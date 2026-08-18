@@ -15,6 +15,9 @@
       "name": "demo",
       "version": "0.1.0",
       "dependencies": {
+        "@anchor-presence/core": "workspace:*",
+        "@anchor-presence/dom": "workspace:*",
+        "@anchor-presence/react": "workspace:*",
         "react": "^19.1.0",
         "react-dom": "^19.1.0",
       },

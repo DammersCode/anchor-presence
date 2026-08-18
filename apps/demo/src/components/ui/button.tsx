@@ -1,4 +1,5 @@
 import type { ButtonHTMLAttributes } from "react";
+import type React from "react";
 import { cn } from "../../lib/cn";
 
 type Variant = "default" | "secondary" | "outline" | "ghost" | "destructive";
@@ -21,11 +22,13 @@ const sizeClasses: Record<Size, string> = {
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
   size?: Size;
+  ref?: React.Ref<HTMLButtonElement>;
 }
 
-export function Button({ variant = "default", size = "default", className, ...props }: ButtonProps) {
+export function Button({ variant = "default", size = "default", className, ref, ...props }: ButtonProps) {
   return (
     <button
+      ref={ref}
       className={cn(
         "inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors",
         "disabled:pointer-events-none disabled:opacity-50",

@@ -1,3 +1,4 @@
+import { useCursorAnchor } from "@anchor-presence/react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { cn } from "../../lib/cn";
 
@@ -10,17 +11,21 @@ export interface StatCardProps {
 }
 
 export function StatCard({ anchorId, label, value, delta, trend }: StatCardProps) {
+  const cardAnchor = useCursorAnchor(`stats.${anchorId}`);
+  const valueAnchor = useCursorAnchor(`stats.${anchorId}.value`);
+  const deltaAnchor = useCursorAnchor(`stats.${anchorId}.delta`);
+
   return (
-    <Card data-anchor={`stats.${anchorId}`}>
+    <Card ref={cardAnchor}>
       <CardHeader>
         <CardTitle>{label}</CardTitle>
       </CardHeader>
       <CardContent className="flex items-baseline justify-between">
-        <span data-anchor={`stats.${anchorId}.value`} className="text-2xl font-semibold text-gray-900">
+        <span ref={valueAnchor} className="text-2xl font-semibold text-gray-900">
           {value}
         </span>
         <span
-          data-anchor={`stats.${anchorId}.delta`}
+          ref={deltaAnchor}
           className={cn("text-sm font-medium", trend === "up" ? "text-emerald-600" : "text-red-600")}
         >
           {trend === "up" ? "▲" : "▼"} {delta}

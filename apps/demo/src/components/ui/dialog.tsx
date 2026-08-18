@@ -1,14 +1,25 @@
 import { useEffect, useRef } from "react";
 import type { HTMLAttributes, ReactNode } from "react";
+import type React from "react";
 import { cn } from "../../lib/cn";
 
 export interface DialogProps extends Omit<HTMLAttributes<HTMLDialogElement>, "onClick"> {
   open: boolean;
   onClose: () => void;
   children: ReactNode;
+  ref?: React.Ref<HTMLDialogElement>;
 }
 
-export function Dialog({ open, onClose, children, className, ...props }: DialogProps) {
+function mergeRefs<T>(...refs: Array<React.Ref<T> | undefined>): React.RefCallback<T> {
+  return (value) => {
+    for (const ref of refs) {
+      if (typeof ref === "function") ref(value);
+      else if (ref !== null && ref !== undefined) (ref as React.RefObject<T | null>).current = value;
+    }
+  };
+}
+
+export function Dialog({ open, onClose, children, className, ref: externalRef, ...props }: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -20,7 +31,7 @@ export function Dialog({ open, onClose, children, className, ...props }: DialogP
 
   return (
     <dialog
-      ref={ref}
+      ref={mergeRefs(ref, externalRef)}
       onClose={onClose}
       onCancel={onClose}
       onClick={(e) => {

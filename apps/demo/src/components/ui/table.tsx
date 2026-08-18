@@ -1,10 +1,15 @@
 import type { HTMLAttributes, TdHTMLAttributes, ThHTMLAttributes } from "react";
+import type React from "react";
 import { cn } from "../../lib/cn";
 
-export function Table({ className, ...props }: HTMLAttributes<HTMLTableElement>) {
+export function Table({
+  className,
+  ref,
+  ...props
+}: HTMLAttributes<HTMLTableElement> & { ref?: React.Ref<HTMLTableElement> }) {
   return (
     <div className="w-full overflow-x-auto">
-      <table className={cn("w-full border-collapse text-sm", className)} {...props} />
+      <table ref={ref} className={cn("w-full border-collapse text-sm", className)} {...props} />
     </div>
   );
 }
@@ -17,8 +22,12 @@ export function TableBody({ className, ...props }: HTMLAttributes<HTMLTableSecti
   return <tbody className={cn("divide-y divide-gray-100", className)} {...props} />;
 }
 
-export function TableRow({ className, ...props }: HTMLAttributes<HTMLTableRowElement>) {
-  return <tr className={cn("hover:bg-gray-50", className)} {...props} />;
+export function TableRow({
+  className,
+  ref,
+  ...props
+}: HTMLAttributes<HTMLTableRowElement> & { ref?: React.Ref<HTMLTableRowElement> }) {
+  return <tr ref={ref} className={cn("hover:bg-gray-50", className)} {...props} />;
 }
 
 export function TableHead({ className, ...props }: ThHTMLAttributes<HTMLTableCellElement>) {
@@ -30,6 +39,10 @@ export function TableHead({ className, ...props }: ThHTMLAttributes<HTMLTableCel
   );
 }
 
-export function TableCell({ className, ...props }: TdHTMLAttributes<HTMLTableCellElement>) {
-  return <td className={cn("px-4 py-2.5 text-gray-700", className)} {...props} />;
+export function TableCell({
+  className,
+  ref,
+  ...props
+}: TdHTMLAttributes<HTMLTableCellElement> & { ref?: React.Ref<HTMLTableCellElement> }) {
+  return <td ref={ref} className={cn("px-4 py-2.5 text-gray-700", className)} {...props} />;
 }

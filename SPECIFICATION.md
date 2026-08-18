@@ -165,6 +165,8 @@ pointer samples (from dom)         inbound bytes (from transport)
 
 Options: `transport`, `codec` (default json), `clientId` (default: random UUID via injected `idFactory`), `publishIntervalMs` (default 50), `staleTimeoutMs`, `heartbeatMs`, `maxRemoteClients`, `user`, `context` setter. The client generates its `session` value at creation from the same `idFactory`. `clientId` identifies a client instance; applications attach user identity via the `user` field, not the `clientId`.
 
+The client ignores inbound messages whose `clientId` equals its own, so broadcast relays that loop messages back are safe. The stale sweep runs on a client-owned timer at `staleTimeoutMs / 2`.
+
 `client.dispose()` is part of the public API. It stops timers, unsubscribes from the transport, and (via the dom layer) removes document listeners, observers, and any pending animation frame. Every layer's setup function returns or registers its teardown with the client.
 
 The publisher keeps only the latest local state. It sends at most one message per interval. It never queues stale positions. Timers are injected (`setTimeout`/`clearTimeout`-shaped scheduler interface) so tests run without real time.

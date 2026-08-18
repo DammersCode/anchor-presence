@@ -5,6 +5,7 @@ import { Topbar } from "./components/dashboard/topbar";
 import { SettingsDialog } from "./components/dashboard/settings-dialog";
 import { CursorLayer } from "./cursors/CursorLayer";
 import { localRoom, localUserName } from "./cursors/setup";
+import { setLocalPage } from "./cursors/visibilityPolicy";
 import type { DemoContext } from "./cursors/setup";
 import { usePageRoute, isPageId } from "./usePageRoute";
 import { DashboardPage } from "./pages/DashboardPage";
@@ -21,6 +22,7 @@ export default function App() {
 
   // Single source of truth for presence context: page + dialog state combined, so neither overwrites the other.
   useEffect(() => {
+    setLocalPage(page);
     setContext(settingsOpen ? { page, dialog: "settings" } : { page });
   }, [page, settingsOpen, setContext]);
 

@@ -1,1 +1,32 @@
-export {};
+export { createAnchorRegistry } from "./registry";
+export type { AnchorRegistry } from "./registry";
+
+export { attachPointerSource, DEFAULT_MAX_ANCHORS } from "./pointer";
+export type { PointerSourceHandle, PointerSourceOptions } from "./pointer";
+
+export { createGeometryScheduler } from "./scheduler";
+export type {
+  CafLike,
+  ComputeResult,
+  GeometryScheduler,
+  GeometrySchedulerOptions,
+  MutationObserverCtor,
+  MutationObserverLike,
+  RafLike,
+  Rect,
+  ResizeObserverCtor,
+  ResizeObserverLike,
+  SchedulerReadState,
+  ViewportSize,
+} from "./scheduler";
+
+export { defaultVisibilityPolicy, findResolvableAnchor, isMeasurable, RemoteResolver, resolveGeometry } from "./resolver";
+export type {
+  ResolutionTier,
+  ResolvedCursor,
+  ResolverOptions,
+  VisibilityPolicy,
+} from "./resolver";
+
+export { createDomBinding } from "./binding";
+export type { DomBinding, DomBindingOptions } from "./binding";

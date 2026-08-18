@@ -34,6 +34,7 @@ function NavButton({ item, isActive, collapsed, onClick }: {
   return (
     <button
       ref={anchorRef}
+      data-testid={`anchor-nav.${item.id}`}
       onClick={onClick}
       title={collapsed ? item.label : undefined}
       className={cn(
@@ -69,6 +70,7 @@ export function Sidebar({ collapsed, onToggle, activeItem, onSelect, onOpenSetti
         )}
         <Button
           ref={toggleAnchor}
+          data-testid="anchor-sidebar.toggle"
           variant="ghost"
           size="icon"
           aria-label="Toggle sidebar"

@@ -34,7 +34,7 @@ function OrderRow({ order, index, onView, onDelete }: {
   const deleteAnchor = useCursorAnchor(`orders.row:${index}.actions.delete`);
 
   return (
-    <TableRow ref={rowAnchor}>
+    <TableRow ref={rowAnchor} data-testid={`anchor-orders.row:${index}`}>
       <TableCell ref={idAnchor} className="font-medium text-gray-900">
         {order.id}
       </TableCell>

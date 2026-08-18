@@ -11,6 +11,10 @@ function RemoteCursor({ cursor }: { cursor: ResolvedCursor<DemoContext, DemoUser
 
   return (
     <div
+      data-testid="remote-cursor"
+      data-cursor-name={name}
+      data-cursor-anchor={cursor.anchorId ?? ""}
+      data-cursor-tier={cursor.tier}
       className="pointer-events-none fixed left-0 top-0 z-50"
       style={{ transform: `translate3d(${cursor.x}px, ${cursor.y}px, 0)` }}
     >

@@ -39,6 +39,8 @@ export function PresencePill() {
               <Avatar name={name} style={{ backgroundColor: color }} className="bg-transparent" />
               {inSettings && (
                 <span
+                  data-testid="presence-in-settings"
+                  data-cursor-name={name}
                   className="absolute -bottom-1 -right-1 rounded-full bg-gray-900 px-1 text-[9px] font-medium leading-tight text-white ring-1 ring-white"
                   title={`${name} is in Settings`}
                 >

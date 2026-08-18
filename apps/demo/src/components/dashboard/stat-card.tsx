@@ -16,7 +16,7 @@ export function StatCard({ anchorId, label, value, delta, trend }: StatCardProps
   const deltaAnchor = useCursorAnchor(`stats.${anchorId}.delta`);
 
   return (
-    <Card ref={cardAnchor}>
+    <Card ref={cardAnchor} data-testid={`anchor-stats.${anchorId}`}>
       <CardHeader>
         <CardTitle>{label}</CardTitle>
       </CardHeader>

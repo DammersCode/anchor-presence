@@ -18,6 +18,7 @@ before starting, honor its STOP conditions, and update your row when done.
 | 006 | Socket.IO transport example (tested) + SignalR recipe check | P2 | M | 001 | TODO |
 | 007 | Demo interpolation style switcher (spring stays demo-side) | P3 | M | — | TODO |
 | 008 | README/docs restyle (use-signalr house style, STE) | P3 | M | 002; run LAST | TODO |
+| 009 | Performance verification: core + react budgets, benches, CI gate | P2 | M | 001 (after 004) | TODO |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale)
 
@@ -27,7 +28,8 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJE
 - 002 before 008: the README's MIT badge links the LICENSE file that 002 creates.
 - 004 after 003: both edit `packages/dom/src/scheduler.ts`/`binding.ts`; serializing avoids conflicts.
 - 005 can run any time after 001; its waves are individually revertable.
-- 008 last: the README capability matrix should reflect whichever of 003–007 landed.
+- 008 last among the docs-facing plans: the README capability matrix should reflect whichever of 003–007 landed.
+- 009 after 004 (both touch the bench page) and BEFORE 003/005 execute ideally — its budgets are the regression gate those riskier plans re-run; if it lands later, they must re-run its suite retroactively.
 
 ## Decisions and findings considered and rejected
 

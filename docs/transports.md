@@ -1,0 +1,204 @@
+# Transports
+
+Core imports no transport library (Invariant 6). An application supplies a transport that implements `LiveCursorTransport`. This page shows the interface and four example implementations.
+
+## The LiveCursorTransport interface
+
+```ts
+import type { LiveCursorTransport, ConnectionStatus } from "@anchor-presence/core";
+
+interface LiveCursorTransport {
+  connect?(): Promise<void> | void;
+  disconnect?(): Promise<void> | void;
+  send(data: Uint8Array): Promise<void> | void;
+  subscribe(listener: (data: Uint8Array) => void): () => void;
+  subscribeStatus?(listener: (status: ConnectionStatus) => void): () => void;
+}
+
+type ConnectionStatus = "connecting" | "connected" | "reconnecting" | "disconnected";
+```
+
+Rules:
+
+- `send` receives already-encoded bytes. The client calls `codec.encode()` before calling `send`.
+- `subscribe` receives already-encoded bytes from the wire. The client calls `codec.decode()` and `validatePresence()` after your listener fires.
+- `connect`, `disconnect`, and `subscribeStatus` are optional. When a transport omits `subscribeStatus`, the client reports a constant `"connected"` status.
+- A `send` failure must not throw past the transport boundary in a way that crashes the app. The client swallows send errors after a status check; presence is lossy by design.
+
+Pass a transport instance to `createPresenceClient`:
+
+```ts
+import { createPresenceClient } from "@anchor-presence/core";
+
+const client = createPresenceClient({ transport: myTransport });
+```
+
+## Native WebSocket example
+
+This example matches the room-broadcast relay in `apps/server/index.ts`, which forwards every binary message to all other sockets in the same room.
+
+```ts
+import type { ConnectionStatus, LiveCursorTransport } from "@anchor-presence/core";
+
+export class WebSocketTransport implements LiveCursorTransport {
+  private socket: WebSocket | null = null;
+  private status: ConnectionStatus = "disconnected";
+  private readonly dataListeners = new Set<(data: Uint8Array) => void>();
+  private readonly statusListeners = new Set<(status: ConnectionStatus) => void>();
+
+  constructor(private readonly url: string) {}
+
+  connect(): void {
+    this.setStatus("connecting");
+    const socket = new WebSocket(this.url);
+    socket.binaryType = "arraybuffer";
+    socket.onopen = () => this.setStatus("connected");
+    socket.onclose = () => this.setStatus("disconnected");
+    socket.onerror = () => this.setStatus("reconnecting");
+    socket.onmessage = (event) => {
+      const bytes = new Uint8Array(event.data as ArrayBuffer);
+      for (const listener of this.dataListeners) listener(bytes);
+    };
+    this.socket = socket;
+  }
+
+  disconnect(): void {
+    this.socket?.close();
+    this.socket = null;
+  }
+
+  send(data: Uint8Array): void {
+    if (this.socket?.readyState === WebSocket.OPEN) this.socket.send(data);
+  }
+
+  subscribe(listener: (data: Uint8Array) => void): () => void {
+    this.dataListeners.add(listener);
+    return () => this.dataListeners.delete(listener);
+  }
+
+  subscribeStatus(listener: (status: ConnectionStatus) => void): () => void {
+    this.statusListeners.add(listener);
+    return () => this.statusListeners.delete(listener);
+  }
+
+  private setStatus(next: ConnectionStatus): void {
+    this.status = next;
+    for (const listener of this.statusListeners) listener(next);
+  }
+}
+```
+
+Use it with the Bun relay in `apps/server`:
+
+```ts
+const transport = new WebSocketTransport("ws://localhost:8787/main");
+transport.connect();
+const client = createPresenceClient({ transport });
+```
+
+## Socket.IO adapter sketch
+
+```ts
+import type { LiveCursorTransport, ConnectionStatus } from "@anchor-presence/core";
+import type { Socket } from "socket.io-client";
+
+export function createSocketIoTransport(socket: Socket): LiveCursorTransport {
+  const statusListeners = new Set<(status: ConnectionStatus) => void>();
+  const setStatus = (status: ConnectionStatus) => {
+    for (const listener of statusListeners) listener(status);
+  };
+
+  socket.on("connect", () => setStatus("connected"));
+  socket.on("disconnect", () => setStatus("disconnected"));
+  socket.on("reconnect_attempt", () => setStatus("reconnecting"));
+
+  return {
+    connect: () => socket.connect(),
+    disconnect: () => socket.disconnect(),
+    send: (data) => void socket.emit("presence", data),
+    subscribe: (listener) => {
+      const handler = (data: ArrayBuffer) => listener(new Uint8Array(data));
+      socket.on("presence", handler);
+      return () => socket.off("presence", handler);
+    },
+    subscribeStatus: (listener) => {
+      statusListeners.add(listener);
+      return () => statusListeners.delete(listener);
+    },
+  };
+}
+```
+
+Socket.IO delivers binary payloads as `ArrayBuffer` on most clients; confirm the wrapper matches your Socket.IO version before shipping it.
+
+## SignalR adapter sketch
+
+```ts
+import type { LiveCursorTransport, ConnectionStatus } from "@anchor-presence/core";
+import type { HubConnection } from "@microsoft/signalr";
+
+export function createSignalRTransport(connection: HubConnection): LiveCursorTransport {
+  const statusListeners = new Set<(status: ConnectionStatus) => void>();
+  const setStatus = (status: ConnectionStatus) => {
+    for (const listener of statusListeners) listener(status);
+  };
+
+  connection.onreconnecting(() => setStatus("reconnecting"));
+  connection.onreconnected(() => setStatus("connected"));
+  connection.onclose(() => setStatus("disconnected"));
+
+  return {
+    connect: async () => {
+      setStatus("connecting");
+      await connection.start();
+      setStatus("connected");
+    },
+    disconnect: () => connection.stop(),
+    send: (data) => connection.send("Presence", data),
+    subscribe: (listener) => {
+      connection.on("Presence", listener);
+      return () => connection.off("Presence", listener);
+    },
+    subscribeStatus: (listener) => {
+      statusListeners.add(listener);
+      return () => statusListeners.delete(listener);
+    },
+  };
+}
+```
+
+## BroadcastChannel example
+
+`BroadcastChannel` needs no server. It works only between tabs in the same browser, on the same origin. Use it for local development and demos.
+
+```ts
+import type { LiveCursorTransport } from "@anchor-presence/core";
+
+export function createBroadcastChannelTransport(channelName: string): LiveCursorTransport {
+  const channel = new BroadcastChannel(channelName);
+
+  return {
+    send: (data) => channel.postMessage(data),
+    subscribe: (listener) => {
+      const handler = (event: MessageEvent<Uint8Array>) => listener(event.data);
+      channel.addEventListener("message", handler);
+      return () => channel.removeEventListener("message", handler);
+    },
+  };
+}
+```
+
+`BroadcastChannel` has no `subscribeStatus`, so the client reports a constant `"connected"` status. This transport needs no relay server, so it is a good choice for testing two-tab scenarios locally before wiring up a real backend.
+
+## Reconnection and status
+
+Core does not implement reconnection. A transport that needs to reconnect must do so internally and call its status listeners as the connection state changes:
+
+- Report `"connecting"` while the first connection attempt is in progress.
+- Report `"connected"` once open.
+- Report `"reconnecting"` while attempting to restore a dropped connection.
+- Report `"disconnected"` when no further automatic attempt will happen.
+
+The presence client stops sending while the status is `"connecting"` or `"disconnected"`. It resumes sending once the status moves to `"connected"`.
+
+A reconnected client keeps its `clientId`. It generates a new `session` value only at client creation, not on reconnect, so the receiver's sequencing rules treat resumed traffic as a continuation, not a restart.

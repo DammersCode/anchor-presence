@@ -19,7 +19,8 @@ Each task lists: objective, files, dependencies, tests, acceptance.
 
 T0 Monorepo scaffold.
 - Files: root `package.json` (workspaces), `tsconfig.base.json`, per-package `package.json`/`tsconfig.json`, `vitest.config.ts`, `.gitignore`.
-- Tests: `bun install` succeeds; `tsc --noEmit` passes on empty packages.
+- Tests: `bun install` succeeds; `tsc --build` passes on empty packages.
+- Unit tests always run through Vitest via Node (`bunx vitest run` / npm script), never `bun test` — different runner, different semantics.
 
 ### Phase 1 — Core (worker A)
 
@@ -39,6 +40,10 @@ T4 Client orchestration (`client.ts`).
 - `createPresenceClient(options)`: latest-state slot, rate-limited publisher (injected scheduler), heartbeat, status wiring (constant "connected" fallback), `setContext`, `dispose()`.
 - Tests: fake-timer publish rate, latest-wins, heartbeat, dispose stops everything, no send while disconnected status.
 
+T9 Interpolators (`packages/core/src/interpolate.ts` — pure math, DOM-free).
+- `Interpolator` interface with `target`, `shift(dx, dy)` (moves current AND target by a delta), `sample`; `none` and `linear` factories.
+- Tests: easing math, settled flag, shift preserves in-flight ease.
+
 Acceptance for Phase 1: zero DOM/React/transport imports (checked by a test that imports the package in plain node), all unit tests pass.
 
 ### Phase 2 — DOM (worker B, after Phase 1 interfaces exist)
@@ -53,20 +58,21 @@ T6 Pointer capture + outbound sampling (`pointer.ts`).
 
 T7 Geometry scheduler (`scheduler.ts`).
 - §11: invalidate → coalesced rAF, read/compute/notify phases, signal wiring (resize, capture scroll, ResizeObserver, MutationObserver, transition tracking with safety timeouts, infinite-animation short window), idle teardown.
-- Tests: coalescing (mock rAF), one-measure-per-anchor-per-frame, idle = no rAF, listener/observer cleanup on dispose, transition window closes on cancel/timeout.
+- Tests: coalescing (mock rAF), one-measure-per-anchor-per-frame, idle = no rAF and all signals disconnected, listener/observer cleanup on dispose, transition window closes on cancel/timeout, MutationObserver-driven invalidation (injected observer factory), infinite-animation 500 ms window.
 
 T8 Remote resolver + visibility policy (`resolver.ts`).
-- §10: tier walk, measurable check, ResolvedCursor output, default policy, policy override, interpolation integration with snap-on-local-invalidation.
-- Tests: tier fallback order, hidden tier, policy override, snap vs target paths.
+- §10: tier walk, measurable check, ResolvedCursor output, default policy, policy override, interpolation integration with shift-on-local-invalidation (network updates call `target`, local-only invalidations call `shift` with the position delta).
+- Tests: tier fallback order, hidden tier, policy override, shift vs target paths.
 
-### Phase 3 — React + interpolation (worker C, after Phase 2 interfaces)
+Acceptance for Phase 2: dom imports only core (grep gate in CI/test), all unit tests pass.
 
-T9 Interpolators (`packages/core/src/interpolate.ts` — math only, DOM-free).
-- `none`, `linear` with snap; tests for easing math and settled flag.
+### Phase 3 — React adapter (worker C, after Phase 2 interfaces)
 
 T10 React adapter (`packages/react/src`).
 - §14: provider, six hooks, useSyncExternalStore wiring, SSR server snapshots, stable ref callback.
 - Tests: strict-mode double mount, snapshot subscription, SSR render (renderToString), rerender isolation.
+
+Acceptance for Phase 3: react imports only core/dom/react itself (grep gate), all unit tests pass.
 
 ### Phase 4 — Demo + server (worker D, parallel with Phase 3)
 
@@ -76,7 +82,7 @@ T12 Demo dashboard (`apps/demo`): Vite React TS, Tailwind, shadcn-style admin da
 
 ### Phase 5 — Cross-layout browser tests (worker E, after 2-4)
 
-T13 Playwright harness: two pages against one relay; scenarios from spec §17 (viewport sizes, sidebar mismatch, flex wrap, element-size proportionality ±2 px, dialog context policy, receiver-scroll reposition without packets).
+T13 Playwright harness: two pages against one relay; scenarios from spec §17 (viewport sizes, sidebar mismatch, flex wrap, element-size proportionality ±2 px, dialog context policy, receiver-scroll reposition without packets, page reload → cursor reappears on the first post-reload message).
 
 ### Phase 6 — Bench, docs, hardening (worker F + Reviewer)
 

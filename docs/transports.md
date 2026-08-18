@@ -1,6 +1,6 @@
 # Transports
 
-Core imports no transport library (Invariant 6). An application supplies a transport that implements `LiveCursorTransport`. This page shows the interface and four example implementations.
+Core imports no transport library (Invariant 6). An application supplies a transport that implements `LiveCursorTransport`. This page shows the interface and four example implementations. The demo app contains a working WebSocket transport with reconnect logic in `apps/demo/src/cursors/transport.ts`.
 
 ## The LiveCursorTransport interface
 

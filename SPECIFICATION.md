@@ -1,7 +1,7 @@
 # Anchor Presence — Technical Specification
 
-Version: 1.1
-Status: revised after Advisor review round 1
+Version: 1.2
+Status: APPROVED by Advisor (round 2), recommendations applied
 
 ## 1. Purpose
 
@@ -116,7 +116,7 @@ Each client keeps one local counter. Every outbound message increments it. The r
 2. If the session matches and `sequence <= lastSequence`, drop the message.
 3. Otherwise accept and store the new sequence.
 
-Wall clocks are not used for ordering. Two live tabs that share a `clientId` have different sessions; rule 1 makes them last-write-wins instead of dropping each other.
+Wall clocks are not used for ordering. Two live tabs that share a `clientId` have different sessions; rule 1 makes them last-write-wins instead of dropping each other. Note: a shared `clientId` is misuse — it causes visible cursor flapping between the two tabs, not an error.
 
 ### 4.4 Presence expiry
 
@@ -273,7 +273,7 @@ ResizeObserver alone is insufficient: an element can move without resizing. Scro
 
 Transition tracking: document-level capture listeners for `transitionrun`, `transitionend`, `transitioncancel`, `animationstart`, `animationend`, `animationcancel`. Each start event opens a tracked entry keyed by target and name, and starts continuous rAF invalidation. An entry closes on its end or cancel event, or on a safety timeout of computed `duration + delay + 500 ms`, capped at 10 s. An animation with `animation-iteration-count: infinite` gets one short window (500 ms) instead of a tracked entry, so spinners cannot pin the rAF loop. When the last entry closes and every interpolator is settled, the rAF loop stops.
 
-Idle behavior: with no active remote cursors, no rAF loop runs and the transition listeners are detached. The scheduler is event-driven, not polling.
+Idle behavior: with no active remote cursors, no rAF loop runs and every scheduler signal disconnects (transition listeners, MutationObserver, scroll and resize listeners, ResizeObservers). The scheduler is event-driven, not polling.
 
 ## 12. UI Context
 
@@ -290,7 +290,7 @@ Interpolation runs after resolution, on receiver-local x/y:
 ```ts
 interface Interpolator {
   target(x: number, y: number, timestampMs: number): void;
-  snap(x: number, y: number): void;   // jump without easing
+  shift(dx: number, dy: number): void;  // move current AND target by a delta, no easing
   sample(timestampMs: number): { x: number; y: number; settled: boolean };
 }
 type InterpolatorFactory = () => Interpolator;
@@ -298,7 +298,7 @@ type InterpolatorFactory = () => Interpolator;
 
 Ships: `none` and `linear` (fixed-duration ease toward target, default 80 ms). Spring/spline are future factories behind the same interface. While any interpolator is unsettled, the scheduler runs a rAF loop; when all are settled, it stops. Interpolation frames reuse the cached rects from the last read phase; a re-measure happens only when an invalidation arrived. Raw sender coordinates are never interpolated.
 
-When a resolved position changes because of a local-only invalidation (scroll, resize, mutation) with no new network data for that cursor, the scheduler calls `snap` instead of `target`. The cursor then tracks its anchor rigidly during local scrolling instead of trailing it.
+When a resolved position changes because of a local-only invalidation (scroll, resize, mutation) with no new network data for that cursor, the scheduler calls `shift(dx, dy)` with the position delta. Current and target move together, so an in-flight ease continues instead of truncating, and the cursor tracks its anchor rigidly during local scrolling.
 
 Interpolation is applied in the dom layer's resolved snapshot, so all adapters get smoothed values for free; `interpolator: none` gives raw resolved values.
 
@@ -338,7 +338,7 @@ SSR: the client is created by the consumer in browser-only code, or the provider
 
 ## 17. Testing
 
-- Core (vitest, node env): validation table, clamping, sequencing incl. reset threshold, expiry with fake timers, publisher rate limiting, codec round-trip, malformed decode, duplicate clientId.
+- Core (vitest, node env): validation table, clamping, sequencing incl. session change, expiry with fake timers, publisher rate limiting, codec round-trip, malformed decode, duplicate clientId, client cap.
 - Dom (vitest, jsdom): registry mount/unmount/remount/duplicates/stale, normalization math, fallback chain order, resolver tiers, zero-size skip, scheduler batching (mock rAF), listener/observer cleanup.
 - React (vitest, jsdom): anchor hook lifecycle incl. strict mode double-mount, useSyncExternalStore snapshots, SSR render without DOM, no-rerender guarantee for non-subscribing components.
 - Cross-layout (Playwright, Chromium + Firefox + WebKit): two pages against one relay with different viewport sizes (1280×720 vs 1920×1080), sidebar expanded vs collapsed, flex wrapping (narrow vs wide), different element sizes (u/v proportionality asserted ±2 px), dialog open vs closed with a context policy, receiver-scroll repositioning without new packets (Invariant 7).

@@ -1,0 +1,12 @@
+import type { ConnectionStatus } from "./protocol";
+
+export type { ConnectionStatus } from "./protocol";
+
+// Transport abstraction — spec §5. Core never imports a transport implementation.
+export interface LiveCursorTransport {
+  connect?(): Promise<void> | void;
+  disconnect?(): Promise<void> | void;
+  send(data: Uint8Array): Promise<void> | void;
+  subscribe(listener: (data: Uint8Array) => void): () => void;
+  subscribeStatus?(listener: (status: ConnectionStatus) => void): () => void;
+}

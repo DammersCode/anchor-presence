@@ -313,7 +313,11 @@ export function createGeometryScheduler<TSnapshot>(
     if (disposed) return;
     const shouldBeActive = options.hasActiveCursors();
     if (shouldBeActive && !attached) attach();
-    else if (!shouldBeActive && attached) detach();
+    else if (!shouldBeActive && attached) {
+      detach();
+      // final pass so consumers see cursors leave before the signals go quiet
+      runPass(typeof performance !== "undefined" ? performance.now() : Date.now());
+    }
   }
 
   // these two listeners stay subscribed even while idle: they're what wakes the scheduler up

@@ -158,6 +158,32 @@ describe("createDomBinding", () => {
     binding.dispose();
   });
 
+  it("going idle publishes a final snapshot so the departed cursor is not left visible", () => {
+    const { raf, caf, flush } = makeRafStub();
+    const { client, pushRemote } = makeFakeClient();
+    const binding = createDomBinding(client, { raf, caf });
+
+    pushRemote([
+      {
+        version: 1,
+        clientId: "remote-1",
+        session: "s",
+        sequence: 1,
+        cursor: { anchors: [], viewport: { u: 0.5, v: 0.5 } },
+      },
+    ]);
+    flush();
+    expect(binding.getSnapshot().some((c) => c.visible)).toBe(true);
+
+    pushRemote([{ version: 1, clientId: "remote-1", session: "s", sequence: 2, cursor: null }]);
+    flush();
+
+    // scheduler is detached now, but the final pass must have hidden the cursor
+    expect(binding.getSnapshot().some((c) => c.visible)).toBe(false);
+
+    binding.dispose();
+  });
+
   it("dispose() detaches everything and is registered as a client teardown", () => {
     const { raf, caf } = makeRafStub();
     const { client } = makeFakeClient();

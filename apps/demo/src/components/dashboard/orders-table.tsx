@@ -17,8 +17,6 @@ export interface OrdersTableProps {
   onDelete: (orderId: string) => void;
 }
 
-// Anchors registered per row via hooks here — not inside the parent's map loop — so each row's
-// useCursorAnchor call site stays stable across re-renders (spec §12 / requirement 4).
 function OrderRow({ order, index, onView, onDelete }: {
   order: Order;
   index: number;

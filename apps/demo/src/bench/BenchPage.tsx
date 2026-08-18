@@ -23,12 +23,7 @@ function randomWalkStep(current: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, next));
 }
 
-/**
- * Wraps binding.subscribe with performance.now() to time each scheduler pass (spec §11's
- * READ+COMPUTE+NOTIFY, run synchronously inside one rAF callback). We run our own rAF loop to mark
- * "frame start", then measure how long after that mark the binding's notify fires — the delta is the
- * scheduler's READ+COMPUTE scripting cost for that pass, which is what the §16 budget (<2ms) targets.
- */
+// frame-start → notify delta = the scheduler's per-pass scripting cost (§16 <2ms budget)
 function useSchedulerPassStats(binding: DomBinding | null) {
   const [stats, setStats] = useState({ mean: 0, p95: 0, count: 0 });
   const rollingRef = useRef(new RollingStats());

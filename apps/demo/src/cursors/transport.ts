@@ -20,10 +20,7 @@ function resolveUrl(options: WebSocketTransportOptions): string {
   return `${protocol}//${host}:${port}/?room=${encodeURIComponent(room)}`;
 }
 
-/**
- * Native-WebSocket transport with auto-reconnect and exponential backoff.
- * Example code for the demo — applications are expected to bring their own transport.
- */
+// demo example transport — applications bring their own
 export function createWebSocketTransport(options: WebSocketTransportOptions = {}): LiveCursorTransport {
   const url = resolveUrl(options);
   const baseBackoffMs = options.baseBackoffMs ?? 500;

@@ -1,10 +1,7 @@
-// UI context policy (spec §12): hide a remote cursor whose sender is in the settings dialog
-// unless the local viewer also has it open. The topbar shows an "in Settings" indicator instead.
 import type { VisibilityPolicy } from "@anchor-presence/dom";
 import type { DemoContext } from "./setup";
 
-// Mutable flag updated by the app when the local dialog opens/closes; the policy function itself
-// stays a plain synchronous callback per the DomBindingOptions contract (no hooks, no store access).
+// module-level flag because the policy must stay a plain synchronous callback
 let localSettingsOpen = false;
 
 export function setLocalSettingsOpen(open: boolean): void {

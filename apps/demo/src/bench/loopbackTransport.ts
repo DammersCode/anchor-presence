@@ -1,6 +1,4 @@
-// In-process transport for the benchmark: no network, send() is a no-op, and injectInbound()
-// feeds synthetic remote presence bytes straight to the client's decode path — exercises the
-// real codec/validate/store/resolver pipeline instead of poking store internals directly.
+// injectInbound runs the real codec/validate/store/resolver pipeline, not store internals
 import type { LiveCursorTransport } from "@anchor-presence/core";
 
 export type LoopbackTransport = LiveCursorTransport & {

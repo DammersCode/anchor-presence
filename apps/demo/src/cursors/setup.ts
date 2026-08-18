@@ -9,14 +9,14 @@ export type DemoUser = { name: string; color: string };
 
 // Fixed palette so the receiver can validate a remote color instead of trusting arbitrary CSS from the wire.
 export const CURSOR_PALETTE = [
-  "#ef4444", // red
-  "#f59e0b", // amber
-  "#10b981", // emerald
-  "#0ea5e9", // sky
-  "#6366f1", // indigo
-  "#a855f7", // purple
-  "#ec4899", // pink
-  "#14b8a6", // teal
+  "#ef4444",
+  "#f59e0b",
+  "#10b981",
+  "#0ea5e9",
+  "#6366f1",
+  "#a855f7",
+  "#ec4899",
+  "#14b8a6",
 ] as const;
 
 export const DEFAULT_CURSOR_COLOR = "#6b7280"; // gray-500 fallback for unrecognized colors

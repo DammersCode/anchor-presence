@@ -37,7 +37,7 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
     const existing = this.entries.get(presence.clientId);
 
     if (existing === undefined) {
-      if (this.entries.size >= this.maxRemoteClients) return false; // new clientId beyond cap: dropped
+      if (this.entries.size >= this.maxRemoteClients) return false;
       this.entries.set(presence.clientId, { presence, lastSeenAt: this.now() });
       this.markDirty();
       return true;
@@ -45,7 +45,7 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
 
     const sameSession = existing.presence.session === presence.session;
     if (sameSession && presence.sequence <= existing.presence.sequence) {
-      return false; // stale sequence within the same session
+      return false;
     }
 
     existing.presence = presence;

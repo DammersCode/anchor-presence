@@ -3,6 +3,7 @@
 import type { CursorPresence, InterpolatorFactory } from "@anchor-presence/core";
 import { linearInterpolator } from "@anchor-presence/core";
 import type { AnchorRegistry } from "./registry";
+import type { Rect, ViewportSize } from "./geometry";
 
 export type ResolutionTier = "anchor" | "viewport" | "hidden";
 
@@ -25,19 +26,12 @@ export type VisibilityPolicy<TContext = unknown> = (input: {
 export const defaultVisibilityPolicy: VisibilityPolicy = ({ resolution }) =>
   resolution.tier === "hidden" ? "hide" : "show";
 
-export type Rect = { left: number; top: number; width: number; height: number };
-
-export type ViewportSize = { width: number; height: number };
-
 /** An element is measurable when connected and its rect has width > 0 and height > 0 — spec §10. */
 export function isMeasurable(rect: Rect): boolean {
   return rect.width > 0 && rect.height > 0;
 }
 
-/**
- * Finds the first connected, measurable anchor in the chain (most specific first).
- * Used both by the scheduler (to compute which elements to measure) and by resolvePresence (to compute geometry).
- */
+/** Finds the first connected, measurable anchor in the chain (most specific first). */
 export function findResolvableAnchor(
   presence: CursorPresence,
   registry: AnchorRegistry,
@@ -110,15 +104,9 @@ type InterpolatorState = {
   interpolator: ReturnType<InterpolatorFactory>;
   lastRawX: number;
   lastRawY: number;
-  lastTier: ResolutionTier;
-  lastAnchorId: string | null;
 };
 
-/**
- * Stateful resolver: tracks one interpolator per clientId, decides target() vs shift() per spec §13.
- * `networkUpdated` clientIds got new presence data since the last pass (call target());
- * everyone else moved only because of a local invalidation (call shift() with the delta).
- */
+/** Stateful resolver: tracks one interpolator per clientId, decides target() vs shift() per spec §13. */
 export class RemoteResolver<TContext = unknown, TUser = unknown> {
   private readonly registry: AnchorRegistry;
   private readonly visibilityPolicy: VisibilityPolicy<TContext>;
@@ -163,8 +151,6 @@ export class RemoteResolver<TContext = unknown, TUser = unknown> {
           interpolator: this.interpolatorFactory(),
           lastRawX: raw.x,
           lastRawY: raw.y,
-          lastTier: raw.tier,
-          lastAnchorId: raw.anchorId,
         };
         state.interpolator.target(raw.x, raw.y, timestampMs);
         this.states.set(presence.clientId, state);
@@ -176,8 +162,6 @@ export class RemoteResolver<TContext = unknown, TUser = unknown> {
       }
       state.lastRawX = raw.x;
       state.lastRawY = raw.y;
-      state.lastTier = raw.tier;
-      state.lastAnchorId = raw.anchorId;
 
       const sample = state.interpolator.sample(timestampMs);
       if (!sample.settled) unsettled = true;

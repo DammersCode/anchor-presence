@@ -1,3 +1,5 @@
+export type { Rect, ViewportSize } from "./geometry";
+
 export { createAnchorRegistry } from "./registry";
 export type { AnchorRegistry } from "./registry";
 
@@ -13,11 +15,9 @@ export type {
   MutationObserverCtor,
   MutationObserverLike,
   RafLike,
-  Rect,
   ResizeObserverCtor,
   ResizeObserverLike,
   SchedulerReadState,
-  ViewportSize,
 } from "./scheduler";
 
 export { defaultVisibilityPolicy, findResolvableAnchor, isMeasurable, RemoteResolver, resolveGeometry } from "./resolver";

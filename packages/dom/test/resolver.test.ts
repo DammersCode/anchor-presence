@@ -4,7 +4,7 @@ import { noneInterpolator } from "@anchor-presence/core";
 import { createAnchorRegistry } from "../src/registry";
 import type { AnchorRegistry } from "../src/registry";
 import { defaultVisibilityPolicy, RemoteResolver, resolveGeometry } from "../src/resolver";
-import type { Rect } from "../src/resolver";
+import type { Rect } from "../src/geometry";
 
 function presence(overrides: Partial<CursorPresence> = {}): CursorPresence {
   return {

@@ -114,11 +114,47 @@ describe("createDomBinding", () => {
     binding.subscribe(listener);
 
     pushRemote([
-      { version: 1, clientId: "remote-1", session: "s", sequence: 1, cursor: null },
+      {
+        version: 1,
+        clientId: "remote-1",
+        session: "s",
+        sequence: 1,
+        cursor: { anchors: [], viewport: { u: 0.5, v: 0.5 } },
+      },
     ]);
     flush();
 
     expect(listener).toHaveBeenCalled();
+    binding.dispose();
+  });
+
+  it("F6: a presence with cursor: null does not count as active — signals detach once it's the only remote presence", () => {
+    const { raf, caf, flush } = makeRafStub();
+    const { client, pushRemote } = makeFakeClient();
+    const addEventListenerSpy = vi.spyOn(document, "addEventListener");
+    const removeEventListenerSpy = vi.spyOn(document, "removeEventListener");
+    const binding = createDomBinding(client, { raf, caf });
+
+    pushRemote([
+      {
+        version: 1,
+        clientId: "remote-1",
+        session: "s",
+        sequence: 1,
+        cursor: { anchors: [], viewport: { u: 0.5, v: 0.5 } },
+      },
+    ]);
+    flush();
+
+    // active: scroll listener attached
+    expect(addEventListenerSpy).toHaveBeenCalledWith("scroll", expect.any(Function), { capture: true, passive: true });
+
+    // the same clientId goes idle (cursor: null) — active must derive from non-null cursors, not store entry count
+    pushRemote([{ version: 1, clientId: "remote-1", session: "s", sequence: 2, cursor: null }]);
+    flush();
+
+    expect(removeEventListenerSpy).toHaveBeenCalledWith("scroll", expect.any(Function), { capture: true });
+
     binding.dispose();
   });
 

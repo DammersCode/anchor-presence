@@ -35,7 +35,7 @@ function buildCursorPosition(
   const anchors: CursorPosition["anchors"] = [];
   for (const { id, element } of chain) {
     const rect = element.getBoundingClientRect();
-    if (rect.width <= 0 || rect.height <= 0) continue; // zero-size rects are skipped
+    if (rect.width <= 0 || rect.height <= 0) continue;
     const u = (clientX - rect.left) / rect.width;
     const v = (clientY - rect.top) / rect.height;
     anchors.push({ id, u, v });

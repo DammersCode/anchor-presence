@@ -1,7 +1,6 @@
 // Geometry scheduler — spec §11
 
-export type Rect = { left: number; top: number; width: number; height: number };
-export type ViewportSize = { width: number; height: number };
+import type { Rect, ViewportSize } from "./geometry";
 
 export type ResizeObserverLike = {
   observe(target: Element): void;
@@ -34,21 +33,15 @@ export type SchedulerReadState = {
 
 export type ComputeResult<TSnapshot> = {
   snapshot: TSnapshot;
-  /** Anchors that should be measured (and observed) on the next pass — the union of first-resolvable anchors. */
   activeAnchors: Element[];
-  /** True while interpolation (or anything else) needs another rAF even with no new invalidation signal. */
   needsAnotherFrame: boolean;
 };
 
 export type GeometrySchedulerOptions<TSnapshot> = {
-  /** True while there is at least one remote cursor; the scheduler attaches signals only in this state. */
   hasActiveCursors(): boolean;
-  /** READ+COMPUTE step: given measured rects, resolve the new snapshot and report which anchors matter. */
   compute(state: SchedulerReadState, timestampMs: number): ComputeResult<TSnapshot>;
   notify(snapshot: TSnapshot): void;
-  /** Anchor register/unregister notifications (registry.onChange). */
   onRegistryChange(listener: () => void): () => void;
-  /** New remote presence data notifications (client.subscribeRemote or store.subscribe). */
   onRemoteData(listener: () => void): () => void;
 
   root?: Document;
@@ -63,12 +56,6 @@ export type GeometryScheduler = {
   invalidate(reason?: string): void;
   dispose(): void;
 };
-
-type TransitionKey = string;
-
-function transitionKey(target: EventTarget | null, name: string): TransitionKey {
-  return `${String(target)}::${name}`;
-}
 
 function parseCssTimeList(value: string): number[] {
   return value
@@ -98,7 +85,12 @@ export function createGeometryScheduler<TSnapshot>(
   let resizeObserver: ResizeObserverLike | null = null;
   let mutationObserver: MutationObserverLike | null = null;
 
-  const transitionEntries = new Map<TransitionKey, { safetyTimer: ReturnType<typeof setTimeout> }>();
+  // per-target keying: distinct elements with the same property/animation name must not collide (spec §11)
+  const transitionEntries = new Map<EventTarget, Map<string, { safetyTimer: ReturnType<typeof setTimeout> }>>();
+  let openTransitionCount = 0;
+
+  let lastRectCache: Map<Element, Rect> | null = null;
+  let lastViewportSize: ViewportSize | null = null;
 
   function measureRect(element: Element): Rect {
     const r = element.getBoundingClientRect();
@@ -117,9 +109,23 @@ export function createGeometryScheduler<TSnapshot>(
 
   function runPass(timestampMs: number): void {
     rafHandle = null;
+    // an invalidation arrived, or a transition window is open: re-measure (spec §11/§13)
+    const shouldRemeasure = dirty || openTransitionCount > 0;
     dirty = false;
 
-    const rectCache = new Map<Element, Rect>();
+    let rectCache: Map<Element, Rect>;
+    let viewportSize: ViewportSize;
+    if (shouldRemeasure || lastRectCache === null || lastViewportSize === null) {
+      rectCache = new Map<Element, Rect>();
+      viewportSize = { width: win.innerWidth, height: win.innerHeight };
+      // pre-measure every candidate anchor once (READ phase) before any compute/consumer code runs
+      for (const element of observedAnchors) rectCache.set(element, measureRect(element));
+    } else {
+      // interpolation-only pass: reuse the cached rects from the last read phase, no re-measure
+      rectCache = lastRectCache;
+      viewportSize = lastViewportSize;
+    }
+
     const readState: SchedulerReadState = {
       getRect(element) {
         let rect = rectCache.get(element);
@@ -129,17 +135,16 @@ export function createGeometryScheduler<TSnapshot>(
         }
         return rect;
       },
-      viewportSize: { width: win.innerWidth, height: win.innerHeight },
+      viewportSize,
     };
 
-    // pre-measure every candidate anchor once (READ phase) before any compute/consumer code runs
-    for (const element of observedAnchors) readState.getRect(element);
-
     const result = options.compute(readState, timestampMs);
+    lastRectCache = rectCache;
+    lastViewportSize = viewportSize;
     syncObservedAnchors(result.activeAnchors);
     options.notify(result.snapshot);
 
-    if (result.needsAnotherFrame || dirty) {
+    if (result.needsAnotherFrame || dirty || openTransitionCount > 0) {
       scheduleFrame();
     }
   }
@@ -170,11 +175,15 @@ export function createGeometryScheduler<TSnapshot>(
     markDirtyAndSchedule();
   }
 
-  function closeTransitionEntry(key: TransitionKey): void {
-    const entry = transitionEntries.get(key);
-    if (entry === undefined) return;
+  function closeTransitionEntry(target: EventTarget | null, name: string): void {
+    if (target === null) return;
+    const byName = transitionEntries.get(target);
+    const entry = byName?.get(name);
+    if (byName === undefined || entry === undefined) return;
     clearTimeout(entry.safetyTimer);
-    transitionEntries.delete(key);
+    byName.delete(name);
+    if (byName.size === 0) transitionEntries.delete(target);
+    openTransitionCount -= 1;
   }
 
   function readTimingMs(target: Element, isAnimation: boolean): number {
@@ -203,8 +212,8 @@ export function createGeometryScheduler<TSnapshot>(
     const isAnimation = event.type === "animationstart";
     const name = isAnimation ? (event as AnimationEvent).animationName : (event as TransitionEvent).propertyName;
     const target = event.target;
-    const key = transitionKey(target, name ?? "");
-    closeTransitionEntry(key);
+    if (target === null) return;
+    closeTransitionEntry(target, name ?? "");
 
     let windowMs: number;
     if (isAnimation && target instanceof Element && isInfiniteIterationAnimation(target)) {
@@ -216,17 +225,23 @@ export function createGeometryScheduler<TSnapshot>(
     }
 
     const safetyTimer = setTimeout(() => {
-      closeTransitionEntry(key);
+      closeTransitionEntry(target, name ?? "");
       markDirtyAndSchedule();
     }, windowMs);
-    transitionEntries.set(key, { safetyTimer });
+    let byName = transitionEntries.get(target);
+    if (byName === undefined) {
+      byName = new Map();
+      transitionEntries.set(target, byName);
+    }
+    byName.set(name ?? "", { safetyTimer });
+    openTransitionCount += 1;
     markDirtyAndSchedule();
   }
 
   function onTransitionEnd(event: Event): void {
     const isAnimation = event.type.startsWith("animation");
     const name = isAnimation ? (event as AnimationEvent).animationName : (event as TransitionEvent).propertyName;
-    closeTransitionEntry(transitionKey(event.target, name ?? ""));
+    closeTransitionEntry(event.target, name ?? "");
     markDirtyAndSchedule();
   }
 
@@ -281,13 +296,17 @@ export function createGeometryScheduler<TSnapshot>(
     for (const type of TRANSITION_END_EVENTS) {
       doc.removeEventListener(type, onTransitionEnd as EventListener, { capture: true });
     }
-    for (const key of Array.from(transitionEntries.keys())) closeTransitionEntry(key);
+    for (const [target, byName] of Array.from(transitionEntries)) {
+      for (const name of Array.from(byName.keys())) closeTransitionEntry(target, name);
+    }
 
     if (rafHandle !== null) {
       caf(rafHandle);
       rafHandle = null;
     }
     dirty = false;
+    lastRectCache = null;
+    lastViewportSize = null;
   }
 
   function syncActivation(): void {

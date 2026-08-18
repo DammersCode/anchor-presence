@@ -154,12 +154,11 @@ describe("validatePresence", () => {
     expect(result?.user).toEqual(smallUser);
   });
 
-  it("drops the whole message when it exceeds 32 KiB encoded", () => {
+  it("no longer enforces the whole-message 32 KiB limit itself (superseded by the client's wire-byte check, spec §4.2)", () => {
     const hugeCursor = {
       anchors: [{ id: "a", u: 0.5, v: 0.5 }],
       viewport: { u: 0.5, v: 0.5 },
     };
-    // context is within the 8 KiB per-field limit but pushes the whole message over 32 KiB
     const result = validatePresence(
       baseMessage({
         cursor: hugeCursor,
@@ -168,7 +167,7 @@ describe("validatePresence", () => {
         extra: "z".repeat(20000),
       }),
     );
-    expect(result).toBeNull();
+    expect(result).not.toBeNull();
   });
 
   it("never throws on garbage input", () => {

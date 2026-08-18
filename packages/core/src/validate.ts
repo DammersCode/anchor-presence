@@ -97,7 +97,7 @@ export function validatePresence<TContext = unknown, TUser = unknown>(
   limits?: ValidationLimits,
 ): CursorPresence<TContext, TUser> | null {
   try {
-    if (byteLengthOf(input) > resolveLimits(limits).maxMessageBytes) return null;
+    // whole-message 32 KiB limit is enforced on wire bytes by the client, before decode (spec §4.2)
     if (!isPlainObject(input)) return null;
 
     const resolved = resolveLimits(limits);

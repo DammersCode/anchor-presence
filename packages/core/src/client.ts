@@ -1,5 +1,6 @@
 import type { CursorCodec } from "./codec";
 import { jsonCodec } from "./codec";
+import { DEFAULT_MAX_MESSAGE_BYTES } from "./protocol";
 import type { ConnectionStatus, CursorPosition, CursorPresence } from "./protocol";
 import { DEFAULT_STALE_TIMEOUT_MS, RemotePresenceStore } from "./store";
 import type { LiveCursorTransport } from "./transport";
@@ -110,8 +111,13 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
 
   function setStatus(next: ConnectionStatus): void {
     if (status === next) return;
+    const wasSendable = status !== "connecting" && status !== "disconnected";
     status = next;
     for (const listener of statusListeners) listener(status);
+    // reconnected: the latest local state was never sent while unsendable, republish now (rate-limited)
+    if (!wasSendable && status === "connected" && latestCursor !== lastSentCursor) {
+      schedulePublish();
+    }
   }
 
   function buildMessage(cursor: CursorPosition | null): CursorPresence<TContext, TUser> {
@@ -127,16 +133,18 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     return message;
   }
 
-  function send(cursor: CursorPosition | null): void {
-    if (status === "disconnected" || status === "connecting") return;
+  function send(cursor: CursorPosition | null): boolean {
+    if (status === "disconnected" || status === "connecting") return false;
     try {
       const bytes = codec.encode(buildMessage(cursor));
       const result = transport.send(bytes);
       if (result && typeof result.catch === "function") {
         result.catch(() => {});
       }
+      return true;
     } catch {
       // swallow send errors — presence is lossy by design
+      return false;
     }
   }
 
@@ -144,9 +152,8 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     if (disposed || publishTimer !== null) return;
     publishTimer = scheduler.setTimeout(() => {
       publishTimer = null;
-      if (latestCursor !== lastSentCursor) {
+      if (latestCursor !== lastSentCursor && send(latestCursor)) {
         lastSentCursor = latestCursor;
-        send(latestCursor);
       }
     }, publishIntervalMs);
   }
@@ -170,8 +177,10 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
   }
   scheduleSweep();
 
+  const maxMessageBytes = validationLimits?.maxMessageBytes ?? DEFAULT_MAX_MESSAGE_BYTES;
   const unsubscribeTransport = transport.subscribe((data) => {
     if (disposed) return;
+    if (data.byteLength > maxMessageBytes) return; // oversized wire message: drop before parsing (spec §4.2)
     const decoded = codec.decode(data);
     const presence = validatePresence<TContext, TUser>(decoded, validationLimits);
     if (presence === null) return;

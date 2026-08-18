@@ -271,6 +271,64 @@ describe("createGeometryScheduler (spec §11)", () => {
     scheduler.dispose();
   });
 
+  it("F2: distinct elements animating the same property keep independent tracked entries (per-target keying)", () => {
+    vi.useFakeTimers();
+    try {
+      const { raf, caf, flush } = makeRafStub();
+      active = true;
+      const compute = vi.fn(() => emptyCompute([]));
+      const scheduler = createGeometryScheduler(baseOptions({ raf, caf, compute }));
+      scheduler.invalidate();
+      flush();
+
+      const elA = document.createElement("div");
+      const elB = document.createElement("div");
+      document.body.append(elA, elB);
+      vi.spyOn(window, "getComputedStyle").mockReturnValue({
+        getPropertyValue: (prop: string) => {
+          if (prop === "transition-duration") return "5s";
+          if (prop === "transition-delay") return "0s";
+          if (prop === "animation-iteration-count") return "1";
+          return "";
+        },
+      } as unknown as CSSStyleDeclaration);
+
+      const startA = new Event("transitionrun", { bubbles: true }) as TransitionEvent & { propertyName: string };
+      Object.defineProperty(startA, "propertyName", { value: "opacity" });
+      elA.dispatchEvent(startA);
+      flush();
+
+      const startB = new Event("transitionrun", { bubbles: true }) as TransitionEvent & { propertyName: string };
+      Object.defineProperty(startB, "propertyName", { value: "opacity" });
+      elB.dispatchEvent(startB);
+      flush();
+
+      // ending elA's transition must not close elB's window
+      const endA = new Event("transitionend", { bubbles: true }) as TransitionEvent & { propertyName: string };
+      Object.defineProperty(endA, "propertyName", { value: "opacity" });
+      elA.dispatchEvent(endA);
+      flush();
+
+      // elB's window is still open: the pass must keep re-running with no further invalidate() calls
+      compute.mockClear();
+      flush();
+      expect(compute).toHaveBeenCalledTimes(1);
+
+      const endB = new Event("transitionend", { bubbles: true }) as TransitionEvent & { propertyName: string };
+      Object.defineProperty(endB, "propertyName", { value: "opacity" });
+      elB.dispatchEvent(endB);
+      flush();
+
+      compute.mockClear();
+      flush();
+      expect(compute).not.toHaveBeenCalled(); // both windows closed now
+
+      scheduler.dispose();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("transition entry closes via the safety timeout (fake timers) when no end/cancel event arrives", () => {
     vi.useFakeTimers();
     try {
@@ -339,14 +397,158 @@ describe("createGeometryScheduler (spec §11)", () => {
       compute.mockClear();
       vi.advanceTimersByTime(499);
       flush();
-      expect(compute).not.toHaveBeenCalled();
+      expect(compute).toHaveBeenCalled(); // window still open: every pass re-runs (spec §11 continuous rAF)
+      compute.mockClear();
       vi.advanceTimersByTime(2);
       flush();
       expect(compute).toHaveBeenCalled(); // closed at ~500ms, not at animation-duration (2s)
+
+      compute.mockClear();
+      flush();
+      expect(compute).not.toHaveBeenCalled(); // window closed: no more auto-scheduled passes
 
       scheduler.dispose();
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it("F1: an open transition window drives continuous rAF invalidation — every frame re-runs compute until the entry closes", () => {
+    vi.useFakeTimers();
+    try {
+      const { raf, caf, flush } = makeRafStub();
+      active = true;
+      const compute = vi.fn(() => emptyCompute([]));
+      const scheduler = createGeometryScheduler(baseOptions({ raf, caf, compute }));
+      scheduler.invalidate();
+      flush();
+
+      const el = document.createElement("div");
+      document.body.appendChild(el);
+      vi.spyOn(window, "getComputedStyle").mockReturnValue({
+        getPropertyValue: (prop: string) => {
+          if (prop === "transition-duration") return "5s"; // long enough that the safety timeout won't fire mid-test
+          if (prop === "transition-delay") return "0s";
+          if (prop === "animation-iteration-count") return "1";
+          return "";
+        },
+      } as unknown as CSSStyleDeclaration);
+
+      const startEvent = new Event("transitionrun", { bubbles: true }) as TransitionEvent & { propertyName: string };
+      Object.defineProperty(startEvent, "propertyName", { value: "transform" });
+      el.dispatchEvent(startEvent);
+      flush(); // consume the frame scheduled by the transitionrun invalidation itself
+
+      // while the window is open, every stepped frame must re-run compute with no further invalidate() calls
+      for (let i = 0; i < 5; i++) {
+        compute.mockClear();
+        flush();
+        expect(compute).toHaveBeenCalledTimes(1);
+      }
+
+      const endEvent = new Event("transitionend", { bubbles: true }) as TransitionEvent & { propertyName: string };
+      Object.defineProperty(endEvent, "propertyName", { value: "transform" });
+      el.dispatchEvent(endEvent);
+      flush(); // the closing invalidation's own pass
+
+      compute.mockClear();
+      flush();
+      expect(compute).not.toHaveBeenCalled(); // window closed: no more auto-scheduled passes
+
+      scheduler.dispose();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("F1: the rAF loop stops via the safety timeout when no end/cancel event ever arrives, after re-running every frame in between", () => {
+    vi.useFakeTimers();
+    try {
+      const { raf, caf, flush } = makeRafStub();
+      active = true;
+      const compute = vi.fn(() => emptyCompute([]));
+      const scheduler = createGeometryScheduler(baseOptions({ raf, caf, compute }));
+      scheduler.invalidate();
+      flush();
+
+      const el = document.createElement("div");
+      document.body.appendChild(el);
+      vi.spyOn(window, "getComputedStyle").mockReturnValue({
+        getPropertyValue: (prop: string) => {
+          if (prop === "transition-duration") return "0.2s";
+          if (prop === "transition-delay") return "0s";
+          if (prop === "animation-iteration-count") return "1";
+          return "";
+        },
+      } as unknown as CSSStyleDeclaration);
+
+      const startEvent = new Event("transitionrun", { bubbles: true }) as TransitionEvent & { propertyName: string };
+      Object.defineProperty(startEvent, "propertyName", { value: "opacity" });
+      el.dispatchEvent(startEvent);
+      flush();
+
+      // safety window = duration(200ms) + delay(0) + 500ms margin = 700ms; step in smaller increments,
+      // asserting each stepped frame re-runs compute while the window remains open
+      compute.mockClear();
+      vi.advanceTimersByTime(300);
+      flush();
+      expect(compute).toHaveBeenCalled();
+
+      compute.mockClear();
+      vi.advanceTimersByTime(300);
+      flush();
+      expect(compute).toHaveBeenCalled();
+
+      compute.mockClear();
+      vi.advanceTimersByTime(100); // crosses the 700ms safety timeout
+      flush();
+      expect(compute).toHaveBeenCalled(); // the safety-timeout invalidation's own pass
+
+      compute.mockClear();
+      flush();
+      expect(compute).not.toHaveBeenCalled(); // window closed: no more auto-scheduled passes
+
+      scheduler.dispose();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("F3: interpolation-only frames (needsAnotherFrame, no invalidation, no open transition) reuse cached rects with zero re-measures", () => {
+    const { raf, caf, flush } = makeRafStub();
+    active = true;
+    const el = document.createElement("div");
+    document.body.appendChild(el);
+    const getRectSpy = vi.spyOn(el, "getBoundingClientRect");
+
+    let unsettled = true;
+    const compute = vi.fn((readState) => {
+      readState.getRect(el);
+      return { snapshot: [], activeAnchors: [el], needsAnotherFrame: unsettled };
+    });
+
+    const scheduler = createGeometryScheduler(baseOptions({ raf, caf, compute }));
+    scheduler.invalidate();
+    flush();
+    expect(getRectSpy).toHaveBeenCalledTimes(1); // the invalidated pass measures once
+
+    getRectSpy.mockClear();
+    flush(); // interpolation-only pass (still unsettled), no invalidate() call in between
+    expect(getRectSpy).not.toHaveBeenCalled();
+
+    flush(); // another interpolation-only pass
+    expect(getRectSpy).not.toHaveBeenCalled();
+
+    unsettled = false;
+    flush(); // settle: no further auto-scheduled frame
+    expect(getRectSpy).not.toHaveBeenCalled();
+
+    // a fresh invalidate() must re-measure
+    unsettled = true;
+    scheduler.invalidate();
+    flush();
+    expect(getRectSpy).toHaveBeenCalledTimes(1);
+
+    scheduler.dispose();
   });
 });

@@ -45,7 +45,13 @@ export function Topbar({ userName, room, onOpenSettings }: TopbarProps) {
           ))}
         </div>
 
-        <Button ref={settingsAnchor} variant="secondary" size="sm" onClick={onOpenSettings}>
+        <Button
+          ref={settingsAnchor}
+          data-testid="anchor-topbar.settings"
+          variant="secondary"
+          size="sm"
+          onClick={onOpenSettings}
+        >
           Settings
         </Button>
       </div>

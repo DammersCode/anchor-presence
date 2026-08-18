@@ -60,7 +60,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
   }, [open, setContext]);
 
   return (
-    <Dialog ref={dialogAnchor} open={open} onClose={onClose}>
+    <Dialog ref={dialogAnchor} data-testid="anchor-settings.dialog" open={open} onClose={onClose}>
       <DialogHeader>
         <DialogTitle>Workspace settings</DialogTitle>
       </DialogHeader>
@@ -87,7 +87,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
           description="Allow this workspace to be listed publicly."
         />
 
-        <Button ref={inviteAnchor} variant="outline" className="self-start">
+        <Button ref={inviteAnchor} data-testid="anchor-settings.dialog.invite" variant="outline" className="self-start">
           + Invite member
         </Button>
       </DialogBody>

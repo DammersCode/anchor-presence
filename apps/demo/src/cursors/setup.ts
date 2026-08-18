@@ -4,7 +4,8 @@ import type { PresenceClient } from "@anchor-presence/core";
 import { createWebSocketTransport } from "./transport";
 import { randomName } from "../lib/names";
 
-export type DemoContext = { dialog?: "settings" };
+export type PageId = "dashboard" | "orders" | "customers" | "products";
+export type DemoContext = { page?: PageId; dialog?: "settings" };
 export type DemoUser = { name: string; color: string };
 
 // Fixed palette so the receiver can validate a remote color instead of trusting arbitrary CSS from the wire.

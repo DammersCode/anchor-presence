@@ -52,6 +52,19 @@ export function PresencePill() {
         })}
       </div>
 
+      <div className="hidden items-center gap-2 lg:flex">
+        {presence.map((p) => {
+          const name = p.user?.name ?? p.clientId.slice(0, 6);
+          const page = p.context?.page;
+          if (!page) return null;
+          return (
+            <span key={p.clientId} data-testid="presence-page" className="text-xs text-gray-400">
+              {name} · {page}
+            </span>
+          );
+        })}
+      </div>
+
       <span data-anchor="topbar.presence.count" className="text-gray-400">
         {presence.length} online
       </span>

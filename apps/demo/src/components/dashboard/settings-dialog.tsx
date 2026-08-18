@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
-import { useCursorAnchor, useCursorContext } from "@anchor-presence/react";
+import { useCursorAnchor } from "@anchor-presence/react";
 import { Dialog, DialogBody, DialogFooter, DialogHeader, DialogTitle } from "../ui/dialog";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { cn } from "../../lib/cn";
 import { setLocalSettingsOpen } from "../../cursors/visibilityPolicy";
-import type { DemoContext } from "../../cursors/setup";
 
 export interface SettingsDialogProps {
   open: boolean;
@@ -45,7 +44,6 @@ function ToggleRow({ anchorId, label, description }: { anchorId: string; label: 
 
 export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
   const [workspaceName, setWorkspaceName] = useState("Acme Storefront");
-  const [, setContext] = useCursorContext<DemoContext>();
 
   const dialogAnchor = useCursorAnchor("settings.dialog");
   const workspaceNameAnchor = useCursorAnchor("settings.dialog.workspaceName");
@@ -54,10 +52,10 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
   const saveAnchor = useCursorAnchor("settings.dialog.save");
 
   // UI context policy (spec §12): announce "in Settings" while open, clear on close.
+  // Presence context itself (page + dialog) is centralized in App so page changes don't get clobbered.
   useEffect(() => {
     setLocalSettingsOpen(open);
-    setContext(open ? { dialog: "settings" } : undefined);
-  }, [open, setContext]);
+  }, [open]);
 
   return (
     <Dialog ref={dialogAnchor} data-testid="anchor-settings.dialog" open={open} onClose={onClose}>

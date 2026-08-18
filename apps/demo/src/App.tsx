@@ -1,20 +1,19 @@
 import { useState } from "react";
+import { useCursorAnchor } from "@anchor-presence/react";
 import { Sidebar } from "./components/dashboard/sidebar";
 import { Topbar } from "./components/dashboard/topbar";
 import { StatsGrid } from "./components/dashboard/stats-grid";
 import { OrdersTable } from "./components/dashboard/orders-table";
 import { RecentActivity } from "./components/dashboard/recent-activity";
 import { SettingsDialog } from "./components/dashboard/settings-dialog";
-import { randomName } from "./lib/names";
-
-const params = new URLSearchParams(window.location.search);
-const userName = params.get("name") || randomName();
-const room = params.get("room") || "main";
+import { CursorLayer } from "./cursors/CursorLayer";
+import { localRoom, localUserName } from "./cursors/setup";
 
 export default function App() {
   const [collapsed, setCollapsed] = useState(false);
   const [activeItem, setActiveItem] = useState("dashboard");
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const mainAnchor = useCursorAnchor("main");
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -27,9 +26,9 @@ export default function App() {
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <Topbar userName={userName} room={room} onOpenSettings={() => setSettingsOpen(true)} />
+        <Topbar userName={localUserName} room={localRoom} onOpenSettings={() => setSettingsOpen(true)} />
 
-        <main data-anchor="main" className="flex-1 overflow-y-auto p-6">
+        <main ref={mainAnchor} className="flex-1 overflow-y-auto p-6">
           <div className="flex flex-col gap-6">
             <StatsGrid />
 
@@ -47,6 +46,7 @@ export default function App() {
       </div>
 
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <CursorLayer />
     </div>
   );
 }

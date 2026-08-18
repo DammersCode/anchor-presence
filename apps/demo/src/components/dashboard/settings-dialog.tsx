@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useCursorAnchor, useCursorContext } from "@anchor-presence/react";
 import { Dialog, DialogBody, DialogFooter, DialogHeader, DialogTitle } from "../ui/dialog";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { cn } from "../../lib/cn";
+import { setLocalSettingsOpen } from "../../cursors/visibilityPolicy";
+import type { DemoContext } from "../../cursors/setup";
 
 export interface SettingsDialogProps {
   open: boolean;
@@ -11,14 +14,16 @@ export interface SettingsDialogProps {
 
 function ToggleRow({ anchorId, label, description }: { anchorId: string; label: string; description: string }) {
   const [enabled, setEnabled] = useState(true);
+  const rowAnchor = useCursorAnchor(`settings.dialog.${anchorId}`);
+  const switchAnchor = useCursorAnchor(`settings.dialog.${anchorId}.switch`);
   return (
-    <div data-anchor={`settings.dialog.${anchorId}`} className="flex items-center justify-between gap-4">
+    <div ref={rowAnchor} className="flex items-center justify-between gap-4">
       <div>
         <p className="text-sm font-medium text-gray-900">{label}</p>
         <p className="text-xs text-gray-500">{description}</p>
       </div>
       <button
-        data-anchor={`settings.dialog.${anchorId}.switch`}
+        ref={switchAnchor}
         role="switch"
         aria-checked={enabled}
         onClick={() => setEnabled((v) => !v)}
@@ -40,14 +45,27 @@ function ToggleRow({ anchorId, label, description }: { anchorId: string; label: 
 
 export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
   const [workspaceName, setWorkspaceName] = useState("Acme Storefront");
+  const [, setContext] = useCursorContext<DemoContext>();
+
+  const dialogAnchor = useCursorAnchor("settings.dialog");
+  const workspaceNameAnchor = useCursorAnchor("settings.dialog.workspaceName");
+  const inviteAnchor = useCursorAnchor("settings.dialog.invite");
+  const cancelAnchor = useCursorAnchor("settings.dialog.cancel");
+  const saveAnchor = useCursorAnchor("settings.dialog.save");
+
+  // UI context policy (spec §12): announce "in Settings" while open, clear on close.
+  useEffect(() => {
+    setLocalSettingsOpen(open);
+    setContext(open ? { dialog: "settings" } : undefined);
+  }, [open, setContext]);
 
   return (
-    <Dialog data-anchor="settings.dialog" open={open} onClose={onClose}>
+    <Dialog ref={dialogAnchor} open={open} onClose={onClose}>
       <DialogHeader>
         <DialogTitle>Workspace settings</DialogTitle>
       </DialogHeader>
       <DialogBody>
-        <div data-anchor="settings.dialog.workspaceName" className="flex flex-col gap-1.5">
+        <div ref={workspaceNameAnchor} className="flex flex-col gap-1.5">
           <label htmlFor="workspace-name" className="text-sm font-medium text-gray-700">
             Workspace name
           </label>
@@ -69,15 +87,15 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
           description="Allow this workspace to be listed publicly."
         />
 
-        <Button data-anchor="settings.dialog.invite" variant="outline" className="self-start">
+        <Button ref={inviteAnchor} variant="outline" className="self-start">
           + Invite member
         </Button>
       </DialogBody>
       <DialogFooter>
-        <Button data-anchor="settings.dialog.cancel" variant="ghost" onClick={onClose}>
+        <Button ref={cancelAnchor} variant="ghost" onClick={onClose}>
           Cancel
         </Button>
-        <Button data-anchor="settings.dialog.save" onClick={onClose}>
+        <Button ref={saveAnchor} onClick={onClose}>
           Save
         </Button>
       </DialogFooter>

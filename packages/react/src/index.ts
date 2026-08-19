@@ -12,3 +12,6 @@ export {
   useCursorStatus,
   useRemoteCursors,
 } from "./hooks";
+
+export { CursorLayer, DefaultCursor } from "./cursor";
+export type { CursorLayerProps, CursorRenderProps, DefaultCursorProps } from "./cursor";

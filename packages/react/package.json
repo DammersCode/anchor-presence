@@ -1,7 +1,7 @@
 {
   "name": "@anchor-presence/react",
   "version": "0.1.0",
-  "description": "React hooks and provider for anchor-presence",
+  "description": "React hooks, provider, and optional configurable cursor components for anchor-presence",
   "license": "MIT",
   "author": "DammersCode",
   "repository": {

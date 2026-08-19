@@ -1,6 +1,6 @@
 # Anchor Presence — Technical Specification
 
-Version: 1.2
+Version: 1.3
 Status: APPROVED by Advisor (round 2), recommendations applied
 
 ## 1. Purpose
@@ -23,7 +23,7 @@ A sender transmits a semantic anchor ID, a normalized position inside that ancho
 6. Transport implementation is independent from cursor logic. Core imports no transport library.
 7. A local layout change repositions a stationary remote cursor without a new network packet.
 8. Network messages cannot execute arbitrary DOM selectors. Anchor IDs resolve only against the registered anchor map.
-9. Rendering is consumer-controlled. The library ships no required cursor component.
+9. Rendering is consumer-controlled. No cursor component is required. `@anchor-presence/react` provides optional, configurable cursor components.
 10. Future framework adapters (Svelte, Vue, Solid) require no architectural rewrite.
 
 ## 3. Package Architecture
@@ -332,10 +332,36 @@ Hooks:
 
 SSR: the client is created by the consumer in browser-only code, or the provider accepts `client: null` during SSR; every hook has a server snapshot (`[]`, `"disconnected"`). No module-level DOM access in any package.
 
+### 14.1 Optional cursor components
+
+`@anchor-presence/react` exports `CursorLayer` and `DefaultCursor`. Both are optional. A consumer can render remote cursors with `useRemoteCursors` directly instead, per Invariant 9.
+
+`CursorLayer` calls `useRemoteCursors` once. For each visible, unfiltered cursor, it renders one package-owned root `div`. The root style sets `position: fixed`, `left: 0`, `top: 0`, `pointerEvents: "none"`, and a `transform` from the resolved coordinates. The root carries `aria-hidden="true"` and four stable data attributes: `data-anchor-presence-cursor`, `data-anchor-presence-client-id`, `data-anchor-presence-tier`, and `data-anchor-presence-anchor` (empty string when `anchorId` is `null`).
+
+```ts
+type CursorLayerProps<TContext = unknown, TUser = unknown> = {
+  getLabel?: (cursor: ResolvedCursor<TContext, TUser>) => ReactNode;
+  getColor?: (cursor: ResolvedCursor<TContext, TUser>) => string;
+  filterCursor?: (cursor: ResolvedCursor<TContext, TUser>) => boolean;
+  getCursorProps?: (
+    cursor: ResolvedCursor<TContext, TUser>,
+  ) => Omit<ComponentPropsWithoutRef<"div">, "children">;
+  renderCursor?: (props: CursorRenderProps<TContext, TUser>) => ReactNode;
+};
+```
+
+`getCursorProps` can add classes, styles, and HTML attributes to the root. The package always applies its geometry values (`position`, `left`, `top`, `transform`, `pointerEvents`) after the consumer style, so a consumer style can never replace them. A consumer style can replace non-geometry values, such as `zIndex` (package default `50`). Package identity and accessibility attributes take the same precedence over consumer attributes.
+
+If `renderCursor` is absent, the root renders `DefaultCursor`. If `renderCursor` is present, its return value replaces only the root's contents; the root itself stays package-owned. `CursorLayer` never reads fields from `cursor.user`. It does not catch errors from a consumer callback; those errors reach the nearest React error boundary.
+
+`DefaultCursor` has no Tailwind dependency and no external stylesheet. It renders a small neutral SVG pointer, `20px` by default, in `#6b7280`, with no label when `label` is `null` or `undefined`. Three CSS custom properties override its visual: `--anchor-presence-cursor-color`, `--anchor-presence-cursor-size`, `--anchor-presence-cursor-label-color`. An explicit CSS variable takes precedence over the `color` prop.
+
+Visual configuration lives on `CursorLayer` props only. `LiveCursorProvider` never gains rendering configuration.
+
 ## 15. Demo
 
 - `apps/server`: Bun WebSocket relay. Broadcasts every binary message to all other sockets in the same room. No message inspection. ~50 lines.
-- `apps/demo`: Vite + React + Tailwind + shadcn-style admin dashboard (sidebar, topbar, stat cards, data table, settings dialog). Dozens of registered anchors (`nav.dashboard`, `stats.revenue`, `orders.row:17.actions`, ...). A collapsible sidebar and responsive grid demonstrate cross-layout correctness: open two windows at different sizes and sidebar states. Cursor renderer is demo code (colored SVG cursor + name label), proving Invariant 9.
+- `apps/demo`: Vite + React + Tailwind + shadcn-style admin dashboard (sidebar, topbar, stat cards, data table, settings dialog). Dozens of registered anchors (`nav.dashboard`, `stats.revenue`, `orders.row:17.actions`, ...). A collapsible sidebar and responsive grid demonstrate cross-layout correctness: open two windows at different sizes and sidebar states. Cursor renderer is demo code (colored SVG cursor + name label) built on the package `CursorLayer`, proving Invariant 9.
 
 ## 16. Performance Budgets
 

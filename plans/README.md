@@ -21,6 +21,7 @@ before starting, honor its STOP conditions, and update your row when done.
 | 009 | Performance verification: core + react budgets, benches, CI gate | P2 | M | 001 (after 004) | DONE |
 | 010 | Configurable cursor components in the React npm package | P1 | M | 002, 009 | DONE |
 | 011 | Agent skill for skills.sh (skills/anchor-presence) | P2 | S | 010 | DONE |
+| 012 | Architecture deepening (6 candidates from 2026-08-19 review) | P2 | L | 010 | IN PROGRESS |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale)
 

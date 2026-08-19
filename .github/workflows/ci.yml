@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - id: playwright-version
+        run: |
+          version=$(bun -e "console.log((await Bun.file('node_modules/@playwright/test/package.json').json()).version)")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
+      - run: bunx tsc --build packages/core packages/dom packages/react
+      - run: bunx vitest run
+      - run: bunx vite build
+        working-directory: apps/demo
+      - run: bunx playwright install --with-deps chromium firefox webkit
+      - run: bunx playwright test --reporter=list,html
+        env:
+          PLAYWRIGHT_HTML_OPEN: never
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/

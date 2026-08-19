@@ -10,7 +10,7 @@ before starting, honor its STOP conditions, and update your row when done.
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| 001 | CI workflow (GitHub Actions, full gate) | P1 | S | — | TODO |
+| 001 | CI workflow (GitHub Actions, full gate) | P1 | S | — | DONE |
 | 002 | npm publish readiness + MIT license | P1 | M | 001 | TODO |
 | 003 | Clipped-anchor occlusion detection + precision tests | P1 | L | 001 | TODO |
 | 004 | Pointer rect-cache reuse + bench resize/nested-scroll | P2 | M | 001 (after 003) | TODO |

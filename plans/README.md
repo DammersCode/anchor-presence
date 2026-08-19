@@ -19,6 +19,7 @@ before starting, honor its STOP conditions, and update your row when done.
 | 007 | Demo interpolation style switcher (spring stays demo-side) | P3 | M | — | DONE |
 | 008 | README/docs restyle (use-signalr house style, STE) | P3 | M | 002; run LAST | DONE |
 | 009 | Performance verification: core + react budgets, benches, CI gate | P2 | M | 001 (after 004) | DONE |
+| 010 | Configurable cursor components in the React npm package | P1 | M | 002, 009 | TODO |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale)
 
@@ -30,6 +31,7 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJE
 - 005 can run any time after 001; its waves are individually revertable.
 - 008 last among the docs-facing plans: the README capability matrix should reflect whichever of 003–007 landed.
 - 009 after 004 (both touch the bench page) and BEFORE 003/005 execute ideally — its budgets are the regression gate those riskier plans re-run; if it lands later, they must re-run its suite retroactively.
+- 010 uses the npm metadata from 002 and must pass the performance gates from 009.
 
 ## Decisions and findings considered and rejected
 
@@ -42,6 +44,7 @@ Owner decisions recorded 2026-08-18 (do not re-audit):
 - **Mobile support**: partially reconsidered after revalidation. SENDING from touch devices stays unsupported by design — touch has no hover state and emits pointer movement only during a drag, so a "cursor position" is mostly meaningless. VIEWING remote cursors on mobile, however, works today and is genuinely useful (read-only presence on a phone/tablet). Decision: document "mobile = viewer role" (plan 008 can carry the doc line); defer pinch-zoom (`visualViewport`) compensation until mobile viewing is actually adopted — under pinch-zoom, `position: fixed` cursor coordinates drift, which is the one known gap.
 - **IntersectionObserver-based occlusion**: rejected in plan 003's design — async delivery cannot feed same-frame resolution; the sync clipping-ancestors walk (Floating UI's `detectOverflow` approach) was chosen, with opt-in `elementFromPoint` hit-testing for z-order occlusion.
 - **`Element.checkVisibility()` for occlusion**: rejected — it does not account for overflow/scroll clipping at all.
+- **shadcn registry for cursor visuals**: rejected on 2026-08-19. npm is the only installation method. Optional cursor components belong in `@anchor-presence/react`; demo-specific recipes stay in `apps/demo`.
 
 ## Plan 005 outcome (2026-08-19)
 

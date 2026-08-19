@@ -23,14 +23,26 @@ function randomWalkStep(current: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, next));
 }
 
+const STORM_DURATION_MS = 5000;
+
 // frame-start → notify delta = the scheduler's per-pass scripting cost (§16 <2ms budget)
-function useSchedulerPassStats(binding: DomBinding | null) {
+// stormActive routes each sample into a separate rolling window so storm-phase cost is visible on its own
+function useSchedulerPassStats(binding: DomBinding | null, stormActive: boolean) {
   const [stats, setStats] = useState({ mean: 0, p95: 0, count: 0 });
+  const [stormStats, setStormStats] = useState({ mean: 0, p95: 0, count: 0 });
   const rollingRef = useRef(new RollingStats());
+  const stormRollingRef = useRef(new RollingStats());
+  const stormActiveRef = useRef(stormActive);
+  stormActiveRef.current = stormActive;
+
+  useEffect(() => {
+    if (stormActive) stormRollingRef.current.reset();
+  }, [stormActive]);
 
   useEffect(() => {
     if (binding === null) return;
     const rolling = rollingRef.current;
+    const stormRolling = stormRollingRef.current;
     rolling.reset();
 
     let frameStartAt = performance.now();
@@ -41,8 +53,14 @@ function useSchedulerPassStats(binding: DomBinding | null) {
 
     const unsubscribe = binding.subscribe(() => {
       const elapsed = performance.now() - frameStartAt;
-      if (elapsed >= 0) rolling.push(elapsed);
-      setStats({ mean: rolling.mean(), p95: rolling.p95(), count: rolling.count });
+      if (elapsed < 0) return;
+      if (stormActiveRef.current) {
+        stormRolling.push(elapsed);
+        setStormStats({ mean: stormRolling.mean(), p95: stormRolling.p95(), count: stormRolling.count });
+      } else {
+        rolling.push(elapsed);
+        setStats({ mean: rolling.mean(), p95: rolling.p95(), count: rolling.count });
+      }
     });
 
     return () => {
@@ -51,7 +69,61 @@ function useSchedulerPassStats(binding: DomBinding | null) {
     };
   }, [binding]);
 
-  return stats;
+  return { stats, stormStats };
+}
+
+/** Oscillates a container's width between 60% and 100% via rAF for STORM_DURATION_MS, then stops. */
+function useResizeStorm(active: boolean, containerRef: React.RefObject<HTMLDivElement | null>) {
+  useEffect(() => {
+    if (!active) return;
+    const el = containerRef.current;
+    if (el === null) return;
+    const startedAt = performance.now();
+    let rafHandle = 0;
+
+    function tick(ts: number) {
+      const elapsed = ts - startedAt;
+      if (elapsed >= STORM_DURATION_MS || el === null) {
+        if (el !== null) el.style.width = "";
+        return;
+      }
+      const phase = (Math.sin((elapsed / 1000) * Math.PI * 2) + 1) / 2; // 0..1 oscillation, ~1s period
+      const widthPct = 60 + phase * 40; // 60%..100%
+      el.style.width = `${widthPct}%`;
+      rafHandle = requestAnimationFrame(tick);
+    }
+    rafHandle = requestAnimationFrame(tick);
+
+    return () => {
+      cancelAnimationFrame(rafHandle);
+      if (el !== null) el.style.width = "";
+    };
+  }, [active, containerRef]);
+}
+
+const NESTED_SCROLL_PERIOD_MS = 900;
+
+/** Sawtooth auto-scrolls the inner scrollable box via rAF for STORM_DURATION_MS, then stops. */
+function useNestedScroll(active: boolean, innerRef: React.RefObject<HTMLDivElement | null>) {
+  useEffect(() => {
+    if (!active) return;
+    const el = innerRef.current;
+    if (el === null) return;
+    const startedAt = performance.now();
+    let rafHandle = 0;
+
+    function tick(ts: number) {
+      const elapsed = ts - startedAt;
+      if (elapsed >= STORM_DURATION_MS || el === null) return;
+      const max = el.scrollHeight - el.clientHeight;
+      const phase = (elapsed % NESTED_SCROLL_PERIOD_MS) / NESTED_SCROLL_PERIOD_MS; // 0..1 sawtooth
+      el.scrollTop = max > 0 ? phase * max : 0;
+      rafHandle = requestAnimationFrame(tick);
+    }
+    rafHandle = requestAnimationFrame(tick);
+
+    return () => cancelAnimationFrame(rafHandle);
+  }, [active, innerRef]);
 }
 
 /** Client + binding + loopback transport, created once and torn down on unmount. */
@@ -80,10 +152,26 @@ export function BenchPage() {
   const [anchorCount, setAnchorCount] = useState<AnchorCount>(100);
   const [cursorCount, setCursorCount] = useState<CursorCount>(10);
   const [running, setRunning] = useState(true);
+  const [stormActive, setStormActive] = useState(false);
+  const [nestedScrollActive, setNestedScrollActive] = useState(false);
 
   const anchorIds = useMemo(() => buildAnchorIds(anchorCount), [anchorCount]);
   const { binding, transportRef } = usePresenceHarness();
-  const stats = useSchedulerPassStats(binding);
+  const { stats, stormStats } = useSchedulerPassStats(binding, stormActive || nestedScrollActive);
+
+  const gridRef = useRef<HTMLDivElement | null>(null);
+  const nestedScrollInnerRef = useRef<HTMLDivElement | null>(null);
+  useResizeStorm(stormActive, gridRef);
+  useNestedScroll(nestedScrollActive, nestedScrollInnerRef);
+
+  function startStorm() {
+    setStormActive(true);
+    setTimeout(() => setStormActive(false), STORM_DURATION_MS);
+  }
+  function startNestedScroll() {
+    setNestedScrollActive(true);
+    setTimeout(() => setNestedScrollActive(false), STORM_DURATION_MS);
+  }
 
   // Simulate N remote cursors: build synthetic presence messages and inject them past the network boundary.
   useEffect(() => {
@@ -182,6 +270,22 @@ export function BenchPage() {
             {running ? "Pause" : "Resume"}
           </button>
 
+          <button
+            className="rounded-md bg-amber-600 px-3 py-1.5 font-medium text-white disabled:opacity-50"
+            onClick={startStorm}
+            disabled={stormActive || nestedScrollActive}
+          >
+            {stormActive ? "Resize storm running…" : "Resize storm (5s)"}
+          </button>
+
+          <button
+            className="rounded-md bg-teal-600 px-3 py-1.5 font-medium text-white disabled:opacity-50"
+            onClick={startNestedScroll}
+            disabled={stormActive || nestedScrollActive}
+          >
+            {nestedScrollActive ? "Nested scroll running…" : "Nested scroll (5s)"}
+          </button>
+
           <a href="?" className="ml-auto text-indigo-600 underline">
             Back to dashboard
           </a>
@@ -193,14 +297,36 @@ export function BenchPage() {
           <Stat label="Samples" value={String(stats.count)} />
         </div>
 
-        <div
-          className="grid gap-1 rounded-lg border border-gray-200 bg-white p-4"
-          style={{ gridTemplateColumns: "repeat(auto-fill, minmax(1rem, 1fr))" }}
-        >
-          {anchorIds.map((id) => (
-            <BenchCell key={id} anchorId={id} />
-          ))}
+        <div className="grid grid-cols-3 gap-4 rounded-lg border border-amber-200 bg-amber-50 p-4">
+          <Stat label="Storm mean pass" value={`${stormStats.mean.toFixed(3)} ms`} />
+          <Stat label="Storm p95 pass" value={`${stormStats.p95.toFixed(3)} ms`} />
+          <Stat label="Storm samples" value={String(stormStats.count)} />
         </div>
+
+        {nestedScrollActive ? (
+          <div className="h-64 overflow-auto rounded-lg border border-gray-200 bg-white p-4">
+            <div ref={nestedScrollInnerRef} className="h-[150%] overflow-auto">
+              <div
+                className="grid gap-1 p-4"
+                style={{ gridTemplateColumns: "repeat(auto-fill, minmax(1rem, 1fr))" }}
+              >
+                {anchorIds.map((id) => (
+                  <BenchCell key={id} anchorId={id} />
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div
+            ref={gridRef}
+            className="grid gap-1 rounded-lg border border-gray-200 bg-white p-4"
+            style={{ gridTemplateColumns: "repeat(auto-fill, minmax(1rem, 1fr))" }}
+          >
+            {anchorIds.map((id) => (
+              <BenchCell key={id} anchorId={id} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

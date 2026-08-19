@@ -2,6 +2,7 @@
 
 import type { CursorPosition, PresenceClient } from "@anchor-presence/core";
 import type { AnchorRegistry } from "./registry";
+import type { Rect } from "./geometry";
 
 export const DEFAULT_MAX_ANCHORS = 4;
 
@@ -9,6 +10,7 @@ export type PointerSourceOptions = {
   maxAnchors?: number;
   root?: Document;
   window?: Window;
+  getCachedRect?: (element: Element) => Rect | undefined;
 };
 
 export type PointerSourceHandle = {
@@ -29,12 +31,14 @@ function buildCursorPosition(
   registry: AnchorRegistry,
   maxAnchors: number,
   win: Window,
+  getCachedRect?: (element: Element) => Rect | undefined,
 ): CursorPosition {
   const chain = registry.ancestors(target).slice(0, maxAnchors);
 
   const anchors: CursorPosition["anchors"] = [];
   for (const { id, element } of chain) {
-    const rect = element.getBoundingClientRect();
+    // cache is at most one frame old; every layout-changing signal invalidates it (spec §9 tolerance)
+    const rect = getCachedRect?.(element) ?? element.getBoundingClientRect();
     if (rect.width <= 0 || rect.height <= 0) continue;
     const u = (clientX - rect.left) / rect.width;
     const v = (clientY - rect.top) / rect.height;
@@ -57,11 +61,12 @@ export function attachPointerSource(
   const maxAnchors = options.maxAnchors ?? DEFAULT_MAX_ANCHORS;
   const doc = options.root ?? document;
   const win = options.window ?? window;
+  const getCachedRect = options.getCachedRect;
 
   function onPointerEvent(event: PointerEvent): void {
     const target = eventTargetElement(event);
     if (target === null) return;
-    const position = buildCursorPosition(event.clientX, event.clientY, target, registry, maxAnchors, win);
+    const position = buildCursorPosition(event.clientX, event.clientY, target, registry, maxAnchors, win, getCachedRect);
     client.updateLocalCursor(position);
   }
 

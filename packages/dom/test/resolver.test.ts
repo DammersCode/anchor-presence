@@ -68,6 +68,7 @@ describe("resolveGeometry (spec §10)", () => {
     const result = resolveGeometry(p, registry, rectMapGetRect(new Map()), { width: 1000, height: 800 });
     expect(result.tier).toBe("viewport");
     expect(result.anchorId).toBeNull();
+    expect(result.pointVisible).toBe(true);
     expect(result.x).toBeCloseTo(250);
     expect(result.y).toBeCloseTo(600);
   });
@@ -77,12 +78,14 @@ describe("resolveGeometry (spec §10)", () => {
     const result = resolveGeometry(p, registry, rectMapGetRect(new Map()), { width: 1000, height: 800 });
     expect(result.tier).toBe("hidden");
     expect(result.anchorId).toBeNull();
+    expect(result.pointVisible).toBe(false);
   });
 
   it("hidden tier when cursor is null", () => {
     const p = presence({ cursor: null });
     const result = resolveGeometry(p, registry, rectMapGetRect(new Map()), { width: 1000, height: 800 });
     expect(result.tier).toBe("hidden");
+    expect(result.pointVisible).toBe(false);
   });
 
   it("skips unmounted (not connected) anchors", () => {
@@ -98,9 +101,9 @@ describe("resolveGeometry (spec §10)", () => {
 describe("defaultVisibilityPolicy (spec §10.1)", () => {
   it("shows on anchor and viewport tiers, hides on hidden", () => {
     const p = presence();
-    expect(defaultVisibilityPolicy({ presence: p, resolution: { tier: "anchor", anchorId: "a" } })).toBe("show");
-    expect(defaultVisibilityPolicy({ presence: p, resolution: { tier: "viewport", anchorId: null } })).toBe("show");
-    expect(defaultVisibilityPolicy({ presence: p, resolution: { tier: "hidden", anchorId: null } })).toBe("hide");
+    expect(defaultVisibilityPolicy({ presence: p, resolution: { tier: "anchor", anchorId: "a", pointVisible: false } })).toBe("show");
+    expect(defaultVisibilityPolicy({ presence: p, resolution: { tier: "viewport", anchorId: null, pointVisible: true } })).toBe("show");
+    expect(defaultVisibilityPolicy({ presence: p, resolution: { tier: "hidden", anchorId: null, pointVisible: false } })).toBe("hide");
   });
 });
 
@@ -211,6 +214,84 @@ describe("RemoteResolver (spec §10 + §13)", () => {
       0,
     );
     expect(cursors[0]?.visible).toBe(false);
+  });
+
+  it("surfaces clipping visibility to the resolved cursor and policy", () => {
+    const clip = document.createElement("div");
+    clip.style.overflow = "hidden";
+    clip.appendChild(el);
+    document.body.appendChild(clip);
+    const rects = new Map<Element, Rect>([
+      [el, { left: 80, top: 90, width: 40, height: 40 }],
+      [clip, { left: 0, top: 0, width: 100, height: 100 }],
+    ]);
+    const policy = vi.fn(() => "show" as const);
+    const resolver = new RemoteResolver({ registry, visibilityPolicy: policy });
+
+    const { cursors } = resolver.resolveAll(
+      [presence()],
+      rectMapGetRect(rects),
+      { width: 1000, height: 800 },
+      new Set(["remote-1"]),
+      0,
+    );
+
+    expect(cursors[0]?.pointVisible).toBe(false);
+    expect(policy).toHaveBeenCalledWith(expect.objectContaining({
+      resolution: { tier: "anchor", anchorId: "a", pointVisible: false },
+    }));
+  });
+
+  it("uses hit testing when enabled", () => {
+    const overlay = document.body.appendChild(document.createElement("div"));
+    const original = Object.getOwnPropertyDescriptor(document, "elementFromPoint");
+    Object.defineProperty(document, "elementFromPoint", { configurable: true, value: () => overlay });
+    const rects = new Map<Element, Rect>([[el, { left: 0, top: 0, width: 100, height: 100 }]]);
+    const resolver = new RemoteResolver({ registry, hitTest: true });
+
+    const { cursors } = resolver.resolveAll(
+      [presence()],
+      rectMapGetRect(rects),
+      { width: 1000, height: 800 },
+      new Set(["remote-1"]),
+      0,
+    );
+
+    if (original === undefined) delete (document as { elementFromPoint?: unknown }).elementFromPoint;
+    else Object.defineProperty(document, "elementFromPoint", original);
+    expect(cursors[0]?.pointVisible).toBe(false);
+  });
+
+  it("descends nested open shadow roots for hit testing", () => {
+    const outerHost = document.body.appendChild(document.createElement("div"));
+    const outerRoot = outerHost.attachShadow({ mode: "open" });
+    const innerHost = outerRoot.appendChild(document.createElement("div"));
+    const innerRoot = innerHost.attachShadow({ mode: "open" });
+    innerRoot.appendChild(el);
+    const documentHit = Object.getOwnPropertyDescriptor(document, "elementFromPoint");
+    const outerHit = Object.getOwnPropertyDescriptor(outerRoot, "elementFromPoint");
+    const innerHit = Object.getOwnPropertyDescriptor(innerRoot, "elementFromPoint");
+    Object.defineProperty(document, "elementFromPoint", { configurable: true, value: () => outerHost });
+    Object.defineProperty(outerRoot, "elementFromPoint", { configurable: true, value: () => innerHost });
+    Object.defineProperty(innerRoot, "elementFromPoint", { configurable: true, value: () => el });
+    const rects = new Map<Element, Rect>([[el, { left: 0, top: 0, width: 100, height: 100 }]]);
+    const resolver = new RemoteResolver({ registry, hitTest: true });
+
+    const { cursors } = resolver.resolveAll(
+      [presence()],
+      rectMapGetRect(rects),
+      { width: 1000, height: 800 },
+      new Set(["remote-1"]),
+      0,
+    );
+
+    if (documentHit === undefined) delete (document as { elementFromPoint?: unknown }).elementFromPoint;
+    else Object.defineProperty(document, "elementFromPoint", documentHit);
+    if (outerHit === undefined) delete (outerRoot as { elementFromPoint?: unknown }).elementFromPoint;
+    else Object.defineProperty(outerRoot, "elementFromPoint", outerHit);
+    if (innerHit === undefined) delete (innerRoot as { elementFromPoint?: unknown }).elementFromPoint;
+    else Object.defineProperty(innerRoot, "elementFromPoint", innerHit);
+    expect(cursors[0]?.pointVisible).toBe(true);
   });
 
   it("produces a fresh snapshot array each call, and does not mutate previous results (immutability)", () => {

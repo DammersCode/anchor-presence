@@ -520,10 +520,24 @@ describe("createGeometryScheduler (spec §11)", () => {
     const el = document.createElement("div");
     document.body.appendChild(el);
     const getRectSpy = vi.spyOn(el, "getBoundingClientRect");
+    let clientMetricReads = 0;
+    const metric = () => {
+      clientMetricReads += 1;
+      return 100;
+    };
+    Object.defineProperties(el, {
+      clientHeight: { configurable: true, get: metric },
+      clientLeft: { configurable: true, get: metric },
+      clientTop: { configurable: true, get: metric },
+      clientWidth: { configurable: true, get: metric },
+      offsetHeight: { configurable: true, get: metric },
+      offsetWidth: { configurable: true, get: metric },
+    });
 
     let unsettled = true;
     const compute = vi.fn((readState) => {
       readState.getRect(el);
+      readState.getClientRect(el);
       return { snapshot: [], activeAnchors: [el], needsAnotherFrame: unsettled };
     });
 
@@ -531,24 +545,67 @@ describe("createGeometryScheduler (spec §11)", () => {
     scheduler.invalidate();
     flush();
     expect(getRectSpy).toHaveBeenCalledTimes(1); // the invalidated pass measures once
+    expect(clientMetricReads).toBeGreaterThan(0);
 
     getRectSpy.mockClear();
+    clientMetricReads = 0;
     flush(); // interpolation-only pass (still unsettled), no invalidate() call in between
     expect(getRectSpy).not.toHaveBeenCalled();
+    expect(clientMetricReads).toBe(0);
 
     flush(); // another interpolation-only pass
     expect(getRectSpy).not.toHaveBeenCalled();
+    expect(clientMetricReads).toBe(0);
 
     unsettled = false;
     flush(); // settle: no further auto-scheduled frame
     expect(getRectSpy).not.toHaveBeenCalled();
+    expect(clientMetricReads).toBe(0);
 
     // a fresh invalidate() must re-measure
     unsettled = true;
     scheduler.invalidate();
     flush();
     expect(getRectSpy).toHaveBeenCalledTimes(1);
+    expect(clientMetricReads).toBeGreaterThan(0);
 
+    scheduler.dispose();
+  });
+
+  it("F3: interpolation-only frames reuse cached client rects with zero client-metric reads", () => {
+    const { raf, caf, flush } = makeRafStub();
+    active = true;
+    const el = document.createElement("div");
+    document.body.appendChild(el);
+    let clientMetricReads = 0;
+    const metric = () => {
+      clientMetricReads += 1;
+      return 100;
+    };
+    Object.defineProperties(el, {
+      clientHeight: { configurable: true, get: metric },
+      clientLeft: { configurable: true, get: metric },
+      clientTop: { configurable: true, get: metric },
+      clientWidth: { configurable: true, get: metric },
+      offsetHeight: { configurable: true, get: metric },
+      offsetWidth: { configurable: true, get: metric },
+    });
+    let unsettled = true;
+    const compute = vi.fn((readState) => {
+      readState.getClientRect(el);
+      return { snapshot: [], activeAnchors: [el], needsAnotherFrame: unsettled };
+    });
+
+    const scheduler = createGeometryScheduler(baseOptions({ raf, caf, compute }));
+    scheduler.invalidate();
+    flush();
+    expect(clientMetricReads).toBeGreaterThan(0);
+
+    clientMetricReads = 0;
+    flush();
+    expect(clientMetricReads).toBe(0);
+
+    unsettled = false;
     scheduler.dispose();
   });
 });

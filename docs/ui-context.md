@@ -23,7 +23,7 @@ A visibility policy is a pure function that decides whether a resolved cursor sh
 ```ts
 type VisibilityPolicy<TContext> = (input: {
   presence: CursorPresence<TContext>;
-  resolution: { tier: "anchor" | "viewport" | "hidden"; anchorId: string | null };
+  resolution: { tier: "anchor" | "viewport" | "hidden"; anchorId: string | null; pointVisible: boolean };
 }) => "show" | "hide";
 ```
 
@@ -35,6 +35,13 @@ export const defaultVisibilityPolicy: VisibilityPolicy = ({ resolution }) =>
 ```
 
 Pass a custom policy through `DomBindingOptions.visibilityPolicy` (dom) or `bindingOptions.visibilityPolicy` on `LiveCursorProvider` (react). A custom policy can inspect `presence.context` to apply application-specific rules on top of geometric resolution.
+
+The resolver sets `resolution.pointVisible` to false when a clipping ancestor hides the resolved point. Use this policy to hide the cursor. This policy does not change the receiver UI.
+
+```ts
+const clippedPointPolicy: VisibilityPolicy = ({ resolution }) =>
+  !resolution.pointVisible || resolution.tier === "hidden" ? "hide" : "show";
+```
 
 ## Dialog mismatch handling
 

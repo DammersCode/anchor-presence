@@ -15,6 +15,7 @@ export function setLocalPage(page: string): void {
 
 export const settingsAwareVisibilityPolicy: VisibilityPolicy<DemoContext> = ({ presence, resolution }) => {
   if (resolution.tier === "hidden") return "hide";
+  if (resolution.tier === "anchor" && !resolution.pointVisible) return "hide";
   if (presence.context?.dialog === "settings" && !localSettingsOpen) return "hide";
   // different route: vanish instead of viewport-fallback; the presence pill still shows their page
   const remotePage = presence.context?.page;

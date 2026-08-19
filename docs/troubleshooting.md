@@ -12,6 +12,19 @@ Three separate causes produce the same symptom.
 
 **The presence is stale.** The store removes a remote client after `staleTimeoutMs` (default 70 000 ms) with no message. A sender on a backgrounded tab still sends a heartbeat every `heartbeatMs` (default 10 000 ms), but a browser can clamp hidden-tab timers to one minute; a very long background period can still expire the entry. Confirm the sender tab is not fully suspended, and confirm the transport is still connected on both sides.
 
+## Cursor floats over empty space
+
+An anchor can be measurable while an internal scroll container clips it. The resolver sets `pointVisible` to false when the resolved point is outside the clipped area. The default policy still shows the cursor.
+
+Hide these cursors with a custom policy:
+
+```ts
+const policy: VisibilityPolicy = ({ resolution }) =>
+  !resolution.pointVisible || resolution.tier === "hidden" ? "hide" : "show";
+```
+
+If an overlay can cover the point, set `hitTest: true`. If the check cost is acceptable, use this option.
+
 ## Cursor drifts
 
 A resolved cursor that slowly separates from its target element usually means a moving container is not covered by the scheduler's automatic invalidation signals.

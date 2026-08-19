@@ -4,6 +4,8 @@ import type { CursorPresence, InterpolatorFactory } from "@anchor-presence/core"
 import { linearInterpolator } from "@anchor-presence/core";
 import type { AnchorRegistry } from "./registry";
 import type { Rect, ViewportSize } from "./geometry";
+import { computeVisibleRect, isPointInRect } from "./occlusion";
+import type { ClientRectReader } from "./occlusion";
 
 export type ResolutionTier = "anchor" | "viewport" | "hidden";
 
@@ -12,6 +14,7 @@ export type ResolvedCursor<TContext = unknown, TUser = unknown> = {
   x: number; // receiver viewport px
   y: number;
   visible: boolean;
+  pointVisible: boolean;
   anchorId: string | null; // which anchor won, null = viewport tier
   tier: ResolutionTier;
   context?: TContext;
@@ -20,7 +23,7 @@ export type ResolvedCursor<TContext = unknown, TUser = unknown> = {
 
 export type VisibilityPolicy<TContext = unknown> = (input: {
   presence: CursorPresence<TContext>;
-  resolution: { tier: ResolutionTier; anchorId: string | null };
+  resolution: { tier: ResolutionTier; anchorId: string | null; pointVisible: boolean };
 }) => "show" | "hide";
 
 export const defaultVisibilityPolicy: VisibilityPolicy = ({ resolution }) =>
@@ -55,6 +58,9 @@ type RawResolution = {
   y: number;
   tier: ResolutionTier;
   anchorId: string | null;
+  pointVisible: boolean;
+  element: Element | null;
+  activeAnchors: Element[];
 };
 
 /** Pure geometry resolution (spec §10, steps 1-5) — no interpolation, no visibility policy. */
@@ -63,10 +69,11 @@ export function resolveGeometry(
   registry: AnchorRegistry,
   getRect: (element: Element) => Rect | undefined,
   viewportSize: ViewportSize,
+  getClientRect?: ClientRectReader,
 ): RawResolution {
   const cursor = presence.cursor;
   if (cursor === null) {
-    return { x: 0, y: 0, tier: "hidden", anchorId: null };
+    return { x: 0, y: 0, tier: "hidden", anchorId: null, pointVisible: false, element: null, activeAnchors: [] };
   }
 
   const resolved = findResolvableAnchor(presence, registry, getRect);
@@ -74,11 +81,25 @@ export function resolveGeometry(
     const anchor = cursor.anchors.find((a) => a.id === resolved.id);
     const u = anchor?.u ?? 0;
     const v = anchor?.v ?? 0;
+    const x = resolved.rect.left + resolved.rect.width * u;
+    const y = resolved.rect.top + resolved.rect.height * v;
+    const clippingAncestors: Element[] = [];
+    const visibleRect = computeVisibleRect(
+      resolved.element,
+      resolved.rect,
+      getRect,
+      undefined,
+      (ancestor) => clippingAncestors.push(ancestor),
+      getClientRect,
+    );
     return {
-      x: resolved.rect.left + resolved.rect.width * u,
-      y: resolved.rect.top + resolved.rect.height * v,
+      x,
+      y,
       tier: "anchor",
       anchorId: resolved.id,
+      pointVisible: isPointInRect(x, y, visibleRect),
+      element: resolved.element,
+      activeAnchors: [resolved.element, ...clippingAncestors],
     };
   }
 
@@ -88,16 +109,20 @@ export function resolveGeometry(
       y: cursor.viewport.v * viewportSize.height,
       tier: "viewport",
       anchorId: null,
+      pointVisible: true,
+      element: null,
+      activeAnchors: [],
     };
   }
 
-  return { x: 0, y: 0, tier: "hidden", anchorId: null };
+  return { x: 0, y: 0, tier: "hidden", anchorId: null, pointVisible: false, element: null, activeAnchors: [] };
 }
 
 export type ResolverOptions<TContext = unknown> = {
   registry: AnchorRegistry;
   visibilityPolicy?: VisibilityPolicy<TContext>;
   interpolatorFactory?: InterpolatorFactory;
+  hitTest?: boolean;
 };
 
 type InterpolatorState = {
@@ -111,12 +136,14 @@ export class RemoteResolver<TContext = unknown, TUser = unknown> {
   private readonly registry: AnchorRegistry;
   private readonly visibilityPolicy: VisibilityPolicy<TContext>;
   private readonly interpolatorFactory: InterpolatorFactory;
+  private readonly hitTest: boolean;
   private readonly states = new Map<string, InterpolatorState>();
 
   constructor(options: ResolverOptions<TContext>) {
     this.registry = options.registry;
     this.visibilityPolicy = options.visibilityPolicy ?? (defaultVisibilityPolicy as VisibilityPolicy<TContext>);
     this.interpolatorFactory = options.interpolatorFactory ?? linearInterpolator;
+    this.hitTest = options.hitTest ?? false;
   }
 
   /** Removes interpolator state for clientIds no longer present (call after each store snapshot changes). */
@@ -132,17 +159,21 @@ export class RemoteResolver<TContext = unknown, TUser = unknown> {
     viewportSize: ViewportSize,
     networkUpdated: ReadonlySet<string>,
     timestampMs: number,
-  ): { cursors: ResolvedCursor<TContext, TUser>[]; unsettled: boolean } {
+    getClientRect?: ClientRectReader,
+  ): { cursors: ResolvedCursor<TContext, TUser>[]; unsettled: boolean; activeAnchors: Element[] } {
     const activeIds = new Set(presences.map((p) => p.clientId));
     this.prune(activeIds);
 
     const results: ResolvedCursor<TContext, TUser>[] = [];
+    const activeAnchors = new Set<Element>();
     let unsettled = false;
     for (const presence of presences) {
-      const raw = resolveGeometry(presence, this.registry, getRect, viewportSize);
+      const raw = resolveGeometry(presence, this.registry, getRect, viewportSize, getClientRect);
+      for (const element of raw.activeAnchors) activeAnchors.add(element);
+      const pointVisible = this.isPointVisible(raw, viewportSize);
       const visibility = this.visibilityPolicy({
         presence,
-        resolution: { tier: raw.tier, anchorId: raw.anchorId },
+        resolution: { tier: raw.tier, anchorId: raw.anchorId, pointVisible },
       });
 
       let state = this.states.get(presence.clientId);
@@ -170,6 +201,7 @@ export class RemoteResolver<TContext = unknown, TUser = unknown> {
         x: sample.x,
         y: sample.y,
         visible: visibility === "show",
+        pointVisible,
         anchorId: raw.anchorId,
         tier: raw.tier,
       };
@@ -177,6 +209,38 @@ export class RemoteResolver<TContext = unknown, TUser = unknown> {
       if (presence.user !== undefined) result.user = presence.user;
       results.push(result);
     }
-    return { cursors: results, unsettled };
+    return { cursors: results, unsettled, activeAnchors: Array.from(activeAnchors) };
+  }
+
+  private isPointVisible(raw: RawResolution, viewportSize: ViewportSize): boolean {
+    if (!raw.pointVisible || !this.hitTest || raw.element === null) return raw.pointVisible;
+    if (raw.x < 0 || raw.y < 0 || raw.x >= viewportSize.width || raw.y >= viewportSize.height) return true;
+    const hit = this.hitElement(raw.element.ownerDocument, raw.x, raw.y);
+    if (hit === null || hit === undefined) return true;
+    return raw.element.contains(hit) || this.hasComposedAncestor(hit, raw.element);
+  }
+
+  private hitElement(root: Document | ShadowRoot, x: number, y: number): Element | null {
+    let hit = root.elementFromPoint?.(x, y) ?? null;
+    while (hit?.shadowRoot?.mode === "open") {
+      const nested = hit.shadowRoot.elementFromPoint?.(x, y) ?? null;
+      if (nested === null || nested === hit) break;
+      hit = nested;
+    }
+    return hit;
+  }
+
+  private hasComposedAncestor(element: Element, ancestor: Element): boolean {
+    let current: Element | null = element;
+    while (current !== null) {
+      if (current === ancestor) return true;
+      const host: unknown = (current.getRootNode() as { host?: unknown }).host;
+      current = current.parentElement ?? (this.isElement(host) ? host : null);
+    }
+    return false;
+  }
+
+  private isElement(value: unknown): value is Element {
+    return typeof value === "object" && value !== null && (value as Node).nodeType === 1;
   }
 }

@@ -1,5 +1,7 @@
 export type { Rect, ViewportSize } from "./geometry";
 
+export { computeVisibleRect, isPointInRect } from "./occlusion";
+
 export { createAnchorRegistry } from "./registry";
 export type { AnchorRegistry } from "./registry";
 

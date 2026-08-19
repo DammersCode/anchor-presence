@@ -218,7 +218,13 @@ For each remote presence with a non-null cursor:
 4. If no anchor resolves and `viewport` exists: `x = viewport.u * innerWidth`, `y = viewport.v * innerHeight`, resolution tier = `"viewport"`.
 5. If nothing resolves: `visible: false`.
 
-An element is measurable when it is connected and its rect has width > 0 and height > 0. `display: none` and unmounted anchors therefore fall through to the next anchor. Offscreen and clipped elements still resolve (the cursor can sit outside the viewport; consumers may clamp or hide via policy).
+An element is measurable when it is connected and its rect has width > 0 and height > 0. `display: none` and unmounted anchors therefore fall through to the next anchor. Offscreen and clipped elements still resolve.
+
+For an anchor tier, the resolver calculates `pointVisible`. It intersects the anchor rect with the padding box of each clipping ancestor. A clipping ancestor has `overflow`, `overflow-x`, or `overflow-y` other than `visible`. `pointVisible` is false when the resolved point is outside that visible rect. The default policy still shows this cursor. Applications can hide it with a policy.
+
+Set `hitTest: true` on the DOM binding to refine anchor visibility with `document.elementFromPoint()`. The resolver runs this check only for points inside the viewport. It detects z-order occlusion, such as a dialog overlay. This option adds one hit test for each resolved cursor per frame.
+
+`pointVisible` is true for the viewport tier. It is false for the hidden tier.
 
 Resolved output per cursor:
 
@@ -228,6 +234,7 @@ type ResolvedCursor<TContext, TUser> = {
   x: number;               // receiver viewport px
   y: number;
   visible: boolean;
+  pointVisible: boolean;
   anchorId: string | null; // which anchor won, null = viewport tier
   tier: "anchor" | "viewport" | "hidden";
   context?: TContext;
@@ -240,7 +247,7 @@ type ResolvedCursor<TContext, TUser> = {
 ```ts
 type VisibilityPolicy<TContext> = (input: {
   presence: CursorPresence<TContext>;
-  resolution: { tier: "anchor" | "viewport" | "hidden"; anchorId: string | null };
+  resolution: { tier: "anchor" | "viewport" | "hidden"; anchorId: string | null; pointVisible: boolean };
 }) => "show" | "hide";
 ```
 
@@ -253,12 +260,12 @@ One shared scheduler per client. No per-cursor measurement loops.
 API: `invalidate(reason?: string)`. Any signal calls it; the scheduler coalesces calls into one `requestAnimationFrame` pass:
 
 ```text
-READ PHASE    measure every active anchor once (getBoundingClientRect), plus viewport size
+READ PHASE    measure every active anchor once and derive its client rect, plus viewport size
 COMPUTE PHASE resolve every remote cursor from the cached rects
 NOTIFY PHASE  publish one immutable snapshot to subscribers
 ```
 
-Active anchors = the union of anchor IDs referenced by current remote cursors (first resolvable per cursor, probed in order). Each element is measured at most once per frame. Reads are batched before any consumer code runs, so the pass causes at most one forced reflow.
+Active anchors include the first resolvable anchor for each remote cursor. They also include its clipping ancestors. Each element is measured at most once per frame. The scheduler derives its client rect from that cached bounding rect. Reads are batched before any consumer code runs, so the pass causes at most one forced reflow.
 
 Invalidation signals:
 
@@ -298,7 +305,7 @@ interface Interpolator {
 type InterpolatorFactory = () => Interpolator;
 ```
 
-Ships: `none` and `linear` (fixed-duration ease toward target, default 80 ms). Spring/spline are future factories behind the same interface. While any interpolator is unsettled, the scheduler runs a rAF loop; when all are settled, it stops. Interpolation frames reuse the cached rects from the last read phase; a re-measure happens only when an invalidation arrived. Raw sender coordinates are never interpolated.
+Ships: `none` and `linear` (fixed-duration ease toward target, default 80 ms). Spring/spline are future factories behind the same interface. While any interpolator is unsettled, the scheduler runs a rAF loop; when all are settled, it stops. Interpolation frames reuse cached bounding and client rects from the last read phase. A re-measure happens only when an invalidation arrived. Raw sender coordinates are never interpolated.
 
 When a resolved position changes because of a local-only invalidation (scroll, resize, mutation) with no new network data for that cursor, the scheduler calls `shift(dx, dy)` with the position delta. Current and target move together, so an in-flight ease continues instead of truncating, and the cursor tracks its anchor rigidly during local scrolling.
 

@@ -12,7 +12,7 @@ import type {
   RafLike,
   ResizeObserverCtor,
 } from "./scheduler";
-import { RemoteResolver, findResolvableAnchor } from "./resolver";
+import { RemoteResolver } from "./resolver";
 import type { ResolvedCursor, VisibilityPolicy } from "./resolver";
 
 export type { AnchorRegistry } from "./registry";
@@ -22,6 +22,7 @@ export type DomBindingOptions<TContext = unknown, TUser = unknown> = {
   maxAnchors?: number;
   visibilityPolicy?: VisibilityPolicy<TContext>;
   interpolatorFactory?: InterpolatorFactory;
+  hitTest?: boolean;
   root?: Document;
   window?: Window;
   raf?: RafLike;
@@ -50,6 +51,7 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
     registry,
     ...(options.visibilityPolicy !== undefined ? { visibilityPolicy: options.visibilityPolicy } : {}),
     ...(options.interpolatorFactory !== undefined ? { interpolatorFactory: options.interpolatorFactory } : {}),
+    ...(options.hitTest !== undefined ? { hitTest: options.hitTest } : {}),
   });
 
   let snapshot: ResolvedCursor<TContext, TUser>[] = EMPTY_SNAPSHOT as ResolvedCursor<TContext, TUser>[];
@@ -76,19 +78,15 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
       }
       lastSeenPresenceByClientId = currentPresenceByClientId;
 
-      const { cursors, unsettled } = resolver.resolveAll(
+      const { cursors, unsettled, activeAnchors } = resolver.resolveAll(
         presences,
         readState.getRect,
         readState.viewportSize,
         networkUpdated,
         timestampMs,
+        readState.getClientRect,
       );
 
-      const activeAnchors: Element[] = [];
-      for (const presence of presences) {
-        const resolved = findResolvableAnchor(presence, registry, readState.getRect);
-        if (resolved !== null) activeAnchors.push(resolved.element);
-      }
       const documentElement = (options.root ?? document).documentElement;
       activeAnchors.push(documentElement);
 

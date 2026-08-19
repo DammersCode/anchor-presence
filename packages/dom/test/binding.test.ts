@@ -128,6 +128,74 @@ describe("createDomBinding", () => {
     binding.dispose();
   });
 
+  it("observes a clipping ancestor and updates point visibility after its resize", () => {
+    const clip = document.body.appendChild(document.createElement("div"));
+    clip.style.overflow = "hidden";
+    const el = clip.appendChild(document.createElement("div"));
+    let clipHeight = 100;
+    vi.spyOn(clip, "getBoundingClientRect").mockImplementation(() => ({
+      left: 0,
+      top: 0,
+      width: 100,
+      height: clipHeight,
+      right: 100,
+      bottom: clipHeight,
+      x: 0,
+      y: 0,
+      toJSON() {
+        return this;
+      },
+    }));
+    vi.spyOn(el, "getBoundingClientRect").mockReturnValue({
+      left: 0,
+      top: 90,
+      width: 100,
+      height: 40,
+      right: 100,
+      bottom: 130,
+      x: 0,
+      y: 90,
+      toJSON() {
+        return this;
+      },
+    });
+
+    let resize: (() => void) | undefined;
+    const observe = vi.fn();
+    class ResizeObserverStub {
+      constructor(callback: () => void) {
+        resize = callback;
+      }
+      observe = observe;
+      unobserve = vi.fn();
+      disconnect = vi.fn();
+    }
+
+    const { raf, caf, flush } = makeRafStub();
+    const { client, pushRemote } = makeFakeClient();
+    const binding = createDomBinding(client, { raf, caf, ResizeObserverCtor: ResizeObserverStub });
+    binding.registry.register("a", el);
+    pushRemote([{
+      version: 1,
+      clientId: "remote-1",
+      session: "s",
+      sequence: 1,
+      cursor: { anchors: [{ id: "a", u: 0.5, v: 0.5 }] },
+    }]);
+    flush();
+
+    expect(observe).toHaveBeenCalledWith(clip);
+    expect(binding.getSnapshot()[0]?.pointVisible).toBe(false);
+
+    clipHeight = 200;
+    expect(resize).toBeTypeOf("function");
+    resize?.();
+    flush(16);
+
+    expect(binding.getSnapshot()[0]?.pointVisible).toBe(true);
+    binding.dispose();
+  });
+
   it("F6: a presence with cursor: null does not count as active — signals detach once it's the only remote presence", () => {
     const { raf, caf, flush } = makeRafStub();
     const { client, pushRemote } = makeFakeClient();

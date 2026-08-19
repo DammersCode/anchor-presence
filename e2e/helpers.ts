@@ -24,12 +24,14 @@ export type OpenPairOptions = {
   room: string;
   senderName?: string;
   receiverName?: string;
+  receiverExtraQuery?: string;
 };
 
 export async function openPair(browser: Browser, options: OpenPairOptions): Promise<Pair> {
   const room = options.room;
   const senderName = options.senderName ?? "Sender";
   const receiverName = options.receiverName ?? "Receiver";
+  const receiverExtraQuery = options.receiverExtraQuery ? `&${options.receiverExtraQuery}` : "";
 
   const senderContext = await browser.newContext({ viewport: options.senderViewport });
   const receiverContext = await browser.newContext({ viewport: options.receiverViewport });
@@ -39,7 +41,9 @@ export async function openPair(browser: Browser, options: OpenPairOptions): Prom
 
   await Promise.all([
     sender.goto(`${BASE_URL}?name=${encodeURIComponent(senderName)}&room=${encodeURIComponent(room)}`),
-    receiver.goto(`${BASE_URL}?name=${encodeURIComponent(receiverName)}&room=${encodeURIComponent(room)}`),
+    receiver.goto(
+      `${BASE_URL}?name=${encodeURIComponent(receiverName)}&room=${encodeURIComponent(room)}${receiverExtraQuery}`,
+    ),
   ]);
 
   // Wait for both sides to see each other before driving the cursor.

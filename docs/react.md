@@ -176,6 +176,77 @@ function CursorLayer() {
 
 Render `cursor.user` and `cursor.context` values as text, never as HTML. See `docs/security.md`.
 
+## Custom interpolation
+
+The library ships two interpolators: `noneInterpolator` (snap, no easing) and `linearInterpolator` (fixed-duration ease). Anything richer, such as a spring, is application code. Pass a custom factory through `bindingOptions.interpolatorFactory`.
+
+Implement the `Interpolator` interface from `@anchor-presence/core`:
+
+```ts
+interface Interpolator {
+  target(x: number, y: number, timestampMs: number): void;
+  shift(dx: number, dy: number): void;
+  sample(timestampMs: number): { x: number; y: number; settled: boolean };
+}
+type InterpolatorFactory = () => Interpolator;
+```
+
+Follow these rules. The resolver calls your interpolator once per remote cursor.
+
+- `target` sets a new destination. Do not reset velocity or other internal motion state here.
+- `shift` moves the current position and the target by the same delta. Do not ease this move. The resolver calls `shift` for local-only changes, such as a scroll, where the anchor moved but no new network packet arrived.
+- `sample` returns the position for one frame. Set `settled: true` once motion has finished. A `settled: true` value lets the scheduler stop its animation-frame loop. An interpolator that never reports `settled: true` keeps that loop running forever.
+
+Here is a trimmed spring, using semi-implicit Euler integration. The full version lives in `apps/demo/src/cursors/interpolators.ts`.
+
+```ts
+function springInterpolator(stiffness = 170, damping = 26): Interpolator {
+  let x = 0, y = 0, vx = 0, vy = 0, targetX = 0, targetY = 0, lastMs = 0, settled = true;
+
+  return {
+    target(nx, ny, ms) {
+      targetX = nx;
+      targetY = ny;
+      settled = false;
+      lastMs = ms;
+    },
+    shift(dx, dy) {
+      x += dx; y += dy; targetX += dx; targetY += dy;
+    },
+    sample(ms) {
+      const dt = Math.min(ms - lastMs, 64) / 1000;
+      lastMs = ms;
+      const ax = -stiffness * (x - targetX) - damping * vx;
+      const ay = -stiffness * (y - targetY) - damping * vy;
+      vx += ax * dt; vy += ay * dt;
+      x += vx * dt; y += vy * dt;
+      if (Math.hypot(vx, vy) < 0.05 && Math.hypot(x - targetX, y - targetY) < 0.05) {
+        x = targetX; y = targetY; settled = true;
+      }
+      return { x, y, settled };
+    },
+  };
+}
+```
+
+Register your style with `bindingOptions`:
+
+```tsx
+<LiveCursorProvider client={client} bindingOptions={{ interpolatorFactory: springInterpolator }}>
+  <App />
+</LiveCursorProvider>
+```
+
+The provider reads `bindingOptions` once, at binding creation (see the note above). To switch interpolator styles at runtime, give the provider (or an ancestor) a `key` that changes with the style. A key change remounts the subtree and creates a fresh binding with the new factory:
+
+```tsx
+<LiveCursorProvider key={style} client={client} bindingOptions={{ interpolatorFactory: registry[style] }}>
+  <App />
+</LiveCursorProvider>
+```
+
+Cursor state lives on the server, not in the binding, so a remount does not lose or reset any remote cursor's position.
+
 ## SSR notes
 
 No package accesses the DOM at module load time. Two supported patterns:

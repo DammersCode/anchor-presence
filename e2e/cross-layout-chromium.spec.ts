@@ -123,6 +123,30 @@ test.describe("cross-layout scenarios", () => {
     expect(visible).toBe(true);
   });
 
+  test("spring-interpolator: custom interpolator (demo-authored, not core) still resolves the anchor correctly", async ({
+    browser,
+  }) => {
+    const { sender, receiver, senderName } = await openPair(browser, {
+      senderViewport: { width: 1280, height: 800 },
+      receiverViewport: { width: 1280, height: 800 },
+      room: uniqueRoom("spring-interpolator"),
+      receiverExtraQuery: "interp=spring",
+    });
+
+    await moveToAnchor(sender, "stats.conversion", 0.5, 0.5);
+    // Springs settle slower than the linear default, so allow more time than expectAnchorNear's default poll.
+    await expect(async () => {
+      const box = await anchorLocator(receiver, "stats.conversion").boundingBox();
+      const pos = await getRemoteCursorPos(receiver, senderName);
+      expect(box).not.toBeNull();
+      expect(pos.visible).toBe(true);
+      const expectedX = box!.x + box!.width * 0.5;
+      const expectedY = box!.y + box!.height * 0.5;
+      expect(Math.abs(pos.x - expectedX)).toBeLessThanOrEqual(3);
+      expect(Math.abs(pos.y - expectedY)).toBeLessThanOrEqual(3);
+    }).toPass({ timeout: 10_000, intervals: [100, 200, 300] });
+  });
+
   test("leave: cursor hides when the sender's pointer leaves the viewport", async ({ browser }) => {
     const { sender, receiver, senderName } = await openPair(browser, {
       senderViewport: { width: 1280, height: 800 },

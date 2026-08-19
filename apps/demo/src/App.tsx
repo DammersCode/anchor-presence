@@ -12,8 +12,14 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { OrdersPage } from "./pages/OrdersPage";
 import { CustomersPage } from "./pages/CustomersPage";
 import { ProductsPage } from "./pages/ProductsPage";
+import type { InterpolatorStyle } from "./cursors/interpolators";
 
-export default function App() {
+export interface AppProps {
+  interpolatorStyle: InterpolatorStyle;
+  onInterpolatorStyleChange: (style: InterpolatorStyle) => void;
+}
+
+export default function App({ interpolatorStyle, onInterpolatorStyleChange }: AppProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [page, navigate] = usePageRoute();
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -52,7 +58,12 @@ export default function App() {
         </main>
       </div>
 
-      <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <SettingsDialog
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        interpolatorStyle={interpolatorStyle}
+        onInterpolatorStyleChange={onInterpolatorStyleChange}
+      />
       <CursorLayer />
     </div>
   );

@@ -41,3 +41,4 @@ Both windows join the same relay room by default (`?room=` to use a different on
   disappears and an "in Settings" indicator appears next to that user's avatar in the topbar instead
   — the UI-context visibility policy from spec §12.
 - Visit `/?page=bench` for the scripted performance page (synthetic cursors/anchors, no network).
+- **Switch cursor motion** in Settings, or with `?interp=none|linear|spring`. `spring` is a demo-authored `Interpolator`, not a library export — see "Custom interpolation" in `docs/react.md`.

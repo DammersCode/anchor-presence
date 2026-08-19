@@ -5,10 +5,47 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { cn } from "../../lib/cn";
 import { setLocalSettingsOpen } from "../../cursors/visibilityPolicy";
+import { INTERPOLATOR_STYLES } from "../../cursors/interpolators";
+import type { InterpolatorStyle } from "../../cursors/interpolators";
 
 export interface SettingsDialogProps {
   open: boolean;
   onClose: () => void;
+  interpolatorStyle: InterpolatorStyle;
+  onInterpolatorStyleChange: (style: InterpolatorStyle) => void;
+}
+
+function InterpolatorStyleRow({
+  value,
+  onChange,
+}: {
+  value: InterpolatorStyle;
+  onChange: (style: InterpolatorStyle) => void;
+}) {
+  const rowAnchor = useCursorAnchor("settings.dialog.cursorMotion");
+  return (
+    <div ref={rowAnchor} className="flex flex-col gap-1.5">
+      <p className="text-sm font-medium text-gray-900">Cursor motion</p>
+      <div role="radiogroup" aria-label="Cursor motion" className="flex gap-2">
+        {INTERPOLATOR_STYLES.map((style) => (
+          <button
+            key={style}
+            type="button"
+            role="radio"
+            aria-checked={value === style}
+            data-testid={`interp-option-${style}`}
+            onClick={() => onChange(style)}
+            className={cn(
+              "rounded-md px-3 py-1.5 text-sm font-medium capitalize transition-colors",
+              value === style ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200",
+            )}
+          >
+            {style}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function ToggleRow({ anchorId, label, description }: { anchorId: string; label: string; description: string }) {
@@ -42,7 +79,12 @@ function ToggleRow({ anchorId, label, description }: { anchorId: string; label: 
   );
 }
 
-export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
+export function SettingsDialog({
+  open,
+  onClose,
+  interpolatorStyle,
+  onInterpolatorStyleChange,
+}: SettingsDialogProps) {
   const [workspaceName, setWorkspaceName] = useState("Acme Storefront");
 
   const dialogAnchor = useCursorAnchor("settings.dialog");
@@ -88,6 +130,8 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
         <Button ref={inviteAnchor} data-testid="anchor-settings.dialog.invite" variant="outline" className="self-start">
           + Invite member
         </Button>
+
+        <InterpolatorStyleRow value={interpolatorStyle} onChange={onInterpolatorStyleChange} />
       </DialogBody>
       <DialogFooter>
         <Button ref={cancelAnchor} variant="ghost" onClick={onClose}>

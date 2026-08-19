@@ -15,7 +15,7 @@ before starting, honor its STOP conditions, and update your row when done.
 | 003 | Clipped-anchor occlusion detection + precision tests | P1 | L | 001 | DONE |
 | 004 | Pointer rect-cache reuse + bench resize/nested-scroll | P2 | M | 001 (after 003) | TODO |
 | 005 | Dependency updates (waves; TS 7 attempt) | P2 | M | 001 | TODO |
-| 006 | Socket.IO transport example (tested) + SignalR recipe check | P2 | M | 001 | TODO |
+| 006 | Socket.IO transport example (tested) + SignalR recipe check | P2 | M | 001 | DONE |
 | 007 | Demo interpolation style switcher (spring stays demo-side) | P3 | M | — | TODO |
 | 008 | README/docs restyle (use-signalr house style, STE) | P3 | M | 002; run LAST | TODO |
 | 009 | Performance verification: core + react budgets, benches, CI gate | P2 | M | 001 (after 004) | TODO |

@@ -24,6 +24,13 @@ export default defineConfig({
           include: ["packages/react/test/**/*.test.{ts,tsx}"],
         },
       },
+      {
+        test: {
+          name: "socketio-example",
+          environment: "node",
+          include: ["examples/socketio/**/*.test.ts"],
+        },
+      },
     ],
   },
 });

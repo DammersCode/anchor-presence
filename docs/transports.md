@@ -96,28 +96,35 @@ transport.connect();
 const client = createPresenceClient({ transport });
 ```
 
-## Socket.IO adapter sketch
+## Socket.IO adapter
+
+`examples/socketio/transport.ts` has a tested `createSocketIoTransport(socket)` adapter. An
+integration test in `examples/socketio/socketio.test.ts` runs it against a real Socket.IO
+server and checks that a cursor update reaches a second client. Excerpt:
 
 ```ts
-import type { LiveCursorTransport, ConnectionStatus } from "@anchor-presence/core";
+import type { ConnectionStatus, LiveCursorTransport } from "@anchor-presence/core";
 import type { Socket } from "socket.io-client";
 
 export function createSocketIoTransport(socket: Socket): LiveCursorTransport {
   const statusListeners = new Set<(status: ConnectionStatus) => void>();
-  const setStatus = (status: ConnectionStatus) => {
-    for (const listener of statusListeners) listener(status);
+  const setStatus = (next: ConnectionStatus) => {
+    for (const listener of statusListeners) listener(next);
   };
 
   socket.on("connect", () => setStatus("connected"));
   socket.on("disconnect", () => setStatus("disconnected"));
-  socket.on("reconnect_attempt", () => setStatus("reconnecting"));
+  socket.io.on("reconnect_attempt", () => setStatus("reconnecting"));
 
   return {
-    connect: () => socket.connect(),
+    connect: () => {
+      if (!socket.connected) socket.connect();
+    },
     disconnect: () => socket.disconnect(),
-    send: (data) => void socket.emit("presence", data),
+    send: (data) => socket.emit("presence", data),
     subscribe: (listener) => {
-      const handler = (data: ArrayBuffer) => listener(new Uint8Array(data));
+      const handler = (data: ArrayBuffer | Uint8Array | Buffer) =>
+        listener(data instanceof Uint8Array ? data : new Uint8Array(data));
       socket.on("presence", handler);
       return () => socket.off("presence", handler);
     },
@@ -129,9 +136,12 @@ export function createSocketIoTransport(socket: Socket): LiveCursorTransport {
 }
 ```
 
-Socket.IO delivers binary payloads as `ArrayBuffer` on most clients; confirm the wrapper matches your Socket.IO version before shipping it.
+See `examples/socketio/README.md` for the matching relay server and setup steps.
 
 ## SignalR adapter sketch
+
+This is a sketch, not tested. It targets `@microsoft/signalr` 8.x. Verify it against a real
+hub before you ship it.
 
 ```ts
 import type { LiveCursorTransport, ConnectionStatus } from "@anchor-presence/core";
@@ -143,6 +153,7 @@ export function createSignalRTransport(connection: HubConnection): LiveCursorTra
     for (const listener of statusListeners) listener(status);
   };
 
+  // withAutomaticReconnect() on the builder is required, or a drop goes straight to onclose
   connection.onreconnecting(() => setStatus("reconnecting"));
   connection.onreconnected(() => setStatus("connected"));
   connection.onclose(() => setStatus("disconnected"));
@@ -156,8 +167,10 @@ export function createSignalRTransport(connection: HubConnection): LiveCursorTra
     disconnect: () => connection.stop(),
     send: (data) => connection.send("Presence", data),
     subscribe: (listener) => {
-      connection.on("Presence", listener);
-      return () => connection.off("Presence", listener);
+      // connection.on passes hub method args positionally; Presence has one arg
+      const handler = (data: Uint8Array) => listener(data);
+      connection.on("Presence", handler);
+      return () => connection.off("Presence", handler);
     },
     subscribeStatus: (listener) => {
       statusListeners.add(listener);
@@ -166,6 +179,39 @@ export function createSignalRTransport(connection: HubConnection): LiveCursorTra
   };
 }
 ```
+
+Build the connection with `HubConnectionBuilder` and `withAutomaticReconnect()`:
+
+```ts
+import { HubConnectionBuilder } from "@microsoft/signalr";
+
+const connection = new HubConnectionBuilder()
+  .withUrl("https://your-server.example/presenceHub")
+  .withAutomaticReconnect()
+  .build();
+```
+
+### Binary payloads need the MessagePack hub protocol
+
+The default JSON hub protocol serializes a `Uint8Array` argument with `JSON.stringify`. This
+turns the bytes into an object of numbered keys, not a compact binary payload. A plain .NET
+hub parameter of type `byte[]` will not decode this object correctly.
+
+Add the MessagePack hub protocol on both client and server for a correct and compact binary
+transfer:
+
+```ts
+import { MessagePackHubProtocol } from "@microsoft/signalr-protocol-msgpack";
+
+const connection = new HubConnectionBuilder()
+  .withUrl("https://your-server.example/presenceHub")
+  .withHubProtocol(new MessagePackHubProtocol())
+  .withAutomaticReconnect()
+  .build();
+```
+
+The MessagePack protocol encodes a `Uint8Array` as a MessagePack `bin` value. A .NET hub
+method with a `byte[]` parameter decodes it directly, with no manual base64 step.
 
 ## BroadcastChannel example
 

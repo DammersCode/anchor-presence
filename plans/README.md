@@ -19,8 +19,8 @@ before starting, honor its STOP conditions, and update your row when done.
 | 007 | Demo interpolation style switcher (spring stays demo-side) | P3 | M | — | DONE |
 | 008 | README/docs restyle (use-signalr house style, STE) | P3 | M | 002; run LAST | DONE |
 | 009 | Performance verification: core + react budgets, benches, CI gate | P2 | M | 001 (after 004) | DONE |
+| 010 | Configurable cursor components in the React npm package | P1 | M | 002, 009 | DONE |
 | 011 | Agent skill for skills.sh (skills/anchor-presence) | P2 | S | 010 | IN PROGRESS (files built; README badge waits for 010 merge) |
-| 010 | Configurable cursor components in the React npm package | P1 | M | 002, 009 | TODO |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale)
 

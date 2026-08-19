@@ -9,7 +9,7 @@ import { createPresenceClient } from "@anchor-presence/core";
 import {
   LiveCursorProvider,
   useCursorAnchor,
-  useRemoteCursors,
+  CursorLayer,
 } from "@anchor-presence/react";
 
 const client = createPresenceClient({ transport: myTransport });
@@ -17,19 +17,6 @@ const client = createPresenceClient({ transport: myTransport });
 function DashboardButton() {
   const anchorRef = useCursorAnchor("nav.dashboard");
   return <button ref={anchorRef}>Dashboard</button>;
-}
-
-function CursorLayer() {
-  const cursors = useRemoteCursors();
-  return (
-    <>
-      {cursors
-        .filter((c) => c.visible)
-        .map((c) => (
-          <div key={c.clientId} style={{ position: "fixed", left: c.x, top: c.y }} />
-        ))}
-    </>
-  );
 }
 
 function App() {
@@ -109,7 +96,7 @@ The sender never measures the receiver's DOM. It sends a semantic anchor ID and 
 - **Local repositioning without network traffic.** A scroll or resize on the receiver moves a stationary remote cursor for free.
 - **Transport-agnostic.** Core imports no transport library. Bring your own WebSocket, Socket.IO, SignalR, or `BroadcastChannel` transport.
 - **Framework adapter, not a framework requirement.** `core` and `dom` run without React. `@anchor-presence/react` is a thin adapter over `useSyncExternalStore`.
-- **No required cursor component.** Rendering is fully consumer-controlled.
+- **Optional cursor components.** `@anchor-presence/react` ships `CursorLayer` and `DefaultCursor`. No cursor component is required; rendering stays consumer-controlled.
 - **Validated, bounded input.** Every inbound message passes size and shape limits before it reaches application code.
 - **Occlusion-aware.** The resolver detects when a clipping ancestor hides the resolved point, so a policy can hide a cursor that otherwise floats over empty space.
 - **Measured performance.** The core inbound pipeline benches at roughly 300k messages per second. The geometry scheduler benches at roughly 1.3 ms mean per pass at 100 anchors and 50 cursors in the browser gate, against a 6 ms budget. See `docs/performance.md`.

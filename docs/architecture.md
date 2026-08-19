@@ -108,7 +108,7 @@ The sender never measures the receiver's DOM. The sender sends a semantic anchor
 6. Transport implementation is independent from cursor logic. Core imports no transport library.
 7. A local layout change repositions a stationary remote cursor without a new network packet.
 8. Network messages cannot execute arbitrary DOM selectors. Anchor IDs resolve only against the registered anchor map.
-9. Rendering is consumer-controlled. The library ships no required cursor component.
+9. Rendering is consumer-controlled. No cursor component is required. `@anchor-presence/react` provides optional, configurable cursor components.
 10. Future framework adapters (Svelte, Vue, Solid) require no architectural rewrite.
 
 ## Why receiver layout is authoritative

@@ -1,6 +1,6 @@
 # React Adapter
 
-`@anchor-presence/react` provides a provider component and six hooks. It holds no engine state; it subscribes to `core` and `dom` stores with `useSyncExternalStore`.
+`@anchor-presence/react` provides a provider component, six hooks, and two optional cursor components. It holds no engine state; it subscribes to `core` and `dom` stores with `useSyncExternalStore`.
 
 ## Install
 
@@ -144,37 +144,90 @@ function SettingsDialog({ open }: { open: boolean }) {
 }
 ```
 
-## Custom rendering: cursor layer example
+## CursorLayer and DefaultCursor
 
-The library ships no required cursor component (Invariant 9). Render cursors with `useRemoteCursors`:
+No cursor component is required (Invariant 9). `@anchor-presence/react` also exports `CursorLayer` and `DefaultCursor` as an optional, configurable cursor renderer.
+
+### Minimal use
 
 ```tsx
-function CursorLayer() {
-  const cursors = useRemoteCursors<unknown, { name: string }>();
+import { CursorLayer } from "@anchor-presence/react";
+
+function App() {
   return (
-    <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 9999 }}>
-      {cursors
-        .filter((cursor) => cursor.visible)
-        .map((cursor) => (
-          <div
-            key={cursor.clientId}
-            style={{
-              position: "fixed",
-              left: cursor.x,
-              top: cursor.y,
-              transform: "translate(-2px, -2px)",
-            }}
-          >
-            <CursorGlyph />
-            <span>{cursor.user?.name ?? "Anonymous"}</span>
-          </div>
-        ))}
-    </div>
+    <LiveCursorProvider client={client}>
+      <Dashboard />
+      <CursorLayer />
+    </LiveCursorProvider>
   );
 }
 ```
 
-Render `cursor.user` and `cursor.context` values as text, never as HTML. See `docs/security.md`.
+`CursorLayer` calls `useRemoteCursors` once. It renders one fixed-position root for each visible cursor, and it renders `DefaultCursor` inside that root by default.
+
+### Label and color mapping
+
+```tsx
+<CursorLayer
+  getLabel={(cursor) => cursor.user?.name ?? "Guest"}
+  getColor={(cursor) => cursor.user?.color ?? "#6b7280"}
+/>
+```
+
+Validate `cursor.user` values before you return them. Remote `user` data is untrusted; treat it as text, never as HTML. See `docs/security.md`.
+
+### Filtering cursors
+
+```tsx
+<CursorLayer filterCursor={(cursor) => cursor.tier !== "viewport"} />
+```
+
+`filterCursor` runs after the visibility check. `CursorLayer` skips `getLabel` and `getColor` for a cursor that `filterCursor` removes.
+
+### Root properties
+
+```tsx
+<CursorLayer
+  getCursorProps={(cursor) => ({
+    className: "my-cursor",
+    "data-testid": "remote-cursor",
+  })}
+/>
+```
+
+`getCursorProps` can add classes, non-geometry styles, and attributes to the root. The package always sets `position`, `left`, `top`, `transform`, and `pointerEvents` after the consumer style, so a consumer value can never replace them. A consumer value can replace `zIndex` (package default `50`).
+
+### Custom cursor content
+
+```tsx
+<CursorLayer
+  renderCursor={({ cursor, label, color }) => (
+    <MyCursorGlyph color={color}>
+      <span>{label}</span>
+    </MyCursorGlyph>
+  )}
+/>
+```
+
+`renderCursor` replaces only the root's contents. The package still owns the root's position, transform, pointer events, `aria-hidden`, and identity data attributes (`data-anchor-presence-cursor`, `data-anchor-presence-client-id`, `data-anchor-presence-tier`, `data-anchor-presence-anchor`).
+
+### DefaultCursor styling
+
+`DefaultCursor` has no Tailwind dependency and no external stylesheet. Three CSS variables control its visual:
+
+```tsx
+<CursorLayer
+  renderCursor={({ cursor, label, color }) => (
+    <DefaultCursor
+      label={label}
+      color={color}
+      style={{ "--anchor-presence-cursor-size": "28px" }}
+    />
+  )}
+/>
+```
+
+An explicit CSS variable on `style` takes precedence over the `color` prop.
 
 ## Custom interpolation
 

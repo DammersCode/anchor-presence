@@ -1,10 +1,9 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useCursorAnchor } from "@anchor-presence/react";
 import { Dialog, DialogBody, DialogFooter, DialogHeader, DialogTitle } from "../ui/dialog";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { cn } from "../../lib/cn";
-import { setLocalSettingsOpen } from "../../cursors/visibilityPolicy";
 import { INTERPOLATOR_STYLES } from "../../cursors/interpolators";
 import type { InterpolatorStyle } from "../../cursors/interpolators";
 
@@ -92,12 +91,6 @@ export function SettingsDialog({
   const inviteAnchor = useCursorAnchor("settings.dialog.invite");
   const cancelAnchor = useCursorAnchor("settings.dialog.cancel");
   const saveAnchor = useCursorAnchor("settings.dialog.save");
-
-  // UI context policy (spec §12): announce "in Settings" while open, clear on close.
-  // Presence context itself (page + dialog) is centralized in App so page changes don't get clobbered.
-  useEffect(() => {
-    setLocalSettingsOpen(open);
-  }, [open]);
 
   return (
     <Dialog ref={dialogAnchor} data-testid="anchor-settings.dialog" open={open} onClose={onClose}>

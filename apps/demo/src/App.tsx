@@ -5,7 +5,7 @@ import { Topbar } from "./components/dashboard/topbar";
 import { SettingsDialog } from "./components/dashboard/settings-dialog";
 import { CursorLayer } from "./cursors/CursorLayer";
 import { localRoom, localUserName } from "./cursors/setup";
-import { setLocalPage } from "./cursors/visibilityPolicy";
+import type { LocalViewState } from "./cursors/visibilityPolicy";
 import type { DemoContext } from "./cursors/setup";
 import { usePageRoute, isPageId } from "./usePageRoute";
 import { DashboardPage } from "./pages/DashboardPage";
@@ -15,22 +15,24 @@ import { ProductsPage } from "./pages/ProductsPage";
 import type { InterpolatorStyle } from "./cursors/interpolators";
 
 export interface AppProps {
+  localViewState: LocalViewState;
   interpolatorStyle: InterpolatorStyle;
   onInterpolatorStyleChange: (style: InterpolatorStyle) => void;
 }
 
-export default function App({ interpolatorStyle, onInterpolatorStyleChange }: AppProps) {
+export default function App({ localViewState, interpolatorStyle, onInterpolatorStyleChange }: AppProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [page, navigate] = usePageRoute();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const mainAnchor = useCursorAnchor("main");
   const [, setContext] = useCursorContext<DemoContext>();
 
-  // Single source of truth for presence context: page + dialog state combined, so neither overwrites the other.
+  // Single writer for both the published context and the local state the visibility policy reads.
   useEffect(() => {
-    setLocalPage(page);
+    localViewState.page = page;
+    localViewState.settingsOpen = settingsOpen;
     setContext(settingsOpen ? { page, dialog: "settings" } : { page });
-  }, [page, settingsOpen, setContext]);
+  }, [localViewState, page, settingsOpen, setContext]);
 
   // Sidebar's onSelect is id: string (also used for "settings", which doesn't navigate); narrow before routing.
   const handleSelect = (id: string) => {

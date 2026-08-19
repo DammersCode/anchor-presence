@@ -5,12 +5,17 @@ import { LiveCursorProvider } from "@anchor-presence/react";
 import App from "./App";
 import { BenchPage } from "./bench/BenchPage";
 import { getPresenceClient } from "./cursors/setup";
-import { settingsAwareVisibilityPolicy } from "./cursors/visibilityPolicy";
+import { createVisibilityPolicy } from "./cursors/visibilityPolicy";
+import type { LocalViewState } from "./cursors/visibilityPolicy";
 import { interpolatorRegistry } from "./cursors/interpolators";
 import { useInterpolatorStyle } from "./useInterpolatorStyle";
 
 // Query-param routing (?page=bench) — no router dependency, per requirement 7.
 const isBenchRoute = new URLSearchParams(window.location.search).get("page") === "bench";
+
+// App's context effect is the single writer; the policy reads it synchronously each resolution.
+const localViewState: LocalViewState = { page: null, settingsOpen: false };
+const visibilityPolicy = createVisibilityPolicy(() => localViewState);
 
 function Root() {
   const [interpolatorStyle, selectInterpolatorStyle] = useInterpolatorStyle();
@@ -25,12 +30,16 @@ function Root() {
       client={client}
       bindingOptions={{
         resolution: {
-          visibilityPolicy: settingsAwareVisibilityPolicy,
+          visibilityPolicy,
           interpolatorFactory: interpolatorRegistry[interpolatorStyle],
         },
       }}
     >
-      <App interpolatorStyle={interpolatorStyle} onInterpolatorStyleChange={selectInterpolatorStyle} />
+      <App
+        localViewState={localViewState}
+        interpolatorStyle={interpolatorStyle}
+        onInterpolatorStyleChange={selectInterpolatorStyle}
+      />
     </LiveCursorProvider>
   );
 }

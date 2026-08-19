@@ -29,6 +29,13 @@ export default defineConfig({
       },
       {
         test: {
+          name: "demo",
+          environment: "node",
+          include: ["apps/demo/src/cursors/visibilityPolicy.test.ts"],
+        },
+      },
+      {
+        test: {
           name: "socketio-example",
           environment: "node",
           include: ["examples/socketio/**/*.test.ts"],

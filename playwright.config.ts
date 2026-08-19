@@ -24,7 +24,8 @@ export default defineConfig({
     trace: "retain-on-failure",
   },
   projects: [
-    { name: "chromium", use: { ...devices["Desktop Chrome"] } },
+    // CI uses the runner's preinstalled Chrome (channel) so playwright install can skip the chromium download
+    { name: "chromium", use: { ...devices["Desktop Chrome"], ...(process.env.CI ? { channel: "chrome" } : {}) } },
     { name: "firefox", use: { ...devices["Desktop Firefox"] } },
     { name: "webkit", use: { ...devices["Desktop Safari"] } },
   ],

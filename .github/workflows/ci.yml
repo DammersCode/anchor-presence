@@ -26,7 +26,8 @@ jobs:
         continue-on-error: true # report-only: benches inform, tests gate (plan 009)
       - run: bunx vite build
         working-directory: apps/demo
-      - run: bunx playwright install --with-deps chromium firefox webkit
+      # chromium is not installed: the chromium project runs on the runner's preinstalled Chrome (channel "chrome")
+      - run: bunx playwright install --with-deps firefox webkit
       - run: bunx playwright test --reporter=list,html
         env:
           PLAYWRIGHT_HTML_OPEN: never

@@ -2,7 +2,7 @@
 
 Semantic live cursors for the DOM — different layouts, same meaning.
 
-[![MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![Agent skill](https://skills.sh/b/DammersCode/anchor-presence)](https://skills.sh)
 
 ```tsx
 import { createPresenceClient } from "@anchor-presence/core";
@@ -133,6 +133,16 @@ The sender never measures the receiver's DOM. It sends a semantic anchor ID and 
 - [`docs/troubleshooting.md`](docs/troubleshooting.md) — common problems and their causes
 
 See also [`SPECIFICATION.md`](SPECIFICATION.md) for the full technical specification.
+
+## Agent skill
+
+AI coding agents can install the integration skill for this library:
+
+```bash
+npx skills add DammersCode/anchor-presence
+```
+
+The skill teaches an agent the anchor model, the integration steps, and the troubleshooting paths. The source is in [`skills/anchor-presence/`](skills/anchor-presence/).
 
 ## Quickstart
 

@@ -42,7 +42,16 @@ test.describe("bench page perf budgets", () => {
 
     await page.getByRole("button", { name: "Pause" }).click();
 
-    const countAfterPause = Number(await page.getByTestId("bench-count").textContent());
+    // drain in-flight passes: record the counter only once it holds still for 500ms
+    let countAfterPause = -1;
+    await expect(async () => {
+      const now = Number(await page.getByTestId("bench-count").textContent());
+      await page.waitForTimeout(500);
+      const later = Number(await page.getByTestId("bench-count").textContent());
+      expect(later).toBe(now);
+      countAfterPause = later;
+    }).toPass({ timeout: 10_000 });
+
     await page.waitForTimeout(1000);
     const countAfterWait = Number(await page.getByTestId("bench-count").textContent());
 

@@ -24,9 +24,24 @@ test.describe("clipped anchor occlusion", () => {
       .locator('[data-testid="anchor-orders.row:3"]')
       .getByRole("button", { name: "Delete" });
     await expect(senderDelete).toBeVisible();
-    const box = await senderDelete.boundingBox();
-    if (box === null) throw new Error("sender Delete button is not measurable");
-    await sender.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    // the table overflows its wrapper at this viewport and layout settles late (scrollbar),
+    // so scroll the button into view and re-target until the point really hits it
+    await senderDelete.scrollIntoViewIfNeeded();
+    await expect(async () => {
+      const box = await senderDelete.boundingBox();
+      if (box === null) throw new Error("sender Delete button is not measurable");
+      const cx = box.x + box.width / 2;
+      const cy = box.y + box.height / 2;
+      await sender.mouse.move(cx, cy);
+      const hit = await sender.evaluate(
+        ([x, y]) => {
+          const el = document.elementFromPoint(x as number, y as number);
+          return el instanceof HTMLElement && el.closest("button") !== null;
+        },
+        [cx, cy] as const,
+      );
+      expect(hit).toBe(true);
+    }).toPass({ timeout: 5_000, intervals: [100, 200, 400] });
 
     await expect(async () => {
       const clipped = await receiver.locator('[data-testid="anchor-orders.row:3"]').evaluate((row) => {

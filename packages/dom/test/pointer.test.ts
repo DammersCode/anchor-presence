@@ -179,6 +179,70 @@ describe("attachPointerSource (spec §9)", () => {
     handle.detach();
   });
 
+  it("uses getCachedRect when it returns a hit, skipping getBoundingClientRect for that element", () => {
+    const el = document.createElement("div");
+    document.body.appendChild(el);
+    registry.register("a", el);
+    mockRect(el, { left: 0, top: 0, width: 100, height: 100 });
+    const getRectSpy = vi.spyOn(el, "getBoundingClientRect");
+
+    const { client, samples } = makeClient();
+    const handle = attachPointerSource(client, registry, {
+      getCachedRect: () => ({ left: 10, top: 10, width: 50, height: 50 }),
+    });
+
+    firePointerEvent("pointermove", el, { clientX: 20, clientY: 20 });
+
+    expect(getRectSpy).not.toHaveBeenCalled();
+    const cursor = samples[0];
+    expect(cursor?.anchors[0]?.u).toBeCloseTo((20 - 10) / 50);
+    expect(cursor?.anchors[0]?.v).toBeCloseTo((20 - 10) / 50);
+
+    handle.detach();
+  });
+
+  it("falls through to direct measurement on a cache miss (getCachedRect returns undefined)", () => {
+    const el = document.createElement("div");
+    document.body.appendChild(el);
+    registry.register("a", el);
+    mockRect(el, { left: 0, top: 0, width: 100, height: 100 });
+    const getRectSpy = vi.spyOn(el, "getBoundingClientRect");
+
+    const { client, samples } = makeClient();
+    const handle = attachPointerSource(client, registry, {
+      getCachedRect: () => undefined,
+    });
+
+    firePointerEvent("pointermove", el, { clientX: 10, clientY: 10 });
+
+    expect(getRectSpy).toHaveBeenCalledTimes(1);
+    const cursor = samples[0];
+    expect(cursor?.anchors[0]?.u).toBeCloseTo(10 / 100);
+    expect(cursor?.anchors[0]?.v).toBeCloseTo(10 / 100);
+
+    handle.detach();
+  });
+
+  it("without the getCachedRect option, behavior is unchanged (always measures directly)", () => {
+    const el = document.createElement("div");
+    document.body.appendChild(el);
+    registry.register("a", el);
+    mockRect(el, { left: 0, top: 0, width: 100, height: 100 });
+    const getRectSpy = vi.spyOn(el, "getBoundingClientRect");
+
+    const { client, samples } = makeClient();
+    const handle = attachPointerSource(client, registry);
+
+    firePointerEvent("pointermove", el, { clientX: 25, clientY: 25 });
+
+    expect(getRectSpy).toHaveBeenCalledTimes(1);
+    const cursor = samples[0];
+    expect(cursor?.anchors[0]?.u).toBeCloseTo(25 / 100);
+    expect(cursor?.anchors[0]?.v).toBeCloseTo(25 / 100);
+
+    handle.detach();
+  });
+
   it("registers its teardown with the client and detach() removes listeners", () => {
     const el = document.createElement("div");
     document.body.appendChild(el);

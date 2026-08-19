@@ -111,6 +111,7 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
 
   const pointerHandle = attachPointerSource(client as PresenceClient<unknown, unknown>, registry, {
     ...(options.maxAnchors !== undefined ? { maxAnchors: options.maxAnchors } : {}),
+    getCachedRect: (element) => scheduler.getCachedRect(element),
     ...(options.pointer ?? {}),
   });
 

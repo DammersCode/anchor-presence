@@ -56,6 +56,7 @@ export type GeometrySchedulerOptions<TSnapshot> = {
 
 export type GeometryScheduler = {
   invalidate(reason?: string): void;
+  getCachedRect(element: Element): Rect | undefined;
   dispose(): void;
 };
 
@@ -356,6 +357,10 @@ export function createGeometryScheduler<TSnapshot>(
       if (disposed) return;
       syncActivation();
       if (attached) markDirtyAndSchedule();
+    },
+
+    getCachedRect(element) {
+      return lastRectCache?.get(element);
     },
 
     dispose() {

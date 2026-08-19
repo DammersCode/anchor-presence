@@ -41,7 +41,17 @@ function App() {
 }
 ```
 
-`bindingOptions` configures the automatically created binding: `maxAnchors`, `visibilityPolicy`, `interpolatorFactory`, and more. See `packages/dom/src/binding.ts` for the full `DomBindingOptions` shape. The provider reads `bindingOptions` only once, at binding creation; later changes to the object do not recreate the binding.
+`bindingOptions` configures the automatically created binding. It has three parts:
+
+```ts
+type DomBindingOptions<TContext = unknown, TUser = unknown> = {
+  maxAnchors?: number;
+  resolution?: { visibilityPolicy?; interpolatorFactory?; hitTest? };
+  environment?: { root?; window?; raf?; caf?; ResizeObserverCtor?; MutationObserverCtor? };
+};
+```
+
+`resolution` controls how remote cursors turn into screen positions. `environment` supplies the DOM and timing hosts, and each field defaults to the ambient browser global. The provider reads `bindingOptions` only once, at binding creation. Later changes to the object do not recreate the binding.
 
 Pass `client={null}` during server-side rendering. See "SSR" below.
 
@@ -231,7 +241,7 @@ An explicit CSS variable on `style` takes precedence over the `color` prop.
 
 ## Custom interpolation
 
-The library ships two interpolators: `noneInterpolator` (snap, no easing) and `linearInterpolator` (fixed-duration ease). Anything richer, such as a spring, is application code. Pass a custom factory through `bindingOptions.interpolatorFactory`.
+The library ships two interpolators: `noneInterpolator` (snap, no easing) and `linearInterpolator` (fixed-duration ease). Anything richer, such as a spring, is application code. Pass a custom factory through `bindingOptions.resolution.interpolatorFactory`.
 
 Implement the `Interpolator` interface from `@anchor-presence/core`:
 
@@ -285,7 +295,7 @@ function springInterpolator(stiffness = 170, damping = 26): Interpolator {
 Register your style with `bindingOptions`:
 
 ```tsx
-<LiveCursorProvider client={client} bindingOptions={{ interpolatorFactory: springInterpolator }}>
+<LiveCursorProvider client={client} bindingOptions={{ resolution: { interpolatorFactory: springInterpolator } }}>
   <App />
 </LiveCursorProvider>
 ```
@@ -293,7 +303,7 @@ Register your style with `bindingOptions`:
 The provider reads `bindingOptions` once, at binding creation (see the note above). To switch interpolator styles at runtime, give the provider (or an ancestor) a `key` that changes with the style. A key change remounts the subtree and creates a fresh binding with the new factory:
 
 ```tsx
-<LiveCursorProvider key={style} client={client} bindingOptions={{ interpolatorFactory: registry[style] }}>
+<LiveCursorProvider key={style} client={client} bindingOptions={{ resolution: { interpolatorFactory: registry[style] } }}>
   <App />
 </LiveCursorProvider>
 ```

@@ -32,4 +32,4 @@ export type {
 } from "./resolver";
 
 export { createDomBinding } from "./binding";
-export type { DomBinding, DomBindingOptions } from "./binding";
+export type { DomBinding, DomBindingOptions, EnvironmentOptions, ResolutionOptions } from "./binding";

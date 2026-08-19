@@ -113,9 +113,9 @@ export function resolveGeometry(
 
 export type ResolverOptions<TContext = unknown> = {
   registry: AnchorRegistry;
-  visibilityPolicy?: VisibilityPolicy<TContext>;
-  interpolatorFactory?: InterpolatorFactory;
-  hitTest?: boolean;
+  visibilityPolicy?: VisibilityPolicy<TContext> | undefined;
+  interpolatorFactory?: InterpolatorFactory | undefined;
+  hitTest?: boolean | undefined;
 };
 
 type InterpolatorState = {

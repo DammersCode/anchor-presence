@@ -135,7 +135,7 @@ function usePresenceHarness() {
     const transport = createLoopbackTransport();
     const client: PresenceClient = createPresenceClient({ transport, maxRemoteClients: 200 });
     // interpolation off for the benchmark: measuring resolver/scheduler cost, not easing (spec §13)
-    const created = createDomBinding(client, { interpolatorFactory: noneInterpolator });
+    const created = createDomBinding(client, { resolution: { interpolatorFactory: noneInterpolator } });
     transportRef.current = transport;
     setBinding(created);
     return () => {

@@ -79,7 +79,7 @@ describe("createDomBinding", () => {
 
     const { raf, caf, flush } = makeRafStub();
     const { client, pushRemote } = makeFakeClient();
-    const binding = createDomBinding(client, { raf, caf });
+    const binding = createDomBinding(client, { environment: { raf, caf } });
 
     binding.registry.register("a", el);
 
@@ -108,7 +108,7 @@ describe("createDomBinding", () => {
   it("notifies subscribers on snapshot changes", () => {
     const { raf, caf, flush } = makeRafStub();
     const { client, pushRemote } = makeFakeClient();
-    const binding = createDomBinding(client, { raf, caf });
+    const binding = createDomBinding(client, { environment: { raf, caf } });
 
     const listener = vi.fn();
     binding.subscribe(listener);
@@ -173,7 +173,7 @@ describe("createDomBinding", () => {
 
     const { raf, caf, flush } = makeRafStub();
     const { client, pushRemote } = makeFakeClient();
-    const binding = createDomBinding(client, { raf, caf, ResizeObserverCtor: ResizeObserverStub });
+    const binding = createDomBinding(client, { environment: { raf, caf, ResizeObserverCtor: ResizeObserverStub } });
     binding.registry.register("a", el);
     pushRemote([{
       version: 1,
@@ -201,7 +201,7 @@ describe("createDomBinding", () => {
     const { client, pushRemote } = makeFakeClient();
     const addEventListenerSpy = vi.spyOn(document, "addEventListener");
     const removeEventListenerSpy = vi.spyOn(document, "removeEventListener");
-    const binding = createDomBinding(client, { raf, caf });
+    const binding = createDomBinding(client, { environment: { raf, caf } });
 
     pushRemote([
       {
@@ -229,7 +229,7 @@ describe("createDomBinding", () => {
   it("going idle publishes a final snapshot so the departed cursor is not left visible", () => {
     const { raf, caf, flush } = makeRafStub();
     const { client, pushRemote } = makeFakeClient();
-    const binding = createDomBinding(client, { raf, caf });
+    const binding = createDomBinding(client, { environment: { raf, caf } });
 
     pushRemote([
       {
@@ -255,7 +255,7 @@ describe("createDomBinding", () => {
   it("dispose() detaches everything and is registered as a client teardown", () => {
     const { raf, caf } = makeRafStub();
     const { client } = makeFakeClient();
-    const binding = createDomBinding(client, { raf, caf });
+    const binding = createDomBinding(client, { environment: { raf, caf } });
     const disposeSpy = vi.fn();
     // dispose should be idempotent / callable directly too
     binding.dispose();

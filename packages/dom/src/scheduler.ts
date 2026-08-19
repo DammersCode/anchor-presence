@@ -48,12 +48,12 @@ export type GeometrySchedulerOptions<TSnapshot> = {
   onRegistryChange(listener: () => void): () => void;
   onRemoteData(listener: () => void): () => void;
 
-  root?: Document;
-  window?: Window;
-  raf?: RafLike;
-  caf?: CafLike;
-  ResizeObserverCtor?: ResizeObserverCtor;
-  MutationObserverCtor?: MutationObserverCtor;
+  root?: Document | undefined;
+  window?: Window | undefined;
+  raf?: RafLike | undefined;
+  caf?: CafLike | undefined;
+  ResizeObserverCtor?: ResizeObserverCtor | undefined;
+  MutationObserverCtor?: MutationObserverCtor | undefined;
 };
 
 export type GeometryScheduler = {

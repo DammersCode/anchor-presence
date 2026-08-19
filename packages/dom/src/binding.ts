@@ -4,7 +4,6 @@ import type { InterpolatorFactory, PresenceClient } from "@anchor-presence/core"
 import { createAnchorRegistry } from "./registry";
 import type { AnchorRegistry } from "./registry";
 import { attachPointerSource } from "./pointer";
-import type { PointerSourceOptions } from "./pointer";
 import { createGeometryScheduler } from "./scheduler";
 import type {
   CafLike,
@@ -18,18 +17,27 @@ import type { ResolvedCursor, VisibilityPolicy } from "./resolver";
 export type { AnchorRegistry } from "./registry";
 export type { ResolvedCursor, ResolutionTier, VisibilityPolicy } from "./resolver";
 
-export type DomBindingOptions<TContext = unknown, TUser = unknown> = {
-  maxAnchors?: number;
+/** How remote cursors turn into screen positions. */
+export type ResolutionOptions<TContext = unknown> = {
   visibilityPolicy?: VisibilityPolicy<TContext>;
   interpolatorFactory?: InterpolatorFactory;
   hitTest?: boolean;
+};
+
+/** The DOM and timing hosts the binding runs against; every field defaults to the ambient browser globals. */
+export type EnvironmentOptions = {
   root?: Document;
   window?: Window;
   raf?: RafLike;
   caf?: CafLike;
   ResizeObserverCtor?: ResizeObserverCtor;
   MutationObserverCtor?: MutationObserverCtor;
-  pointer?: Pick<PointerSourceOptions, "root" | "window">;
+};
+
+export type DomBindingOptions<TContext = unknown, TUser = unknown> = {
+  maxAnchors?: number;
+  resolution?: ResolutionOptions<TContext>;
+  environment?: EnvironmentOptions;
 };
 
 export type DomBinding<TContext = unknown, TUser = unknown> = {
@@ -46,13 +54,9 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
   client: PresenceClient<TContext, TUser>,
   options: DomBindingOptions<TContext, TUser> = {},
 ): DomBinding<TContext, TUser> {
+  const { resolution = {}, environment = {} } = options;
   const registry = createAnchorRegistry();
-  const resolver = new RemoteResolver<TContext, TUser>({
-    registry,
-    ...(options.visibilityPolicy !== undefined ? { visibilityPolicy: options.visibilityPolicy } : {}),
-    ...(options.interpolatorFactory !== undefined ? { interpolatorFactory: options.interpolatorFactory } : {}),
-    ...(options.hitTest !== undefined ? { hitTest: options.hitTest } : {}),
-  });
+  const resolver = new RemoteResolver<TContext, TUser>({ registry, ...resolution });
 
   let snapshot: ResolvedCursor<TContext, TUser>[] = EMPTY_SNAPSHOT as ResolvedCursor<TContext, TUser>[];
   const snapshotListeners = new Set<() => void>();
@@ -71,7 +75,7 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
         timestampMs,
       );
 
-      const documentElement = (options.root ?? document).documentElement;
+      const documentElement = (environment.root ?? document).documentElement;
       activeAnchors.push(documentElement);
 
       return { snapshot: cursors, activeAnchors, needsAnotherFrame: unsettled };
@@ -85,18 +89,14 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
     onRegistryChange: (listener) => registry.onChange(listener),
     onRemoteData: (listener) => client.subscribeRemote(listener),
 
-    ...(options.root !== undefined ? { root: options.root } : {}),
-    ...(options.window !== undefined ? { window: options.window } : {}),
-    ...(options.raf !== undefined ? { raf: options.raf } : {}),
-    ...(options.caf !== undefined ? { caf: options.caf } : {}),
-    ...(options.ResizeObserverCtor !== undefined ? { ResizeObserverCtor: options.ResizeObserverCtor } : {}),
-    ...(options.MutationObserverCtor !== undefined ? { MutationObserverCtor: options.MutationObserverCtor } : {}),
+    ...environment,
   });
 
   const pointerHandle = attachPointerSource(client as PresenceClient<unknown, unknown>, registry, {
-    ...(options.maxAnchors !== undefined ? { maxAnchors: options.maxAnchors } : {}),
+    maxAnchors: options.maxAnchors,
+    root: environment.root,
+    window: environment.window,
     getCachedRect: (element) => scheduler.getCachedRect(element),
-    ...(options.pointer ?? {}),
   });
 
   let disposed = false;

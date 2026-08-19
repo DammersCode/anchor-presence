@@ -24,8 +24,10 @@ function Root() {
       key={interpolatorStyle}
       client={client}
       bindingOptions={{
-        visibilityPolicy: settingsAwareVisibilityPolicy,
-        interpolatorFactory: interpolatorRegistry[interpolatorStyle],
+        resolution: {
+          visibilityPolicy: settingsAwareVisibilityPolicy,
+          interpolatorFactory: interpolatorRegistry[interpolatorStyle],
+        },
       }}
     >
       <App interpolatorStyle={interpolatorStyle} onInterpolatorStyleChange={selectInterpolatorStyle} />

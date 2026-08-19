@@ -34,7 +34,7 @@ export const defaultVisibilityPolicy: VisibilityPolicy = ({ resolution }) =>
   resolution.tier === "hidden" ? "hide" : "show";
 ```
 
-Pass a custom policy through `DomBindingOptions.visibilityPolicy` (dom) or `bindingOptions.visibilityPolicy` on `LiveCursorProvider` (react). A custom policy can inspect `presence.context` to apply application-specific rules on top of geometric resolution.
+Pass a custom policy through `DomBindingOptions.resolution.visibilityPolicy` (dom) or `bindingOptions.resolution.visibilityPolicy` on `LiveCursorProvider` (react). A custom policy can inspect `presence.context` to apply application-specific rules on top of geometric resolution.
 
 The resolver sets `resolution.pointVisible` to false when a clipping ancestor hides the resolved point. Use this policy to hide the cursor. This policy does not change the receiver UI.
 

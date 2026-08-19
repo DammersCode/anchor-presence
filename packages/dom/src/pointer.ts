@@ -7,10 +7,10 @@ import type { Rect } from "./geometry";
 export const DEFAULT_MAX_ANCHORS = 4;
 
 export type PointerSourceOptions = {
-  maxAnchors?: number;
-  root?: Document;
-  window?: Window;
-  getCachedRect?: (element: Element) => Rect | undefined;
+  maxAnchors?: number | undefined;
+  root?: Document | undefined;
+  window?: Window | undefined;
+  getCachedRect?: ((element: Element) => Rect | undefined) | undefined;
 };
 
 export type PointerSourceHandle = {

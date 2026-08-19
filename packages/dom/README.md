@@ -27,10 +27,22 @@ Dom is the only package that calls browser APIs: `getBoundingClientRect`, `Resiz
 ## Main exports
 
 - `createDomBinding(client, options?)` — wires an anchor registry, pointer source, geometry scheduler, and resolver to a `PresenceClient`
+- `DomBindingOptions`, `ResolutionOptions`, `EnvironmentOptions` — binding configuration types
 - `createAnchorRegistry()` — the anchor ID to `Element` registry
 - `attachPointerSource(client, registry, options?)` — outbound pointer sampling
 - `createGeometryScheduler(options)` — the read/compute/notify rAF scheduler
 - `RemoteResolver`, `resolveGeometry`, `findResolvableAnchor`, `defaultVisibilityPolicy` — remote cursor resolution
 - `ResolvedCursor`, `ResolutionTier`, `VisibilityPolicy` — resolution types
+
+## Binding options
+
+`createDomBinding` takes `maxAnchors` plus two groups. `resolution` controls how remote cursors turn into screen positions: `visibilityPolicy`, `interpolatorFactory`, `hitTest`. `environment` supplies the DOM and timing hosts: `root`, `window`, `raf`, `caf`, `ResizeObserverCtor`, `MutationObserverCtor`. Each `environment` field defaults to the ambient browser global, so tests can replace one host without touching the others.
+
+```ts
+const binding = createDomBinding(client, {
+  resolution: { hitTest: true },
+  environment: { raf, caf },
+});
+```
 
 See `docs/architecture.md`, `docs/concepts.md`, `docs/responsive-layouts.md`, and `docs/performance.md` in the repository root for full guides.

@@ -5,7 +5,7 @@ import { linearInterpolator } from "@anchor-presence/core";
 import type { AnchorRegistry } from "./registry";
 import type { Rect, ViewportSize } from "./geometry";
 import { computeVisibleRect, isPointInRect } from "./occlusion";
-import type { ClientRectReader } from "./occlusion";
+import type { SchedulerReadState } from "./scheduler";
 
 export type ResolutionTier = "anchor" | "viewport" | "hidden";
 
@@ -67,16 +67,14 @@ type RawResolution = {
 export function resolveGeometry(
   presence: CursorPresence,
   registry: AnchorRegistry,
-  getRect: (element: Element) => Rect | undefined,
-  viewportSize: ViewportSize,
-  getClientRect?: ClientRectReader,
+  readState: SchedulerReadState,
 ): RawResolution {
   const cursor = presence.cursor;
   if (cursor === null) {
     return { x: 0, y: 0, tier: "hidden", anchorId: null, pointVisible: false, element: null, activeAnchors: [] };
   }
 
-  const resolved = findResolvableAnchor(presence, registry, getRect);
+  const resolved = findResolvableAnchor(presence, registry, readState.getRect);
   if (resolved !== null) {
     const anchor = cursor.anchors.find((a) => a.id === resolved.id);
     const u = anchor?.u ?? 0;
@@ -84,13 +82,8 @@ export function resolveGeometry(
     const x = resolved.rect.left + resolved.rect.width * u;
     const y = resolved.rect.top + resolved.rect.height * v;
     const clippingAncestors: Element[] = [];
-    const visibleRect = computeVisibleRect(
-      resolved.element,
-      resolved.rect,
-      getRect,
-      undefined,
-      (ancestor) => clippingAncestors.push(ancestor),
-      getClientRect,
+    const visibleRect = computeVisibleRect(resolved.element, resolved.rect, readState, (ancestor) =>
+      clippingAncestors.push(ancestor),
     );
     return {
       x,
@@ -105,8 +98,8 @@ export function resolveGeometry(
 
   if (cursor.viewport !== undefined) {
     return {
-      x: cursor.viewport.u * viewportSize.width,
-      y: cursor.viewport.v * viewportSize.height,
+      x: cursor.viewport.u * readState.viewportSize.width,
+      y: cursor.viewport.v * readState.viewportSize.height,
       tier: "viewport",
       anchorId: null,
       pointVisible: true,
@@ -129,6 +122,7 @@ type InterpolatorState = {
   interpolator: ReturnType<InterpolatorFactory>;
   lastRawX: number;
   lastRawY: number;
+  lastPresence: unknown;
 };
 
 /** Stateful resolver: tracks one interpolator per clientId, decides target() vs shift() per spec §13. */
@@ -155,11 +149,8 @@ export class RemoteResolver<TContext = unknown, TUser = unknown> {
 
   resolveAll(
     presences: readonly CursorPresence<TContext, TUser>[],
-    getRect: (element: Element) => Rect | undefined,
-    viewportSize: ViewportSize,
-    networkUpdated: ReadonlySet<string>,
+    readState: SchedulerReadState,
     timestampMs: number,
-    getClientRect?: ClientRectReader,
   ): { cursors: ResolvedCursor<TContext, TUser>[]; unsettled: boolean; activeAnchors: Element[] } {
     const activeIds = new Set(presences.map((p) => p.clientId));
     this.prune(activeIds);
@@ -168,9 +159,9 @@ export class RemoteResolver<TContext = unknown, TUser = unknown> {
     const activeAnchors = new Set<Element>();
     let unsettled = false;
     for (const presence of presences) {
-      const raw = resolveGeometry(presence, this.registry, getRect, viewportSize, getClientRect);
+      const raw = resolveGeometry(presence, this.registry, readState);
       for (const element of raw.activeAnchors) activeAnchors.add(element);
-      const pointVisible = this.isPointVisible(raw, viewportSize);
+      const pointVisible = this.isPointVisible(raw, readState.viewportSize);
       const visibility = this.visibilityPolicy({
         presence,
         resolution: { tier: raw.tier, anchorId: raw.anchorId, pointVisible },
@@ -182,10 +173,11 @@ export class RemoteResolver<TContext = unknown, TUser = unknown> {
           interpolator: this.interpolatorFactory(),
           lastRawX: raw.x,
           lastRawY: raw.y,
+          lastPresence: presence,
         };
         state.interpolator.target(raw.x, raw.y, timestampMs);
         this.states.set(presence.clientId, state);
-      } else if (networkUpdated.has(presence.clientId)) {
+      } else if (state.lastPresence !== presence) {
         state.interpolator.target(raw.x, raw.y, timestampMs);
       } else if (raw.x !== state.lastRawX || raw.y !== state.lastRawY) {
         // local-only invalidation moved the resolved position: shift current+target by the delta, no easing
@@ -193,6 +185,7 @@ export class RemoteResolver<TContext = unknown, TUser = unknown> {
       }
       state.lastRawX = raw.x;
       state.lastRawY = raw.y;
+      state.lastPresence = presence;
 
       const sample = state.interpolator.sample(timestampMs);
       if (!sample.settled) unsettled = true;

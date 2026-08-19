@@ -2,6 +2,7 @@
 
 import type { Rect, ViewportSize } from "./geometry";
 import { readClientRect } from "./occlusion";
+import type { StyleValues } from "./occlusion";
 
 export type ResizeObserverLike = {
   observe(target: Element): void;
@@ -30,6 +31,7 @@ const CANCEL_SAFETY_MARGIN_MS = 500;
 export type SchedulerReadState = {
   getRect(element: Element): Rect | undefined;
   getClientRect(element: Element): Rect;
+  getStyle(element: Element): StyleValues;
   viewportSize: ViewportSize;
 };
 
@@ -153,6 +155,9 @@ export function createGeometryScheduler<TSnapshot>(
           clientRectCache.set(element, rect);
         }
         return rect;
+      },
+      getStyle(element) {
+        return (element.ownerDocument.defaultView ?? win).getComputedStyle(element);
       },
       viewportSize,
     };

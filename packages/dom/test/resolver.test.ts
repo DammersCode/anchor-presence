@@ -4,7 +4,9 @@ import { noneInterpolator } from "@anchor-presence/core";
 import { createAnchorRegistry } from "../src/registry";
 import type { AnchorRegistry } from "../src/registry";
 import { defaultVisibilityPolicy, RemoteResolver, resolveGeometry } from "../src/resolver";
+import { readClientRect } from "../src/occlusion";
 import type { Rect } from "../src/geometry";
+import type { SchedulerReadState } from "../src/scheduler";
 
 function presence(overrides: Partial<CursorPresence> = {}): CursorPresence {
   return {
@@ -17,8 +19,13 @@ function presence(overrides: Partial<CursorPresence> = {}): CursorPresence {
   };
 }
 
-function rectMapGetRect(rects: Map<Element, Rect>): (el: Element) => Rect | undefined {
-  return (el) => rects.get(el);
+function readState(rects: Map<Element, Rect>, viewportSize = { width: 1000, height: 800 }): SchedulerReadState {
+  return {
+    getRect: (el) => rects.get(el),
+    getClientRect: (el) => readClientRect(el, rects.get(el)!),
+    getStyle: (el) => getComputedStyle(el),
+    viewportSize,
+  };
 }
 
 describe("resolveGeometry (spec §10)", () => {
@@ -50,7 +57,7 @@ describe("resolveGeometry (spec §10)", () => {
       },
     });
 
-    const result = resolveGeometry(p, registry, rectMapGetRect(rects), { width: 1000, height: 800 });
+    const result = resolveGeometry(p, registry, readState(rects));
     expect(result.tier).toBe("anchor");
     expect(result.anchorId).toBe("second");
     expect(result.x).toBeCloseTo(10 + 100 * 0.25);
@@ -65,7 +72,7 @@ describe("resolveGeometry (spec §10)", () => {
       },
     });
 
-    const result = resolveGeometry(p, registry, rectMapGetRect(new Map()), { width: 1000, height: 800 });
+    const result = resolveGeometry(p, registry, readState(new Map()));
     expect(result.tier).toBe("viewport");
     expect(result.anchorId).toBeNull();
     expect(result.pointVisible).toBe(true);
@@ -75,7 +82,7 @@ describe("resolveGeometry (spec §10)", () => {
 
   it("falls back to hidden tier when nothing resolves", () => {
     const p = presence({ cursor: { anchors: [{ id: "missing", u: 0.5, v: 0.5 }] } });
-    const result = resolveGeometry(p, registry, rectMapGetRect(new Map()), { width: 1000, height: 800 });
+    const result = resolveGeometry(p, registry, readState(new Map()));
     expect(result.tier).toBe("hidden");
     expect(result.anchorId).toBeNull();
     expect(result.pointVisible).toBe(false);
@@ -83,7 +90,7 @@ describe("resolveGeometry (spec §10)", () => {
 
   it("hidden tier when cursor is null", () => {
     const p = presence({ cursor: null });
-    const result = resolveGeometry(p, registry, rectMapGetRect(new Map()), { width: 1000, height: 800 });
+    const result = resolveGeometry(p, registry, readState(new Map()));
     expect(result.tier).toBe("hidden");
     expect(result.pointVisible).toBe(false);
   });
@@ -93,7 +100,7 @@ describe("resolveGeometry (spec §10)", () => {
     registry.register("a", el);
     const rects = new Map<Element, Rect>([[el, { left: 0, top: 0, width: 100, height: 100 }]]);
     const p = presence({ cursor: { anchors: [{ id: "a", u: 0.5, v: 0.5 }] } });
-    const result = resolveGeometry(p, registry, rectMapGetRect(rects), { width: 1000, height: 800 });
+    const result = resolveGeometry(p, registry, readState(rects));
     expect(result.tier).toBe("hidden");
   });
 });
@@ -144,7 +151,7 @@ describe("RemoteResolver (spec §10 + §13)", () => {
     const resolver = new RemoteResolver({ registry, interpolatorFactory: factory });
     const rects = new Map<Element, Rect>([[el, { left: 0, top: 0, width: 100, height: 100 }]]);
 
-    resolver.resolveAll([presence()], rectMapGetRect(rects), { width: 1000, height: 800 }, new Set(["remote-1"]), 0);
+    resolver.resolveAll([presence()], readState(rects), 0);
 
     expect(targetSpy).toHaveBeenCalledTimes(1);
   });
@@ -153,16 +160,14 @@ describe("RemoteResolver (spec §10 + §13)", () => {
     const { factory, targetSpy } = spyInterpolator();
     const resolver = new RemoteResolver({ registry, interpolatorFactory: factory });
     const rects = new Map<Element, Rect>([[el, { left: 0, top: 0, width: 100, height: 100 }]]);
-    const getRect = rectMapGetRect(rects);
+    const state = readState(rects);
 
-    resolver.resolveAll([presence()], getRect, { width: 1000, height: 800 }, new Set(["remote-1"]), 0);
+    resolver.resolveAll([presence()], state, 0);
     targetSpy.mockClear();
 
     resolver.resolveAll(
       [presence({ sequence: 2, cursor: { anchors: [{ id: "a", u: 0.6, v: 0.6 }] } })],
-      getRect,
-      { width: 1000, height: 800 },
-      new Set(["remote-1"]),
+      state,
       16,
     );
 
@@ -173,14 +178,15 @@ describe("RemoteResolver (spec §10 + §13)", () => {
     const { factory, targetSpy, shiftSpy } = spyInterpolator();
     const resolver = new RemoteResolver({ registry, interpolatorFactory: factory });
     const rects = new Map<Element, Rect>([[el, { left: 0, top: 0, width: 100, height: 100 }]]);
-    const getRect = rectMapGetRect(rects);
+    const state = readState(rects);
+    const p = presence();
 
-    resolver.resolveAll([presence()], getRect, { width: 1000, height: 800 }, new Set(["remote-1"]), 0);
+    resolver.resolveAll([p], state, 0);
     targetSpy.mockClear();
 
-    // local layout change moves the anchor; same presence object, no network update flag
+    // local layout change moves the anchor; same presence object, so no network update
     rects.set(el, { left: 50, top: 0, width: 100, height: 100 });
-    resolver.resolveAll([presence()], getRect, { width: 1000, height: 800 }, new Set(), 16);
+    resolver.resolveAll([p], state, 16);
 
     expect(targetSpy).not.toHaveBeenCalled();
     expect(shiftSpy).toHaveBeenCalledTimes(1);
@@ -191,10 +197,11 @@ describe("RemoteResolver (spec §10 + §13)", () => {
     const { factory, shiftSpy } = spyInterpolator();
     const resolver = new RemoteResolver({ registry, interpolatorFactory: factory });
     const rects = new Map<Element, Rect>([[el, { left: 0, top: 0, width: 100, height: 100 }]]);
-    const getRect = rectMapGetRect(rects);
+    const state = readState(rects);
+    const p = presence();
 
-    resolver.resolveAll([presence()], getRect, { width: 1000, height: 800 }, new Set(["remote-1"]), 0);
-    resolver.resolveAll([presence()], getRect, { width: 1000, height: 800 }, new Set(), 16);
+    resolver.resolveAll([p], state, 0);
+    resolver.resolveAll([p], state, 16);
 
     expect(shiftSpy).not.toHaveBeenCalled();
   });
@@ -206,13 +213,7 @@ describe("RemoteResolver (spec §10 + §13)", () => {
       visibilityPolicy: () => "hide",
     });
 
-    const { cursors } = resolver.resolveAll(
-      [presence()],
-      rectMapGetRect(rects),
-      { width: 1000, height: 800 },
-      new Set(["remote-1"]),
-      0,
-    );
+    const { cursors } = resolver.resolveAll([presence()], readState(rects), 0);
     expect(cursors[0]?.visible).toBe(false);
   });
 
@@ -228,13 +229,7 @@ describe("RemoteResolver (spec §10 + §13)", () => {
     const policy = vi.fn(() => "show" as const);
     const resolver = new RemoteResolver({ registry, visibilityPolicy: policy });
 
-    const { cursors } = resolver.resolveAll(
-      [presence()],
-      rectMapGetRect(rects),
-      { width: 1000, height: 800 },
-      new Set(["remote-1"]),
-      0,
-    );
+    const { cursors } = resolver.resolveAll([presence()], readState(rects), 0);
 
     expect(cursors[0]?.pointVisible).toBe(false);
     expect(policy).toHaveBeenCalledWith(expect.objectContaining({
@@ -249,13 +244,7 @@ describe("RemoteResolver (spec §10 + §13)", () => {
     const rects = new Map<Element, Rect>([[el, { left: 0, top: 0, width: 100, height: 100 }]]);
     const resolver = new RemoteResolver({ registry, hitTest: true });
 
-    const { cursors } = resolver.resolveAll(
-      [presence()],
-      rectMapGetRect(rects),
-      { width: 1000, height: 800 },
-      new Set(["remote-1"]),
-      0,
-    );
+    const { cursors } = resolver.resolveAll([presence()], readState(rects), 0);
 
     if (original === undefined) delete (document as { elementFromPoint?: unknown }).elementFromPoint;
     else Object.defineProperty(document, "elementFromPoint", original);
@@ -277,13 +266,7 @@ describe("RemoteResolver (spec §10 + §13)", () => {
     const rects = new Map<Element, Rect>([[el, { left: 0, top: 0, width: 100, height: 100 }]]);
     const resolver = new RemoteResolver({ registry, hitTest: true });
 
-    const { cursors } = resolver.resolveAll(
-      [presence()],
-      rectMapGetRect(rects),
-      { width: 1000, height: 800 },
-      new Set(["remote-1"]),
-      0,
-    );
+    const { cursors } = resolver.resolveAll([presence()], readState(rects), 0);
 
     if (documentHit === undefined) delete (document as { elementFromPoint?: unknown }).elementFromPoint;
     else Object.defineProperty(document, "elementFromPoint", documentHit);
@@ -298,17 +281,15 @@ describe("RemoteResolver (spec §10 + §13)", () => {
     const rects = new Map<Element, Rect>([[el, { left: 0, top: 0, width: 100, height: 100 }]]);
     // interpolator: none -> sample() always reflects the latest target immediately, making motion easy to assert
     const resolver = new RemoteResolver({ registry, interpolatorFactory: () => noneInterpolator() });
-    const getRect = rectMapGetRect(rects);
+    const state = readState(rects);
 
-    const first = resolver.resolveAll([presence()], getRect, { width: 1000, height: 800 }, new Set(["remote-1"]), 0);
+    const first = resolver.resolveAll([presence()], state, 0);
     const firstCursor = first.cursors[0];
     const firstCursorSnapshotX = firstCursor?.x;
 
     const second = resolver.resolveAll(
       [presence({ sequence: 2, cursor: { anchors: [{ id: "a", u: 0.9, v: 0.9 }] } })],
-      getRect,
-      { width: 1000, height: 800 },
-      new Set(["remote-1"]),
+      state,
       16,
     );
 
@@ -322,10 +303,10 @@ describe("RemoteResolver (spec §10 + §13)", () => {
   it("prunes interpolator state for clientIds no longer present", () => {
     const rects = new Map<Element, Rect>([[el, { left: 0, top: 0, width: 100, height: 100 }]]);
     const resolver = new RemoteResolver({ registry });
-    const getRect = rectMapGetRect(rects);
+    const state = readState(rects);
 
-    resolver.resolveAll([presence()], getRect, { width: 1000, height: 800 }, new Set(["remote-1"]), 0);
-    const { cursors } = resolver.resolveAll([], getRect, { width: 1000, height: 800 }, new Set(), 16);
+    resolver.resolveAll([presence()], state, 0);
+    const { cursors } = resolver.resolveAll([], state, 16);
     expect(cursors).toHaveLength(0);
   });
 
@@ -334,13 +315,7 @@ describe("RemoteResolver (spec §10 + §13)", () => {
     const resolver = new RemoteResolver({ registry });
     const p = presence({ context: { route: "/settings" }, user: { name: "Ada" } });
 
-    const { cursors } = resolver.resolveAll(
-      [p],
-      rectMapGetRect(rects),
-      { width: 1000, height: 800 },
-      new Set(["remote-1"]),
-      0,
-    );
+    const { cursors } = resolver.resolveAll([p], readState(rects), 0);
     expect(cursors[0]?.context).toEqual({ route: "/settings" });
     expect(cursors[0]?.user).toEqual({ name: "Ada" });
   });

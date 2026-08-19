@@ -1,10 +1,7 @@
 import type { Rect } from "./geometry";
+import type { SchedulerReadState } from "./scheduler";
 
-type StyleValues = Pick<CSSStyleDeclaration, "overflow" | "overflowX" | "overflowY">;
-type StyleReader = (element: Element) => StyleValues;
-export type ClientRectReader = (element: Element, boundingRect: Rect) => Rect;
-
-const visibleStyle: StyleValues = { overflow: "visible", overflowX: "visible", overflowY: "visible" };
+export type StyleValues = Pick<CSSStyleDeclaration, "overflow" | "overflowX" | "overflowY">;
 
 function intersect(first: Rect, second: Rect): Rect | null {
   const left = Math.max(first.left, second.left);
@@ -65,28 +62,21 @@ export function readClientRect(element: Element, rect: Rect): Rect {
   };
 }
 
-function defaultStyle(target: Element): StyleValues {
-  return target.ownerDocument.defaultView?.getComputedStyle(target) ?? visibleStyle;
-}
-
 export function computeVisibleRect(
   element: Element,
   rect: Rect,
-  getRect: (element: Element) => Rect | undefined,
-  getStyle: StyleReader = defaultStyle,
+  readState: SchedulerReadState,
   onClippingAncestor?: (element: Element) => void,
-  getClientRect: ClientRectReader = readClientRect,
 ): Rect | null {
   let visible = rect;
   let ancestor = parent(element);
   const documentElement = element.ownerDocument.documentElement;
   while (ancestor !== null && ancestor !== documentElement) {
-    const style = getStyle(ancestor);
-    if (clips(style)) {
+    if (clips(readState.getStyle(ancestor))) {
       onClippingAncestor?.(ancestor);
-      const ancestorRect = getRect(ancestor);
-      if (ancestorRect !== undefined) {
-        const clipped = intersect(visible, getClientRect(ancestor, ancestorRect));
+      // an unmeasurable ancestor cannot clip: skip it rather than intersecting against a guessed rect
+      if (readState.getRect(ancestor) !== undefined) {
+        const clipped = intersect(visible, readState.getClientRect(ancestor));
         if (clipped === null) return null;
         visible = clipped;
       }

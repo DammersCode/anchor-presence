@@ -56,7 +56,6 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
 
   let snapshot: ResolvedCursor<TContext, TUser>[] = EMPTY_SNAPSHOT as ResolvedCursor<TContext, TUser>[];
   const snapshotListeners = new Set<() => void>();
-  let lastSeenPresenceByClientId = new Map<string, unknown>();
 
   function notifySnapshotListeners(): void {
     for (const listener of snapshotListeners) listener();
@@ -66,25 +65,10 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
     hasActiveCursors: () => client.getRemoteSnapshot().some((presence) => presence.cursor !== null),
 
     compute(readState, timestampMs) {
-      const presences = client.getRemoteSnapshot();
-
-      const networkUpdated = new Set<string>();
-      const currentPresenceByClientId = new Map<string, unknown>();
-      for (const presence of presences) {
-        currentPresenceByClientId.set(presence.clientId, presence);
-        if (lastSeenPresenceByClientId.get(presence.clientId) !== presence) {
-          networkUpdated.add(presence.clientId);
-        }
-      }
-      lastSeenPresenceByClientId = currentPresenceByClientId;
-
       const { cursors, unsettled, activeAnchors } = resolver.resolveAll(
-        presences,
-        readState.getRect,
-        readState.viewportSize,
-        networkUpdated,
+        client.getRemoteSnapshot(),
+        readState,
         timestampMs,
-        readState.getClientRect,
       );
 
       const documentElement = (options.root ?? document).documentElement;

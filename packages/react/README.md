@@ -1,6 +1,6 @@
 # @anchor-presence/react
 
-The framework adapter layer of Anchor Presence: a provider component, six hooks, and two optional cursor components.
+The framework adapter layer of Anchor Presence: a provider component, seven hooks, and two optional cursor components.
 
 [![MIT](https://img.shields.io/badge/license-MIT-blue.svg)](../../LICENSE)
 
@@ -34,6 +34,7 @@ React holds no engine state of its own. It subscribes to `core` and `dom` stores
 - `LiveCursorProvider` — provides a `PresenceClient` and its `DomBinding` to the component tree
 - `useCursorAnchor(id)` — ref callback that registers and unregisters an element as a semantic anchor
 - `useRemoteCursors()` — resolved cursor snapshot for rendering
+- `useRemoteCursorsSelector(select, isEqual?)` — a derived value that rerenders only when it changes
 - `useCursorPresence()` — raw remote presence snapshot
 - `useCursorStatus()` — connection status
 - `useCursorClient()` — the underlying `PresenceClient`
@@ -43,7 +44,7 @@ React holds no engine state of its own. It subscribes to `core` and `dom` stores
 
 ## CursorLayer
 
-No cursor component is required (Invariant 9). `CursorLayer` is an optional, configurable renderer built on `useRemoteCursors`.
+No cursor component is required (Invariant 9). `CursorLayer` is an optional, configurable renderer built on `useRemoteCursorsSelector`.
 
 ```tsx
 <CursorLayer

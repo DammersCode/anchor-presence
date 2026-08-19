@@ -11,6 +11,7 @@ export {
   useCursorPresence,
   useCursorStatus,
   useRemoteCursors,
+  useRemoteCursorsSelector,
 } from "./hooks";
 
 export { CursorLayer, DefaultCursor } from "./cursor";

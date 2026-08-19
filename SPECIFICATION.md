@@ -1,6 +1,6 @@
 # Anchor Presence — Technical Specification
 
-Version: 1.3
+Version: 1.4
 Status: APPROVED by Advisor (round 2), recommendations applied
 
 ## 1. Purpose
@@ -323,6 +323,7 @@ Hooks:
 |---|---|
 | `useCursorAnchor(id)` | ref callback that registers/unregisters the element |
 | `useRemoteCursors()` | `ResolvedCursor[]` snapshot (useSyncExternalStore) |
+| `useRemoteCursorsSelector(select, isEqual?)` | a value derived from the snapshot, recomputed per frame |
 | `useCursorPresence()` | raw remote `CursorPresence[]` |
 | `useCursorStatus()` | `ConnectionStatus` |
 | `useCursorClient()` | the client instance |
@@ -330,13 +331,15 @@ Hooks:
 
 `useCursorAnchor` returns a stable ref callback; on element change it unregisters the old element and registers the new one. Cursor movement updates flow only to components using `useRemoteCursors`; the provider never rerenders the app tree per cursor frame.
 
+`useRemoteCursorsSelector` narrows that flow further. It applies `select` to each snapshot and rerenders the component only when `isEqual` reports the selected value changed. `isEqual` defaults to `Object.is`. When the value is equal, the hook returns the previous reference, so a derived array or set keeps its identity. The server snapshot is `select([])`, computed once. The caller must keep `select` and `isEqual` stable across renders, for example with `useCallback` or a module-level function.
+
 SSR: the client is created by the consumer in browser-only code, or the provider accepts `client: null` during SSR; every hook has a server snapshot (`[]`, `"disconnected"`). No module-level DOM access in any package.
 
 ### 14.1 Optional cursor components
 
 `@anchor-presence/react` exports `CursorLayer` and `DefaultCursor`. Both are optional. A consumer can render remote cursors with `useRemoteCursors` directly instead, per Invariant 9.
 
-`CursorLayer` calls `useRemoteCursors` once. For each visible, unfiltered cursor, it renders one package-owned root `div`. The root style sets `position: fixed`, `left: 0`, `top: 0`, `pointerEvents: "none"`, and a `transform` from the resolved coordinates. The root carries `aria-hidden="true"` and four stable data attributes: `data-anchor-presence-cursor`, `data-anchor-presence-client-id`, `data-anchor-presence-tier`, and `data-anchor-presence-anchor` (empty string when `anchorId` is `null`).
+`CursorLayer` calls `useRemoteCursorsSelector` once, with a selector that keeps the visible, unfiltered cursors. The selection compares element by element, so an unchanged list keeps its identity. For each selected cursor, `CursorLayer` renders one package-owned root `div`. The root style sets `position: fixed`, `left: 0`, `top: 0`, `pointerEvents: "none"`, and a `transform` from the resolved coordinates. The root carries `aria-hidden="true"` and four stable data attributes: `data-anchor-presence-cursor`, `data-anchor-presence-client-id`, `data-anchor-presence-tier`, and `data-anchor-presence-anchor` (empty string when `anchorId` is `null`).
 
 ```ts
 type CursorLayerProps<TContext = unknown, TUser = unknown> = {

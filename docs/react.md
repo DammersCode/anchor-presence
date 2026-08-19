@@ -1,6 +1,6 @@
 # React Adapter
 
-`@anchor-presence/react` provides a provider component, six hooks, and two optional cursor components. It holds no engine state; it subscribes to `core` and `dom` stores with `useSyncExternalStore`.
+`@anchor-presence/react` provides a provider component, seven hooks, and two optional cursor components. It holds no engine state; it subscribes to `core` and `dom` stores with `useSyncExternalStore`.
 
 ## Install
 
@@ -61,6 +61,7 @@ Pass `client={null}` during server-side rendering. See "SSR" below.
 |---|---|
 | `useCursorAnchor(id)` | a ref callback that registers and unregisters the element |
 | `useRemoteCursors()` | `ResolvedCursor[]` snapshot |
+| `useRemoteCursorsSelector(select, isEqual?)` | a value derived from the snapshot |
 | `useCursorPresence()` | raw remote `CursorPresence[]` |
 | `useCursorStatus()` | `ConnectionStatus` |
 | `useCursorClient()` | the `PresenceClient` instance, or `null` |
@@ -108,6 +109,42 @@ function useRemoteCursors<TContext = unknown, TUser = unknown>(): ResolvedCursor
 Returns the current resolved-cursor snapshot: `{ clientId, x, y, visible, anchorId, tier, context?, user? }[]`. Values are receiver-viewport pixels. Position with `position: fixed`.
 
 Cursor movement updates flow only to components that call this hook. The provider never rerenders the rest of the app tree per cursor frame.
+
+### useRemoteCursorsSelector
+
+```ts
+function useRemoteCursorsSelector<TSelected, TContext = unknown, TUser = unknown>(
+  select: (cursors: ResolvedCursor<TContext, TUser>[]) => TSelected,
+  isEqual?: (a: TSelected, b: TSelected) => boolean, // default Object.is
+): TSelected;
+```
+
+`useRemoteCursors` rerenders its component on every cursor frame, because each frame publishes a new array. Use this hook when a component needs a small derived value instead of the full snapshot. It applies `select` to each snapshot and rerenders only when `isEqual` reports the selected value changed.
+
+Keep `select` and `isEqual` stable across renders. Declare them at module level, or wrap them in `useCallback`.
+
+A presence indicator needs only the set of clients whose cursor is clipped out of view. Cursors move every frame, but that set changes rarely:
+
+```tsx
+function selectClippedClientIds(cursors: ResolvedCursor[]): ReadonlySet<string> {
+  const clipped = new Set<string>();
+  for (const cursor of cursors) {
+    if (cursor.tier === "anchor" && !cursor.pointVisible) clipped.add(cursor.clientId);
+  }
+  return clipped;
+}
+
+function sameClientIds(a: ReadonlySet<string>, b: ReadonlySet<string>): boolean {
+  return a.size === b.size && [...a].every((id) => b.has(id));
+}
+
+function PresencePill() {
+  const clipped = useRemoteCursorsSelector(selectClippedClientIds, sameClientIds);
+  return <span>{clipped.size} out of view</span>;
+}
+```
+
+`select` builds a new `Set` each frame, so the default `Object.is` would rerender every frame. The `sameClientIds` comparison stops that. When the membership is unchanged, the hook returns the previous `Set` reference, which also keeps any dependent `useMemo` or `memo` stable.
 
 ### useCursorPresence
 
@@ -173,7 +210,7 @@ function App() {
 }
 ```
 
-`CursorLayer` calls `useRemoteCursors` once. It renders one fixed-position root for each visible cursor, and it renders `DefaultCursor` inside that root by default.
+`CursorLayer` calls `useRemoteCursorsSelector` once, with a selector that keeps the visible, unfiltered cursors. It renders one fixed-position root for each selected cursor, and it renders `DefaultCursor` inside that root by default.
 
 ### Label and color mapping
 

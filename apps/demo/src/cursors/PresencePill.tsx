@@ -1,44 +1,21 @@
-import { useCallback, useContext, useRef, useSyncExternalStore } from "react";
-import {
-  LiveCursorContext,
-  type LiveCursorContextValue,
-  useCursorPresence,
-  useCursorStatus,
-} from "@anchor-presence/react";
+import { useCursorPresence, useCursorStatus, useRemoteCursorsSelector } from "@anchor-presence/react";
+import type { ResolvedCursor } from "@anchor-presence/dom";
 import type { ConnectionStatus } from "@anchor-presence/core";
 import { Avatar } from "../components/ui/avatar";
 import { DEFAULT_CURSOR_COLOR, isKnownCursorColor } from "./setup";
 import type { DemoContext, DemoUser } from "./setup";
 
-const EMPTY_CLIPPED_CLIENT_IDS: ReadonlySet<string> = new Set();
-
-function membershipIsUnchanged(
-  cursors: ReturnType<NonNullable<LiveCursorContextValue<DemoContext, DemoUser>["binding"]>["getSnapshot"]>,
-  previous: ReadonlySet<string>,
-): boolean {
-  let size = 0;
+function selectClippedClientIds(cursors: ResolvedCursor<DemoContext, DemoUser>[]): ReadonlySet<string> {
+  const clipped = new Set<string>();
   for (const cursor of cursors) {
-    if (cursor.tier !== "anchor" || cursor.pointVisible) continue;
-    size += 1;
-    if (!previous.has(cursor.clientId)) return false;
+    if (cursor.tier === "anchor" && !cursor.pointVisible) clipped.add(cursor.clientId);
   }
-  return size === previous.size;
+  return clipped;
 }
 
-function selectClippedClientIds(
-  binding: LiveCursorContextValue<DemoContext, DemoUser>["binding"],
-  previous: ReadonlySet<string>,
-): ReadonlySet<string> {
-  const cursors = binding?.getSnapshot() ?? [];
-  if (membershipIsUnchanged(cursors, previous)) return previous;
-  const next = new Set<string>();
-  for (const cursor of cursors) {
-    if (cursor.tier === "anchor" && !cursor.pointVisible) next.add(cursor.clientId);
-  }
-  return next.size === 0 ? EMPTY_CLIPPED_CLIENT_IDS : next;
+function sameClientIds(a: ReadonlySet<string>, b: ReadonlySet<string>): boolean {
+  return a.size === b.size && [...a].every((id) => b.has(id));
 }
-
-const getEmptyClippedClientIds = (): ReadonlySet<string> => EMPTY_CLIPPED_CLIENT_IDS;
 
 const STATUS_LABEL: Record<ConnectionStatus, string> = {
   connecting: "Connecting…",
@@ -57,18 +34,7 @@ const STATUS_DOT: Record<ConnectionStatus, string> = {
 export function PresencePill() {
   const status = useCursorStatus();
   const presence = useCursorPresence<DemoContext, DemoUser>();
-  const { binding } = useContext(LiveCursorContext) as LiveCursorContextValue<DemoContext, DemoUser>;
-  const clippedClientIdsRef = useRef<ReadonlySet<string>>(EMPTY_CLIPPED_CLIENT_IDS);
-  const subscribe = useCallback(
-    (listener: () => void) => binding?.subscribe(listener) ?? (() => {}),
-    [binding],
-  );
-  const getClippedClientIds = useCallback(() => {
-    const next = selectClippedClientIds(binding, clippedClientIdsRef.current);
-    clippedClientIdsRef.current = next;
-    return next;
-  }, [binding]);
-  const clippedClientIds = useSyncExternalStore(subscribe, getClippedClientIds, getEmptyClippedClientIds);
+  const clippedClientIds = useRemoteCursorsSelector(selectClippedClientIds, sameClientIds);
 
   return (
     <div data-anchor="topbar.presence" className="flex items-center gap-3 text-sm text-gray-500">

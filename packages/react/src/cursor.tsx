@@ -1,9 +1,14 @@
+import { useCallback } from "react";
 import type { ComponentPropsWithoutRef, CSSProperties, ReactNode } from "react";
 import type { ResolvedCursor } from "@anchor-presence/dom";
-import { useRemoteCursors } from "./hooks";
+import { useRemoteCursorsSelector } from "./hooks";
 
 const DEFAULT_COLOR = "#6b7280";
 const DEFAULT_Z_INDEX = 50;
+
+function sameCursors(a: readonly unknown[], b: readonly unknown[]): boolean {
+  return a.length === b.length && a.every((item, index) => item === b[index]);
+}
 
 export type CursorRenderProps<TContext = unknown, TUser = unknown> = {
   cursor: ResolvedCursor<TContext, TUser>;
@@ -72,10 +77,13 @@ export function CursorLayer<TContext = unknown, TUser = unknown>(
   props: CursorLayerProps<TContext, TUser>,
 ): ReactNode {
   const { getLabel, getColor, filterCursor, getCursorProps, renderCursor } = props;
-  const cursors = useRemoteCursors<TContext, TUser>();
 
-  const visible = cursors.filter((cursor) => cursor.visible);
-  const filtered = filterCursor ? visible.filter(filterCursor) : visible;
+  const select = useCallback(
+    (cursors: ResolvedCursor<TContext, TUser>[]) =>
+      cursors.filter((cursor) => cursor.visible && (filterCursor?.(cursor) ?? true)),
+    [filterCursor],
+  );
+  const filtered = useRemoteCursorsSelector(select, sameCursors);
 
   return (
     <>

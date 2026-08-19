@@ -89,6 +89,7 @@ export function makeFakeBinding<TContext = unknown, TUser = unknown>(): {
   binding: DomBinding<TContext, TUser>;
   publish: (next: ResolvedCursor<TContext, TUser>[]) => void;
   registry: AnchorRegistry & { registrations: Map<string, Element> };
+  listenerCount: () => number;
 } {
   const registry = makeFakeRegistry();
   let snapshot: ResolvedCursor<TContext, TUser>[] = [];
@@ -114,5 +115,6 @@ export function makeFakeBinding<TContext = unknown, TUser = unknown>(): {
       snapshot = next;
       for (const listener of listeners) listener();
     },
+    listenerCount: () => listeners.size,
   };
 }

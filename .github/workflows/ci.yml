@@ -22,6 +22,8 @@ jobs:
           key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
       - run: bunx tsc --build packages/core packages/dom packages/react
       - run: bunx vitest run
+      - run: bunx vitest bench --project core --run
+        continue-on-error: true # report-only: benches inform, tests gate (plan 009)
       - run: bunx vite build
         working-directory: apps/demo
       - run: bunx playwright install --with-deps chromium firefox webkit

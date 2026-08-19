@@ -292,9 +292,9 @@ export function BenchPage() {
         </div>
 
         <div className="grid grid-cols-3 gap-4 rounded-lg border border-gray-200 bg-white p-4">
-          <Stat label="Mean pass" value={`${stats.mean.toFixed(3)} ms`} />
-          <Stat label="p95 pass" value={`${stats.p95.toFixed(3)} ms`} />
-          <Stat label="Samples" value={String(stats.count)} />
+          <Stat label="Mean pass" value={`${stats.mean.toFixed(3)} ms`} testId="bench-mean" />
+          <Stat label="p95 pass" value={`${stats.p95.toFixed(3)} ms`} testId="bench-p95" />
+          <Stat label="Samples" value={String(stats.count)} testId="bench-count" />
         </div>
 
         <div className="grid grid-cols-3 gap-4 rounded-lg border border-amber-200 bg-amber-50 p-4">
@@ -332,11 +332,13 @@ export function BenchPage() {
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ label, value, testId }: { label: string; value: string; testId?: string }) {
   return (
     <div className="flex flex-col">
       <span className="text-xs uppercase tracking-wide text-gray-400">{label}</span>
-      <span className="text-xl font-semibold tabular-nums">{value}</span>
+      <span className="text-xl font-semibold tabular-nums" data-testid={testId}>
+        {value}
+      </span>
     </div>
   );
 }

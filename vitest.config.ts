@@ -8,6 +8,9 @@ export default defineConfig({
           name: "core",
           environment: "node",
           include: ["packages/core/test/**/*.test.ts"],
+          benchmark: {
+            include: ["packages/core/bench/**/*.bench.ts"],
+          },
         },
       },
       {

@@ -1,6 +1,26 @@
 {
   "name": "@anchor-presence/core",
   "version": "0.1.0",
+  "description": "Framework-agnostic live cursor presence engine",
+  "license": "MIT",
+  "author": "DammersCode",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DammersCode/anchor-presence.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://github.com/DammersCode/anchor-presence#readme",
+  "keywords": [
+    "live-cursors",
+    "presence",
+    "collaboration",
+    "multiplayer",
+    "cursor",
+    "realtime"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "sideEffects": false,
   "main": "./dist/index.js",

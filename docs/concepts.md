@@ -77,3 +77,7 @@ Every resolved cursor carries a tier, one of three values:
 The resolution order is fixed: exact anchor, then nearest registered parent anchor, then a larger region anchor, then viewport fallback, then the visibility policy decides whether to show a hidden cursor at all (Invariant 4).
 
 A visibility policy runs after tier resolution and can still hide an `anchor` or `viewport` tier cursor for application reasons. See `docs/ui-context.md`.
+
+## Interpolation
+
+The receiver eases a remote cursor from its last position to its new one, instead of jumping. The library ships two styles: `none` (snap) and `linear` (fixed-duration ease). Write a custom style, such as a spring, against the public `Interpolator` interface. See "Custom interpolation" in `docs/react.md` for the interface and the settled-flag rule.

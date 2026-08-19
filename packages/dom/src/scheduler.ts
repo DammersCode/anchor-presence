@@ -1,8 +1,8 @@
 // Geometry scheduler — spec §11
 
 import type { Rect, ViewportSize } from "./geometry";
-import { readClientRect } from "./occlusion";
 import type { StyleValues } from "./occlusion";
+import { createFrameCache } from "./frameCache";
 
 export type ResizeObserverLike = {
   observe(target: Element): void;
@@ -94,14 +94,10 @@ export function createGeometryScheduler<TSnapshot>(
   const transitionEntries = new Map<EventTarget, Map<string, { safetyTimer: ReturnType<typeof setTimeout> }>>();
   let openTransitionCount = 0;
 
-  let lastRectCache: Map<Element, Rect> | null = null;
-  let lastClientRectCache: Map<Element, Rect> | null = null;
-  let lastViewportSize: ViewportSize | null = null;
-
-  function measureRect(element: Element): Rect {
-    const r = element.getBoundingClientRect();
-    return { left: r.left, top: r.top, width: r.width, height: r.height };
-  }
+  const frameCache = createFrameCache({
+    window: win,
+    getStyle: (element) => (element.ownerDocument.defaultView ?? win).getComputedStyle(element),
+  });
 
   function scheduleFrame(): void {
     if (disposed || rafHandle !== null || !attached) return;
@@ -119,53 +115,10 @@ export function createGeometryScheduler<TSnapshot>(
     const shouldRemeasure = dirty || openTransitionCount > 0;
     dirty = false;
 
-    let rectCache: Map<Element, Rect>;
-    let clientRectCache: Map<Element, Rect>;
-    let viewportSize: ViewportSize;
-    if (shouldRemeasure || lastRectCache === null || lastClientRectCache === null || lastViewportSize === null) {
-      rectCache = new Map<Element, Rect>();
-      clientRectCache = new Map<Element, Rect>();
-      viewportSize = { width: win.innerWidth, height: win.innerHeight };
-      // pre-measure every candidate anchor once (READ phase) before any compute/consumer code runs
-      for (const element of observedAnchors) {
-        const rect = measureRect(element);
-        rectCache.set(element, rect);
-        clientRectCache.set(element, readClientRect(element, rect));
-      }
-    } else {
-      // interpolation-only pass: reuse the cached rects from the last read phase, no re-measure
-      rectCache = lastRectCache;
-      clientRectCache = lastClientRectCache;
-      viewportSize = lastViewportSize;
-    }
-
-    const readState: SchedulerReadState = {
-      getRect(element) {
-        let rect = rectCache.get(element);
-        if (rect === undefined) {
-          rect = measureRect(element);
-          rectCache.set(element, rect);
-        }
-        return rect;
-      },
-      getClientRect(element) {
-        let rect = clientRectCache.get(element);
-        if (rect === undefined) {
-          rect = readClientRect(element, readState.getRect(element)!);
-          clientRectCache.set(element, rect);
-        }
-        return rect;
-      },
-      getStyle(element) {
-        return (element.ownerDocument.defaultView ?? win).getComputedStyle(element);
-      },
-      viewportSize,
-    };
+    // interpolation-only pass: reuse the last read phase's rects, no re-measure
+    const readState = (shouldRemeasure ? null : frameCache.reuse()) ?? frameCache.measure(observedAnchors);
 
     const result = options.compute(readState, timestampMs);
-    lastRectCache = rectCache;
-    lastClientRectCache = clientRectCache;
-    lastViewportSize = viewportSize;
     syncObservedAnchors(result.activeAnchors);
     options.notify(result.snapshot);
 
@@ -330,9 +283,7 @@ export function createGeometryScheduler<TSnapshot>(
       rafHandle = null;
     }
     dirty = false;
-    lastRectCache = null;
-    lastClientRectCache = null;
-    lastViewportSize = null;
+    frameCache.clear();
   }
 
   function syncActivation(): void {
@@ -365,7 +316,7 @@ export function createGeometryScheduler<TSnapshot>(
     },
 
     getCachedRect(element) {
-      return lastRectCache?.get(element);
+      return frameCache.getCachedRect(element);
     },
 
     dispose() {

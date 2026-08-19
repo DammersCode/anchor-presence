@@ -8,9 +8,9 @@ Three separate causes produce the same symptom.
 
 **The anchor is not registered.** If the sender's cursor sits over an element with no matching anchor ID on the receiver, and the fallback chain and viewport both miss, the resolution tier is `hidden`. Register the anchor with `useCursorAnchor` (React) or `registry.register()` (dom), and make sure both sender and receiver register the same anchor ID for the same semantic location.
 
-**A visibility policy hides it.** A custom `VisibilityPolicy` can return `"hide"` for a tier that otherwise shows. Check the policy passed to `bindingOptions.visibilityPolicy` or `DomBindingOptions.visibilityPolicy`. The default policy hides only the `hidden` tier; anything else hiding an `anchor` or `viewport` tier cursor is application logic. See `docs/ui-context.md`.
+**A visibility policy hides it.** A custom `VisibilityPolicy` can return `"hide"` for a tier that otherwise shows. Make sure the policy passed to `bindingOptions.visibilityPolicy` or `DomBindingOptions.visibilityPolicy` is not the cause. The default policy hides only the `hidden` tier; anything else hiding an `anchor` or `viewport` tier cursor is application logic. See `docs/ui-context.md`.
 
-**The presence is stale.** The store removes a remote client after `staleTimeoutMs` (default 70 000 ms) with no message. A sender on a backgrounded tab still sends a heartbeat every `heartbeatMs` (default 10 000 ms), but a browser can clamp hidden-tab timers to one minute; a very long background period can still expire the entry. Confirm the sender tab is not fully suspended, and confirm the transport is still connected on both sides.
+**The presence is stale.** The store removes a remote client after `staleTimeoutMs` (default 70 000 ms) with no message. A sender on a backgrounded tab still sends a heartbeat every `heartbeatMs` (default 10 000 ms), but a browser can clamp hidden-tab timers to one minute; a very long background period can still expire the entry. Make sure the sender tab is not fully suspended, and make sure the transport is still connected on both sides.
 
 ## Cursor floats over empty space
 
@@ -59,4 +59,4 @@ Unit tests run in jsdom, which lacks real layout: `getBoundingClientRect()` alwa
 
 Because of this, `dom` and `react` unit tests use injectable observer factories and mocked rects to test scheduler and resolver logic without real layout. Real cross-layout correctness (wrapping, sidebar states, element-size proportionality) is owned by the Playwright suite, which runs against Chromium, Firefox, and WebKit.
 
-If a scheduler or resolver behavior looks correct in a jsdom unit test but wrong in the browser, suspect a jsdom API gap first: confirm the real browser has the observer or CSS feature the test mocked, and confirm the Playwright suite covers the same scenario.
+If a scheduler or resolver behavior looks correct in a jsdom unit test but wrong in the browser, suspect a jsdom API gap first: make sure the real browser has the observer or CSS feature the test mocked, and make sure the Playwright suite covers the same scenario.

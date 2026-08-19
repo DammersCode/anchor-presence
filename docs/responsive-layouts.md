@@ -51,7 +51,7 @@ If the collapsed sidebar hides an item entirely (no matching DOM element), the f
 
 ## How element-size differences resolve
 
-Two clients can render the identical anchor at different sizes because of font settings, zoom, container queries, or a different viewport. Because `u`/`v` are proportions of the anchor's own rectangle, not absolute pixels, this size difference never causes a visible drift. The Playwright cross-layout test suite asserts this proportionality to within 2 pixels across different viewport sizes and sidebar states.
+Two clients can render the identical anchor at different sizes because of font configuration, zoom, container queries, or a different viewport. Because `u`/`v` are proportions of the anchor's own rectangle, not absolute pixels, this size difference never causes a visible drift. The Playwright cross-layout test suite asserts this proportionality to within 2 pixels across different viewport sizes and sidebar states.
 
 ## When no anchor matches
 

@@ -1,16 +1,19 @@
 # Anchor Presence — Demo
 
 A Vite + React admin dashboard that shows live remote cursors positioned by semantic DOM anchor
-(`data-anchor` → `useCursorAnchor`), not by raw screen coordinates. See `SPECIFICATION.md` for the
-full protocol.
+(`data-anchor` → `useCursorAnchor`), not by raw screen coordinates.
+
+[![MIT](https://img.shields.io/badge/license-MIT-blue.svg)](../../LICENSE)
 
 This app consumes the built `dist/` output of `@anchor-presence/core`, `@anchor-presence/dom`, and
 `@anchor-presence/react` (package `exports` point at `dist/`, not `src/`). Build those packages
-before running the demo:
+before running the demo.
 
 ```sh
 bunx tsc --build packages/react   # also builds core and dom via project references
 ```
+
+See `SPECIFICATION.md` in the repository root for the full protocol.
 
 ## Run it
 
@@ -20,7 +23,7 @@ bun run --cwd apps/server dev     # relay on :8787
 bun run --cwd apps/demo dev       # vite dev server on :5173
 ```
 
-Open two browser windows with different `?name=` values so you can tell the cursors apart, e.g.:
+Open two browser windows with different `?name=` values so you can tell the cursors apart, for example:
 
 ```
 http://localhost:5173/?name=Ari

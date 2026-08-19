@@ -140,7 +140,7 @@ See `examples/socketio/README.md` for the matching relay server and setup steps.
 
 ## SignalR adapter sketch
 
-This is a sketch, not tested. It targets `@microsoft/signalr` 8.x. Verify it against a real
+This is a sketch, not tested. It targets `@microsoft/signalr` 8.x. Make sure it works against a real
 hub before you ship it.
 
 ```ts

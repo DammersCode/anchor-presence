@@ -31,7 +31,7 @@ export default defineConfig({
         test: {
           name: "demo",
           environment: "node",
-          include: ["apps/demo/src/cursors/visibilityPolicy.test.ts"],
+          include: ["apps/demo/src/cursors/**/*.test.ts"],
         },
       },
       {

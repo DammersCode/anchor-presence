@@ -5,7 +5,8 @@
   "workspaces": [
     "packages/*",
     "apps/*",
-    "examples/*"
+    "examples/*",
+    "examples/signalr/client"
   ],
   "scripts": {
     "build": "bun run --filter '@anchor-presence/*' build",

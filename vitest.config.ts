@@ -41,6 +41,13 @@ export default defineConfig({
           include: ["examples/socketio/**/*.test.ts"],
         },
       },
+      {
+        test: {
+          name: "signalr-example",
+          environment: "node",
+          include: ["examples/signalr/**/*.test.ts"],
+        },
+      },
     ],
   },
 });

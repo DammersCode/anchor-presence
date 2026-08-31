@@ -23,6 +23,7 @@ before starting, honor its STOP conditions, and update your row when done.
 | 011 | Agent skill for skills.sh (skills/anchor-presence) | P2 | S | 010 | DONE |
 | 012 | Architecture deepening (six review candidates) | P2 | L | 010 | DONE |
 | 012 | Architecture deepening (6 candidates from 2026-08-19 review) | P2 | L | 010 | DONE |
+| 013 | Fix reference navigation (F12) in the VS Code tooling | P3 | S | — | TODO |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale)
 

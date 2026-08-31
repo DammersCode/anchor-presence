@@ -1,0 +1,17 @@
+{
+  // Pin the editor to the workspace TypeScript (5.9.3, the version CI and all
+  // local verification use) so Go to Definition / References behave identically
+  // to the terminal `tsc --build` (see plans/005 for TS 6/7 regressions).
+  "typescript.tsdk": "node_modules/typescript/lib",
+  // Keep the Windows file watcher and the search index out of gitignored e2e
+  // build output and the bun cache; they hold hundreds of files.
+  "files.watcherExclude": {
+    "**/test-results/**": true,
+    "**/playwright-report/**": true,
+    "**/.bun/**": true
+  },
+  "search.exclude": {
+    "**/test-results/**": true,
+    "**/playwright-report/**": true
+  }
+}

@@ -8,22 +8,22 @@ before starting, honor its STOP conditions, and update your row when done.
 
 ## Execution order & status
 
-| Plan | Title | Priority | Effort | Depends on | Status |
-|------|-------|----------|--------|------------|--------|
-| 001 | CI workflow (GitHub Actions, full gate) | P1 | S | — | DONE |
-| 002 | npm publish readiness + MIT license | P1 | M | 001 | DONE |
-| 003 | Clipped-anchor occlusion detection + precision tests | P1 | L | 001 | DONE |
-| 004 | Pointer rect-cache reuse + bench resize/nested-scroll | P2 | M | 001 (after 003) | DONE |
-| 005 | Dependency updates (waves; TS 7 attempt) | P2 | M | 001 | DONE (waves 1-2 landed; 3-4 reverted, see notes) |
-| 006 | Socket.IO transport example (tested) + SignalR recipe check | P2 | M | 001 | DONE |
-| 007 | Demo interpolation style switcher (spring stays demo-side) | P3 | M | — | DONE |
-| 008 | README/docs restyle (use-signalr house style, STE) | P3 | M | 002; run LAST | DONE |
-| 009 | Performance verification: core + react budgets, benches, CI gate | P2 | M | 001 (after 004) | DONE |
-| 010 | Configurable cursor components in the React npm package | P1 | M | 002, 009 | DONE |
-| 011 | Agent skill for skills.sh (skills/anchor-presence) | P2 | S | 010 | DONE |
-| 012 | Architecture deepening (six review candidates) | P2 | L | 010 | DONE |
-| 012 | Architecture deepening (6 candidates from 2026-08-19 review) | P2 | L | 010 | DONE |
-| 013 | Fix reference navigation (F12) in the VS Code tooling | P3 | S | — | TODO |
+| Plan | Title                                                            | Priority | Effort | Depends on      | Status                                           |
+| ---- | ---------------------------------------------------------------- | -------- | ------ | --------------- | ------------------------------------------------ |
+| 001  | CI workflow (GitHub Actions, full gate)                          | P1       | S      | —               | DONE                                             |
+| 002  | npm publish readiness + MIT license                              | P1       | M      | 001             | DONE                                             |
+| 003  | Clipped-anchor occlusion detection + precision tests             | P1       | L      | 001             | DONE                                             |
+| 004  | Pointer rect-cache reuse + bench resize/nested-scroll            | P2       | M      | 001 (after 003) | DONE                                             |
+| 005  | Dependency updates (waves; TS 7 attempt)                         | P2       | M      | 001             | DONE (waves 1-2 landed; 3-4 reverted, see notes) |
+| 006  | Socket.IO transport example (tested) + SignalR recipe check      | P2       | M      | 001             | DONE                                             |
+| 007  | Demo interpolation style switcher (spring stays demo-side)       | P3       | M      | —               | DONE                                             |
+| 008  | README/docs restyle (use-signalr house style, STE)               | P3       | M      | 002; run LAST   | DONE                                             |
+| 009  | Performance verification: core + react budgets, benches, CI gate | P2       | M      | 001 (after 004) | DONE                                             |
+| 010  | Configurable cursor components in the React npm package          | P1       | M      | 002, 009        | DONE                                             |
+| 011  | Agent skill for skills.sh (skills/anchor-presence)               | P2       | S      | 010             | DONE                                             |
+| 012  | Architecture deepening (six review candidates)                   | P2       | L      | 010             | DONE                                             |
+| 012  | Architecture deepening (6 candidates from 2026-08-19 review)     | P2       | L      | 010             | DONE                                             |
+| 013  | Fix reference navigation (F12) in the VS Code tooling            | P3       | S      | —               | TODO                                             |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale)
 

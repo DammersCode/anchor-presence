@@ -61,7 +61,9 @@ import { io } from "socket.io-client";
 import { createSocketIoTransport } from "./transport";
 
 const socket = io("https://your-server.example", { query: { room: "main" } });
-const client = createPresenceClient({ transport: createSocketIoTransport(socket) });
+const client = createPresenceClient({
+  transport: createSocketIoTransport(socket),
+});
 ```
 
 ## Room routing

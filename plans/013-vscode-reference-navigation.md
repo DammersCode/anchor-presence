@@ -90,11 +90,11 @@ typecheck). Verification: Terminal > Run Task lists all four.
 
 ### Gate
 
-| Command | Expected |
-|---|---|
-| `git status --short` | only `.vscode/`, `plans/README.md`, and this file |
-| F12 / Shift+F12 in `packages/core`/`apps/demo` (editor) | navigates, no "No definitions found" |
-| `bun run typecheck` | exit 0 (the tsdk pin must not break the editor; terminal tsc unchanged) |
+| Command                                                 | Expected                                                                |
+| ------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `git status --short`                                    | only `.vscode/`, `plans/README.md`, and this file                       |
+| F12 / Shift+F12 in `packages/core`/`apps/demo` (editor) | navigates, no "No definitions found"                                    |
+| `bun run typecheck`                                     | exit 0 (the tsdk pin must not break the editor; terminal tsc unchanged) |
 
 ## Scope
 

@@ -1,11 +1,21 @@
 import { useCursorAnchor } from "@anchor-presence/react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../ui/table";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { orders, type Order, type OrderStatus } from "../../data/orders";
 
-const STATUS_VARIANT: Record<OrderStatus, "success" | "warning" | "danger" | "neutral"> = {
+const STATUS_VARIANT: Record<
+  OrderStatus,
+  "success" | "warning" | "danger" | "neutral"
+> = {
   paid: "success",
   pending: "warning",
   refunded: "neutral",
@@ -17,7 +27,12 @@ export interface OrdersTableProps {
   onDelete: (orderId: string) => void;
 }
 
-function OrderRow({ order, index, onView, onDelete }: {
+function OrderRow({
+  order,
+  index,
+  onView,
+  onDelete,
+}: {
   order: Order;
   index: number;
   onView: (orderId: string) => void;
@@ -41,10 +56,17 @@ function OrderRow({ order, index, onView, onDelete }: {
       <TableCell ref={customerAnchor} className="min-w-32">
         <div className="flex flex-col">
           <span className="text-gray-900">{order.customer}</span>
-          <span className="text-xs text-gray-500 sm:text-gray-400">{order.email}</span>
+          <span className="text-xs text-gray-500 sm:text-gray-400">
+            {order.email}
+          </span>
         </div>
       </TableCell>
-      <TableCell ref={dateAnchor} className="hidden whitespace-nowrap sm:table-cell">{order.date}</TableCell>
+      <TableCell
+        ref={dateAnchor}
+        className="hidden whitespace-nowrap sm:table-cell"
+      >
+        {order.date}
+      </TableCell>
       <TableCell ref={statusAnchor}>
         <Badge variant={STATUS_VARIANT[order.status]}>{order.status}</Badge>
       </TableCell>
@@ -53,10 +75,20 @@ function OrderRow({ order, index, onView, onDelete }: {
       </TableCell>
       <TableCell ref={actionsAnchor} className="text-right">
         <div className="flex justify-end gap-2">
-          <Button ref={viewAnchor} variant="outline" size="sm" onClick={() => onView(order.id)}>
+          <Button
+            ref={viewAnchor}
+            variant="outline"
+            size="sm"
+            onClick={() => onView(order.id)}
+          >
             View
           </Button>
-          <Button ref={deleteAnchor} variant="destructive" size="sm" onClick={() => onDelete(order.id)}>
+          <Button
+            ref={deleteAnchor}
+            variant="destructive"
+            size="sm"
+            onClick={() => onDelete(order.id)}
+          >
             Delete
           </Button>
         </div>
@@ -72,7 +104,9 @@ export function OrdersTable({ onView, onDelete }: OrdersTableProps) {
   return (
     <Card ref={ordersAnchor}>
       <CardHeader>
-        <CardTitle className="text-base font-semibold text-gray-900">Orders</CardTitle>
+        <CardTitle className="text-base font-semibold text-gray-900">
+          Orders
+        </CardTitle>
       </CardHeader>
       <CardContent className="overflow-hidden p-0">
         <Table ref={tableAnchor} className="min-w-[28rem]">
@@ -88,7 +122,13 @@ export function OrdersTable({ onView, onDelete }: OrdersTableProps) {
           </TableHeader>
           <TableBody>
             {orders.map((order, index) => (
-              <OrderRow key={order.id} order={order} index={index} onView={onView} onDelete={onDelete} />
+              <OrderRow
+                key={order.id}
+                order={order}
+                index={index}
+                onView={onView}
+                onDelete={onDelete}
+              />
             ))}
           </TableBody>
         </Table>

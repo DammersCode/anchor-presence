@@ -8,11 +8,15 @@ import { getPresenceClient } from "./cursors/setup";
 import { SignalRProvider, useSignalR, SERVER_URL } from "./signalr";
 import { createVisibilityPolicy } from "./cursors/visibilityPolicy";
 import type { LocalViewState } from "./cursors/visibilityPolicy";
-import { interpolatorRegistry, type InterpolatorStyle } from "./cursors/interpolators";
+import {
+  interpolatorRegistry,
+  type InterpolatorStyle,
+} from "./cursors/interpolators";
 import { useInterpolatorStyle } from "./useInterpolatorStyle";
 
 // Query-param routing (?page=bench) — no router dependency, per requirement 7.
-const isBenchRoute = new URLSearchParams(window.location.search).get("page") === "bench";
+const isBenchRoute =
+  new URLSearchParams(window.location.search).get("page") === "bench";
 
 // App's context effect is the single writer; the policy reads it synchronously each resolution.
 const localViewState: LocalViewState = { page: null, settingsOpen: false };

@@ -25,8 +25,13 @@ export const CURSOR_PALETTE = [
 
 export const DEFAULT_CURSOR_COLOR = "#6b7280"; // gray-500 fallback for unrecognized colors
 
-export function isKnownCursorColor(color: unknown): color is (typeof CURSOR_PALETTE)[number] {
-  return typeof color === "string" && (CURSOR_PALETTE as readonly string[]).includes(color);
+export function isKnownCursorColor(
+  color: unknown,
+): color is (typeof CURSOR_PALETTE)[number] {
+  return (
+    typeof color === "string" &&
+    (CURSOR_PALETTE as readonly string[]).includes(color)
+  );
 }
 
 function hashString(value: string): number {
@@ -57,7 +62,10 @@ let client: PresenceClient<DemoContext, DemoUser> | null = null;
 /** Module-safe: constructs the transport/client lazily so importing this module never touches the network at eval time. */
 export function getPresenceClient(): PresenceClient<DemoContext, DemoUser> {
   if (client !== null) return client;
-  const socket = io(relayUrl, { query: { room: localRoom }, transports: ["websocket"] });
+  const socket = io(relayUrl, {
+    query: { room: localRoom },
+    transports: ["websocket"],
+  });
   const transport = createSocketIoTransport(socket);
   client = createPresenceClient<DemoContext, DemoUser>({
     transport,

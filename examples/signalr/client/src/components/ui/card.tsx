@@ -2,7 +2,11 @@ import type { HTMLAttributes } from "react";
 import type React from "react";
 import { cn } from "../../lib/cn";
 
-export function Card({ className, ref, ...props }: HTMLAttributes<HTMLDivElement> & { ref?: React.Ref<HTMLDivElement> }) {
+export function Card({
+  className,
+  ref,
+  ...props
+}: HTMLAttributes<HTMLDivElement> & { ref?: React.Ref<HTMLDivElement> }) {
   return (
     <div
       ref={ref}
@@ -15,16 +19,32 @@ export function Card({ className, ref, ...props }: HTMLAttributes<HTMLDivElement
   );
 }
 
-export function CardHeader({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("flex flex-col gap-1 p-4", className)} {...props} />;
+export function CardHeader({
+  className,
+  ...props
+}: HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div className={cn("flex flex-col gap-1 p-4", className)} {...props} />
+  );
 }
 
-export function CardTitle({ className, ...props }: HTMLAttributes<HTMLHeadingElement>) {
-  return <h3 className={cn("text-sm font-medium text-gray-500", className)} {...props} />;
+export function CardTitle({
+  className,
+  ...props
+}: HTMLAttributes<HTMLHeadingElement>) {
+  return (
+    <h3
+      className={cn("text-sm font-medium text-gray-500", className)}
+      {...props}
+    />
+  );
 }
 
 // Callers own the padding so header-less cards stay consistent (p-4) while
 // full-bleed content (tables) can use p-0 without fighting a base value.
-export function CardContent({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
+export function CardContent({
+  className,
+  ...props
+}: HTMLAttributes<HTMLDivElement>) {
   return <div className={className} {...props} />;
 }

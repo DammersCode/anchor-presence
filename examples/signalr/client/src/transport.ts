@@ -1,4 +1,8 @@
-import { jsonCodec, type ConnectionStatus, type LiveCursorTransport } from "@anchor-presence/core";
+import {
+  jsonCodec,
+  type ConnectionStatus,
+  type LiveCursorTransport,
+} from "@anchor-presence/core";
 import type { HubConnectionStatus } from "@dammers/use-signalr-react";
 
 // The hub path the whole app talks to; a single relay hub.
@@ -87,7 +91,9 @@ export function createSignalRTransport(harness: SignalRHarness): {
     for (const listener of statusListeners) listener(status);
   }
 
-  const offStatus = harness.subscribeStatus(() => setStatus(mapStatus(harness.getStatus())));
+  const offStatus = harness.subscribeStatus(() =>
+    setStatus(mapStatus(harness.getStatus())),
+  );
 
   // Defensive: if the hub is already connected at construction, bind now. The
   // transition path above normally handles this; the `!attached` guard makes a

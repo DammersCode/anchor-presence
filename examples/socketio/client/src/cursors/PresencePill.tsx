@@ -1,19 +1,29 @@
-import { useCursorPresence, useCursorStatus, useRemoteCursorsSelector } from "@anchor-presence/react";
+import {
+  useCursorPresence,
+  useCursorStatus,
+  useRemoteCursorsSelector,
+} from "@anchor-presence/react";
 import type { ResolvedCursor } from "@anchor-presence/dom";
 import type { ConnectionStatus } from "@anchor-presence/core";
 import { Avatar } from "../components/ui/avatar";
 import { DEFAULT_CURSOR_COLOR, isKnownCursorColor } from "./setup";
 import type { DemoContext, DemoUser } from "./setup";
 
-function selectClippedClientIds(cursors: ResolvedCursor<DemoContext, DemoUser>[]): ReadonlySet<string> {
+function selectClippedClientIds(
+  cursors: ResolvedCursor<DemoContext, DemoUser>[],
+): ReadonlySet<string> {
   const clipped = new Set<string>();
   for (const cursor of cursors) {
-    if (cursor.tier === "anchor" && !cursor.pointVisible) clipped.add(cursor.clientId);
+    if (cursor.tier === "anchor" && !cursor.pointVisible)
+      clipped.add(cursor.clientId);
   }
   return clipped;
 }
 
-function sameClientIds(a: ReadonlySet<string>, b: ReadonlySet<string>): boolean {
+function sameClientIds(
+  a: ReadonlySet<string>,
+  b: ReadonlySet<string>,
+): boolean {
   return a.size === b.size && [...a].every((id) => b.has(id));
 }
 
@@ -34,24 +44,39 @@ const STATUS_DOT: Record<ConnectionStatus, string> = {
 export function PresencePill() {
   const status = useCursorStatus();
   const presence = useCursorPresence<DemoContext, DemoUser>();
-  const clippedClientIds = useRemoteCursorsSelector(selectClippedClientIds, sameClientIds);
+  const clippedClientIds = useRemoteCursorsSelector(
+    selectClippedClientIds,
+    sameClientIds,
+  );
 
   return (
-    <div data-anchor="topbar.presence" className="flex items-center gap-3 text-sm text-gray-500">
+    <div
+      data-anchor="topbar.presence"
+      className="flex items-center gap-3 text-sm text-gray-500"
+    >
       <div className="flex items-center gap-1.5">
-        <span className={`h-2 w-2 rounded-full ${STATUS_DOT[status]}`} aria-hidden="true" />
+        <span
+          className={`h-2 w-2 rounded-full ${STATUS_DOT[status]}`}
+          aria-hidden="true"
+        />
         <span>{STATUS_LABEL[status]}</span>
       </div>
 
       <div className="flex items-center -space-x-2">
         {presence.map((p) => {
           const name = p.user?.name ?? p.clientId.slice(0, 6);
-          const color = isKnownCursorColor(p.user?.color) ? p.user!.color : DEFAULT_CURSOR_COLOR;
+          const color = isKnownCursorColor(p.user?.color)
+            ? p.user!.color
+            : DEFAULT_CURSOR_COLOR;
           const inSettings = p.context?.dialog === "settings";
           const outOfView = clippedClientIds.has(p.clientId);
           return (
             <div key={p.clientId} className="relative">
-              <Avatar name={name} style={{ backgroundColor: color }} className="bg-transparent" />
+              <Avatar
+                name={name}
+                style={{ backgroundColor: color }}
+                className="bg-transparent"
+              />
               {inSettings && (
                 <span
                   data-testid="presence-in-settings"
@@ -82,14 +107,21 @@ export function PresencePill() {
           const page = p.context?.page;
           if (!page) return null;
           return (
-            <span key={p.clientId} data-testid="presence-page" className="text-xs text-gray-400">
+            <span
+              key={p.clientId}
+              data-testid="presence-page"
+              className="text-xs text-gray-400"
+            >
               {name} · {page}
             </span>
           );
         })}
       </div>
 
-      <span data-anchor="topbar.presence.count" className="whitespace-nowrap text-gray-500">
+      <span
+        data-anchor="topbar.presence.count"
+        className="whitespace-nowrap text-gray-500"
+      >
         {presence.length} online
       </span>
     </div>

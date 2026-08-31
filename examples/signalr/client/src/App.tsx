@@ -20,7 +20,11 @@ export interface AppProps {
   onInterpolatorStyleChange: (style: InterpolatorStyle) => void;
 }
 
-export default function App({ localViewState, interpolatorStyle, onInterpolatorStyleChange }: AppProps) {
+export default function App({
+  localViewState,
+  interpolatorStyle,
+  onInterpolatorStyleChange,
+}: AppProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [page, navigate] = usePageRoute();
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -83,7 +87,10 @@ export default function App({ localViewState, interpolatorStyle, onInterpolatorS
           onOpenMobileNav={() => setMobileNavOpen(true)}
         />
 
-        <main ref={mainAnchor} className="main-entrance flex-1 overflow-y-auto p-4 sm:p-6">
+        <main
+          ref={mainAnchor}
+          className="main-entrance flex-1 overflow-y-auto p-4 sm:p-6"
+        >
           {page === "dashboard" && <DashboardPage />}
           {page === "orders" && <OrdersPage />}
           {page === "customers" && <CustomersPage />}

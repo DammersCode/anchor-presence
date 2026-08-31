@@ -9,7 +9,7 @@ function ActivityRow({ item }: { item: ActivityItem }) {
       <span className="text-gray-700">
         <span className="font-medium text-gray-900">{item.actor}</span> {item.action}
       </span>
-      <span className="shrink-0 text-xs text-gray-400">{item.time}</span>
+      <span className="shrink-0 text-xs text-gray-500">{item.time}</span>
     </div>
   );
 }

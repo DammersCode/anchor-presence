@@ -89,7 +89,7 @@ export function PresencePill() {
         })}
       </div>
 
-      <span data-anchor="topbar.presence.count" className="text-gray-400">
+      <span data-anchor="topbar.presence.count" className="whitespace-nowrap text-gray-500">
         {presence.length} online
       </span>
     </div>

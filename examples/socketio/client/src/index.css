@@ -1,1 +1,90 @@
 @import "tailwindcss";
+
+/* Browser surfaces: selection and scrollbars, themed from the palette. */
+::selection {
+  background: #e0e7ff;
+  color: #1e1b4b;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+  background-clip: content-box;
+}
+
+/* Mobile sidebar overlay (drawer + backdrop). */
+.sidebar-overlay-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(9, 9, 11, 0.4);
+  backdrop-filter: blur(2px);
+  z-index: 40;
+  animation: overlay-fade-in 0.2s ease-out;
+}
+
+.sidebar-overlay {
+  box-shadow: 0 8px 32px rgba(9, 9, 11, 0.18);
+  animation: overlay-slide-in 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes overlay-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes overlay-slide-in {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* Main content entrance: one authored moment, not a repeated section entrance. */
+.main-entrance {
+  animation: main-rise 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes main-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-overlay,
+  .sidebar-overlay-backdrop,
+  .main-entrance {
+    animation: none;
+  }
+}

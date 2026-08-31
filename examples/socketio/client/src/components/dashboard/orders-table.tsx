@@ -38,13 +38,13 @@ function OrderRow({ order, index, onView, onDelete }: {
       <TableCell ref={idAnchor} className="font-medium text-gray-900">
         {order.id}
       </TableCell>
-      <TableCell ref={customerAnchor}>
+      <TableCell ref={customerAnchor} className="min-w-32">
         <div className="flex flex-col">
           <span className="text-gray-900">{order.customer}</span>
-          <span className="text-xs text-gray-400">{order.email}</span>
+          <span className="text-xs text-gray-500 sm:text-gray-400">{order.email}</span>
         </div>
       </TableCell>
-      <TableCell ref={dateAnchor}>{order.date}</TableCell>
+      <TableCell ref={dateAnchor} className="hidden whitespace-nowrap sm:table-cell">{order.date}</TableCell>
       <TableCell ref={statusAnchor}>
         <Badge variant={STATUS_VARIANT[order.status]}>{order.status}</Badge>
       </TableCell>
@@ -75,13 +75,13 @@ export function OrdersTable({ onView, onDelete }: OrdersTableProps) {
         <CardTitle className="text-base font-semibold text-gray-900">Orders</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
-        <Table ref={tableAnchor}>
+        <Table ref={tableAnchor} className="min-w-[28rem]">
           <TableHeader>
             <TableRow>
-              <TableHead>Order</TableHead>
+              <TableHead className="whitespace-nowrap">Order</TableHead>
               <TableHead>Customer</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead className="hidden sm:table-cell">Date</TableHead>
+              <TableHead className="whitespace-nowrap">Status</TableHead>
               <TableHead className="text-right">Amount</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>

@@ -6,7 +6,10 @@ export function Card({ className, ref, ...props }: HTMLAttributes<HTMLDivElement
   return (
     <div
       ref={ref}
-      className={cn("rounded-lg border border-gray-200 bg-white shadow-sm", className)}
+      className={cn(
+        "rounded-xl border border-gray-200/80 bg-white shadow-[0_1px_2px_0_rgba(16,24,40,0.04)]",
+        className,
+      )}
       {...props}
     />
   );

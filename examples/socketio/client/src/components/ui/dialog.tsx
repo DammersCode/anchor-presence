@@ -38,8 +38,8 @@ export function Dialog({ open, onClose, children, className, ref: externalRef, .
         if (e.target === ref.current) onClose();
       }}
       className={cn(
-        "m-auto rounded-lg border border-gray-200 bg-white p-0 shadow-lg backdrop:bg-gray-900/40",
-        "w-full max-w-md",
+        "m-auto rounded-xl border border-gray-200 bg-white p-0 shadow-xl backdrop:bg-gray-900/40",
+        "w-[min(28rem,calc(100vw-2rem))]",
         className,
       )}
       {...props}

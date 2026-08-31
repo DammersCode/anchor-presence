@@ -22,6 +22,8 @@ export interface SidebarProps {
   activeItem: string;
   onSelect: (id: string) => void;
   onOpenSettings: () => void;
+  mobileOpen: boolean;
+  onCloseMobile: () => void;
 }
 
 function NavButton({ item, isActive, collapsed, onClick }: {
@@ -48,7 +50,15 @@ function NavButton({ item, isActive, collapsed, onClick }: {
   );
 }
 
-export function Sidebar({ collapsed, onToggle, activeItem, onSelect, onOpenSettings }: SidebarProps) {
+export function Sidebar({
+  collapsed,
+  onToggle,
+  activeItem,
+  onSelect,
+  onOpenSettings,
+  mobileOpen,
+  onCloseMobile,
+}: SidebarProps) {
   const sidebarAnchor = useCursorAnchor("sidebar");
   const brandAnchor = useCursorAnchor("sidebar.brand");
   const toggleAnchor = useCursorAnchor("sidebar.toggle");
@@ -57,9 +67,15 @@ export function Sidebar({ collapsed, onToggle, activeItem, onSelect, onOpenSetti
   return (
     <aside
       ref={sidebarAnchor}
+      onClick={mobileOpen ? onCloseMobile : undefined}
       className={cn(
-        "flex h-screen flex-col border-r border-gray-200 bg-white transition-[width] duration-300 ease-in-out",
-        collapsed ? "w-16" : "w-60",
+        "z-50 flex w-64 flex-col border-r border-gray-200 bg-white",
+        // Mobile: off-canvas drawer, closed off-screen.
+        "fixed inset-y-0 left-0 -translate-x-full transition-transform duration-300 ease-in-out",
+        mobileOpen && "sidebar-overlay translate-x-0",
+        // Desktop: static, width toggle.
+        "md:static md:z-auto md:h-screen md:translate-x-0 md:transition-[width] md:duration-300",
+        collapsed ? "md:w-16" : "md:w-60",
       )}
     >
       <div className="flex h-14 items-center justify-between px-3">
@@ -75,13 +91,13 @@ export function Sidebar({ collapsed, onToggle, activeItem, onSelect, onOpenSetti
           size="icon"
           aria-label="Toggle sidebar"
           onClick={onToggle}
-          className="ml-auto shrink-0"
+          className="ml-auto hidden shrink-0 md:inline-flex"
         >
           {collapsed ? "»" : "«"}
         </Button>
       </div>
 
-      <nav ref={navAnchor} className="flex flex-1 flex-col gap-1 px-2">
+      <nav ref={navAnchor} className="flex flex-1 flex-col gap-1 overflow-y-auto px-2 py-2">
         {NAV_ITEMS.map((item) => {
           const handleClick = item.id === "settings" ? onOpenSettings : () => onSelect(item.id);
           return (

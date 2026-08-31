@@ -24,6 +24,7 @@ export default function App({ localViewState, interpolatorStyle, onInterpolatorS
   const [collapsed, setCollapsed] = useState(false);
   const [page, navigate] = usePageRoute();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const mainAnchor = useCursorAnchor("main");
   const [, setContext] = useCursorContext<DemoContext>();
 
@@ -34,6 +35,16 @@ export default function App({ localViewState, interpolatorStyle, onInterpolatorS
     setContext(settingsOpen ? { page, dialog: "settings" } : { page });
   }, [localViewState, page, settingsOpen, setContext]);
 
+  // Keep the page from scrolling behind the mobile nav overlay.
+  useEffect(() => {
+    if (!mobileNavOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [mobileNavOpen]);
+
   // Sidebar's onSelect is id: string (also used for "settings", which doesn't navigate); narrow before routing.
   const handleSelect = (id: string) => {
     if (isPageId(id)) navigate(id);
@@ -41,18 +52,38 @@ export default function App({ localViewState, interpolatorStyle, onInterpolatorS
 
   return (
     <div className="flex h-screen bg-gray-50">
+      {mobileNavOpen && (
+        <div
+          className="sidebar-overlay-backdrop md:hidden"
+          onClick={() => setMobileNavOpen(false)}
+          aria-hidden="true"
+        />
+      )}
       <Sidebar
         collapsed={collapsed}
         onToggle={() => setCollapsed((v) => !v)}
         activeItem={page}
-        onSelect={handleSelect}
-        onOpenSettings={() => setSettingsOpen(true)}
+        mobileOpen={mobileNavOpen}
+        onCloseMobile={() => setMobileNavOpen(false)}
+        onSelect={(id) => {
+          setMobileNavOpen(false);
+          handleSelect(id);
+        }}
+        onOpenSettings={() => {
+          setMobileNavOpen(false);
+          setSettingsOpen(true);
+        }}
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <Topbar userName={localUserName} room={localRoom} onOpenSettings={() => setSettingsOpen(true)} />
+        <Topbar
+          userName={localUserName}
+          room={localRoom}
+          onOpenSettings={() => setSettingsOpen(true)}
+          onOpenMobileNav={() => setMobileNavOpen(true)}
+        />
 
-        <main ref={mainAnchor} className="flex-1 overflow-y-auto p-6">
+        <main ref={mainAnchor} className="main-entrance flex-1 overflow-y-auto p-4 sm:p-6">
           {page === "dashboard" && <DashboardPage />}
           {page === "orders" && <OrdersPage />}
           {page === "customers" && <CustomersPage />}

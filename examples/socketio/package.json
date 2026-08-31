@@ -2,6 +2,10 @@
   "name": "example-socketio",
   "private": true,
   "type": "module",
+  "scripts": {
+    "dev:relay": "bun relay.ts",
+    "dev": "cd client && bun run dev"
+  },
   "dependencies": {
     "@anchor-presence/core": "workspace:*",
     "socket.io": "^4.8.3",

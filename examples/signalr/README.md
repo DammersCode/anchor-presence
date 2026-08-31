@@ -3,16 +3,26 @@
 This example shows a `LiveCursorTransport` for ASP.NET Core SignalR. It has three parts:
 
 - `client/src/transport.ts`: `createSignalRTransport(harness)`. It wraps a use-signalr hub connection.
-- `client/`: a small Vite + React app. It renders live cursors on a few demo elements.
+- `client/`: a Vite + React app. It renders live cursors on the same demo page as `apps/demo`,
+  anchored to semantic elements.
 - `server/`: a minimal .NET 10 app. It runs one SignalR hub that relays presence messages.
 
-The React client layer is [`use-signalr`](https://github.com/DammersCode/use-signalr) (`@dammers/use-signalr-react`). It owns the hub connection, the typed events and methods, reconnects, and the per-hub status. This transport only adapts that connection to the presence client.
+The `client/` page is the same demo page as `apps/demo`. Only the backend is different: the app
+calls `getPresenceClient()`, which builds the presence client over `createSignalRTransport`
+instead of a plain WebSocket. The rest of the UI calls the same `@anchor-presence/react` hooks,
+so the live cursor behavior is unchanged.
+
+The React client layer is [`use-signalr`](https://github.com/DammersCode/use-signalr)
+(`@dammers/use-signalr-react`). It owns the hub connection, the typed events and methods,
+reconnects, and the per-hub status. This transport only adapts that connection to the presence
+client.
 
 ## Prerequisites
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0). The server targets `net10.0`.
 - [Bun](https://bun.sh). The client uses `bun run dev`.
-- On a fresh checkout, run `bun install` once in the repository root first. It links the workspace packages and the example's dependencies.
+- On a fresh checkout, run `bun install` once in the repository root first. It links the workspace
+  packages and the example's dependencies.
 
 ## Start the server
 
@@ -27,22 +37,24 @@ The server listens on <http://localhost:5000>. It needs no further setup.
 
 ```sh
 cd examples/signalr/client
-bun install
 bun run dev
 ```
 
-The client serves at <http://localhost:5173/.> Open that address in two browser windows.
+The client serves at <http://localhost:5173/>. Open that address in two browser windows.
+
+Add `?name=<name>` to change the cursor label.
 
 ## What the demo shows
 
-Move the pointer inside a card in one window. The other window draws the same cursor. The cursor
-anchors to a semantic element, not to a screen position. Resize one window to a different width.
-The cursor stays on the same element in both layouts. Each cursor position is a normalized `(u, v)`
-offset per anchored element.
+Move the pointer inside the page in one window. The other window draws the same cursor. The
+cursor anchors to a semantic element, not to a screen position. Resize one window to a
+different width. The cursor stays on the same element in both layouts. Each cursor position is a
+normalized `(u, v)` offset per anchored element.
 
-Each element registers an anchor id through `useCursorAnchor`. A pointer movement inside an element
-captures the normalized offsets of every anchor in its chain. The receiver reads its own element
-size and multiplies the offsets by that size. That resolves the cursor onto the receiver's layout.
+Each element registers an anchor id through `useCursorAnchor`. A pointer movement inside an
+element captures the normalized offsets of every anchor in its chain. The receiver reads its own
+element size and multiplies the offsets by that size. That resolves the cursor onto the receiver's
+layout.
 
 ## How the relay works
 

@@ -120,12 +120,12 @@ export function createSignalRTransport(harness: SignalRHarness): {
     },
   };
 
-  function dispose(): void {
-    if (attached) detachListener();
+  const dispose = (): void => {
     offStatus();
+    if (attached) detachListener();
     statusListeners.clear();
     dataListeners.clear();
-  }
+  };
 
   return { transport, dispose };
 }

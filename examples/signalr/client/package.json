@@ -1,5 +1,5 @@
 {
-  "name": "example-signalr",
+  "name": "example-signalr-client",
   "private": true,
   "type": "module",
   "scripts": {
@@ -17,9 +17,12 @@
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.1.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "5.2.0",
+    "babel-plugin-react-compiler": "^1.0.0",
+    "tailwindcss": "^4.1.0",
     "typescript": "^5.7.0",
     "vite": "^8"
   }

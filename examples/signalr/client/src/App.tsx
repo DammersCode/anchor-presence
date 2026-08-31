@@ -1,122 +1,72 @@
-import { useCallback, useState, type ReactNode, type Ref } from "react";
-import { CursorLayer, useCursorAnchor, useCursorStatus } from "@anchor-presence/react";
-import type { DemoContext, DemoUser } from "./usePresence";
+import { useEffect, useState } from "react";
+import { useCursorAnchor, useCursorContext } from "@anchor-presence/react";
+import { Sidebar } from "./components/dashboard/sidebar";
+import { Topbar } from "./components/dashboard/topbar";
+import { SettingsDialog } from "./components/dashboard/settings-dialog";
+import { CursorLayer } from "./cursors/CursorLayer";
+import { localRoom, localUserName } from "./cursors/setup";
+import type { LocalViewState } from "./cursors/visibilityPolicy";
+import type { DemoContext } from "./cursors/setup";
+import { usePageRoute, isPageId } from "./usePageRoute";
+import { DashboardPage } from "./pages/DashboardPage";
+import { OrdersPage } from "./pages/OrdersPage";
+import { CustomersPage } from "./pages/CustomersPage";
+import { ProductsPage } from "./pages/ProductsPage";
+import type { InterpolatorStyle } from "./cursors/interpolators";
 
-// useCursorAnchor's ref callback is typed as (Element | null) => void; the cast makes it
-// usable as a regular element ref so the cards stay terse.
-function anchor(id: string): Ref<HTMLDivElement> {
-  return useCursorAnchor(id) as Ref<HTMLDivElement>;
+export interface AppProps {
+  localViewState: LocalViewState;
+  interpolatorStyle: InterpolatorStyle;
+  onInterpolatorStyleChange: (style: InterpolatorStyle) => void;
 }
 
-function Label({ children }: { children: ReactNode }) {
-  return <h2>{children}</h2>;
-}
+export default function App({ localViewState, interpolatorStyle, onInterpolatorStyleChange }: AppProps) {
+  const [collapsed, setCollapsed] = useState(false);
+  const [page, navigate] = usePageRoute();
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const mainAnchor = useCursorAnchor("main");
+  const [, setContext] = useCursorContext<DemoContext>();
 
-export function App() {
-  const [view, setView] = useState<"overview" | "metrics">("overview");
-  const status = useCursorStatus();
-  const overviewRef = anchor("overview-card");
-  const metricsRef = anchor("metrics-card");
-  const tagsRef = anchor("tags-card");
+  // Single writer for both the published context and the local state the visibility policy reads.
+  useEffect(() => {
+    localViewState.page = page;
+    localViewState.settingsOpen = settingsOpen;
+    setContext(settingsOpen ? { page, dialog: "settings" } : { page });
+  }, [localViewState, page, settingsOpen, setContext]);
 
-  const select = useCallback((next: "overview" | "metrics") => setView(next), []);
+  // Sidebar's onSelect is id: string (also used for "settings", which doesn't navigate); narrow before routing.
+  const handleSelect = (id: string) => {
+    if (isPageId(id)) navigate(id);
+  };
 
   return (
-    <div className="shell">
-      <header>
-        <h1>anchor-presence — SignalR</h1>
-        <span className="status" data-testid="hub-status">
-          hub: {status}
-        </span>
-        <span className="status" style={{ marginLeft: "auto" }}>
-          open a second window to see two cursors
-        </span>
-      </header>
+    <div className="flex h-screen bg-gray-50">
+      <Sidebar
+        collapsed={collapsed}
+        onToggle={() => setCollapsed((v) => !v)}
+        activeItem={page}
+        onSelect={handleSelect}
+        onOpenSettings={() => setSettingsOpen(true)}
+      />
 
-      <main>
-        {view === "overview" ? (
-          <section className="card" ref={overviewRef} data-testid="overview-anchor">
-            <Label>Live cursors on semantic anchors</Label>
-            <p>
-              A minimal .NET 10 ASP.NET Core server relays every received presence payload to all
-              other connections. It keeps no state and never parses the payload.
-            </p>
-            <p>
-              Cursor updates travel as a JSON string over the <code>OnPresence</code> hub method and
-              come back as <code>PresenceReceived</code> events.
-            </p>
-            <div className="meter">
-              <span className="meter-fill" />
-            </div>
-            <p>
-              Move the pointer inside this card. A second window draws the same cursor anchored to
-              this element, so it survives a different window width.
-            </p>
-          </section>
-        ) : (
-          <section className="card" ref={metricsRef} data-testid="metrics-anchor">
-            <Label>SignalR relay, receiver-authoritative</Label>
-            <p>
-              The relay never validates. This client validates every received payload against the
-              presence schema, then resolves the cursor onto the local layout.
-            </p>
-            <div className="meter">
-              <span className="meter-fill-alt" />
-            </div>
-            <p>
-              A cursor position is a normalized (u, v) offset per anchored element. The receiver
-              multiplies it by its own element size, so the cursor follows the element when two
-              windows have different widths.
-            </p>
-          </section>
-        )}
+      <div className="flex min-w-0 flex-1 flex-col">
+        <Topbar userName={localUserName} room={localRoom} onOpenSettings={() => setSettingsOpen(true)} />
 
-        <div className="column">
-          <section className="card">
-            <Label>Try it</Label>
-            <p>Start the server and this client twice, then:</p>
-            <p>1. Move a pointer inside a card in one window.</p>
-            <p>2. Resize the other window. The cursor follows the element.</p>
-            <p>3. Close a window. Its cursor goes stale and is removed.</p>
-          </section>
-
-          <div className="card" ref={tagsRef} data-testid="tags-anchor">
-            <Label>Anchored elements</Label>
-            <div className="tags">
-              <span className="tag">overview-card</span>
-              <span className="tag">metrics-card</span>
-              <span className="tag">tags-card</span>
-            </div>
-            <p>
-              Each card is a cursor anchor. The cursor anchors to the deepest anchor under the
-              pointer, up to four elements in the registry chain.
-            </p>
-          </div>
-
-          <section className="card">
-            <Label>Switch view</Label>
-            <div className="tags">
-              <button className="tag" type="button" onClick={() => select("overview")}>
-                overview
-              </button>
-              <button className="tag" type="button" onClick={() => select("metrics")}>
-                metrics
-              </button>
-            </div>
-            <p>
-              Switching the main card changes which element the cursor anchors to. The other window
-              resolves the same anchor in its own layout.
-            </p>
-          </section>
-        </div>
-      </main>
-
-      <div className="foot">
-        use-signalr · @microsoft/signalr · @anchor-presence/core · @anchor-presence/react · .NET 10
-        SignalR relay
+        <main ref={mainAnchor} className="flex-1 overflow-y-auto p-6">
+          {page === "dashboard" && <DashboardPage />}
+          {page === "orders" && <OrdersPage />}
+          {page === "customers" && <CustomersPage />}
+          {page === "products" && <ProductsPage />}
+        </main>
       </div>
 
-      <CursorLayer<DemoContext, DemoUser> />
+      <SettingsDialog
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        interpolatorStyle={interpolatorStyle}
+        onInterpolatorStyleChange={onInterpolatorStyleChange}
+      />
+      <CursorLayer />
     </div>
   );
 }

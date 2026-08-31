@@ -6,7 +6,8 @@
     "packages/*",
     "apps/*",
     "examples/*",
-    "examples/signalr/client"
+    "examples/signalr/client",
+    "examples/socketio/client"
   ],
   "scripts": {
     "build": "bun run --filter '@anchor-presence/*' build",

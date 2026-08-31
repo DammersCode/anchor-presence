@@ -38,13 +38,15 @@ function NavButton({ item, isActive, collapsed, onClick }: {
       ref={anchorRef}
       data-testid={`anchor-nav.${item.id}`}
       onClick={onClick}
+      aria-label={item.label}
       title={collapsed ? item.label : undefined}
       className={cn(
-        "flex h-9 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors",
+        "flex h-9 items-center rounded-lg text-sm font-medium transition-colors",
+        collapsed ? "w-9 justify-center" : "gap-3 px-3",
         isActive ? "bg-indigo-50 text-indigo-700" : "text-gray-600 hover:bg-gray-100",
       )}
     >
-      <span className="w-4 shrink-0 text-center">{item.icon}</span>
+      <span className="flex w-4 shrink-0 justify-center text-center">{item.icon}</span>
       {!collapsed && <span className="truncate">{item.label}</span>}
     </button>
   );
@@ -93,7 +95,10 @@ export function Sidebar({
           onClick={onToggle}
           className="ml-auto hidden shrink-0 md:inline-flex"
         >
-          {collapsed ? "»" : "«"}
+          {/* Chevron glyphs sit left of the em box; nudge them onto the optical center. */}
+          <span className={collapsed ? "translate-x-[0.5px]" : "-translate-x-[0.5px]"}>
+            {collapsed ? "»" : "«"}
+          </span>
         </Button>
       </div>
 

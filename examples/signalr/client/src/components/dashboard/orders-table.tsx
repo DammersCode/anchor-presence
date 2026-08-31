@@ -74,7 +74,7 @@ export function OrdersTable({ onView, onDelete }: OrdersTableProps) {
       <CardHeader>
         <CardTitle className="text-base font-semibold text-gray-900">Orders</CardTitle>
       </CardHeader>
-      <CardContent className="p-0">
+      <CardContent className="overflow-hidden p-0">
         <Table ref={tableAnchor} className="min-w-[28rem]">
           <TableHeader>
             <TableRow>

@@ -1,11 +1,7 @@
 import { useCursorAnchor } from "@anchor-presence/react";
-import { Avatar } from "../ui/avatar";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { PresencePill } from "../../cursors/PresencePill";
-
-const PEERS = ["Sage", "Rowan", "Quinn"];
-const PEER_COLORS = ["bg-emerald-500", "bg-amber-500", "bg-sky-500"];
 
 export interface TopbarProps {
   userName: string;
@@ -19,7 +15,6 @@ export function Topbar({ userName, room, onOpenSettings, onOpenMobileNav }: Topb
   const searchAnchor = useCursorAnchor("topbar.search");
   const roomAnchor = useCursorAnchor("topbar.room");
   const userAnchor = useCursorAnchor("topbar.user");
-  const avatarsAnchor = useCursorAnchor("topbar.avatars");
   const settingsAnchor = useCursorAnchor("topbar.settings");
 
   return (
@@ -48,12 +43,6 @@ export function Topbar({ userName, room, onOpenSettings, onOpenMobileNav }: Topb
 
         <div ref={userAnchor} className="hidden text-sm text-gray-500 md:block">
           You are <span className="font-medium text-gray-700">{userName}</span>
-        </div>
-
-        <div ref={avatarsAnchor} className="hidden items-center -space-x-2 md:flex">
-          {PEERS.map((peer, i) => (
-            <Avatar key={peer} name={peer} colorClass={PEER_COLORS[i % PEER_COLORS.length]} />
-          ))}
         </div>
 
         <Button

@@ -20,7 +20,7 @@ export function StatCard({ anchorId, label, value, delta, trend }: StatCardProps
       <CardHeader>
         <CardTitle>{label}</CardTitle>
       </CardHeader>
-      <CardContent className="flex items-baseline justify-between gap-2">
+      <CardContent className="flex items-baseline justify-between gap-2 p-4">
         <span ref={valueAnchor} className="text-[1.4rem] font-semibold tabular-nums text-gray-900 sm:text-2xl lg:text-3xl">
           {value}
         </span>

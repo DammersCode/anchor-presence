@@ -21,7 +21,7 @@ export function RecentActivity() {
       <CardHeader>
         <CardTitle className="text-base font-semibold text-gray-900">Recent activity</CardTitle>
       </CardHeader>
-      <CardContent className="flex flex-col gap-3">
+      <CardContent className="flex flex-col gap-3 p-4">
         {activity.map((item) => (
           <ActivityRow key={item.id} item={item} />
         ))}

@@ -23,6 +23,8 @@ export function CardTitle({ className, ...props }: HTMLAttributes<HTMLHeadingEle
   return <h3 className={cn("text-sm font-medium text-gray-500", className)} {...props} />;
 }
 
+// Callers own the padding so header-less cards stay consistent (p-4) while
+// full-bleed content (tables) can use p-0 without fighting a base value.
 export function CardContent({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("p-4 pt-0", className)} {...props} />;
+  return <div className={className} {...props} />;
 }

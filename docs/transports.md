@@ -13,6 +13,7 @@ interface LiveCursorTransport {
   send(data: Uint8Array): Promise<void> | void;
   subscribe(listener: (data: Uint8Array) => void): () => void;
   subscribeStatus?(listener: (status: ConnectionStatus) => void): () => void;
+  getStatus?(): ConnectionStatus;
 }
 
 type ConnectionStatus = "connecting" | "connected" | "reconnecting" | "disconnected";
@@ -22,7 +23,9 @@ Rules:
 
 - `send` receives already-encoded bytes. The client calls `codec.encode()` before calling `send`.
 - `subscribe` receives already-encoded bytes from the wire. The client calls `codec.decode()` and `validatePresence()` after your listener fires.
-- `connect`, `disconnect`, and `subscribeStatus` are optional. When a transport omits `subscribeStatus`, the client reports a constant `"connected"` status.
+- `connect`, `disconnect`, `subscribeStatus`, and `getStatus` are optional. When a transport omits `subscribeStatus`, the client reports a constant `"connected"` status.
+- `subscribeStatus` SHOULD replay the current status to every new subscriber. Without a replay, a client that subscribes after the connection opened never learns it can send. All examples below replay.
+- `getStatus` returns the current status. The client reads it once at creation for its initial status; without it, the client starts at `"connecting"` until the first status callback.
 - A `send` failure must not throw past the transport boundary in a way that crashes the app. The client swallows send errors after a status check; presence is lossy by design.
 
 Pass a transport instance to `createPresenceClient`:
@@ -78,7 +81,12 @@ export class WebSocketTransport implements LiveCursorTransport {
 
   subscribeStatus(listener: (status: ConnectionStatus) => void): () => void {
     this.statusListeners.add(listener);
+    listener(this.status); // replay so a late subscriber sees the current state
     return () => this.statusListeners.delete(listener);
+  }
+
+  getStatus(): ConnectionStatus {
+    return this.status;
   }
 
   private setStatus(next: ConnectionStatus): void {
@@ -100,7 +108,8 @@ const client = createPresenceClient({ transport });
 
 `examples/socketio/transport.ts` has a tested `createSocketIoTransport(socket)` adapter. An
 integration test in `examples/socketio/socketio.test.ts` runs it against a real Socket.IO
-server and checks that a cursor update reaches a second client. Excerpt:
+server and checks that a cursor update reaches a second client. The version below adds
+status replay and `getStatus`:
 
 ```ts
 import type { ConnectionStatus, LiveCursorTransport } from "@anchor-presence/core";
@@ -108,7 +117,9 @@ import type { Socket } from "socket.io-client";
 
 export function createSocketIoTransport(socket: Socket): LiveCursorTransport {
   const statusListeners = new Set<(status: ConnectionStatus) => void>();
+  let status: ConnectionStatus = socket.connected ? "connected" : "connecting";
   const setStatus = (next: ConnectionStatus) => {
+    status = next;
     for (const listener of statusListeners) listener(next);
   };
 
@@ -130,8 +141,10 @@ export function createSocketIoTransport(socket: Socket): LiveCursorTransport {
     },
     subscribeStatus: (listener) => {
       statusListeners.add(listener);
+      listener(status); // replay so a late subscriber sees the current state
       return () => statusListeners.delete(listener);
     },
+    getStatus: () => status,
   };
 }
 ```
@@ -149,8 +162,10 @@ import type { HubConnection } from "@microsoft/signalr";
 
 export function createSignalRTransport(connection: HubConnection): LiveCursorTransport {
   const statusListeners = new Set<(status: ConnectionStatus) => void>();
-  const setStatus = (status: ConnectionStatus) => {
-    for (const listener of statusListeners) listener(status);
+  let status: ConnectionStatus = "connecting";
+  const setStatus = (next: ConnectionStatus) => {
+    status = next;
+    for (const listener of statusListeners) listener(next);
   };
 
   // withAutomaticReconnect() on the builder is required, or a drop goes straight to onclose
@@ -174,8 +189,10 @@ export function createSignalRTransport(connection: HubConnection): LiveCursorTra
     },
     subscribeStatus: (listener) => {
       statusListeners.add(listener);
+      listener(status); // replay so a late subscriber sees the current state
       return () => statusListeners.delete(listener);
     },
+    getStatus: () => status,
   };
 }
 ```
@@ -244,7 +261,8 @@ Core does not implement reconnection. A transport that needs to reconnect must d
 - Report `"connected"` once open.
 - Report `"reconnecting"` while attempting to restore a dropped connection.
 - Report `"disconnected"` when no further automatic attempt will happen.
+- Replay the current status to every new `subscribeStatus` subscriber, and implement `getStatus` so the client starts with the right status.
 
-The presence client stops sending while the status is `"connecting"` or `"disconnected"`. It resumes sending once the status moves to `"connected"`.
+The presence client sends only while the status is `"connected"`. On every transition into `"connected"` it republishes the latest local state, so receivers catch up without waiting for a pointer move.
 
 A reconnected client keeps its `clientId`. It generates a new `session` value only at client creation, not on reconnect, so the receiver's sequencing rules treat resumed traffic as a continuation, not a restart.

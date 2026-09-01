@@ -133,10 +133,13 @@ interface LiveCursorTransport {
   send(data: Uint8Array): Promise<void> | void;
   subscribe(listener: (data: Uint8Array) => void): () => void;
   subscribeStatus?(listener: (status: ConnectionStatus) => void): () => void;
+  getStatus?(): ConnectionStatus;
 }
 ```
 
 Core never imports a transport implementation. The demo ships a small `WebSocketTransport` in the demo app (not in core) as example code. `send` failures are swallowed after a status check; presence is lossy by design. When a transport omits `subscribeStatus`, the client reports a constant `"connected"`. The status union is fixed for protocol v1; consumers can switch exhaustively.
+
+A transport that implements `subscribeStatus` SHOULD replay its current status to every new subscriber. `getStatus` is optional; when present, the client reads it once at creation for its initial status. Without either signal, the client assumes `"connecting"` until the first status callback — an already-connected transport that never replays would leave the client mute. The client sends only while the status is `"connected"`; `"connecting"`, `"reconnecting"`, and `"disconnected"` block sends.
 
 ## 6. Codec Abstraction
 
@@ -163,11 +166,13 @@ pointer samples (from dom)         inbound bytes (from transport)
   codec.encode → transport.send      remote presence store → subscribers
 ```
 
-Options: `transport`, `codec` (default json), `clientId` (default: random UUID via injected `idFactory`), `publishIntervalMs` (default 50), `staleTimeoutMs`, `heartbeatMs`, `maxRemoteClients`, `user`, `context` setter. The client generates its `session` value at creation from the same `idFactory`. `clientId` identifies a client instance; applications attach user identity via the `user` field, not the `clientId`.
+Options: `transport`, `codec` (default json), `clientId` (default: random UUID via injected `idFactory`), `publishIntervalMs` (default 50), `staleTimeoutMs`, `heartbeatMs`, `maxRemoteClients`, `user`, `context` setter. The client generates its `session` value at creation from the same `idFactory`. `clientId` identifies a client instance; applications attach user identity via the `user` field, not the `clientId`. The client clamps `publishIntervalMs` and `heartbeatMs` to at least 1 ms and `staleTimeoutMs` to at least 1000 ms. Outside production (`NODE_ENV !== "production"`), the client warns on `console` when the outbound `context` or `user` exceeds `maxFieldBytes` or the encoded message exceeds `maxMessageBytes`; the check runs when `context`/`user` changes, not per message.
+
+`updateLocalCursor(cursor, pointer?)` records the latest local cursor; the optional second argument (`{ type?: "mouse" | "pen" | "touch" }`) is kept until replaced and sent as the `pointer` wire field. `getContext()` and `getUser()` return the current outbound values; `setContext()` and `setUser()` replace them and trigger a publish, as does every transition into `"connected"` (so a reconnect republishes the latest state without waiting for a pointer move). A failed send re-arms the publish timer.
 
 The client ignores inbound messages whose `clientId` equals its own, so broadcast relays that loop messages back are safe. The stale sweep runs on a client-owned timer at `staleTimeoutMs / 2`.
 
-`client.dispose()` is part of the public API. It stops timers, unsubscribes from the transport, and (via the dom layer) removes document listeners, observers, and any pending animation frame. Every layer's setup function returns or registers its teardown with the client.
+`client.dispose()` is part of the public API. It sends a best-effort `cursor: null` leave message while the status allows it, stops timers, unsubscribes from the transport, and (via the dom layer) removes document listeners, observers, and any pending animation frame. Status listeners receive a final `"disconnected"` before they are cleared. Every layer's setup function returns or registers its teardown with the client. `registerTeardown(fn)` returns an unregister function; called on an already-disposed client, it runs `fn` immediately and returns a no-op.
 
 The publisher keeps only the latest local state. It sends at most one message per interval. It never queues stale positions. Timers are injected (`setTimeout`/`clearTimeout`-shaped scheduler interface) so tests run without real time.
 

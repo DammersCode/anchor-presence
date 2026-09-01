@@ -8,5 +8,7 @@ export interface LiveCursorTransport {
   disconnect?(): Promise<void> | void;
   send(data: Uint8Array): Promise<void> | void;
   subscribe(listener: (data: Uint8Array) => void): () => void;
+  // subscribeStatus SHOULD replay the current status to a new subscriber (spec §5)
   subscribeStatus?(listener: (status: ConnectionStatus) => void): () => void;
+  getStatus?(): ConnectionStatus;
 }

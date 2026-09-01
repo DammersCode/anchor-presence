@@ -89,6 +89,12 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
 
   private markDirty(): void {
     this.snapshotDirty = true;
-    for (const listener of this.listeners) listener();
+    for (const listener of this.listeners) {
+      try {
+        listener();
+      } catch {
+        // one throwing subscriber must not starve the rest
+      }
+    }
   }
 }

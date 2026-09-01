@@ -1,7 +1,12 @@
 import type { CursorCodec } from "./codec";
 import { jsonCodec } from "./codec";
-import { DEFAULT_MAX_MESSAGE_BYTES } from "./protocol";
-import type { ConnectionStatus, CursorPosition, CursorPresence } from "./protocol";
+import { DEFAULT_MAX_FIELD_BYTES, DEFAULT_MAX_MESSAGE_BYTES } from "./protocol";
+import type {
+  ConnectionStatus,
+  CursorPosition,
+  CursorPresence,
+  PointerInfo,
+} from "./protocol";
 import { DEFAULT_STALE_TIMEOUT_MS, RemotePresenceStore } from "./store";
 import type { LiveCursorTransport } from "./transport";
 import { validatePresence } from "./validate";
@@ -9,6 +14,9 @@ import type { ValidationLimits } from "./validate";
 
 export const DEFAULT_PUBLISH_INTERVAL_MS = 50;
 export const DEFAULT_HEARTBEAT_MS = 10_000;
+
+const MIN_TIMER_INTERVAL_MS = 1;
+const MIN_STALE_TIMEOUT_MS = 1000;
 
 type TimerHandle = ReturnType<typeof setTimeout>;
 
@@ -36,14 +44,17 @@ export type PresenceClientOptions<TContext = unknown, TUser = unknown> = {
 export interface PresenceClient<TContext = unknown, TUser = unknown> {
   readonly clientId: string;
   readonly session: string;
-  updateLocalCursor(cursor: CursorPosition | null): void;
+  updateLocalCursor(cursor: CursorPosition | null, pointer?: PointerInfo): void;
   setContext(context: TContext | undefined): void;
+  getContext(): TContext | undefined;
   setUser(user: TUser | undefined): void;
+  getUser(): TUser | undefined;
   getStatus(): ConnectionStatus;
-  subscribeStatus(listener: (status: ConnectionStatus) => void) : () => void;
+  subscribeStatus(listener: (status: ConnectionStatus) => void): () => void;
   getRemoteSnapshot(): CursorPresence<TContext, TUser>[];
   subscribeRemote(listener: () => void): () => void;
-  registerTeardown(fn: () => void): void;
+  /** Returns an unregister function; on an already-disposed client runs fn immediately. */
+  registerTeardown(fn: () => void): () => void;
   dispose(): void;
 }
 
@@ -68,21 +79,42 @@ function defaultIdFactory(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
 }
 
+function isDevMode(): boolean {
+  const env = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env;
+  return env?.NODE_ENV !== "production";
+}
+
+function jsonByteLength(value: unknown): number {
+  try {
+    const json = JSON.stringify(value);
+    return json === undefined ? 0 : new TextEncoder().encode(json).length;
+  } catch {
+    return Number.POSITIVE_INFINITY;
+  }
+}
+
 export function createPresenceClient<TContext = unknown, TUser = unknown>(
   options: PresenceClientOptions<TContext, TUser>,
 ): PresenceClient<TContext, TUser> {
   const {
     transport,
     codec = jsonCodec,
-    publishIntervalMs = DEFAULT_PUBLISH_INTERVAL_MS,
-    staleTimeoutMs,
-    heartbeatMs = DEFAULT_HEARTBEAT_MS,
     maxRemoteClients,
     idFactory = defaultIdFactory,
     now = () => Date.now(),
     scheduler = defaultScheduler,
     validationLimits,
   } = options;
+
+  const publishIntervalMs = Math.max(
+    MIN_TIMER_INTERVAL_MS,
+    options.publishIntervalMs ?? DEFAULT_PUBLISH_INTERVAL_MS,
+  );
+  const heartbeatMs = Math.max(MIN_TIMER_INTERVAL_MS, options.heartbeatMs ?? DEFAULT_HEARTBEAT_MS);
+  const staleTimeoutMs =
+    options.staleTimeoutMs === undefined
+      ? undefined
+      : Math.max(MIN_STALE_TIMEOUT_MS, options.staleTimeoutMs);
 
   const clientId = options.clientId ?? idFactory();
   const session = idFactory();
@@ -93,12 +125,15 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
   let disposed = false;
 
   let latestCursor: CursorPosition | null = null;
-  let lastSentCursor: CursorPosition | null | undefined; // undefined = nothing sent yet
+  let latestPointer: PointerInfo | undefined;
+  let pendingPublish = false;
   let publishTimer: TimerHandle | null = null;
   let heartbeatTimer: TimerHandle | null = null;
   let sweepTimer: TimerHandle | null = null;
 
-  let status: ConnectionStatus = transport.subscribeStatus ? "connecting" : "connected";
+  let status: ConnectionStatus = transport.subscribeStatus
+    ? (transport.getStatus?.() ?? "connecting")
+    : "connected";
   const statusListeners = new Set<(status: ConnectionStatus) => void>();
 
   const store = new RemotePresenceStore<TContext, TUser>({
@@ -109,14 +144,57 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
 
   const teardowns: Array<() => void> = [];
 
+  const maxFieldBytes = validationLimits?.maxFieldBytes ?? DEFAULT_MAX_FIELD_BYTES;
+  const maxMessageBytes = validationLimits?.maxMessageBytes ?? DEFAULT_MAX_MESSAGE_BYTES;
+  const devMode = isDevMode();
+
+  // checked when context/user changes, not per message — receivers silently drop oversized fields
+  function warnIfOversized(): void {
+    if (!devMode) return;
+    try {
+      if (context !== undefined && jsonByteLength(context) > maxFieldBytes) {
+        console.warn(
+          `[anchor-presence] outbound context exceeds maxFieldBytes (${maxFieldBytes}); receivers will drop the field`,
+        );
+      }
+      if (user !== undefined && jsonByteLength(user) > maxFieldBytes) {
+        console.warn(
+          `[anchor-presence] outbound user exceeds maxFieldBytes (${maxFieldBytes}); receivers will drop the field`,
+        );
+      }
+      const probe: CursorPresence<TContext, TUser> = {
+        version: 1,
+        clientId,
+        session,
+        sequence,
+        cursor: latestCursor,
+      };
+      if (context !== undefined) probe.context = context;
+      if (user !== undefined) probe.user = user;
+      if (codec.encode(probe).byteLength > maxMessageBytes) {
+        console.warn(
+          `[anchor-presence] outbound message exceeds maxMessageBytes (${maxMessageBytes}); receivers will drop it`,
+        );
+      }
+    } catch {
+      // the sizing probe must never break the client
+    }
+  }
+
   function setStatus(next: ConnectionStatus): void {
     if (status === next) return;
-    const wasSendable = status !== "connecting" && status !== "disconnected";
     status = next;
-    for (const listener of statusListeners) listener(status);
-    // reconnected: the latest local state was never sent while unsendable, republish now (rate-limited)
-    if (!wasSendable && status === "connected" && latestCursor !== lastSentCursor) {
+    // republish before listener fan-out so a throwing listener cannot kill the guarantee
+    if (status === "connected") {
+      pendingPublish = true;
       schedulePublish();
+    }
+    for (const listener of statusListeners) {
+      try {
+        listener(status);
+      } catch {
+        // one throwing listener must not starve the rest
+      }
     }
   }
 
@@ -130,11 +208,12 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     };
     if (context !== undefined) message.context = context;
     if (user !== undefined) message.user = user;
+    if (latestPointer !== undefined) message.pointer = latestPointer;
     return message;
   }
 
   function send(cursor: CursorPosition | null): boolean {
-    if (status === "disconnected" || status === "connecting") return false;
+    if (status !== "connected") return false;
     try {
       const bytes = codec.encode(buildMessage(cursor));
       const result = transport.send(bytes);
@@ -152,16 +231,25 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     if (disposed || publishTimer !== null) return;
     publishTimer = scheduler.setTimeout(() => {
       publishTimer = null;
-      if (latestCursor !== lastSentCursor && send(latestCursor)) {
-        lastSentCursor = latestCursor;
+      if (!pendingPublish) return;
+      if (send(latestCursor)) {
+        pendingPublish = false;
+      } else if (status === "connected") {
+        schedulePublish(); // transient send failure: retry instead of stalling until the next change
       }
+      // while unsendable, pendingPublish stays set; the transition into "connected" re-schedules
     }, publishIntervalMs);
+  }
+
+  function markPending(): void {
+    pendingPublish = true;
+    schedulePublish();
   }
 
   function scheduleHeartbeat(): void {
     if (disposed) return;
     heartbeatTimer = scheduler.setTimeout(() => {
-      send(lastSentCursor ?? null);
+      if (send(latestCursor)) pendingPublish = false;
       scheduleHeartbeat();
     }, heartbeatMs);
   }
@@ -177,15 +265,18 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
   }
   scheduleSweep();
 
-  const maxMessageBytes = validationLimits?.maxMessageBytes ?? DEFAULT_MAX_MESSAGE_BYTES;
   const unsubscribeTransport = transport.subscribe((data) => {
     if (disposed) return;
-    if (data.byteLength > maxMessageBytes) return; // oversized wire message: drop before parsing (spec §4.2)
-    const decoded = codec.decode(data);
-    const presence = validatePresence<TContext, TUser>(decoded, validationLimits);
-    if (presence === null) return;
-    if (presence.clientId === clientId) return; // ignore echoes of our own messages
-    store.ingest(presence);
+    try {
+      if (data.byteLength > maxMessageBytes) return; // oversized wire message: drop before parsing (spec §4.2)
+      const decoded = codec.decode(data);
+      const presence = validatePresence<TContext, TUser>(decoded, validationLimits);
+      if (presence === null) return;
+      if (presence.clientId === clientId) return; // ignore echoes of our own messages
+      store.ingest(presence);
+    } catch {
+      // a throwing codec or subscriber must not break the transport dispatch loop
+    }
   });
   teardowns.push(unsubscribeTransport);
 
@@ -194,22 +285,39 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     teardowns.push(unsubscribeStatus);
   }
 
+  if (context !== undefined || user !== undefined) warnIfOversized();
+
   return {
     clientId,
     session,
 
-    updateLocalCursor(cursor) {
+    updateLocalCursor(cursor, pointer) {
       if (disposed) return;
       latestCursor = cursor;
-      schedulePublish();
+      if (pointer !== undefined) latestPointer = pointer;
+      markPending();
     },
 
     setContext(next) {
+      if (disposed) return;
       context = next;
+      warnIfOversized();
+      markPending();
+    },
+
+    getContext() {
+      return context;
     },
 
     setUser(next) {
+      if (disposed) return;
       user = next;
+      warnIfOversized();
+      markPending();
+    },
+
+    getUser() {
+      return user;
     },
 
     getStatus() {
@@ -232,18 +340,37 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     },
 
     registerTeardown(fn) {
+      if (disposed) {
+        fn();
+        return () => {};
+      }
       teardowns.push(fn);
+      return () => {
+        const index = teardowns.indexOf(fn);
+        if (index !== -1) teardowns.splice(index, 1);
+      };
     },
 
     dispose() {
       if (disposed) return;
       disposed = true;
+      send(null); // best-effort leave message so receivers hide the cursor immediately
       if (publishTimer !== null) scheduler.clearTimeout(publishTimer);
       if (heartbeatTimer !== null) scheduler.clearTimeout(heartbeatTimer);
       if (sweepTimer !== null) scheduler.clearTimeout(sweepTimer);
       publishTimer = null;
       heartbeatTimer = null;
       sweepTimer = null;
+      if (status !== "disconnected") {
+        status = "disconnected";
+        for (const listener of statusListeners) {
+          try {
+            listener(status);
+          } catch {
+            // one throwing listener must not starve the rest
+          }
+        }
+      }
       statusListeners.clear();
       for (const teardown of teardowns.splice(0, teardowns.length)) {
         teardown();

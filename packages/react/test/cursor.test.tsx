@@ -171,7 +171,7 @@ describe("cursor components", () => {
       root.render(
         <LiveCursorProvider client={client} binding={binding}>
           <CursorLayer
-            getCursorProps={(c) => ({
+            getCursorProps={() => ({
               className: "demo-cursor",
               "data-testid": "remote-cursor",
               "data-cursor-name": "Ada",

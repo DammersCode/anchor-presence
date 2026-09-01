@@ -269,6 +269,7 @@ describe("createGeometryScheduler (spec §11)", () => {
   });
 
   it("transition entry closes on transitioncancel", () => {
+    vi.useFakeTimers();
     const { raf, caf } = makeRafStub();
     active = true;
     const scheduler = createGeometryScheduler(baseOptions({ raf, caf }));
@@ -285,8 +286,10 @@ describe("createGeometryScheduler (spec §11)", () => {
     Object.defineProperty(cancelEvent, "propertyName", { value: "opacity" });
     el.dispatchEvent(cancelEvent);
 
-    // no throw, and no leaked timers: dispose should be silent
+    // closed entry leaves no pending safety timer behind
+    expect(vi.getTimerCount()).toBe(0);
     scheduler.dispose();
+    vi.useRealTimers();
   });
 
   it("F2: distinct elements animating the same property keep independent tracked entries (per-target keying)", () => {

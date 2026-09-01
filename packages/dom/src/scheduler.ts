@@ -66,9 +66,30 @@ export type GeometryScheduler = {
   dispose(): void;
 };
 
+// document-level scroll/mutation signals stop at shadow boundaries; observe each anchor's roots directly
+function collectShadowRoots(anchors: Iterable<Element>): Set<ShadowRoot> {
+  const roots = new Set<ShadowRoot>();
+  for (const el of anchors) {
+    let root = el.getRootNode();
+    while (root instanceof ShadowRoot) {
+      roots.add(root);
+      root = root.host.getRootNode();
+    }
+  }
+  return roots;
+}
+
+// own cursor renders mutate the DOM every frame; reacting to them would defeat the interpolation-only reuse path
+function isCursorRootMutation(record: MutationRecord): boolean {
+  const target = record.target;
+  const element = target instanceof Element ? target : target.parentElement;
+  return element !== null && element.closest("[data-anchor-presence-cursor]") !== null;
+}
+
 function parseCssTimeList(value: string): number[] {
   return value
     .split(",")
+    // oxlint-disable-next-line unicorn/prefer-number-coercion -- Number("0.3s") is NaN; parseFloat reads the leading number
     .map((v) => Number.parseFloat(v))
     .map((n) => (Number.isFinite(n) ? n * 1000 : 0));
 }
@@ -146,19 +167,6 @@ export function createGeometryScheduler<TSnapshot>(
     syncShadowRoots(nextSet);
   }
 
-  // document-level scroll/mutation signals stop at shadow boundaries; observe each anchor's roots directly
-  function collectShadowRoots(anchors: Iterable<Element>): Set<ShadowRoot> {
-    const roots = new Set<ShadowRoot>();
-    for (const el of anchors) {
-      let root = el.getRootNode();
-      while (root instanceof ShadowRoot) {
-        roots.add(root);
-        root = root.host.getRootNode();
-      }
-    }
-    return roots;
-  }
-
   function syncShadowRoots(anchors: Iterable<Element>): void {
     const next = collectShadowRoots(anchors);
     for (const [root, observer] of shadowRootObservers) {
@@ -188,13 +196,6 @@ export function createGeometryScheduler<TSnapshot>(
   function onResizeObserverEntry(): void {
     markDirtyAndSchedule();
   }
-  // own cursor renders mutate the DOM every frame; reacting to them would defeat the interpolation-only reuse path
-  function isCursorRootMutation(record: MutationRecord): boolean {
-    const target = record.target;
-    const element = target instanceof Element ? target : target.parentElement;
-    return element !== null && element.closest("[data-anchor-presence-cursor]") !== null;
-  }
-
   function onMutation(records?: MutationRecord[]): void {
     if (records === undefined) {
       markDirtyAndSchedule();
@@ -298,10 +299,10 @@ export function createGeometryScheduler<TSnapshot>(
     }
 
     for (const type of TRANSITION_START_EVENTS) {
-      doc.addEventListener(type, onTransitionStart as EventListener, { capture: true });
+      doc.addEventListener(type, onTransitionStart, { capture: true });
     }
     for (const type of TRANSITION_END_EVENTS) {
-      doc.addEventListener(type, onTransitionEnd as EventListener, { capture: true });
+      doc.addEventListener(type, onTransitionEnd, { capture: true });
     }
 
     scheduleFrame();
@@ -331,10 +332,10 @@ export function createGeometryScheduler<TSnapshot>(
     shadowRootObservers.clear();
 
     for (const type of TRANSITION_START_EVENTS) {
-      doc.removeEventListener(type, onTransitionStart as EventListener, { capture: true });
+      doc.removeEventListener(type, onTransitionStart, { capture: true });
     }
     for (const type of TRANSITION_END_EVENTS) {
-      doc.removeEventListener(type, onTransitionEnd as EventListener, { capture: true });
+      doc.removeEventListener(type, onTransitionEnd, { capture: true });
     }
     for (const [target, byName] of Array.from(transitionEntries)) {
       for (const name of Array.from(byName.keys())) closeTransitionEntry(target, name);

@@ -1,5 +1,7 @@
 // Anchor registry — spec §8
 
+import { parentAcrossShadow } from "./domTree";
+
 export interface AnchorRegistry {
   register(id: string, element: Element): () => void;
   get(id: string): Element | null;
@@ -15,15 +17,6 @@ function isDev(): boolean {
   } catch {
     return true;
   }
-}
-
-/** Walks up through ancestors, crossing shadow boundaries via `host`. */
-function parentOf(element: Element): Element | null {
-  const parent = element.parentElement;
-  if (parent !== null) return parent;
-  const root = element.getRootNode();
-  if (root instanceof ShadowRoot) return root.host;
-  return null;
 }
 
 export function createAnchorRegistry(): AnchorRegistry {
@@ -75,7 +68,7 @@ export function createAnchorRegistry(): AnchorRegistry {
         if (id !== undefined && byId.get(id) === current) {
           result.push({ id, element: current });
         }
-        current = parentOf(current);
+        current = parentAcrossShadow(current);
       }
       return result;
     },

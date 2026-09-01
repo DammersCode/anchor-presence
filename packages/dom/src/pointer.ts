@@ -19,6 +19,11 @@ export type PointerSourceHandle = {
   detach(): void;
 };
 
+function pointerInfo(event: PointerEvent): PointerInfo | undefined {
+  const type = event.pointerType;
+  return type === "mouse" || type === "pen" || type === "touch" ? { type } : undefined;
+}
+
 function eventTargetElement(event: Event): Element | null {
   const path = typeof event.composedPath === "function" ? event.composedPath() : [];
   const first = path[0];
@@ -56,7 +61,7 @@ function buildCursorPosition(
 
 /** Listens for pointer activity and feeds outbound samples to the presence client — spec §9. */
 export function attachPointerSource(
-  client: PresenceClient<unknown, unknown>,
+  client: PresenceClient,
   registry: AnchorRegistry,
   options: PointerSourceOptions = {},
 ): PointerSourceHandle {
@@ -64,11 +69,6 @@ export function attachPointerSource(
   const doc = options.root ?? document;
   const win = options.window ?? window;
   const getCachedRect = options.getCachedRect;
-
-  function pointerInfo(event: PointerEvent): PointerInfo | undefined {
-    const type = event.pointerType;
-    return type === "mouse" || type === "pen" || type === "touch" ? { type } : undefined;
-  }
 
   function onPointerEvent(event: PointerEvent): void {
     const target = eventTargetElement(event);

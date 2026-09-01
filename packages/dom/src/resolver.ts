@@ -3,6 +3,7 @@
 import type { CursorPresence, InterpolatorFactory } from "@anchor-presence/core";
 import { linearInterpolator } from "@anchor-presence/core";
 import type { AnchorRegistry } from "./registry";
+import { parentAcrossShadow } from "./domTree";
 import type { Rect, ViewportSize } from "./geometry";
 import { computeVisibleRect, isPointInRect } from "./occlusion";
 import type { SchedulerReadState } from "./scheduler";
@@ -21,8 +22,8 @@ export type ResolvedCursor<TContext = unknown, TUser = unknown> = {
   user?: TUser;
 };
 
-export type VisibilityPolicy<TContext = unknown> = (input: {
-  presence: CursorPresence<TContext>;
+export type VisibilityPolicy<TContext = unknown, TUser = unknown> = (input: {
+  presence: CursorPresence<TContext, TUser>;
   resolution: { tier: ResolutionTier; anchorId: string | null; pointVisible: boolean };
 }) => "show" | "hide";
 
@@ -77,7 +78,7 @@ export function resolveGeometry(
     return { x: 0, y: 0, tier: "hidden", anchorId: null, pointVisible: false, element: null, activeAnchors: [] };
   }
 
-  const resolved = findResolvableAnchor(presence, registry, readState.getRect);
+  const resolved = findResolvableAnchor(presence, registry, (element) => readState.getRect(element));
   if (resolved !== null) {
     const anchor = cursor.anchors.find((a) => a.id === resolved.id);
     const u = anchor?.u ?? 0;
@@ -119,9 +120,9 @@ export function resolveGeometry(
   return { x: 0, y: 0, tier: "hidden", anchorId: null, pointVisible: false, element: null, activeAnchors: [] };
 }
 
-export type ResolverOptions<TContext = unknown> = {
+export type ResolverOptions<TContext = unknown, TUser = unknown> = {
   registry: AnchorRegistry;
-  visibilityPolicy?: VisibilityPolicy<TContext> | undefined;
+  visibilityPolicy?: VisibilityPolicy<TContext, TUser> | undefined;
   interpolatorFactory?: InterpolatorFactory | undefined;
   hitTest?: boolean | undefined;
 };
@@ -136,7 +137,7 @@ type InterpolatorState = {
 /** Stateful resolver: tracks one interpolator per clientId, decides target() vs shift() per spec §13. */
 export class RemoteResolver<TContext = unknown, TUser = unknown> {
   private readonly registry: AnchorRegistry;
-  private readonly visibilityPolicy: VisibilityPolicy<TContext>;
+  private readonly visibilityPolicy: VisibilityPolicy<TContext, TUser>;
   private readonly interpolatorFactory: InterpolatorFactory;
   private readonly hitTest: boolean;
   private readonly states = new Map<string, InterpolatorState>();
@@ -144,9 +145,9 @@ export class RemoteResolver<TContext = unknown, TUser = unknown> {
   private readonly lastResults = new Map<string, ResolvedCursor<TContext, TUser>>();
   private lastList: ResolvedCursor<TContext, TUser>[] = [];
 
-  constructor(options: ResolverOptions<TContext>) {
+  constructor(options: ResolverOptions<TContext, TUser>) {
     this.registry = options.registry;
-    this.visibilityPolicy = options.visibilityPolicy ?? (defaultVisibilityPolicy as VisibilityPolicy<TContext>);
+    this.visibilityPolicy = options.visibilityPolicy ?? defaultVisibilityPolicy;
     this.interpolatorFactory = options.interpolatorFactory ?? linearInterpolator;
     this.hitTest = options.hitTest ?? false;
   }
@@ -264,13 +265,8 @@ export class RemoteResolver<TContext = unknown, TUser = unknown> {
     let current: Element | null = element;
     while (current !== null) {
       if (current === ancestor) return true;
-      const host: unknown = (current.getRootNode() as { host?: unknown }).host;
-      current = current.parentElement ?? (this.isElement(host) ? host : null);
+      current = parentAcrossShadow(current);
     }
     return false;
-  }
-
-  private isElement(value: unknown): value is Element {
-    return typeof value === "object" && value !== null && (value as Node).nodeType === 1;
   }
 }

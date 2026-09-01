@@ -372,7 +372,7 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
         }
       }
       statusListeners.clear();
-      for (const teardown of teardowns.splice(0, teardowns.length)) {
+      for (const teardown of teardowns.splice(0)) {
         teardown();
       }
     },

@@ -124,16 +124,12 @@ export function validatePresence<TContext = unknown, TUser = unknown>(
       cursor,
     };
 
-    if ("context" in input && input.context !== undefined) {
-      if (byteLengthOf(input.context) <= resolved.maxFieldBytes) {
-        message.context = input.context as TContext;
-      }
+    if ("context" in input && input.context !== undefined && byteLengthOf(input.context) <= resolved.maxFieldBytes) {
+      message.context = input.context as TContext;
     }
 
-    if ("user" in input && input.user !== undefined) {
-      if (byteLengthOf(input.user) <= resolved.maxFieldBytes) {
-        message.user = input.user as TUser;
-      }
+    if ("user" in input && input.user !== undefined && byteLengthOf(input.user) <= resolved.maxFieldBytes) {
+      message.user = input.user as TUser;
     }
 
     const pointer = input.pointer;

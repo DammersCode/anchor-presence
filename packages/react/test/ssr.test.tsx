@@ -23,7 +23,7 @@ function AllHooks() {
       <span data-testid="presence">{presence.length}</span>
       <span data-testid="status">{status}</span>
       <span data-testid="client">{client === null ? "null" : "present"}</span>
-      <span data-testid="context">{context === undefined ? "undefined" : String(context)}</span>
+      <span data-testid="context">{context === undefined ? "undefined" : JSON.stringify(context)}</span>
     </div>
   );
 }

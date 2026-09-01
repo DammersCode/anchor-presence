@@ -1,4 +1,5 @@
 import type { Rect } from "./geometry";
+import { parentAcrossShadow } from "./domTree";
 import type { SchedulerReadState } from "./scheduler";
 
 export type StyleValues = Pick<CSSStyleDeclaration, "overflow" | "overflowX" | "overflowY">;
@@ -10,16 +11,6 @@ function intersect(first: Rect, second: Rect): Rect | null {
   const bottom = Math.min(first.top + first.height, second.top + second.height);
   if (right <= left || bottom <= top) return null;
   return { left, top, width: right - left, height: bottom - top };
-}
-
-function isElement(value: unknown): value is Element {
-  return typeof value === "object" && value !== null && (value as Node).nodeType === 1;
-}
-
-function parent(element: Element): Element | null {
-  if (element.parentElement !== null) return element.parentElement;
-  const host = (element.getRootNode() as { host?: unknown }).host;
-  return isElement(host) ? host : null;
 }
 
 function clips(style: StyleValues): boolean {
@@ -69,7 +60,7 @@ export function computeVisibleRect(
   onClippingAncestor?: (element: Element) => void,
 ): Rect | null {
   let visible = rect;
-  let ancestor = parent(element);
+  let ancestor = parentAcrossShadow(element);
   const documentElement = element.ownerDocument.documentElement;
   while (ancestor !== null && ancestor !== documentElement) {
     if (clips(readState.getStyle(ancestor))) {
@@ -81,7 +72,7 @@ export function computeVisibleRect(
         visible = clipped;
       }
     }
-    ancestor = parent(ancestor);
+    ancestor = parentAcrossShadow(ancestor);
   }
   return visible;
 }

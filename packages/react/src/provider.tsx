@@ -25,7 +25,9 @@ export function LiveCursorProvider<TContext = unknown, TUser = unknown>(
   const [ownBinding, setOwnBinding] = useState<DomBinding<TContext, TUser> | null>(null);
   // bindingOptions changes are intentionally ignored after the binding is created — the binding is created once per client.
   const bindingOptionsRef = useRef(bindingOptions);
-  bindingOptionsRef.current = bindingOptions;
+  useEffect(() => {
+    bindingOptionsRef.current = bindingOptions;
+  });
 
   useEffect(() => {
     if (providedBinding !== undefined) return;
@@ -48,7 +50,7 @@ export function LiveCursorProvider<TContext = unknown, TUser = unknown>(
   );
 
   return (
-    <LiveCursorContext.Provider value={value as LiveCursorContextValue}>
+    <LiveCursorContext.Provider value={value}>
       {children}
     </LiveCursorContext.Provider>
   );

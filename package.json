@@ -12,6 +12,7 @@
   "scripts": {
     "build": "bun run --filter '@anchor-presence/*' build",
     "typecheck": "tsc --build packages/core packages/dom packages/react",
+    "lint": "oxlint --type-aware",
     "test": "vitest run",
     "test:browser": "playwright test"
   },
@@ -19,6 +20,8 @@
     "@playwright/test": "^1.62.1",
     "@types/node": "^24.0.0",
     "jsdom": "^30.0.1",
+    "oxlint": "^1.80.0",
+    "oxlint-tsgolint": "^7.0.2001",
     "typescript": "^5.7.0",
     "vitest": "^4.1.11"
   }

@@ -1,6 +1,6 @@
 // Per-frame geometry cache for the scheduler's READ phase — spec §11
 
-import type { Rect, ViewportSize } from "./geometry";
+import type { Rect } from "./geometry";
 import { readClientRect } from "./occlusion";
 import type { StyleValues } from "./occlusion";
 import type { SchedulerReadState } from "./scheduler";
@@ -36,19 +36,20 @@ export function createFrameCache(host: FrameCacheHost): FrameCache {
     const rects = new Map<Element, Rect>();
     const clientRects = new Map<Element, Rect>();
     const styles = new Map<Element, StyleValues>();
+    function rectOf(element: Element): Rect {
+      let rect = rects.get(element);
+      if (rect === undefined) {
+        rect = measureRect(element);
+        rects.set(element, rect);
+      }
+      return rect;
+    }
     const readState: SchedulerReadState = {
-      getRect(element) {
-        let rect = rects.get(element);
-        if (rect === undefined) {
-          rect = measureRect(element);
-          rects.set(element, rect);
-        }
-        return rect;
-      },
+      getRect: rectOf,
       getClientRect(element) {
         let rect = clientRects.get(element);
         if (rect === undefined) {
-          rect = readClientRect(element, readState.getRect(element)!);
+          rect = readClientRect(element, rectOf(element));
           clientRects.set(element, rect);
         }
         return rect;

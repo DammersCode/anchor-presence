@@ -18,8 +18,8 @@ export type { AnchorRegistry } from "./registry";
 export type { ResolvedCursor, ResolutionTier, VisibilityPolicy } from "./resolver";
 
 /** How remote cursors turn into screen positions. */
-export type ResolutionOptions<TContext = unknown> = {
-  visibilityPolicy?: VisibilityPolicy<TContext>;
+export type ResolutionOptions<TContext = unknown, TUser = unknown> = {
+  visibilityPolicy?: VisibilityPolicy<TContext, TUser>;
   interpolatorFactory?: InterpolatorFactory;
   hitTest?: boolean;
 };
@@ -36,7 +36,7 @@ export type EnvironmentOptions = {
 
 export type DomBindingOptions<TContext = unknown, TUser = unknown> = {
   maxAnchors?: number;
-  resolution?: ResolutionOptions<TContext>;
+  resolution?: ResolutionOptions<TContext, TUser>;
   environment?: EnvironmentOptions;
 };
 
@@ -92,7 +92,7 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
     ...environment,
   });
 
-  const pointerHandle = attachPointerSource(client as PresenceClient<unknown, unknown>, registry, {
+  const pointerHandle = attachPointerSource(client, registry, {
     maxAnchors: options.maxAnchors,
     root: environment.root,
     window: environment.window,

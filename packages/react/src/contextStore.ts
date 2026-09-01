@@ -7,7 +7,7 @@ type ContextStore<TContext> = {
   setContext(next: TContext | undefined): void;
 };
 
-const stores = new WeakMap<PresenceClient<unknown, unknown>, ContextStore<unknown>>();
+const stores = new WeakMap<PresenceClient, ContextStore<unknown>>();
 
 function createContextStore<TContext, TUser>(
   client: PresenceClient<TContext, TUser>,
@@ -32,9 +32,9 @@ function createContextStore<TContext, TUser>(
 export function getContextStore<TContext, TUser>(
   client: PresenceClient<TContext, TUser>,
 ): ContextStore<TContext> {
-  const existing = stores.get(client as PresenceClient<unknown, unknown>);
+  const existing = stores.get(client);
   if (existing !== undefined) return existing as ContextStore<TContext>;
   const created = createContextStore(client);
-  stores.set(client as PresenceClient<unknown, unknown>, created as ContextStore<unknown>);
+  stores.set(client, created);
   return created;
 }

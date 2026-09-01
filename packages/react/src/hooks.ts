@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { ConnectionStatus, CursorPresence, PresenceClient } from "@anchor-presence/core";
 import type { ResolvedCursor } from "@anchor-presence/dom";
 import { LiveCursorContext } from "./context";
@@ -34,8 +34,6 @@ export function useCursorAnchor(id: string): (element: Element | null) => void {
   const elementRef = useRef<Element | null>(null);
   const unregisterRef = useRef<(() => void) | null>(null);
 
-  idRef.current = id;
-
   const register = useCallback(
     (element: Element | null) => {
       if (unregisterRef.current !== null) {
@@ -50,10 +48,9 @@ export function useCursorAnchor(id: string): (element: Element | null) => void {
     [binding],
   );
 
-  const idChangedRef = useRef(id);
   useEffect(() => {
-    if (idChangedRef.current === id) return;
-    idChangedRef.current = id;
+    if (idRef.current === id) return;
+    idRef.current = id;
     register(elementRef.current);
   }, [id, register]);
 
@@ -100,11 +97,8 @@ export function useRemoteCursorsSelector<TSelected, TContext = unknown, TUser = 
   }, [binding, select, isEqual]);
 
   // computed once: React may call the server snapshot repeatedly, and it compares by identity
-  const serverRef = useRef<{ value: TSelected } | null>(null);
-  const getServerSnapshot = useCallback(() => {
-    serverRef.current ??= { value: select(EMPTY_CURSORS as ResolvedCursor<TContext, TUser>[]) };
-    return serverRef.current.value;
-  }, [select]);
+  const [serverValue] = useState(() => select(EMPTY_CURSORS as ResolvedCursor<TContext, TUser>[]));
+  const getServerSnapshot = useCallback(() => serverValue, [serverValue]);
 
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
@@ -132,6 +126,8 @@ export function useCursorStatus(): ConnectionStatus {
   return useSyncExternalStore(subscribe, getSnapshot, getServerStatus);
 }
 
+// TUser keeps the generic arity aligned with the other hooks; removing it would break existing call sites
+// oxlint-disable-next-line typescript/no-unnecessary-type-parameters
 export function useCursorContext<TContext = unknown, TUser = unknown>(): [
   TContext | undefined,
   (next: TContext | undefined) => void,

@@ -106,7 +106,7 @@ function OrderRow({ order }: { order: Order }) {
 function useRemoteCursors<TContext = unknown, TUser = unknown>(): ResolvedCursor<TContext, TUser>[];
 ```
 
-Returns the current resolved-cursor snapshot: `{ clientId, x, y, visible, anchorId, tier, context?, user? }[]`. Values are receiver-viewport pixels. Position with `position: fixed`.
+Returns the current resolved-cursor snapshot: `{ clientId, x, y, visible, pointVisible, anchorId, tier, context?, user? }[]`. Values are receiver-viewport pixels. Position with `position: fixed`.
 
 Cursor movement updates flow only to components that call this hook. The provider never rerenders the rest of the app tree per cursor frame.
 
@@ -179,7 +179,9 @@ function useCursorContext<TContext = unknown, TUser = unknown>(): [
 ];
 ```
 
-Returns the current context value and a setter. The setter calls `client.setContext()` and updates every subscribed component.
+Returns the current context value and a setter. The initial value is the client's current context, including the `context` option passed to `createPresenceClient`. The setter calls `client.setContext()` and updates every subscribed component.
+
+Caveat: a direct `client.setContext()` call outside the hook updates the client, but subscribed components rerender only on the next hook-driven update. Set context through the hook's setter.
 
 ```tsx
 function SettingsDialog({ open }: { open: boolean }) {

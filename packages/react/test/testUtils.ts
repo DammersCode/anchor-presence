@@ -13,14 +13,22 @@ export function makeFakeClient<TContext = unknown, TUser = unknown>(): {
   const remoteListeners = new Set<() => void>();
   const statusListeners = new Set<(status: ConnectionStatus) => void>();
   let status: ConnectionStatus = "connected";
+  let context: TContext | undefined;
+  let user: TUser | undefined;
   const teardowns: Array<() => void> = [];
 
   const client: PresenceClient<TContext, TUser> = {
     clientId: "local",
     session: "s",
     updateLocalCursor: () => {},
-    setContext: () => {},
-    setUser: () => {},
+    setContext: (next) => {
+      context = next;
+    },
+    getContext: () => context,
+    setUser: (next) => {
+      user = next;
+    },
+    getUser: () => user,
     getStatus: () => status,
     subscribeStatus: (listener) => {
       statusListeners.add(listener);
@@ -31,7 +39,13 @@ export function makeFakeClient<TContext = unknown, TUser = unknown>(): {
       remoteListeners.add(listener);
       return () => remoteListeners.delete(listener);
     },
-    registerTeardown: (fn) => teardowns.push(fn),
+    registerTeardown: (fn) => {
+      teardowns.push(fn);
+      return () => {
+        const index = teardowns.indexOf(fn);
+        if (index !== -1) teardowns.splice(index, 1);
+      };
+    },
     dispose: () => {
       for (const fn of teardowns.splice(0, teardowns.length)) fn();
     },

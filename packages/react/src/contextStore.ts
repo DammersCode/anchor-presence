@@ -1,6 +1,6 @@
 import type { PresenceClient } from "@anchor-presence/core";
 
-// core's setContext is write-only (spec §7/§12); this mirrors the last-set value so useCursorContext can read it back.
+// Reads through to the client so the initial `context` option and direct writes stay visible.
 type ContextStore<TContext> = {
   getSnapshot(): TContext | undefined;
   subscribe(listener: () => void): () => void;
@@ -12,11 +12,10 @@ const stores = new WeakMap<PresenceClient<unknown, unknown>, ContextStore<unknow
 function createContextStore<TContext, TUser>(
   client: PresenceClient<TContext, TUser>,
 ): ContextStore<TContext> {
-  let value: TContext | undefined;
   const listeners = new Set<() => void>();
 
   return {
-    getSnapshot: () => value,
+    getSnapshot: () => client.getContext(),
     subscribe(listener) {
       listeners.add(listener);
       return () => {
@@ -24,7 +23,6 @@ function createContextStore<TContext, TUser>(
       };
     },
     setContext(next) {
-      value = next;
       client.setContext(next);
       for (const listener of listeners) listener();
     },

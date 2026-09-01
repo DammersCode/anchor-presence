@@ -23,6 +23,8 @@ const policy: VisibilityPolicy = ({ resolution }) =>
   !resolution.pointVisible || resolution.tier === "hidden" ? "hide" : "show";
 ```
 
+Note: the occlusion check uses a simplified model (spec §10). An absolutely or fixed-positioned anchor that escapes an `overflow: hidden` ancestor is still treated as clipped, so this policy can hide a cursor that is actually visible. Prefer portal-rendered overlays, or a custom policy for those anchors.
+
 If an overlay can cover the point, set `hitTest: true`. If the check cost is acceptable, use this option.
 
 ## Cursor drifts

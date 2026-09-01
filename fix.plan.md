@@ -1,5 +1,7 @@
 # Fix Plan — validated findings → worktree workstreams
 
+> **Status 2026-09-01: DONE.** WS-1..4 merged into `dev`; final verification agent returned GO (typecheck, lint, 263/263 unit tests, 17/17 Playwright chromium). Non-blocking observations from verification: unbounded-in-count send retry (rate-limited, by design), size-warning probe omits the `pointer` field, connect transitions send an announce message (documented).
+
 Source: review.validation.md (26 findings; 0 false-positives). Grouped by root cause, cut so parallel work has no file overlap. All work lands on `dev` (merge to `main` = deliberate CI trigger, user-controlled).
 
 Sequencing: **WS-1 first** (it introduces the core API surface WS-2/WS-3 build on), then **WS-2 ∥ WS-3** in parallel worktrees. Docs/spec reconciliation as a final advisor pass.

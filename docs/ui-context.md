@@ -43,6 +43,8 @@ const clippedPointPolicy: VisibilityPolicy = ({ resolution }) =>
   !resolution.pointVisible || resolution.tier === "hidden" ? "hide" : "show";
 ```
 
+Note: occlusion uses a simplified model (spec §10). An absolutely or fixed-positioned anchor that escapes an `overflow: hidden` ancestor still counts as clipped, because the check walks DOM ancestors without computing containing blocks. For such overlays, render them in a portal outside the clipping ancestor, or use a custom policy that ignores `pointVisible` for those anchors.
+
 ## Dialog mismatch handling
 
 Anchor fallback usually covers a context mismatch by itself. If a sender's cursor sits inside an anchor named `settings.dialog.invite` and the receiver has not opened that dialog, the anchor is absent from the receiver's DOM. The fallback chain falls through to a parent anchor, for example `settings`, or to the viewport.

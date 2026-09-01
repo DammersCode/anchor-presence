@@ -24,6 +24,7 @@ The scheduler listens for these signals while at least one remote cursor is acti
 - `scroll` on `window` and on scrollable ancestors, through one capture-phase document scroll listener
 - `ResizeObserver` on each active anchor element and on `document.documentElement`
 - one `MutationObserver` on `document.body` (`childList`, `attributes`, `subtree`), for moves with no dedicated signal: sibling insertion or removal, instant class toggles, transform changes
+- a capture-phase scroll listener and a `MutationObserver` on each open shadow root that holds an active anchor, because document-level scroll and mutation signals stop at shadow boundaries
 - anchor register or unregister
 - new remote presence data
 - CSS transition and animation start and end events
@@ -49,7 +50,7 @@ Most application code never needs to call this. The built-in signals cover ordin
 
 ## Idle behavior
 
-With no active remote cursors, no `requestAnimationFrame` loop runs, and every scheduler signal disconnects: transition listeners, the `MutationObserver`, scroll and resize listeners, and every `ResizeObserver`. The scheduler is event-driven, not polling. It reattaches automatically when a remote cursor becomes active again.
+With no active remote cursors, no `requestAnimationFrame` loop runs, and every scheduler signal disconnects: transition listeners, mutation observers (including shadow-root observers), scroll and resize listeners, and every `ResizeObserver`. The scheduler is event-driven, not polling. It reattaches automatically when a remote cursor becomes active again.
 
 ## Budgets
 

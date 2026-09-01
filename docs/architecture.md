@@ -35,7 +35,7 @@ Dom owns the anchor registry, pointer capture, pointer target resolution, normal
 
 ### react
 
-React owns the provider component, the six hooks, anchor registration helpers, and SSR safety.
+React owns the provider component, the seven hooks, anchor registration helpers, and SSR safety.
 
 ## Sender to receiver flow
 

@@ -198,14 +198,18 @@ Rules:
 
 ## 9. Pointer Capture and Target Resolution (dom)
 
-On `pointermove` (and `pointerdown`, `pointerenter`):
+On `pointermove` (and `pointerdown`, `pointerover`):
 
 1. Read the event target. Inside shadow roots, use `event.composedPath()[0]` when available.
 2. Walk up through ancestors (crossing shadow boundaries via `host`) and collect registered anchors, innermost first.
-3. Build the fallback chain: up to `maxAnchors` (default 4) anchors, most specific first.
+3. Build the fallback chain: up to `maxAnchors` (default `DEFAULT_MAX_SENT_ANCHORS` = 4) anchors, most specific first.
 4. For each anchor, compute `u = (clientX - rect.left) / rect.width`, same for `v`. Zero-size rects are skipped.
 5. Compute viewport fallback: `u = clientX / innerWidth`, `v = clientY / innerHeight`.
-6. Hand the sample to the core client.
+6. Hand the sample to the core client, together with the pointer type (`event.pointerType`, when it is `mouse`, `pen`, or `touch`). The client keeps the latest pointer type and sends it as the wire `pointer` field.
+
+The capture uses `pointerover`, not `pointerenter`: enter events do not bubble, so a document listener never receives one with an Element target.
+
+The dom constant `DEFAULT_MAX_SENT_ANCHORS` replaced the former export `DEFAULT_MAX_ANCHORS`, which remains as a deprecated alias. Core's `DEFAULT_MAX_ANCHORS` (8, the inbound validation cap from section 4.2) keeps its name.
 
 On `pointerleave` of the document and on `blur` of the window: publish `cursor: null`.
 
@@ -277,7 +281,8 @@ Invalidation signals:
 - `window` `resize` → invalidate
 - `scroll` on `window` and on scrollable ancestors: one capture-phase document scroll listener (`{ capture: true, passive: true }`) → invalidate
 - `ResizeObserver` on each active anchor element and on `document.documentElement` → invalidate
-- one `MutationObserver` on `document.body` (`childList`, `attributes`, `subtree`) → invalidate. This catches signal-less moves: sibling insertion or removal, instant class toggles, transform changes. The callback only sets a dirty flag, so DOM churn costs one coalesced rAF pass per frame.
+- one `MutationObserver` on `document.body` (`childList`, `attributes`, `subtree`), or on `document.documentElement` when `body` does not exist yet → invalidate. This catches signal-less moves: sibling insertion or removal, instant class toggles, transform changes. The callback only sets a dirty flag, so DOM churn costs one coalesced rAF pass per frame.
+- open shadow roots of active anchors: document-level scroll and mutation signals stop at shadow boundaries, so the scheduler attaches a capture-phase scroll listener and a `MutationObserver` (same options) to each shadow root in an active anchor's chain → invalidate. Roots are re-collected as the active anchor set changes.
 - anchor register/unregister → invalidate
 - new remote presence data → invalidate
 - CSS transition and animation tracking (below)
@@ -287,7 +292,7 @@ ResizeObserver alone is insufficient: an element can move without resizing. Scro
 
 Transition tracking: document-level capture listeners for `transitionrun`, `transitionend`, `transitioncancel`, `animationstart`, `animationend`, `animationcancel`. Each start event opens a tracked entry keyed by target and name, and starts continuous rAF invalidation. An entry closes on its end or cancel event, or on a safety timeout of computed `duration + delay + 500 ms`, capped at 10 s. An animation with `animation-iteration-count: infinite` gets one short window (500 ms) instead of a tracked entry, so spinners cannot pin the rAF loop. When the last entry closes and every interpolator is settled, the rAF loop stops.
 
-Idle behavior: with no active remote cursors, no rAF loop runs and every scheduler signal disconnects (transition listeners, MutationObserver, scroll and resize listeners, ResizeObservers). The scheduler is event-driven, not polling.
+Idle behavior: with no active remote cursors, no rAF loop runs and every scheduler signal disconnects (transition listeners, MutationObservers, shadow-root observers, scroll and resize listeners, ResizeObservers). The scheduler is event-driven, not polling.
 
 ## 12. UI Context
 
@@ -315,6 +320,8 @@ Ships: `none` and `linear` (fixed-duration ease toward target, default 80 ms). S
 When a resolved position changes because of a local-only invalidation (scroll, resize, mutation) with no new network data for that cursor, the scheduler calls `shift(dx, dy)` with the position delta. Current and target move together, so an in-flight ease continues instead of truncating, and the cursor tracks its anchor rigidly during local scrolling.
 
 Interpolation is applied in the dom layer's resolved snapshot, so all adapters get smoothed values for free; `interpolator: none` gives raw resolved values.
+
+The resolver keeps one interpolator instance per remote `clientId` and prunes it when that client leaves. It also keeps output identity: a resolved cursor whose fields did not change keeps its object across passes, and a pass in which no cursor changed returns the previous array. Consumers can compare snapshots and cursors by reference.
 
 ## 14. React Adapter
 
@@ -344,7 +351,7 @@ SSR: the client is created by the consumer in browser-only code, or the provider
 
 `@anchor-presence/react` exports `CursorLayer` and `DefaultCursor`. Both are optional. A consumer can render remote cursors with `useRemoteCursors` directly instead, per Invariant 9.
 
-`CursorLayer` calls `useRemoteCursorsSelector` once, with a selector that keeps the visible, unfiltered cursors. The selection compares element by element, so an unchanged list keeps its identity. For each selected cursor, `CursorLayer` renders one package-owned root `div`. The root style sets `position: fixed`, `left: 0`, `top: 0`, `pointerEvents: "none"`, and a `transform` from the resolved coordinates. The root carries `aria-hidden="true"` and four stable data attributes: `data-anchor-presence-cursor`, `data-anchor-presence-client-id`, `data-anchor-presence-tier`, and `data-anchor-presence-anchor` (empty string when `anchorId` is `null`).
+`CursorLayer` calls `useRemoteCursorsSelector` once, with a selector that keeps the visible, unfiltered cursors. The resolver already keeps unchanged cursors' identity (section 13), and the selection compares element by element, so a list whose visible cursors did not change keeps its identity. For each selected cursor, `CursorLayer` renders one package-owned root `div`. The root style sets `position: fixed`, `left: 0`, `top: 0`, `pointerEvents: "none"`, and a `transform` from the resolved coordinates. The root carries `aria-hidden="true"` and four stable data attributes: `data-anchor-presence-cursor`, `data-anchor-presence-client-id`, `data-anchor-presence-tier`, and `data-anchor-presence-anchor` (empty string when `anchorId` is `null`).
 
 ```ts
 type CursorLayerProps<TContext = unknown, TUser = unknown> = {

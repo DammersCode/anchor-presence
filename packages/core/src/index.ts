@@ -3,6 +3,8 @@ export type {
   ConnectionStatus,
   CursorPosition,
   CursorPresence,
+  PointerInfo,
+  PointerType,
 } from "./protocol";
 export {
   DEFAULT_MAX_ANCHORS,

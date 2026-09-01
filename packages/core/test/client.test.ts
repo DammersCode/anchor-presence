@@ -4,7 +4,7 @@ import { jsonCodec } from "../src/codec";
 import type { LiveCursorTransport } from "../src/transport";
 import type { ConnectionStatus } from "../src/protocol";
 
-function makeTransport(withStatus = false) {
+function makeTransport(withStatus = false, initialStatus?: ConnectionStatus) {
   const sent: Uint8Array[] = [];
   const messageListeners = new Set<(data: Uint8Array) => void>();
   const statusListeners = new Set<(status: ConnectionStatus) => void>();
@@ -24,6 +24,10 @@ function makeTransport(withStatus = false) {
       statusListeners.add(listener);
       return () => statusListeners.delete(listener);
     });
+  }
+
+  if (initialStatus !== undefined) {
+    transport.getStatus = vi.fn(() => initialStatus);
   }
 
   return {
@@ -300,9 +304,10 @@ describe("createPresenceClient dispose", () => {
     const { transport, sent } = makeTransport();
     const client = createPresenceClient({ transport, idFactory, publishIntervalMs: 50 });
     client.dispose();
+    expect(sent).toHaveLength(1); // only the leave message
     client.updateLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
     vi.advanceTimersByTime(50);
-    expect(sent).toHaveLength(0);
+    expect(sent).toHaveLength(1);
   });
 });
 
@@ -312,6 +317,23 @@ describe("createPresenceClient session/context/user", () => {
     const client = createPresenceClient({ transport, idFactory });
     expect(client.clientId).toBe("id-1");
     expect(client.session).toBe("id-2");
+    client.dispose();
+  });
+
+  it("exposes context and user through getContext/getUser", () => {
+    const { transport } = makeTransport();
+    const client = createPresenceClient({
+      transport,
+      idFactory,
+      context: { route: "/" },
+      user: { name: "Ada" },
+    });
+    expect(client.getContext()).toEqual({ route: "/" });
+    expect(client.getUser()).toEqual({ name: "Ada" });
+    client.setContext({ route: "/settings" });
+    client.setUser(undefined);
+    expect(client.getContext()).toEqual({ route: "/settings" });
+    expect(client.getUser()).toBeUndefined();
     client.dispose();
   });
 
@@ -326,5 +348,301 @@ describe("createPresenceClient session/context/user", () => {
     expect(message.context).toEqual({ route: "/settings" });
     expect(message.user).toEqual({ name: "Ada" });
     client.dispose();
+  });
+});
+
+describe("createPresenceClient dirty-flag publishing", () => {
+  it("publishes after setContext without a cursor move", () => {
+    const { transport, sent } = makeTransport();
+    const client = createPresenceClient({ transport, idFactory, publishIntervalMs: 50 });
+    client.setContext({ route: "/a" });
+    vi.advanceTimersByTime(50);
+    expect(sent).toHaveLength(1);
+    const message = decodeSent(sent[0]!);
+    expect(message.context).toEqual({ route: "/a" });
+    expect(message.cursor).toBeNull();
+    client.dispose();
+  });
+
+  it("publishes after setUser without a cursor move", () => {
+    const { transport, sent } = makeTransport();
+    const client = createPresenceClient({ transport, idFactory, publishIntervalMs: 50 });
+    client.setUser({ name: "Ada" });
+    vi.advanceTimersByTime(50);
+    expect(sent).toHaveLength(1);
+    expect(decodeSent(sent[0]!).user).toEqual({ name: "Ada" });
+    client.dispose();
+  });
+
+  it("does not send while status is reconnecting", () => {
+    const { transport, sent, setStatus } = makeTransport(true, "connected");
+    const client = createPresenceClient({ transport, idFactory, publishIntervalMs: 50 });
+    setStatus("reconnecting");
+    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
+    vi.advanceTimersByTime(200);
+    expect(sent).toHaveLength(0);
+    client.dispose();
+  });
+
+  it("republishes the latest state on reconnecting to connected, even without a local change", () => {
+    const { transport, sent, setStatus } = makeTransport(true, "connected");
+    const client = createPresenceClient({ transport, idFactory, publishIntervalMs: 50 });
+
+    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.4, v: 0.4 }] });
+    vi.advanceTimersByTime(50);
+    expect(sent).toHaveLength(1);
+
+    setStatus("reconnecting");
+    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.6, v: 0.6 }] });
+    vi.advanceTimersByTime(200);
+    expect(sent).toHaveLength(1);
+
+    setStatus("connected");
+    vi.advanceTimersByTime(50);
+    expect(sent).toHaveLength(2);
+    expect(decodeSent(sent[1]!).cursor.anchors[0].u).toBe(0.6);
+
+    // every transition into "connected" republishes, even with nothing new locally
+    setStatus("reconnecting");
+    setStatus("connected");
+    vi.advanceTimersByTime(50);
+    expect(sent).toHaveLength(3);
+    expect(decodeSent(sent[2]!).cursor.anchors[0].u).toBe(0.6);
+
+    client.dispose();
+  });
+
+  it("re-arms the publish timer when a send fails while connected", () => {
+    const sent: Uint8Array[] = [];
+    let failures = 1;
+    const transport: LiveCursorTransport = {
+      send: vi.fn((data: Uint8Array) => {
+        if (failures > 0) {
+          failures -= 1;
+          throw new Error("boom");
+        }
+        sent.push(data);
+      }),
+      subscribe: vi.fn(() => () => {}),
+    };
+    const client = createPresenceClient({ transport, idFactory, publishIntervalMs: 50 });
+
+    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
+    vi.advanceTimersByTime(50);
+    expect(sent).toHaveLength(0);
+
+    // retry fires without a new local change
+    vi.advanceTimersByTime(50);
+    expect(sent).toHaveLength(1);
+    expect(decodeSent(sent[0]!).cursor.anchors[0].u).toBe(0.5);
+
+    client.dispose();
+  });
+});
+
+describe("createPresenceClient pointer type", () => {
+  it("includes the pointer type on the wire and keeps it across single-arg updates", () => {
+    const { transport, sent } = makeTransport();
+    const client = createPresenceClient({ transport, idFactory, publishIntervalMs: 50 });
+
+    client.updateLocalCursor({ anchors: [] }, { type: "touch" });
+    vi.advanceTimersByTime(50);
+    expect(decodeSent(sent[0]!).pointer).toEqual({ type: "touch" });
+
+    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.2, v: 0.2 }] });
+    vi.advanceTimersByTime(50);
+    expect(decodeSent(sent[1]!).pointer).toEqual({ type: "touch" });
+
+    client.dispose();
+  });
+});
+
+describe("createPresenceClient initial status via transport.getStatus", () => {
+  it("adopts the transport's current status at creation", () => {
+    const { transport, sent } = makeTransport(true, "connected");
+    const client = createPresenceClient({ transport, idFactory, publishIntervalMs: 50 });
+    expect(client.getStatus()).toBe("connected");
+
+    client.updateLocalCursor({ anchors: [] });
+    vi.advanceTimersByTime(50);
+    expect(sent).toHaveLength(1);
+    client.dispose();
+  });
+
+  it("falls back to connecting when subscribeStatus exists without getStatus", () => {
+    const { transport } = makeTransport(true);
+    const client = createPresenceClient({ transport, idFactory });
+    expect(client.getStatus()).toBe("connecting");
+    client.dispose();
+  });
+});
+
+describe("createPresenceClient dispose lifecycle", () => {
+  it("sends a best-effort cursor:null leave message on dispose", () => {
+    const { transport, sent } = makeTransport();
+    const client = createPresenceClient({ transport, idFactory, publishIntervalMs: 50 });
+
+    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
+    vi.advanceTimersByTime(50);
+    expect(sent).toHaveLength(1);
+
+    client.dispose();
+    expect(sent).toHaveLength(2);
+    expect(decodeSent(sent[1]!).cursor).toBeNull();
+  });
+
+  it("sends no leave message while unsendable", () => {
+    const { transport, sent } = makeTransport(true);
+    const client = createPresenceClient({ transport, idFactory });
+    expect(client.getStatus()).toBe("connecting");
+    client.dispose();
+    expect(sent).toHaveLength(0);
+  });
+
+  it("notifies status listeners with disconnected before clearing them", () => {
+    const { transport, setStatus } = makeTransport(true);
+    const client = createPresenceClient({ transport, idFactory });
+    setStatus("connected");
+
+    const seen: ConnectionStatus[] = [];
+    client.subscribeStatus((status) => seen.push(status));
+    client.dispose();
+
+    expect(seen).toEqual(["disconnected"]);
+    expect(client.getStatus()).toBe("disconnected");
+  });
+
+  it("registerTeardown returns an unregister function", () => {
+    const { transport } = makeTransport();
+    const client = createPresenceClient({ transport, idFactory });
+    const teardown = vi.fn();
+    const unregister = client.registerTeardown(teardown);
+    unregister();
+    client.dispose();
+    expect(teardown).not.toHaveBeenCalled();
+  });
+
+  it("runs the teardown immediately when registered after dispose", () => {
+    const { transport } = makeTransport();
+    const client = createPresenceClient({ transport, idFactory });
+    client.dispose();
+
+    const late = vi.fn();
+    const unregister = client.registerTeardown(late);
+    expect(late).toHaveBeenCalledTimes(1);
+    expect(() => unregister()).not.toThrow();
+  });
+});
+
+describe("createPresenceClient guarded fan-out", () => {
+  it("a throwing status listener does not break others or the reconnect republish", () => {
+    const { transport, sent, setStatus } = makeTransport(true);
+    const client = createPresenceClient({ transport, idFactory, publishIntervalMs: 50 });
+
+    const seen: ConnectionStatus[] = [];
+    client.subscribeStatus(() => {
+      throw new Error("boom");
+    });
+    client.subscribeStatus((status) => seen.push(status));
+
+    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
+    expect(() => setStatus("connected")).not.toThrow();
+    expect(seen).toEqual(["connected"]);
+
+    vi.advanceTimersByTime(50);
+    expect(sent).toHaveLength(1);
+    client.dispose();
+  });
+
+  it("a throwing remote-store listener does not break other listeners or the transport loop", () => {
+    const { transport, emit } = makeTransport();
+    const client = createPresenceClient({ transport, idFactory });
+
+    const calls: number[] = [];
+    client.subscribeRemote(() => {
+      throw new Error("boom");
+    });
+    client.subscribeRemote(() => calls.push(1));
+
+    const remoteMessage = {
+      version: 1,
+      clientId: "remote-1",
+      session: "remote-session",
+      sequence: 0,
+      cursor: null,
+    };
+    expect(() => emit(jsonCodec.encode(remoteMessage as never))).not.toThrow();
+    expect(calls).toHaveLength(1);
+    expect(client.getRemoteSnapshot()).toHaveLength(1);
+    client.dispose();
+  });
+});
+
+describe("createPresenceClient option clamping", () => {
+  it("clamps heartbeatMs to at least 1 ms", () => {
+    const { transport, sent } = makeTransport();
+    const client = createPresenceClient({ transport, idFactory, heartbeatMs: 0 });
+    vi.advanceTimersByTime(5);
+    expect(sent).toHaveLength(5);
+    client.dispose();
+  });
+
+  it("clamps staleTimeoutMs to at least 1000 ms", () => {
+    const { transport, emit } = makeTransport();
+    const client = createPresenceClient({ transport, idFactory, staleTimeoutMs: 0 });
+
+    emit(
+      jsonCodec.encode({
+        version: 1,
+        clientId: "remote-1",
+        session: "s",
+        sequence: 0,
+        cursor: null,
+      } as never),
+    );
+    expect(client.getRemoteSnapshot()).toHaveLength(1);
+
+    vi.advanceTimersByTime(600); // first sweep ran; entry is younger than the clamped timeout
+    expect(client.getRemoteSnapshot()).toHaveLength(1);
+
+    vi.advanceTimersByTime(1000); // now past the clamped timeout
+    expect(client.getRemoteSnapshot()).toHaveLength(0);
+    client.dispose();
+  });
+});
+
+describe("createPresenceClient dev-mode size warnings", () => {
+  it("warns once when context exceeds maxFieldBytes, not per message", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { transport } = makeTransport();
+    const client = createPresenceClient({ transport, idFactory, publishIntervalMs: 50 });
+
+    client.setContext({ blob: "x".repeat(9000) });
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+
+    warnSpy.mockClear();
+    client.updateLocalCursor({ anchors: [] });
+    vi.advanceTimersByTime(50);
+    expect(warnSpy).not.toHaveBeenCalled();
+
+    client.dispose();
+    warnSpy.mockRestore();
+  });
+
+  it("warns when the encoded message exceeds maxMessageBytes", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { transport } = makeTransport();
+    const client = createPresenceClient({
+      transport,
+      idFactory,
+      validationLimits: { maxFieldBytes: 64 * 1024 },
+    });
+
+    client.setContext({ blob: "x".repeat(40_000) });
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy.mock.calls[0]?.[0]).toContain("maxMessageBytes");
+
+    client.dispose();
+    warnSpy.mockRestore();
   });
 });

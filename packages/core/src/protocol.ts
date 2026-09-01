@@ -11,6 +11,10 @@ export type CursorPosition = {
   viewport?: { u: number; v: number };
 };
 
+export type PointerType = "mouse" | "pen" | "touch";
+
+export type PointerInfo = { type?: PointerType };
+
 export type CursorPresence<TContext = unknown, TUser = unknown> = {
   version: 1;
   clientId: string; // client INSTANCE (tab/connection), not a user
@@ -19,7 +23,7 @@ export type CursorPresence<TContext = unknown, TUser = unknown> = {
   cursor: CursorPosition | null;
   context?: TContext;
   user?: TUser;
-  pointer?: { type?: "mouse" | "pen" | "touch" };
+  pointer?: PointerInfo;
 };
 
 // Validation limits — spec §4.2 (overridable via ValidationLimits passed to validatePresence)

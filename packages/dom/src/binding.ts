@@ -100,14 +100,19 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
   });
 
   let disposed = false;
+  let unregisterTeardown: (() => void) | undefined;
   function dispose(): void {
     if (disposed) return;
     disposed = true;
+    unregisterTeardown?.();
     scheduler.dispose();
     pointerHandle.detach();
+    // final empty snapshot so subscribers render cursors gone before the signals go quiet
+    snapshot = EMPTY_SNAPSHOT as ResolvedCursor<TContext, TUser>[];
+    notifySnapshotListeners();
     snapshotListeners.clear();
   }
-  client.registerTeardown(dispose);
+  unregisterTeardown = client.registerTeardown(dispose);
 
   return {
     registry,

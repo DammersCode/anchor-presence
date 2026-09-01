@@ -88,6 +88,23 @@ describe("createFrameCache", () => {
     expect(cache.getCachedRect(other.el)).toBeUndefined();
   });
 
+  it("D-6: getStyle is memoized per element per frame; a new frame re-reads", () => {
+    const { el } = makeElement({ left: 0, top: 0, width: 10, height: 10 });
+    const getStyle = vi.fn(() => styleStub);
+    const cache = createFrameCache({ window: makeHost().window, getStyle });
+
+    const state = cache.measure([]);
+    state.getStyle(el);
+    state.getStyle(el);
+    expect(getStyle).toHaveBeenCalledTimes(1);
+
+    cache.reuse()?.getStyle(el);
+    expect(getStyle).toHaveBeenCalledTimes(1); // reused frame serves the memoized style
+
+    cache.measure([]).getStyle(el);
+    expect(getStyle).toHaveBeenCalledTimes(2);
+  });
+
   it("viewportSize is read from the host window at measure time", () => {
     const host = makeHost(1024, 768);
     const cache = createFrameCache(host);

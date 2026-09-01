@@ -33,7 +33,9 @@ function makeFakeClient() {
     session: "s",
     updateLocalCursor: () => {},
     setContext: () => {},
+    getContext: () => undefined,
     setUser: () => {},
+    getUser: () => undefined,
     getStatus: () => "connected",
     subscribeStatus: () => () => {},
     getRemoteSnapshot: () => remoteSnapshot,
@@ -41,9 +43,15 @@ function makeFakeClient() {
       remoteListeners.add(listener);
       return () => remoteListeners.delete(listener);
     },
-    registerTeardown: (fn) => teardowns.push(fn),
+    registerTeardown: (fn) => {
+      teardowns.push(fn);
+      return () => {
+        const index = teardowns.indexOf(fn);
+        if (index !== -1) teardowns.splice(index, 1);
+      };
+    },
     dispose: () => {
-      for (const fn of teardowns) fn();
+      for (const fn of teardowns.splice(0, teardowns.length)) fn();
     },
   };
 
@@ -52,7 +60,7 @@ function makeFakeClient() {
     for (const listener of remoteListeners) listener();
   }
 
-  return { client, pushRemote };
+  return { client, pushRemote, teardowns };
 }
 
 describe("createDomBinding", () => {
@@ -262,5 +270,64 @@ describe("createDomBinding", () => {
     expect(() => binding.dispose()).not.toThrow();
     disposeSpy();
     expect(disposeSpy).toHaveBeenCalled();
+  });
+
+  it("R-6: dispose() publishes one final empty snapshot to listeners before clearing them", () => {
+    const { raf, caf, flush } = makeRafStub();
+    const { client, pushRemote } = makeFakeClient();
+    const binding = createDomBinding(client, { environment: { raf, caf } });
+    const listener = vi.fn();
+    binding.subscribe(listener);
+
+    pushRemote([
+      {
+        version: 1,
+        clientId: "remote-1",
+        session: "s",
+        sequence: 1,
+        cursor: { anchors: [], viewport: { u: 0.5, v: 0.5 } },
+      },
+    ]);
+    flush();
+    expect(binding.getSnapshot()).toHaveLength(1);
+
+    listener.mockClear();
+    binding.dispose();
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(binding.getSnapshot()).toHaveLength(0);
+  });
+
+  it("D-1: dispose() unregisters binding and pointer teardowns from the client", () => {
+    const { raf, caf } = makeRafStub();
+    const { client, teardowns } = makeFakeClient();
+    const binding = createDomBinding(client, { environment: { raf, caf } });
+    expect(teardowns).toHaveLength(2); // binding dispose + pointer detach
+
+    binding.dispose();
+    expect(teardowns).toHaveLength(0); // client.dispose() must not re-run them
+
+    expect(() => client.dispose()).not.toThrow();
+  });
+
+  it("client.dispose() still tears the binding down when the binding was not disposed directly", () => {
+    const { raf, caf, flush } = makeRafStub();
+    const { client, pushRemote, teardowns } = makeFakeClient();
+    const binding = createDomBinding(client, { environment: { raf, caf } });
+
+    pushRemote([
+      {
+        version: 1,
+        clientId: "remote-1",
+        session: "s",
+        sequence: 1,
+        cursor: { anchors: [], viewport: { u: 0.5, v: 0.5 } },
+      },
+    ]);
+    flush();
+    expect(binding.getSnapshot()).toHaveLength(1);
+
+    client.dispose();
+    expect(binding.getSnapshot()).toHaveLength(0);
+    expect(teardowns).toHaveLength(0);
   });
 });

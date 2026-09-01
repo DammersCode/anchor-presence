@@ -1,10 +1,12 @@
 // Pointer capture and target resolution — spec §9
 
-import type { CursorPosition, PresenceClient } from "@anchor-presence/core";
+import type { CursorPosition, PointerInfo, PresenceClient } from "@anchor-presence/core";
 import type { AnchorRegistry } from "./registry";
 import type { Rect } from "./geometry";
 
-export const DEFAULT_MAX_ANCHORS = 4;
+export const DEFAULT_MAX_SENT_ANCHORS = 4;
+/** @deprecated Renamed: use DEFAULT_MAX_SENT_ANCHORS (core's DEFAULT_MAX_ANCHORS is the wire limit, 8). */
+export const DEFAULT_MAX_ANCHORS = DEFAULT_MAX_SENT_ANCHORS;
 
 export type PointerSourceOptions = {
   maxAnchors?: number | undefined;
@@ -58,16 +60,21 @@ export function attachPointerSource(
   registry: AnchorRegistry,
   options: PointerSourceOptions = {},
 ): PointerSourceHandle {
-  const maxAnchors = options.maxAnchors ?? DEFAULT_MAX_ANCHORS;
+  const maxAnchors = options.maxAnchors ?? DEFAULT_MAX_SENT_ANCHORS;
   const doc = options.root ?? document;
   const win = options.window ?? window;
   const getCachedRect = options.getCachedRect;
+
+  function pointerInfo(event: PointerEvent): PointerInfo | undefined {
+    const type = event.pointerType;
+    return type === "mouse" || type === "pen" || type === "touch" ? { type } : undefined;
+  }
 
   function onPointerEvent(event: PointerEvent): void {
     const target = eventTargetElement(event);
     if (target === null) return;
     const position = buildCursorPosition(event.clientX, event.clientY, target, registry, maxAnchors, win, getCachedRect);
-    client.updateLocalCursor(position);
+    client.updateLocalCursor(position, pointerInfo(event));
   }
 
   function onDocumentPointerLeave(): void {
@@ -80,19 +87,23 @@ export function attachPointerSource(
 
   doc.addEventListener("pointermove", onPointerEvent);
   doc.addEventListener("pointerdown", onPointerEvent);
-  doc.addEventListener("pointerenter", onPointerEvent);
+  // pointerenter never fires at the document with an Element target; pointerover bubbles and does
+  doc.addEventListener("pointerover", onPointerEvent);
   doc.addEventListener("pointerleave", onDocumentPointerLeave);
   win.addEventListener("blur", onWindowBlur);
 
+  let unregisterTeardown: (() => void) | undefined;
+
   function detach(): void {
+    unregisterTeardown?.();
     doc.removeEventListener("pointermove", onPointerEvent);
     doc.removeEventListener("pointerdown", onPointerEvent);
-    doc.removeEventListener("pointerenter", onPointerEvent);
+    doc.removeEventListener("pointerover", onPointerEvent);
     doc.removeEventListener("pointerleave", onDocumentPointerLeave);
     win.removeEventListener("blur", onWindowBlur);
   }
 
-  client.registerTeardown(detach);
+  unregisterTeardown = client.registerTeardown(detach);
 
   return { detach };
 }

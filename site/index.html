@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAzMiAzMic+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSdnJyB4MT0nMCcgeTE9JzAnIHgyPScxJyB5Mj0nMSc+PHN0b3Agb2Zmc2V0PScwJyBzdG9wLWNvbG9yPScjNEY0NkU1Jy8+PHN0b3Agb2Zmc2V0PScxJyBzdG9wLWNvbG9yPScjMjJEM0VFJy8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PGcgZmlsbD0nbm9uZScgc3Ryb2tlPScjMEIwQjE2JyBzdHJva2Utd2lkdGg9JzIuNCcgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJz48cGF0aCBkPSdNNSAxMFY1aDUnLz48cGF0aCBkPSdNMjIgNWg1djUnLz48cGF0aCBkPSdNMjcgMjJ2NWgtNScvPjxwYXRoIGQ9J00xMCAyN0g1di01Jy8+PC9nPjxwYXRoIGQ9J00wIDAgTDAgMTIgTDMgOS4zIEw0LjcgMTMgTDYuOSAxMi4xIEw1LjEgOC4zIEw4LjIgNy41IFonIHRyYW5zZm9ybT0ndHJhbnNsYXRlKDExLjksNi45KSBzY2FsZSgxLjQpJyBmaWxsPSd1cmwoI2cpJy8+PC9zdmc+">
+<title>Anchor Presence · Live cursors that stay on the element</title>
+<meta name="description" content="Anchor Presence is a live-cursor layer for web apps. Show where your teammates are looking and clicking, and keep every cursor on the right element, even across different layouts. Bring your own transport; React adapter included.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F6F7FB; --card:#FFFFFF; --ink:#0B0B16; --muted:#5A5F6B; --faint:#616876; --hair:#E7E9F0; --hair2:#EEF0F6;
+  --ind:#4F46E5; --cyn:#22D3EE; --alice:#FF5A3C; --bob:#0E9E8E; --dev:#E0A100;
+  --grad:linear-gradient(100deg,var(--ind),var(--cyn));
+  --display:"Sora",system-ui,sans-serif;
+  --body:"Inter",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,monospace;
+  --sh:0 1px 2px rgba(11,11,22,.04),0 18px 40px -24px rgba(11,11,22,.24);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);-webkit-font-smoothing:antialiased;line-height:1.55;font-size:15px}
+a{color:inherit;text-decoration:none}
+h1,h2,h3{margin:0;font-family:var(--display);letter-spacing:-.025em}
+.mono{font-family:var(--mono)}
+.wrap{max-width:1180px;margin:0 auto;padding:0 32px}
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+/* nav */
+.nav{position:sticky;top:0;z-index:20;background:rgba(246,247,251,.82);backdrop-filter:blur(14px);border-bottom:1px solid transparent;transition:border-color .2s,box-shadow .2s}
+.nav.scrolled{border-color:var(--hair);box-shadow:0 6px 20px -18px rgba(11,11,22,.5)}
+.nav .wrap{display:flex;align-items:center;justify-content:space-between;height:66px}
+.brand{font-family:var(--display);font-weight:800;font-size:17px;display:flex;align-items:center;gap:10px;white-space:nowrap}
+.brand .mk{width:24px;height:24px;flex:none;display:grid;place-items:center}
+.brand .mk svg{width:24px;height:24px;display:block}
+.nav .links{display:flex;gap:26px;font-size:14.5px;color:var(--muted)}
+.nav .links a:hover{color:var(--ink)}
+.nav .r{display:flex;align-items:center;gap:12px}
+.badge{font-family:var(--mono);font-size:11px;border:1px solid var(--hair);border-radius:999px;padding:4px 10px;color:var(--muted);background:var(--card)}
+.btn{font-weight:600;font-size:14.5px;padding:10px 18px;border-radius:999px;background:var(--ink);color:#fff;transition:transform .15s;white-space:nowrap}
+.btn:hover{transform:translateY(-1px)}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--hair)}
+
+/* hero */
+.hero{display:grid;grid-template-columns:1.02fr .98fr;gap:48px;align-items:center;padding:60px 0 56px}
+.pill{display:inline-flex;align-items:center;gap:9px;font-size:13px;font-weight:500;background:var(--card);border:1px solid var(--hair);border-radius:999px;padding:6px 13px;margin-bottom:22px;box-shadow:var(--sh)}
+.pill .d{width:7px;height:7px;border-radius:50%;background:var(--cyn);animation:livePing 1.8s ease-out infinite}
+@keyframes livePing{0%{box-shadow:0 0 0 0 rgba(34,211,238,.45)}70%,100%{box-shadow:0 0 0 7px rgba(34,211,238,0)}}
+h1{font-weight:800;font-size:clamp(38px,5.4vw,62px);line-height:1.03;letter-spacing:-.035em;margin:0 0 20px}
+h1 .g{color:#4338CA}
+.hero .lead{font-size:18.5px;color:var(--muted);max-width:46ch;margin:0 0 28px}
+.install{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;background:var(--ink);color:#fff;border-radius:12px;padding:12px 16px;font-family:var(--mono);font-size:14px}
+.install .pk{color:var(--cyn);user-select:none}
+.install > span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.install .cp{flex:0 0 auto;font-size:12px;color:rgba(255,255,255,.78);cursor:pointer;user-select:none}
+.install .cp:hover{color:#fff}
+.install .cp.ok{color:var(--cyn)}
+.hero .cta{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:22px 0 0}
+.hero .cta a.u{font-weight:600;font-size:14.5px;color:var(--ink);border-bottom:1px solid var(--hair);padding-bottom:1px}
+.hero .cta a:hover{color:var(--ind)}
+.hero .cta .btn{color:#fff}
+.agentlbl{font-family:var(--mono);font-size:12px;color:var(--faint);margin:16px 0 7px}
+.install.agent{margin-top:0}
+
+/* product tile */
+.prod{background:var(--card);border:1px solid var(--hair);border-radius:20px;box-shadow:var(--sh);overflow:hidden}
+.prod .bar{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid var(--hair)}
+.prod .bar .l{font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+.prod .body{padding:18px;position:relative;min-height:340px}
+.mock{display:grid;gap:12px}
+.mock .krow{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.mock .k{background:var(--bg);border-radius:11px;padding:12px}
+.mock .k small{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.mock .k b{display:block;font-family:var(--display);font-weight:800;font-size:19px;margin-top:6px}
+.mock .k .dd{font-family:var(--mono);font-size:10.5px;color:#0B6E63;margin-top:3px}
+.mock .tbl{background:var(--bg);border-radius:11px;padding:6px 12px}
+.mock .tbl .tr{display:grid;grid-template-columns:1.4fr 1fr .7fr;gap:8px;padding:9px 4px;border-bottom:1px solid var(--hair2);font-size:11.5px;color:var(--muted)}
+.mock .tbl .tr:last-child{border-bottom:0}
+.mock .tbl .tr.hd{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+.mock .tbl .tr .st{color:var(--ink);font-weight:500}
+.pill2{font-family:var(--mono);font-size:9.5px;padding:2px 8px;border-radius:999px;background:#EAF0FB;color:var(--ind);justify-self:start}
+/* cursors */
+.cur{position:absolute;top:0;left:0;z-index:4;display:flex;align-items:flex-start;gap:6px;pointer-events:none;will-change:transform}
+.cur svg{width:21px;height:21px;filter:drop-shadow(0 5px 9px rgba(11,11,22,.22))}
+.cur .tag{font-family:var(--mono);font-size:10.5px;font-weight:600;padding:3px 8px;border-radius:999px;color:#0B0B16;margin-top:9px;white-space:nowrap}
+.cur.a{color:var(--alice);transform:translate(20px,22px)} .cur.a .tag{background:var(--alice)}
+.cur.b{color:var(--bob);transform:translate(300px,44px)} .cur.b .tag{background:var(--bob)}
+.cur.c{color:var(--dev);transform:translate(150px,220px)} .cur.c .tag{background:var(--dev)}
+/* hero cursors are positioned by JS, each toward real elements (see script) */
+
+/* section scaffolding */
+.sec{padding:64px 0}
+.sec.tight{padding:44px 0}
+.kick{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--ind);margin:0 0 12px}
+h2{font-weight:800;font-size:clamp(28px,4.2vw,44px);letter-spacing:-.03em;margin:0 0 14px}
+.lead{font-size:17px;color:var(--muted);max-width:60ch;margin:0}
+.head{margin-bottom:36px}
+
+/* how it works */
+.flow{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.step{background:var(--card);border:1px solid var(--hair);border-radius:16px;padding:24px;box-shadow:var(--sh)}
+.step .n{font-family:var(--mono);font-size:12px;color:var(--ind);margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.step .n::after{content:"";height:1px;flex:1;background:var(--hair)}
+.step h3{font-weight:700;font-size:19px;margin:0 0 9px;letter-spacing:-.01em}
+.step p{font-size:14.5px;color:var(--muted);margin:0}
+.code{margin-top:18px;background:var(--ink);color:#EDE9DC;border-radius:14px;overflow:hidden;box-shadow:var(--sh)}
+.code .ch{display:flex;align-items:center;justify-content:space-between;padding:11px 18px;border-bottom:1px solid rgba(255,255,255,.1);font-family:var(--mono);font-size:12px;color:#9C9789}
+.code pre{margin:0;padding:20px 22px;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.75}
+.code .c{color:#A39D8D} .code .k{color:#AEC9FF} .code .s{color:#FFB08A} .code .f{color:#7CE7C0} .code .p{color:#9C9789;user-select:none}
+#run .code .c{user-select:none}
+
+/* bento */
+.bento{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:220px;gap:14px}
+.t{background:var(--card);border:1px solid var(--hair);border-radius:18px;padding:22px;box-shadow:var(--sh);position:relative;overflow:hidden;display:flex;flex-direction:column;min-height:152px}
+.t .lab{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-bottom:10px;display:flex;align-items:center;gap:9px}
+.t .lab svg{width:15px;height:15px;color:var(--ind)}
+.t h3{font-weight:700;font-size:19px;margin:0 0 6px;letter-spacing:-.01em}
+.t p{font-size:14px;color:var(--muted);margin:0}
+.t .install{margin-top:14px}
+.t.big{grid-column:span 2;grid-row:span 2}
+.t.wide{grid-column:span 2}
+.t.vcenter .layers,.t.vcenter .fb{margin-top:auto;margin-bottom:auto}
+/* big tile: cross-layout */
+.xv{position:relative;flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.xv .pane{background:var(--bg);border-radius:12px;padding:12px 12px 30px;display:flex;gap:10px;overflow:hidden;position:relative}
+.xv .side{display:flex;flex-direction:column;gap:6px;flex:none}
+.xv .side.wide{width:64px} .xv .side.rail{width:20px}
+.xv .side i{height:7px;border-radius:4px;background:#C9CDDC}
+.xv .side.rail i{width:12px;height:12px;border-radius:4px;margin:0 auto}
+.xv .side .top{background:var(--grad)}
+.xv .main{flex:1;display:flex;flex-direction:column;gap:8px;min-width:0}
+.xv .main .m1{height:24px;flex:none;border-radius:7px;background:#DEE1EE}
+.xv .main .m1.hot{background:linear-gradient(100deg,#E9E6FF,#DFF3FA)}
+.xv .main .list{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:space-between}
+.xv .main .list i{height:14px;border-radius:5px;background:#DEE1EE}
+.xv .main .list i:nth-child(2n){width:86%}
+.xv .main .list i:nth-child(3n){width:68%}
+.xv .cap{position:absolute;left:12px;bottom:9px;font-family:var(--mono);font-size:10px;letter-spacing:.04em;color:var(--faint)}
+/* perf numbers */
+.numrow{display:flex;flex-direction:column;justify-content:flex-start}
+.numrow .n{font-family:var(--display);font-weight:800;font-size:30px;letter-spacing:-.02em;line-height:1}
+.numrow .n small{font-size:13px;color:var(--muted);font-weight:600}
+.numrow .d{font-size:12.5px;color:var(--muted);margin:4px 0 14px}
+/* pills */
+.pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.pill2.xl{font-family:var(--mono);font-size:12px;padding:6px 12px;border-radius:999px;background:var(--bg);border:1px solid var(--hair);color:var(--ink)}
+/* layers */
+.layers{display:flex;flex-direction:column;gap:8px;margin-top:2px}
+.layers .ly{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:500}
+.layers .ly .tagx{font-family:var(--mono);font-size:11px;padding:3px 9px;border-radius:7px;background:var(--bg);border:1px solid var(--hair)}
+.layers .ly small{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--faint)}
+/* fallback stepper */
+.fb{position:relative;margin-top:8px}
+.fb::before{content:"";position:absolute;left:8px;top:16px;bottom:16px;width:2px;background:var(--hair)}
+.fb-step{position:relative;display:flex;align-items:center;gap:11px;padding:7px 0}
+.fb-step .fb-n{width:18px;height:18px;border-radius:50%;border:2px solid var(--hair);background:var(--card);z-index:1;display:grid;place-items:center;font-family:var(--mono);font-size:10px;font-weight:600;color:var(--faint);flex:none}
+.fb-step.hot .fb-n{background:var(--ind);border-color:var(--ind);color:#fff;box-shadow:0 0 0 3px rgba(79,70,229,.14)}
+.fb-step .fb-t{font-weight:600;font-size:14px;color:var(--muted)}
+.fb-step.hot .fb-t{color:var(--ink)}
+.fb-step .fb-d{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--faint)}
+/* wide cta */
+.t.wide.cta{justify-content:center;background:var(--ink);color:#fff}
+.t.wide.cta .lab{color:rgba(255,255,255,.75)}
+.t.wide.cta h3{color:#fff;font-size:23px}
+.t.wide.cta p{color:rgba(255,255,255,.82)}
+.t.wide.cta .install{margin-top:14px;background:rgba(255,255,255,.12)}
+.t.wide.cta .install .cp{color:rgba(255,255,255,.85)}
+.t.wide.agent{justify-content:center}
+.t.wide.agent code{font-family:var(--mono);font-size:12.5px;background:var(--bg);border:1px solid var(--hair);border-radius:8px;padding:6px 10px;color:var(--ink);margin-top:12px;display:inline-block}
+
+/* invariants */
+.invc{background:var(--card);border:1px solid var(--hair);border-radius:20px;box-shadow:var(--sh);padding:34px}
+.invc .cols{display:grid;grid-template-columns:1fr 1fr;gap:0 44px;margin-top:8px}
+.invc .it{display:grid;grid-template-columns:44px 1fr;gap:14px;padding:15px 0;border-top:1px solid var(--hair2);align-items:baseline}
+.invc .it:first-child,.invc .it:nth-child(2){border-top:0}
+.invc .it .n{font-family:var(--mono);font-size:13px;color:var(--ind);font-weight:600}
+.invc .it b{font-weight:600;font-size:15px;display:block}
+.invc .it span{font-size:13.5px;color:var(--muted)}
+
+/* quickstart */
+.qs{display:grid;grid-template-columns:.9fr 1.1fr;gap:32px;align-items:start}
+.qs .code{margin-top:0}
+.qs .note p{font-size:14.5px;color:var(--muted);margin:0 0 16px}
+.qs .note .meta{display:flex;gap:8px;flex-wrap:wrap}
+.qs .note .meta span{font-family:var(--mono);font-size:11.5px;background:var(--card);border:1px solid var(--hair);border-radius:999px;padding:5px 11px;color:var(--muted)}
+
+/* footer */
+.foot{border-top:1px solid var(--hair);margin-top:20px;padding:40px 0 60px}
+.foot .wrap{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;flex-wrap:wrap}
+.foot .tag{font-family:var(--display);font-weight:700;font-size:18px;letter-spacing:-.01em;max-width:34ch}
+.foot .tag small{display:block;font-family:var(--body);font-weight:400;font-size:13.5px;color:var(--muted);margin-top:8px;letter-spacing:0}
+.foot .links{display:flex;gap:22px;font-size:14px;color:var(--muted);flex-wrap:wrap}
+.foot .links a:hover{color:var(--ink)}
+.foot .lic{font-family:var(--mono);font-size:12px;color:var(--faint);width:100%;padding-top:14px;border-top:1px solid var(--hair2);margin-top:8px}
+
+/* reveal */
+.reveal{opacity:0;transform:translateY(16px);transition:opacity .6s ease,transform .6s ease}
+.reveal.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none}}
+
+@media(max-width:900px){
+  .hero{grid-template-columns:minmax(0,1fr);gap:30px;padding:36px 0 40px}
+  .flow{grid-template-columns:1fr}
+  .bento{grid-template-columns:repeat(2,1fr)}
+  .t.big{grid-column:span 2;grid-row:span 2}
+  .t.wide{grid-column:span 2}
+  .invc .cols{grid-template-columns:1fr;gap:0}
+  .invc .it:nth-child(2){border-top:1px solid var(--hair2)}
+  .qs{grid-template-columns:minmax(0,1fr);gap:24px}
+  .nav .links{display:none}
+  .mock .krow{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:560px){
+  .wrap{padding:0 18px}
+  h1{font-size:30px}
+  .brand{font-size:15px}
+  .nav .badge{display:none}
+  .nav .btn{padding:9px 14px;font-size:13.5px}
+  .t{padding:18px}
+  .t .lab{margin-bottom:8px}
+  .t h3{margin-bottom:4px}
+  .t .install{margin-top:10px}
+  .install{padding:11px 14px}
+  .bento{grid-template-columns:1fr}
+  .t.big{grid-column:span 1;grid-row:span 2}
+  .t.wide{grid-column:span 1}
+  .xv{grid-template-columns:1fr}
+  .xv .main .list i:nth-child(n+5){display:none}
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="ap-grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4F46E5"/><stop offset="1" stop-color="#22D3EE"/></linearGradient><path id="ap-cur" d="M0 0 L0 12 L3 9.3 L4.7 13 L6.9 12.1 L5.1 8.3 L8.2 7.5 Z"/><symbol id="ap-logo" viewBox="0 0 32 32"><g fill="none" stroke="#0B0B16" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 10V5h5"/><path d="M22 5h5v5"/><path d="M27 22v5h-5"/><path d="M10 27H5v-5"/></g><use href="#ap-cur" transform="translate(12.2,7.2) scale(1.3)" fill="url(#ap-grad)"/></symbol></defs></svg>
+<header class="nav" id="nav">
+  <div class="wrap">
+    <a class="brand" href="#top"><span class="mk"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="#ap-logo"/></svg></span> anchor-presence</a>
+    <nav class="links" aria-label="Primary"><a href="#features">What it does</a><a href="#how">How it works</a><a href="#rules">Guarantees</a><a href="#run">Run it</a><a href="https://github.com/DammersCode/anchor-presence">GitHub</a></nav>
+    <div class="r"><span class="badge">MIT</span><a class="btn" href="#run">Try it</a></div>
+  </div>
+</header>
+
+<main id="top">
+<section class="wrap hero">
+  <div>
+    <span class="pill"><span class="d"></span>Real-time presence for the web</span>
+    <h1>Live cursors that stay<br>on the <span class="g">right element</span>.</h1>
+    <p class="lead">Anchor Presence is a live-cursor layer for web apps. It shows where your teammates are looking and clicking, and it keeps every cursor on the correct element, even when their layout, sidebar, or screen size differs from yours.</p>
+    <div class="install"><span><span class="pk">$</span> npm i @dammers/anchor-presence</span><span class="cp" data-copy="npm i @dammers/anchor-presence">copy</span></div>
+    <p class="agentlbl">Your AI agent can wire it up too</p>
+    <div class="install agent"><span><span class="pk">$</span> npx skills add DammersCode/anchor-presence</span><span class="cp" data-copy="npx skills add DammersCode/anchor-presence">copy</span></div>
+    <div class="cta"><a class="btn" href="#run">Try it out</a><a class="u" href="#how">How it works &rarr;</a></div>
+  </div>
+
+  <div class="prod">
+    <div class="bar"><span class="l">room / main · 3 present</span></div>
+    <div class="body">
+      <div class="mock">
+        <div class="krow">
+          <div class="k"><small>Revenue</small><b>$48.2k</b><span class="dd">+12%</span></div>
+          <div class="k"><small>Orders</small><b>1,204</b><span class="dd">+4%</span></div>
+          <div class="k"><small>Customers</small><b>3,890</b><span class="dd">+9%</span></div>
+          <div class="k"><small>Conv.</small><b>3.4%</b><span class="dd">+0.2</span></div>
+        </div>
+        <div class="tbl">
+          <div class="tr hd"><span>Order</span><span>Customer</span><span>Status</span></div>
+          <div class="tr"><span class="st">#10482</span><span>A. Rivera</span><span><span class="pill2">shipped</span></span></div>
+          <div class="tr"><span class="st">#10481</span><span>M. Chen</span><span><span class="pill2">pending</span></span></div>
+          <div class="tr"><span class="st">#10479</span><span>J. Okafor</span><span><span class="pill2">paid</span></span></div>
+          <div class="tr"><span class="st">#10477</span><span>L. Novak</span><span><span class="pill2">shipped</span></span></div>
+          <div class="tr"><span class="st">#10475</span><span>S. Patel</span><span><span class="pill2">paid</span></span></div>
+        </div>
+      </div>
+      <div class="cur a"><svg viewBox="0 0 24 24"><path d="M5 2 L5 20 L9.5 15.5 L12.5 21.5 L15 20.3 L12 14.5 L18 13 Z" fill="currentColor"/></svg><span class="tag">Stu</span></div>
+      <div class="cur b"><svg viewBox="0 0 24 24"><path d="M5 2 L5 20 L9.5 15.5 L12.5 21.5 L15 20.3 L12 14.5 L18 13 Z" fill="currentColor"/></svg><span class="tag">Alan</span></div>
+      <div class="cur c"><svg viewBox="0 0 24 24"><path d="M5 2 L5 20 L9.5 15.5 L12.5 21.5 L15 20.3 L12 14.5 L18 13 Z" fill="currentColor"/></svg><span class="tag">Doug</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="features">
+  <div class="wrap">
+    <div class="head reveal"><p class="kick">What it does</p><h2>Everything you need to ship live cursors.</h2><p class="lead">No canvas, no layout hacks, no framework lock-in. The hard parts are already handled: reflow, resolution, performance, and security.</p></div>
+    <div class="bento">
+      <div class="t big reveal">
+        <span class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 9h18M9 4v14"/></svg>Layout-independent</span>
+        <h3>Stays on the element, at any layout</h3>
+        <p>Reflow, resize, a collapsed sidebar, a smaller screen: the cursor tracks the element, not the pixels. Same element, two layouts.</p>
+        <div class="xv" aria-hidden="true">
+          <div class="pane">
+            <div class="side wide"><i class="top"></i><i></i><i></i><i></i></div>
+            <div class="main"><div class="m1 hot"></div><div class="list" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+            <span class="cap">sidebar expanded</span>
+            <span class="cur c" style="transform:translate(96px,14px);animation:none"><svg viewBox="0 0 24 24"><path d="M5 2 L5 20 L9.5 15.5 L12.5 21.5 L15 20.3 L12 14.5 L18 13 Z" fill="currentColor"/></svg></span>
+          </div>
+          <div class="pane">
+            <div class="side rail"><i class="top"></i><i></i><i></i></div>
+            <div class="main"><div class="m1 hot"></div><div class="list" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+            <span class="cap">sidebar collapsed</span>
+            <span class="cur c" style="transform:translate(52px,14px);animation:none"><svg viewBox="0 0 24 24"><path d="M5 2 L5 20 L9.5 15.5 L12.5 21.5 L15 20.3 L12 14.5 L18 13 Z" fill="currentColor"/></svg></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="t reveal">
+        <span class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg>Measured</span>
+        <div class="numrow"><div class="n"><span id="tps">300</span>k <small>msg/s</small></div><div class="d">core inbound throughput</div>
+        <div class="n">1.3 <small>ms / pass</small></div><div class="d">100 anchors · 50 cursors</div></div>
+      </div>
+
+      <div class="t reveal">
+        <span class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 12h8M8 12a4 4 0 1 1 0-8 4 4 0 0 1 0 8Zm8 0a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z"/></svg>Transports</span>
+        <h3>Use the channel you already have</h3>
+        <div class="pills"><span class="pill2 xl">WebSocket</span><span class="pill2 xl">Socket.IO</span><span class="pill2 xl">SignalR</span><span class="pill2 xl">your own</span></div>
+      </div>
+
+      <div class="t vcenter reveal">
+        <span class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 4 7v10l8 4 8-4V7l-8-4ZM4 7l8 4 8-4M12 21V11"/></svg>Packages</span>
+        <div class="layers">
+          <div class="ly"><span class="tagx">core</span><small>no deps · no DOM</small></div>
+          <div class="ly"><span class="tagx">dom</span><small>browser APIs</small></div>
+          <div class="ly"><span class="tagx">react</span><small>adapter</small></div>
+        </div>
+      </div>
+
+      <div class="t vcenter reveal">
+        <span class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h10M4 17h7"/></svg>Fallback</span>
+        <div class="fb" aria-label="Fallback tiers">
+          <div class="fb-step hot"><span class="fb-n">1</span><span class="fb-t">Element</span><span class="fb-d">exact</span></div>
+          <div class="fb-step"><span class="fb-n">2</span><span class="fb-t">Viewport</span><span class="fb-d">screen</span></div>
+          <div class="fb-step"><span class="fb-n">3</span><span class="fb-t">Hidden</span><span class="fb-d">off-screen</span></div>
+        </div>
+      </div>
+
+      <div class="t reveal">
+        <span class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 5 6v6c0 4 3 7 7 9 4-2 7-5 7-9V6l-7-3Z"/></svg>Security</span>
+        <h3>Built to trust no input</h3>
+        <p>Every message is checked for size and shape before your code sees it. Labels are map keys, never selectors.</p>
+      </div>
+
+      <div class="t reveal">
+        <span class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 8 5 12l4 4M15 8l4 4-4 4"/></svg>Rendering</span>
+        <h3>Draw your own cursor</h3>
+        <p>Ship the default or render your own. Nothing forces a look, and no component is required.</p>
+      </div>
+
+      <div class="t reveal">
+        <span class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M9 9h6v6H9z"/></svg>Visibility</span>
+        <h3>Hides itself when it should</h3>
+        <p>Route changes, dialogs, and off-screen spots hide the cursor, not float over nothing.</p>
+      </div>
+
+      <div class="t reveal">
+        <span class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0Z"/><path d="M9 9h.01M15 9h.01M9 15c1.5 1 4.5 1 6 0"/></svg>React adapter</span>
+        <h3>A thin React adapter</h3>
+        <p>A provider, 7 hooks, and optional cursor components. The engine itself runs without React.</p>
+      </div>
+      <div class="t wide agent reveal">
+        <span class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M6 6l2 2m8 8 2 2M6 18l2-2m8-8 2-2"/></svg>Agent skill</span>
+        <h3>Let your AI write the integration</h3>
+        <p>A bundled skill teaches coding agents the anchor model and the integration steps.</p>
+        <div class="install"><span><span class="pk">$</span> npx skills add DammersCode/anchor-presence</span><span class="cp" data-copy="npx skills add DammersCode/anchor-presence">copy</span></div>
+      </div>
+      <div class="t wide cta reveal">
+        <span class="lab">Get started</span>
+        <h3>Add live cursors in minutes</h3>
+        <p>One provider, one hook, one layer. Your transport, your rendering.</p>
+        <div class="install"><span><span class="pk">$</span> npm i @dammers/anchor-presence</span><span class="cp" data-copy="npm i @dammers/anchor-presence">copy</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec tight" id="how">
+  <div class="wrap">
+    <div class="head reveal"><p class="kick">How it works</p><h2>A cursor is an address, not a coordinate.</h2><p class="lead">No screen position ever crosses the wire. You send a label plus an offset; each person’s browser turns it into pixels for their own layout.</p></div>
+    <div class="flow">
+      <div class="step reveal"><div class="n">01</div><h3>You send what, not where</h3><p>A pointer move becomes a label plus a position inside it: “the Revenue card, 42% across.” Never a screen coordinate.</p></div>
+      <div class="step reveal"><div class="n">02</div><h3>Your channel carries it</h3><p>It works over any real-time channel: WebSocket, Socket.IO, SignalR, BroadcastChannel. Plug in the one your app already runs.</p></div>
+      <div class="step reveal"><div class="n">03</div><h3>Their browser does the rest</h3><p>On their side, the label is measured against their own layout and turned into pixels. A different sidebar or screen size can’t misplace it.</p></div>
+    </div>
+    <div class="code reveal">
+      <div class="ch"><span>no raw pixels cross the wire</span><span>ts</span></div>
+<pre><span class="c">// sender: register the elements you want to share</span>
+<span class="k">const</span> <span class="k">client</span> = <span class="f">createPresenceClient</span>({ <span class="k">transport</span>, <span class="k">user</span>: { <span class="k">name</span>: <span class="s">"Phil"</span> } })
+<span class="f">registerAnchor</span>(<span class="s">"stats.revenue"</span>, revenueEl)
+<span class="f">registerAnchor</span>(<span class="s">"orders.row:10482"</span>, rowEl)
+
+<span class="c">// a pointer move → a semantic address, never a screen coordinate</span>
+<span class="k">client</span>.<span class="f">updateLocalCursor</span>({ <span class="k">anchor</span>: <span class="s">"stats.revenue"</span>, <span class="k">u</span>: <span class="s">0.42</span>, <span class="k">v</span>: <span class="s">0.88</span> })
+
+<span class="c">// receiver: same address, different layout → its own pixels</span>
+<span class="k">client</span>.<span class="f">subscribe</span>((remote) =&gt; {
+  <span class="k">const</span> { x, y, tier } = <span class="f">resolveForMe</span>(remote)   <span class="c">// "anchor" | "viewport" | "hidden"</span>
+  <span class="f">renderCursor</span>(remote.user, x, y)               <span class="c">// x,y are THIS window's pixels</span>
+})</pre>
+    </div>
+  </div>
+</section>
+
+<section class="sec tight" id="rules">
+  <div class="wrap">
+    <div class="head reveal"><p class="kick">Guarantees</p><h2>Built so it doesn’t break.</h2><p class="lead">The demo runs on ten rules, held on every message. The ones you’ll feel on the first move:</p></div>
+    <div class="invc reveal">
+      <div class="cols">
+        <div class="it"><span class="n">01</span><div><b>No pixels on the wire</b><span>Position is a label + an offset, never a coordinate.</span></div></div>
+        <div class="it"><span class="n">02</span><div><b>Your layout is the source of truth</b><span>Each browser resolves against its own DOM.</span></div></div>
+        <div class="it"><span class="n">03</span><div><b>Survives reflow and resize</b><span>The cursor follows the element, not the frame.</span></div></div>
+        <div class="it"><span class="n">04</span><div><b>Fails in a defined order</b><span>Element → parent → region → viewport → hidden.</span></div></div>
+        <div class="it"><span class="n">05</span><div><b>Adapters stay thin</b><span>The framework layer never owns the engine’s state.</span></div></div>
+        <div class="it"><span class="n">06</span><div><b>The channel is swappable</b><span>The engine imports no transport.</span></div></div>
+        <div class="it"><span class="n">07</span><div><b>Reflow costs nothing</b><span>A local layout change moves a still cursor with zero packets.</span></div></div>
+        <div class="it"><span class="n">08</span><div><b>Messages can’t run code</b><span>Labels resolve only against elements you registered.</span></div></div>
+        <div class="it"><span class="n">09</span><div><b>You own the rendering</b><span>No cursor component is required.</span></div></div>
+        <div class="it"><span class="n">10</span><div><b>Built to grow</b><span>The boundary is designed to extend without touching the core.</span></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec tight" id="run">
+  <div class="wrap">
+    <div class="head reveal"><p class="kick">Run it</p><h2>Two windows, one cursor.</h2><p class="lead">Start the relay and the demo, open two windows, and move the pointer. The other window tracks the same element across different sizes and sidebar states.</p></div>
+    <div class="qs">
+      <div class="code reveal">
+        <div class="ch"><span>quickstart (requires bun)</span><span>sh</span></div>
+<pre><span class="p">$</span> git clone https://github.com/DammersCode/anchor-presence.git
+<span class="p">$</span> cd anchor-presence
+<span class="p">$</span> bun install
+<span class="p">$</span> bun run build
+<span class="c"># terminal 1 · relay</span>
+<span class="p">$</span> cd apps/server &amp;&amp; bun run dev
+<span class="c"># terminal 2 · demo (open two windows)</span>
+<span class="p">$</span> cd apps/demo &amp;&amp; bun run dev</pre>
+      </div>
+      <div class="note reveal">
+        <p>Give each window a distinct name so the cursors are easy to tell apart:</p>
+        <div class="code" style="margin-top:0">
+          <div class="ch"><span>two windows</span><span>url</span></div>
+<pre><span class="s">http://localhost:5173/?name=Phil&room=main</span>
+<span class="s">http://localhost:5173/?room=main</span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="tag">Live cursors that stay on the element.<small>Different layouts, same meaning.</small></div>
+    <nav class="links" aria-label="Footer"><a href="#features">What it does</a><a href="#how">How it works</a><a href="#rules">Guarantees</a><a href="https://github.com/DammersCode/anchor-presence">GitHub</a><a href="https://github.com/DammersCode/anchor-presence/tree/main/docs">Docs</a></nav>
+    <div class="lic">MIT © DammersCode · anchor-presence</div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var nav=document.getElementById("nav");
+  addEventListener("scroll",function(){nav.classList.toggle("scrolled",scrollY>8);},{passive:true});
+  document.querySelectorAll(".cp").forEach(function(b){
+    b.addEventListener("click",function(){
+      var t=b.getAttribute("data-copy");
+      if(navigator.clipboard){navigator.clipboard.writeText(t).then(function(){b.textContent="copied";b.classList.add("ok");setTimeout(function(){b.textContent="copy";b.classList.remove("ok")},1400);});}
+    });
+  });
+  var rm=matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if(!rm && "IntersectionObserver" in window){
+    var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target);}});},{threshold:.12});
+    document.querySelectorAll(".reveal").forEach(function(el){io.observe(el);});
+  } else { document.querySelectorAll(".reveal").forEach(function(el){el.classList.add("in");}); }
+  var t=298; setInterval(function(){t=297+Math.floor(Math.random()*6);var e=document.getElementById("tps");if(e)e.textContent=t;},1800);
+})();
+(function(){
+  var body=document.querySelector(".prod .body");if(!body)return;
+  var cs=[document.querySelector(".prod .cur.a"),document.querySelector(".prod .cur.b"),document.querySelector(".prod .cur.c")];
+  var k=document.querySelectorAll(".prod .krow .k");var st=document.querySelectorAll(".prod .tbl .st");var pill=document.querySelectorAll(".prod .tbl .pill2");
+  var W=[[st[0],k[0],st[2]],[pill[1],k[3],pill[3]],[k[1],st[4],k[2]]];
+  function pt(el){var b=body.getBoundingClientRect(),r=el.getBoundingClientRect();return{x:r.left-b.left+r.width/2-5,y:r.top-b.top+r.height/2-3};}
+  function go(c,el){if(!el)return;var p=pt(el);c.style.transform="translate("+p.x+"px,"+p.y+"px)";}
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches){cs.forEach(function(c,i){if(c)go(c,W[i]&&W[i][0]);});return;}
+  cs.forEach(function(c,i){
+    if(!c||!W[i]||!W[i][0])return;
+    c.style.transition="transform 1100ms cubic-bezier(.45,.05,.3,1)";
+    var idx=i;go(c,W[i][idx]);
+    setInterval(function(){idx=(idx+1)%3;go(c,W[i][idx]);},1100+1700+i*520);
+  });
+})();
+</script>
+</body>
+</html>

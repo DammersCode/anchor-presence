@@ -319,4 +319,57 @@ describe("RemoteResolver (spec §10 + §13)", () => {
     expect(cursors[0]?.context).toEqual({ route: "/settings" });
     expect(cursors[0]?.user).toEqual({ name: "Ada" });
   });
+
+  it("R-7: unchanged input keeps cursor and list identity across resolveAll calls (spec §14.1)", () => {
+    const { factory } = spyInterpolator();
+    const resolver = new RemoteResolver({ registry, interpolatorFactory: factory });
+    const rects = new Map<Element, Rect>([[el, { left: 0, top: 0, width: 100, height: 100 }]]);
+    const state = readState(rects);
+    const p = presence();
+
+    const first = resolver.resolveAll([p], state, 0);
+    const second = resolver.resolveAll([p], state, 16);
+
+    expect(second.cursors).toBe(first.cursors);
+    expect(second.cursors[0]).toBe(first.cursors[0]);
+  });
+
+  it("R-7: an empty list keeps its identity too", () => {
+    const resolver = new RemoteResolver({ registry });
+    const state = readState(new Map());
+
+    const first = resolver.resolveAll([], state, 0);
+    const second = resolver.resolveAll([], state, 16);
+
+    expect(second.cursors).toBe(first.cursors);
+  });
+
+  it("R-7: a changed value produces a new list and a new instance, while unchanged cursors keep identity", () => {
+    const elB = document.createElement("div");
+    document.body.appendChild(elB);
+    registry.register("b", elB);
+
+    const { factory } = spyInterpolator();
+    const factoryB = spyInterpolator().factory;
+    let calls = 0;
+    const perClientFactory: InterpolatorFactory = () => (calls++ === 0 ? factory() : factoryB());
+    const resolver = new RemoteResolver({ registry, interpolatorFactory: perClientFactory });
+
+    const rects = new Map<Element, Rect>([
+      [el, { left: 0, top: 0, width: 100, height: 100 }],
+      [elB, { left: 200, top: 0, width: 100, height: 100 }],
+    ]);
+    const state = readState(rects);
+    const p1 = presence();
+    const p2 = presence({ clientId: "remote-2", cursor: { anchors: [{ id: "b", u: 0.5, v: 0.5 }] } });
+
+    const first = resolver.resolveAll([p1, p2], state, 0);
+    rects.set(elB, { left: 300, top: 0, width: 100, height: 100 });
+    const second = resolver.resolveAll([p1, p2], state, 16);
+
+    expect(second.cursors).not.toBe(first.cursors);
+    expect(second.cursors[0]).toBe(first.cursors[0]);
+    expect(second.cursors[1]).not.toBe(first.cursors[1]);
+    expect(second.cursors[1]?.x).toBeCloseTo(350);
+  });
 });

@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createAnchorRegistry } from "../src/registry";
 import type { AnchorRegistry } from "../src/registry";
-import { attachPointerSource, DEFAULT_MAX_ANCHORS } from "../src/pointer";
-import type { CursorPosition, PresenceClient } from "@anchor-presence/core";
+import { attachPointerSource, DEFAULT_MAX_ANCHORS, DEFAULT_MAX_SENT_ANCHORS } from "../src/pointer";
+import type { CursorPosition, PointerInfo, PresenceClient } from "@anchor-presence/core";
 
 // jsdom has no layout engine and no PointerEvent constructor; stub both.
 function mockRect(el: Element, rect: { left: number; top: number; width: number; height: number }): void {
@@ -24,7 +24,7 @@ function mockRect(el: Element, rect: { left: number; top: number; width: number;
 function firePointerEvent(
   type: string,
   target: Element,
-  init: { clientX: number; clientY: number },
+  init: { clientX: number; clientY: number; pointerType?: string },
 ): void {
   const event = new Event(type, { bubbles: true, cancelable: true, composed: true }) as PointerEvent & {
     clientX: number;
@@ -32,28 +32,46 @@ function firePointerEvent(
   };
   Object.defineProperty(event, "clientX", { value: init.clientX });
   Object.defineProperty(event, "clientY", { value: init.clientY });
+  if (init.pointerType !== undefined) Object.defineProperty(event, "pointerType", { value: init.pointerType });
   target.dispatchEvent(event);
 }
 
-function makeClient(): { client: PresenceClient<unknown, unknown>; samples: (CursorPosition | null)[] } {
+function makeClient(): {
+  client: PresenceClient<unknown, unknown>;
+  samples: (CursorPosition | null)[];
+  pointers: (PointerInfo | undefined)[];
+  teardowns: Array<() => void>;
+} {
   const samples: (CursorPosition | null)[] = [];
+  const pointers: (PointerInfo | undefined)[] = [];
   const teardowns: Array<() => void> = [];
   const client = {
     clientId: "local",
     session: "s1",
-    updateLocalCursor: (cursor: CursorPosition | null) => samples.push(cursor),
+    updateLocalCursor: (cursor: CursorPosition | null, pointer?: PointerInfo) => {
+      samples.push(cursor);
+      pointers.push(pointer);
+    },
     setContext: () => {},
+    getContext: () => undefined,
     setUser: () => {},
+    getUser: () => undefined,
     getStatus: () => "connected" as const,
     subscribeStatus: () => () => {},
     getRemoteSnapshot: () => [],
     subscribeRemote: () => () => {},
-    registerTeardown: (fn: () => void) => teardowns.push(fn),
+    registerTeardown: (fn: () => void) => {
+      teardowns.push(fn);
+      return () => {
+        const index = teardowns.indexOf(fn);
+        if (index !== -1) teardowns.splice(index, 1);
+      };
+    },
     dispose: () => {
-      for (const fn of teardowns) fn();
+      for (const fn of teardowns.splice(0, teardowns.length)) fn();
     },
   } satisfies PresenceClient<unknown, unknown>;
-  return { client, samples };
+  return { client, samples, pointers, teardowns };
 }
 
 describe("attachPointerSource (spec §9)", () => {
@@ -241,6 +259,49 @@ describe("attachPointerSource (spec §9)", () => {
     expect(cursor?.anchors[0]?.v).toBeCloseTo(25 / 100);
 
     handle.detach();
+  });
+
+  it("D-4: pointerover produces a sample (pointerenter never reaches the document with an Element target)", () => {
+    const el = document.createElement("div");
+    document.body.appendChild(el);
+    mockRect(el, { left: 0, top: 0, width: 100, height: 100 });
+    registry.register("a", el);
+
+    const { client, samples } = makeClient();
+    const handle = attachPointerSource(client, registry);
+
+    firePointerEvent("pointerover", el, { clientX: 25, clientY: 75 });
+
+    expect(samples).toHaveLength(1);
+    expect(samples[0]?.anchors[0]?.u).toBeCloseTo(0.25);
+    expect(samples[0]?.anchors[0]?.v).toBeCloseTo(0.75);
+
+    handle.detach();
+  });
+
+  it("C-4: passes the event's pointerType to updateLocalCursor; unknown or missing types pass undefined", () => {
+    const el = document.createElement("div");
+    document.body.appendChild(el);
+    mockRect(el, { left: 0, top: 0, width: 100, height: 100 });
+    registry.register("a", el);
+
+    const { client, pointers } = makeClient();
+    const handle = attachPointerSource(client, registry);
+
+    firePointerEvent("pointermove", el, { clientX: 10, clientY: 10, pointerType: "mouse" });
+    firePointerEvent("pointermove", el, { clientX: 10, clientY: 10, pointerType: "touch" });
+    firePointerEvent("pointermove", el, { clientX: 10, clientY: 10, pointerType: "pen" });
+    firePointerEvent("pointermove", el, { clientX: 10, clientY: 10, pointerType: "eyetracker" });
+    firePointerEvent("pointermove", el, { clientX: 10, clientY: 10 });
+
+    expect(pointers).toEqual([{ type: "mouse" }, { type: "touch" }, { type: "pen" }, undefined, undefined]);
+
+    handle.detach();
+  });
+
+  it("R-2: DEFAULT_MAX_ANCHORS stays exported as a deprecated alias of DEFAULT_MAX_SENT_ANCHORS", () => {
+    expect(DEFAULT_MAX_ANCHORS).toBe(DEFAULT_MAX_SENT_ANCHORS);
+    expect(DEFAULT_MAX_SENT_ANCHORS).toBe(4);
   });
 
   it("registers its teardown with the client and detach() removes listeners", () => {

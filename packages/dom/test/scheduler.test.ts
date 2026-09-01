@@ -44,15 +44,33 @@ function makeResizeObserverStub() {
 }
 
 function makeMutationObserverStub() {
-  const instances: { observe: ReturnType<typeof vi.fn>; disconnect: ReturnType<typeof vi.fn>; callback: () => void }[] = [];
+  const instances: {
+    observe: ReturnType<typeof vi.fn>;
+    disconnect: ReturnType<typeof vi.fn>;
+    callback: (records?: MutationRecord[]) => void;
+  }[] = [];
   const ctor: MutationObserverCtor = class implements MutationObserverLike {
     observe = vi.fn();
     disconnect = vi.fn();
-    constructor(private callback: () => void) {
+    constructor(public callback: (records?: MutationRecord[]) => void) {
       instances.push(this as unknown as (typeof instances)[number]);
     }
   } as unknown as MutationObserverCtor;
   return { ctor, instances };
+}
+
+function fakeRecord(target: Node): MutationRecord {
+  return {
+    type: "attributes",
+    target,
+    addedNodes: document.querySelectorAll("#none"),
+    removedNodes: document.querySelectorAll("#none"),
+    previousSibling: null,
+    nextSibling: null,
+    attributeName: null,
+    attributeNamespace: null,
+    oldValue: null,
+  };
 }
 
 function emptyCompute<T>(snapshot: T): ComputeResult<T> {
@@ -570,6 +588,123 @@ describe("createGeometryScheduler (spec §11)", () => {
     expect(clientMetricReads).toBeGreaterThan(0);
 
     scheduler.dispose();
+  });
+
+  it("M-D-1: mutation records from inside [data-anchor-presence-cursor] roots do not dirty the scheduler", () => {
+    const { raf, caf, queue, flush } = makeRafStub();
+    active = true;
+    const mutationObs = makeMutationObserverStub();
+    const cursorRoot = document.createElement("div");
+    cursorRoot.setAttribute("data-anchor-presence-cursor", "");
+    const cursorChild = cursorRoot.appendChild(document.createElement("div"));
+    const cursorText = cursorChild.appendChild(document.createTextNode("label"));
+    document.body.appendChild(cursorRoot);
+    const outside = document.body.appendChild(document.createElement("div"));
+
+    const scheduler = createGeometryScheduler(baseOptions({ raf, caf, MutationObserverCtor: mutationObs.ctor }));
+    flush(); // consume the attach-time frame
+    expect(queue).toHaveLength(0);
+
+    mutationObs.instances[0]?.callback([fakeRecord(cursorRoot), fakeRecord(cursorChild), fakeRecord(cursorText)]);
+    expect(queue).toHaveLength(0); // all records filtered: not dirty
+
+    mutationObs.instances[0]?.callback([fakeRecord(cursorChild), fakeRecord(outside)]);
+    expect(queue).toHaveLength(1); // one surviving record dirties
+    flush();
+
+    mutationObs.instances[0]?.callback(); // a legacy no-records callback stays conservative
+    expect(queue).toHaveLength(1);
+
+    scheduler.dispose();
+  });
+
+  it("D-3: getCachedRect returns undefined while an invalidation is pending", () => {
+    const { raf, caf, flush } = makeRafStub();
+    active = true;
+    const el = document.createElement("div");
+    document.body.appendChild(el);
+    const compute = vi.fn((readState) => {
+      readState.getRect(el);
+      return { snapshot: [], activeAnchors: [el], needsAnotherFrame: false };
+    });
+    const scheduler = createGeometryScheduler(baseOptions({ raf, caf, compute }));
+
+    scheduler.invalidate();
+    expect(scheduler.getCachedRect(el)).toBeUndefined(); // dirty, not yet re-measured
+
+    flush();
+    expect(scheduler.getCachedRect(el)).toBeDefined();
+
+    scheduler.invalidate();
+    expect(scheduler.getCachedRect(el)).toBeUndefined();
+
+    scheduler.dispose();
+  });
+
+  it("D-2: attaches scroll + mutation observers to open shadow roots hosting active anchors, and detaches them", () => {
+    const { raf, caf, flush } = makeRafStub();
+    active = true;
+    const mutationObs = makeMutationObserverStub();
+    const host = document.body.appendChild(document.createElement("div"));
+    const shadow = host.attachShadow({ mode: "open" });
+    const anchor = shadow.appendChild(document.createElement("div"));
+
+    let activeAnchors: Element[] = [anchor];
+    const compute = vi.fn(() => ({ snapshot: [], activeAnchors, needsAnotherFrame: false }));
+    const scheduler = createGeometryScheduler(baseOptions({ raf, caf, compute, MutationObserverCtor: mutationObs.ctor }));
+    scheduler.invalidate();
+    flush();
+
+    const shadowObserver = mutationObs.instances[1];
+    expect(shadowObserver?.observe).toHaveBeenCalledWith(
+      shadow,
+      expect.objectContaining({ childList: true, attributes: true, subtree: true }),
+    );
+
+    // scroll inside the shadow root (composed: false) must still invalidate
+    compute.mockClear();
+    anchor.dispatchEvent(new Event("scroll"));
+    flush();
+    expect(compute).toHaveBeenCalledTimes(1);
+
+    // mutation records delivered by the shadow-root observer invalidate too
+    compute.mockClear();
+    shadowObserver?.callback([fakeRecord(anchor)]);
+    flush();
+    expect(compute).toHaveBeenCalledTimes(1);
+
+    // once the anchor is no longer active, the shadow-root observer is disconnected
+    activeAnchors = [];
+    scheduler.invalidate();
+    flush();
+    expect(shadowObserver?.disconnect).toHaveBeenCalled();
+
+    scheduler.dispose();
+  });
+
+  it("D-2: nested shadow roots along the host chain are all observed, and detach() disconnects them", () => {
+    const { raf, caf, flush } = makeRafStub();
+    active = true;
+    const mutationObs = makeMutationObserverStub();
+    const outerHost = document.body.appendChild(document.createElement("div"));
+    const outerShadow = outerHost.attachShadow({ mode: "open" });
+    const innerHost = outerShadow.appendChild(document.createElement("div"));
+    const innerShadow = innerHost.attachShadow({ mode: "open" });
+    const anchor = innerShadow.appendChild(document.createElement("div"));
+
+    const compute = vi.fn(() => ({ snapshot: [], activeAnchors: [anchor], needsAnotherFrame: false }));
+    const scheduler = createGeometryScheduler(baseOptions({ raf, caf, compute, MutationObserverCtor: mutationObs.ctor }));
+    scheduler.invalidate();
+    flush();
+
+    const observedRoots = mutationObs.instances.slice(1).flatMap((i) => i.observe.mock.calls.map((c) => c[0]));
+    expect(observedRoots).toContain(innerShadow);
+    expect(observedRoots).toContain(outerShadow);
+
+    scheduler.dispose();
+    for (const instance of mutationObs.instances) {
+      expect(instance.disconnect).toHaveBeenCalled();
+    }
   });
 
   it("F3: interpolation-only frames reuse cached client rects with zero client-metric reads", () => {

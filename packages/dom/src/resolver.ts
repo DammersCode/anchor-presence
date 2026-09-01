@@ -63,11 +63,14 @@ type RawResolution = {
   activeAnchors: Element[];
 };
 
+type VisibleRectEntry = { rect: Rect | null; clippingAncestors: Element[] };
+
 /** Pure geometry resolution (spec §10, steps 1-5) — no interpolation, no visibility policy. */
 export function resolveGeometry(
   presence: CursorPresence,
   registry: AnchorRegistry,
   readState: SchedulerReadState,
+  visibleRectMemo?: Map<Element, VisibleRectEntry>,
 ): RawResolution {
   const cursor = presence.cursor;
   if (cursor === null) {
@@ -81,18 +84,23 @@ export function resolveGeometry(
     const v = anchor?.v ?? 0;
     const x = resolved.rect.left + resolved.rect.width * u;
     const y = resolved.rect.top + resolved.rect.height * v;
-    const clippingAncestors: Element[] = [];
-    const visibleRect = computeVisibleRect(resolved.element, resolved.rect, readState, (ancestor) =>
-      clippingAncestors.push(ancestor),
-    );
+    let entry = visibleRectMemo?.get(resolved.element);
+    if (entry === undefined) {
+      const clippingAncestors: Element[] = [];
+      const rect = computeVisibleRect(resolved.element, resolved.rect, readState, (ancestor) =>
+        clippingAncestors.push(ancestor),
+      );
+      entry = { rect, clippingAncestors };
+      visibleRectMemo?.set(resolved.element, entry);
+    }
     return {
       x,
       y,
       tier: "anchor",
       anchorId: resolved.id,
-      pointVisible: isPointInRect(x, y, visibleRect),
+      pointVisible: isPointInRect(x, y, entry.rect),
       element: resolved.element,
-      activeAnchors: [resolved.element, ...clippingAncestors],
+      activeAnchors: [resolved.element, ...entry.clippingAncestors],
     };
   }
 
@@ -132,6 +140,9 @@ export class RemoteResolver<TContext = unknown, TUser = unknown> {
   private readonly interpolatorFactory: InterpolatorFactory;
   private readonly hitTest: boolean;
   private readonly states = new Map<string, InterpolatorState>();
+  // spec §14.1: unchanged cursors (and an unchanged list) keep their identity across passes
+  private readonly lastResults = new Map<string, ResolvedCursor<TContext, TUser>>();
+  private lastList: ResolvedCursor<TContext, TUser>[] = [];
 
   constructor(options: ResolverOptions<TContext>) {
     this.registry = options.registry;
@@ -145,6 +156,9 @@ export class RemoteResolver<TContext = unknown, TUser = unknown> {
     for (const clientId of this.states.keys()) {
       if (!activeClientIds.has(clientId)) this.states.delete(clientId);
     }
+    for (const clientId of this.lastResults.keys()) {
+      if (!activeClientIds.has(clientId)) this.lastResults.delete(clientId);
+    }
   }
 
   resolveAll(
@@ -157,9 +171,11 @@ export class RemoteResolver<TContext = unknown, TUser = unknown> {
 
     const results: ResolvedCursor<TContext, TUser>[] = [];
     const activeAnchors = new Set<Element>();
+    const visibleRectMemo = new Map<Element, VisibleRectEntry>();
     let unsettled = false;
+    let listUnchanged = presences.length === this.lastList.length;
     for (const presence of presences) {
-      const raw = resolveGeometry(presence, this.registry, readState);
+      const raw = resolveGeometry(presence, this.registry, readState, visibleRectMemo);
       for (const element of raw.activeAnchors) activeAnchors.add(element);
       const pointVisible = this.isPointVisible(raw, readState.viewportSize);
       const visibility = this.visibilityPolicy({
@@ -189,20 +205,41 @@ export class RemoteResolver<TContext = unknown, TUser = unknown> {
 
       const sample = state.interpolator.sample(timestampMs);
       if (!sample.settled) unsettled = true;
-      const result: ResolvedCursor<TContext, TUser> = {
-        clientId: presence.clientId,
-        x: sample.x,
-        y: sample.y,
-        visible: visibility === "show",
-        pointVisible,
-        anchorId: raw.anchorId,
-        tier: raw.tier,
-      };
-      if (presence.context !== undefined) result.context = presence.context;
-      if (presence.user !== undefined) result.user = presence.user;
+
+      const prev = this.lastResults.get(presence.clientId);
+      let result: ResolvedCursor<TContext, TUser>;
+      if (
+        prev !== undefined &&
+        prev.x === sample.x &&
+        prev.y === sample.y &&
+        prev.visible === (visibility === "show") &&
+        prev.pointVisible === pointVisible &&
+        prev.anchorId === raw.anchorId &&
+        prev.tier === raw.tier &&
+        prev.context === presence.context &&
+        prev.user === presence.user
+      ) {
+        result = prev;
+      } else {
+        result = {
+          clientId: presence.clientId,
+          x: sample.x,
+          y: sample.y,
+          visible: visibility === "show",
+          pointVisible,
+          anchorId: raw.anchorId,
+          tier: raw.tier,
+        };
+        if (presence.context !== undefined) result.context = presence.context;
+        if (presence.user !== undefined) result.user = presence.user;
+        this.lastResults.set(presence.clientId, result);
+      }
+      if (listUnchanged && this.lastList[results.length] !== result) listUnchanged = false;
       results.push(result);
     }
-    return { cursors: results, unsettled, activeAnchors: Array.from(activeAnchors) };
+    const cursors = listUnchanged ? this.lastList : results;
+    this.lastList = cursors;
+    return { cursors, unsettled, activeAnchors: Array.from(activeAnchors) };
   }
 
   private isPointVisible(raw: RawResolution, viewportSize: ViewportSize): boolean {

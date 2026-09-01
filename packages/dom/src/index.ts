@@ -6,7 +6,7 @@ export type { StyleValues } from "./occlusion";
 export { createAnchorRegistry } from "./registry";
 export type { AnchorRegistry } from "./registry";
 
-export { attachPointerSource, DEFAULT_MAX_ANCHORS } from "./pointer";
+export { attachPointerSource, DEFAULT_MAX_ANCHORS, DEFAULT_MAX_SENT_ANCHORS } from "./pointer";
 export type { PointerSourceHandle, PointerSourceOptions } from "./pointer";
 
 export { createGeometryScheduler } from "./scheduler";

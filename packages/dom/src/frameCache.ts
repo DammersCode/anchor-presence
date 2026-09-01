@@ -35,6 +35,7 @@ export function createFrameCache(host: FrameCacheHost): FrameCache {
   function startFrame(): SchedulerReadState {
     const rects = new Map<Element, Rect>();
     const clientRects = new Map<Element, Rect>();
+    const styles = new Map<Element, StyleValues>();
     const readState: SchedulerReadState = {
       getRect(element) {
         let rect = rects.get(element);
@@ -52,7 +53,14 @@ export function createFrameCache(host: FrameCacheHost): FrameCache {
         }
         return rect;
       },
-      getStyle: host.getStyle,
+      getStyle(element) {
+        let style = styles.get(element);
+        if (style === undefined) {
+          style = host.getStyle(element);
+          styles.set(element, style);
+        }
+        return style;
+      },
       viewportSize: { width: host.window.innerWidth, height: host.window.innerHeight },
     };
     frame = { readState, rects };

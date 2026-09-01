@@ -15,7 +15,9 @@ export type MutationObserverLike = {
   observe(target: Node, options: MutationObserverInit): void;
   disconnect(): void;
 };
-export type MutationObserverCtor = new (callback: () => void) => MutationObserverLike;
+export type MutationObserverCtor = new (
+  callback: (records?: MutationRecord[]) => void,
+) => MutationObserverLike;
 
 export type RafLike = (callback: (timestampMs: number) => void) => number;
 export type CafLike = (handle: number) => void;
@@ -26,6 +28,8 @@ const TRANSITION_END_EVENTS = ["transitionend", "transitioncancel", "animationen
 const SAFETY_TIMEOUT_CAP_MS = 10_000;
 const INFINITE_ANIMATION_WINDOW_MS = 500;
 const CANCEL_SAFETY_MARGIN_MS = 500;
+
+const MUTATION_OBSERVE_OPTIONS: MutationObserverInit = { childList: true, attributes: true, subtree: true };
 
 /** Result of one READ+COMPUTE+NOTIFY pass, handed back to the caller-supplied compute function. */
 export type SchedulerReadState = {
@@ -89,6 +93,7 @@ export function createGeometryScheduler<TSnapshot>(
   let observedAnchors = new Set<Element>();
   let resizeObserver: ResizeObserverLike | null = null;
   let mutationObserver: MutationObserverLike | null = null;
+  const shadowRootObservers = new Map<ShadowRoot, MutationObserverLike | null>();
 
   // per-target keying: distinct elements with the same property/animation name must not collide (spec §11)
   const transitionEntries = new Map<EventTarget, Map<string, { safetyTimer: ReturnType<typeof setTimeout> }>>();
@@ -138,6 +143,40 @@ export function createGeometryScheduler<TSnapshot>(
       }
     }
     observedAnchors = nextSet;
+    syncShadowRoots(nextSet);
+  }
+
+  // document-level scroll/mutation signals stop at shadow boundaries; observe each anchor's roots directly
+  function collectShadowRoots(anchors: Iterable<Element>): Set<ShadowRoot> {
+    const roots = new Set<ShadowRoot>();
+    for (const el of anchors) {
+      let root = el.getRootNode();
+      while (root instanceof ShadowRoot) {
+        roots.add(root);
+        root = root.host.getRootNode();
+      }
+    }
+    return roots;
+  }
+
+  function syncShadowRoots(anchors: Iterable<Element>): void {
+    const next = collectShadowRoots(anchors);
+    for (const [root, observer] of shadowRootObservers) {
+      if (next.has(root)) continue;
+      root.removeEventListener("scroll", onDocumentScroll, { capture: true });
+      observer?.disconnect();
+      shadowRootObservers.delete(root);
+    }
+    for (const root of next) {
+      if (shadowRootObservers.has(root)) continue;
+      root.addEventListener("scroll", onDocumentScroll, { capture: true, passive: true });
+      let observer: MutationObserverLike | null = null;
+      if (MutationObserverImpl) {
+        observer = new MutationObserverImpl(onMutation);
+        observer.observe(root, MUTATION_OBSERVE_OPTIONS);
+      }
+      shadowRootObservers.set(root, observer);
+    }
   }
 
   function onWindowResize(): void {
@@ -149,8 +188,24 @@ export function createGeometryScheduler<TSnapshot>(
   function onResizeObserverEntry(): void {
     markDirtyAndSchedule();
   }
-  function onMutation(): void {
-    markDirtyAndSchedule();
+  // own cursor renders mutate the DOM every frame; reacting to them would defeat the interpolation-only reuse path
+  function isCursorRootMutation(record: MutationRecord): boolean {
+    const target = record.target;
+    const element = target instanceof Element ? target : target.parentElement;
+    return element !== null && element.closest("[data-anchor-presence-cursor]") !== null;
+  }
+
+  function onMutation(records?: MutationRecord[]): void {
+    if (records === undefined) {
+      markDirtyAndSchedule();
+      return;
+    }
+    for (const record of records) {
+      if (!isCursorRootMutation(record)) {
+        markDirtyAndSchedule();
+        return;
+      }
+    }
   }
 
   function closeTransitionEntry(target: EventTarget | null, name: string): void {
@@ -235,9 +290,11 @@ export function createGeometryScheduler<TSnapshot>(
       resizeObserver.observe(doc.documentElement);
     }
 
-    if (MutationObserverImpl) {
+    // body can still be null when attach runs from a <head> script; documentElement covers the later body subtree
+    const mutationTarget: Node | null = doc.body ?? doc.documentElement;
+    if (MutationObserverImpl && mutationTarget !== null) {
       mutationObserver = new MutationObserverImpl(onMutation);
-      mutationObserver.observe(doc.body, { childList: true, attributes: true, subtree: true });
+      mutationObserver.observe(mutationTarget, MUTATION_OBSERVE_OPTIONS);
     }
 
     for (const type of TRANSITION_START_EVENTS) {
@@ -267,6 +324,11 @@ export function createGeometryScheduler<TSnapshot>(
       mutationObserver.disconnect();
       mutationObserver = null;
     }
+    for (const [root, observer] of shadowRootObservers) {
+      root.removeEventListener("scroll", onDocumentScroll, { capture: true });
+      observer?.disconnect();
+    }
+    shadowRootObservers.clear();
 
     for (const type of TRANSITION_START_EVENTS) {
       doc.removeEventListener(type, onTransitionStart as EventListener, { capture: true });
@@ -316,7 +378,8 @@ export function createGeometryScheduler<TSnapshot>(
     },
 
     getCachedRect(element) {
-      return frameCache.getCachedRect(element);
+      // a dirty flag means a layout-changing signal arrived after the last measure; the cache is not trustworthy
+      return dirty ? undefined : frameCache.getCachedRect(element);
     },
 
     dispose() {

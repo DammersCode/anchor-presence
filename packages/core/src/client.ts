@@ -7,7 +7,7 @@ import type {
   CursorPresence,
   PointerInfo,
 } from "./protocol";
-import { DEFAULT_STALE_TIMEOUT_MS, RemotePresenceStore } from "./store";
+import { DEFAULT_MAX_REMOTE_CLIENTS, DEFAULT_STALE_TIMEOUT_MS, RemotePresenceStore } from "./store";
 import type { LiveCursorTransport } from "./transport";
 import { validatePresence } from "./validate";
 import type { ValidationLimits } from "./validate";
@@ -166,17 +166,25 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     : "connected";
   const statusListeners = new Set<(status: ConnectionStatus) => void>();
 
+  const devMode = isDevMode();
+  let warnedAboutRemoteCap = false;
   const store = new RemotePresenceStore<TContext, TUser>({
     ...(maxRemoteClients !== undefined ? { maxRemoteClients } : {}),
     ...(staleTimeoutMs !== undefined ? { staleTimeoutMs } : {}),
     now,
+    onDropNewClient: () => {
+      if (!devMode || warnedAboutRemoteCap) return;
+      warnedAboutRemoteCap = true;
+      console.warn(
+        `[anchor-presence] remote presence store is full (maxRemoteClients=${maxRemoteClients ?? DEFAULT_MAX_REMOTE_CLIENTS}); new clientIds are dropped until an entry expires`,
+      );
+    },
   });
 
   const teardowns: Array<() => void> = [];
 
   const maxFieldBytes = validationLimits?.maxFieldBytes ?? DEFAULT_MAX_FIELD_BYTES;
   const maxMessageBytes = validationLimits?.maxMessageBytes ?? DEFAULT_MAX_MESSAGE_BYTES;
-  const devMode = isDevMode();
 
   // checked when context/user changes, not per message — receivers silently drop oversized fields
   function warnIfOversized(): void {

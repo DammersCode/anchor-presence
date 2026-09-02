@@ -840,3 +840,32 @@ describe("createPresenceClient dev-mode size warnings", () => {
     warnSpy.mockRestore();
   });
 });
+
+describe("createPresenceClient dev-mode remote-cap warning", () => {
+  it("warns once when a new remote client is dropped at maxRemoteClients", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { transport, emit } = makeTransport();
+    const client = createPresenceClient({
+      transport,
+      idFactory,
+      maxRemoteClients: 1,
+      publishIntervalMs: 50,
+    });
+
+    const remoteMessage = (clientId: string) =>
+      emit(jsonCodec.encode({ version: 1, clientId, session: `${clientId}-session`, sequence: 0, cursor: { anchors: [] } } as never));
+
+    remoteMessage("remote-1");
+    expect(warnSpy).not.toHaveBeenCalled();
+
+    remoteMessage("remote-2");
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy.mock.calls[0]?.[0]).toContain("maxRemoteClients=1");
+
+    remoteMessage("remote-3");
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+
+    client.dispose();
+    warnSpy.mockRestore();
+  });
+});

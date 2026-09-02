@@ -50,6 +50,6 @@ Render both fields as text: text nodes in plain DOM code, or framework text inte
 
 The remote presence store caps the number of distinct remote clients it tracks. `maxRemoteClients` defaults to 64, and is configurable through `PresenceClientOptions.maxRemoteClients` on `createPresenceClient`.
 
-A message from a new `clientId` beyond the cap is dropped; existing clients are unaffected. This bounds every allocation driven by network data: store entries, resolved cursors, and observed anchors. Expiry and disconnects free slots for new clients as they occur.
+A message from a new `clientId` beyond the cap is dropped; existing clients are unaffected. This bounds every allocation driven by network data: store entries, resolved cursors, and observed anchors. Expiry and disconnects free slots for new clients as they occur. In development, the client warns once when the cap starts dropping new clients.
 
 Set `maxRemoteClients` to match your expected concurrent session count. A value far above real usage offers no benefit and only raises the worst-case cost of a flood of distinct `clientId` values.

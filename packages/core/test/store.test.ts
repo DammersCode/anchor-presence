@@ -92,6 +92,17 @@ describe("RemotePresenceStore cap", () => {
     store.remove("a");
     expect(store.ingest(presence({ clientId: "b" }))).toBe(true);
   });
+
+  it("reports dropped new clients without reporting updates to existing clients", () => {
+    const onDropNewClient = vi.fn();
+    const store = new RemotePresenceStore({ maxRemoteClients: 1, onDropNewClient });
+    store.ingest(presence({ clientId: "a" }));
+    store.ingest(presence({ clientId: "a", sequence: 1 }));
+    expect(onDropNewClient).not.toHaveBeenCalled();
+
+    expect(store.ingest(presence({ clientId: "b" }))).toBe(false);
+    expect(onDropNewClient).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe("RemotePresenceStore stale sweep", () => {

@@ -7,6 +7,7 @@ export type RemotePresenceStoreOptions = {
   maxRemoteClients?: number;
   staleTimeoutMs?: number;
   now?: () => number;
+  onDropNewClient?: () => void;
 };
 
 type Entry<TContext, TUser> = {
@@ -19,6 +20,7 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
   private readonly maxRemoteClients: number;
   private readonly staleTimeoutMs: number;
   private readonly now: () => number;
+  private readonly onDropNewClient: (() => void) | undefined;
 
   private readonly entries = new Map<string, Entry<TContext, TUser>>();
   private readonly listeners = new Set<() => void>();
@@ -30,6 +32,7 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
     this.maxRemoteClients = options.maxRemoteClients ?? DEFAULT_MAX_REMOTE_CLIENTS;
     this.staleTimeoutMs = options.staleTimeoutMs ?? DEFAULT_STALE_TIMEOUT_MS;
     this.now = options.now ?? (() => Date.now());
+    this.onDropNewClient = options.onDropNewClient;
   }
 
   /** Applies an inbound (already-validated) presence message. Returns true if it was accepted. */
@@ -37,7 +40,10 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
     const existing = this.entries.get(presence.clientId);
 
     if (existing === undefined) {
-      if (this.entries.size >= this.maxRemoteClients) return false;
+      if (this.entries.size >= this.maxRemoteClients) {
+        this.onDropNewClient?.();
+        return false;
+      }
       this.entries.set(presence.clientId, { presence: this.normalizePresence(presence), lastSeenAt: this.now() });
       this.markDirty();
       return true;

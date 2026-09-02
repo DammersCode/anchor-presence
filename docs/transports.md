@@ -40,7 +40,7 @@ const client = createPresenceClient({ transport: myTransport });
 
 ## Native WebSocket example
 
-`@anchor-presence/dom` ships `createWebSocketTransport`. The function is unit-tested and reconnects with exponential backoff. It matches the room-broadcast relay in `apps/server/index.ts`. That relay forwards every binary message to the other sockets in the same room.
+`@anchor-presence/dom` ships `createWebSocketTransport`. The function is unit-tested and reconnects with exponential backoff. It matches the room-broadcast relay in `apps/server/index.ts`. That relay forwards size- and rate-bounded binary messages to the other sockets in the same room and enforces a per-room socket cap.
 
 ```ts
 import { createPresenceClient } from "@anchor-presence/core";
@@ -263,4 +263,4 @@ The client enters slow mode at the high watermark and leaves it at the low water
 
 ## Relay hardening boundary
 
-The shipped `apps/server/index.ts` relay is a reference room-broadcast relay. It is not a hardened production gateway. Rate limiting, per-socket message caps, authentication, connection quotas, pings, and horizontal scaling are relay/server responsibilities, not library transport responsibilities. The client-side `adaptivePublish` option reduces sender pressure when the local socket buffer grows, but it does not replace relay-side limits.
+The shipped `apps/server/index.ts` relay is a reference room-broadcast relay with reference-side hardening: a per-room socket cap, a per-message byte cap, and a per-socket token-bucket rate limit. Defaults are 1000 sockets per room, 32 KiB per message, a burst of 40 messages, and 20 messages/s refill. The values can be overridden with `MAX_ROOM_SOCKETS`, `MAX_MESSAGE_BYTES`, `RATE_CAPACITY`, and `RATE_REFILL_PER_SECOND`. The relay is still not a production gateway. Authentication, broader connection quotas, pings, and horizontal scaling remain relay/server responsibilities, not library transport responsibilities. The client-side `adaptivePublish` option reduces sender pressure when the local socket buffer grows, but it does not replace relay-side limits.

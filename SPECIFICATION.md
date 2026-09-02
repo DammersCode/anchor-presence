@@ -407,7 +407,7 @@ Visual configuration lives on `CursorLayer` props only. `LiveCursorProvider` nev
 
 ## 15. Demo
 
-- `apps/server`: Bun WebSocket relay. Broadcasts every binary message to all other sockets in the same room. No message inspection. ~50 lines.
+- `apps/server`: Bun WebSocket relay. Broadcasts size- and rate-bounded binary messages to the other sockets in the same room, enforces a per-room socket cap, and performs no message inspection.
 - `apps/demo`: Vite + React + Tailwind + shadcn-style admin dashboard (sidebar, topbar, stat cards, data table, settings dialog). Dozens of registered anchors (`nav.dashboard`, `stats.revenue`, `orders.row:17.actions`, ...). A collapsible sidebar and responsive grid demonstrate cross-layout correctness: open two windows at different sizes and sidebar states. Cursor renderer is demo code (colored SVG cursor + name label) built on the package `CursorLayer`, proving Invariant 9.
 
 ## 16. Performance Budgets

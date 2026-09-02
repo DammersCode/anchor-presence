@@ -73,7 +73,7 @@ Dev-machine reference from 2026-09-02:
 
 The default relay forwards every message to every other socket in a room, so relay traffic grows with `senders × receivers`. The library reduces per-message cost (delta `context`/`user`, one validation pass, optional adaptive publish rate), but it does not change the room-broadcast fan-out. For large rooms, move receivers into smaller rooms, add relay-side rate limits and message caps, or introduce a server-side aggregator.
 
-The reference relay in `apps/server/index.ts` is intentionally minimal. Production relay hardening (authentication, per-socket limits, ping, logging discipline, horizontal scale) is a server concern, not a library transport concern. See `docs/transports.md` for the boundary.
+The reference relay in `apps/server/index.ts` enforces a per-room socket cap, a per-message byte cap, and a per-socket token-bucket rate limit. Production relay hardening (authentication, broader connection quotas, ping, horizontal scale) remains a server concern, not a library transport concern. See `docs/transports.md` for the boundary.
 
 ## Guidance
 

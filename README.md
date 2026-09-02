@@ -154,6 +154,7 @@ The sender never measures the DOM of the receiver. It sends a semantic anchor ID
 | Capability | React |
 |---|---|
 | Semantic anchors | ✅ |
+| `[data-anchor]` auto-registration (opt-in `autoRegister` flag) | ✅ |
 | Fallback chains | ✅ |
 | Viewport fallback | ✅ |
 | UI context visibility policies (route- or dialog-aware, application-defined) | ✅ |

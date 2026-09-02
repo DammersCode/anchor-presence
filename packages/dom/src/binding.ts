@@ -11,6 +11,8 @@ import type {
   RafLike,
   ResizeObserverCtor,
 } from "./scheduler";
+import { startAutoRegister } from "./autoRegister";
+import type { AutoRegisterHandle, AutoRegisterOptions } from "./autoRegister";
 import { RemoteResolver } from "./resolver";
 import type { ResolvedCursor, VisibilityPolicy } from "./resolver";
 
@@ -38,6 +40,10 @@ export type DomBindingOptions<TContext = unknown, TUser = unknown> = {
   maxAnchors?: number;
   resolution?: ResolutionOptions<TContext, TUser>;
   environment?: EnvironmentOptions;
+  /** Watch the DOM for `[data-anchor]` elements and register/unregister them automatically. Default false. */
+  autoRegister?: boolean;
+  /** Attribute to watch for auto-registration. Default "data-anchor". */
+  autoRegisterAttribute?: string;
 };
 
 export type DomBinding<TContext = unknown, TUser = unknown> = {
@@ -55,7 +61,41 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
   options: DomBindingOptions<TContext, TUser> = {},
 ): DomBinding<TContext, TUser> {
   const { resolution = {}, environment = {} } = options;
-  const registry = createAnchorRegistry();
+  const realRegistry = createAnchorRegistry();
+  const explicit = new WeakSet<Element>();
+  let autoHandle: AutoRegisterHandle | undefined;
+
+  // when the flag is on, the consumer-facing registry marks manual registrations so the
+  // auto-observer never owns an explicitly registered element (explicit wins)
+  const registry: AnchorRegistry = options.autoRegister
+    ? {
+        ...realRegistry,
+        register(id, element) {
+          explicit.add(element);
+          autoHandle?.resync();
+          const unregister = realRegistry.register(id, element);
+          return () => {
+            unregister();
+            explicit.delete(element);
+            autoHandle?.resync();
+          };
+        },
+      }
+    : realRegistry;
+
+  if (options.autoRegister) {
+    const autoOptions: AutoRegisterOptions = {
+      registry: realRegistry,
+      explicit,
+      onAutoRegistered: () => {},
+      onAutoUnregistered: () => {},
+    };
+    if (options.autoRegisterAttribute !== undefined) autoOptions.attribute = options.autoRegisterAttribute;
+    if (environment.root !== undefined) autoOptions.root = environment.root;
+    if (environment.MutationObserverCtor !== undefined) autoOptions.MutationObserverCtor = environment.MutationObserverCtor;
+    autoHandle = startAutoRegister(autoOptions);
+  }
+
   const resolver = new RemoteResolver<TContext, TUser>({ registry, ...resolution });
 
   let snapshot: ResolvedCursor<TContext, TUser>[] = EMPTY_SNAPSHOT as ResolvedCursor<TContext, TUser>[];
@@ -105,6 +145,7 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
     if (disposed) return;
     disposed = true;
     unregisterTeardown?.();
+    autoHandle?.dispose();
     scheduler.dispose();
     pointerHandle.detach();
     // final empty snapshot so subscribers render cursors gone before the signals go quiet

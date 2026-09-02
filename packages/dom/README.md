@@ -46,6 +46,17 @@ The `environment` group supplies the DOM and timing hosts. It holds `root`, `win
 
 Each `environment` field defaults to the ambient browser global. Tests can replace one host without touching the others.
 
+### Auto-registration
+
+Set `autoRegister: true` to register anchors from the DOM. `createDomBinding` watches for elements with the `data-anchor` attribute and registers them. The default is `false`.
+
+The attribute value is the anchor ID. An empty attribute falls back to the element `id`, then a generated ID. An explicit `binding.registry.register` wins over an auto anchor on the same element. Remove the explicit binding and auto-registration takes the element back. The watch is best-effort across shadow trees.
+
+```ts
+const binding = createDomBinding(client, { autoRegister: true });
+// <div data-anchor="nav.dashboard"></div> is a live anchor with no ref
+```
+
 ```ts
 const binding = createDomBinding(client, {
   resolution: { hitTest: true },

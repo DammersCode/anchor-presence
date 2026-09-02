@@ -4,21 +4,24 @@
 > completed step. Commit this file with each plan commit so `git log -p --
 > PROGRESS.md` replays the full trajectory.
 
-**Last updated:** 2026-09-02 (plan 015, step 4 done — gate + commit 2 next)
+**Last updated:** 2026-09-02 (plan 016 A DONE — auto-registration committed; plan 016 B1 next)
 **Branch:** `dev` | **Drift base:** `1f8f7b4`
 
 ## Resume point
 
-Next action: **plan-015 gate, then commit 2**
-(`add usePresenceClient and useRemoteUsers react hooks`). Gate:
-`bunx vitest run` + `bunx tsc --build packages/core packages/dom
-packages/react` + `cd apps/demo; bunx vite build` + oxlint.
-Plan 014 is DONE (commit 7b97707). All four 015 steps done: hooks
-implemented + exported, 9 new tests green (StrictMode factory-once
-proven, perf suite unchanged), README gained "Client lifecycle" +
-"Who's online" sections + 2 table rows, demo `WhoIsOnline` chip added
-(`apps/demo/src/components/who-is-online.tsx`, rendered from App.tsx),
-README snippets typechecked via throwaway file (deleted).
+Next action: **plan 016, step B1 — `packages/core/src/inMemoryTransport.ts`**
+(`createInMemoryPair`: a wire-connected 2-peer mesh. Each side implements
+`LiveCursorTransport` (connect→connected, disconnect→disconnected, send,
+subscribe, subscribeStatus replays, getStatus). `send` on A delivers to B's
+subscribers only. Delivery is synchronous by default; `async?: boolean`
+routes through `queueMicrotask`. `dispose()` stops delivery. DOM-free.)
+Deliverable A (auto-registration) is DONE and committed: `autoRegister` flag
+on `DomBindingOptions` (default off), `autoRegisterAttribute`, explicit-
+register wins via a `WeakSet`, a separate MutationObserver (NOT the
+scheduler's), `dispose()` cleanup, 9-case jsdom test suite green.
+Plan 014 is DONE (7b97707), plan 015 is DONE (3cf3480), plan 016 A gate green
+(vitest, tsc, vite build, oxlint 0 errors). Plan 016 drift check was clean:
+only 014 additions in-scope (dom src/test).
 Findings for the owner (out of plan scope, not touched):
 `SPECIFICATION.md:140` and `playwright.config.ts:8` still reference the
 deleted demo `WebSocketTransport`.
@@ -150,12 +153,19 @@ client + overridden `dispose`. Verify tsc passes.
 
 ### Plan 016 A — `[data-anchor]` auto-registration
 
-- [ ] Step A1: `packages/dom/src/autoRegister.ts`
-- [ ] Step A2: wire into `createDomBinding` (`DomBindingOptions.autoRegister`,
+- [x] Step A1: `packages/dom/src/autoRegister.ts` (scan + diff via `sync()`,
+      `Map<Element, { id, unregister }>`, `explicit` WeakSet skip, `resync()`
+      for the explicit-unregister take-back, separate MutationObserver)
+- [x] Step A2: wire into `createDomBinding` (`DomBindingOptions.autoRegister`,
       `autoRegisterAttribute`, default off; `WeakSet` explicit; wrap the
       registry's `register`/unregister for marking)
-- [ ] Step A3: `packages/dom/test/autoRegister.test.ts` (9 cases in plan)
-- [ ] Step A4: `packages/dom/README.md` + root README matrix row
+- [x] Step A3: `packages/dom/test/autoRegister.test.ts` (9 cases)
+- [x] Step A4: `packages/dom/README.md` + root README matrix row
+
+A design note (why the wrapped register marks + `resync()` BEFORE
+`realRegistry.register`): releasing the auto anchor first prevents the auto
+unregister fn from deleting a same-id explicit entry. Collision (two elements,
+same value): last-wins in the registry, the loser stays dormant (no churn/loop).
 
 ### Plan 016 B — `createInMemoryPair` in core
 

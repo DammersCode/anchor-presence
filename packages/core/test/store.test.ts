@@ -186,6 +186,22 @@ describe("RemotePresenceStore context/user field delta", () => {
     expect(entry.user).toEqual({ name: "Ada" });
   });
 
+  it("does not materialize absent fields as own undefined properties", () => {
+    const store = new RemotePresenceStore();
+    store.ingest(presence({ sequence: 0, user: { name: "Ada" } }));
+    store.ingest(presence({ sequence: 1 }));
+
+    const inherited = store.getSnapshot()[0]!;
+    expect("context" in inherited).toBe(false);
+    expect("user" in inherited).toBe(true);
+    expect(inherited.user).toEqual({ name: "Ada" });
+
+    store.ingest(presence({ sequence: 2, context: null, user: null }));
+    const cleared = store.getSnapshot()[0]!;
+    expect("context" in cleared).toBe(false);
+    expect("user" in cleared).toBe(false);
+  });
+
   it("clears context and user when a same-session message sends explicit null", () => {
     const store = new RemotePresenceStore();
     store.ingest(presence({ sequence: 0, context: { route: "/" }, user: { name: "Ada" } }));

@@ -69,15 +69,17 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
   ): CursorPresence<TContext, TUser> {
     const context = resolveFieldDelta(next.context, previous.context);
     const user = resolveFieldDelta(next.user, previous.user);
-    if (context === next.context && user === next.user) return next;
-    return { ...next, context, user };
+    const hasOwnContext = "context" in next && next.context === undefined;
+    const hasOwnUser = "user" in next && next.user === undefined;
+    if (context === next.context && user === next.user && !hasOwnContext && !hasOwnUser) return next;
+    return applyFieldDeltas(next, context, user);
   }
 
   private normalizePresence(presence: CursorPresence<TContext, TUser>): CursorPresence<TContext, TUser> {
+    if (!("context" in presence) && !("user" in presence)) return presence;
     const context = resolveFieldDelta(presence.context, undefined);
     const user = resolveFieldDelta(presence.user, undefined);
-    if (context === presence.context && user === presence.user) return presence;
-    return { ...presence, context, user };
+    return applyFieldDeltas(presence, context, user);
   }
 
   /** Removes entries not seen for staleTimeoutMs. Call periodically (e.g. from a client heartbeat timer). */
@@ -134,4 +136,18 @@ function resolveFieldDelta<T>(
   if (next !== undefined) return next;
   if (previous === null) return undefined;
   return previous;
+}
+
+// A resolved `undefined` must not become an own property: public presences omit empty fields.
+function applyFieldDeltas<TContext, TUser>(
+  base: CursorPresence<TContext, TUser>,
+  context: TContext | undefined,
+  user: TUser | undefined,
+): CursorPresence<TContext, TUser> {
+  const result: CursorPresence<TContext, TUser> = { ...base };
+  if (context === undefined) delete result.context;
+  else result.context = context;
+  if (user === undefined) delete result.user;
+  else result.user = user;
+  return result;
 }

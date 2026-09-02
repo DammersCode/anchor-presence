@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { binaryCodec } from "../src/binaryCodec";
 import { createPresenceClient } from "../src/client";
 import { createInMemoryPair } from "../src/inMemoryTransport";
 
@@ -31,6 +32,46 @@ describe("createInMemoryPair", () => {
     expect(fromA).toBeDefined();
     expect(fromA?.cursor).not.toBeNull();
     expect(fromA?.cursor?.anchors[0]?.id).toBe("x");
+
+    clientA.dispose();
+    clientB.dispose();
+  });
+
+  it("delivers binaryCodec cursor, user, and context changes end to end", () => {
+    const { a, b } = createInMemoryPair();
+    const clientA = createPresenceClient<{ page?: string }, { name?: string }>({
+      transport: a,
+      clientId: "A",
+      codec: binaryCodec,
+      user: { name: "A" },
+    });
+    const clientB = createPresenceClient<{ page?: string }, { name?: string }>({
+      transport: b,
+      clientId: "B",
+      codec: binaryCodec,
+    });
+
+    void a.connect?.();
+    void b.connect?.();
+
+    clientA.updateLocalCursor({ anchors: [{ id: "x", u: 0.5, v: 0.5 }] });
+    vi.advanceTimersByTime(50);
+
+    const initial = clientB.getRemoteSnapshot().find((p) => p.clientId === "A");
+    expect(initial?.cursor?.anchors[0]?.id).toBe("x");
+    expect(initial?.cursor?.anchors[0]?.u).toBe(0.5);
+    expect(initial?.user).toEqual({ name: "A" });
+    expect("context" in (initial ?? {})).toBe(false);
+
+    clientA.setContext({ page: "dashboard" });
+    vi.advanceTimersByTime(50);
+    const withContext = clientB.getRemoteSnapshot().find((p) => p.clientId === "A");
+    expect(withContext?.context).toEqual({ page: "dashboard" });
+
+    clientA.setContext(null);
+    vi.advanceTimersByTime(50);
+    const cleared = clientB.getRemoteSnapshot().find((p) => p.clientId === "A");
+    expect("context" in (cleared ?? {})).toBe(false);
 
     clientA.dispose();
     clientB.dispose();

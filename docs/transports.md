@@ -1,6 +1,6 @@
 # Transports
 
-Core imports no transport library (Invariant 6). An application supplies a transport that implements `LiveCursorTransport`. This page shows the interface and four example implementations. The demo app contains a working WebSocket transport with reconnect logic in `apps/demo/src/cursors/transport.ts`.
+Core imports no transport library (Invariant 6). An application supplies a transport that implements `LiveCursorTransport`. This page shows the interface and the example implementations. The native WebSocket transport ships in `@anchor-presence/dom` with automatic reconnect and exponential backoff.
 
 ## The LiveCursorTransport interface
 
@@ -38,71 +38,20 @@ const client = createPresenceClient({ transport: myTransport });
 
 ## Native WebSocket example
 
-This example matches the room-broadcast relay in `apps/server/index.ts`, which forwards every binary message to all other sockets in the same room.
+`@anchor-presence/dom` ships `createWebSocketTransport`. The function is unit-tested and reconnects with exponential backoff. It matches the room-broadcast relay in `apps/server/index.ts`. That relay forwards every binary message to the other sockets in the same room.
 
 ```ts
-import type { ConnectionStatus, LiveCursorTransport } from "@anchor-presence/core";
+import { createPresenceClient } from "@anchor-presence/core";
+import { createWebSocketTransport } from "@anchor-presence/dom";
 
-export class WebSocketTransport implements LiveCursorTransport {
-  private socket: WebSocket | null = null;
-  private status: ConnectionStatus = "disconnected";
-  private readonly dataListeners = new Set<(data: Uint8Array) => void>();
-  private readonly statusListeners = new Set<(status: ConnectionStatus) => void>();
-
-  constructor(private readonly url: string) {}
-
-  connect(): void {
-    this.setStatus("connecting");
-    const socket = new WebSocket(this.url);
-    socket.binaryType = "arraybuffer";
-    socket.onopen = () => this.setStatus("connected");
-    socket.onclose = () => this.setStatus("disconnected");
-    socket.onerror = () => this.setStatus("reconnecting");
-    socket.onmessage = (event) => {
-      const bytes = new Uint8Array(event.data as ArrayBuffer);
-      for (const listener of this.dataListeners) listener(bytes);
-    };
-    this.socket = socket;
-  }
-
-  disconnect(): void {
-    this.socket?.close();
-    this.socket = null;
-  }
-
-  send(data: Uint8Array): void {
-    if (this.socket?.readyState === WebSocket.OPEN) this.socket.send(data);
-  }
-
-  subscribe(listener: (data: Uint8Array) => void): () => void {
-    this.dataListeners.add(listener);
-    return () => this.dataListeners.delete(listener);
-  }
-
-  subscribeStatus(listener: (status: ConnectionStatus) => void): () => void {
-    this.statusListeners.add(listener);
-    listener(this.status); // replay so a late subscriber sees the current state
-    return () => this.statusListeners.delete(listener);
-  }
-
-  getStatus(): ConnectionStatus {
-    return this.status;
-  }
-
-  private setStatus(next: ConnectionStatus): void {
-    this.status = next;
-    for (const listener of this.statusListeners) listener(next);
-  }
-}
-```
-
-Use it with the Bun relay in `apps/server`:
-
-```ts
-const transport = new WebSocketTransport("ws://localhost:8787/main");
+const transport = createWebSocketTransport({ room: "main" });
 transport.connect();
 const client = createPresenceClient({ transport });
 ```
+
+The default URL is `ws(s)://<current host>:8787/?room=<room>`. The room comes from the `room` option or the page `?room=` parameter. Pass `url` to override the whole URL. Pass `reconnect: false` to turn off automatic reconnect. Pass `baseBackoffMs` and `maxBackoffMs` to change the backoff. Pass `WebSocketCtor` to inject a WebSocket constructor for tests.
+
+The Socket.IO and SignalR adapters stay in `examples/`. They need foreign dependencies. Only the native WebSocket transport is part of the library.
 
 ## Socket.IO adapter
 

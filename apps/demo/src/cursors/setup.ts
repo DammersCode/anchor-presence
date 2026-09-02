@@ -1,7 +1,7 @@
 // Browser-only client creation — never imported by SSR/module-eval code paths.
 import { createPresenceClient } from "@anchor-presence/core";
 import type { PresenceClient } from "@anchor-presence/core";
-import { createWebSocketTransport } from "./transport";
+import { createWebSocketTransport } from "@anchor-presence/dom";
 import { randomName } from "../lib/names";
 
 export type PageId = "dashboard" | "orders" | "customers" | "products";

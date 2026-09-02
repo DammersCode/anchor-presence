@@ -23,6 +23,9 @@ export type {
   SchedulerReadState,
 } from "./scheduler";
 
+export { createWebSocketTransport } from "./transport";
+export type { WebSocketTransportOptions } from "./transport";
+
 export { defaultVisibilityPolicy, findResolvableAnchor, isMeasurable, RemoteResolver, resolveGeometry } from "./resolver";
 export type {
   ResolutionTier,

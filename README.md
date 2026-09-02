@@ -41,7 +41,7 @@ function App() {
 }
 ```
 
-`myTransport` is any bidirectional byte channel that implements the transport interface. See [docs/transports.md](docs/transports.md) for ready-made WebSocket, Socket.IO, SignalR, and BroadcastChannel transports.
+`myTransport` is any bidirectional byte channel that implements the transport interface. `@anchor-presence/dom` ships a ready-made WebSocket transport. See [docs/transports.md](docs/transports.md) for the WebSocket usage and the Socket.IO, SignalR, and BroadcastChannel examples.
 
 Open your app in two browser windows. Move the pointer in one window. A live cursor appears in the second window, tracking the same element even at a different window size.
 

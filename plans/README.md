@@ -24,6 +24,9 @@ before starting, honor its STOP conditions, and update your row when done.
 | 012  | Architecture deepening (six review candidates)                   | P2       | L      | 010             | DONE                                             |
 | 012  | Architecture deepening (6 candidates from 2026-08-19 review)     | P2       | L      | 010             | DONE                                             |
 | 013  | Fix reference navigation (F12) in the VS Code tooling            | P3       | S      | —               | TODO                                             |
+| 014  | Native `createWebSocketTransport` in `@anchor-presence/dom`        | P0       | M      | 001             | DONE                                             |
+| 015  | `usePresenceClient` + `useRemoteUsers` React lifecycle hooks        | P1       | M      | 001             | TODO                                             |
+| 016  | `[data-anchor]` auto-registration + core `createInMemoryPair()`     | P1/P2    | L      | 001             | TODO (A: auto-register, B: in-memory; two commits)   |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale)
 
@@ -36,6 +39,8 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJE
 - 008 last among the docs-facing plans: the README capability matrix should reflect whichever of 003–007 landed.
 - 009 after 004 (both touch the bench page) and BEFORE 003/005 execute ideally — its budgets are the regression gate those riskier plans re-run; if it lands later, they must re-run its suite retroactively.
 - 010 uses the npm metadata from 002 and must pass the performance gates from 009.
+- 014 before 015's demo wiring: the hook docs show the library WebSocket transport as the canonical example, so 014's Step 3 (demo consumes the library transport) lands first.
+- 015 and 016 are independent of each other; 016 A (auto-registration) and 016 B (in-memory pair) are independent within themselves — execute A first (higher value, riskier code), merge as two commits.
 
 ## Decisions and findings considered and rejected
 

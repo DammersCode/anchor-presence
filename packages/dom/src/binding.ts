@@ -116,6 +116,9 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
 
     onRegistryChange: (listener) => registry.onChange(listener),
     onRemoteData: (listener) => client.subscribeRemote(listener),
+    onMutationRecords: (records) => autoHandle.handleRecords(records),
+    onAttach: () => autoHandle.setEnabled(false),
+    onDetach: () => autoHandle.setEnabled(true),
 
     ...environment,
   });

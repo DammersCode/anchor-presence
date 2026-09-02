@@ -746,4 +746,27 @@ describe("createGeometryScheduler (spec §11)", () => {
     unsettled = false;
     scheduler.dispose();
   });
+
+  it("calls onAttach, onDetach, and onMutationRecords for mutation callbacks", () => {
+    const { raf, caf } = makeRafStub();
+    active = true;
+    const { ctor, instances } = makeMutationObserverStub();
+    const onAttach = vi.fn();
+    const onDetach = vi.fn();
+    const onMutationRecords = vi.fn();
+    const scheduler = createGeometryScheduler(
+      baseOptions({ raf, caf, onAttach, onDetach, onMutationRecords, MutationObserverCtor: ctor })
+    );
+
+    expect(onAttach).toHaveBeenCalledTimes(1);
+
+    instances[0]?.callback([fakeRecord(document.body)]);
+    expect(onMutationRecords).toHaveBeenCalled();
+
+    active = false;
+    scheduler.invalidate();
+    expect(onDetach).toHaveBeenCalledTimes(1);
+
+    scheduler.dispose();
+  });
 });

@@ -13,6 +13,7 @@ export type ResizeObserverCtor = new (callback: () => void) => ResizeObserverLik
 
 export type MutationObserverLike = {
   observe(target: Node, options: MutationObserverInit): void;
+  unobserve?(target: Node): void;
   disconnect(): void;
 };
 export type MutationObserverCtor = new (
@@ -51,6 +52,9 @@ export type GeometrySchedulerOptions<TSnapshot> = {
   notify(snapshot: TSnapshot): void;
   onRegistryChange(listener: () => void): () => void;
   onRemoteData(listener: () => void): () => void;
+  onMutationRecords?(records?: MutationRecord[]): void;
+  onAttach?(): void;
+  onDetach?(): void;
 
   root?: Document | undefined;
   window?: Window | undefined;
@@ -198,14 +202,22 @@ export function createGeometryScheduler<TSnapshot>(
   }
   function onMutation(records?: MutationRecord[]): void {
     if (records === undefined) {
+      options.onMutationRecords?.(records);
       markDirtyAndSchedule();
       return;
     }
+
+    let hasRelevantRecord = false;
     for (const record of records) {
       if (!isCursorRootMutation(record)) {
-        markDirtyAndSchedule();
-        return;
+        hasRelevantRecord = true;
+        break;
       }
+    }
+
+    if (hasRelevantRecord) {
+      options.onMutationRecords?.(records);
+      markDirtyAndSchedule();
     }
   }
 
@@ -306,6 +318,7 @@ export function createGeometryScheduler<TSnapshot>(
     }
 
     scheduleFrame();
+    options.onAttach?.();
   }
 
   function detach(): void {
@@ -347,6 +360,7 @@ export function createGeometryScheduler<TSnapshot>(
     }
     dirty = false;
     frameCache.clear();
+    options.onDetach?.();
   }
 
   function syncActivation(): void {

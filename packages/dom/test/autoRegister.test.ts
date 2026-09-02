@@ -5,6 +5,7 @@ import type { MutationObserverCtor } from "../src/scheduler";
 
 type MoInstance = {
   observe: ReturnType<typeof vi.fn>;
+  unobserve: ReturnType<typeof vi.fn>;
   disconnect: ReturnType<typeof vi.fn>;
   callback: (records?: unknown[]) => void;
 };
@@ -12,7 +13,7 @@ type MoInstance = {
 function makeMoStub() {
   const instances: MoInstance[] = [];
   function Ctor(this: unknown, callback: (records?: unknown[]) => void): MoInstance {
-    const inst: MoInstance = { observe: vi.fn(), disconnect: vi.fn(), callback };
+    const inst: MoInstance = { observe: vi.fn(), unobserve: vi.fn(), disconnect: vi.fn(), callback };
     instances.push(inst);
     return inst;
   }
@@ -239,7 +240,85 @@ describe("startAutoRegister", () => {
     h2.dispose();
 
     expect(instances).toHaveLength(2);
+    for (const instance of instances) expect(instance.disconnect).toHaveBeenCalled();
+  });
+
+  it("observes childList and anchor attribute changes on the root", () => {
+    const { ctor, instances } = makeMoStub();
+    const registry = createAnchorRegistry();
+    document.body.innerHTML = '<div data-anchor="a"></div>';
+
+    const handle = startAutoRegister({ attribute: "data-anchor", registry, MutationObserverCtor: ctor });
+
+    expect(instances[0]?.observe).toHaveBeenCalledWith(document, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["data-anchor"],
+    });
+
+    handle.dispose();
+  });
+
+  it("delegates mutation records while disabled and resyncs on re-enable", () => {
+    const { ctor, instances } = makeMoStub();
+    const registry = createAnchorRegistry();
+    document.body.innerHTML = '<div data-anchor="a"></div>';
+    const el = document.querySelector("div")!;
+
+    const handle = startAutoRegister({ attribute: "data-anchor", registry, MutationObserverCtor: ctor });
+    handle.setEnabled(false);
     expect(instances[0]?.disconnect).toHaveBeenCalled();
-    expect(instances[1]?.disconnect).toHaveBeenCalled();
+
+    el.setAttribute("data-anchor", "b");
+    handle.handleRecords();
+
+    expect(registry.get("a")).toBe(null);
+    expect(registry.get("b")).toBe(el);
+
+    handle.setEnabled(true);
+    expect(instances[0]?.observe).toHaveBeenCalledTimes(2);
+
+    handle.dispose();
+  });
+
+  it("registers an anchor when an attribute is added through a mutation record", () => {
+    const { ctor } = makeMoStub();
+    const registry = createAnchorRegistry();
+    const el = document.createElement("div");
+    document.body.append(el);
+
+    const handle = startAutoRegister({ attribute: "data-anchor", registry, MutationObserverCtor: ctor });
+    expect(registry.get("a")).toBe(null);
+
+    el.setAttribute("data-anchor", "a");
+    handle.handleRecords([{ type: "attributes", target: el, attributeName: "data-anchor" }] as unknown as MutationRecord[]);
+
+    expect(registry.get("a")).toBe(el);
+
+    handle.dispose();
+  });
+
+  it("reclaims a duplicate id through an incremental removal record", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { ctor } = makeMoStub();
+    const registry = createAnchorRegistry();
+
+    const el1 = document.createElement("div");
+    el1.setAttribute("data-anchor", "dup");
+    const el2 = document.createElement("div");
+    el2.setAttribute("data-anchor", "dup");
+    document.body.append(el1, el2);
+
+    const handle = startAutoRegister({ attribute: "data-anchor", registry, MutationObserverCtor: ctor });
+    expect(registry.get("dup")).toBe(el2);
+
+    el2.remove();
+    handle.handleRecords([{ type: "childList", target: document.body, removedNodes: [el2], addedNodes: [] }] as unknown as MutationRecord[]);
+
+    expect(registry.get("dup")).toBe(el1);
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+
+    handle.dispose();
   });
 });

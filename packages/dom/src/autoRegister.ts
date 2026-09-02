@@ -9,6 +9,8 @@ export type AutoRegisterOptions = {
 };
 
 export type AutoRegisterHandle = {
+  setEnabled(enabled: boolean): void;
+  handleRecords(records?: MutationRecord[]): void;
   dispose(): void;
 };
 
@@ -25,6 +27,10 @@ function defaultMutationObserverCtor(): MutationObserverCtor | undefined {
   return typeof MutationObserver !== "undefined" ? MutationObserver : undefined;
 }
 
+function isElement(node: Node): node is Element {
+  return node.nodeType === 1;
+}
+
 export function startAutoRegister(options: AutoRegisterOptions): AutoRegisterHandle {
   const attribute = options.attribute;
   const root = options.root ?? document;
@@ -34,6 +40,39 @@ export function startAutoRegister(options: AutoRegisterOptions): AutoRegisterHan
   const autoAnchors = new Map<Element, { id: string; unregister: () => void }>();
   const warnedEmpty = new WeakSet<Element>();
   let disposed = false;
+  let enabled = true;
+
+  const observer = MutationObserverImpl !== undefined ? new MutationObserverImpl((records) => handleRecords(records)) : null;
+
+  function connectObserver(): void {
+    if (disposed || !enabled || observer === null) return;
+    observer.observe(root, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: [attribute],
+    });
+  }
+
+  function disconnectObserver(): void {
+    observer?.disconnect();
+  }
+
+  function handleRecords(records?: MutationRecord[]): void {
+    if (disposed) return;
+    if (records === undefined || records.length === 0) {
+      sync();
+      return;
+    }
+    for (const record of records) {
+      if (record.type === "attributes") {
+        if (record.attributeName === attribute && isElement(record.target)) syncElement(record.target);
+        continue;
+      }
+      for (const node of Array.from(record.removedNodes)) releaseNode(node);
+      for (const node of Array.from(record.addedNodes)) adoptNode(node);
+    }
+  }
 
   function warnEmpty(element: Element): void {
     if (!isDev() || warnedEmpty.has(element)) return;
@@ -53,48 +92,79 @@ export function startAutoRegister(options: AutoRegisterOptions): AutoRegisterHan
     autoAnchors.set(element, { id, unregister });
   }
 
+  function syncElement(element: Element): void {
+    const id = element.getAttribute(attribute)?.trim() ?? "";
+    if (id === "") {
+      autoUnregister(element);
+      warnEmpty(element);
+      return;
+    }
+
+    const existing = autoAnchors.get(element);
+    if (existing === undefined || existing.id !== id || registry.get(id) === null) {
+      autoUnregister(element);
+      registerAuto(element, id);
+    }
+  }
+
+  function resyncId(id: string): void {
+    for (const element of Array.from(root.querySelectorAll(`[${attribute}]`))) {
+      if ((element.getAttribute(attribute)?.trim() ?? "") === id) syncElement(element);
+    }
+  }
+
+  function adoptNode(node: Node): void {
+    if (!isElement(node)) return;
+    if (node.hasAttribute(attribute)) syncElement(node);
+    for (const element of Array.from(node.querySelectorAll(`[${attribute}]`))) syncElement(element);
+  }
+
+  function releaseNode(node: Node): void {
+    if (!isElement(node)) return;
+    const replacedIds = new Set<string>();
+    const release = (element: Element): void => {
+      const entry = autoAnchors.get(element);
+      if (entry !== undefined) replacedIds.add(entry.id);
+      autoUnregister(element);
+    };
+
+    release(node);
+    for (const element of Array.from(node.querySelectorAll(`[${attribute}]`))) release(element);
+    for (const id of replacedIds) resyncId(id);
+  }
+
   function sync(): void {
     if (disposed) return;
-    const live = new Set<Element>(root.querySelectorAll(`[${attribute}]`));
+    const live = new Set<Element>(Array.from(root.querySelectorAll(`[${attribute}]`)));
 
     for (const element of autoAnchors.keys()) {
       if (!live.has(element)) autoUnregister(element);
     }
 
-    for (const element of live) {
-      const id = element.getAttribute(attribute)?.trim() ?? "";
-      if (id === "") {
-        autoUnregister(element);
-        warnEmpty(element);
-        continue;
-      }
-
-      const existing = autoAnchors.get(element);
-      if (existing === undefined) {
-        registerAuto(element, id);
-      } else if (existing.id !== id || registry.get(id) === null) {
-        autoUnregister(element);
-        registerAuto(element, id);
-      }
-    }
+    for (const element of live) syncElement(element);
   }
 
-  const observer = MutationObserverImpl !== undefined ? new MutationObserverImpl(sync) : null;
-  if (observer !== null) {
-    observer.observe(root, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: [attribute],
-    });
-  }
+  connectObserver();
   sync();
 
   return {
+    setEnabled(next: boolean): void {
+      if (disposed || enabled === next) return;
+      enabled = next;
+      if (enabled) {
+        connectObserver();
+        sync();
+      } else {
+        disconnectObserver();
+      }
+    },
+
+    handleRecords,
+
     dispose() {
       if (disposed) return;
       disposed = true;
-      observer?.disconnect();
+      disconnectObserver();
       for (const element of autoAnchors.keys()) autoUnregister(element);
     },
   };

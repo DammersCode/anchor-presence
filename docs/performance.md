@@ -60,6 +60,13 @@ With no active remote cursors, no `requestAnimationFrame` loop runs, and every s
 - Publishing rate defaults to 20 Hz (`publishIntervalMs: 50`), and is configurable per client.
 - Benchmark scenarios live in the demo app: 1, 10, 50, and 100 cursors, crossed with 10, 100, and 1000 anchors; a resize storm; and nested scroll.
 
+## Measured reference
+
+Dev-machine reference from 2026-09-02:
+
+- Browser scheduler pass (Chromium, demo bench page, 240-sample rolling window): 100 anchors × 50 cursors ≈1.1 ms mean, ≈2.0 ms p95
+- Core inbound path (Node/vitest hot-path bench, decode → validate → ingest): ≈390k messages/s
+
 ## Guidance
 
 **Register stable anchors.** Map an anchor ID to one long-lived semantic location: a button, a row template, a section. Do not generate a new anchor ID per render for the same logical element; each new ID is a fresh registry entry and forces re-registration.

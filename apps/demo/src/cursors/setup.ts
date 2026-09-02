@@ -1,5 +1,5 @@
 // Browser-only client creation — never imported by SSR/module-eval code paths.
-import { createPresenceClient } from "@anchor-presence/core";
+import { binaryCodec, createPresenceClient } from "@anchor-presence/core";
 import type { PresenceClient } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
 import { randomName } from "../lib/names";
@@ -50,6 +50,7 @@ export function getPresenceClient(): PresenceClient<DemoContext, DemoUser> {
   const transport = createWebSocketTransport({ path: `/?room=${encodeURIComponent(localRoom)}` });
   client = createPresenceClient<DemoContext, DemoUser>({
     transport,
+    codec: binaryCodec,
     user: { name: localUserName, color: colorForName(localUserName) },
   });
   transport.connect?.();

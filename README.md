@@ -78,7 +78,7 @@ Open your app in two browser windows. Move the pointer in one window. A live cur
 | [`docs/ui-context.md`](docs/ui-context.md) | Opaque context, visibility policies, dialog mismatch handling |
 | [`docs/react.md`](docs/react.md) | Provider and hook reference, custom interpolation, examples |
 | [`docs/transports.md`](docs/transports.md) | The transport interface, plus WebSocket, Socket.IO, SignalR, and BroadcastChannel examples |
-| [`docs/codecs.md`](docs/codecs.md) | The codec interface, `jsonCodec`, a MessagePack sketch, and the validation boundary |
+| [`docs/codecs.md`](docs/codecs.md) | The codec interface, `jsonCodec`, `binaryCodec`, a MessagePack sketch, and the validation boundary |
 | [`docs/performance.md`](docs/performance.md) | The geometry scheduler model and performance guidance |
 | [`docs/security.md`](docs/security.md) | Validation limits, anchor ID safety, rendering rules |
 | [`docs/troubleshooting.md`](docs/troubleshooting.md) | Common problems and their causes |

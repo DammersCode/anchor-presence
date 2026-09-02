@@ -31,6 +31,7 @@ Core imports no DOM, React, transport, or codec library, so it does not know wha
 | `CursorPresence`, `AnchorPoint`, `CursorPosition` | Wire protocol types |
 | `validatePresence(input, limits?)` | Validates and clamps an untrusted decoded value |
 | `jsonCodec` | The default `CursorCodec` implementation |
+| `binaryCodec` | A compact `CursorCodec` for binary WebSocket relays |
 | `LiveCursorTransport`, `ConnectionStatus` | The transport interface |
 | `AdaptivePublishOptions` | Opt-in slow-mode options for the publish rate |
 | `createInMemoryPair` | A 2-peer in-memory transport for tests |

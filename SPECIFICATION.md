@@ -153,7 +153,7 @@ interface CursorCodec {
 }
 ```
 
-Core ships `jsonCodec` (TextEncoder/TextDecoder + JSON). The decoder returns `unknown`; `validatePresence()` produces a typed message or `null`. Malformed input never throws past the decode boundary.
+Core ships `jsonCodec` (TextEncoder/TextDecoder + JSON) and `binaryCodec` (compact fixed binary layout with JSON payloads for `context` and `user`). The decoder returns `unknown`; `validatePresence()` produces a typed message or `null`. Malformed input never throws past the decode boundary. All clients in a room must use the same codec.
 
 ## 7. Client Orchestration (core)
 

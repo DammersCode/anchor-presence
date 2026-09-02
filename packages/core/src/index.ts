@@ -26,6 +26,7 @@ export {
 export type { RemotePresenceStoreOptions } from "./store";
 
 export { jsonCodec } from "./codec";
+export { binaryCodec } from "./binaryCodec";
 export type { CursorCodec } from "./codec";
 
 export type { LiveCursorTransport } from "./transport";

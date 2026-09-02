@@ -1,4 +1,5 @@
 import { bench, describe } from "vitest";
+import { binaryCodec } from "../src/binaryCodec";
 import { jsonCodec } from "../src/codec";
 import { RemotePresenceStore } from "../src/store";
 import { validatePresence } from "../src/validate";
@@ -26,6 +27,7 @@ function fourAnchorMessage(clientId: string, sequence: number): CursorPresence {
 
 const decodedMessage: unknown = JSON.parse(JSON.stringify(fourAnchorMessage("bench-client", 1)));
 const encodedMessage = jsonCodec.encode(fourAnchorMessage("bench-client", 1));
+const encodedBinaryMessage = binaryCodec.encode(fourAnchorMessage("bench-client", 1));
 
 describe("hot path", () => {
   bench("validatePresence on a decoded 4-anchor message", () => {
@@ -37,6 +39,11 @@ describe("hot path", () => {
     validatePresence(decoded);
   });
 
+  bench("binaryCodec.decode + validatePresence on encoded bytes", () => {
+    const decoded = binaryCodec.decode(encodedBinaryMessage);
+    validatePresence(decoded);
+  });
+
   bench("store.ingest steady-state: 64 clients, sequential sequences", () => {
     const store = new RemotePresenceStore({ maxRemoteClients: 64 });
     for (let i = 0; i < 64; i++) store.ingest(fourAnchorMessage(`client-${i}`, 0));
@@ -45,6 +52,35 @@ describe("hot path", () => {
       for (let i = 0; i < 64; i++) store.ingest(fourAnchorMessage(`client-${i}`, sequence));
       sequence += 1;
     };
+  });
+
+  bench("binaryCodec full inbound path: bytes -> snapshot listener fired", () => {
+    let fired = false;
+    let subscriber: ((data: Uint8Array) => void) | null = null;
+    const transport: LiveCursorTransport = {
+      send: () => {},
+      subscribe: (fn) => {
+        subscriber = fn;
+        return () => {
+          subscriber = null;
+        };
+      },
+    };
+
+    const store = new RemotePresenceStore();
+    const unsubscribeTransport = transport.subscribe((data) => {
+      const decoded = binaryCodec.decode(data);
+      const presence = validatePresence(decoded);
+      if (presence === null) return;
+      store.ingest(presence);
+    });
+    store.subscribe(() => {
+      fired = true;
+    });
+
+    subscriber?.(encodedBinaryMessage);
+    unsubscribeTransport();
+    if (!fired) throw new Error("snapshot listener did not fire");
   });
 
   bench("full inbound path: bytes -> snapshot listener fired", () => {

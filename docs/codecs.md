@@ -1,6 +1,6 @@
 # Codecs
 
-A codec turns a `CursorPresence` message into bytes for the wire, and turns bytes back into a value. This page covers the `CursorCodec` interface, the shipped `jsonCodec`, a MessagePack sketch, and the validation boundary.
+A codec turns a `CursorPresence` message into bytes for the wire, and turns bytes back into a value. This page covers the `CursorCodec` interface, the shipped `jsonCodec` and `binaryCodec`, a MessagePack sketch, and the validation boundary.
 
 ## CursorCodec
 
@@ -43,6 +43,33 @@ export const jsonCodec: CursorCodec = {
 ```
 
 `decode` catches JSON parse errors and returns `null` instead of throwing. `validatePresence(null)` then returns `null`, and the message is dropped. `jsonCodec` is the default when `codec` is not passed to `createPresenceClient`.
+
+## binaryCodec
+
+`@anchor-presence/core` also ships `binaryCodec`, a compact fixed-layout binary codec:
+
+```ts
+import { binaryCodec } from "@anchor-presence/core";
+
+const client = createPresenceClient({ transport: myTransport, codec: binaryCodec });
+```
+
+The wire layout is little-endian:
+
+- header: magic `0x41`, format `2`, protocol version `1`
+- `clientId`: `u16` byte length + UTF-8 bytes
+- `session`: `u16` byte length + UTF-8 bytes
+- `sequence`: `u32`
+- cursor tag: `0` for `null`, `1` for a cursor
+- anchor count: `u8`
+- each anchor: `u16` id length + UTF-8 id, `f32` `u`, `f32` `v`
+- viewport tag: `0` absent, `1` present, then `f32` `u`, `f32` `v`
+- pointer tag: absent, present without type, `mouse`, `pen`, or `touch`
+- `context` and `user`: tag `0` absent, `1` explicit `null`, or `2` JSON payload with a `u32` byte length
+
+Opaque `context` and `user` values remain JSON payloads inside the binary frame. The hot cursor fields use the compact fixed layout, which is why `binaryCodec` is smaller than `jsonCodec` for typical multi-anchor messages.
+
+All clients in the same room must use the same codec. The relay forwards bytes opaquely and does not mix `jsonCodec` and `binaryCodec` frames. `binaryCodec.decode` never throws and returns `null` for malformed, truncated, or non-binary input.
 
 ## MessagePack sketch
 

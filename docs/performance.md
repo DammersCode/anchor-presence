@@ -67,7 +67,7 @@ With no active remote cursors, no `requestAnimationFrame` loop runs, and every s
 Dev-machine reference from 2026-09-02:
 
 - Browser scheduler pass (Chromium, demo bench page, 240-sample rolling window): 100 anchors × 50 cursors ≈1.1 ms mean, ≈2.0 ms p95
-- Core inbound path (Node/vitest hot-path bench, decode → validate → ingest): ≈490k messages/s
+- Core inbound path (Node/vitest hot-path bench, decode → validate → ingest): ≈650k messages/s with `binaryCodec`, ≈460k messages/s with `jsonCodec`
 
 ## Scaling limits
 

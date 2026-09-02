@@ -14,6 +14,7 @@ interface LiveCursorTransport {
   subscribe(listener: (data: Uint8Array) => void): () => void;
   subscribeStatus?(listener: (status: ConnectionStatus) => void): () => void;
   getStatus?(): ConnectionStatus;
+  bufferedBytes?(): number;
 }
 
 type ConnectionStatus = "connecting" | "connected" | "reconnecting" | "disconnected";
@@ -26,6 +27,7 @@ Rules:
 - `connect`, `disconnect`, `subscribeStatus`, and `getStatus` are optional. When a transport omits `subscribeStatus`, the client reports a constant `"connected"` status.
 - `subscribeStatus` SHOULD replay the current status to every new subscriber. Without a replay, a client that subscribes after the connection opened never learns it can send. All examples below replay.
 - `getStatus` returns the current status. The client reads it once at creation for its initial status; without it, the client starts at `"connecting"` until the first status callback.
+- `bufferedBytes` is optional. It reports bytes currently queued by the transport and is used only by the opt-in `adaptivePublish` client option.
 - A `send` failure must not throw past the transport boundary in a way that crashes the app. The client swallows send errors after a status check; presence is lossy by design.
 
 Pass a transport instance to `createPresenceClient`:
@@ -49,7 +51,7 @@ transport.connect();
 const client = createPresenceClient({ transport });
 ```
 
-The default URL is `ws(s)://<current host>:8787/`. Room grouping is a relay/server concern, not part of the core protocol. If your relay uses rooms, pass a `url` or `path` such as `/?room=main`. Pass `reconnect: false` to turn off automatic reconnect. Pass `baseBackoffMs` and `maxBackoffMs` to change the backoff. Pass `WebSocketCtor` to inject a WebSocket constructor for tests.
+The default URL is `ws(s)://<current host>:8787/`. Room grouping is a relay/server concern, not part of the core protocol. If your relay uses rooms, pass a `url` or `path` such as `/?room=main`. Pass `reconnect: false` to turn off automatic reconnect. Pass `baseBackoffMs` and `maxBackoffMs` to change the backoff, and `random` to inject the jitter source used to spread reconnect attempts. Pass `WebSocketCtor` to inject a WebSocket constructor for tests. The transport also exposes `bufferedBytes()` from `WebSocket.bufferedAmount` for the client's optional adaptive publish rate.
 
 The Socket.IO and SignalR adapters stay in `examples/`. They need foreign dependencies. Only the native WebSocket transport is part of the library.
 
@@ -232,3 +234,33 @@ Core does not implement reconnection. A transport that needs to reconnect must d
 The presence client sends only while the status is `"connected"`. On every transition into `"connected"` it republishes the latest local state, so receivers catch up without waiting for a pointer move.
 
 A reconnected client keeps its `clientId`. It generates a new `session` value only at client creation, not on reconnect, so the receiver's sequencing rules treat resumed traffic as a continuation, not a restart.
+
+## Adaptive publish rate
+
+The presence client can slow its publish rate when the transport reports a growing send buffer. This is opt-in and only active when the transport implements `bufferedBytes()`:
+
+```ts
+const client = createPresenceClient({
+  transport,
+  publishIntervalMs: 50,
+  adaptivePublish: {
+    highWatermarkBytes: 64 * 1024,
+    lowWatermarkBytes: 32 * 1024,
+    slowPublishIntervalMs: 200,
+  },
+});
+```
+
+Defaults:
+
+| Option | Default |
+|---|---|
+| `highWatermarkBytes` | `64 KiB` |
+| `lowWatermarkBytes` | half of `highWatermarkBytes` |
+| `slowPublishIntervalMs` | `max(publishIntervalMs * 4, 100)` |
+
+The client enters slow mode at the high watermark and leaves it at the low watermark. Heartbeats and full reconnect publishes keep their own schedule.
+
+## Relay hardening boundary
+
+The shipped `apps/server/index.ts` relay is a reference room-broadcast relay. It is not a hardened production gateway. Rate limiting, per-socket message caps, authentication, connection quotas, pings, and horizontal scaling are relay/server responsibilities, not library transport responsibilities. The client-side `adaptivePublish` option reduces sender pressure when the local socket buffer grows, but it does not replace relay-side limits.

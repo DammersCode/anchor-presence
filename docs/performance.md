@@ -58,6 +58,8 @@ With no active remote cursors, no `requestAnimationFrame` loop runs, and every s
 - Each active anchor is measured at most once per frame.
 - 100 cursors over 20 distinct anchors: one snapshot object per frame, under 2 ms scripting per pass on a mid-range laptop. This is a benchmark target, not a gated test.
 - Publishing rate defaults to 20 Hz (`publishIntervalMs: 50`), and is configurable per client.
+- Outbound `context` and `user` fields are delta-encoded: a changed field is sent once, full reconnect/heartbeat publishes include the current values, and later cursor messages omit unchanged fields.
+- The optional `adaptivePublish` client option slows the publish rate when a transport reports a growing send buffer.
 - Benchmark scenarios live in the demo app: 1, 10, 50, and 100 cursors, crossed with 10, 100, and 1000 anchors; a resize storm; and nested scroll.
 
 ## Measured reference
@@ -65,7 +67,13 @@ With no active remote cursors, no `requestAnimationFrame` loop runs, and every s
 Dev-machine reference from 2026-09-02:
 
 - Browser scheduler pass (Chromium, demo bench page, 240-sample rolling window): 100 anchors × 50 cursors ≈1.1 ms mean, ≈2.0 ms p95
-- Core inbound path (Node/vitest hot-path bench, decode → validate → ingest): ≈390k messages/s
+- Core inbound path (Node/vitest hot-path bench, decode → validate → ingest): ≈490k messages/s
+
+## Scaling limits
+
+The default relay forwards every message to every other socket in a room, so relay traffic grows with `senders × receivers`. The library reduces per-message cost (delta `context`/`user`, one validation pass, optional adaptive publish rate), but it does not change the room-broadcast fan-out. For large rooms, move receivers into smaller rooms, add relay-side rate limits and message caps, or introduce a server-side aggregator.
+
+The reference relay in `apps/server/index.ts` is intentionally minimal. Production relay hardening (authentication, per-socket limits, ping, logging discipline, horizontal scale) is a server concern, not a library transport concern. See `docs/transports.md` for the boundary.
 
 ## Guidance
 

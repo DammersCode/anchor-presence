@@ -25,6 +25,15 @@ export type SchedulerLike = {
   clearTimeout: (handle: TimerHandle) => void;
 };
 
+export type AdaptivePublishOptions = {
+  /** Enter slow mode when the transport reports this many buffered bytes or more. Default 64 KiB. */
+  highWatermarkBytes?: number;
+  /** Leave slow mode when the transport reports this many buffered bytes or fewer. Default half of `highWatermarkBytes`. */
+  lowWatermarkBytes?: number;
+  /** Publish interval used in slow mode. Default `max(publishIntervalMs * 4, 100)`. */
+  slowPublishIntervalMs?: number;
+};
+
 export type PresenceClientOptions<TContext = unknown, TUser = unknown> = {
   transport: LiveCursorTransport;
   codec?: CursorCodec;
@@ -39,6 +48,7 @@ export type PresenceClientOptions<TContext = unknown, TUser = unknown> = {
   now?: () => number;
   scheduler?: SchedulerLike;
   validationLimits?: ValidationLimits;
+  adaptivePublish?: AdaptivePublishOptions;
 };
 
 export interface PresenceClient<TContext = unknown, TUser = unknown> {
@@ -110,6 +120,22 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     MIN_TIMER_INTERVAL_MS,
     options.publishIntervalMs ?? DEFAULT_PUBLISH_INTERVAL_MS,
   );
+  const adaptiveOptions = options.adaptivePublish;
+  const highWatermarkBytes = Math.max(
+    0,
+    adaptiveOptions?.highWatermarkBytes ?? 64 * 1024,
+  );
+  const lowWatermarkBytes = Math.max(
+    0,
+    Math.min(
+      adaptiveOptions?.lowWatermarkBytes ?? highWatermarkBytes / 2,
+      highWatermarkBytes,
+    ),
+  );
+  const slowPublishIntervalMs = Math.max(
+    MIN_TIMER_INTERVAL_MS,
+    adaptiveOptions?.slowPublishIntervalMs ?? Math.max(publishIntervalMs * 4, 100),
+  );
   const heartbeatMs = Math.max(MIN_TIMER_INTERVAL_MS, options.heartbeatMs ?? DEFAULT_HEARTBEAT_MS);
   const staleTimeoutMs =
     options.staleTimeoutMs === undefined
@@ -121,12 +147,16 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
 
   let context = options.context;
   let user = options.user;
+  let contextDirty = context !== undefined;
+  let userDirty = user !== undefined;
   let sequence = 0;
   let disposed = false;
 
   let latestCursor: CursorPosition | null = null;
   let latestPointer: PointerInfo | undefined;
   let pendingPublish = false;
+  let pendingFullPublish = false;
+  let slowMode = false;
   let publishTimer: TimerHandle | null = null;
   let heartbeatTimer: TimerHandle | null = null;
   let sweepTimer: TimerHandle | null = null;
@@ -187,6 +217,7 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     // republish before listener fan-out so a throwing listener cannot kill the guarantee
     if (status === "connected") {
       pendingPublish = true;
+      pendingFullPublish = true;
       schedulePublish();
     }
     for (const listener of statusListeners) {
@@ -198,7 +229,7 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     }
   }
 
-  function buildMessage(cursor: CursorPosition | null): CursorPresence<TContext, TUser> {
+  function buildMessage(cursor: CursorPosition | null, includeFull: boolean): CursorPresence<TContext, TUser> {
     const message: CursorPresence<TContext, TUser> = {
       version: 1,
       clientId,
@@ -206,20 +237,35 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
       sequence: sequence++,
       cursor,
     };
-    if (context !== undefined) message.context = context;
-    if (user !== undefined) message.user = user;
+    if (contextDirty || includeFull) message.context = context ?? null;
+    if (userDirty || includeFull) message.user = user ?? null;
     if (latestPointer !== undefined) message.pointer = latestPointer;
     return message;
   }
 
-  function send(cursor: CursorPosition | null): boolean {
+  function updateSlowMode(): void {
+    if (adaptiveOptions === undefined || typeof transport.bufferedBytes !== "function") return;
+    try {
+      const buffered = transport.bufferedBytes();
+      if (buffered >= highWatermarkBytes) slowMode = true;
+      else if (buffered <= lowWatermarkBytes) slowMode = false;
+    } catch {
+      // a throwing transport probe must not break publishing
+    }
+  }
+
+  function send(cursor: CursorPosition | null, includeFull = false): boolean {
     if (status !== "connected") return false;
     try {
-      const bytes = codec.encode(buildMessage(cursor));
+      const message = buildMessage(cursor, includeFull);
+      const bytes = codec.encode(message);
       const result = transport.send(bytes);
       if (result && typeof result.catch === "function") {
         result.catch(() => {});
       }
+      updateSlowMode();
+      if (message.context !== undefined) contextDirty = false;
+      if (message.user !== undefined) userDirty = false;
       return true;
     } catch {
       // swallow send errors — presence is lossy by design
@@ -232,13 +278,14 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     publishTimer = scheduler.setTimeout(() => {
       publishTimer = null;
       if (!pendingPublish) return;
-      if (send(latestCursor)) {
+      if (send(latestCursor, pendingFullPublish)) {
         pendingPublish = false;
+        pendingFullPublish = false;
       } else if (status === "connected") {
         schedulePublish(); // transient send failure: retry instead of stalling until the next change
       }
       // while unsendable, pendingPublish stays set; the transition into "connected" re-schedules
-    }, publishIntervalMs);
+    }, slowMode ? slowPublishIntervalMs : publishIntervalMs);
   }
 
   function markPending(): void {
@@ -249,7 +296,7 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
   function scheduleHeartbeat(): void {
     if (disposed) return;
     heartbeatTimer = scheduler.setTimeout(() => {
-      if (send(latestCursor)) pendingPublish = false;
+      if (send(latestCursor, true)) pendingPublish = false;
       scheduleHeartbeat();
     }, heartbeatMs);
   }
@@ -300,7 +347,9 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
 
     setContext(next) {
       if (disposed) return;
+      if (context === next) return;
       context = next;
+      contextDirty = true;
       warnIfOversized();
       markPending();
     },
@@ -311,7 +360,9 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
 
     setUser(next) {
       if (disposed) return;
+      if (user === next) return;
       user = next;
+      userDirty = true;
       warnIfOversized();
       markPending();
     },

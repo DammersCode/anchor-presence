@@ -349,6 +349,200 @@ describe("createPresenceClient session/context/user", () => {
     expect(message.user).toEqual({ name: "Ada" });
     client.dispose();
   });
+
+  it("sends initial context and user on the first delta publish", () => {
+    const { transport, sent } = makeTransport();
+    const client = createPresenceClient({
+      transport,
+      idFactory,
+      publishIntervalMs: 50,
+      context: { route: "/" },
+      user: { name: "Ada" },
+    });
+
+    client.updateLocalCursor({ anchors: [] });
+    vi.advanceTimersByTime(50);
+    const message = decodeSent(sent[0]!);
+    expect(message.context).toEqual({ route: "/" });
+    expect(message.user).toEqual({ name: "Ada" });
+
+    client.dispose();
+  });
+
+  it("sends explicit null context and user in a full publish while no value is set", () => {
+    const { transport, sent } = makeTransport();
+    const client = createPresenceClient({
+      transport,
+      idFactory,
+      publishIntervalMs: 50,
+      heartbeatMs: 1000,
+    });
+
+    client.updateLocalCursor({ anchors: [] });
+    vi.advanceTimersByTime(50);
+    expect(decodeSent(sent[0]!).context).toBeUndefined();
+
+    vi.advanceTimersByTime(1000);
+    const heartbeat = decodeSent(sent[1]!);
+    expect(heartbeat.context).toBeNull();
+    expect(heartbeat.user).toBeNull();
+
+    client.dispose();
+  });
+
+  it("omits unchanged context and user from later delta publishes", () => {
+    const { transport, sent } = makeTransport();
+    const client = createPresenceClient({ transport, idFactory, publishIntervalMs: 50 });
+
+    client.setContext({ route: "/a" });
+    client.setUser({ name: "Ada" });
+    client.updateLocalCursor({ anchors: [] });
+    vi.advanceTimersByTime(50);
+    expect(decodeSent(sent[0]!).context).toEqual({ route: "/a" });
+    expect(decodeSent(sent[0]!).user).toEqual({ name: "Ada" });
+
+    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.2, v: 0.2 }] });
+    vi.advanceTimersByTime(50);
+    const delta = decodeSent(sent[1]!);
+    expect(delta.cursor.anchors[0].u).toBe(0.2);
+    expect(delta.context).toBeUndefined();
+    expect(delta.user).toBeUndefined();
+
+    client.dispose();
+  });
+
+  it("sends an explicit null context/user delta when the value is cleared", () => {
+    const { transport, sent } = makeTransport();
+    const client = createPresenceClient({ transport, idFactory, publishIntervalMs: 50 });
+
+    client.setContext({ route: "/a" });
+    client.setUser({ name: "Ada" });
+    client.updateLocalCursor({ anchors: [] });
+    vi.advanceTimersByTime(50);
+
+    client.setContext(undefined);
+    client.setUser(undefined);
+    vi.advanceTimersByTime(50);
+    const cleared = decodeSent(sent[1]!);
+    expect(cleared.context).toBeNull();
+    expect(cleared.user).toBeNull();
+
+    client.dispose();
+  });
+
+  it("does not republish a context/user value that is reference-equal to the current value", () => {
+    const { transport, sent } = makeTransport();
+    const client = createPresenceClient({ transport, idFactory, publishIntervalMs: 50 });
+    const context = { route: "/a" };
+
+    client.setContext(context);
+    vi.advanceTimersByTime(50);
+    expect(sent).toHaveLength(1);
+
+    client.setContext(context);
+    vi.advanceTimersByTime(50);
+    expect(sent).toHaveLength(1);
+
+    client.dispose();
+  });
+
+  it("includes the current context and user in the reconnect and heartbeat full publishes", () => {
+    const { transport, sent, setStatus } = makeTransport(true, "connected");
+    const client = createPresenceClient({
+      transport,
+      idFactory,
+      publishIntervalMs: 50,
+      heartbeatMs: 1000,
+    });
+
+    client.setContext({ route: "/a" });
+    client.setUser({ name: "Ada" });
+    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
+    vi.advanceTimersByTime(50);
+    expect(decodeSent(sent[0]!).context).toEqual({ route: "/a" });
+
+    vi.advanceTimersByTime(1000);
+    expect(decodeSent(sent[1]!).context).toEqual({ route: "/a" });
+    expect(decodeSent(sent[1]!).user).toEqual({ name: "Ada" });
+
+    setStatus("disconnected");
+    setStatus("connected");
+    vi.advanceTimersByTime(50);
+    expect(decodeSent(sent[2]!).context).toEqual({ route: "/a" });
+    expect(decodeSent(sent[2]!).user).toEqual({ name: "Ada" });
+
+    client.dispose();
+  });
+});
+
+describe("createPresenceClient adaptive publish rate", () => {
+  it("uses the slow interval while the transport reports buffered bytes above the high watermark", () => {
+    const sent: Uint8Array[] = [];
+    let buffered = 0;
+    const transport: LiveCursorTransport = {
+      send: vi.fn((data: Uint8Array) => {
+        sent.push(data);
+        buffered += 100;
+      }),
+      subscribe: vi.fn(() => () => {}),
+      bufferedBytes: () => buffered,
+    };
+    const client = createPresenceClient({
+      transport,
+      idFactory,
+      publishIntervalMs: 50,
+      adaptivePublish: { highWatermarkBytes: 100, lowWatermarkBytes: 0, slowPublishIntervalMs: 200 },
+    });
+
+    client.updateLocalCursor({ anchors: [] });
+    vi.advanceTimersByTime(50);
+    expect(sent).toHaveLength(1);
+
+    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
+    vi.advanceTimersByTime(50);
+    expect(sent).toHaveLength(1);
+
+    vi.advanceTimersByTime(150);
+    expect(sent).toHaveLength(2);
+
+    client.dispose();
+  });
+
+  it("returns to the normal interval after the buffered bytes fall to the low watermark", () => {
+    const sent: Uint8Array[] = [];
+    const bufferedByCall = [200, 0, 0];
+    let calls = 0;
+    let buffered = 0;
+    const transport: LiveCursorTransport = {
+      send: vi.fn((data: Uint8Array) => {
+        sent.push(data);
+        buffered = bufferedByCall[calls] ?? 0;
+        calls += 1;
+      }),
+      subscribe: vi.fn(() => () => {}),
+      bufferedBytes: () => buffered,
+    };
+    const client = createPresenceClient({
+      transport,
+      idFactory,
+      publishIntervalMs: 50,
+      adaptivePublish: { highWatermarkBytes: 100, lowWatermarkBytes: 0, slowPublishIntervalMs: 200 },
+    });
+
+    client.updateLocalCursor({ anchors: [] });
+    vi.advanceTimersByTime(50);
+    expect(sent).toHaveLength(1);
+
+    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.1, v: 0.1 }] });
+    vi.advanceTimersByTime(200);
+    expect(sent).toHaveLength(2);
+
+    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.2, v: 0.2 }] });
+    vi.advanceTimersByTime(50);
+    expect(sent).toHaveLength(3);
+
+    client.dispose();
+  });
 });
 
 describe("createPresenceClient dirty-flag publishing", () => {

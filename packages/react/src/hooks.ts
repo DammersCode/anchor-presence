@@ -153,7 +153,7 @@ export type RemoteUser<TUser = unknown> = {
 };
 
 function projectRemoteUsers<TUser>(snapshot: CursorPresence<unknown, TUser>[]): RemoteUser<TUser>[] {
-  return snapshot.map((p) => ({ clientId: p.clientId, user: p.user, session: p.session }));
+  return snapshot.map((p) => ({ clientId: p.clientId, user: p.user === null ? undefined : p.user, session: p.session }));
 }
 
 // TContext keeps the generic arity aligned with the other hooks; the list mirrors the client's remote snapshot

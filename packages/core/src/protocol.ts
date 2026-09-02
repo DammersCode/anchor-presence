@@ -15,14 +15,15 @@ export type PointerType = "mouse" | "pen" | "touch";
 
 export type PointerInfo = { type?: PointerType };
 
+// `null` is a wire-level clear; a missing field means "unchanged since the previous same-session message".
 export type CursorPresence<TContext = unknown, TUser = unknown> = {
   version: 1;
   clientId: string; // client INSTANCE (tab/connection), not a user
   session: string;
   sequence: number;
   cursor: CursorPosition | null;
-  context?: TContext;
-  user?: TUser;
+  context?: TContext | null | undefined;
+  user?: TUser | null | undefined;
   pointer?: PointerInfo;
 };
 

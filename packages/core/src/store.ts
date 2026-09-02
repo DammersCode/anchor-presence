@@ -38,7 +38,7 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
 
     if (existing === undefined) {
       if (this.entries.size >= this.maxRemoteClients) return false;
-      this.entries.set(presence.clientId, { presence, lastSeenAt: this.now() });
+      this.entries.set(presence.clientId, { presence: this.normalizePresence(presence), lastSeenAt: this.now() });
       this.markDirty();
       return true;
     }
@@ -48,10 +48,30 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
       return false;
     }
 
-    existing.presence = presence;
+    existing.presence = sameSession
+      ? this.mergeFields(existing.presence, presence)
+      : this.normalizePresence(presence);
     existing.lastSeenAt = this.now();
     this.markDirty();
     return true;
+  }
+
+  // A missing field is a delta encoding: keep the previous same-session value. An explicit `null` clears it.
+  private mergeFields(
+    previous: CursorPresence<TContext, TUser>,
+    next: CursorPresence<TContext, TUser>,
+  ): CursorPresence<TContext, TUser> {
+    const context = resolveFieldDelta(next.context, previous.context);
+    const user = resolveFieldDelta(next.user, previous.user);
+    if (context === next.context && user === next.user) return next;
+    return { ...next, context, user };
+  }
+
+  private normalizePresence(presence: CursorPresence<TContext, TUser>): CursorPresence<TContext, TUser> {
+    const context = resolveFieldDelta(presence.context, undefined);
+    const user = resolveFieldDelta(presence.user, undefined);
+    if (context === presence.context && user === presence.user) return presence;
+    return { ...presence, context, user };
   }
 
   /** Removes entries not seen for staleTimeoutMs. Call periodically (e.g. from a client heartbeat timer). */
@@ -97,4 +117,15 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
       }
     }
   }
+}
+
+// Wire encoding: `null` clears the field, `undefined` inherits the previous same-session value.
+function resolveFieldDelta<T>(
+  next: T | null | undefined,
+  previous: T | null | undefined,
+): T | undefined {
+  if (next === null) return undefined;
+  if (next !== undefined) return next;
+  if (previous === null) return undefined;
+  return previous;
 }

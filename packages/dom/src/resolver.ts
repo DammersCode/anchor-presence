@@ -231,8 +231,8 @@ export class RemoteResolver<TContext = unknown, TUser = unknown> {
           anchorId: raw.anchorId,
           tier: raw.tier,
         };
-        if (presence.context !== undefined) result.context = presence.context;
-        if (presence.user !== undefined) result.user = presence.user;
+        if (presence.context !== null && presence.context !== undefined) result.context = presence.context;
+        if (presence.user !== null && presence.user !== undefined) result.user = presence.user;
         this.lastResults.set(presence.clientId, result);
       }
       if (listUnchanged && this.lastList[results.length] !== result) listUnchanged = false;

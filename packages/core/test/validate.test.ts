@@ -154,6 +154,14 @@ describe("validatePresence", () => {
     expect(result?.user).toEqual(smallUser);
   });
 
+  it("uses exact UTF-8 length only when the JSON length is close to the byte limit", () => {
+    const ascii = validatePresence(baseMessage({ context: "a" }), { maxFieldBytes: 3 });
+    expect(ascii?.context).toBe("a");
+
+    const multibyte = validatePresence(baseMessage({ context: "é" }), { maxFieldBytes: 3 });
+    expect(multibyte?.context).toBeUndefined();
+  });
+
   it("no longer enforces the whole-message 32 KiB limit itself (superseded by the client's wire-byte check, spec §4.2)", () => {
     const hugeCursor = {
       anchors: [{ id: "a", u: 0.5, v: 0.5 }],

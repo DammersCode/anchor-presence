@@ -24,6 +24,8 @@ These limits are constants in `@anchor-presence/core`, and every one is overrida
 
 A message with an invalid `version`, `clientId`, `session`, `sequence`, or `cursor` shape is dropped in full. A message with an oversized `context` or `user` field keeps the rest of the message and drops only that field.
 
+Wire encoding for `context` and `user`: a missing field means "unchanged since the previous same-session message", and an explicit `null` clears the field. The store normalizes a cleared field to `undefined` in the receiver snapshot.
+
 ## Why anchor IDs never touch selectors
 
 An anchor ID is an opaque string. The resolver looks it up as a plain object key in the registry's `Map<string, Element>`. It is never passed to `querySelector`, `eval`, a template engine, or any other code path that interprets a string as a program or a selector.

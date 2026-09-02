@@ -39,6 +39,7 @@ export {
   DEFAULT_PUBLISH_INTERVAL_MS,
 } from "./client";
 export type {
+  AdaptivePublishOptions,
   PresenceClient,
   PresenceClientOptions,
   SchedulerLike,

@@ -30,6 +30,7 @@ class FakeWebSocket implements WebSocketLike {
   onerror: null | (() => void) = null;
   onmessage: null | ((event: { data: unknown }) => void) = null;
   binaryType = "";
+  bufferedAmount = 0;
   sent: Uint8Array[] = [];
 
   constructor(url: string) {
@@ -48,7 +49,12 @@ class FakeWebSocket implements WebSocketLike {
 
 const TEST_URL = "ws://relay.test/?room=main";
 
-type MakeOverrides = { reconnect?: boolean; baseBackoffMs?: number; maxBackoffMs?: number };
+type MakeOverrides = {
+  reconnect?: boolean;
+  baseBackoffMs?: number;
+  maxBackoffMs?: number;
+  random?: () => number;
+};
 
 function make(overrides: MakeOverrides = {}) {
   return createWebSocketTransport({ url: TEST_URL, WebSocketCtor: FakeWebSocket, ...overrides });
@@ -88,7 +94,7 @@ describe("createWebSocketTransport", () => {
 
   it("reconnects with exponential backoff: base delay, doubling, capped at maxBackoffMs", () => {
     vi.useFakeTimers();
-    const transport = make({ baseBackoffMs: 200, maxBackoffMs: 1000 });
+    const transport = make({ baseBackoffMs: 200, maxBackoffMs: 1000, random: () => 1 });
     void transport.connect?.();
     FakeWebSocket.fire(lastSocket(), "open");
     expect(transport.getStatus?.()).toBe("connected");
@@ -119,6 +125,19 @@ describe("createWebSocketTransport", () => {
     vi.advanceTimersByTime(201);
     expect(FakeWebSocket.instances).toHaveLength(5);
     expect(transport.getStatus?.()).toBe("reconnecting");
+  });
+
+  it("jitters the first reconnect delay down to half the base backoff", () => {
+    vi.useFakeTimers();
+    const transport = make({ baseBackoffMs: 200, random: () => 0 });
+    void transport.connect?.();
+    FakeWebSocket.fire(lastSocket(), "open");
+
+    FakeWebSocket.fire(lastSocket(), "close");
+    vi.advanceTimersByTime(99);
+    expect(FakeWebSocket.instances).toHaveLength(1);
+    vi.advanceTimersByTime(1);
+    expect(FakeWebSocket.instances).toHaveLength(2);
   });
 
   it("disconnect() cancels the pending reconnect timer", () => {
@@ -241,6 +260,21 @@ describe("createWebSocketTransport", () => {
 
     FakeWebSocket.fire(ws, "close");
     expect(transport.getStatus?.()).toBe("disconnected");
+  });
+
+  it("reports the live socket's bufferedAmount and zero while no socket is open", () => {
+    const transport = make();
+    expect(transport.bufferedBytes?.()).toBe(0);
+
+    void transport.connect?.();
+    FakeWebSocket.fire(lastSocket(), "open");
+    expect(transport.bufferedBytes?.()).toBe(0);
+
+    lastSocket().bufferedAmount = 42;
+    expect(transport.bufferedBytes?.()).toBe(42);
+
+    FakeWebSocket.fire(lastSocket(), "close");
+    expect(transport.bufferedBytes?.()).toBe(0);
   });
 
   it("builds the default URL from host, port, and path", () => {

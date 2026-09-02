@@ -155,3 +155,49 @@ describe("RemotePresenceStore snapshot immutability", () => {
     expect(listener).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("RemotePresenceStore context/user field delta", () => {
+  it("normalizes an explicit null context/user on first ingest", () => {
+    const store = new RemotePresenceStore();
+    store.ingest(presence({ context: null, user: null }));
+    const entry = store.getSnapshot()[0]!;
+    expect(entry.context).toBeUndefined();
+    expect(entry.user).toBeUndefined();
+  });
+
+  it("keeps omitted context and user from the previous same-session message", () => {
+    const store = new RemotePresenceStore();
+    store.ingest(presence({ sequence: 0, context: { route: "/" }, user: { name: "Ada" } }));
+    store.ingest(presence({ sequence: 1 }));
+    const entry = store.getSnapshot()[0]!;
+    expect(entry.sequence).toBe(1);
+    expect(entry.context).toEqual({ route: "/" });
+    expect(entry.user).toEqual({ name: "Ada" });
+  });
+
+  it("clears context and user when a same-session message sends explicit null", () => {
+    const store = new RemotePresenceStore();
+    store.ingest(presence({ sequence: 0, context: { route: "/" }, user: { name: "Ada" } }));
+    store.ingest(presence({ sequence: 1, context: null, user: null }));
+    const entry = store.getSnapshot()[0]!;
+    expect(entry.context).toBeUndefined();
+    expect(entry.user).toBeUndefined();
+  });
+
+  it("does not inherit omitted context or user across a session change", () => {
+    const store = new RemotePresenceStore();
+    store.ingest(presence({ session: "session-1", sequence: 5, context: { route: "/" }, user: { name: "Ada" } }));
+    store.ingest(presence({ session: "session-2", sequence: 0 }));
+    const entry = store.getSnapshot()[0]!;
+    expect(entry.session).toBe("session-2");
+    expect(entry.context).toBeUndefined();
+    expect(entry.user).toBeUndefined();
+  });
+
+  it("still drops a stale same-session message whose omitted fields would inherit state", () => {
+    const store = new RemotePresenceStore();
+    store.ingest(presence({ sequence: 2, context: { route: "/" } }));
+    expect(store.ingest(presence({ sequence: 1 }))).toBe(false);
+    expect(store.getSnapshot()[0]!.sequence).toBe(2);
+  });
+});

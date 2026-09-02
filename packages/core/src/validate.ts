@@ -19,15 +19,32 @@ export type ValidationLimits = {
 
 type ResolvedLimits = Required<ValidationLimits>;
 
+const DEFAULT_RESOLVED_LIMITS: ResolvedLimits = {
+  maxClientIdLength: DEFAULT_MAX_CLIENT_ID_LENGTH,
+  maxSessionLength: DEFAULT_MAX_SESSION_LENGTH,
+  maxAnchors: DEFAULT_MAX_ANCHORS,
+  maxAnchorIdLength: DEFAULT_MAX_ANCHOR_ID_LENGTH,
+  maxFieldBytes: DEFAULT_MAX_FIELD_BYTES,
+  maxMessageBytes: DEFAULT_MAX_MESSAGE_BYTES,
+};
+
+const resolvedLimitsCache = new WeakMap<ValidationLimits, ResolvedLimits>();
+
 function resolveLimits(limits?: ValidationLimits): ResolvedLimits {
-  return {
-    maxClientIdLength: limits?.maxClientIdLength ?? DEFAULT_MAX_CLIENT_ID_LENGTH,
-    maxSessionLength: limits?.maxSessionLength ?? DEFAULT_MAX_SESSION_LENGTH,
-    maxAnchors: limits?.maxAnchors ?? DEFAULT_MAX_ANCHORS,
-    maxAnchorIdLength: limits?.maxAnchorIdLength ?? DEFAULT_MAX_ANCHOR_ID_LENGTH,
-    maxFieldBytes: limits?.maxFieldBytes ?? DEFAULT_MAX_FIELD_BYTES,
-    maxMessageBytes: limits?.maxMessageBytes ?? DEFAULT_MAX_MESSAGE_BYTES,
-  };
+  if (limits === undefined) return DEFAULT_RESOLVED_LIMITS;
+  let resolved = resolvedLimitsCache.get(limits);
+  if (resolved === undefined) {
+    resolved = {
+      maxClientIdLength: limits.maxClientIdLength ?? DEFAULT_MAX_CLIENT_ID_LENGTH,
+      maxSessionLength: limits.maxSessionLength ?? DEFAULT_MAX_SESSION_LENGTH,
+      maxAnchors: limits.maxAnchors ?? DEFAULT_MAX_ANCHORS,
+      maxAnchorIdLength: limits.maxAnchorIdLength ?? DEFAULT_MAX_ANCHOR_ID_LENGTH,
+      maxFieldBytes: limits.maxFieldBytes ?? DEFAULT_MAX_FIELD_BYTES,
+      maxMessageBytes: limits.maxMessageBytes ?? DEFAULT_MAX_MESSAGE_BYTES,
+    };
+    resolvedLimitsCache.set(limits, resolved);
+  }
+  return resolved;
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -44,13 +61,16 @@ function clamp01(value: number): number {
   return value;
 }
 
-function byteLengthOf(value: unknown): number {
+// JSON string length is a lower bound for UTF-8 byte length; exact encoding is only needed near the limit.
+function jsonFieldFits(value: unknown, maxBytes: number): boolean {
   try {
     const json = JSON.stringify(value);
-    if (json === undefined) return 0;
-    return new TextEncoder().encode(json).length;
+    if (json === undefined) return true;
+    if (json.length > maxBytes) return false;
+    if (json.length * 4 <= maxBytes) return true;
+    return new TextEncoder().encode(json).length <= maxBytes;
   } catch {
-    return Number.POSITIVE_INFINITY;
+    return false;
   }
 }
 
@@ -124,11 +144,11 @@ export function validatePresence<TContext = unknown, TUser = unknown>(
       cursor,
     };
 
-    if ("context" in input && input.context !== undefined && byteLengthOf(input.context) <= resolved.maxFieldBytes) {
+    if ("context" in input && input.context !== undefined && jsonFieldFits(input.context, resolved.maxFieldBytes)) {
       message.context = input.context as TContext;
     }
 
-    if ("user" in input && input.user !== undefined && byteLengthOf(input.user) <= resolved.maxFieldBytes) {
+    if ("user" in input && input.user !== undefined && jsonFieldFits(input.user, resolved.maxFieldBytes)) {
       message.user = input.user as TUser;
     }
 

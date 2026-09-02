@@ -12,9 +12,9 @@ The application sets context on the client:
 client.setContext({ route: "/settings", dialog: "invite" });
 ```
 
-Every outbound presence message carries the current context. On the receiver, context reaches two places: the visibility policy input, and the `context` field on each `ResolvedCursor`.
+A change to context is sent once, and full publishes (reconnect and heartbeat) include the current context. A missing field means "unchanged since the previous same-session message"; an explicit `null` clears it. On the receiver, context reaches two places: the visibility policy input, and the `context` field on each `ResolvedCursor`.
 
-Use context for information the receiver needs to decide how to show a cursor: current route, open dialog, active tab, or similar semantic state. Do not use context for anything that must stay private; it travels on every presence message. See `docs/security.md` for validation limits and rendering rules.
+Use context for information the receiver needs to decide how to show a cursor: current route, open dialog, active tab, or similar semantic state. Do not use context for anything that must stay private; it reaches every receiver in the room when it changes and on full publishes. See `docs/security.md` for validation limits and rendering rules.
 
 ## Visibility policies
 

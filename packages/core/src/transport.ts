@@ -11,4 +11,6 @@ export interface LiveCursorTransport {
   // subscribeStatus SHOULD replay the current status to a new subscriber (spec §5)
   subscribeStatus?(listener: (status: ConnectionStatus) => void): () => void;
   getStatus?(): ConnectionStatus;
+  /** Bytes currently queued by the transport; used only for opt-in adaptive publish rate. */
+  bufferedBytes?(): number;
 }

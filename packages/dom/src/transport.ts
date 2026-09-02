@@ -10,6 +10,7 @@ export type WebSocketLike = {
   onerror: null | (() => void);
   onmessage: null | ((event: { data: unknown }) => void);
   binaryType: string;
+  bufferedAmount?: number;
   send(data: ArrayBufferView): void;
   close(): void;
 };
@@ -31,6 +32,8 @@ export type WebSocketTransportOptions = {
   baseBackoffMs?: number;
   /** Cap on the reconnect backoff. Default 8000. */
   maxBackoffMs?: number;
+  /** Randomness source for backoff jitter; returns a value in `[0, 1)`. Defaults to `Math.random`. */
+  random?: () => number;
   /** Inject a WebSocket constructor; defaults to `globalThis.WebSocket`. */
   WebSocketCtor?: WebSocketCtor;
 };
@@ -61,6 +64,7 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
   const reconnect = options.reconnect ?? true;
   const baseBackoffMs = options.baseBackoffMs ?? 500;
   const maxBackoffMs = options.maxBackoffMs ?? 8_000;
+  const random = options.random ?? Math.random;
   // the real WebSocket does not structurally satisfy WebSocketLike (handler signature variance); cast like the scheduler's ctor injections
   const WebSocketImpl =
     options.WebSocketCtor ?? (globalThis as unknown as { WebSocket?: WebSocketCtor }).WebSocket;
@@ -83,7 +87,9 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
   function scheduleReconnect(): void {
     if (disposedByUser || reconnectTimer !== null) return;
     setStatus("reconnecting");
-    const delay = Math.min(baseBackoffMs * 2 ** reconnectAttempt, maxBackoffMs);
+    const capped = Math.min(baseBackoffMs * 2 ** reconnectAttempt, maxBackoffMs);
+    // full-jitter on a lower bound: spreads reconnect storms without doubling the worst case
+    const delay = Math.max(1, Math.round(capped * (0.5 + random() * 0.5)));
     reconnectAttempt += 1;
     reconnectTimer = setTimeout(() => {
       reconnectTimer = null;
@@ -170,6 +176,10 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
 
     getStatus() {
       return status;
+    },
+
+    bufferedBytes() {
+      return socket?.bufferedAmount ?? 0;
     },
   };
 }

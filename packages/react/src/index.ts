@@ -5,7 +5,6 @@ export { LiveCursorContext } from "./context";
 export type { LiveCursorContextValue } from "./context";
 
 export {
-  useCursorAnchor,
   useCursorClient,
   useCursorContext,
   useCursorPresence,

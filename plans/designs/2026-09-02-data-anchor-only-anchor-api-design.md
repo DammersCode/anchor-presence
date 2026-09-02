@@ -45,6 +45,8 @@ This creates two mental models: manual registration and attribute registration. 
 - `data-anchor`, or the configured attribute, is strictly semantic.
 - E2E tests use `data-testid` for test-only locators.
 - Existing deprecated or unnecessary APIs are removed instead of marked deprecated.
+- `createWebSocketTransport` does not expose a `room` option.
+- Room grouping is a relay/server concern. Consumers that need rooms pass a `url` or `path` such as `/?room=main`.
 
 ## Configurable Anchor Attribute
 
@@ -308,6 +310,7 @@ Migration rules:
 - keep `data-anchor` when the element is a real semantic anchor
 - `BenchCell` uses `data-anchor={anchorId}`
 - `PresencePill` keeps semantic presence anchors and gains stable `data-testid` values for E2E
+- `apps/demo/src/cursors/setup.ts` passes the room through `createWebSocketTransport({ path: "/?room=..." })`
 
 ## Documentation Updates
 

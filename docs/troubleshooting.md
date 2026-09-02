@@ -6,7 +6,7 @@ This page covers common problems and their causes.
 
 Three separate causes produce the same symptom.
 
-**The anchor is not registered.** If the sender's cursor sits over an element with no matching anchor ID on the receiver, and the fallback chain and viewport both miss, the resolution tier is `hidden`. Register the anchor with `useCursorAnchor` (React) or `registry.register()` (dom), and make sure both sender and receiver register the same anchor ID for the same semantic location.
+**The anchor is not registered.** If the sender's cursor sits over an element with no matching anchor ID on the receiver, and the fallback chain and viewport both miss, the resolution tier is `hidden`. Make sure both sender and receiver render the same non-empty anchor attribute value for the same semantic location.
 
 **A visibility policy hides it.** A custom `VisibilityPolicy` can return `"hide"` for a tier that otherwise shows. Make sure the policy passed to `bindingOptions.resolution.visibilityPolicy` or `DomBindingOptions.resolution.visibilityPolicy` is not the cause. The default policy hides only the `hidden` tier; anything else hiding an `anchor` or `viewport` tier cursor is application logic. See `docs/ui-context.md`.
 

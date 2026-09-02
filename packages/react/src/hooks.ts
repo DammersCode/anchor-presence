@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useContext, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { ConnectionStatus, CursorPresence, PresenceClient } from "@anchor-presence/core";
 import type { ResolvedCursor } from "@anchor-presence/dom";
 import { LiveCursorContext } from "./context";
@@ -85,35 +85,6 @@ export function usePresenceClient<TContext = unknown, TUser = unknown>(
     clientRegistry.set(key, client);
   }
   return client as PresenceClient<TContext, TUser>;
-}
-
-export function useCursorAnchor(id: string): (element: Element | null) => void {
-  const { binding } = useLiveCursorContext();
-  const idRef = useRef(id);
-  const elementRef = useRef<Element | null>(null);
-  const unregisterRef = useRef<(() => void) | null>(null);
-
-  const register = useCallback(
-    (element: Element | null) => {
-      if (unregisterRef.current !== null) {
-        unregisterRef.current();
-        unregisterRef.current = null;
-      }
-      elementRef.current = element;
-      if (element !== null && binding !== null) {
-        unregisterRef.current = binding.registry.register(idRef.current, element);
-      }
-    },
-    [binding],
-  );
-
-  useEffect(() => {
-    if (idRef.current === id) return;
-    idRef.current = id;
-    register(elementRef.current);
-  }, [id, register]);
-
-  return register;
 }
 
 export function useRemoteCursors<TContext = unknown, TUser = unknown>(): ResolvedCursor<TContext, TUser>[] {

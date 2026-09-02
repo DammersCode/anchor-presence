@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useCursorAnchor, useCursorContext } from "@anchor-presence/react";
+import { useCursorContext } from "@anchor-presence/react";
 import { Sidebar } from "./components/dashboard/sidebar";
 import { Topbar } from "./components/dashboard/topbar";
 import { SettingsDialog } from "./components/dashboard/settings-dialog";
@@ -29,7 +29,6 @@ export default function App({
   const [page, navigate] = usePageRoute();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const mainAnchor = useCursorAnchor("main");
   const [, setContext] = useCursorContext<DemoContext>();
 
   // Single writer for both the published context and the local state the visibility policy reads.
@@ -88,7 +87,7 @@ export default function App({
         />
 
         <main
-          ref={mainAnchor}
+          data-anchor="main"
           className="main-entrance flex-1 overflow-y-auto p-4 sm:p-6"
         >
           {page === "dashboard" && <DashboardPage />}

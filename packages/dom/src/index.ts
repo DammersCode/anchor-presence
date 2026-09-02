@@ -1,38 +1,16 @@
-export type { Rect, ViewportSize } from "./geometry";
-
-export { computeVisibleRect, isPointInRect } from "./occlusion";
-export type { StyleValues } from "./occlusion";
-
-export { createAnchorRegistry } from "./registry";
-export type { AnchorRegistry } from "./registry";
-
-export { attachPointerSource, DEFAULT_MAX_ANCHORS, DEFAULT_MAX_SENT_ANCHORS } from "./pointer";
-export type { PointerSourceHandle, PointerSourceOptions } from "./pointer";
-
-export { createGeometryScheduler } from "./scheduler";
+export { createDomBinding } from "./binding";
 export type {
-  CafLike,
-  ComputeResult,
-  GeometryScheduler,
-  GeometrySchedulerOptions,
-  MutationObserverCtor,
-  MutationObserverLike,
-  RafLike,
-  ResizeObserverCtor,
-  ResizeObserverLike,
-  SchedulerReadState,
-} from "./scheduler";
+  DomBinding,
+  DomBindingOptions,
+  EnvironmentOptions,
+  ResolutionOptions,
+} from "./binding";
 
 export { createWebSocketTransport } from "./transport";
 export type { WebSocketTransportOptions } from "./transport";
 
-export { defaultVisibilityPolicy, findResolvableAnchor, isMeasurable, RemoteResolver, resolveGeometry } from "./resolver";
 export type {
-  ResolutionTier,
   ResolvedCursor,
-  ResolverOptions,
+  ResolutionTier,
   VisibilityPolicy,
 } from "./resolver";
-
-export { createDomBinding } from "./binding";
-export type { DomBinding, DomBindingOptions, EnvironmentOptions, ResolutionOptions } from "./binding";

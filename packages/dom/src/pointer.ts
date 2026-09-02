@@ -5,8 +5,6 @@ import type { AnchorRegistry } from "./registry";
 import type { Rect } from "./geometry";
 
 export const DEFAULT_MAX_SENT_ANCHORS = 4;
-/** @deprecated Renamed: use DEFAULT_MAX_SENT_ANCHORS (core's DEFAULT_MAX_ANCHORS is the wire limit, 8). */
-export const DEFAULT_MAX_ANCHORS = DEFAULT_MAX_SENT_ANCHORS;
 
 export type PointerSourceOptions = {
   maxAnchors?: number | undefined;

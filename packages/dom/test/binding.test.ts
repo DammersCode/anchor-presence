@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { PresenceClient, CursorPresence } from "@anchor-presence/core";
+import type { PresenceClient, CursorPresence, CursorPosition } from "@anchor-presence/core";
 import { createDomBinding } from "../src/binding";
 
 type RafLike = (cb: (ts: number) => void) => number;
@@ -63,6 +63,73 @@ function makeFakeClient() {
   return { client, pushRemote, teardowns };
 }
 
+function makeCapturingClient(samples: (CursorPosition | null)[]): PresenceClient<unknown, unknown> {
+  const teardowns: Array<() => void> = [];
+  return {
+    clientId: "local",
+    session: "s",
+    updateLocalCursor: (cursor) => {
+      samples.push(cursor);
+    },
+    setContext: () => {},
+    getContext: () => undefined,
+    setUser: () => {},
+    getUser: () => undefined,
+    getStatus: () => "connected",
+    subscribeStatus: () => () => {},
+    getRemoteSnapshot: () => [],
+    subscribeRemote: () => () => {},
+    registerTeardown: (fn) => {
+      teardowns.push(fn);
+      return () => {
+        const index = teardowns.indexOf(fn);
+        if (index !== -1) teardowns.splice(index, 1);
+      };
+    },
+    dispose: () => {
+      for (const fn of teardowns.splice(0)) fn();
+    },
+  };
+}
+
+function mockRect(el: Element): void {
+  vi.spyOn(el, "getBoundingClientRect").mockReturnValue({
+    left: 0,
+    top: 0,
+    width: 100,
+    height: 100,
+    right: 100,
+    bottom: 100,
+    x: 0,
+    y: 0,
+    toJSON() {
+      return this;
+    },
+  });
+}
+
+function buildNestedAnchors(count: number): Element {
+  let parent: Element = document.body;
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement("div");
+    el.setAttribute("data-anchor", `level-${i}`);
+    mockRect(el);
+    parent.appendChild(el);
+    parent = el;
+  }
+  return parent;
+}
+
+function firePointerMove(target: Element): void {
+  const event = new Event("pointermove", { bubbles: true, cancelable: true, composed: true }) as PointerEvent & {
+    clientX: number;
+    clientY: number;
+  };
+  Object.defineProperty(event, "clientX", { value: 10 });
+  Object.defineProperty(event, "clientY", { value: 10 });
+  target.dispatchEvent(event);
+}
+
 describe("createDomBinding", () => {
   beforeEach(() => {
     document.body.innerHTML = "";
@@ -70,6 +137,7 @@ describe("createDomBinding", () => {
 
   it("wires registry + pointer + scheduler + resolver: resolves a remote cursor against a registered anchor", () => {
     const el = document.createElement("div");
+    el.setAttribute("data-anchor", "a");
     document.body.appendChild(el);
     vi.spyOn(el, "getBoundingClientRect").mockReturnValue({
       left: 0,
@@ -88,8 +156,6 @@ describe("createDomBinding", () => {
     const { raf, caf, flush } = makeRafStub();
     const { client, pushRemote } = makeFakeClient();
     const binding = createDomBinding(client, { environment: { raf, caf } });
-
-    binding.registry.register("a", el);
 
     pushRemote([
       {
@@ -140,6 +206,7 @@ describe("createDomBinding", () => {
     const clip = document.body.appendChild(document.createElement("div"));
     clip.style.overflow = "hidden";
     const el = clip.appendChild(document.createElement("div"));
+    el.setAttribute("data-anchor", "a");
     let clipHeight = 100;
     vi.spyOn(clip, "getBoundingClientRect").mockImplementation(() => ({
       left: 0,
@@ -182,7 +249,6 @@ describe("createDomBinding", () => {
     const { raf, caf, flush } = makeRafStub();
     const { client, pushRemote } = makeFakeClient();
     const binding = createDomBinding(client, { environment: { raf, caf, ResizeObserverCtor: ResizeObserverStub } });
-    binding.registry.register("a", el);
     pushRemote([{
       version: 1,
       clientId: "remote-1",
@@ -329,5 +395,87 @@ describe("createDomBinding", () => {
     client.dispose();
     expect(binding.getSnapshot()).toHaveLength(0);
     expect(teardowns).toHaveLength(0);
+  });
+
+  it("throws for an invalid anchorAttribute", () => {
+    const { client } = makeFakeClient();
+    expect(() => createDomBinding(client, { anchorAttribute: "not an attribute" })).toThrow(TypeError);
+  });
+
+  it("throws for a non-integer maxAnchors", () => {
+    const { client } = makeFakeClient();
+    expect(() => createDomBinding(client, { maxAnchors: 2.5 })).toThrow(TypeError);
+  });
+
+  it("registers anchors from the default data-anchor attribute without manual registry access", () => {
+    const el = document.createElement("div");
+    el.setAttribute("data-anchor", "a");
+    document.body.appendChild(el);
+    vi.spyOn(el, "getBoundingClientRect").mockReturnValue({
+      left: 0,
+      top: 0,
+      width: 100,
+      height: 100,
+      right: 100,
+      bottom: 100,
+      x: 0,
+      y: 0,
+      toJSON() {
+        return this;
+      },
+    });
+
+    const { raf, caf, flush } = makeRafStub();
+    const { client, pushRemote } = makeFakeClient();
+    const binding = createDomBinding(client, { environment: { raf, caf } });
+
+    pushRemote([
+      {
+        version: 1,
+        clientId: "remote-1",
+        session: "s",
+        sequence: 1,
+        cursor: { anchors: [{ id: "a", u: 0.5, v: 0.5 }] },
+      },
+    ]);
+
+    flush();
+
+    expect(binding.getSnapshot()[0]?.tier).toBe("anchor");
+    expect(binding.getSnapshot()[0]?.anchorId).toBe("a");
+
+    binding.dispose();
+  });
+
+  it("clamps maxAnchors to the protocol range for the outbound chain", () => {
+    const deepest = buildNestedAnchors(9);
+    const { raf, caf } = makeRafStub();
+    const wide: (CursorPosition | null)[] = [];
+    const wideClient = makeCapturingClient(wide);
+    const wideBinding = createDomBinding(wideClient, { maxAnchors: 10, environment: { raf, caf } });
+
+    firePointerMove(deepest);
+    expect(wide[0]?.anchors.map((a) => a.id)).toEqual([
+      "level-8",
+      "level-7",
+      "level-6",
+      "level-5",
+      "level-4",
+      "level-3",
+      "level-2",
+      "level-1",
+    ]);
+    wideBinding.dispose();
+
+    document.body.innerHTML = "";
+    const deepestAgain = buildNestedAnchors(9);
+    const { raf: raf2, caf: caf2 } = makeRafStub();
+    const narrow: (CursorPosition | null)[] = [];
+    const narrowClient = makeCapturingClient(narrow);
+    const narrowBinding = createDomBinding(narrowClient, { maxAnchors: 0, environment: { raf: raf2, caf: caf2 } });
+
+    firePointerMove(deepestAgain);
+    expect(narrow[0]?.anchors.map((a) => a.id)).toEqual(["level-8"]);
+    narrowBinding.dispose();
   });
 });

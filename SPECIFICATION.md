@@ -1,7 +1,7 @@
 # Anchor Presence — Technical Specification
 
-Version: 1.4
-Status: APPROVED by Advisor (round 2), recommendations applied
+Version: 1.5
+Status: updated for the data-attribute-only anchor API and WebSocket transport room removal
 
 ## 1. Purpose
 
@@ -52,7 +52,7 @@ Responsibilities: anchor registry, pointer capture, pointer target resolution, n
 
 ### 3.3 react
 
-Responsibilities: provider component, hooks, anchor registration helpers, SSR safety. React subscribes to core/dom stores with `useSyncExternalStore`. React holds no engine state.
+Responsibilities: provider component, hooks, SSR safety. React subscribes to core/dom stores with `useSyncExternalStore`. React holds no engine state. Anchors are declared in the DOM through the binding's anchor attribute; React has no anchor registration hook.
 
 ## 4. Protocol
 
@@ -137,7 +137,7 @@ interface LiveCursorTransport {
 }
 ```
 
-Core never imports a transport implementation. The demo ships a small `WebSocketTransport` in the demo app (not in core) as example code. `send` failures are swallowed after a status check; presence is lossy by design. When a transport omits `subscribeStatus`, the client reports a constant `"connected"`. The status union is fixed for protocol v1; consumers can switch exhaustively.
+Core never imports a transport implementation. `@anchor-presence/dom` ships `createWebSocketTransport` for the repository relay; it is a convenience transport, not a core dependency. `send` failures are swallowed after a status check; presence is lossy by design. When a transport omits `subscribeStatus`, the client reports a constant `"connected"`. The status union is fixed for protocol v1; consumers can switch exhaustively.
 
 A transport that implements `subscribeStatus` SHOULD replay its current status to every new subscriber. `getStatus` is optional; when present, the client reads it once at creation for its initial status. Without either signal, the client assumes `"connecting"` until the first status callback — an already-connected transport that never replays would leave the client mute. The client sends only while the status is `"connected"`; `"connecting"`, `"reconnecting"`, and `"disconnected"` block sends.
 
@@ -178,7 +178,9 @@ The publisher keeps only the latest local state. It sends at most one message pe
 
 The remote store exposes `getSnapshot()` and `subscribe(listener)`. Snapshots are immutable objects, so `useSyncExternalStore` works without tearing.
 
-## 8. Anchor Registry (dom)
+## 8. Anchor Registry and Auto-Registration (dom)
+
+`createDomBinding` owns an internal `AnchorRegistry` and always watches the DOM for anchor elements.
 
 ```ts
 interface AnchorRegistry {
@@ -189,10 +191,34 @@ interface AnchorRegistry {
 }
 ```
 
-Rules:
+The registry is an internal implementation detail. It is not part of the public `DomBinding` surface.
+
+Public binding configuration:
+
+```ts
+type DomBindingOptions = {
+  anchorAttribute?: string; // default "data-anchor"
+  maxAnchors?: number;      // default 4, clamped to 1..8
+  resolution?: ResolutionOptions;
+  environment?: EnvironmentOptions;
+};
+```
+
+Auto-registration rules:
+
+- The binding scans `environment.root` (default `document`) at creation.
+- It observes `childList`, `subtree`, and attribute changes for `anchorAttribute`.
+- An element is registered when its configured attribute has a non-empty value after trimming.
+- The attribute value is the anchor ID.
+- Attribute changes re-register the element under the new ID.
+- Attribute removal or element removal unregisters the element.
+- Empty or whitespace-only values are ignored and warn once in development.
+- No generated IDs are created.
+
+Registry rules:
 
 - `register` returns an unregister function. Unregister removes the entry only if it still points at the same element.
-- Duplicate registration of one ID with a different element: the new element wins, and a `console.warn` fires in development builds. This makes remount-before-unmount (React strict mode, virtualized lists) deterministic.
+- Duplicate registration of one ID with a different element: the new element wins, and one `console.warn` fires per anchor ID per binding in development builds. This makes remount-before-unmount (React strict mode, virtualized lists) deterministic.
 - A stale entry (element no longer connected) reads as absent: `get` returns `null` when `element.isConnected` is false.
 - Lookup is `Map<string, Element>` plus a reverse `WeakMap<Element, string>` for ancestor walks. The reverse map can hold a stale entry after a new-element-wins replacement, so `ancestors()` cross-checks the forward map (`map.get(id) === element`) before it reports an entry.
 
@@ -209,7 +235,7 @@ On `pointermove` (and `pointerdown`, `pointerover`):
 
 The capture uses `pointerover`, not `pointerenter`: enter events do not bubble, so a document listener never receives one with an Element target.
 
-The dom constant `DEFAULT_MAX_SENT_ANCHORS` replaced the former export `DEFAULT_MAX_ANCHORS`, which remains as a deprecated alias. Core's `DEFAULT_MAX_ANCHORS` (8, the inbound validation cap from section 4.2) keeps its name.
+The dom layer uses an internal default of `4` sent anchors. `DomBindingOptions.maxAnchors` clamps consumer values to `1` through `8`. Core's `DEFAULT_MAX_ANCHORS` (8, the inbound validation cap from section 4.2) remains the protocol limit.
 
 On `pointerleave` of the document and on `blur` of the window: publish `cursor: null`.
 
@@ -333,7 +359,8 @@ Hooks:
 
 | Hook | Returns |
 |---|---|
-| `useCursorAnchor(id)` | ref callback that registers/unregisters the element |
+| `usePresenceClient({ factory, key? })` | a stable `PresenceClient` per `key` (page-lifetime registry) |
+| `useRemoteUsers()` | one entry per remote client: `clientId`, `user`, and `session` |
 | `useRemoteCursors()` | `ResolvedCursor[]` snapshot (useSyncExternalStore) |
 | `useRemoteCursorsSelector(select, isEqual?)` | a value derived from the snapshot, recomputed per frame |
 | `useCursorPresence()` | raw remote `CursorPresence[]` |
@@ -341,7 +368,7 @@ Hooks:
 | `useCursorClient()` | the client instance |
 | `useCursorContext()` | `[context, setContext]` |
 
-`useCursorAnchor` returns a stable ref callback; on element change it unregisters the old element and registers the new one. Cursor movement updates flow only to components using `useRemoteCursors`; the provider never rerenders the app tree per cursor frame.
+Anchors are declared in the DOM with the binding's anchor attribute. Cursor movement updates flow only to components using `useRemoteCursors`; the provider never rerenders the app tree per cursor frame.
 
 `useRemoteCursorsSelector` narrows that flow further. It applies `select` to each snapshot and rerenders the component only when `isEqual` reports the selected value changed. `isEqual` defaults to `Object.is`. When the value is equal, the hook returns the previous reference, so a derived array or set keeps its identity. The server snapshot is `select([])`, computed once. The caller must keep `select` and `isEqual` stable across renders, for example with `useCallback` or a module-level function.
 

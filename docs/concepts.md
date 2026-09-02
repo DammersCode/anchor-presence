@@ -8,7 +8,7 @@ A semantic anchor is a DOM element that the application registers under a stable
 
 The sender expresses cursor position relative to an anchor, not as an absolute screen coordinate. The receiver measures its own copy of that anchor and places the cursor there.
 
-Register an anchor with `dom`'s `AnchorRegistry`, or with the `useCursorAnchor` hook in React. See `docs/react.md` for the hook.
+Mark an anchor with the configured anchor attribute. The default attribute is `data-anchor`; a binding can configure another attribute with `anchorAttribute`.
 
 ## Anchor IDs
 

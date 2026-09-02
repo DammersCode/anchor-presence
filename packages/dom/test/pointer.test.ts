@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createAnchorRegistry } from "../src/registry";
 import type { AnchorRegistry } from "../src/registry";
-import { attachPointerSource, DEFAULT_MAX_ANCHORS, DEFAULT_MAX_SENT_ANCHORS } from "../src/pointer";
+import { attachPointerSource, DEFAULT_MAX_SENT_ANCHORS } from "../src/pointer";
 import type { CursorPosition, PointerInfo, PresenceClient } from "@anchor-presence/core";
 
 // jsdom has no layout engine and no PointerEvent constructor; stub both.
@@ -131,7 +131,7 @@ describe("attachPointerSource (spec §9)", () => {
     firePointerEvent("pointermove", deepest, { clientX: 10, clientY: 10 });
 
     const cursor = samples[0];
-    expect(cursor?.anchors).toHaveLength(DEFAULT_MAX_ANCHORS);
+    expect(cursor?.anchors).toHaveLength(DEFAULT_MAX_SENT_ANCHORS);
     expect(cursor?.anchors.map((a) => a.id)).toEqual(["level-5", "level-4", "level-3", "level-2"]);
 
     handle.detach();
@@ -297,11 +297,6 @@ describe("attachPointerSource (spec §9)", () => {
     expect(pointers).toEqual([{ type: "mouse" }, { type: "touch" }, { type: "pen" }, undefined, undefined]);
 
     handle.detach();
-  });
-
-  it("R-2: DEFAULT_MAX_ANCHORS stays exported as a deprecated alias of DEFAULT_MAX_SENT_ANCHORS", () => {
-    expect(DEFAULT_MAX_ANCHORS).toBe(DEFAULT_MAX_SENT_ANCHORS);
-    expect(DEFAULT_MAX_SENT_ANCHORS).toBe(4);
   });
 
   it("registers its teardown with the client and detach() removes listeners", () => {

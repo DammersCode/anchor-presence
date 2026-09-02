@@ -1,4 +1,3 @@
-import { useCursorAnchor } from "@anchor-presence/react";
 import { cn } from "../../lib/cn";
 import { Button } from "../ui/button";
 
@@ -37,10 +36,9 @@ function NavButton({
   collapsed: boolean;
   onClick: () => void;
 }) {
-  const anchorRef = useCursorAnchor(`nav.${item.id}`);
   return (
     <button
-      ref={anchorRef}
+      data-anchor={`nav.${item.id}`}
       data-testid={`anchor-nav.${item.id}`}
       onClick={onClick}
       aria-label={item.label}
@@ -70,14 +68,9 @@ export function Sidebar({
   mobileOpen,
   onCloseMobile,
 }: SidebarProps) {
-  const sidebarAnchor = useCursorAnchor("sidebar");
-  const brandAnchor = useCursorAnchor("sidebar.brand");
-  const toggleAnchor = useCursorAnchor("sidebar.toggle");
-  const navAnchor = useCursorAnchor("sidebar.nav");
-
   return (
     <aside
-      ref={sidebarAnchor}
+      data-anchor="sidebar"
       onClick={mobileOpen ? onCloseMobile : undefined}
       className={cn(
         "z-50 flex w-64 flex-col border-r border-gray-200 bg-white",
@@ -92,14 +85,14 @@ export function Sidebar({
       <div className="flex h-14 items-center justify-between px-3">
         {!collapsed && (
           <span
-            ref={brandAnchor}
+            data-anchor="sidebar.brand"
             className="truncate text-sm font-semibold text-gray-900"
           >
             Anchor Admin
           </span>
         )}
         <Button
-          ref={toggleAnchor}
+          data-anchor="sidebar.toggle"
           data-testid="anchor-sidebar.toggle"
           variant="ghost"
           size="icon"
@@ -119,7 +112,7 @@ export function Sidebar({
       </div>
 
       <nav
-        ref={navAnchor}
+        data-anchor="sidebar.nav"
         className="flex flex-1 flex-col gap-1 overflow-y-auto px-2 py-2"
       >
         {NAV_ITEMS.map((item) => {

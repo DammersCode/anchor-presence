@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useCursorAnchor, useCursorContext } from "@anchor-presence/react";
+import { useCursorContext } from "@anchor-presence/react";
 import { Sidebar } from "./components/dashboard/sidebar";
 import { Topbar } from "./components/dashboard/topbar";
 import { SettingsDialog } from "./components/dashboard/settings-dialog";
@@ -25,7 +25,6 @@ export default function App({ localViewState, interpolatorStyle, onInterpolatorS
   const [collapsed, setCollapsed] = useState(false);
   const [page, navigate] = usePageRoute();
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const mainAnchor = useCursorAnchor("main");
   const [, setContext] = useCursorContext<DemoContext>();
 
   // Single writer for both the published context and the local state the visibility policy reads.
@@ -53,7 +52,7 @@ export default function App({ localViewState, interpolatorStyle, onInterpolatorS
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar userName={localUserName} room={localRoom} onOpenSettings={() => setSettingsOpen(true)} />
 
-        <main ref={mainAnchor} className="flex-1 overflow-y-auto p-6">
+        <main data-anchor="main" className="flex-1 overflow-y-auto p-6">
           {page === "dashboard" && <DashboardPage />}
           {page === "orders" && <OrdersPage />}
           {page === "customers" && <CustomersPage />}

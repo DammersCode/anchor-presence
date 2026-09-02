@@ -2,7 +2,6 @@ import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { LiveCursorProvider } from "../src/provider";
 import {
-  useCursorAnchor,
   useCursorClient,
   useCursorContext,
   useCursorPresence,
@@ -11,14 +10,13 @@ import {
 } from "../src/hooks";
 
 function AllHooks() {
-  const ref = useCursorAnchor("a");
   const cursors = useRemoteCursors();
   const presence = useCursorPresence();
   const status = useCursorStatus();
   const client = useCursorClient();
   const [context] = useCursorContext();
   return (
-    <div ref={ref}>
+    <div data-anchor="a">
       <span data-testid="cursors">{cursors.length}</span>
       <span data-testid="presence">{presence.length}</span>
       <span data-testid="status">{status}</span>

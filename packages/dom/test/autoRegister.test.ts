@@ -1,42 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { CursorPresence, PresenceClient } from "@anchor-presence/core";
-import { createDomBinding } from "../src/binding";
+import { createAnchorRegistry } from "../src/registry";
+import { startAutoRegister } from "../src/autoRegister";
 import type { MutationObserverCtor } from "../src/scheduler";
 
-function makeFakeClient() {
-  const teardowns: Array<() => void> = [];
-  const client: PresenceClient<unknown, unknown> = {
-    clientId: "local",
-    session: "s",
-    updateLocalCursor: () => {},
-    setContext: () => {},
-    getContext: () => undefined,
-    setUser: () => {},
-    getUser: () => undefined,
-    getStatus: () => "connected",
-    subscribeStatus: () => () => {},
-    getRemoteSnapshot: () => [] as CursorPresence[],
-    subscribeRemote: () => () => {},
-    registerTeardown: (fn) => {
-      teardowns.push(fn);
-      return () => {
-        const index = teardowns.indexOf(fn);
-        if (index !== -1) teardowns.splice(index, 1);
-      };
-    },
-    dispose: () => {
-      for (const fn of teardowns.splice(0, teardowns.length)) fn();
-    },
-  };
-  return { client };
-}
-
-// deterministic MutationObserver: no microtask, fire sync() on demand
 type MoInstance = {
   observe: ReturnType<typeof vi.fn>;
   disconnect: ReturnType<typeof vi.fn>;
   callback: (records?: unknown[]) => void;
 };
+
 function makeMoStub() {
   const instances: MoInstance[] = [];
   function Ctor(this: unknown, callback: (records?: unknown[]) => void): MoInstance {
@@ -51,7 +23,7 @@ function makeMoStub() {
   return { ctor, instances, trigger };
 }
 
-describe("createDomBinding autoRegister", () => {
+describe("startAutoRegister", () => {
   beforeEach(() => {
     document.body.innerHTML = "";
   });
@@ -60,108 +32,144 @@ describe("createDomBinding autoRegister", () => {
     vi.restoreAllMocks();
   });
 
-  it("flag off: a [data-anchor] element is not resolvable and no registration observer runs", () => {
-    const { ctor, instances } = makeMoStub();
-    const { client } = makeFakeClient();
-    document.body.innerHTML = '<div data-anchor="a"></div>';
-
-    const binding = createDomBinding(client, { environment: { MutationObserverCtor: ctor } });
-
-    expect(binding.registry.get("a")).toBe(null);
-    expect(instances).toHaveLength(0);
-
-    binding.dispose();
-  });
-
-  it("flag on: a pre-existing [data-anchor] element is registered on creation", () => {
+  it("registers a pre-existing element with the configured attribute on start", () => {
     const { ctor } = makeMoStub();
-    const { client } = makeFakeClient();
+    const registry = createAnchorRegistry();
     document.body.innerHTML = '<div data-anchor="a"></div>';
     const el = document.querySelector("div");
 
-    const binding = createDomBinding(client, { autoRegister: true, environment: { MutationObserverCtor: ctor } });
+    const handle = startAutoRegister({ attribute: "data-anchor", registry, MutationObserverCtor: ctor });
 
-    expect(binding.registry.get("a")).toBe(el);
-    expect(binding.registry.ancestors(el!)).toContainEqual({ id: "a", element: el });
+    expect(registry.get("a")).toBe(el);
+    expect(registry.ancestors(el!)).toContainEqual({ id: "a", element: el });
 
-    binding.dispose();
+    handle.dispose();
   });
 
-  it("flag on: a [data-anchor] node appended at runtime is registered without a new binding", () => {
-    const { ctor, trigger } = makeMoStub();
-    const { client } = makeFakeClient();
+  it("supports a custom anchor attribute", () => {
+    const { ctor } = makeMoStub();
+    const registry = createAnchorRegistry();
+    const el = document.createElement("div");
+    el.setAttribute("data-presence", "custom");
+    document.body.append(el);
 
-    const binding = createDomBinding(client, { autoRegister: true, environment: { MutationObserverCtor: ctor } });
+    const handle = startAutoRegister({ attribute: "data-presence", registry, MutationObserverCtor: ctor });
+
+    expect(registry.get("custom")).toBe(el);
+
+    handle.dispose();
+  });
+
+  it("treats id as a normal anchor attribute when configured", () => {
+    const { ctor, trigger } = makeMoStub();
+    const registry = createAnchorRegistry();
+    const el = document.createElement("div");
+    el.id = "a";
+    document.body.append(el);
+
+    const handle = startAutoRegister({ attribute: "id", registry, MutationObserverCtor: ctor });
+    expect(registry.get("a")).toBe(el);
+
+    el.id = "b";
+    trigger();
+
+    expect(registry.get("a")).toBe(null);
+    expect(registry.get("b")).toBe(el);
+
+    handle.dispose();
+  });
+
+  it("ignores elements with empty or whitespace-only attribute values and warns in development", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { ctor } = makeMoStub();
+    const registry = createAnchorRegistry();
+    const empty = document.createElement("div");
+    empty.setAttribute("data-anchor", "");
+    const whitespace = document.createElement("div");
+    whitespace.setAttribute("data-anchor", "   ");
+    document.body.append(empty, whitespace);
+
+    const handle = startAutoRegister({ attribute: "data-anchor", registry, MutationObserverCtor: ctor });
+
+    expect(registry.get("")).toBe(null);
+    expect(registry.get("   ")).toBe(null);
+    expect(warnSpy).toHaveBeenCalledTimes(2);
+
+    handle.dispose();
+  });
+
+  it("registers an element appended at runtime after the observer fires", () => {
+    const { ctor, trigger } = makeMoStub();
+    const registry = createAnchorRegistry();
+
+    const handle = startAutoRegister({ attribute: "data-anchor", registry, MutationObserverCtor: ctor });
 
     const el = document.createElement("div");
     el.setAttribute("data-anchor", "b");
     document.body.append(el);
     trigger();
 
-    expect(binding.registry.get("b")).toBe(el);
+    expect(registry.get("b")).toBe(el);
 
-    binding.dispose();
+    handle.dispose();
   });
 
-  it("flag on: removing a [data-anchor] node unregisters it", () => {
+  it("unregisters an element when its attribute is removed", () => {
     const { ctor, trigger } = makeMoStub();
-    const { client } = makeFakeClient();
+    const registry = createAnchorRegistry();
     document.body.innerHTML = '<div data-anchor="a"></div>';
     const el = document.querySelector("div")!;
 
-    const binding = createDomBinding(client, { autoRegister: true, environment: { MutationObserverCtor: ctor } });
-    expect(binding.registry.get("a")).toBe(el);
+    const handle = startAutoRegister({ attribute: "data-anchor", registry, MutationObserverCtor: ctor });
+    expect(registry.get("a")).toBe(el);
+
+    el.removeAttribute("data-anchor");
+    trigger();
+
+    expect(registry.get("a")).toBe(null);
+
+    handle.dispose();
+  });
+
+  it("unregisters an element when it is removed from the DOM", () => {
+    const { ctor, trigger } = makeMoStub();
+    const registry = createAnchorRegistry();
+    document.body.innerHTML = '<div data-anchor="a"></div>';
+    const el = document.querySelector("div")!;
+
+    const handle = startAutoRegister({ attribute: "data-anchor", registry, MutationObserverCtor: ctor });
+    expect(registry.get("a")).toBe(el);
 
     el.remove();
     trigger();
 
-    expect(binding.registry.get("a")).toBe(null);
+    expect(registry.get("a")).toBe(null);
 
-    binding.dispose();
+    handle.dispose();
   });
 
-  it("flag on: changing the attribute value drops the old anchor and adds the new one", () => {
+  it("changes the registered id when the attribute value changes", () => {
     const { ctor, trigger } = makeMoStub();
-    const { client } = makeFakeClient();
+    const registry = createAnchorRegistry();
     document.body.innerHTML = '<div data-anchor="a"></div>';
     const el = document.querySelector("div")!;
 
-    const binding = createDomBinding(client, { autoRegister: true, environment: { MutationObserverCtor: ctor } });
-    expect(binding.registry.get("a")).toBe(el);
+    const handle = startAutoRegister({ attribute: "data-anchor", registry, MutationObserverCtor: ctor });
+    expect(registry.get("a")).toBe(el);
 
     el.setAttribute("data-anchor", "a2");
     trigger();
 
-    expect(binding.registry.get("a")).toBe(null);
-    expect(binding.registry.get("a2")).toBe(el);
+    expect(registry.get("a")).toBe(null);
+    expect(registry.get("a2")).toBe(el);
 
-    binding.dispose();
+    handle.dispose();
   });
 
-  it("explicit register wins over auto for the same element; explicit unregister re-allows auto", () => {
-    const { ctor } = makeMoStub();
-    const { client } = makeFakeClient();
-    document.body.innerHTML = '<div data-anchor="auto1"></div>';
-    const el = document.querySelector("div")!;
-
-    const binding = createDomBinding(client, { autoRegister: true, environment: { MutationObserverCtor: ctor } });
-    expect(binding.registry.get("auto1")).toBe(el);
-
-    const unreg = binding.registry.register("explicit1", el);
-    expect(binding.registry.get("explicit1")).toBe(el);
-    expect(binding.registry.get("auto1")).toBe(null);
-
-    unreg();
-    expect(binding.registry.get("auto1")).toBe(el);
-    expect(binding.registry.get("explicit1")).toBe(null);
-
-    binding.dispose();
-  });
-
-  it("collision: two [data-anchor] with the same value do not throw; the registry keeps one", () => {
+  it("keeps duplicate ids deterministic: newest registration wins and warns once in development", () => {
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     const { ctor } = makeMoStub();
-    const { client } = makeFakeClient();
+    const registry = createAnchorRegistry();
 
     const el1 = document.createElement("div");
     el1.setAttribute("data-anchor", "dup");
@@ -169,49 +177,66 @@ describe("createDomBinding autoRegister", () => {
     el2.setAttribute("data-anchor", "dup");
     document.body.append(el1, el2);
 
-    const binding = createDomBinding(client, { autoRegister: true, environment: { MutationObserverCtor: ctor } });
+    const handle = startAutoRegister({ attribute: "data-anchor", registry, MutationObserverCtor: ctor });
 
-    expect(() => binding.registry.get("dup")).not.toThrow();
-    expect(binding.registry.get("dup")).toBe(el2);
-    expect(warnSpy).toHaveBeenCalled();
+    expect(registry.get("dup")).toBe(el2);
+    expect(warnSpy).toHaveBeenCalledTimes(1);
 
-    binding.dispose();
+    handle.dispose();
   });
 
-  it("dispose: auto anchors are unregistered and the observer disconnected; explicit anchors remain", () => {
+  it("reclaims a duplicate id for the older element when the newer element is removed", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { ctor, trigger } = makeMoStub();
+    const registry = createAnchorRegistry();
+
+    const el1 = document.createElement("div");
+    el1.setAttribute("data-anchor", "dup");
+    const el2 = document.createElement("div");
+    el2.setAttribute("data-anchor", "dup");
+    document.body.append(el1, el2);
+
+    const handle = startAutoRegister({ attribute: "data-anchor", registry, MutationObserverCtor: ctor });
+    expect(registry.get("dup")).toBe(el2);
+
+    el2.remove();
+    trigger();
+
+    expect(registry.get("dup")).toBe(el1);
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+
+    handle.dispose();
+  });
+
+  it("dispose unregisters auto anchors and disconnects the observer", () => {
     const { ctor, instances } = makeMoStub();
-    const { client } = makeFakeClient();
-    document.body.innerHTML = '<div data-anchor="auto1"></div>';
-    const autoEl = document.querySelector("div")!;
-    const explicitEl = document.createElement("section");
-    document.body.append(explicitEl);
+    const registry = createAnchorRegistry();
+    document.body.innerHTML = '<div data-anchor="a"></div>';
+    const el = document.querySelector("div")!;
 
-    const binding = createDomBinding(client, { autoRegister: true, environment: { MutationObserverCtor: ctor } });
-    expect(binding.registry.get("auto1")).toBe(autoEl);
-    const unreg = binding.registry.register("explicit1", explicitEl);
+    const handle = startAutoRegister({ attribute: "data-anchor", registry, MutationObserverCtor: ctor });
+    expect(registry.get("a")).toBe(el);
 
-    binding.dispose();
+    handle.dispose();
 
-    expect(binding.registry.get("auto1")).toBe(null);
+    expect(registry.get("a")).toBe(null);
     expect(instances[0]?.disconnect).toHaveBeenCalled();
-    expect(binding.registry.get("explicit1")).toBe(explicitEl);
-
-    unreg();
   });
 
-  it("idempotent remount: create -> dispose -> create makes one observer each and no leaked anchors", () => {
+  it("idempotent remount: start -> dispose -> start leaves no leaked anchors", () => {
     const { ctor, instances } = makeMoStub();
     document.body.innerHTML = '<div data-anchor="a"></div>';
     const el = document.querySelector("div")!;
 
-    const b1 = createDomBinding(makeFakeClient().client, { autoRegister: true, environment: { MutationObserverCtor: ctor } });
-    expect(b1.registry.get("a")).toBe(el);
-    b1.dispose();
-    expect(b1.registry.get("a")).toBe(null);
+    const registry = createAnchorRegistry();
+    const h1 = startAutoRegister({ attribute: "data-anchor", registry, MutationObserverCtor: ctor });
+    expect(registry.get("a")).toBe(el);
+    h1.dispose();
+    expect(registry.get("a")).toBe(null);
 
-    const b2 = createDomBinding(makeFakeClient().client, { autoRegister: true, environment: { MutationObserverCtor: ctor } });
-    expect(b2.registry.get("a")).toBe(el);
-    b2.dispose();
+    const h2 = startAutoRegister({ attribute: "data-anchor", registry, MutationObserverCtor: ctor });
+    expect(registry.get("a")).toBe(el);
+    h2.dispose();
 
     expect(instances).toHaveLength(2);
     expect(instances[0]?.disconnect).toHaveBeenCalled();

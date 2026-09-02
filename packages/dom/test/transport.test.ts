@@ -242,4 +242,18 @@ describe("createWebSocketTransport", () => {
     FakeWebSocket.fire(ws, "close");
     expect(transport.getStatus?.()).toBe("disconnected");
   });
+
+  it("builds the default URL from host, port, and path", () => {
+    const transport = createWebSocketTransport({ host: "relay.test", port: 9000, path: "/?room=main", WebSocketCtor: FakeWebSocket });
+    void transport.connect?.();
+
+    expect(lastSocket().url).toBe("ws://relay.test:9000/?room=main");
+  });
+
+  it("uses / as the default path when no query is supplied", () => {
+    const transport = createWebSocketTransport({ host: "relay.test", port: 9000, WebSocketCtor: FakeWebSocket });
+    void transport.connect?.();
+
+    expect(lastSocket().url).toBe("ws://relay.test:9000/");
+  });
 });

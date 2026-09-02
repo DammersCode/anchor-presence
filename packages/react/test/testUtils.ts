@@ -1,5 +1,5 @@
 import type { ConnectionStatus, CursorPresence, PresenceClient } from "@anchor-presence/core";
-import type { AnchorRegistry, DomBinding, ResolvedCursor } from "@anchor-presence/dom";
+import type { DomBinding, ResolvedCursor } from "@anchor-presence/dom";
 
 // react's `act` needs this flag set; every jsdom test importing testUtils gets it without a shared vitest setupFiles entry.
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -64,53 +64,15 @@ export function makeFakeClient<TContext = unknown, TUser = unknown>(): {
   };
 }
 
-export function makeFakeRegistry(): AnchorRegistry & { registrations: Map<string, Element> } {
-  const registrations = new Map<string, Element>();
-  const changeListeners = new Set<() => void>();
-
-  return {
-    registrations,
-    register(id, element) {
-      registrations.set(id, element);
-      for (const listener of changeListeners) listener();
-      let active = true;
-      return () => {
-        if (!active) return;
-        active = false;
-        if (registrations.get(id) === element) {
-          registrations.delete(id);
-          for (const listener of changeListeners) listener();
-        }
-      };
-    },
-    get(id) {
-      return registrations.get(id) ?? null;
-    },
-    has(id) {
-      return registrations.has(id);
-    },
-    ancestors() {
-      return [];
-    },
-    onChange(listener) {
-      changeListeners.add(listener);
-      return () => changeListeners.delete(listener);
-    },
-  };
-}
-
 export function makeFakeBinding<TContext = unknown, TUser = unknown>(): {
   binding: DomBinding<TContext, TUser>;
   publish: (next: ResolvedCursor<TContext, TUser>[]) => void;
-  registry: AnchorRegistry & { registrations: Map<string, Element> };
   listenerCount: () => number;
 } {
-  const registry = makeFakeRegistry();
   let snapshot: ResolvedCursor<TContext, TUser>[] = [];
   const listeners = new Set<() => void>();
 
   const binding: DomBinding<TContext, TUser> = {
-    registry,
     invalidate: () => {},
     getSnapshot: () => snapshot,
     subscribe(listener) {
@@ -124,7 +86,6 @@ export function makeFakeBinding<TContext = unknown, TUser = unknown>(): {
 
   return {
     binding,
-    registry,
     publish(next) {
       snapshot = next;
       for (const listener of listeners) listener();

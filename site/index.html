@@ -248,7 +248,7 @@ h2{font-weight:800;font-size:clamp(28px,4.2vw,44px);letter-spacing:-.03em;margin
     <span class="pill"><span class="d"></span>Real-time presence for the web</span>
     <h1>Live cursors that stay<br>on the <span class="g">right element</span>.</h1>
     <p class="lead">Anchor Presence is a live-cursor layer for web apps. It shows where your teammates are looking and clicking, and it keeps every cursor on the correct element, even when their layout, sidebar, or screen size differs from yours.</p>
-    <div class="install"><span><span class="pk">$</span> npm i @dammers/anchor-presence</span><span class="cp" data-copy="npm i @dammers/anchor-presence">copy</span></div>
+    <div class="install"><span><span class="pk">$</span> npm i @anchor-presence/core @anchor-presence/dom @anchor-presence/react</span><span class="cp" data-copy="npm i @anchor-presence/core @anchor-presence/dom @anchor-presence/react">copy</span></div>
     <p class="agentlbl">Your AI agent can wire it up too</p>
     <div class="install agent"><span><span class="pk">$</span> npx skills add DammersCode/anchor-presence</span><span class="cp" data-copy="npx skills add DammersCode/anchor-presence">copy</span></div>
     <div class="cta"><a class="btn" href="#run">Try it out</a><a class="u" href="#how">How it works &rarr;</a></div>
@@ -328,9 +328,9 @@ h2{font-weight:800;font-size:clamp(28px,4.2vw,44px);letter-spacing:-.03em;margin
       <div class="t vcenter reveal">
         <span class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h10M4 17h7"/></svg>Fallback</span>
         <div class="fb" aria-label="Fallback tiers">
-          <div class="fb-step hot"><span class="fb-n">1</span><span class="fb-t">Element</span><span class="fb-d">exact</span></div>
-          <div class="fb-step"><span class="fb-n">2</span><span class="fb-t">Viewport</span><span class="fb-d">screen</span></div>
-          <div class="fb-step"><span class="fb-n">3</span><span class="fb-t">Hidden</span><span class="fb-d">off-screen</span></div>
+          <div class="fb-step hot"><span class="fb-n">1</span><span class="fb-t">Anchor</span><span class="fb-d">exact / parent</span></div>
+          <div class="fb-step"><span class="fb-n">2</span><span class="fb-t">Viewport</span><span class="fb-d">fallback</span></div>
+          <div class="fb-step"><span class="fb-n">3</span><span class="fb-t">Hidden</span><span class="fb-d">policy</span></div>
         </div>
       </div>
 
@@ -355,7 +355,7 @@ h2{font-weight:800;font-size:clamp(28px,4.2vw,44px);letter-spacing:-.03em;margin
       <div class="t reveal">
         <span class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0Z"/><path d="M9 9h.01M15 9h.01M9 15c1.5 1 4.5 1 6 0"/></svg>React adapter</span>
         <h3>A thin React adapter</h3>
-        <p>A provider, 7 hooks, and optional cursor components. The engine itself runs without React.</p>
+        <p>A provider, 8 hooks, and optional cursor components. The engine itself runs without React.</p>
       </div>
       <div class="t wide agent reveal">
         <span class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M6 6l2 2m8 8 2 2M6 18l2-2m8-8 2-2"/></svg>Agent skill</span>
@@ -367,7 +367,7 @@ h2{font-weight:800;font-size:clamp(28px,4.2vw,44px);letter-spacing:-.03em;margin
         <span class="lab">Get started</span>
         <h3>Add live cursors in minutes</h3>
         <p>One provider, one hook, one layer. Your transport, your rendering.</p>
-        <div class="install"><span><span class="pk">$</span> npm i @dammers/anchor-presence</span><span class="cp" data-copy="npm i @dammers/anchor-presence">copy</span></div>
+        <div class="install"><span><span class="pk">$</span> npm i @anchor-presence/core @anchor-presence/dom @anchor-presence/react</span><span class="cp" data-copy="npm i @anchor-presence/core @anchor-presence/dom @anchor-presence/react">copy</span></div>
       </div>
     </div>
   </div>
@@ -383,18 +383,20 @@ h2{font-weight:800;font-size:clamp(28px,4.2vw,44px);letter-spacing:-.03em;margin
     </div>
     <div class="code reveal">
       <div class="ch"><span>no raw pixels cross the wire</span><span>ts</span></div>
-<pre><span class="c">// sender: register the elements you want to share</span>
-<span class="k">const</span> <span class="k">client</span> = <span class="f">createPresenceClient</span>({ <span class="k">transport</span>, <span class="k">user</span>: { <span class="k">name</span>: <span class="s">"Phil"</span> } })
-<span class="f">registerAnchor</span>(<span class="s">"stats.revenue"</span>, revenueEl)
-<span class="f">registerAnchor</span>(<span class="s">"orders.row:10482"</span>, rowEl)
+<pre><span class="c">// sender: mark the elements you want to share</span>
+<span class="c">// &lt;div data-anchor="stats.revenue"&gt;…&lt;/div&gt;</span>
+<span class="c">// &lt;tr data-anchor="orders.row:10482"&gt;…&lt;/tr&gt;</span>
 
-<span class="c">// a pointer move → a semantic address, never a screen coordinate</span>
-<span class="k">client</span>.<span class="f">updateLocalCursor</span>({ <span class="k">anchor</span>: <span class="s">"stats.revenue"</span>, <span class="k">u</span>: <span class="s">0.42</span>, <span class="k">v</span>: <span class="s">0.88</span> })
+<span class="k">const</span> client = <span class="f">createPresenceClient</span>({ transport, user: { name: <span class="s">"Phil"</span> } })
+<span class="f">createDomBinding</span>(client)
+
+<span class="c">// a pointer move becomes a semantic address, never a screen coordinate</span>
+<span class="c">// { anchors: [{ id: "stats.revenue", u: 0.42, v: 0.88 }], viewport: { u, v } }</span>
 
 <span class="c">// receiver: same address, different layout → its own pixels</span>
-<span class="k">client</span>.<span class="f">subscribe</span>((remote) =&gt; {
-  <span class="k">const</span> { x, y, tier } = <span class="f">resolveForMe</span>(remote)   <span class="c">// "anchor" | "viewport" | "hidden"</span>
-  <span class="f">renderCursor</span>(remote.user, x, y)               <span class="c">// x,y are THIS window's pixels</span>
+<span class="k">const</span> binding = <span class="f">createDomBinding</span>(theirClient)
+binding.<span class="f">subscribe</span>(() =&gt; {
+  <span class="k">for</span> (<span class="k">const</span> c <span class="k">of</span> binding.<span class="f">getSnapshot</span>()) <span class="f">renderCursor</span>(c.user, c.x, c.y)
 })</pre>
     </div>
   </div>
@@ -412,7 +414,7 @@ h2{font-weight:800;font-size:clamp(28px,4.2vw,44px);letter-spacing:-.03em;margin
         <div class="it"><span class="n">05</span><div><b>Adapters stay thin</b><span>The framework layer never owns the engine’s state.</span></div></div>
         <div class="it"><span class="n">06</span><div><b>The channel is swappable</b><span>The engine imports no transport.</span></div></div>
         <div class="it"><span class="n">07</span><div><b>Reflow costs nothing</b><span>A local layout change moves a still cursor with zero packets.</span></div></div>
-        <div class="it"><span class="n">08</span><div><b>Messages can’t run code</b><span>Labels resolve only against elements you registered.</span></div></div>
+        <div class="it"><span class="n">08</span><div><b>Messages can’t run code</b><span>Anchor IDs resolve only against elements marked with the binding’s anchor attribute.</span></div></div>
         <div class="it"><span class="n">09</span><div><b>You own the rendering</b><span>No cursor component is required.</span></div></div>
         <div class="it"><span class="n">10</span><div><b>Built to grow</b><span>The boundary is designed to extend without touching the core.</span></div></div>
       </div>

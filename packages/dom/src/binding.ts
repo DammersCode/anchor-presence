@@ -2,7 +2,6 @@
 
 import type { InterpolatorFactory, PresenceClient } from "@anchor-presence/core";
 import { createAnchorRegistry } from "./registry";
-import type { AnchorRegistry } from "./registry";
 import { attachPointerSource } from "./pointer";
 import { createGeometryScheduler } from "./scheduler";
 import type {
@@ -12,11 +11,10 @@ import type {
   ResizeObserverCtor,
 } from "./scheduler";
 import { startAutoRegister } from "./autoRegister";
-import type { AutoRegisterHandle, AutoRegisterOptions } from "./autoRegister";
+import type { AutoRegisterOptions } from "./autoRegister";
 import { RemoteResolver } from "./resolver";
 import type { ResolvedCursor, VisibilityPolicy } from "./resolver";
 
-export type { AnchorRegistry } from "./registry";
 export type { ResolvedCursor, ResolutionTier, VisibilityPolicy } from "./resolver";
 
 /** How remote cursors turn into screen positions. */
@@ -36,18 +34,21 @@ export type EnvironmentOptions = {
   MutationObserverCtor?: MutationObserverCtor;
 };
 
+const ANCHOR_ATTRIBUTE_PATTERN = /^[A-Za-z][A-Za-z0-9]*(-[A-Za-z0-9]+)*$/;
+const DEFAULT_ANCHOR_ATTRIBUTE = "data-anchor";
+const DEFAULT_MAX_ANCHORS = 4;
+const PROTOCOL_MAX_ANCHORS = 8;
+
 export type DomBindingOptions<TContext = unknown, TUser = unknown> = {
+  /** Attribute whose value is the anchor ID. Default `"data-anchor"`. */
+  anchorAttribute?: string;
+  /** Maximum anchors in the outbound fallback chain. Default `4`, clamped to `1` through `8`. */
   maxAnchors?: number;
   resolution?: ResolutionOptions<TContext, TUser>;
   environment?: EnvironmentOptions;
-  /** Watch the DOM for `[data-anchor]` elements and register/unregister them automatically. Default false. */
-  autoRegister?: boolean;
-  /** Attribute to watch for auto-registration. Default "data-anchor". */
-  autoRegisterAttribute?: string;
 };
 
 export type DomBinding<TContext = unknown, TUser = unknown> = {
-  registry: AnchorRegistry;
   invalidate(reason?: string): void;
   getSnapshot(): ResolvedCursor<TContext, TUser>[];
   subscribe(listener: () => void): () => void;
@@ -61,40 +62,27 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
   options: DomBindingOptions<TContext, TUser> = {},
 ): DomBinding<TContext, TUser> {
   const { resolution = {}, environment = {} } = options;
-  const realRegistry = createAnchorRegistry();
-  const explicit = new WeakSet<Element>();
-  let autoHandle: AutoRegisterHandle | undefined;
-
-  // when the flag is on, the consumer-facing registry marks manual registrations so the
-  // auto-observer never owns an explicitly registered element (explicit wins)
-  const registry: AnchorRegistry = options.autoRegister
-    ? {
-        ...realRegistry,
-        register(id, element) {
-          explicit.add(element);
-          autoHandle?.resync();
-          const unregister = realRegistry.register(id, element);
-          return () => {
-            unregister();
-            explicit.delete(element);
-            autoHandle?.resync();
-          };
-        },
-      }
-    : realRegistry;
-
-  if (options.autoRegister) {
-    const autoOptions: AutoRegisterOptions = {
-      registry: realRegistry,
-      explicit,
-      onAutoRegistered: () => {},
-      onAutoUnregistered: () => {},
-    };
-    if (options.autoRegisterAttribute !== undefined) autoOptions.attribute = options.autoRegisterAttribute;
-    if (environment.root !== undefined) autoOptions.root = environment.root;
-    if (environment.MutationObserverCtor !== undefined) autoOptions.MutationObserverCtor = environment.MutationObserverCtor;
-    autoHandle = startAutoRegister(autoOptions);
+  const anchorAttribute = options.anchorAttribute ?? DEFAULT_ANCHOR_ATTRIBUTE;
+  if (!ANCHOR_ATTRIBUTE_PATTERN.test(anchorAttribute)) {
+    throw new TypeError(`anchorAttribute must be a valid DOM attribute name, got "${anchorAttribute}"`);
   }
+
+  let maxAnchors = DEFAULT_MAX_ANCHORS;
+  if (options.maxAnchors !== undefined) {
+    if (!Number.isInteger(options.maxAnchors) || !Number.isFinite(options.maxAnchors)) {
+      throw new TypeError(`maxAnchors must be a finite integer, got ${String(options.maxAnchors)}`);
+    }
+    maxAnchors = Math.min(PROTOCOL_MAX_ANCHORS, Math.max(1, options.maxAnchors));
+  }
+
+  const registry = createAnchorRegistry();
+  const autoOptions: AutoRegisterOptions = {
+    attribute: anchorAttribute,
+    registry,
+  };
+  if (environment.root !== undefined) autoOptions.root = environment.root;
+  if (environment.MutationObserverCtor !== undefined) autoOptions.MutationObserverCtor = environment.MutationObserverCtor;
+  const autoHandle = startAutoRegister(autoOptions);
 
   const resolver = new RemoteResolver<TContext, TUser>({ registry, ...resolution });
 
@@ -133,7 +121,7 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
   });
 
   const pointerHandle = attachPointerSource(client, registry, {
-    maxAnchors: options.maxAnchors,
+    maxAnchors,
     root: environment.root,
     window: environment.window,
     getCachedRect: (element) => scheduler.getCachedRect(element),
@@ -156,7 +144,6 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
   unregisterTeardown = client.registerTeardown(dispose);
 
   return {
-    registry,
     invalidate: (reason) => scheduler.invalidate(reason),
     getSnapshot: () => snapshot,
     subscribe(listener) {

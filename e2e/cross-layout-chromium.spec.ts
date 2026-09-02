@@ -108,7 +108,7 @@ test.describe("cross-layout scenarios", () => {
     await expectAnchorNear(receiver, senderName, "stats.orders", 0.5, 0.5);
 
     await receiver.reload();
-    await expect(receiver.locator('[data-anchor="topbar.presence.count"]')).toBeVisible({ timeout: 15_000 });
+    await expect(receiver.locator('[data-testid="presence-count"]')).toBeVisible({ timeout: 15_000 });
 
     // The receiver only recovers presence once a fresh packet arrives (session-based recovery, no
     // heartbeat wait), so keep the sender moving right away rather than waiting on presence count first.

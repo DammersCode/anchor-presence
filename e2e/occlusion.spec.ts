@@ -55,7 +55,7 @@ test.describe("clipped anchor occlusion", () => {
 
     const remoteCursor = receiver.locator(`[data-testid="remote-cursor"][data-cursor-name="${senderName}"]`);
     const outOfView = receiver.locator(`[data-testid="presence-out-of-view"][data-cursor-name="${senderName}"]`);
-    await expect(receiver.locator('[data-anchor="topbar.presence.count"]')).toHaveText(/[1-9]\d* online/);
+    await expect(receiver.locator('[data-testid="presence-count"]')).toHaveText(/[1-9]\d* online/);
     await expect(async () => {
       expect((await remoteCursor.count()) + (await outOfView.count())).toBeGreaterThan(0);
     }).toPass({ timeout: 5_000, intervals: [50, 100, 200] });

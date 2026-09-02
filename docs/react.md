@@ -1,6 +1,6 @@
 # React Adapter
 
-`@anchor-presence/react` provides a provider component, seven hooks, and two optional cursor components. It holds no engine state; it subscribes to `core` and `dom` stores with `useSyncExternalStore`.
+`@anchor-presence/react` provides a provider component, eight hooks, and two optional cursor components. It holds no engine state; it subscribes to `core` and `dom` stores with `useSyncExternalStore`.
 
 ## Install
 
@@ -41,10 +41,13 @@ function App() {
 }
 ```
 
-`bindingOptions` configures the automatically created binding. It has three parts:
+`bindingOptions` configures the automatically created binding. The binding always watches the configured anchor attribute. The default attribute is `data-anchor`; pass `bindingOptions.anchorAttribute` to use another existing attribute, for example `data-presence` or `id`.
+
+It has four parts:
 
 ```ts
 type DomBindingOptions<TContext = unknown, TUser = unknown> = {
+  anchorAttribute?: string;
   maxAnchors?: number;
   resolution?: { visibilityPolicy?; interpolatorFactory?; hitTest? };
   environment?: { root?; window?; raf?; caf?; ResizeObserverCtor?; MutationObserverCtor? };
@@ -59,7 +62,8 @@ Pass `client={null}` during server-side rendering. See "SSR" below.
 
 | Hook | Returns |
 |---|---|
-| `useCursorAnchor(id)` | a ref callback that registers and unregisters the element |
+| `usePresenceClient({ factory, key? })` | a stable `PresenceClient` per `key` |
+| `useRemoteUsers()` | one entry per remote client: `clientId`, `user`, and `session` |
 | `useRemoteCursors()` | `ResolvedCursor[]` snapshot |
 | `useRemoteCursorsSelector(select, isEqual?)` | a value derived from the snapshot |
 | `useCursorPresence()` | raw remote `CursorPresence[]` |
@@ -67,37 +71,25 @@ Pass `client={null}` during server-side rendering. See "SSR" below.
 | `useCursorClient()` | the `PresenceClient` instance, or `null` |
 | `useCursorContext()` | `[context, setContext]` |
 
-### useCursorAnchor
+### Anchor elements
 
-```ts
-function useCursorAnchor(id: string): (element: Element | null) => void;
-```
-
-Returns a stable ref callback. Attach it to any DOM element to register it as a semantic anchor under `id`. On element change, the hook unregisters the old element and registers the new one. On `id` change, it re-registers the current element under the new ID.
+Anchors are declared with the binding's anchor attribute.
 
 ```tsx
-function DashboardButton() {
-  const anchorRef = useCursorAnchor("nav.dashboard");
-  return <button ref={anchorRef}>Dashboard</button>;
-}
+<button data-anchor="nav.dashboard">Dashboard</button>
 ```
 
-### useCursorAnchor in a list row
-
-Give each row a unique anchor ID built from its own data. This keeps every row addressable, even in a virtualized or paginated list.
+In list rows, give each row a unique anchor ID built from its own data.
 
 ```tsx
-function OrderRow({ order }: { order: Order }) {
-  const anchorRef = useCursorAnchor(`orders.row:${order.id}.actions`);
-  return (
-    <tr>
-      <td>{order.customer}</td>
-      <td ref={anchorRef}>
-        <button onClick={() => onView(order.id)}>View</button>
-      </td>
-    </tr>
-  );
-}
+<tr data-anchor={`orders.row:${order.id}`}>
+  <td>{order.customer}</td>
+  <td>
+    <button data-anchor={`orders.row:${order.id}.actions`} onClick={() => onView(order.id)}>
+      View
+    </button>
+  </td>
+</tr>
 ```
 
 ### useRemoteCursors

@@ -14,21 +14,16 @@ Install the three packages.
 bun add @anchor-presence/react @anchor-presence/dom @anchor-presence/core
 ```
 
-Create a client with a transport. Register one anchor with `useCursorAnchor`. Then render the provider and the cursor layer.
+Create a client with a transport. Mark one element with `data-anchor`. Then render the provider and the cursor layer.
 
 ```tsx
 import { createPresenceClient } from "@anchor-presence/core";
-import {
-  LiveCursorProvider,
-  useCursorAnchor,
-  CursorLayer,
-} from "@anchor-presence/react";
+import { LiveCursorProvider, CursorLayer } from "@anchor-presence/react";
 
 const client = createPresenceClient({ transport: myTransport });
 
 function DashboardButton() {
-  const anchorRef = useCursorAnchor("nav.dashboard");
-  return <button ref={anchorRef}>Dashboard</button>;
+  return <button data-anchor="nav.dashboard">Dashboard</button>;
 }
 
 function App() {
@@ -154,7 +149,7 @@ The sender never measures the DOM of the receiver. It sends a semantic anchor ID
 | Capability | React |
 |---|---|
 | Semantic anchors | ✅ |
-| `[data-anchor]` auto-registration (opt-in `autoRegister` flag) | ✅ |
+| `[data-anchor]` anchors with always-on auto-registration and configurable `anchorAttribute` | ✅ |
 | Fallback chains | ✅ |
 | Viewport fallback | ✅ |
 | UI context visibility policies (route- or dialog-aware, application-defined) | ✅ |

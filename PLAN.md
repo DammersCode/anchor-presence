@@ -77,7 +77,7 @@ Acceptance for Phase 3: react imports only core/dom/react itself (grep gate), al
 ### Phase 4 — Demo + server (worker D, parallel with Phase 3)
 
 T11 Bun relay (`apps/server/index.ts`): room broadcast, ~50 lines, no message inspection.
-T12 Demo dashboard (`apps/demo`): Vite React TS, Tailwind, shadcn-style admin dashboard (collapsible sidebar, topbar, stat cards, orders table with per-row anchors, settings dialog), `WebSocketTransport` example, colored SVG cursor renderer with text-node name labels, anchors registered via `useCursorAnchor`.
+T12 Demo dashboard (`apps/demo`): Vite React TS, Tailwind, shadcn-style admin dashboard (collapsible sidebar, topbar, stat cards, orders table with per-row anchors, settings dialog), `createWebSocketTransport` usage, colored SVG cursor renderer with text-node name labels, anchors declared with `data-anchor`.
 - Acceptance: two browser windows at different sizes/sidebar states show semantically correct cursors.
 
 ### Phase 5 — Cross-layout browser tests (worker E, after 2-4)

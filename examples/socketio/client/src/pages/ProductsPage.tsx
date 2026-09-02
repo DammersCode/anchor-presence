@@ -1,4 +1,3 @@
-import { useCursorAnchor } from "@anchor-presence/react";
 import { Card, CardContent } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { products, type Product } from "../data/products";
@@ -26,10 +25,9 @@ function AnchoredProductCard({
   product: Product;
   index: number;
 }) {
-  const cardAnchor = useCursorAnchor(`products.card:${index}`);
   return (
     <Card
-      ref={cardAnchor}
+      data-anchor={`products.card:${index}`}
       data-testid={`anchor-products.card:${index}`}
       className="relative"
     >
@@ -41,7 +39,7 @@ function AnchoredProductCard({
   );
 }
 
-// No useCursorAnchor call: remote cursors over this card fall back to normalized viewport coordinates.
+// No anchor attribute: remote cursors over this card fall back to normalized viewport coordinates.
 function PlainProductCard({ product }: { product: Product }) {
   return (
     <Card className="relative">

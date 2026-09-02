@@ -12,13 +12,12 @@ bun add @anchor-presence/react @anchor-presence/dom @anchor-presence/core
 
 ```tsx
 import { createPresenceClient } from "@anchor-presence/core";
-import { LiveCursorProvider, useCursorAnchor, CursorLayer } from "@anchor-presence/react";
+import { LiveCursorProvider, CursorLayer } from "@anchor-presence/react";
 
 const client = createPresenceClient({ transport: myTransport });
 
 function DashboardButton() {
-  const anchorRef = useCursorAnchor("nav.dashboard");
-  return <button ref={anchorRef}>Dashboard</button>;
+  return <button data-anchor="nav.dashboard">Dashboard</button>;
 }
 
 function App() {
@@ -40,7 +39,6 @@ React holds no cursor state of its own. It reads the `core` and `dom` stores wit
 | Hook or component | What it does |
 |---|---|
 | `LiveCursorProvider` | Provides a `PresenceClient` and its `DomBinding` to the component tree |
-| `useCursorAnchor(id)` | Ref callback that registers an element as a semantic anchor |
 | `usePresenceClient({ factory, key? })` | A stable `PresenceClient` per `key`, memoized for the page lifetime |
 | `useRemoteUsers()` | One entry per remote client: `clientId`, `user`, and `session` |
 | `useRemoteCursors()` | Resolved cursor snapshot for rendering |
@@ -63,7 +61,7 @@ import { CursorLayer, LiveCursorProvider, usePresenceClient } from "@anchor-pres
 
 function App() {
   const client = usePresenceClient({
-    factory: () => createPresenceClient({ transport: createWebSocketTransport({ room: "main" }) }),
+    factory: () => createPresenceClient({ transport: createWebSocketTransport({ path: "/?room=main" }) }),
   });
   return (
     <LiveCursorProvider client={client}>

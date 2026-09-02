@@ -52,6 +52,7 @@ export function PresencePill() {
   return (
     <div
       data-anchor="topbar.presence"
+      data-testid="presence"
       className="flex items-center gap-3 text-sm text-gray-500"
     >
       <div className="flex items-center gap-1.5">
@@ -120,6 +121,7 @@ export function PresencePill() {
 
       <span
         data-anchor="topbar.presence.count"
+        data-testid="presence-count"
         className="whitespace-nowrap text-gray-500"
       >
         {presence.length} online

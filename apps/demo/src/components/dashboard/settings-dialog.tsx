@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useCursorAnchor } from "@anchor-presence/react";
 import { Dialog, DialogBody, DialogFooter, DialogHeader, DialogTitle } from "../ui/dialog";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
@@ -21,9 +20,8 @@ function InterpolatorStyleRow({
   value: InterpolatorStyle;
   onChange: (style: InterpolatorStyle) => void;
 }) {
-  const rowAnchor = useCursorAnchor("settings.dialog.cursorMotion");
   return (
-    <div ref={rowAnchor} className="flex flex-col gap-1.5">
+    <div data-anchor="settings.dialog.cursorMotion" className="flex flex-col gap-1.5">
       <p className="text-sm font-medium text-gray-900">Cursor motion</p>
       <div role="radiogroup" aria-label="Cursor motion" className="flex gap-2">
         {INTERPOLATOR_STYLES.map((style) => (
@@ -49,16 +47,14 @@ function InterpolatorStyleRow({
 
 function ToggleRow({ anchorId, label, description }: { anchorId: string; label: string; description: string }) {
   const [enabled, setEnabled] = useState(true);
-  const rowAnchor = useCursorAnchor(`settings.dialog.${anchorId}`);
-  const switchAnchor = useCursorAnchor(`settings.dialog.${anchorId}.switch`);
   return (
-    <div ref={rowAnchor} className="flex items-center justify-between gap-4">
+    <div data-anchor={`settings.dialog.${anchorId}`} className="flex items-center justify-between gap-4">
       <div>
         <p className="text-sm font-medium text-gray-900">{label}</p>
         <p className="text-xs text-gray-500">{description}</p>
       </div>
       <button
-        ref={switchAnchor}
+        data-anchor={`settings.dialog.${anchorId}.switch`}
         role="switch"
         aria-checked={enabled}
         onClick={() => setEnabled((v) => !v)}
@@ -86,19 +82,13 @@ export function SettingsDialog({
 }: SettingsDialogProps) {
   const [workspaceName, setWorkspaceName] = useState("Acme Storefront");
 
-  const dialogAnchor = useCursorAnchor("settings.dialog");
-  const workspaceNameAnchor = useCursorAnchor("settings.dialog.workspaceName");
-  const inviteAnchor = useCursorAnchor("settings.dialog.invite");
-  const cancelAnchor = useCursorAnchor("settings.dialog.cancel");
-  const saveAnchor = useCursorAnchor("settings.dialog.save");
-
   return (
-    <Dialog ref={dialogAnchor} data-testid="anchor-settings.dialog" open={open} onClose={onClose}>
+    <Dialog data-anchor="settings.dialog" data-testid="anchor-settings.dialog" open={open} onClose={onClose}>
       <DialogHeader>
         <DialogTitle>Workspace settings</DialogTitle>
       </DialogHeader>
       <DialogBody>
-        <div ref={workspaceNameAnchor} className="flex flex-col gap-1.5">
+        <div data-anchor="settings.dialog.workspaceName" className="flex flex-col gap-1.5">
           <label htmlFor="workspace-name" className="text-sm font-medium text-gray-700">
             Workspace name
           </label>
@@ -120,17 +110,17 @@ export function SettingsDialog({
           description="Allow this workspace to be listed publicly."
         />
 
-        <Button ref={inviteAnchor} data-testid="anchor-settings.dialog.invite" variant="outline" className="self-start">
+        <Button data-anchor="settings.dialog.invite" data-testid="anchor-settings.dialog.invite" variant="outline" className="self-start">
           + Invite member
         </Button>
 
         <InterpolatorStyleRow value={interpolatorStyle} onChange={onInterpolatorStyleChange} />
       </DialogBody>
       <DialogFooter>
-        <Button ref={cancelAnchor} variant="ghost" onClick={onClose}>
+        <Button data-anchor="settings.dialog.cancel" variant="ghost" onClick={onClose}>
           Cancel
         </Button>
-        <Button ref={saveAnchor} onClick={onClose}>
+        <Button data-anchor="settings.dialog.save" onClick={onClose}>
           Save
         </Button>
       </DialogFooter>

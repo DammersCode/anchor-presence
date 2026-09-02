@@ -47,7 +47,7 @@ let client: PresenceClient<DemoContext, DemoUser> | null = null;
 /** Module-safe: constructs the transport/client lazily so importing this module never touches the network at eval time. */
 export function getPresenceClient(): PresenceClient<DemoContext, DemoUser> {
   if (client !== null) return client;
-  const transport = createWebSocketTransport({ room: localRoom });
+  const transport = createWebSocketTransport({ path: `/?room=${encodeURIComponent(localRoom)}` });
   client = createPresenceClient<DemoContext, DemoUser>({
     transport,
     user: { name: localUserName, color: colorForName(localUserName) },

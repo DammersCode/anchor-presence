@@ -39,14 +39,13 @@ const client = createPresenceClient({
 
 `<CursorLayer />` alone renders a neutral cursor. Configure visuals through its props — `getLabel`, `getColor`, `filterCursor`, `getCursorProps`, or replace the contents entirely with `renderCursor`. The package owns positioning; a custom renderer only fills the positioned root.
 
-4. Register an **anchor** on every element users point at meaningfully. The ref callback handles mount, unmount, and remount:
+4. Mark an **anchor** on every element users point at meaningfully with the binding's anchor attribute. The default attribute is `data-anchor`; the binding watches it automatically.
 
 ```tsx
-const ref = useCursorAnchor("orders.row:3.actions.delete");
-return <button ref={ref}>Delete</button>;
+<button data-anchor="orders.row:3.actions.delete">Delete</button>
 ```
 
-Register the parents too (`orders.row:3`, `orders`) — the **chain** degrades to them when the exact anchor is absent on a receiver.
+Mark the parents too (`orders.row:3`, `orders`) — the **chain** degrades to them when the exact anchor is absent on a receiver.
 
 5. Publish UI state as context, and hide cursors that stop making sense with a **policy**:
 

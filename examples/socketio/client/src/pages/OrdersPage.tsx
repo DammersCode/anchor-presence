@@ -1,12 +1,9 @@
-import { useCursorAnchor } from "@anchor-presence/react";
 import { OrdersTable } from "../components/dashboard/orders-table";
 
 export function OrdersPage() {
-  const headerAnchor = useCursorAnchor("orders.pageHeader");
-
   return (
     <div className="flex flex-col gap-6">
-      <div ref={headerAnchor} data-testid="anchor-orders.pageHeader">
+      <div data-anchor="orders.pageHeader" data-testid="anchor-orders.pageHeader">
         <h1 className="text-lg font-semibold text-gray-900">Orders</h1>
         <p className="text-sm text-gray-500">All orders placed across the storefront.</p>
       </div>

@@ -11,7 +11,7 @@ import { createDomBinding } from "@anchor-presence/dom";
 const client = createPresenceClient({ transport: myTransport });
 const binding = createDomBinding(client);
 
-const unregister = binding.registry.register("nav.dashboard", buttonElement);
+// <button data-anchor="nav.dashboard"></button> is a live anchor.
 
 binding.subscribe(() => {
   for (const cursor of binding.getSnapshot()) {
@@ -28,40 +28,46 @@ Dom is the only package that calls browser APIs: `getBoundingClientRect`, `Resiz
 
 | Export | What it does |
 |---|---|
-| `createDomBinding(client, options?)` | Wires an anchor registry, pointer source, geometry scheduler, and resolver to a `PresenceClient` |
+| `createDomBinding(client, options?)` | Wires anchor auto-registration, pointer sampling, geometry scheduling, and remote resolution to a `PresenceClient` |
+| `createWebSocketTransport(options?)` | Native WebSocket transport for the bundled relay or a compatible relay |
 | `DomBindingOptions`, `ResolutionOptions`, `EnvironmentOptions` | Binding configuration types |
-| `createAnchorRegistry()` | The anchor ID to `Element` registry |
-| `attachPointerSource(client, registry, options?)` | Outbound pointer sampling |
-| `createGeometryScheduler(options)` | The read/compute/notify rAF scheduler |
-| `RemoteResolver`, `resolveGeometry`, `findResolvableAnchor`, `defaultVisibilityPolicy` | Remote cursor resolution |
+| `WebSocketTransportOptions` | WebSocket transport configuration types |
 | `ResolvedCursor`, `ResolutionTier`, `VisibilityPolicy` | Resolution types |
 
 ## Binding options
 
-`createDomBinding` takes a `maxAnchors` limit plus two option groups.
+`createDomBinding` always watches the DOM for anchor elements.
+
+```ts
+type DomBindingOptions = {
+  anchorAttribute?: string;
+  maxAnchors?: number;
+  resolution?: { visibilityPolicy?; interpolatorFactory?; hitTest? };
+  environment?: { root?; window?; raf?; caf?; ResizeObserverCtor?; MutationObserverCtor? };
+};
+```
+
+The `anchorAttribute` field names the attribute whose value is the anchor ID. The default is `"data-anchor"`. The attribute name may be any valid DOM attribute name, including `"id"`.
 
 The `resolution` group controls how remote cursors turn into screen positions. It holds `visibilityPolicy`, `interpolatorFactory`, and `hitTest`.
 
-The `environment` group supplies the DOM and timing hosts. It holds `root`, `window`, `raf`, `caf`, `ResizeObserverCtor`, and `MutationObserverCtor`.
+The `environment` group supplies the DOM and timing hosts. Each field defaults to the ambient browser global. Tests can replace one host without touching the others.
 
-Each `environment` field defaults to the ambient browser global. Tests can replace one host without touching the others.
+### Anchor attributes
 
-### Auto-registration
-
-Set `autoRegister: true` to register anchors from the DOM. `createDomBinding` watches for elements with the `data-anchor` attribute and registers them. The default is `false`.
-
-The attribute value is the anchor ID. An empty attribute falls back to the element `id`, then a generated ID. An explicit `binding.registry.register` wins over an auto anchor on the same element. Remove the explicit binding and auto-registration takes the element back. The watch is best-effort across shadow trees.
-
-```ts
-const binding = createDomBinding(client, { autoRegister: true });
-// <div data-anchor="nav.dashboard"></div> is a live anchor with no ref
-```
+An element is an anchor when it has a non-empty value for the configured attribute.
 
 ```ts
 const binding = createDomBinding(client, {
+  anchorAttribute: "data-presence",
+  maxAnchors: 4,
   resolution: { hitTest: true },
   environment: { raf, caf },
 });
+
+// <div data-presence="nav.dashboard"></div> is a live anchor.
 ```
+
+Empty or whitespace-only values are ignored. Changing the attribute value re-registers the element under the new ID. Removing the attribute or the element unregisters the anchor. Duplicate anchor IDs use the newest registration and warn once in development.
 
 See [docs/architecture.md](../../docs/architecture.md) and [docs/responsive-layouts.md](../../docs/responsive-layouts.md) in the repository root for full guides.

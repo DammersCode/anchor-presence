@@ -55,7 +55,7 @@ export async function openPair(browser: Browser, options: OpenPairOptions): Prom
 
 /** Presence pill shows peer count independent of cursor movement, so this works before any mouse.move. */
 async function waitForPeer(page: Page): Promise<void> {
-  await expect(page.locator('[data-anchor="topbar.presence.count"]')).toHaveText(/[1-9]\d* online/, {
+  await expect(page.locator('[data-testid="presence-count"]')).toHaveText(/[1-9]\d* online/, {
     timeout: 15_000,
   });
 }

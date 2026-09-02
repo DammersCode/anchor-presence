@@ -44,12 +44,12 @@ const client = createPresenceClient({ transport: myTransport });
 import { createPresenceClient } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
 
-const transport = createWebSocketTransport({ room: "main" });
+const transport = createWebSocketTransport({ path: "/?room=main" });
 transport.connect();
 const client = createPresenceClient({ transport });
 ```
 
-The default URL is `ws(s)://<current host>:8787/?room=<room>`. The room comes from the `room` option or the page `?room=` parameter. Pass `url` to override the whole URL. Pass `reconnect: false` to turn off automatic reconnect. Pass `baseBackoffMs` and `maxBackoffMs` to change the backoff. Pass `WebSocketCtor` to inject a WebSocket constructor for tests.
+The default URL is `ws(s)://<current host>:8787/`. Room grouping is a relay/server concern, not part of the core protocol. If your relay uses rooms, pass a `url` or `path` such as `/?room=main`. Pass `reconnect: false` to turn off automatic reconnect. Pass `baseBackoffMs` and `maxBackoffMs` to change the backoff. Pass `WebSocketCtor` to inject a WebSocket constructor for tests.
 
 The Socket.IO and SignalR adapters stay in `examples/`. They need foreign dependencies. Only the native WebSocket transport is part of the library.
 

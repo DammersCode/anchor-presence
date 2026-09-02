@@ -5,7 +5,7 @@ import { defineConfig, devices } from "@playwright/test";
 // The relay stays on the spec's default port 8787: it broadcasts opaque bytes per room with no message
 // inspection, so it is safe to share with another worktree's relay instance already listening there
 // (rooms are isolated via a random UUID suffix, see uniqueRoom() in helpers.ts) — and apps/server is on
-// the DO-NOT-CHANGE list, so its hardcoded connection port in the demo's WebSocketTransport cannot move.
+// the DO-NOT-CHANGE list, so its hardcoded connection port in the demo's createWebSocketTransport setup cannot move.
 // reuseExistingServer stays on for the relay so this works whether or not one is already up.
 //
 // The demo dev server (vite) cannot share with another worktree's instance — it serves that worktree's

@@ -1,4 +1,3 @@
-import { useCursorAnchor } from "@anchor-presence/react";
 import { Card, CardContent } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { products, type Product } from "../data/products";
@@ -18,9 +17,8 @@ function CardBody({ product }: { product: Product }) {
 
 // Registers a semantic anchor: remote cursors resolve to this exact card regardless of layout.
 function AnchoredProductCard({ product, index }: { product: Product; index: number }) {
-  const cardAnchor = useCursorAnchor(`products.card:${index}`);
   return (
-    <Card ref={cardAnchor} data-testid={`anchor-products.card:${index}`} className="relative">
+    <Card data-anchor={`products.card:${index}`} data-testid={`anchor-products.card:${index}`} className="relative">
       <Badge variant="success" className="absolute right-3 top-3">
         anchored
       </Badge>
@@ -29,7 +27,7 @@ function AnchoredProductCard({ product, index }: { product: Product; index: numb
   );
 }
 
-// No useCursorAnchor call: remote cursors over this card fall back to normalized viewport coordinates.
+// No anchor attribute: remote cursors over this card fall back to normalized viewport coordinates.
 function PlainProductCard({ product }: { product: Product }) {
   return (
     <Card className="relative">

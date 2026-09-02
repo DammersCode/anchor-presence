@@ -17,14 +17,12 @@ export type WebSocketLike = {
 export type WebSocketCtor = new (url: string) => WebSocketLike;
 
 export type WebSocketTransportOptions = {
-  /** WebSocket URL. Defaults to `ws(s)://<current host>:<relay port>/<room path>` when omitted. */
+  /** WebSocket URL. Defaults to `ws(s)://<current host>:<relay port><path>` when omitted. */
   url?: string;
   /** Host used when building the default URL. Defaults to `window.location.hostname`. */
   host?: string;
-  /** Path including query. Defaults to `/?room=<room>`; room comes from `room`, else the page `?room=` param, else "main". */
+  /** Path including query. Defaults to `/`. */
   path?: string;
-  /** Room used when building the default URL. */
-  room?: string;
   /** Relay port used when building the default URL. Defaults to 8787. */
   port?: number;
   /** Enable automatic reconnect with exponential backoff. Default `true`. */
@@ -41,7 +39,8 @@ const WS_OPEN = 1;
 
 function isDev(): boolean {
   try {
-    return typeof process !== "undefined" && process.env?.NODE_ENV !== "production";
+    const env = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env;
+    return env?.NODE_ENV !== "production";
   } catch {
     return true;
   }
@@ -53,8 +52,7 @@ function resolveUrl(options: WebSocketTransportOptions): string {
   const protocol = location.protocol === "https:" ? "wss:" : "ws:";
   const host = options.host ?? location.hostname;
   const port = options.port ?? 8787;
-  const room = options.room ?? new URLSearchParams(location.search).get("room") ?? "main";
-  const path = options.path ?? `/?room=${encodeURIComponent(room)}`;
+  const path = options.path ?? "/";
   return `${protocol}//${host}:${port}${path}`;
 }
 

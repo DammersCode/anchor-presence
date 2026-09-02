@@ -1,4 +1,3 @@
-import { useCursorAnchor } from "@anchor-presence/react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import {
   Table,
@@ -38,22 +37,21 @@ function OrderRow({
   onView: (orderId: string) => void;
   onDelete: (orderId: string) => void;
 }) {
-  const rowAnchor = useCursorAnchor(`orders.row:${index}`);
-  const idAnchor = useCursorAnchor(`orders.row:${index}.id`);
-  const customerAnchor = useCursorAnchor(`orders.row:${index}.customer`);
-  const dateAnchor = useCursorAnchor(`orders.row:${index}.date`);
-  const statusAnchor = useCursorAnchor(`orders.row:${index}.status`);
-  const amountAnchor = useCursorAnchor(`orders.row:${index}.amount`);
-  const actionsAnchor = useCursorAnchor(`orders.row:${index}.actions`);
-  const viewAnchor = useCursorAnchor(`orders.row:${index}.actions.view`);
-  const deleteAnchor = useCursorAnchor(`orders.row:${index}.actions.delete`);
-
   return (
-    <TableRow ref={rowAnchor} data-testid={`anchor-orders.row:${index}`}>
-      <TableCell ref={idAnchor} className="font-medium text-gray-900">
+    <TableRow
+      data-anchor={`orders.row:${index}`}
+      data-testid={`anchor-orders.row:${index}`}
+    >
+      <TableCell
+        data-anchor={`orders.row:${index}.id`}
+        className="font-medium text-gray-900"
+      >
         {order.id}
       </TableCell>
-      <TableCell ref={customerAnchor} className="min-w-32">
+      <TableCell
+        data-anchor={`orders.row:${index}.customer`}
+        className="min-w-32"
+      >
         <div className="flex flex-col">
           <span className="text-gray-900">{order.customer}</span>
           <span className="text-xs text-gray-500 sm:text-gray-400">
@@ -62,21 +60,27 @@ function OrderRow({
         </div>
       </TableCell>
       <TableCell
-        ref={dateAnchor}
+        data-anchor={`orders.row:${index}.date`}
         className="hidden whitespace-nowrap sm:table-cell"
       >
         {order.date}
       </TableCell>
-      <TableCell ref={statusAnchor}>
+      <TableCell data-anchor={`orders.row:${index}.status`}>
         <Badge variant={STATUS_VARIANT[order.status]}>{order.status}</Badge>
       </TableCell>
-      <TableCell ref={amountAnchor} className="text-right tabular-nums">
+      <TableCell
+        data-anchor={`orders.row:${index}.amount`}
+        className="text-right tabular-nums"
+      >
         ${order.amount.toFixed(2)}
       </TableCell>
-      <TableCell ref={actionsAnchor} className="text-right">
+      <TableCell
+        data-anchor={`orders.row:${index}.actions`}
+        className="text-right"
+      >
         <div className="flex justify-end gap-2">
           <Button
-            ref={viewAnchor}
+            data-anchor={`orders.row:${index}.actions.view`}
             variant="outline"
             size="sm"
             onClick={() => onView(order.id)}
@@ -84,7 +88,7 @@ function OrderRow({
             View
           </Button>
           <Button
-            ref={deleteAnchor}
+            data-anchor={`orders.row:${index}.actions.delete`}
             variant="destructive"
             size="sm"
             onClick={() => onDelete(order.id)}
@@ -98,18 +102,15 @@ function OrderRow({
 }
 
 export function OrdersTable({ onView, onDelete }: OrdersTableProps) {
-  const ordersAnchor = useCursorAnchor("orders");
-  const tableAnchor = useCursorAnchor("orders.table");
-
   return (
-    <Card ref={ordersAnchor}>
+    <Card data-anchor="orders">
       <CardHeader>
         <CardTitle className="text-base font-semibold text-gray-900">
           Orders
         </CardTitle>
       </CardHeader>
       <CardContent className="overflow-hidden p-0">
-        <Table ref={tableAnchor} className="min-w-[28rem]">
+        <Table data-anchor="orders.table" className="min-w-[28rem]">
           <TableHeader>
             <TableRow>
               <TableHead className="whitespace-nowrap">Order</TableHead>

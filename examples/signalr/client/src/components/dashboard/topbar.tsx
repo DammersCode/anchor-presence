@@ -1,4 +1,3 @@
-import { useCursorAnchor } from "@anchor-presence/react";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { PresencePill } from "../../cursors/PresencePill";
@@ -16,15 +15,9 @@ export function Topbar({
   onOpenSettings,
   onOpenMobileNav,
 }: TopbarProps) {
-  const topbarAnchor = useCursorAnchor("topbar");
-  const searchAnchor = useCursorAnchor("topbar.search");
-  const roomAnchor = useCursorAnchor("topbar.room");
-  const userAnchor = useCursorAnchor("topbar.user");
-  const settingsAnchor = useCursorAnchor("topbar.settings");
-
   return (
     <header
-      ref={topbarAnchor}
+      data-anchor="topbar"
       className="flex h-14 shrink-0 items-center gap-3 border-b border-gray-200 bg-white px-3 sm:px-4"
     >
       <Button
@@ -37,7 +30,7 @@ export function Topbar({
         ☰
       </Button>
 
-      <div ref={searchAnchor} className="min-w-16 max-w-sm flex-1">
+      <div data-anchor="topbar.search" className="min-w-16 max-w-sm flex-1">
         <Input
           placeholder="Search orders, customers, products…"
           aria-label="Search"
@@ -48,7 +41,7 @@ export function Topbar({
         <PresencePill />
 
         <div
-          ref={roomAnchor}
+          data-anchor="topbar.room"
           className="hidden items-center gap-2 text-sm text-gray-500 sm:flex"
         >
           <span className="text-gray-400">Room</span>
@@ -57,12 +50,12 @@ export function Topbar({
           </span>
         </div>
 
-        <div ref={userAnchor} className="hidden text-sm text-gray-500 md:block">
+        <div data-anchor="topbar.user" className="hidden text-sm text-gray-500 md:block">
           You are <span className="font-medium text-gray-700">{userName}</span>
         </div>
 
         <Button
-          ref={settingsAnchor}
+          data-anchor="topbar.settings"
           data-testid="anchor-topbar.settings"
           variant="secondary"
           size="sm"

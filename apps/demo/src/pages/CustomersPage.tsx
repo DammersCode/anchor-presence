@@ -2,7 +2,7 @@ import { Card, CardContent } from "../components/ui/card";
 import { Avatar } from "../components/ui/avatar";
 import { customers } from "../data/customers";
 
-// Deliberately no useCursorAnchor calls on this page's content — demonstrates the un-anchored fallback.
+// Deliberately no anchor attribute on this page's content — demonstrates the un-anchored fallback.
 export function CustomersPage() {
   return (
     <div className="flex flex-col gap-6">

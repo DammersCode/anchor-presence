@@ -4,19 +4,21 @@
 > completed step. Commit this file with each plan commit so `git log -p --
 > PROGRESS.md` replays the full trajectory.
 
-**Last updated:** 2026-09-02 (plan 016 A + B DONE — both committed; plans-status commit next)
+**Last updated:** 2026-09-02 (rollout complete — plans 014/015/016 all committed)
 **Branch:** `dev` | **Drift base:** `1f8f7b4`
 
 ## Resume point
 
-Next action: **final commit — update plans status**
-(mark `plans/016-...md` row and `plans/README.md` DONE, record final
-PROGRESS.md state). Plan 016 deliverables A and B are both DONE and
-committed as separate feature commits. All three plans (014, 015, 016) are
-complete; the full gate is green (vitest 298, tsc exit 0, vite build,
-oxlint 0 errors on the new files).
-Plan 014 is DONE (7b97707), plan 015 is DONE (3cf3480), plan 016 A and B
-are DONE (auto-registration + `createInMemoryPair`).
+**Rollout complete.** All three plans are done and committed, one commit per
+feature. Nothing is pending in scope.
+
+- Plan 014 — `7b97707` `add createWebSocketTransport to @anchor-presence/dom`
+- Plan 015 — `3cf3480` `add usePresenceClient and useRemoteUsers react hooks`
+- Plan 016 A — `1d8a6e3` `add [data-anchor] auto-registration to dom binding`
+- Plan 016 B — `e39137f` `add createInMemoryPair test transport to core`
+
+Full gate green: vitest 298, tsc exit 0, demo `vite build` OK, oxlint 0
+errors on the new files. `plans/README.md` 016 row marked DONE.
 Findings for the owner (out of plan scope, not touched):
 `SPECIFICATION.md:140` and `playwright.config.ts:8` still reference the
 deleted demo `WebSocketTransport`.

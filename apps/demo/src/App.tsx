@@ -4,6 +4,7 @@ import { Sidebar } from "./components/dashboard/sidebar";
 import { Topbar } from "./components/dashboard/topbar";
 import { SettingsDialog } from "./components/dashboard/settings-dialog";
 import { CursorLayer } from "./cursors/CursorLayer";
+import { WhoIsOnline } from "./components/who-is-online";
 import { localRoom, localUserName } from "./cursors/setup";
 import type { LocalViewState } from "./cursors/visibilityPolicy";
 import type { DemoContext } from "./cursors/setup";
@@ -67,6 +68,7 @@ export default function App({ localViewState, interpolatorStyle, onInterpolatorS
         onInterpolatorStyleChange={onInterpolatorStyleChange}
       />
       <CursorLayer />
+      <WhoIsOnline />
     </div>
   );
 }

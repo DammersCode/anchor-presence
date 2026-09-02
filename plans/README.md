@@ -25,7 +25,7 @@ before starting, honor its STOP conditions, and update your row when done.
 | 012  | Architecture deepening (6 candidates from 2026-08-19 review)     | P2       | L      | 010             | DONE                                             |
 | 013  | Fix reference navigation (F12) in the VS Code tooling            | P3       | S      | —               | TODO                                             |
 | 014  | Native `createWebSocketTransport` in `@anchor-presence/dom`        | P0       | M      | 001             | DONE                                             |
-| 015  | `usePresenceClient` + `useRemoteUsers` React lifecycle hooks        | P1       | M      | 001             | TODO                                             |
+| 015  | `usePresenceClient` + `useRemoteUsers` React lifecycle hooks        | P1       | M      | 001             | DONE                                             |
 | 016  | `[data-anchor]` auto-registration + core `createInMemoryPair()`     | P1/P2    | L      | 001             | TODO (A: auto-register, B: in-memory; two commits)   |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale)

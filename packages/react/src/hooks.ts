@@ -28,6 +28,65 @@ export function useCursorClient<TContext = unknown, TUser = unknown>(): Presence
   return useLiveCursorContext<TContext, TUser>().client;
 }
 
+const DEFAULT_CLIENT_KEY = "__default__";
+
+const clientRegistry = new Map<string, PresenceClient>();
+
+function wrapClient<TContext, TUser>(client: PresenceClient<TContext, TUser>, key: string): PresenceClient<TContext, TUser> {
+  return {
+    ...client,
+    dispose: () => {
+      clientRegistry.delete(key);
+      client.dispose();
+    },
+  };
+}
+
+export type PresenceClientFactoryOptions<TContext = unknown, TUser = unknown> = {
+  /**
+   * Creates the client. It runs exactly once per `key` per page; the hook memoizes the
+   * result for the page lifetime and uses the first render's closure. Own the transport
+   * here: call `transport.connect()` inside the factory or before render.
+   */
+  factory: (opts: { key?: string }) => PresenceClient<TContext, TUser>;
+  /**
+   * Identity for multi-client setups. The same `key` resolves to the same client across
+   * renders and StrictMode remounts. Omit it for the single-client case.
+   */
+  key?: string;
+};
+
+/**
+ * Stable PresenceClient per `key`, memoized for the page lifetime (module-scoped registry).
+ *
+ * The hook never disposes on unmount: PresenceClient is a one-way latch, and remounts
+ * (StrictMode, route changes) must keep working. Call `dispose()` explicitly. It clears
+ * the `key` entry, so a later render re-creates the client through the factory.
+ * The hook does not call `transport.connect()`: the factory owns the transport lifecycle.
+ *
+ * ```ts
+ * const client = usePresenceClient({
+ *   factory: () => createPresenceClient({ transport }), // connect the transport inside the factory
+ * });
+ * ```
+ */
+export function usePresenceClient<TContext = unknown, TUser = unknown>(
+  options: PresenceClientFactoryOptions<TContext, TUser>,
+): PresenceClient<TContext, TUser> {
+  const { factory, key = DEFAULT_CLIENT_KEY } = options;
+  const factoryRef = useRef(factory);
+  // oxlint-disable-next-line react/refs -- latest-ref pattern: creation uses the first render's factory
+  factoryRef.current = factory;
+
+  let client = clientRegistry.get(key);
+  if (client === undefined) {
+    // oxlint-disable-next-line react/refs -- reads the latest-ref set above on the one-shot creation path
+    client = wrapClient<TContext, TUser>(factoryRef.current({ key }), key);
+    clientRegistry.set(key, client);
+  }
+  return client as PresenceClient<TContext, TUser>;
+}
+
 export function useCursorAnchor(id: string): (element: Element | null) => void {
   const { binding } = useLiveCursorContext();
   const idRef = useRef(id);
@@ -114,6 +173,23 @@ export function useCursorPresence<TContext = unknown, TUser = unknown>(): Cursor
     [client],
   );
   return useSyncExternalStore(subscribe, getSnapshot, getServerPresence as () => CursorPresence<TContext, TUser>[]);
+}
+
+export type RemoteUser<TUser = unknown> = {
+  clientId: string;
+  user: TUser | undefined;
+  session: string;
+};
+
+function projectRemoteUsers<TUser>(snapshot: CursorPresence<unknown, TUser>[]): RemoteUser<TUser>[] {
+  return snapshot.map((p) => ({ clientId: p.clientId, user: p.user, session: p.session }));
+}
+
+// TContext keeps the generic arity aligned with the other hooks; the list mirrors the client's remote snapshot
+// oxlint-disable-next-line typescript/no-unnecessary-type-parameters
+export function useRemoteUsers<TContext = unknown, TUser = unknown>(): RemoteUser<TUser>[] {
+  const presence = useCursorPresence<TContext, TUser>();
+  return useMemo(() => projectRemoteUsers(presence), [presence]);
 }
 
 export function useCursorStatus(): ConnectionStatus {

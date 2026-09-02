@@ -10,9 +10,13 @@ export {
   useCursorContext,
   useCursorPresence,
   useCursorStatus,
+  usePresenceClient,
   useRemoteCursors,
   useRemoteCursorsSelector,
+  useRemoteUsers,
 } from "./hooks";
+
+export type { PresenceClientFactoryOptions, RemoteUser } from "./hooks";
 
 export { CursorLayer, DefaultCursor } from "./cursor";
 export type { CursorLayerProps, CursorRenderProps, DefaultCursorProps } from "./cursor";

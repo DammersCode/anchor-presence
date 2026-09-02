@@ -4,21 +4,24 @@
 > completed step. Commit this file with each plan commit so `git log -p --
 > PROGRESS.md` replays the full trajectory.
 
-**Last updated:** 2026-09-02 (plan 014, step 5 done — gate + commit 1 next)
+**Last updated:** 2026-09-02 (plan 015, step 4 done — gate + commit 2 next)
 **Branch:** `dev` | **Drift base:** `1f8f7b4`
 
 ## Resume point
 
-Next action: **plan-014 gate, then commit 1**
-(`add createWebSocketTransport to @anchor-presence/dom`). Gate:
+Next action: **plan-015 gate, then commit 2**
+(`add usePresenceClient and useRemoteUsers react hooks`). Gate:
 `bunx vitest run` + `bunx tsc --build packages/core packages/dom
-packages/react` + `cd apps/demo; bunx vite build` + oxlint. Commit 1 also
-carries the three plan .md files and the plans/README.md row additions
-from the pre-session work (owner decision: keep the tree clean per
-plan-commit; PROGRESS.md included per commit plan).
-All five 014 steps done. Findings for the owner (out of plan scope, not
-touched): `SPECIFICATION.md:140` and `playwright.config.ts:8` still
-reference the deleted demo `WebSocketTransport`.
+packages/react` + `cd apps/demo; bunx vite build` + oxlint.
+Plan 014 is DONE (commit 7b97707). All four 015 steps done: hooks
+implemented + exported, 9 new tests green (StrictMode factory-once
+proven, perf suite unchanged), README gained "Client lifecycle" +
+"Who's online" sections + 2 table rows, demo `WhoIsOnline` chip added
+(`apps/demo/src/components/who-is-online.tsx`, rendered from App.tsx),
+README snippets typechecked via throwaway file (deleted).
+Findings for the owner (out of plan scope, not touched):
+`SPECIFICATION.md:140` and `playwright.config.ts:8` still reference the
+deleted demo `WebSocketTransport`.
 
 ## Goal (owner, 2026-09-02)
 
@@ -125,11 +128,11 @@ Design notes for executor:
 
 ### Plan 015 — `usePresenceClient` + `useRemoteUsers`
 
-- [ ] Step 1: `useRemoteUsers` (pure projection, identity-stable cache)
-- [ ] Step 2: `usePresenceClient` (module `Map` registry by `key`, wrapper
+- [x] Step 1: `useRemoteUsers` (pure projection, identity-stable cache)
+- [x] Step 2: `usePresenceClient` (module `Map` registry by `key`, wrapper
       whose `dispose()` clears the entry then delegates)
-- [ ] Step 3: tests (`remoteUsers.test.tsx`, `presenceClient.test.tsx`)
-- [ ] Step 4: README sections + optional demo `WhoIsOnline` chip
+- [x] Step 3: tests (`remoteUsers.test.tsx`, `presenceClient.test.tsx`)
+- [x] Step 4: README sections + optional demo `WhoIsOnline` chip
 
 Types to ship (final):
 ```ts

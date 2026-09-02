@@ -41,6 +41,8 @@ React holds no cursor state of its own. It reads the `core` and `dom` stores wit
 |---|---|
 | `LiveCursorProvider` | Provides a `PresenceClient` and its `DomBinding` to the component tree |
 | `useCursorAnchor(id)` | Ref callback that registers an element as a semantic anchor |
+| `usePresenceClient({ factory, key? })` | A stable `PresenceClient` per `key`, memoized for the page lifetime |
+| `useRemoteUsers()` | One entry per remote client: `clientId`, `user`, and `session` |
 | `useRemoteCursors()` | Resolved cursor snapshot for rendering |
 | `useRemoteCursorsSelector(select, isEqual?)` | A derived value that rerenders only when it changes |
 | `useCursorPresence()` | Raw remote presence snapshot |
@@ -49,6 +51,48 @@ React holds no cursor state of its own. It reads the `core` and `dom` stores wit
 | `useCursorContext()` | `[context, setContext]` |
 | `CursorLayer` | Optional component that renders every visible remote cursor |
 | `DefaultCursor` | Optional neutral cursor visual, used by `CursorLayer` by default |
+
+## Client lifecycle
+
+Create the client with `usePresenceClient`. The hook memoizes the client for the page lifetime. It returns the same instance across renders and StrictMode remounts.
+
+```tsx
+import { createPresenceClient } from "@anchor-presence/core";
+import { createWebSocketTransport } from "@anchor-presence/dom";
+import { CursorLayer, LiveCursorProvider, usePresenceClient } from "@anchor-presence/react";
+
+function App() {
+  const client = usePresenceClient({
+    factory: () => createPresenceClient({ transport: createWebSocketTransport({ room: "main" }) }),
+  });
+  return (
+    <LiveCursorProvider client={client}>
+      <CursorLayer />
+    </LiveCursorProvider>
+  );
+}
+```
+
+`PresenceClient` is a one-way latch. `dispose()` is final. The hook never disposes the client on unmount. Call `dispose()` on an explicit user action, for example on logout. The call clears the `key` entry. A later render creates a new client through the factory.
+
+The registry lives at module scope. Clients survive route changes and component remounts until the page unloads. Pass a different `key` for a second client, for example an admin overlay.
+
+The hook does not call `transport.connect()`. Connect the transport inside the factory or before render.
+
+## Who's online
+
+`useRemoteUsers` lists every remote client. Use it for a presence bar.
+
+```tsx
+import { useRemoteUsers } from "@anchor-presence/react";
+
+function OnlineBar() {
+  const users = useRemoteUsers();
+  return <span>{users.length} online</span>;
+}
+```
+
+`user` is the `TUser` you passed to `createPresenceClient`. The library does not derive labels or colors from `clientId`. Validate `user` before you render it.
 
 ## CursorLayer
 

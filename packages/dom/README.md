@@ -1,6 +1,6 @@
 # @anchor-presence/dom
 
-The browser layer of Anchor Presence.
+`@anchor-presence/dom` is the browser layer of Anchor Presence. It registers anchors, samples the pointer, measures elements, and turns remote cursor data into screen positions.
 
 [![MIT](https://img.shields.io/badge/license-MIT-blue.svg)](../../LICENSE)
 
@@ -22,21 +22,29 @@ binding.subscribe(() => {
 
 ## Boundary rule
 
-Dom is the only package that calls browser APIs: `getBoundingClientRect`, `ResizeObserver`, `MutationObserver`, `requestAnimationFrame`, pointer events. Core stays DOM-free; framework adapters read from dom, never from the browser directly.
+Dom is the only package that calls browser APIs: `getBoundingClientRect`, `ResizeObserver`, `MutationObserver`, `requestAnimationFrame`, and pointer events. Core stays DOM-free. Framework adapters read from dom, never from the browser directly.
 
 ## Main exports
 
-- `createDomBinding(client, options?)` — wires an anchor registry, pointer source, geometry scheduler, and resolver to a `PresenceClient`
-- `DomBindingOptions`, `ResolutionOptions`, `EnvironmentOptions` — binding configuration types
-- `createAnchorRegistry()` — the anchor ID to `Element` registry
-- `attachPointerSource(client, registry, options?)` — outbound pointer sampling
-- `createGeometryScheduler(options)` — the read/compute/notify rAF scheduler
-- `RemoteResolver`, `resolveGeometry`, `findResolvableAnchor`, `defaultVisibilityPolicy` — remote cursor resolution
-- `ResolvedCursor`, `ResolutionTier`, `VisibilityPolicy` — resolution types
+| Export | What it does |
+|---|---|
+| `createDomBinding(client, options?)` | Wires an anchor registry, pointer source, geometry scheduler, and resolver to a `PresenceClient` |
+| `DomBindingOptions`, `ResolutionOptions`, `EnvironmentOptions` | Binding configuration types |
+| `createAnchorRegistry()` | The anchor ID to `Element` registry |
+| `attachPointerSource(client, registry, options?)` | Outbound pointer sampling |
+| `createGeometryScheduler(options)` | The read/compute/notify rAF scheduler |
+| `RemoteResolver`, `resolveGeometry`, `findResolvableAnchor`, `defaultVisibilityPolicy` | Remote cursor resolution |
+| `ResolvedCursor`, `ResolutionTier`, `VisibilityPolicy` | Resolution types |
 
 ## Binding options
 
-`createDomBinding` takes `maxAnchors` plus two groups. `resolution` controls how remote cursors turn into screen positions: `visibilityPolicy`, `interpolatorFactory`, `hitTest`. `environment` supplies the DOM and timing hosts: `root`, `window`, `raf`, `caf`, `ResizeObserverCtor`, `MutationObserverCtor`. Each `environment` field defaults to the ambient browser global, so tests can replace one host without touching the others.
+`createDomBinding` takes a `maxAnchors` limit plus two option groups.
+
+The `resolution` group controls how remote cursors turn into screen positions. It holds `visibilityPolicy`, `interpolatorFactory`, and `hitTest`.
+
+The `environment` group supplies the DOM and timing hosts. It holds `root`, `window`, `raf`, `caf`, `ResizeObserverCtor`, and `MutationObserverCtor`.
+
+Each `environment` field defaults to the ambient browser global. Tests can replace one host without touching the others.
 
 ```ts
 const binding = createDomBinding(client, {
@@ -45,4 +53,4 @@ const binding = createDomBinding(client, {
 });
 ```
 
-See `docs/architecture.md`, `docs/concepts.md`, `docs/responsive-layouts.md`, and `docs/performance.md` in the repository root for full guides.
+See [docs/architecture.md](../../docs/architecture.md) and [docs/responsive-layouts.md](../../docs/responsive-layouts.md) in the repository root for full guides.

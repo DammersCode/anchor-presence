@@ -1,8 +1,14 @@
 # @anchor-presence/react
 
-The framework adapter layer of Anchor Presence: a provider component, seven hooks, and two optional cursor components.
+`@anchor-presence/react` is the React adapter for Anchor Presence. It gives you a provider component, a set of hooks, and two optional cursor components.
 
 [![MIT](https://img.shields.io/badge/license-MIT-blue.svg)](../../LICENSE)
+
+## Install
+
+```sh
+bun add @anchor-presence/react @anchor-presence/dom @anchor-presence/core
+```
 
 ```tsx
 import { createPresenceClient } from "@anchor-presence/core";
@@ -27,24 +33,26 @@ function App() {
 
 ## Boundary rule
 
-React holds no engine state of its own. It subscribes to `core` and `dom` stores with `useSyncExternalStore`. Every hook has a server-safe snapshot, so the package never accesses the DOM at module load time.
+React holds no cursor state of its own. It reads the `core` and `dom` stores with `useSyncExternalStore`. The package never touches the DOM at load time, so it is safe to import on a server.
 
 ## Main exports
 
-- `LiveCursorProvider` — provides a `PresenceClient` and its `DomBinding` to the component tree
-- `useCursorAnchor(id)` — ref callback that registers and unregisters an element as a semantic anchor
-- `useRemoteCursors()` — resolved cursor snapshot for rendering
-- `useRemoteCursorsSelector(select, isEqual?)` — a derived value that rerenders only when it changes
-- `useCursorPresence()` — raw remote presence snapshot
-- `useCursorStatus()` — connection status
-- `useCursorClient()` — the underlying `PresenceClient`
-- `useCursorContext()` — `[context, setContext]`
-- `CursorLayer` — optional component that renders every visible remote cursor
-- `DefaultCursor` — optional neutral cursor visual, used by `CursorLayer` by default
+| Hook or component | What it does |
+|---|---|
+| `LiveCursorProvider` | Provides a `PresenceClient` and its `DomBinding` to the component tree |
+| `useCursorAnchor(id)` | Ref callback that registers an element as a semantic anchor |
+| `useRemoteCursors()` | Resolved cursor snapshot for rendering |
+| `useRemoteCursorsSelector(select, isEqual?)` | A derived value that rerenders only when it changes |
+| `useCursorPresence()` | Raw remote presence snapshot |
+| `useCursorStatus()` | Connection status |
+| `useCursorClient()` | The underlying `PresenceClient` |
+| `useCursorContext()` | `[context, setContext]` |
+| `CursorLayer` | Optional component that renders every visible remote cursor |
+| `DefaultCursor` | Optional neutral cursor visual, used by `CursorLayer` by default |
 
 ## CursorLayer
 
-No cursor component is required (Invariant 9). `CursorLayer` is an optional, configurable renderer built on `useRemoteCursorsSelector`.
+`CursorLayer` is optional. It renders every visible remote cursor. You can style it with the props `getLabel`, `getColor`, `filterCursor`, and `getCursorProps`. You can replace its contents entirely with `renderCursor`.
 
 ```tsx
 <CursorLayer
@@ -56,12 +64,6 @@ No cursor component is required (Invariant 9). `CursorLayer` is an optional, con
 />
 ```
 
-`CursorLayer` owns the root's position, transform, pointer events, `aria-hidden`, and identity data attributes. A consumer style or `renderCursor` cannot replace these geometry values. Validate `cursor.user` before you render it; remote user data is untrusted. See `docs/react.md` in the repository root for the full API and more examples.
+`CursorLayer` owns the cursor position and size. A custom style or `renderCursor` cannot change them. Remote user data is untrusted. Validate `cursor.user` before you render it.
 
-## Install
-
-```sh
-bun add @anchor-presence/react @anchor-presence/dom @anchor-presence/core
-```
-
-See `docs/react.md` in the repository root for the full hook reference, SSR notes, custom interpolation, and more examples.
+See [docs/react.md](../../docs/react.md) in the repository root for the full hook reference, custom interpolation, and more examples.

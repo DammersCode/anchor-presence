@@ -1,17 +1,12 @@
 # Socket.IO transport example
 
-This example shows a `LiveCursorTransport` for Socket.IO. It has three parts:
+This example adds a Socket.IO transport to the demo. It has three parts:
 
-- `transport.ts`: `createSocketIoTransport(socket)`. It wraps a Socket.IO client socket.
-- `server.ts` / `relay.ts`: a minimal Socket.IO server. It relays `"presence"` events to other
-  sockets in the same room.
-- `client/`: a Vite + React app. It renders live cursors on a demo page, anchored to semantic
-  elements.
+- `transport.ts`: wraps a Socket.IO client socket as a `LiveCursorTransport`.
+- `server.ts` / `relay.ts`: a minimal Socket.IO server. It relays `"presence"` events to the other sockets in a room.
+- `client/`: the same demo page as `apps/demo`.
 
-The `client/` page is the same demo page as `apps/demo`. Only the backend is different: the app
-calls `getPresenceClient()`, which builds the presence client over `createSocketIoTransport`
-instead of a plain WebSocket. The rest of the UI calls the same `@anchor-presence/react` hooks,
-so the live cursor behavior is unchanged.
+Only the backend changes. The client builds its presence client over `createSocketIoTransport` instead of a plain WebSocket. The UI still uses the same `@anchor-presence/react` hooks, so the cursor behavior is unchanged.
 
 ## Start the relay
 
@@ -33,21 +28,15 @@ bun run dev
 
 The client serves at <http://localhost:5174/>. Open that address in two browser windows.
 
-Add `?room=<name>` to both addresses when you want multiple room lanes. The default room is
-`main`. Add `?name=<name>` to change the cursor label.
+If you want multiple room lanes, add `?room=<name>` to both addresses. The default room is `main`. Add `?name=<name>` to change the cursor label.
 
 ## What the demo shows
 
-Move the pointer inside the page in one window. The other window draws the same cursor. The
-cursor anchors to a semantic element, not to a screen position. Resize one window to a
-different width. The cursor stays on the same element in both layouts. Each cursor position is a
-normalized `(u, v)` offset per anchored element.
+Move the pointer in one window and the other window draws the same cursor on the same element, even at a different width. See the [root README](../../README.md) for the core idea.
 
 ## Run the integration tests
 
-The test in `socketio.test.ts` starts a real relay on an ephemeral port. It connects two Socket.IO
-clients, sends a cursor update from one, and checks that the other client receives it through
-`getRemoteSnapshot()`. Run them from the repository root:
+The test in `socketio.test.ts` starts a real relay on an ephemeral port. It connects two Socket.IO clients, sends a cursor update from one, and checks that the other client receives it through `getRemoteSnapshot()`. Run it from the repository root:
 
 ```sh
 bunx vitest run --project socketio-example
@@ -68,11 +57,8 @@ const client = createPresenceClient({
 
 ## Room routing
 
-The relay reads the room name from the client's handshake query (`?room=main`). Change
-`roomFor` logic in `server.ts` if your app picks rooms a different way, for example from an
-authenticated session.
+The relay reads the room name from the handshake query of the client (`?room=main`). If your app picks rooms a different way, for example from an authenticated session, change the `roomFor` logic in `server.ts`.
 
 ## Binary payloads
 
-Socket.IO delivers binary data as `ArrayBuffer` in browsers and as `Buffer` in Node.
-`transport.ts` normalizes both to `Uint8Array` before it calls the presence client.
+Socket.IO delivers binary data as `ArrayBuffer` in browsers and as `Buffer` in Node. `transport.ts` normalizes both to `Uint8Array` before it calls the presence client.

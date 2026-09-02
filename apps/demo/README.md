@@ -1,19 +1,14 @@
-# Anchor Presence — Demo
-
-A Vite + React admin dashboard that shows live remote cursors positioned by semantic DOM anchor
-(`data-anchor` → `useCursorAnchor`), not by raw screen coordinates.
+# Anchor Presence Demo
 
 [![MIT](https://img.shields.io/badge/license-MIT-blue.svg)](../../LICENSE)
 
-This app consumes the built `dist/` output of `@anchor-presence/core`, `@anchor-presence/dom`, and
-`@anchor-presence/react` (package `exports` point at `dist/`, not `src/`). Build those packages
-before running the demo.
+A Vite + React admin dashboard that shows live remote cursors. Each cursor tracks a semantic element in your layout, not a raw screen coordinate.
+
+The packages must be built before the demo runs.
 
 ```sh
 bunx tsc --build packages/react   # also builds core and dom via project references
 ```
-
-See `SPECIFICATION.md` in the repository root for the full protocol.
 
 ## Run it
 
@@ -23,25 +18,20 @@ bun run --cwd apps/server dev     # relay on :8787
 bun run --cwd apps/demo dev       # vite dev server on :5173
 ```
 
-Open two browser windows with different `?name=` values so you can tell the cursors apart, for example:
+Open two browser windows with different `?name=` values so you can tell the cursors apart.
 
 ```
 http://localhost:5173/?name=Ari
 http://localhost:5173/?name=Bo
 ```
 
-Both windows join the same relay room by default (`?room=` to use a different one).
+Both windows join the same relay room by default. Use `?room=` to use a different one.
 
 ## What to try
 
-- **Resize** either window and watch the remote cursor track the same semantic element instead of
-  drifting to a stale screen coordinate.
-- **Collapse the sidebar** in one window — the other window's cursor over `sidebar.*` elements stays
-  correctly positioned even though the sidebar width changed underneath it.
-- **Narrow the window** until the stats grid wraps to fewer columns — cursors over `stats.*` cards
-  keep tracking their card through the reflow.
-- **Open Settings** in one window. In the other window (without Settings open) the remote cursor
-  disappears and an "in Settings" indicator appears next to that user's avatar in the topbar instead
-  — the UI-context visibility policy from spec §12.
-- Visit `/?page=bench` for the scripted performance page (synthetic cursors/anchors, no network).
-- **Switch cursor motion** in Settings, or with `?interp=none|linear|spring`. `spring` is a demo-authored `Interpolator`, not a library export — see "Custom interpolation" in `docs/react.md`.
+- **Resize** either window. The remote cursor tracks the same element instead of drifting to a stale screen position.
+- **Collapse the sidebar** in one window. The cursor over the sidebar in the other window stays in the right place.
+- **Narrow the window** until the stats grid wraps to fewer columns. The cursor keeps tracking its card through the reflow.
+- **Open Settings** in one window. In the other window, the cursor hides and an "in Settings" indicator appears in the topbar.
+- Visit `/?page=bench` for the performance page. It uses synthetic cursors, no network.
+- **Switch cursor motion** in Settings, or with `?interp=none|linear|spring`.

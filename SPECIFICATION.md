@@ -76,13 +76,15 @@ type CursorPresence<TContext = unknown, TUser = unknown> = {
   session: string;                 // random per client instance, generated at client creation
   sequence: number;                // monotonic per (clientId, session)
   cursor: CursorPosition | null;   // null = pointer left / hidden
-  context?: TContext;              // opaque to core
-  user?: TUser;                    // opaque to core
+  context?: TContext | null;       // opaque to core; `null` = cleared, missing = unchanged
+  user?: TUser | null;             // opaque to core; `null` = cleared, missing = unchanged
   pointer?: { type?: "mouse" | "pen" | "touch" };
 };
 ```
 
 Leave messages use `cursor: null`. A separate `{ version: 1, clientId, sequence, type: "leave" }` message is not required; `cursor: null` plus expiry covers departure.
+
+`context` and `user` are delta-encoded on the wire. A missing field means "unchanged since the previous same-session message"; an explicit `null` clears the field. Full publishes (reconnect and heartbeat) include the current values, including `null` for empty fields, so a missed clear is repaired on the next full publish. The receiver normalizes a cleared field to `undefined` in its snapshot. All senders and receivers in a room must understand this encoding; a receiver that does not merge missing fields can lose `context`/`user` values.
 
 ### 4.2 Validation limits
 
@@ -114,7 +116,7 @@ Each client keeps one local counter. Every outbound message increments it. The r
 
 1. If the inbound `session` differs from the stored session for that `clientId`, accept the message and reset `lastSequence`. A restart or reconnect gets a new random session, so restarts recover on the first message.
 2. If the session matches and `sequence <= lastSequence`, drop the message.
-3. Otherwise accept and store the new sequence.
+3. Otherwise accept and store the new sequence. For an accepted same-session message, missing `context`/`user` fields inherit the stored values; explicit `null` clears them. A session change starts with no inherited fields.
 
 Wall clocks are not used for ordering. Two live tabs that share a `clientId` have different sessions; rule 1 makes them last-write-wins instead of dropping each other. Note: a shared `clientId` is misuse — it causes visible cursor flapping between the two tabs, not an error.
 
@@ -134,12 +136,13 @@ interface LiveCursorTransport {
   subscribe(listener: (data: Uint8Array) => void): () => void;
   subscribeStatus?(listener: (status: ConnectionStatus) => void): () => void;
   getStatus?(): ConnectionStatus;
+  bufferedBytes?(): number;
 }
 ```
 
 Core never imports a transport implementation. `@anchor-presence/dom` ships `createWebSocketTransport` for the repository relay; it is a convenience transport, not a core dependency. `send` failures are swallowed after a status check; presence is lossy by design. When a transport omits `subscribeStatus`, the client reports a constant `"connected"`. The status union is fixed for protocol v1; consumers can switch exhaustively.
 
-A transport that implements `subscribeStatus` SHOULD replay its current status to every new subscriber. `getStatus` is optional; when present, the client reads it once at creation for its initial status. Without either signal, the client assumes `"connecting"` until the first status callback — an already-connected transport that never replays would leave the client mute. The client sends only while the status is `"connected"`; `"connecting"`, `"reconnecting"`, and `"disconnected"` block sends.
+A transport that implements `subscribeStatus` SHOULD replay its current status to every new subscriber. `getStatus` is optional; when present, the client reads it once at creation for its initial status. Without either signal, the client assumes `"connecting"` until the first status callback — an already-connected transport that never replays would leave the client mute. The client sends only while the status is `"connected"`; `"connecting"`, `"reconnecting"`, and `"disconnected"` block sends. `bufferedBytes` is optional and is used only by the opt-in `adaptivePublish` client option.
 
 ## 6. Codec Abstraction
 
@@ -166,7 +169,7 @@ pointer samples (from dom)         inbound bytes (from transport)
   codec.encode → transport.send      remote presence store → subscribers
 ```
 
-Options: `transport`, `codec` (default json), `clientId` (default: random UUID via injected `idFactory`), `publishIntervalMs` (default 50), `staleTimeoutMs`, `heartbeatMs`, `maxRemoteClients`, `user`, `context` setter. The client generates its `session` value at creation from the same `idFactory`. `clientId` identifies a client instance; applications attach user identity via the `user` field, not the `clientId`. The client clamps `publishIntervalMs` and `heartbeatMs` to at least 1 ms and `staleTimeoutMs` to at least 1000 ms. Outside production (`NODE_ENV !== "production"`), the client warns on `console` when the outbound `context` or `user` exceeds `maxFieldBytes` or the encoded message exceeds `maxMessageBytes`; the check runs when `context`/`user` changes, not per message.
+Options: `transport`, `codec` (default json), `clientId` (default: random UUID via injected `idFactory`), `publishIntervalMs` (default 50), `staleTimeoutMs`, `heartbeatMs`, `maxRemoteClients`, `user`, `context` setter, `adaptivePublish`. The client generates its `session` value at creation from the same `idFactory`. `clientId` identifies a client instance; applications attach user identity via the `user` field, not the `clientId`. The client clamps `publishIntervalMs` and `heartbeatMs` to at least 1 ms and `staleTimeoutMs` to at least 1000 ms. Outside production (`NODE_ENV !== "production"`), the client warns on `console` when the outbound `context` or `user` exceeds `maxFieldBytes` or the encoded message exceeds `maxMessageBytes`; the check runs when `context`/`user` changes, not per message.
 
 `updateLocalCursor(cursor, pointer?)` records the latest local cursor; the optional second argument (`{ type?: "mouse" | "pen" | "touch" }`) is kept until replaced and sent as the `pointer` wire field. `getContext()` and `getUser()` return the current outbound values; `setContext()` and `setUser()` replace them and trigger a publish, as does every transition into `"connected"` (so a reconnect republishes the latest state without waiting for a pointer move). A failed send re-arms the publish timer.
 
@@ -175,6 +178,8 @@ The client ignores inbound messages whose `clientId` equals its own, so broadcas
 `client.dispose()` is part of the public API. It sends a best-effort `cursor: null` leave message while the status allows it, stops timers, unsubscribes from the transport, and (via the dom layer) removes document listeners, observers, and any pending animation frame. Status listeners receive a final `"disconnected"` before they are cleared. Every layer's setup function returns or registers its teardown with the client. `registerTeardown(fn)` returns an unregister function; called on an already-disposed client, it runs `fn` immediately and returns a no-op.
 
 The publisher keeps only the latest local state. It sends at most one message per interval. It never queues stale positions. Timers are injected (`setTimeout`/`clearTimeout`-shaped scheduler interface) so tests run without real time.
+
+`adaptivePublish` is optional and active only when the transport implements `bufferedBytes()`. It steps the publish interval to a slower interval when the reported buffer reaches `highWatermarkBytes` (default 64 KiB) and returns to the normal interval at `lowWatermarkBytes` (default half of the high watermark). Defaults: `slowPublishIntervalMs = max(publishIntervalMs * 4, 100)`. Heartbeats keep their own schedule.
 
 The remote store exposes `getSnapshot()` and `subscribe(listener)`. Snapshots are immutable objects, so `useSyncExternalStore` works without tearing.
 
@@ -411,6 +416,9 @@ Visual configuration lives on `CursorLayer` props only. `LiveCursorProvider` nev
 - Each active anchor measured at most once per frame.
 - 100 cursors over 20 distinct anchors: one snapshot object per frame, < 2 ms scripting per pass on a mid-range laptop (benchmark, not test-gated).
 - Publishing rate default 20 Hz, configurable.
+- `context`/`user` are delta-encoded; full reconnect/heartbeat publishes carry the current values, including explicit `null` for empty fields.
+- The optional `adaptivePublish` client option slows the publish rate when `transport.bufferedBytes()` reports a growing send buffer.
+- Relay fan-out remains `senders × receivers` in a room. Relay-side rate limits, message caps, authentication, and horizontal scale are server concerns, not library transport concerns.
 - Benchmark scenarios (scripted page in the demo app): 1/10/50/100 cursors × 10/100/1000 anchors, resize storm, nested scroll.
 
 ## 17. Testing

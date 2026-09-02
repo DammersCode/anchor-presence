@@ -156,6 +156,7 @@ The sender never measures the DOM of the receiver. It sends a semantic anchor ID
 | Occlusion detection (clipped-ancestor + optional hit-test) | ✅ |
 | Interpolation (`none`, `linear`, or a custom `Interpolator`) | ✅ |
 | Transport-agnostic (bring your own WebSocket, Socket.IO, SignalR, `BroadcastChannel`) | ✅ |
+| Delta `context`/`user` wire encoding + optional adaptive publish rate | ✅ |
 | SSR-safe hooks | ✅ |
 | Mobile viewing (read-only presence) | ✅ |
 | Mobile sending (touch as a pointer source) | not supported |

@@ -32,7 +32,9 @@ Core imports no DOM, React, transport, or codec library, so it does not know wha
 | `validatePresence(input, limits?)` | Validates and clamps an untrusted decoded value |
 | `jsonCodec` | The default `CursorCodec` implementation |
 | `LiveCursorTransport`, `ConnectionStatus` | The transport interface |
-| `RemotePresenceStore` | Sequencing and stale-expiry store for remote presences |
+| `AdaptivePublishOptions` | Opt-in slow-mode options for the publish rate |
+| `createInMemoryPair` | A 2-peer in-memory transport for tests |
+| `RemotePresenceStore` | Sequencing, field-delta merge, and stale-expiry store for remote presences |
 | `linearInterpolator`, `noneInterpolator` | Interpolation factories |
 
 See [docs/architecture.md](../../docs/architecture.md) and [docs/codecs.md](../../docs/codecs.md) in the repository root for full guides.

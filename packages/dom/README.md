@@ -29,7 +29,7 @@ Dom is the only package that calls browser APIs: `getBoundingClientRect`, `Resiz
 | Export | What it does |
 |---|---|
 | `createDomBinding(client, options?)` | Wires anchor auto-registration, pointer sampling, geometry scheduling, and remote resolution to a `PresenceClient` |
-| `createWebSocketTransport(options?)` | Native WebSocket transport for the bundled relay or a compatible relay |
+| `createWebSocketTransport(options?)` | Native WebSocket transport for the bundled relay or a compatible relay; exposes `bufferedBytes()` and reconnect jitter |
 | `DomBindingOptions`, `ResolutionOptions`, `EnvironmentOptions` | Binding configuration types |
 | `WebSocketTransportOptions` | WebSocket transport configuration types |
 | `ResolvedCursor`, `ResolutionTier`, `VisibilityPolicy` | Resolution types |

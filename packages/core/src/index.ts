@@ -30,6 +30,9 @@ export type { CursorCodec } from "./codec";
 
 export type { LiveCursorTransport } from "./transport";
 
+export { createInMemoryPair } from "./inMemoryTransport";
+export type { InMemoryPair, InMemoryPairOptions } from "./inMemoryTransport";
+
 export {
   createPresenceClient,
   DEFAULT_HEARTBEAT_MS,

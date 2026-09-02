@@ -202,6 +202,23 @@ export function createBroadcastChannelTransport(channelName: string): LiveCursor
 
 `BroadcastChannel` has no `subscribeStatus`, so the client reports a constant `"connected"` status. This transport needs no relay server, so it is a good choice for testing two-tab scenarios locally before wiring up a real backend.
 
+## Testing without a browser
+
+`createInMemoryPair` in `@anchor-presence/core` wires two clients together in memory. It needs no server, no browser, and no DOM. Use it in node unit tests to feed one client and read the other.
+
+```ts
+import { createInMemoryPair, createPresenceClient } from "@anchor-presence/core";
+
+const { a, b } = createInMemoryPair();
+const clientA = createPresenceClient({ transport: a });
+const clientB = createPresenceClient({ transport: b });
+a.connect();
+clientA.updateLocalCursor({ anchors: [{ id: "x", u: 0.5, v: 0.5 }] });
+// after the publish interval, clientB.getRemoteSnapshot() holds client A's cursor
+```
+
+It is exactly a two-peer mesh: `send` on one side reaches only the other side's subscribers. The client does the `encode` and `validate`, so the pair stays a thin pipe. Pass `async: true` to route delivery through a microtask. Call `dispose()` to stop delivery.
+
 ## Reconnection and status
 
 Core does not implement reconnection. A transport that needs to reconnect must do so internally and call its status listeners as the connection state changes:

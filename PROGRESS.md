@@ -4,24 +4,19 @@
 > completed step. Commit this file with each plan commit so `git log -p --
 > PROGRESS.md` replays the full trajectory.
 
-**Last updated:** 2026-09-02 (plan 016 A DONE — auto-registration committed; plan 016 B1 next)
+**Last updated:** 2026-09-02 (plan 016 A + B DONE — both committed; plans-status commit next)
 **Branch:** `dev` | **Drift base:** `1f8f7b4`
 
 ## Resume point
 
-Next action: **plan 016, step B1 — `packages/core/src/inMemoryTransport.ts`**
-(`createInMemoryPair`: a wire-connected 2-peer mesh. Each side implements
-`LiveCursorTransport` (connect→connected, disconnect→disconnected, send,
-subscribe, subscribeStatus replays, getStatus). `send` on A delivers to B's
-subscribers only. Delivery is synchronous by default; `async?: boolean`
-routes through `queueMicrotask`. `dispose()` stops delivery. DOM-free.)
-Deliverable A (auto-registration) is DONE and committed: `autoRegister` flag
-on `DomBindingOptions` (default off), `autoRegisterAttribute`, explicit-
-register wins via a `WeakSet`, a separate MutationObserver (NOT the
-scheduler's), `dispose()` cleanup, 9-case jsdom test suite green.
-Plan 014 is DONE (7b97707), plan 015 is DONE (3cf3480), plan 016 A gate green
-(vitest, tsc, vite build, oxlint 0 errors). Plan 016 drift check was clean:
-only 014 additions in-scope (dom src/test).
+Next action: **final commit — update plans status**
+(mark `plans/016-...md` row and `plans/README.md` DONE, record final
+PROGRESS.md state). Plan 016 deliverables A and B are both DONE and
+committed as separate feature commits. All three plans (014, 015, 016) are
+complete; the full gate is green (vitest 298, tsc exit 0, vite build,
+oxlint 0 errors on the new files).
+Plan 014 is DONE (7b97707), plan 015 is DONE (3cf3480), plan 016 A and B
+are DONE (auto-registration + `createInMemoryPair`).
 Findings for the owner (out of plan scope, not touched):
 `SPECIFICATION.md:140` and `playwright.config.ts:8` still reference the
 deleted demo `WebSocketTransport`.
@@ -169,9 +164,13 @@ same value): last-wins in the registry, the loser stays dormant (no churn/loop).
 
 ### Plan 016 B — `createInMemoryPair` in core
 
-- [ ] Step B1: `packages/core/src/inMemoryTransport.ts` + index export
-- [ ] Step B2: `packages/core/test/inMemoryTransport.test.ts` (node env, 5 cases)
-- [ ] Step B3: `docs/transports.md` "Testing without a browser" section
+- [x] Step B1: `packages/core/src/inMemoryTransport.ts` + index export
+- [x] Step B2: `packages/core/test/inMemoryTransport.test.ts` (node env, 5 cases)
+- [x] Step B3: `docs/transports.md` "Testing without a browser" section
+
+B design note: `setStatus` lives at module scope (it captures nothing); a single
+pair-level `disposed` flag gates `deliver`. The pair is a 2-peer mesh (`send` on
+A reaches B's subscribers only); the client does encode/validate.
 
 ## Full gate checklist (run after each plan, and at the end)
 

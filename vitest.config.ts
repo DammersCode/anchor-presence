@@ -36,6 +36,13 @@ export default defineConfig({
       },
       {
         test: {
+          name: "server",
+          environment: "node",
+          include: ["apps/server/test/**/*.test.ts"],
+        },
+      },
+      {
+        test: {
           name: "socketio-example",
           environment: "node",
           include: ["examples/socketio/**/*.test.ts"],

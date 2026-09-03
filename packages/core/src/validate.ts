@@ -87,27 +87,27 @@ function jsonFieldFits(value: unknown, maxBytes: number): boolean {
 }
 
 // Iterative so pathological nesting cannot overflow the call stack; a repeated ancestor means a cycle,
-// which JSON.stringify would reject anyway.
+// which JSON.stringify would reject anyway. A `done` frame marks when the container's children finish.
 function exceedsMaxDepth(value: unknown, maxDepth: number): boolean {
-  type Frame = { value: unknown; depth: number; processed: boolean };
+  type Frame = { value: unknown; depth: number; done: boolean };
   const ancestors = new Set<object>();
-  const stack: Frame[] = [{ value, depth: 0, processed: false }];
+  const stack: Frame[] = [{ value, depth: 0, done: false }];
   while (stack.length > 0) {
-    const frame = stack[stack.length - 1]!;
-    if (frame.processed) {
-      stack.pop();
+    const frame = stack.pop();
+    if (frame === undefined) break;
+    if (frame.done) {
       if (isJsonContainer(frame.value)) ancestors.delete(frame.value);
       continue;
     }
-    frame.processed = true;
     if (!isJsonContainer(frame.value)) continue;
-    const container = frame.value;
     const nextDepth = frame.depth + 1;
     if (nextDepth > maxDepth) return true;
+    const container = frame.value;
     if (ancestors.has(container)) return true;
     ancestors.add(container);
+    stack.push({ value: container, depth: nextDepth, done: true });
     const children = Array.isArray(container) ? container : Object.values(container);
-    for (const child of children) stack.push({ value: child, depth: nextDepth, processed: false });
+    for (const child of children) stack.push({ value: child, depth: nextDepth, done: false });
   }
   return false;
 }

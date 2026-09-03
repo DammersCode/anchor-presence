@@ -178,19 +178,19 @@ describe("binaryCodec", () => {
   });
 
   it("applies the shared sequence cap on encode", () => {
-    const message = {
+    const base = {
       version: 1,
       clientId: "a",
       session: "s",
       sequence: 0,
       cursor: null,
-    } as CursorPresence;
+    } as const;
 
-    message.sequence = 2_147_483_647;
-    expect(validatePresence(binaryCodec.decode(binaryCodec.encode(message)))).not.toBeNull();
+    const atLimit = { ...base, sequence: 2_147_483_647 } as CursorPresence;
+    expect(validatePresence(binaryCodec.decode(binaryCodec.encode(atLimit)))).not.toBeNull();
 
-    message.sequence = 2_147_483_648;
-    expect(() => binaryCodec.encode(message)).toThrow("sequence out of range");
+    const aboveLimit = { ...base, sequence: 2_147_483_648 } as CursorPresence;
+    expect(() => binaryCodec.encode(aboveLimit)).toThrow("sequence out of range");
   });
 
   it("rejects a binary wire sequence above the cap at validation", () => {

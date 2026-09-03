@@ -48,7 +48,7 @@ export type EnvironmentOptions = {
   MutationObserverCtor?: MutationObserverCtor;
 };
 
-const ANCHOR_ATTRIBUTE_PATTERN = /^[A-Za-z][A-Za-z0-9]*(-[A-Za-z0-9]+)*$/;
+const ANCHOR_ATTRIBUTE_PATTERN = /^[A-Za-z][A-Za-z0-9]*(-[A-Za-z0-9]+)*$/u;
 const DEFAULT_ANCHOR_ATTRIBUTE = "data-anchor";
 const DEFAULT_MAX_ANCHORS = 4;
 const PROTOCOL_MAX_ANCHORS = 8;

@@ -1043,7 +1043,7 @@ describe("createPresenceClient visibilitychange publish flush", () => {
       documentStub,
       listeners,
       fire: () => {
-        for (const listener of [...listeners]) listener();
+        for (const listener of listeners) listener();
       },
     };
   }

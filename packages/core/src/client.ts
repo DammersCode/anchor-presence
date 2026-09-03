@@ -3,6 +3,7 @@ import { jsonCodec } from "./codec";
 import { createOversizedWarning, isDevMode } from "./internal/devWarnings";
 import { defaultIdFactory } from "./internal/ids";
 import { createPublishLoop } from "./internal/publishLoop";
+import { createStatusMachine } from "./internal/reconnect";
 import type { PresenceClientState, SchedulerLike } from "./internal/types";
 import { DEFAULT_MAX_FIELD_BYTES, DEFAULT_MAX_MESSAGE_BYTES } from "./protocol";
 import type {
@@ -208,7 +209,6 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
   const status = transport.subscribeStatus
     ? (transport.getStatus?.() ?? "connecting")
     : "connected";
-  const statusListeners = new Set<(status: ConnectionStatus) => void>();
 
   const devMode = isDevMode();
   let warnedAboutRemoteCap = false;
@@ -272,22 +272,7 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
   const warnIfOversized = createOversizedWarning(state);
 
   const publish = createPublishLoop(state);
-
-  function setStatus(next: ConnectionStatus): void {
-    if (state.status === next) return;
-    state.status = next;
-    // republish before listener fan-out so a throwing listener cannot kill the guarantee
-    if (state.status === "connected") {
-      publish.markReconnected();
-    }
-    for (const listener of statusListeners) {
-      try {
-        listener(state.status);
-      } catch {
-        // one throwing listener must not starve the rest
-      }
-    }
-  }
+  const statusMachine = createStatusMachine(state, publish);
 
   function scheduleHeartbeat(): void {
     if (state.disposed) return;
@@ -322,10 +307,7 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
   });
   state.teardowns.push(unsubscribeTransport);
 
-  if (transport.subscribeStatus) {
-    const unsubscribeStatus = transport.subscribeStatus((next) => setStatus(next));
-    state.teardowns.push(unsubscribeStatus);
-  }
+  statusMachine.wireTransport();
 
   publish.wireVisibility();
 
@@ -387,10 +369,7 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     },
 
     subscribeStatus(listener) {
-      statusListeners.add(listener);
-      return () => {
-        statusListeners.delete(listener);
-      };
+      return statusMachine.subscribeStatus(listener);
     },
 
     getRemoteSnapshot() {
@@ -427,17 +406,7 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
       state.publishTimer = null;
       state.heartbeatTimer = null;
       state.sweepTimer = null;
-      if (state.status !== "disconnected") {
-        state.status = "disconnected";
-        for (const listener of statusListeners) {
-          try {
-            listener(state.status);
-          } catch {
-            // one throwing listener must not starve the rest
-          }
-        }
-      }
-      statusListeners.clear();
+      statusMachine.dispose();
       state.contextListeners.clear();
       for (const teardown of state.teardowns.splice(0)) {
         teardown();

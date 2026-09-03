@@ -15,7 +15,7 @@ describe("rerender isolation", () => {
 
   beforeEach(() => {
     container = document.createElement("div");
-    document.body.appendChild(container);
+    document.body.append(container);
     siblingRenderCount = 0;
     cursorRenderCount = 0;
   });

@@ -49,7 +49,7 @@ export function makeFakeClient<TContext = unknown, TUser = unknown>(): {
       };
     },
     dispose: () => {
-      for (const fn of teardowns.splice(0, teardowns.length)) fn();
+      for (const fn of teardowns.splice(0)) fn();
     },
   };
 

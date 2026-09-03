@@ -20,12 +20,19 @@ function cursor(overrides: Partial<ResolvedCursor> = {}): ResolvedCursor {
   };
 }
 
+function makeItemSpy(counts: Record<string, number>) {
+  return function ItemSpy(props: { id: string }) {
+    counts[props.id] += 1;
+    return <span>{props.id}</span>;
+  };
+}
+
 describe("cursor components", () => {
   let container: HTMLDivElement;
 
   beforeEach(() => {
     container = document.createElement("div");
-    document.body.appendChild(container);
+    document.body.append(container);
   });
 
   afterEach(() => {
@@ -187,7 +194,7 @@ describe("cursor components", () => {
     const el = container.querySelector('[data-testid="remote-cursor"]');
     expect(el).not.toBeNull();
     expect(el?.className).toContain("demo-cursor");
-    expect(el?.getAttribute("data-cursor-name")).toBe("Ada");
+    expect(el?.dataset.cursorName).toBe("Ada");
 
     act(() => root.unmount());
   });
@@ -230,7 +237,7 @@ describe("cursor components", () => {
     });
 
     const ids = Array.from(container.querySelectorAll("[data-anchor-presence-client-id]")).map((el) =>
-      el.getAttribute("data-anchor-presence-client-id"),
+      el.dataset.anchorPresenceClientId,
     );
     expect(ids).toEqual(["r1"]);
 
@@ -279,16 +286,8 @@ describe("cursor components", () => {
     const { client } = makeFakeClient();
     const { binding, publish } = makeFakeBinding();
     const root = createRoot(container);
-    let r1Renders = 0;
-    let r2Renders = 0;
-    let r3Renders = 0;
-
-    function ItemSpy(props: { id: string }) {
-      if (props.id === "r1") r1Renders += 1;
-      else if (props.id === "r2") r2Renders += 1;
-      else r3Renders += 1;
-      return <span>{props.id}</span>;
-    }
+    const counts: Record<string, number> = { r1: 0, r2: 0, r3: 0 };
+    const ItemSpy = makeItemSpy(counts);
     const renderCursor = (props: { cursor: ResolvedCursor }) => <ItemSpy id={props.cursor.clientId} />;
 
     act(() => {
@@ -305,13 +304,13 @@ describe("cursor components", () => {
     act(() => {
       publish([r1, r2, r3]);
     });
-    expect([r1Renders, r2Renders, r3Renders]).toEqual([1, 1, 1]);
+    expect([counts.r1, counts.r2, counts.r3]).toEqual([1, 1, 1]);
 
     // r2 moves; r1 and r3 keep their object identity, as the resolver produces for unchanged cursors
     act(() => {
       publish([r1, { ...r2, x: 42, y: 42 }, r3]);
     });
-    expect([r1Renders, r2Renders, r3Renders]).toEqual([1, 2, 1]);
+    expect([counts.r1, counts.r2, counts.r3]).toEqual([1, 2, 1]);
 
     act(() => root.unmount());
   });

@@ -25,7 +25,7 @@ describe("useCursorContext", () => {
 
   beforeEach(() => {
     container = document.createElement("div");
-    document.body.appendChild(container);
+    document.body.append(container);
     renders = [];
     lastSetContext = null;
   });
@@ -136,7 +136,7 @@ describe("index re-exports", () => {
   it("re-exports the foreign types used in public signatures", () => {
     const source = readFileSync(join(process.cwd(), "packages/react/src/index.ts"), "utf8");
     for (const name of foreignTypes) {
-      expect(source, `missing re-export of ${name}`).toMatch(new RegExp(`\\b${name}\\b`));
+      expect(source, `missing re-export of ${name}`).toMatch(new RegExp(`\\b${name}\\b`, "u"));
     }
   });
 });

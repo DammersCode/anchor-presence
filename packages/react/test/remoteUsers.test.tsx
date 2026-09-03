@@ -44,7 +44,7 @@ describe("useRemoteUsers", () => {
 
   beforeEach(() => {
     container = document.createElement("div");
-    document.body.appendChild(container);
+    document.body.append(container);
   });
 
   afterEach(() => {

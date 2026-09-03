@@ -18,9 +18,9 @@ describe("usePresenceClient", () => {
     container.remove();
   });
 
-  it("runs the factory once per key and returns the same instance across renders", () => {
+  it("returns null before the effect and the stable client after, with one factory call", () => {
     const factory = vi.fn(() => makeFakeClient().client);
-    const seen: PresenceClient[] = [];
+    const seen: (PresenceClient | null)[] = [];
     function Comp() {
       seen.push(usePresenceClient({ factory, key: "memo" }));
       return null;
@@ -35,15 +35,17 @@ describe("usePresenceClient", () => {
     });
 
     expect(factory).toHaveBeenCalledTimes(1);
-    expect(seen).toHaveLength(2);
-    expect(seen[1]).toBe(seen[0]);
+    expect(seen[0]).toBeNull();
+    const last = seen.at(-1);
+    expect(last).not.toBeNull();
+    expect(seen.at(-2)).toBe(last);
 
     act(() => root.unmount());
   });
 
   it("runs the factory once under StrictMode and keeps the instance across the double mount", () => {
     const factory = vi.fn(() => makeFakeClient().client);
-    const seen: PresenceClient[] = [];
+    const seen: (PresenceClient | null)[] = [];
     function Comp() {
       seen.push(usePresenceClient({ factory, key: "strict" }));
       return null;
@@ -59,16 +61,18 @@ describe("usePresenceClient", () => {
     });
 
     expect(factory).toHaveBeenCalledTimes(1);
-    expect(seen.length).toBeGreaterThanOrEqual(2);
-    expect(seen[1]).toBe(seen[0]);
+    expect(seen[0]).toBeNull();
+    const last = seen.at(-1);
+    expect(last).not.toBeNull();
+    expect(seen.at(-2)).toBe(last);
 
     act(() => root.unmount());
   });
 
   it("resolves the same instance for two components without a key", () => {
     const factory = vi.fn(() => makeFakeClient().client);
-    const seenA: PresenceClient[] = [];
-    const seenB: PresenceClient[] = [];
+    const seenA: (PresenceClient | null)[] = [];
+    const seenB: (PresenceClient | null)[] = [];
     function A() {
       seenA.push(usePresenceClient({ factory }));
       return null;
@@ -89,14 +93,17 @@ describe("usePresenceClient", () => {
     });
 
     expect(factory).toHaveBeenCalledTimes(1);
-    expect(seenA[0]).toBe(seenB[0]);
+    expect(seenA[0]).toBeNull();
+    expect(seenB[0]).toBeNull();
+    expect(seenA.at(-1)).toBe(seenB.at(-1));
+    expect(seenA.at(-1)).not.toBeNull();
 
     act(() => root.unmount());
   });
 
   it("creates distinct instances for different keys", () => {
     const factory = vi.fn(() => makeFakeClient().client);
-    const seen: PresenceClient[] = [];
+    const seen: (PresenceClient | null)[] = [];
     function Comp(props: { clientKey: string }) {
       seen.push(usePresenceClient({ factory, key: props.clientKey }));
       return null;
@@ -113,14 +120,18 @@ describe("usePresenceClient", () => {
     });
 
     expect(factory).toHaveBeenCalledTimes(2);
-    expect(seen[0]).not.toBe(seen[1]);
+    expect(seen[0]).toBeNull();
+    const last = seen.at(-1);
+    expect(last).not.toBeNull();
+    expect(seen.at(-2)).not.toBeNull();
+    expect(last).not.toBe(seen.at(-2));
 
     act(() => root.unmount());
   });
 
   it("dispose() clears the registry entry so the next render re-creates the client", () => {
     const factory = vi.fn(() => makeFakeClient().client);
-    const seen: PresenceClient[] = [];
+    const seen: (PresenceClient | null)[] = [];
     function Comp() {
       seen.push(usePresenceClient({ factory, key: "recreate" }));
       return null;
@@ -130,7 +141,8 @@ describe("usePresenceClient", () => {
     act(() => {
       root.render(<Comp />);
     });
-    const before = seen[0]!;
+    const before = seen[1]!;
+    expect(before).not.toBeNull();
 
     act(() => {
       before.dispose();
@@ -140,15 +152,16 @@ describe("usePresenceClient", () => {
     });
 
     expect(factory).toHaveBeenCalledTimes(2);
-    expect(seen[1]).toBeDefined();
-    expect(seen[1]).not.toBe(before);
+    const last = seen.at(-1);
+    expect(last).not.toBeNull();
+    expect(last).not.toBe(before);
 
     act(() => root.unmount());
   });
 
-  it("keeps a stable instance across server renders", () => {
+  it("server renders return null and never run the factory", () => {
     const factory = vi.fn(() => makeFakeClient().client);
-    const seen: PresenceClient[] = [];
+    const seen: (PresenceClient | null)[] = [];
     function Comp() {
       seen.push(usePresenceClient({ factory, key: "ssr" }));
       return null;
@@ -157,7 +170,7 @@ describe("usePresenceClient", () => {
     renderToString(<Comp />);
     renderToString(<Comp />);
 
-    expect(factory).toHaveBeenCalledTimes(1);
-    expect(seen[1]).toBe(seen[0]);
+    expect(factory).not.toHaveBeenCalled();
+    expect(seen).toEqual([null, null]);
   });
 });

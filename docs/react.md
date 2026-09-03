@@ -62,7 +62,7 @@ Pass `client={null}` during server-side rendering. See "SSR" below.
 
 | Hook | Returns |
 |---|---|
-| `usePresenceClient({ factory, key? })` | a stable `PresenceClient` per `key` |
+| `usePresenceClient({ factory, key? })` | a stable `PresenceClient` per `key`, or `null` before the mount effect runs |
 | `useRemoteUsers()` | one entry per remote client: `clientId`, `user`, and `session` |
 | `useRemoteCursors()` | `ResolvedCursor[]` snapshot |
 | `useRemoteCursorsSelector(select, isEqual?)` | a value derived from the snapshot |

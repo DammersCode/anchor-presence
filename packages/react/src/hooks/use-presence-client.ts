@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useReducer, useRef } from "react";
 import type { PresenceClient } from "@anchor-presence/core";
 
 const DEFAULT_CLIENT_KEY = "__default__";
@@ -20,8 +20,8 @@ function wrapClient<TContext, TUser>(client: PresenceClient<TContext, TUser>, ke
  */
 export type PresenceClientFactoryOptions<TContext = unknown, TUser = unknown> = {
   /**
-   * Creates the client. The hook runs it once per `key`, on first use.
-   * The factory owns the transport: call `transport.connect()` inside it.
+   * Creates the client. The hook runs it once per `key`, on first mount, in an effect.
+   * Server renders never run the factory. The factory owns the transport: call `transport.connect()` inside it.
    */
   factory: (opts: { key?: string }) => PresenceClient<TContext, TUser>;
   /**
@@ -33,25 +33,34 @@ export type PresenceClientFactoryOptions<TContext = unknown, TUser = unknown> = 
 };
 
 /**
- * Returns one presence client per `key`.
- * The hook runs the factory once, on first use, and keeps the client for the page lifetime.
+ * Returns the presence client for `key`, or `null` until the client exists.
+ * The hook runs the factory once per `key`, on first mount, in an effect.
+ * Server renders return `null` and never run the factory.
+ * The same `key` resolves to the same client across renders, remounts, and StrictMode.
  * The hook never disposes on unmount. Call `client.dispose()` to end the client.
  * After `dispose()`, the next render creates a new client.
  * The hook does not connect the transport. The factory owns the transport.
  */
 export function usePresenceClient<TContext = unknown, TUser = unknown>(
   options: PresenceClientFactoryOptions<TContext, TUser>,
-): PresenceClient<TContext, TUser> {
+): PresenceClient<TContext, TUser> | null {
   const { factory, key = DEFAULT_CLIENT_KEY } = options;
   const factoryRef = useRef(factory);
-  // oxlint-disable-next-line react/refs -- latest-ref pattern: creation uses the first render's factory
+  // oxlint-disable-next-line react/refs -- latest-ref pattern: the creation effect reads the latest factory
   factoryRef.current = factory;
+  const [, force] = useReducer((tick: number) => tick + 1, 0);
+  const registryHas = clientRegistry.has(key);
+  const client = (clientRegistry.get(key) as PresenceClient<TContext, TUser> | undefined) ?? null;
 
-  let client = clientRegistry.get(key);
-  if (client === undefined) {
-    // oxlint-disable-next-line react/refs -- reads the latest-ref set above on the one-shot creation path
-    client = wrapClient<TContext, TUser>(factoryRef.current({ key }), key);
-    clientRegistry.set(key, client);
-  }
-  return client as PresenceClient<TContext, TUser>;
+  useEffect(() => {
+    if (!clientRegistry.has(key)) {
+      // oxlint-disable-next-line react/refs -- one-shot creation path
+      clientRegistry.set(key, wrapClient<TContext, TUser>(factoryRef.current({ key }), key));
+      force();
+      return;
+    }
+    if (!registryHas) force();
+  }, [key, registryHas]);
+
+  return client;
 }

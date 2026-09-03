@@ -39,7 +39,7 @@ React holds no cursor state of its own. It reads the `core` and `dom` stores wit
 | Hook or component | What it does |
 |---|---|
 | `LiveCursorProvider` | Provides a `PresenceClient` and its `DomBinding` to the component tree |
-| `usePresenceClient({ factory, key? })` | A stable `PresenceClient` per `key`, memoized for the page lifetime |
+| `usePresenceClient({ factory, key? })` | One `PresenceClient` per `key` (or `null` before the mount effect runs), memoized for the page lifetime |
 | `useRemoteUsers()` | One entry per remote client: `clientId`, `user`, and `session` |
 | `useRemoteCursors()` | Resolved cursor snapshot for rendering |
 | `useRemoteCursorsSelector(select, isEqual?)` | A derived value that rerenders only when it changes |
@@ -72,7 +72,7 @@ Two rules of thumb:
 
 ## Client lifecycle
 
-Create the client with `usePresenceClient`. The hook memoizes the client for the page lifetime. It returns the same instance across renders and StrictMode remounts.
+Create the client with `usePresenceClient`. The hook runs the factory once, in a mount effect, and memoizes the client for the page lifetime. It returns `null` until the effect has run, then the same instance across renders and StrictMode remounts. Server renders return `null` and never run the factory.
 
 ```tsx
 import { createPresenceClient } from "@anchor-presence/core";

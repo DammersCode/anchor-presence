@@ -364,7 +364,7 @@ Hooks:
 
 | Hook | Returns |
 |---|---|
-| `usePresenceClient({ factory, key? })` | a stable `PresenceClient` per `key` (page-lifetime registry) |
+| `usePresenceClient({ factory, key? })` | a stable `PresenceClient` per `key`, or `null` before the mount effect runs (page-lifetime registry) |
 | `useRemoteUsers()` | one entry per remote client: `clientId`, `user`, and `session` |
 | `useRemoteCursors()` | `ResolvedCursor[]` snapshot (useSyncExternalStore) |
 | `useRemoteCursorsSelector(select, isEqual?)` | a value derived from the snapshot, recomputed per frame |

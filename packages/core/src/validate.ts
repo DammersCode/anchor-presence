@@ -3,7 +3,9 @@ import {
   DEFAULT_MAX_ANCHOR_ID_LENGTH,
   DEFAULT_MAX_CLIENT_ID_LENGTH,
   DEFAULT_MAX_FIELD_BYTES,
+  DEFAULT_MAX_FIELD_DEPTH,
   DEFAULT_MAX_MESSAGE_BYTES,
+  DEFAULT_MAX_SEQUENCE,
   DEFAULT_MAX_SESSION_LENGTH,
 } from "./protocol";
 import type { AnchorPoint, CursorPosition, CursorPresence } from "./protocol";
@@ -11,9 +13,11 @@ import type { AnchorPoint, CursorPosition, CursorPresence } from "./protocol";
 export type ValidationLimits = {
   maxClientIdLength?: number;
   maxSessionLength?: number;
+  maxSequence?: number;
   maxAnchors?: number;
   maxAnchorIdLength?: number;
   maxFieldBytes?: number;
+  maxFieldDepth?: number;
   maxMessageBytes?: number;
 };
 
@@ -22,9 +26,11 @@ type ResolvedLimits = Required<ValidationLimits>;
 const DEFAULT_RESOLVED_LIMITS: ResolvedLimits = {
   maxClientIdLength: DEFAULT_MAX_CLIENT_ID_LENGTH,
   maxSessionLength: DEFAULT_MAX_SESSION_LENGTH,
+  maxSequence: DEFAULT_MAX_SEQUENCE,
   maxAnchors: DEFAULT_MAX_ANCHORS,
   maxAnchorIdLength: DEFAULT_MAX_ANCHOR_ID_LENGTH,
   maxFieldBytes: DEFAULT_MAX_FIELD_BYTES,
+  maxFieldDepth: DEFAULT_MAX_FIELD_DEPTH,
   maxMessageBytes: DEFAULT_MAX_MESSAGE_BYTES,
 };
 
@@ -37,9 +43,11 @@ function resolveLimits(limits?: ValidationLimits): ResolvedLimits {
     resolved = {
       maxClientIdLength: limits.maxClientIdLength ?? DEFAULT_MAX_CLIENT_ID_LENGTH,
       maxSessionLength: limits.maxSessionLength ?? DEFAULT_MAX_SESSION_LENGTH,
+      maxSequence: limits.maxSequence ?? DEFAULT_MAX_SEQUENCE,
       maxAnchors: limits.maxAnchors ?? DEFAULT_MAX_ANCHORS,
       maxAnchorIdLength: limits.maxAnchorIdLength ?? DEFAULT_MAX_ANCHOR_ID_LENGTH,
       maxFieldBytes: limits.maxFieldBytes ?? DEFAULT_MAX_FIELD_BYTES,
+      maxFieldDepth: limits.maxFieldDepth ?? DEFAULT_MAX_FIELD_DEPTH,
       maxMessageBytes: limits.maxMessageBytes ?? DEFAULT_MAX_MESSAGE_BYTES,
     };
     resolvedLimitsCache.set(limits, resolved);
@@ -49,6 +57,10 @@ function resolveLimits(limits?: ValidationLimits): ResolvedLimits {
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isJsonContainer(value: unknown): value is Record<string, unknown> | unknown[] {
+  return isPlainObject(value) || Array.isArray(value);
 }
 
 function isFiniteNumber(value: unknown): value is number {
@@ -72,6 +84,32 @@ function jsonFieldFits(value: unknown, maxBytes: number): boolean {
   } catch {
     return false;
   }
+}
+
+// Iterative so pathological nesting cannot overflow the call stack; a repeated ancestor means a cycle,
+// which JSON.stringify would reject anyway. A `done` frame marks when the container's children finish.
+function exceedsMaxDepth(value: unknown, maxDepth: number): boolean {
+  type Frame = { value: unknown; depth: number; done: boolean };
+  const ancestors = new Set<object>();
+  const stack: Frame[] = [{ value, depth: 0, done: false }];
+  while (stack.length > 0) {
+    const frame = stack.pop();
+    if (frame === undefined) break;
+    if (frame.done) {
+      if (isJsonContainer(frame.value)) ancestors.delete(frame.value);
+      continue;
+    }
+    if (!isJsonContainer(frame.value)) continue;
+    const nextDepth = frame.depth + 1;
+    if (nextDepth > maxDepth) return true;
+    const container = frame.value;
+    if (ancestors.has(container)) return true;
+    ancestors.add(container);
+    stack.push({ value: container, depth: nextDepth, done: true });
+    const children = Array.isArray(container) ? container : Object.values(container);
+    for (const child of children) stack.push({ value: child, depth: nextDepth, done: false });
+  }
+  return false;
 }
 
 function validateAnchorPoint(input: unknown, limits: ResolvedLimits): AnchorPoint | null {
@@ -131,7 +169,9 @@ export function validatePresence<TContext = unknown, TUser = unknown>(
     if (typeof session !== "string" || session.length < 1 || session.length > resolved.maxSessionLength) {
       return null;
     }
-    if (!isFiniteNumber(sequence) || !Number.isInteger(sequence) || sequence < 0) return null;
+    if (!isFiniteNumber(sequence) || !Number.isInteger(sequence) || sequence < 0 || sequence > resolved.maxSequence) {
+      return null;
+    }
 
     const cursor = validateCursor(input.cursor, resolved);
     if (cursor === undefined) return null;
@@ -144,11 +184,21 @@ export function validatePresence<TContext = unknown, TUser = unknown>(
       cursor,
     };
 
-    if ("context" in input && input.context !== undefined && jsonFieldFits(input.context, resolved.maxFieldBytes)) {
+    if (
+      "context" in input &&
+      input.context !== undefined &&
+      !exceedsMaxDepth(input.context, resolved.maxFieldDepth) &&
+      jsonFieldFits(input.context, resolved.maxFieldBytes)
+    ) {
       message.context = input.context as TContext;
     }
 
-    if ("user" in input && input.user !== undefined && jsonFieldFits(input.user, resolved.maxFieldBytes)) {
+    if (
+      "user" in input &&
+      input.user !== undefined &&
+      !exceedsMaxDepth(input.user, resolved.maxFieldDepth) &&
+      jsonFieldFits(input.user, resolved.maxFieldBytes)
+    ) {
       message.user = input.user as TUser;
     }
 

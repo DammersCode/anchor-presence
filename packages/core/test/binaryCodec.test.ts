@@ -177,6 +177,40 @@ describe("binaryCodec", () => {
     expect(binaryCodec.decode(badViewport)).toBeNull();
   });
 
+  it("applies the shared sequence cap on encode", () => {
+    const base = {
+      version: 1,
+      clientId: "a",
+      session: "s",
+      sequence: 0,
+      cursor: null,
+    } as const;
+
+    const atLimit = { ...base, sequence: 2_147_483_647 } as CursorPresence;
+    expect(validatePresence(binaryCodec.decode(binaryCodec.encode(atLimit)))).not.toBeNull();
+
+    const aboveLimit = { ...base, sequence: 2_147_483_648 } as CursorPresence;
+    expect(() => binaryCodec.encode(aboveLimit)).toThrow("sequence out of range");
+  });
+
+  it("rejects a binary wire sequence above the cap at validation", () => {
+    const encoded = binaryCodec.encode({
+      version: 1,
+      clientId: "a",
+      session: "s",
+      sequence: 0,
+      cursor: null,
+    });
+
+    // sequence is the uint32 right after the session string (offset 9 for "a"/"s")
+    const spoofed = encoded.slice();
+    new DataView(spoofed.buffer).setUint32(9, 0xffffffff, true);
+
+    const decoded = binaryCodec.decode(spoofed);
+    expect(decoded).not.toBeNull();
+    expect(validatePresence(decoded)).toBeNull();
+  });
+
   it("round-trips unicode clientId, session, anchor ids, and JSON fields", () => {
     const message: CursorPresence = {
       version: 1,

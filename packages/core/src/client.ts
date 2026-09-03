@@ -17,6 +17,8 @@ export const DEFAULT_HEARTBEAT_MS = 10_000;
 
 const MIN_TIMER_INTERVAL_MS = 1;
 const MIN_STALE_TIMEOUT_MS = 1000;
+const PUBLISH_RETRY_INITIAL_MS = 50;
+const PUBLISH_RETRY_MAX_MS = 2000;
 
 type TimerHandle = ReturnType<typeof setTimeout>;
 
@@ -42,6 +44,8 @@ export type PresenceClientOptions<TContext = unknown, TUser = unknown> = {
   staleTimeoutMs?: number;
   heartbeatMs?: number;
   maxRemoteClients?: number;
+  /** Invoked whenever a new remote clientId is dropped because the store is full. */
+  onRemoteClientDrop?: () => void;
   user?: TUser;
   context?: TContext;
   idFactory?: () => string;
@@ -76,6 +80,13 @@ const defaultScheduler: SchedulerLike = {
 type CryptoLike = {
   randomUUID?: () => string;
   getRandomValues?: (array: Uint8Array) => Uint8Array;
+};
+
+// Minimal DOM surface; core builds without the DOM lib so this stays a structural type.
+type DocumentLike = {
+  readonly visibilityState: string;
+  addEventListener: (type: string, listener: () => void) => void;
+  removeEventListener: (type: string, listener: () => void) => void;
 };
 
 function defaultIdFactory(): string {
@@ -156,6 +167,7 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
   let latestPointer: PointerInfo | undefined;
   let pendingPublish = false;
   let pendingFullPublish = false;
+  let failedSendCount = 0;
   let slowMode = false;
   let publishTimer: TimerHandle | null = null;
   let heartbeatTimer: TimerHandle | null = null;
@@ -173,11 +185,17 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     ...(staleTimeoutMs !== undefined ? { staleTimeoutMs } : {}),
     now,
     onDropNewClient: () => {
-      if (!devMode || warnedAboutRemoteCap) return;
-      warnedAboutRemoteCap = true;
-      console.warn(
-        `[anchor-presence] remote presence store is full (maxRemoteClients=${maxRemoteClients ?? DEFAULT_MAX_REMOTE_CLIENTS}); new clientIds are dropped until an entry expires`,
-      );
+      if (devMode && !warnedAboutRemoteCap) {
+        warnedAboutRemoteCap = true;
+        console.warn(
+          `[anchor-presence] remote presence store is full (maxRemoteClients=${maxRemoteClients ?? DEFAULT_MAX_REMOTE_CLIENTS}); new clientIds are dropped until an entry expires`,
+        );
+      }
+      try {
+        options.onRemoteClientDrop?.();
+      } catch {
+        // a throwing callback must not break the inbound pipeline
+      }
     },
   });
 
@@ -281,19 +299,24 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     }
   }
 
-  function schedulePublish(): void {
+  function schedulePublish(retryDelayMs?: number): void {
     if (disposed || publishTimer !== null) return;
+    const interval = retryDelayMs ?? (slowMode ? slowPublishIntervalMs : publishIntervalMs);
     publishTimer = scheduler.setTimeout(() => {
       publishTimer = null;
       if (!pendingPublish) return;
       if (send(latestCursor, pendingFullPublish)) {
         pendingPublish = false;
         pendingFullPublish = false;
+        failedSendCount = 0;
       } else if (status === "connected") {
-        schedulePublish(); // transient send failure: retry instead of stalling until the next change
+        // transient send failure: retry on an exponential backoff instead of hammering a dead transport
+        const delay = Math.min(PUBLISH_RETRY_INITIAL_MS * 2 ** failedSendCount, PUBLISH_RETRY_MAX_MS);
+        failedSendCount += 1;
+        schedulePublish(delay);
       }
       // while unsendable, pendingPublish stays set; the transition into "connected" re-schedules
-    }, slowMode ? slowPublishIntervalMs : publishIntervalMs);
+    }, interval);
   }
 
   function markPending(): void {
@@ -338,6 +361,21 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
   if (transport.subscribeStatus) {
     const unsubscribeStatus = transport.subscribeStatus((next) => setStatus(next));
     teardowns.push(unsubscribeStatus);
+  }
+
+  // browser-only: flush a pending publish as soon as the page becomes visible again
+  const browserDocument = (globalThis as { document?: DocumentLike }).document;
+  if (browserDocument !== undefined && typeof browserDocument.addEventListener === "function") {
+    const onVisibilityChange = () => {
+      if (disposed || browserDocument.visibilityState !== "visible" || !pendingPublish) return;
+      if (send(latestCursor, pendingFullPublish)) {
+        pendingPublish = false;
+        pendingFullPublish = false;
+        failedSendCount = 0;
+      }
+    };
+    browserDocument.addEventListener("visibilitychange", onVisibilityChange);
+    teardowns.push(() => browserDocument.removeEventListener("visibilitychange", onVisibilityChange));
   }
 
   if (context !== undefined || user !== undefined) warnIfOversized();

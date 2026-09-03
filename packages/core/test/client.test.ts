@@ -247,6 +247,36 @@ describe("createPresenceClient inbound pipeline", () => {
     client.dispose();
   });
 
+  it("K7: drops a spoofed huge-sequence message so later genuine messages still land", () => {
+    const { transport, emit } = makeTransport();
+    const client = createPresenceClient({ transport, idFactory });
+
+    emit(
+      jsonCodec.encode({
+        version: 1,
+        clientId: "remote-1",
+        session: "s",
+        sequence: 1e21,
+        cursor: { anchors: [] },
+      } as never),
+    );
+    expect(client.getRemoteSnapshot()).toHaveLength(0);
+
+    emit(
+      jsonCodec.encode({
+        version: 1,
+        clientId: "remote-1",
+        session: "s",
+        sequence: 1,
+        cursor: { anchors: [{ id: "a", u: 0.5, v: 0.5 }] },
+      } as never),
+    );
+    expect(client.getRemoteSnapshot()).toHaveLength(1);
+    expect(client.getRemoteSnapshot()[0]?.sequence).toBe(1);
+
+    client.dispose();
+  });
+
   it("ignores echoes of its own clientId", () => {
     const { transport, emit } = makeTransport();
     const client = createPresenceClient({ transport, clientId: "self", idFactory });
@@ -634,6 +664,71 @@ describe("createPresenceClient dirty-flag publishing", () => {
   });
 });
 
+describe("createPresenceClient publish retry backoff", () => {
+  function makeThrowingTransport() {
+    let failing = true;
+    const send = vi.fn(() => {
+      if (failing) throw new Error("boom");
+    });
+    const transport: LiveCursorTransport = { send, subscribe: vi.fn(() => () => {}) };
+    return { transport, send, setFailing: (value: boolean) => { failing = value; } };
+  }
+
+  it("backs off exponentially while sends keep failing, capped at 2 s", () => {
+    const { transport, send } = makeThrowingTransport();
+    const client = createPresenceClient({ transport, idFactory, publishIntervalMs: 50 });
+
+    client.updateLocalCursor({ anchors: [] });
+
+    vi.advanceTimersByTime(50); // t=50: initial attempt fails, retry in 50 ms
+    expect(send).toHaveBeenCalledTimes(1);
+    vi.advanceTimersByTime(50); // t=100
+    expect(send).toHaveBeenCalledTimes(2);
+    vi.advanceTimersByTime(100); // t=200
+    expect(send).toHaveBeenCalledTimes(3);
+    vi.advanceTimersByTime(200); // t=400
+    expect(send).toHaveBeenCalledTimes(4);
+    vi.advanceTimersByTime(400); // t=800
+    expect(send).toHaveBeenCalledTimes(5);
+    vi.advanceTimersByTime(800); // t=1600
+    expect(send).toHaveBeenCalledTimes(6);
+    vi.advanceTimersByTime(1600); // t=3200: backoff capped at 2 s
+    expect(send).toHaveBeenCalledTimes(7);
+    vi.advanceTimersByTime(2000); // t=5200
+    expect(send).toHaveBeenCalledTimes(8);
+    vi.advanceTimersByTime(2000); // t=7200
+    expect(send).toHaveBeenCalledTimes(9);
+
+    client.dispose();
+  });
+
+  it("resets the backoff after a successful send", () => {
+    const { transport, send, setFailing } = makeThrowingTransport();
+    const client = createPresenceClient({ transport, idFactory, publishIntervalMs: 50 });
+
+    client.updateLocalCursor({ anchors: [] });
+    vi.advanceTimersByTime(50); // t=50: fails, schedules retry in 50 ms
+    expect(send).toHaveBeenCalledTimes(1);
+
+    setFailing(false);
+    vi.advanceTimersByTime(50); // t=100: succeeds, backoff reset
+    expect(send).toHaveBeenCalledTimes(2);
+
+    // a new failing publish must start the backoff at 50 ms again, not the grown delay
+    setFailing(true);
+    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
+    vi.advanceTimersByTime(50); // t=150: fails, schedules retry in 50 ms
+    expect(send).toHaveBeenCalledTimes(3);
+
+    vi.advanceTimersByTime(49); // t=199: no retry yet
+    expect(send).toHaveBeenCalledTimes(3);
+    vi.advanceTimersByTime(1); // t=200: retry fires
+    expect(send).toHaveBeenCalledTimes(4);
+
+    client.dispose();
+  });
+});
+
 describe("createPresenceClient pointer type", () => {
   it("includes the pointer type on the wire and keeps it across single-arg updates", () => {
     const { transport, sent } = makeTransport();
@@ -867,5 +962,146 @@ describe("createPresenceClient dev-mode remote-cap warning", () => {
 
     client.dispose();
     warnSpy.mockRestore();
+  });
+});
+
+describe("createPresenceClient onRemoteClientDrop", () => {
+  function emitRemote(emit: (data: Uint8Array) => void, clientId: string) {
+    emit(
+      jsonCodec.encode({
+        version: 1,
+        clientId,
+        session: `${clientId}-session`,
+        sequence: 0,
+        cursor: { anchors: [] },
+      } as never),
+    );
+  }
+
+  it("invokes onRemoteClientDrop whenever a new remote client is dropped at the cap", () => {
+    const onRemoteClientDrop = vi.fn();
+    const { transport, emit } = makeTransport();
+    const client = createPresenceClient({
+      transport,
+      idFactory,
+      maxRemoteClients: 1,
+      onRemoteClientDrop,
+    });
+
+    emitRemote(emit, "remote-1");
+    expect(onRemoteClientDrop).not.toHaveBeenCalled();
+
+    emitRemote(emit, "remote-2");
+    expect(onRemoteClientDrop).toHaveBeenCalledTimes(1);
+
+    emitRemote(emit, "remote-3");
+    expect(onRemoteClientDrop).toHaveBeenCalledTimes(2);
+
+    client.dispose();
+  });
+
+  it("keeps ingesting existing clients when the drop callback throws", () => {
+    const onRemoteClientDrop = vi.fn(() => {
+      throw new Error("boom");
+    });
+    const { transport, emit } = makeTransport();
+    const client = createPresenceClient({
+      transport,
+      idFactory,
+      maxRemoteClients: 1,
+      onRemoteClientDrop,
+    });
+
+    expect(() => {
+      emitRemote(emit, "remote-1");
+      emitRemote(emit, "remote-2");
+    }).not.toThrow();
+
+    expect(client.getRemoteSnapshot()).toHaveLength(1);
+    expect(client.getRemoteSnapshot()[0]?.clientId).toBe("remote-1");
+
+    client.dispose();
+  });
+});
+
+describe("createPresenceClient visibilitychange publish flush", () => {
+  type VisibilityListener = () => void;
+
+  function installDocumentStub() {
+    const listeners = new Set<VisibilityListener>();
+    const documentStub = {
+      visibilityState: "hidden" as string,
+      addEventListener: vi.fn((type: string, listener: VisibilityListener) => {
+        if (type === "visibilitychange") listeners.add(listener);
+      }),
+      removeEventListener: vi.fn((type: string, listener: VisibilityListener) => {
+        if (type === "visibilitychange") listeners.delete(listener);
+      }),
+    };
+    Object.defineProperty(globalThis, "document", { value: documentStub, configurable: true });
+    return {
+      documentStub,
+      listeners,
+      fire: () => {
+        for (const listener of listeners) listener();
+      },
+    };
+  }
+
+  afterEach(() => {
+    delete (globalThis as { document?: unknown }).document;
+  });
+
+  it("flushes a pending publish immediately when the page becomes visible", () => {
+    const { documentStub, fire, listeners } = installDocumentStub();
+    const { transport, sent } = makeTransport();
+    const client = createPresenceClient({ transport, idFactory, publishIntervalMs: 50 });
+
+    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
+    expect(sent).toHaveLength(0); // rate-limited: the 50 ms timer has not fired yet
+    expect(listeners).toHaveLength(1);
+
+    documentStub.visibilityState = "visible";
+    fire();
+
+    expect(sent).toHaveLength(1);
+    expect(decodeSent(sent[0]!).cursor.anchors[0].u).toBe(0.5);
+
+    vi.advanceTimersByTime(100); // the rate-limited timer must not double-send
+    expect(sent).toHaveLength(1);
+
+    client.dispose();
+  });
+
+  it("does not flush while the page is still hidden", () => {
+    const { documentStub, fire } = installDocumentStub();
+    const { transport, sent } = makeTransport();
+    const client = createPresenceClient({ transport, idFactory, publishIntervalMs: 50 });
+
+    client.updateLocalCursor({ anchors: [] });
+    documentStub.visibilityState = "hidden";
+    fire();
+    expect(sent).toHaveLength(0);
+
+    vi.advanceTimersByTime(50); // the normal rate-limited path still works
+    expect(sent).toHaveLength(1);
+
+    client.dispose();
+  });
+
+  it("removes the visibilitychange listener on dispose", () => {
+    const { documentStub, fire, listeners } = installDocumentStub();
+    const { transport, sent } = makeTransport();
+    const client = createPresenceClient({ transport, idFactory, publishIntervalMs: 50 });
+    expect(listeners).toHaveLength(1);
+
+    client.dispose();
+    expect(listeners).toHaveLength(0);
+    expect(documentStub.removeEventListener).toHaveBeenCalledTimes(1);
+
+    client.updateLocalCursor({ anchors: [] });
+    fire();
+    vi.advanceTimersByTime(100);
+    expect(sent).toHaveLength(1); // only the leave message
   });
 });

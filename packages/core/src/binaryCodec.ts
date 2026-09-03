@@ -1,5 +1,5 @@
 import type { CursorCodec } from "./codec";
-import type { CursorPosition, CursorPresence, PointerInfo } from "./protocol";
+import { DEFAULT_MAX_SEQUENCE, type CursorPosition, type CursorPresence, type PointerInfo } from "./protocol";
 
 const MAGIC = 0x41;
 const FORMAT = 2;
@@ -80,7 +80,7 @@ function encodeMessage(message: CursorPresence): Uint8Array {
   if (clientIdBytes.byteLength > 0xffff) throw new Error("binaryCodec: clientId too large");
   const sessionBytes = encoder.encode(message.session);
   if (sessionBytes.byteLength > 0xffff) throw new Error("binaryCodec: session too large");
-  if (!Number.isSafeInteger(message.sequence) || message.sequence < 0 || message.sequence > 0xffffffff) {
+  if (!Number.isSafeInteger(message.sequence) || message.sequence < 0 || message.sequence > DEFAULT_MAX_SEQUENCE) {
     throw new Error("binaryCodec: sequence out of range");
   }
 

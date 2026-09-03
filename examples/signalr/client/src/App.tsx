@@ -7,7 +7,7 @@ import { CursorLayer } from "./cursors/CursorLayer";
 import { localRoom, localUserName } from "./cursors/setup";
 import type { LocalViewState } from "./cursors/visibilityPolicy";
 import type { DemoContext } from "./cursors/setup";
-import { usePageRoute, isPageId } from "./usePageRoute";
+import { usePageRoute, isPageId } from "./use-page-route";
 import { DashboardPage } from "./pages/DashboardPage";
 import { OrdersPage } from "./pages/OrdersPage";
 import { CustomersPage } from "./pages/CustomersPage";

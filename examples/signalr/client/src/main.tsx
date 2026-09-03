@@ -12,7 +12,7 @@ import {
   interpolatorRegistry,
   type InterpolatorStyle,
 } from "./cursors/interpolators";
-import { useInterpolatorStyle } from "./useInterpolatorStyle";
+import { useInterpolatorStyle } from "./use-interpolator-style";
 
 // Query-param routing (?page=bench) — no router dependency, per requirement 7.
 const isBenchRoute =

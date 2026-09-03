@@ -9,7 +9,7 @@ import { getPresenceClient } from "./cursors/setup";
 import { createVisibilityPolicy } from "./cursors/visibilityPolicy";
 import type { LocalViewState } from "./cursors/visibilityPolicy";
 import { interpolatorRegistry } from "./cursors/interpolators";
-import { useInterpolatorStyle } from "./useInterpolatorStyle";
+import { useInterpolatorStyle } from "./use-interpolator-style";
 
 // Query-param routing (?page=bench) — no router dependency, per requirement 7.
 const isBenchRoute = new URLSearchParams(window.location.search).get("page") === "bench";

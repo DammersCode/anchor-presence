@@ -111,8 +111,8 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
 
   private normalizePresence(presence: CursorPresence<TContext, TUser>): CursorPresence<TContext, TUser> {
     if (!("context" in presence) && !("user" in presence)) return presence;
-    const context = resolveFieldDelta(presence.context, undefined);
-    const user = resolveFieldDelta(presence.user, undefined);
+    const context = resolveFieldDelta(presence.context);
+    const user = resolveFieldDelta(presence.user);
     return applyFieldDeltas(presence, context, user);
   }
 
@@ -199,7 +199,7 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
 // Wire encoding: `null` clears the field, `undefined` inherits the previous same-session value.
 function resolveFieldDelta<T>(
   next: T | null | undefined,
-  previous: T | null | undefined,
+  previous?: T | null,
 ): T | undefined {
   if (next === null) return undefined;
   if (next !== undefined) return next;

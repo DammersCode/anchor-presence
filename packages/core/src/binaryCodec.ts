@@ -107,7 +107,7 @@ function encodeMessage(message: CursorPresence): Uint8Array {
     hasViewport = viewportValue !== undefined;
     if (viewportValue !== undefined) {
       if (!Number.isFinite(viewportValue.u) || !Number.isFinite(viewportValue.v)) {
-        throw new Error("binaryCodec: invalid viewport");
+        throw new TypeError("binaryCodec: invalid viewport");
       }
       viewport = { u: viewportValue.u, v: viewportValue.v };
     }

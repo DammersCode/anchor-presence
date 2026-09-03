@@ -1,8 +1,7 @@
 {
-  // Pin the editor to the workspace TypeScript (5.9.3, the version CI and all
-  // local verification use) so Go to Definition / References behave identically
-  // to the terminal `tsc --build` (see plans/005 for TS 6/7 regressions).
-  "typescript.tsdk": "node_modules/typescript/lib",
+  // No editor TypeScript pin: the workspace typescript@7 (native) ships no
+  // tsserver.js, so VS Code uses its bundled compiler (Select TypeScript
+  // Version -> Use Installed Version). CLI checks run on workspace tsc 7.
   // Keep the Windows file watcher and the search index out of gitignored e2e
   // build output and the bun cache; they hold hundreds of files.
   "files.watcherExclude": {
@@ -13,6 +12,5 @@
   "search.exclude": {
     "**/test-results/**": true,
     "**/playwright-report/**": true
-  },
-  "js/ts.tsdk.path": "node_modules/typescript/lib"
+  }
 }

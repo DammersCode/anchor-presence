@@ -221,6 +221,14 @@ clientA.updateLocalCursor({ anchors: [{ id: "x", u: 0.5, v: 0.5 }] });
 
 It is exactly a two-peer mesh: `send` on one side reaches only the other side's subscribers. The client does the `encode` and `validate`, so the pair stays a thin pipe. Pass `async: true` to route delivery through a microtask. Call `dispose()` to stop delivery.
 
+## Reading remote presence
+
+The client exposes two read APIs for the remote presences it has accepted.
+
+`getRemoteSnapshot()` returns the raw list, including each presence's `sequence`. Its identity changes on every accepted message. Use it for tests and diagnostics that need the wire order.
+
+`getRemotePresence()` returns the render-stable list. Each entry is a `RemotePresence`, which excludes `sequence`. The list holds its identity until an observable field changes, so a remote cursor move changes only that entry. Use it in render loops; a consumer of an unchanged presence does not re-render. The React adapter's `useCursorPresence` reads this list.
+
 ## Reconnection and status
 
 Core does not implement reconnection. A transport that needs to reconnect must do so internally and call its status listeners as the connection state changes:

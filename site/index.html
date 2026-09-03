@@ -395,9 +395,12 @@ h2{font-weight:800;font-size:clamp(28px,4.2vw,44px);letter-spacing:-.03em;margin
 
 <span class="c">// receiver: same address, different layout → its own pixels</span>
 <span class="k">const</span> binding = <span class="f">createDomBinding</span>(theirClient)
-binding.<span class="f">subscribe</span>(() =&gt; {
-  <span class="k">for</span> (<span class="k">const</span> c <span class="k">of</span> binding.<span class="f">getSnapshot</span>()) <span class="f">renderCursor</span>(c.user, c.x, c.y)
-})</pre>
+ binding.<span class="f">subscribe</span>(() =&gt; {
+   <span class="k">for</span> (<span class="k">const</span> c <span class="k">of</span> binding.<span class="f">getSnapshot</span>()) <span class="f">renderCursor</span>(c.user, c.x, c.y)
+ })
+
+ <span class="c">// core read: the render-stable presence list (no re-render on a cursor move)</span>
+ <span class="c">// const who = theirClient.getRemotePresence()</span></pre>
     </div>
   </div>
 </section>
@@ -473,7 +476,7 @@ binding.<span class="f">subscribe</span>(() =&gt; {
     var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target);}});},{threshold:.12});
     document.querySelectorAll(".reveal").forEach(function(el){io.observe(el);});
   } else { document.querySelectorAll(".reveal").forEach(function(el){el.classList.add("in");}); }
-  var t=391; setInterval(function(){t=389+Math.floor(Math.random()*6);var e=document.getElementById("tps");if(e)e.textContent=t;},1800);
+  var t=650; setInterval(function(){t=640+Math.floor(Math.random()*21);var e=document.getElementById("tps");if(e)e.textContent=t;},1800);
 })();
 (function(){
   var body=document.querySelector(".prod .body");if(!body)return;

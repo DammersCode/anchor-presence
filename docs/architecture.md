@@ -98,6 +98,14 @@ client.updateLocalCursor()  ---------> latest-state slot
 
 The sender never measures the receiver's DOM. The sender sends a semantic anchor ID and a normalized position inside it. The receiver measures its own anchors and turns that data into pixels.
 
+## Reading the remote state
+
+The receiver's client stores every accepted remote presence. It exposes two read APIs.
+
+`getRemoteSnapshot()` returns the raw store, including each presence's `sequence`. Its identity changes on every accepted message. Use it for tests and diagnostics.
+
+`getRemotePresence()` returns a render-stable projection. Each entry is a `RemotePresence` without `sequence`. Its identity changes only when an observable field changes. The React adapter reads this projection, so a remote cursor move re-renders only the consumers that need it.
+
 ## The 10 invariants
 
 1. Absolute sender screen coordinates are never the primary cross-client positioning representation.

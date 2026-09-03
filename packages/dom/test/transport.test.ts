@@ -359,4 +359,18 @@ describe("createWebSocketTransport", () => {
 
     expect(lastSocket().url).toBe("ws://relay.test:9000/");
   });
+
+  it("appends an opt-in token to the upgrade URL, URL-encoded", () => {
+    const transport = createWebSocketTransport({ url: TEST_URL, token: "a b+c=d", WebSocketCtor: FakeWebSocket });
+    void transport.connect?.();
+
+    expect(lastSocket().url).toBe("ws://relay.test/?room=main&token=a%20b%2Bc%3Dd");
+  });
+
+  it("appends the token with ? when the URL has no query", () => {
+    const transport = createWebSocketTransport({ url: "ws://relay.test/", token: "t", WebSocketCtor: FakeWebSocket });
+    void transport.connect?.();
+
+    expect(lastSocket().url).toBe("ws://relay.test/?token=t");
+  });
 });

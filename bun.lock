@@ -38,6 +38,9 @@
     "apps/server": {
       "name": "server",
       "version": "0.1.0",
+      "devDependencies": {
+        "@anchor-presence/core": "workspace:*",
+      },
     },
     "examples/signalr/client": {
       "name": "example-signalr-client",

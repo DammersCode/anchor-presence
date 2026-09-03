@@ -5,5 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "bun run index.ts"
+  },
+  "devDependencies": {
+    "@anchor-presence/core": "workspace:*"
   }
 }

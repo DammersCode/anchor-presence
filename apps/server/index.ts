@@ -1,4 +1,4 @@
-// Room-broadcast relay with reference-side size, rate, and room limits.
+// Room-broadcast relay with reference-side size, rate, room, origin, and liveness limits.
 function limitFromEnv(name: string, fallback: number): number {
   const parsed = Number(process.env[name]);
   return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback;
@@ -12,11 +12,15 @@ const RATE_CAPACITY = limitFromEnv("RATE_CAPACITY", 40);
 const RATE_REFILL_PER_SECOND = limitFromEnv("RATE_REFILL_PER_SECOND", 20);
 const SLOW_PEER_SOFT_BYTES = limitFromEnv("RELAY_SLOW_PEER_SOFT_BYTES", 1024 * 1024);
 const SLOW_PEER_HARD_BYTES = limitFromEnv("RELAY_SLOW_PEER_HARD_BYTES", 8 * 1024 * 1024);
+const PING_INTERVAL_MS = 30_000;
+const LIVENESS_LIMIT_MS = 60_000;
 
 const ROOM_FULL_CODE = 4001;
 const SERVER_FULL_CODE = 4002;
 const SLOW_PEER_CODE = 4003;
 const ORIGIN_REJECTED_CODE = 4004;
+const LIVENESS_CODE = 4005;
+
 const encoder = new TextEncoder();
 
 type SocketData = {
@@ -24,6 +28,7 @@ type SocketData = {
   origin: string;
   tokens: number;
   lastRefill: number;
+  lastPong: number;
 };
 
 type RoomSocket = Bun.ServerWebSocket<SocketData>;
@@ -67,7 +72,7 @@ if (typeof Bun !== "undefined" && import.meta.main) {
       const origin = req.headers.get("origin") ?? "";
       if (
         server.upgrade(req, {
-          data: { room, origin, tokens: RATE_CAPACITY, lastRefill: Date.now() },
+          data: { room, origin, tokens: RATE_CAPACITY, lastRefill: Date.now(), lastPong: Date.now() },
         })
       )
         return;
@@ -119,6 +124,9 @@ if (typeof Bun !== "undefined" && import.meta.main) {
           peer.send(message);
         }
       },
+      pong(ws: RoomSocket) {
+        ws.data.lastPong = Date.now();
+      },
       close(ws: RoomSocket) {
         const sockets = rooms.get(ws.data.room);
         if (!sockets?.has(ws)) return;
@@ -128,6 +136,20 @@ if (typeof Bun !== "undefined" && import.meta.main) {
       },
     },
   });
+
+  setInterval(() => {
+    const now = Date.now();
+    for (const sockets of rooms.values()) {
+      for (const peer of sockets) {
+        if (peer.readyState !== WebSocket.OPEN) continue;
+        if (now - peer.data.lastPong >= LIVENESS_LIMIT_MS) {
+          peer.close(LIVENESS_CODE, "liveness timeout");
+          continue;
+        }
+        peer.ping();
+      }
+    }
+  }, PING_INTERVAL_MS);
 
   console.log(`relay listening on :${PORT}`);
 }

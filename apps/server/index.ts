@@ -12,6 +12,7 @@ const RATE_CAPACITY = limitFromEnv("RATE_CAPACITY", 40);
 const RATE_REFILL_PER_SECOND = limitFromEnv("RATE_REFILL_PER_SECOND", 20);
 const SLOW_PEER_SOFT_BYTES = limitFromEnv("RELAY_SLOW_PEER_SOFT_BYTES", 1024 * 1024);
 const SLOW_PEER_HARD_BYTES = limitFromEnv("RELAY_SLOW_PEER_HARD_BYTES", 8 * 1024 * 1024);
+const SLOW_PEER_RESUME_BYTES = limitFromEnv("RELAY_SLOW_PEER_RESUME_BYTES", 512 * 1024);
 const PING_INTERVAL_MS = 30_000;
 const LIVENESS_LIMIT_MS = 60_000;
 
@@ -29,6 +30,7 @@ type SocketData = {
   tokens: number;
   lastRefill: number;
   lastPong: number;
+  skipped: boolean;
 };
 
 type RoomSocket = Bun.ServerWebSocket<SocketData>;
@@ -58,10 +60,16 @@ function messageByteLength(message: string | ArrayBuffer): number {
 
 export type SlowPeerAction = "send" | "skip" | "close";
 
-export function slowPeerAction(bufferedAmount: number, softBytes: number, hardBytes: number): SlowPeerAction {
+export function slowPeerAction(
+  bufferedAmount: number,
+  skipped: boolean,
+  softBytes: number,
+  hardBytes: number,
+  resumeBytes: number,
+): SlowPeerAction {
   if (bufferedAmount > hardBytes) return "close";
-  if (bufferedAmount > softBytes) return "skip";
-  return "send";
+  if (skipped) return bufferedAmount < resumeBytes ? "send" : "skip";
+  return bufferedAmount > softBytes ? "skip" : "send";
 }
 
 if (typeof Bun !== "undefined" && import.meta.main) {
@@ -72,7 +80,7 @@ if (typeof Bun !== "undefined" && import.meta.main) {
       const origin = req.headers.get("origin") ?? "";
       if (
         server.upgrade(req, {
-          data: { room, origin, tokens: RATE_CAPACITY, lastRefill: Date.now(), lastPong: Date.now() },
+          data: { room, origin, tokens: RATE_CAPACITY, lastRefill: Date.now(), lastPong: Date.now(), skipped: false },
         })
       )
         return;
@@ -115,11 +123,18 @@ if (typeof Bun !== "undefined" && import.meta.main) {
 
         for (const peer of sockets) {
           if (peer === ws || peer.readyState !== WebSocket.OPEN) continue;
-          const action = slowPeerAction(peer.getBufferedAmount(), SLOW_PEER_SOFT_BYTES, SLOW_PEER_HARD_BYTES);
+          const action = slowPeerAction(
+            peer.getBufferedAmount(),
+            peer.data.skipped,
+            SLOW_PEER_SOFT_BYTES,
+            SLOW_PEER_HARD_BYTES,
+            SLOW_PEER_RESUME_BYTES,
+          );
           if (action === "close") {
             peer.close(SLOW_PEER_CODE, "slow peer");
             continue;
           }
+          peer.data.skipped = action === "skip";
           if (action === "skip") continue;
           peer.send(message);
         }

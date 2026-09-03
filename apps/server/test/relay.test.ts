@@ -242,6 +242,7 @@ beforeAll(async () => {
     RATE_REFILL_PER_SECOND: "100000",
     RELAY_SLOW_PEER_SOFT_BYTES: String(64 * 1024),
     RELAY_SLOW_PEER_HARD_BYTES: String(192 * 1024),
+    RELAY_SLOW_PEER_RESUME_BYTES: String(32 * 1024),
   });
   await Promise.all([
     waitForPort(hardeningPort),
@@ -384,12 +385,18 @@ describe("reference relay hardening", () => {
     stalled.socket.destroy();
   }, 20_000);
 
-  it("classifies slow-peer actions by buffered amount", () => {
-    expect(slowPeerAction(0, 64, 192)).toBe("send");
-    expect(slowPeerAction(64, 64, 192)).toBe("send");
-    expect(slowPeerAction(65, 64, 192)).toBe("skip");
-    expect(slowPeerAction(192, 64, 192)).toBe("skip");
-    expect(slowPeerAction(193, 64, 192)).toBe("close");
+  it("classifies slow-peer actions with skip hysteresis", () => {
+    expect(slowPeerAction(0, false, 64, 192, 32)).toBe("send");
+    expect(slowPeerAction(64, false, 64, 192, 32)).toBe("send");
+    expect(slowPeerAction(65, false, 64, 192, 32)).toBe("skip");
+    expect(slowPeerAction(128, true, 64, 192, 32)).toBe("skip");
+    expect(slowPeerAction(192, true, 64, 192, 32)).toBe("skip");
+    expect(slowPeerAction(31, true, 64, 192, 32)).toBe("send");
+    expect(slowPeerAction(32, true, 64, 192, 32)).toBe("skip");
+    expect(slowPeerAction(0, true, 64, 192, 32)).toBe("send");
+    expect(slowPeerAction(193, false, 64, 192, 32)).toBe("close");
+    expect(slowPeerAction(193, true, 64, 192, 32)).toBe("close");
+    expect(slowPeerAction(4096, true, 64, 192, 32)).toBe("close");
   });
 
   it("limits burst messages per socket and refills over time", async () => {

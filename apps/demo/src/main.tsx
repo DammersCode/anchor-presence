@@ -4,6 +4,7 @@ import "./index.css";
 import { LiveCursorProvider } from "@anchor-presence/react";
 import App from "./App";
 import { BenchPage } from "./bench/BenchPage";
+import { ReflowBenchPage } from "./reflow/ReflowBenchPage";
 import { getPresenceClient } from "./cursors/setup";
 import { createVisibilityPolicy } from "./cursors/visibilityPolicy";
 import type { LocalViewState } from "./cursors/visibilityPolicy";
@@ -12,6 +13,7 @@ import { useInterpolatorStyle } from "./useInterpolatorStyle";
 
 // Query-param routing (?page=bench) — no router dependency, per requirement 7.
 const isBenchRoute = new URLSearchParams(window.location.search).get("page") === "bench";
+const isReflowBenchRoute = new URLSearchParams(window.location.search).get("page") === "reflow-bench";
 
 // App's context effect is the single writer; the policy reads it synchronously each resolution.
 const localViewState: LocalViewState = { page: null, settingsOpen: false };
@@ -20,6 +22,7 @@ const visibilityPolicy = createVisibilityPolicy(() => localViewState);
 function Root() {
   const [interpolatorStyle, selectInterpolatorStyle] = useInterpolatorStyle();
   if (isBenchRoute) return <BenchPage />;
+  if (isReflowBenchRoute) return <ReflowBenchPage />;
 
   const client = getPresenceClient();
   return (

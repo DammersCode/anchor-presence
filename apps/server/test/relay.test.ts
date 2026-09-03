@@ -337,11 +337,14 @@ describe("reference relay hardening", () => {
   });
 
   it(
-    "rejects a disallowed origin with 4004 and accepts an allowed one",
+    "rejects a disallowed or missing origin with 4004 and accepts an allowed one",
     async () => {
       const room = randomUUID();
       const rejected = await rawConnect(originPort, `/?room=${room}`, "http://evil.example");
       expect((await awaitCloseCode(rejected)).code).toBe(4004);
+
+      const missingOrigin = await rawConnect(originPort, `/?room=${room}`, null);
+      expect((await awaitCloseCode(missingOrigin)).code).toBe(4004);
 
       const noOrigin = await connect(`ws://127.0.0.1:${originPort}/?room=${room}`);
       expect(await noOrigin.closeCode).toBe(4004);

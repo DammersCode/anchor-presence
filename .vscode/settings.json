@@ -13,5 +13,6 @@
   "search.exclude": {
     "**/test-results/**": true,
     "**/playwright-report/**": true
-  }
+  },
+  "js/ts.tsdk.path": "node_modules/typescript/lib"
 }

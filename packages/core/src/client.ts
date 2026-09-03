@@ -44,6 +44,8 @@ export type PresenceClientOptions<TContext = unknown, TUser = unknown> = {
   staleTimeoutMs?: number;
   heartbeatMs?: number;
   maxRemoteClients?: number;
+  /** Invoked whenever a new remote clientId is dropped because the store is full. */
+  onRemoteClientDrop?: () => void;
   user?: TUser;
   context?: TContext;
   idFactory?: () => string;
@@ -176,11 +178,17 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     ...(staleTimeoutMs !== undefined ? { staleTimeoutMs } : {}),
     now,
     onDropNewClient: () => {
-      if (!devMode || warnedAboutRemoteCap) return;
-      warnedAboutRemoteCap = true;
-      console.warn(
-        `[anchor-presence] remote presence store is full (maxRemoteClients=${maxRemoteClients ?? DEFAULT_MAX_REMOTE_CLIENTS}); new clientIds are dropped until an entry expires`,
-      );
+      if (devMode && !warnedAboutRemoteCap) {
+        warnedAboutRemoteCap = true;
+        console.warn(
+          `[anchor-presence] remote presence store is full (maxRemoteClients=${maxRemoteClients ?? DEFAULT_MAX_REMOTE_CLIENTS}); new clientIds are dropped until an entry expires`,
+        );
+      }
+      try {
+        options.onRemoteClientDrop?.();
+      } catch {
+        // a throwing callback must not break the inbound pipeline
+      }
     },
   });
 

@@ -964,3 +964,62 @@ describe("createPresenceClient dev-mode remote-cap warning", () => {
     warnSpy.mockRestore();
   });
 });
+
+describe("createPresenceClient onRemoteClientDrop", () => {
+  function emitRemote(emit: (data: Uint8Array) => void, clientId: string) {
+    emit(
+      jsonCodec.encode({
+        version: 1,
+        clientId,
+        session: `${clientId}-session`,
+        sequence: 0,
+        cursor: { anchors: [] },
+      } as never),
+    );
+  }
+
+  it("invokes onRemoteClientDrop whenever a new remote client is dropped at the cap", () => {
+    const onRemoteClientDrop = vi.fn();
+    const { transport, emit } = makeTransport();
+    const client = createPresenceClient({
+      transport,
+      idFactory,
+      maxRemoteClients: 1,
+      onRemoteClientDrop,
+    });
+
+    emitRemote(emit, "remote-1");
+    expect(onRemoteClientDrop).not.toHaveBeenCalled();
+
+    emitRemote(emit, "remote-2");
+    expect(onRemoteClientDrop).toHaveBeenCalledTimes(1);
+
+    emitRemote(emit, "remote-3");
+    expect(onRemoteClientDrop).toHaveBeenCalledTimes(2);
+
+    client.dispose();
+  });
+
+  it("keeps ingesting existing clients when the drop callback throws", () => {
+    const onRemoteClientDrop = vi.fn(() => {
+      throw new Error("boom");
+    });
+    const { transport, emit } = makeTransport();
+    const client = createPresenceClient({
+      transport,
+      idFactory,
+      maxRemoteClients: 1,
+      onRemoteClientDrop,
+    });
+
+    expect(() => {
+      emitRemote(emit, "remote-1");
+      emitRemote(emit, "remote-2");
+    }).not.toThrow();
+
+    expect(client.getRemoteSnapshot()).toHaveLength(1);
+    expect(client.getRemoteSnapshot()[0]?.clientId).toBe("remote-1");
+
+    client.dispose();
+  });
+});

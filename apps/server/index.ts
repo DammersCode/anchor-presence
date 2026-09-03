@@ -16,10 +16,12 @@ const SLOW_PEER_HARD_BYTES = limitFromEnv("RELAY_SLOW_PEER_HARD_BYTES", 8 * 1024
 const ROOM_FULL_CODE = 4001;
 const SERVER_FULL_CODE = 4002;
 const SLOW_PEER_CODE = 4003;
+const ORIGIN_REJECTED_CODE = 4004;
 const encoder = new TextEncoder();
 
 type SocketData = {
   room: string;
+  origin: string;
   tokens: number;
   lastRefill: number;
 };
@@ -27,6 +29,12 @@ type SocketData = {
 type RoomSocket = Bun.ServerWebSocket<SocketData>;
 
 const rooms = new Map<string, Set<RoomSocket>>();
+const allowedOrigins = new Set(
+  (process.env.RELAY_ALLOWED_ORIGINS ?? "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter((origin) => origin.length > 0),
+);
 let totalSockets = 0;
 
 function roomFor(req: Request): string {
@@ -56,11 +64,21 @@ if (typeof Bun !== "undefined" && import.meta.main) {
     port: PORT,
     fetch(req, server) {
       const room = roomFor(req);
-      if (server.upgrade(req, { data: { room, tokens: RATE_CAPACITY, lastRefill: Date.now() } })) return;
+      const origin = req.headers.get("origin") ?? "";
+      if (
+        server.upgrade(req, {
+          data: { room, origin, tokens: RATE_CAPACITY, lastRefill: Date.now() },
+        })
+      )
+        return;
       return new Response("WebSocket relay: upgrade required", { status: 426 });
     },
     websocket: {
       open(ws: RoomSocket) {
+        if (allowedOrigins.size > 0 && !allowedOrigins.has(ws.data.origin)) {
+          ws.close(ORIGIN_REJECTED_CODE, "origin not allowed");
+          return;
+        }
         if (totalSockets >= MAX_TOTAL_SOCKETS) {
           ws.close(SERVER_FULL_CODE, "server full");
           return;

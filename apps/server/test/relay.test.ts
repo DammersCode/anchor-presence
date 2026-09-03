@@ -21,10 +21,12 @@ type RawSocket = {
 let hardening: ChildProcessWithoutNullStreams;
 let rateLimited: ChildProcessWithoutNullStreams;
 let capped: ChildProcessWithoutNullStreams;
+let origin: ChildProcessWithoutNullStreams;
 let slow: ChildProcessWithoutNullStreams;
 let hardeningPort = 0;
 let rateLimitedPort = 0;
 let cappedPort = 0;
+let originPort = 0;
 let slowPort = 0;
 const sockets: WebSocket[] = [];
 const rawSockets: net.Socket[] = [];
@@ -94,7 +96,7 @@ function connect(url: string): Promise<OpenedSocket> {
   });
 }
 
-function rawConnect(port: number, urlPath: string): Promise<RawSocket> {
+function rawConnect(port: number, urlPath: string, originHeader: string | null): Promise<RawSocket> {
   return new Promise((resolve, reject) => {
     const socket = net.connect(port, "127.0.0.1");
     rawSockets.push(socket);
@@ -107,6 +109,7 @@ function rawConnect(port: number, urlPath: string): Promise<RawSocket> {
       `Sec-WebSocket-Key: ${key}`,
       "Sec-WebSocket-Version: 13",
     ];
+    if (originHeader !== null) lines.push(`Origin: ${originHeader}`);
     let settled = false;
     let frames = Buffer.alloc(0);
     let handshakeDone = false;
@@ -207,6 +210,7 @@ beforeAll(async () => {
   hardeningPort = await freePort();
   rateLimitedPort = await freePort();
   cappedPort = await freePort();
+  originPort = await freePort();
   slowPort = await freePort();
   hardening = startRelay(hardeningPort, {
     RELAY_MAX_ROOM_SOCKETS: "3",
@@ -226,6 +230,11 @@ beforeAll(async () => {
     RATE_CAPACITY: "1000",
     RATE_REFILL_PER_SECOND: "1000",
   });
+  origin = startRelay(originPort, {
+    RELAY_ALLOWED_ORIGINS: "http://allowed.example",
+    RATE_CAPACITY: "1000",
+    RATE_REFILL_PER_SECOND: "1000",
+  });
   slow = startRelay(slowPort, {
     RELAY_MAX_ROOM_SOCKETS: "1000",
     MAX_MESSAGE_BYTES: String(1024 * 1024),
@@ -238,6 +247,7 @@ beforeAll(async () => {
     waitForPort(hardeningPort),
     waitForPort(rateLimitedPort),
     waitForPort(cappedPort),
+    waitForPort(originPort),
     waitForPort(slowPort),
   ]);
 }, 15_000);
@@ -248,6 +258,7 @@ afterAll(async () => {
   hardening.kill();
   rateLimited.kill();
   capped.kill();
+  origin.kill();
   slow.kill();
   await new Promise((resolve) => setTimeout(resolve, 50));
 });
@@ -324,9 +335,27 @@ describe("reference relay hardening", () => {
     expect(fourth.ws.readyState).toBe(WebSocket.OPEN);
   });
 
+  it(
+    "rejects a disallowed origin with 4004 and accepts an allowed one",
+    async () => {
+      const room = randomUUID();
+      const rejected = await rawConnect(originPort, `/?room=${room}`, "http://evil.example");
+      expect((await awaitCloseCode(rejected)).code).toBe(4004);
+
+      const noOrigin = await connect(`ws://127.0.0.1:${originPort}/?room=${room}`);
+      expect(await noOrigin.closeCode).toBe(4004);
+
+      const allowed = await rawConnect(originPort, `/?room=${room}`, "http://allowed.example");
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      expect(allowed.socket.destroyed).toBe(false);
+      allowed.socket.destroy();
+    },
+    10_000,
+  );
+
   it("closes a stalled peer with 4003 and stops queueing messages for it", async () => {
     const room = randomUUID();
-    const stalled = await rawConnect(slowPort, `/?room=${room}`);
+    const stalled = await rawConnect(slowPort, `/?room=${room}`, null);
     stalled.socket.pause();
 
     const sender = await connect(`ws://127.0.0.1:${slowPort}/?room=${room}`);
@@ -341,7 +370,7 @@ describe("reference relay hardening", () => {
 
   it("keeps delivering to healthy peers while a peer is stalled", async () => {
     const room = randomUUID();
-    const stalled = await rawConnect(slowPort, `/?room=${room}`);
+    const stalled = await rawConnect(slowPort, `/?room=${room}`, null);
     stalled.socket.pause();
 
     const sender = await connect(`ws://127.0.0.1:${slowPort}/?room=${room}`);

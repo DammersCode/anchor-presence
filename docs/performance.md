@@ -69,6 +69,8 @@ Dev-machine reference from 2026-09-02:
 - Browser scheduler pass (Chromium, demo bench page, 240-sample rolling window): 100 anchors × 50 cursors ≈1.1 ms mean, ≈2.0 ms p95
 - Core inbound path (Node/vitest hot-path bench, decode → validate → ingest): ≈650k messages/s with `binaryCodec`, ≈460k messages/s with `jsonCodec`
 
+The demo bench page updates its stats readout once per second. This keeps the readout from adding work to the measured scheduler passes. For the cleanest number, open the page with `?nostats` (for example `/?page=bench&nostats`). That mode skips the readout and writes the rolling numbers to `window.benchStats` instead.
+
 ## Scaling limits
 
 The default relay forwards every message to every other socket in a room, so relay traffic grows with `senders × receivers`. The library reduces per-message cost (delta `context`/`user`, one validation pass, optional adaptive publish rate), but it does not change the room-broadcast fan-out. For large rooms, move receivers into smaller rooms, add relay-side rate limits and message caps, or introduce a server-side aggregator.

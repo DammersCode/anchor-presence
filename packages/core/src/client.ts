@@ -9,7 +9,7 @@ import type {
   RemotePresence,
 } from "./protocol";
 import { DEFAULT_MAX_REMOTE_CLIENTS, DEFAULT_STALE_TIMEOUT_MS, RemotePresenceStore } from "./store";
-import type { SchedulerLike, TimerHandle } from "./internal/types";
+import type { PresenceClientState, SchedulerLike } from "./internal/types";
 import type { LiveCursorTransport } from "./transport";
 import { validatePresence } from "./validate";
 import type { ValidationLimits } from "./validate";
@@ -241,28 +241,10 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
   const clientId = options.clientId ?? idFactory();
   const session = idFactory();
 
-  let context = options.context;
-  let user = options.user;
-  let contextDirty = context !== undefined;
-  let userDirty = user !== undefined;
-  let sequence = 0;
-  let disposed = false;
-
-  let latestCursor: CursorPosition | null = null;
-  let latestPointer: PointerInfo | undefined;
-  let pendingPublish = false;
-  let pendingFullPublish = false;
-  let failedSendCount = 0;
-  let slowMode = false;
-  let publishTimer: TimerHandle | null = null;
-  let heartbeatTimer: TimerHandle | null = null;
-  let sweepTimer: TimerHandle | null = null;
-
-  let status: ConnectionStatus = transport.subscribeStatus
+  const status = transport.subscribeStatus
     ? (transport.getStatus?.() ?? "connecting")
     : "connected";
   const statusListeners = new Set<(status: ConnectionStatus) => void>();
-  const contextListeners = new Set<() => void>();
 
   const devMode = isDevMode();
   let warnedAboutRemoteCap = false;
@@ -285,37 +267,70 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     },
   });
 
-  const teardowns: Array<() => void> = [];
-
-  const maxFieldBytes = validationLimits?.maxFieldBytes ?? DEFAULT_MAX_FIELD_BYTES;
-  const maxMessageBytes = validationLimits?.maxMessageBytes ?? DEFAULT_MAX_MESSAGE_BYTES;
+  const state: PresenceClientState<TContext, TUser> = {
+    transport,
+    codec,
+    scheduler,
+    clientId,
+    session,
+    publishIntervalMs,
+    slowPublishIntervalMs,
+    highWatermarkBytes,
+    lowWatermarkBytes,
+    adaptivePublish: adaptiveOptions !== undefined,
+    heartbeatMs,
+    sweepIntervalMs: (staleTimeoutMs ?? DEFAULT_STALE_TIMEOUT_MS) / 2,
+    maxFieldBytes: validationLimits?.maxFieldBytes ?? DEFAULT_MAX_FIELD_BYTES,
+    maxMessageBytes: validationLimits?.maxMessageBytes ?? DEFAULT_MAX_MESSAGE_BYTES,
+    validationLimits,
+    devMode,
+    store,
+    context: options.context,
+    user: options.user,
+    contextDirty: options.context !== undefined,
+    userDirty: options.user !== undefined,
+    sequence: 0,
+    disposed: false,
+    latestCursor: null,
+    latestPointer: undefined,
+    pendingPublish: false,
+    pendingFullPublish: false,
+    failedSendCount: 0,
+    slowMode: false,
+    publishTimer: null,
+    heartbeatTimer: null,
+    sweepTimer: null,
+    status,
+    contextListeners: new Set(),
+    teardowns: [],
+  };
 
   // checked when context/user changes, not per message — receivers silently drop oversized fields
   function warnIfOversized(): void {
-    if (!devMode) return;
+    if (!state.devMode) return;
     try {
-      if (context !== undefined && jsonByteLength(context) > maxFieldBytes) {
+      if (state.context !== undefined && jsonByteLength(state.context) > state.maxFieldBytes) {
         console.warn(
-          `[anchor-presence] outbound context exceeds maxFieldBytes (${maxFieldBytes}); receivers will drop the field`,
+          `[anchor-presence] outbound context exceeds maxFieldBytes (${state.maxFieldBytes}); receivers will drop the field`,
         );
       }
-      if (user !== undefined && jsonByteLength(user) > maxFieldBytes) {
+      if (state.user !== undefined && jsonByteLength(state.user) > state.maxFieldBytes) {
         console.warn(
-          `[anchor-presence] outbound user exceeds maxFieldBytes (${maxFieldBytes}); receivers will drop the field`,
+          `[anchor-presence] outbound user exceeds maxFieldBytes (${state.maxFieldBytes}); receivers will drop the field`,
         );
       }
       const probe: CursorPresence<TContext, TUser> = {
         version: 1,
-        clientId,
-        session,
-        sequence,
-        cursor: latestCursor,
+        clientId: state.clientId,
+        session: state.session,
+        sequence: state.sequence,
+        cursor: state.latestCursor,
       };
-      if (context !== undefined) probe.context = context;
-      if (user !== undefined) probe.user = user;
-      if (codec.encode(probe).byteLength > maxMessageBytes) {
+      if (state.context !== undefined) probe.context = state.context;
+      if (state.user !== undefined) probe.user = state.user;
+      if (state.codec.encode(probe).byteLength > state.maxMessageBytes) {
         console.warn(
-          `[anchor-presence] outbound message exceeds maxMessageBytes (${maxMessageBytes}); receivers will drop it`,
+          `[anchor-presence] outbound message exceeds maxMessageBytes (${state.maxMessageBytes}); receivers will drop it`,
         );
       }
     } catch {
@@ -324,17 +339,17 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
   }
 
   function setStatus(next: ConnectionStatus): void {
-    if (status === next) return;
-    status = next;
+    if (state.status === next) return;
+    state.status = next;
     // republish before listener fan-out so a throwing listener cannot kill the guarantee
-    if (status === "connected") {
-      pendingPublish = true;
-      pendingFullPublish = true;
+    if (state.status === "connected") {
+      state.pendingPublish = true;
+      state.pendingFullPublish = true;
       schedulePublish();
     }
     for (const listener of statusListeners) {
       try {
-        listener(status);
+        listener(state.status);
       } catch {
         // one throwing listener must not starve the rest
       }
@@ -344,40 +359,40 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
   function buildMessage(cursor: CursorPosition | null, includeFull: boolean): CursorPresence<TContext, TUser> {
     const message: CursorPresence<TContext, TUser> = {
       version: 1,
-      clientId,
-      session,
-      sequence: sequence++,
+      clientId: state.clientId,
+      session: state.session,
+      sequence: state.sequence++,
       cursor,
     };
-    if (contextDirty || includeFull) message.context = context ?? null;
-    if (userDirty || includeFull) message.user = user ?? null;
-    if (latestPointer !== undefined) message.pointer = latestPointer;
+    if (state.contextDirty || includeFull) message.context = state.context ?? null;
+    if (state.userDirty || includeFull) message.user = state.user ?? null;
+    if (state.latestPointer !== undefined) message.pointer = state.latestPointer;
     return message;
   }
 
   function updateSlowMode(): void {
-    if (adaptiveOptions === undefined || typeof transport.bufferedBytes !== "function") return;
+    if (!state.adaptivePublish || typeof state.transport.bufferedBytes !== "function") return;
     try {
-      const buffered = transport.bufferedBytes();
-      if (buffered >= highWatermarkBytes) slowMode = true;
-      else if (buffered <= lowWatermarkBytes) slowMode = false;
+      const buffered = state.transport.bufferedBytes();
+      if (buffered >= state.highWatermarkBytes) state.slowMode = true;
+      else if (buffered <= state.lowWatermarkBytes) state.slowMode = false;
     } catch {
       // a throwing transport probe must not break publishing
     }
   }
 
   function send(cursor: CursorPosition | null, includeFull = false): boolean {
-    if (status !== "connected") return false;
+    if (state.status !== "connected") return false;
     try {
       const message = buildMessage(cursor, includeFull);
-      const bytes = codec.encode(message);
-      const result = transport.send(bytes);
+      const bytes = state.codec.encode(message);
+      const result = state.transport.send(bytes);
       if (result && typeof result.catch === "function") {
         result.catch(() => {});
       }
       updateSlowMode();
-      if (message.context !== undefined) contextDirty = false;
-      if (message.user !== undefined) userDirty = false;
+      if (message.context !== undefined) state.contextDirty = false;
+      if (message.user !== undefined) state.userDirty = false;
       return true;
     } catch {
       // swallow send errors — presence is lossy by design
@@ -386,19 +401,19 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
   }
 
   function schedulePublish(retryDelayMs?: number): void {
-    if (disposed || publishTimer !== null) return;
-    const interval = retryDelayMs ?? (slowMode ? slowPublishIntervalMs : publishIntervalMs);
-    publishTimer = scheduler.setTimeout(() => {
-      publishTimer = null;
-      if (!pendingPublish) return;
-      if (send(latestCursor, pendingFullPublish)) {
-        pendingPublish = false;
-        pendingFullPublish = false;
-        failedSendCount = 0;
-      } else if (status === "connected") {
+    if (state.disposed || state.publishTimer !== null) return;
+    const interval = retryDelayMs ?? (state.slowMode ? state.slowPublishIntervalMs : state.publishIntervalMs);
+    state.publishTimer = state.scheduler.setTimeout(() => {
+      state.publishTimer = null;
+      if (!state.pendingPublish) return;
+      if (send(state.latestCursor, state.pendingFullPublish)) {
+        state.pendingPublish = false;
+        state.pendingFullPublish = false;
+        state.failedSendCount = 0;
+      } else if (state.status === "connected") {
         // transient send failure: retry on an exponential backoff instead of hammering a dead transport
-        const delay = Math.min(PUBLISH_RETRY_INITIAL_MS * 2 ** failedSendCount, PUBLISH_RETRY_MAX_MS);
-        failedSendCount += 1;
+        const delay = Math.min(PUBLISH_RETRY_INITIAL_MS * 2 ** state.failedSendCount, PUBLISH_RETRY_MAX_MS);
+        state.failedSendCount += 1;
         schedulePublish(delay);
       }
       // while unsendable, pendingPublish stays set; the transition into "connected" re-schedules
@@ -406,85 +421,84 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
   }
 
   function markPending(): void {
-    pendingPublish = true;
+    state.pendingPublish = true;
     schedulePublish();
   }
 
   function scheduleHeartbeat(): void {
-    if (disposed) return;
-    heartbeatTimer = scheduler.setTimeout(() => {
-      if (send(latestCursor, true)) pendingPublish = false;
+    if (state.disposed) return;
+    state.heartbeatTimer = state.scheduler.setTimeout(() => {
+      if (send(state.latestCursor, true)) state.pendingPublish = false;
       scheduleHeartbeat();
-    }, heartbeatMs);
+    }, state.heartbeatMs);
   }
   scheduleHeartbeat();
 
-  const sweepIntervalMs = (staleTimeoutMs ?? DEFAULT_STALE_TIMEOUT_MS) / 2;
   function scheduleSweep(): void {
-    if (disposed) return;
-    sweepTimer = scheduler.setTimeout(() => {
-      store.sweep();
+    if (state.disposed) return;
+    state.sweepTimer = state.scheduler.setTimeout(() => {
+      state.store.sweep();
       scheduleSweep();
-    }, sweepIntervalMs);
+    }, state.sweepIntervalMs);
   }
   scheduleSweep();
 
   const unsubscribeTransport = transport.subscribe((data) => {
-    if (disposed) return;
+    if (state.disposed) return;
     try {
-      if (data.byteLength > maxMessageBytes) return; // oversized wire message: drop before parsing (spec §4.2)
-      const decoded = codec.decode(data);
-      const presence = validatePresence<TContext, TUser>(decoded, validationLimits);
+      if (data.byteLength > state.maxMessageBytes) return; // oversized wire message: drop before parsing (spec §4.2)
+      const decoded = state.codec.decode(data);
+      const presence = validatePresence<TContext, TUser>(decoded, state.validationLimits);
       if (presence === null) return;
-      if (presence.clientId === clientId) return; // ignore echoes of our own messages
-      store.ingest(presence);
+      if (presence.clientId === state.clientId) return; // ignore echoes of our own messages
+      state.store.ingest(presence);
     } catch {
       // a throwing codec or subscriber must not break the transport dispatch loop
     }
   });
-  teardowns.push(unsubscribeTransport);
+  state.teardowns.push(unsubscribeTransport);
 
   if (transport.subscribeStatus) {
     const unsubscribeStatus = transport.subscribeStatus((next) => setStatus(next));
-    teardowns.push(unsubscribeStatus);
+    state.teardowns.push(unsubscribeStatus);
   }
 
   // browser-only: flush a pending publish as soon as the page becomes visible again
   const browserDocument = (globalThis as { document?: DocumentLike }).document;
   if (browserDocument !== undefined && typeof browserDocument.addEventListener === "function") {
     const onVisibilityChange = () => {
-      if (disposed || browserDocument.visibilityState !== "visible" || !pendingPublish) return;
-      if (send(latestCursor, pendingFullPublish)) {
-        pendingPublish = false;
-        pendingFullPublish = false;
-        failedSendCount = 0;
+      if (state.disposed || browserDocument.visibilityState !== "visible" || !state.pendingPublish) return;
+      if (send(state.latestCursor, state.pendingFullPublish)) {
+        state.pendingPublish = false;
+        state.pendingFullPublish = false;
+        state.failedSendCount = 0;
       }
     };
     browserDocument.addEventListener("visibilitychange", onVisibilityChange);
-    teardowns.push(() => browserDocument.removeEventListener("visibilitychange", onVisibilityChange));
+    state.teardowns.push(() => browserDocument.removeEventListener("visibilitychange", onVisibilityChange));
   }
 
-  if (context !== undefined || user !== undefined) warnIfOversized();
+  if (state.context !== undefined || state.user !== undefined) warnIfOversized();
 
   return {
     clientId,
     session,
 
     updateLocalCursor(cursor, pointer) {
-      if (disposed) return;
-      latestCursor = cursor;
-      if (pointer !== undefined) latestPointer = pointer;
+      if (state.disposed) return;
+      state.latestCursor = cursor;
+      if (pointer !== undefined) state.latestPointer = pointer;
       markPending();
     },
 
     setContext(next) {
-      if (disposed) return;
-      if (context === next) return;
-      context = next;
-      contextDirty = true;
+      if (state.disposed) return;
+      if (state.context === next) return;
+      state.context = next;
+      state.contextDirty = true;
       warnIfOversized();
       markPending();
-      for (const listener of contextListeners) {
+      for (const listener of state.contextListeners) {
         try {
           listener();
         } catch {
@@ -494,31 +508,31 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     },
 
     getContext() {
-      return context;
+      return state.context;
     },
 
     subscribeContext(listener) {
-      contextListeners.add(listener);
+      state.contextListeners.add(listener);
       return () => {
-        contextListeners.delete(listener);
+        state.contextListeners.delete(listener);
       };
     },
 
     setUser(next) {
-      if (disposed) return;
-      if (user === next) return;
-      user = next;
-      userDirty = true;
+      if (state.disposed) return;
+      if (state.user === next) return;
+      state.user = next;
+      state.userDirty = true;
       warnIfOversized();
       markPending();
     },
 
     getUser() {
-      return user;
+      return state.user;
     },
 
     getStatus() {
-      return status;
+      return state.status;
     },
 
     subscribeStatus(listener) {
@@ -529,52 +543,52 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     },
 
     getRemoteSnapshot() {
-      return store.getSnapshot();
+      return state.store.getSnapshot();
     },
 
     getRemotePresence() {
-      return store.getStableSnapshot();
+      return state.store.getStableSnapshot();
     },
 
     subscribeRemote(listener) {
-      return store.subscribe(listener);
+      return state.store.subscribe(listener);
     },
 
     registerTeardown(fn) {
-      if (disposed) {
+      if (state.disposed) {
         fn();
         return () => {};
       }
-      teardowns.push(fn);
+      state.teardowns.push(fn);
       return () => {
-        const index = teardowns.indexOf(fn);
-        if (index !== -1) teardowns.splice(index, 1);
+        const index = state.teardowns.indexOf(fn);
+        if (index !== -1) state.teardowns.splice(index, 1);
       };
     },
 
     dispose() {
-      if (disposed) return;
-      disposed = true;
+      if (state.disposed) return;
+      state.disposed = true;
       send(null); // best-effort leave message so receivers hide the cursor immediately
-      if (publishTimer !== null) scheduler.clearTimeout(publishTimer);
-      if (heartbeatTimer !== null) scheduler.clearTimeout(heartbeatTimer);
-      if (sweepTimer !== null) scheduler.clearTimeout(sweepTimer);
-      publishTimer = null;
-      heartbeatTimer = null;
-      sweepTimer = null;
-      if (status !== "disconnected") {
-        status = "disconnected";
+      if (state.publishTimer !== null) scheduler.clearTimeout(state.publishTimer);
+      if (state.heartbeatTimer !== null) scheduler.clearTimeout(state.heartbeatTimer);
+      if (state.sweepTimer !== null) scheduler.clearTimeout(state.sweepTimer);
+      state.publishTimer = null;
+      state.heartbeatTimer = null;
+      state.sweepTimer = null;
+      if (state.status !== "disconnected") {
+        state.status = "disconnected";
         for (const listener of statusListeners) {
           try {
-            listener(status);
+            listener(state.status);
           } catch {
             // one throwing listener must not starve the rest
           }
         }
       }
       statusListeners.clear();
-      contextListeners.clear();
-      for (const teardown of teardowns.splice(0)) {
+      state.contextListeners.clear();
+      for (const teardown of state.teardowns.splice(0)) {
         teardown();
       }
     },

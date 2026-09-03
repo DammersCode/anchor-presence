@@ -99,32 +99,38 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
 
   function open(): void {
     if (disposedByUser || WebSocketImpl === undefined) return;
-    const ws = new WebSocketImpl(url);
-    ws.binaryType = "arraybuffer";
-    socket = ws;
+    try {
+      const ws = new WebSocketImpl(url);
+      ws.binaryType = "arraybuffer";
+      socket = ws;
 
-    ws.onopen = () => {
-      reconnectAttempt = 0;
-      setStatus("connected");
-    };
+      ws.onopen = () => {
+        reconnectAttempt = 0;
+        setStatus("connected");
+      };
 
-    ws.onmessage = (event) => {
-      const data = event.data;
-      if (!(data instanceof ArrayBuffer)) return;
-      const bytes = new Uint8Array(data);
-      for (const listener of dataListeners) listener(bytes);
-    };
+      ws.onmessage = (event) => {
+        const data = event.data;
+        if (!(data instanceof ArrayBuffer)) return;
+        const bytes = new Uint8Array(data);
+        for (const listener of dataListeners) listener(bytes);
+      };
 
-    ws.onclose = () => {
-      if (socket === ws) socket = null;
-      if (disposedByUser) return;
+      ws.onclose = () => {
+        if (socket === ws) socket = null;
+        if (disposedByUser) return;
+        if (reconnect) scheduleReconnect();
+        else setStatus("disconnected");
+      };
+
+      ws.onerror = () => {
+        ws.close();
+      };
+    } catch {
+      // a throwing constructor (bad URL, blocked host) must not kill the reconnect loop
       if (reconnect) scheduleReconnect();
       else setStatus("disconnected");
-    };
-
-    ws.onerror = () => {
-      ws.close();
-    };
+    }
   }
 
   return {

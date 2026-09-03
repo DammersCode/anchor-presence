@@ -6,31 +6,52 @@ import { useRemoteCursorsSelector } from "./hooks";
 const DEFAULT_COLOR = "#6b7280";
 const DEFAULT_Z_INDEX = 50;
 
-// JSX cannot name an attribute dynamically; the marker wins over consumer props, as before
+// JSX cannot name an attribute dynamically. The marker wins over consumer props.
 const CURSOR_MARKER_PROPS: Record<string, string> = { [CURSOR_MARKER_ATTRIBUTE]: "" };
 
 function sameCursors(a: readonly unknown[], b: readonly unknown[]): boolean {
   return a.length === b.length && a.every((item, index) => item === b[index]);
 }
 
+/**
+ * Props that `renderCursor` receives.
+ */
 export type CursorRenderProps<TContext = unknown, TUser = unknown> = {
+  /** The resolved cursor to render. */
   cursor: ResolvedCursor<TContext, TUser>;
+  /** The label, from `getLabel`. `null` hides the label. */
   label: ReactNode;
+  /** The color, from `getColor`. */
   color: string;
 };
 
+/**
+ * Props for `CursorLayer`.
+ */
 export type CursorLayerProps<TContext = unknown, TUser = unknown> = {
+  /** Returns the label to show for one cursor. */
   getLabel?: (cursor: ResolvedCursor<TContext, TUser>) => ReactNode;
+  /** Returns the color for one cursor. */
   getColor?: (cursor: ResolvedCursor<TContext, TUser>) => string;
+  /** Hides a cursor when it returns `false`. Default: show every visible cursor. */
   filterCursor?: (cursor: ResolvedCursor<TContext, TUser>) => boolean;
+  /** Returns extra props for the cursor element. */
   getCursorProps?: (cursor: ResolvedCursor<TContext, TUser>) => Omit<ComponentPropsWithoutRef<"div">, "children">;
+  /** Renders one cursor. Default: the `DefaultCursor` component. */
   renderCursor?: (props: CursorRenderProps<TContext, TUser>) => ReactNode;
 };
 
+/**
+ * Props for `DefaultCursor`.
+ */
 export type DefaultCursorProps = {
+  /** The label text to show next to the arrow. */
   label?: ReactNode;
+  /** The arrow color. Default `#6b7280`. */
   color?: string;
+  /** A class name for the outer element. */
   className?: string;
+  /** Inline styles for the outer element. */
   style?: CSSProperties &
     Partial<
       Record<
@@ -38,10 +59,15 @@ export type DefaultCursorProps = {
         string
       >
     >;
+  /** A class name for the label element. */
   labelClassName?: string;
+  /** Inline styles for the label element. */
   labelStyle?: CSSProperties;
 };
 
+/**
+ * The default cursor shape: an arrow with an optional label.
+ */
 export function DefaultCursor(props: DefaultCursorProps): ReactNode {
   const { label, color = DEFAULT_COLOR, className, style, labelClassName, labelStyle } = props;
   const cssColor = `var(--anchor-presence-cursor-color, ${color})`;
@@ -121,6 +147,10 @@ function CursorItem<TContext = unknown, TUser = unknown>(props: CursorItemProps<
 // the resolver keeps result-object identity for unchanged cursors (spec §14.1), so memo skips static cursors for free
 const MemoizedCursorItem = memo(CursorItem) as typeof CursorItem;
 
+/**
+ * Renders the visible remote cursors.
+ * The layer places each cursor at its resolved position.
+ */
 export function CursorLayer<TContext = unknown, TUser = unknown>(
   props: CursorLayerProps<TContext, TUser>,
 ): ReactNode {

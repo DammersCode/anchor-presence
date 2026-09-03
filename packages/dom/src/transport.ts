@@ -26,6 +26,8 @@ export type WebSocketTransportOptions = {
   path?: string;
   /** Relay port used when building the default URL. Defaults to 8787. */
   port?: number;
+  /** Relay room auth token (opt-in). URL-encoded and appended to the upgrade URL as `token=...`. */
+  token?: string;
   /** Enable automatic reconnect with exponential backoff. Default `true`. */
   reconnect?: boolean;
   /** Base backoff in ms before the first reconnect attempt. Default 500. */
@@ -59,8 +61,12 @@ function resolveUrl(options: WebSocketTransportOptions): string {
   return `${protocol}//${host}:${port}${path}`;
 }
 
+function withToken(url: string, token: string): string {
+  return `${url}${url.includes("?") ? "&" : "?"}token=${encodeURIComponent(token)}`;
+}
+
 export function createWebSocketTransport(options: WebSocketTransportOptions = {}): LiveCursorTransport {
-  const url = resolveUrl(options);
+  const url = options.token !== undefined ? withToken(resolveUrl(options), options.token) : resolveUrl(options);
   const reconnect = options.reconnect ?? true;
   const baseBackoffMs = options.baseBackoffMs ?? 500;
   const maxBackoffMs = options.maxBackoffMs ?? 8_000;

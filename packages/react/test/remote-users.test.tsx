@@ -7,7 +7,7 @@ import type { LiveCursorTransport } from "@anchor-presence/core";
 import { LiveCursorProvider } from "../src/provider";
 import { useRemoteUsers } from "../src/hooks";
 import type { RemoteUser } from "../src/hooks";
-import { makeFakeBinding, makeFakeClient } from "./testUtils";
+import { makeFakeBinding, makeFakeClient } from "./test-utils";
 
 type TestUser = { name: string };
 

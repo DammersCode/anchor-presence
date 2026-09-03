@@ -6,7 +6,7 @@ import type { CursorPresence, LiveCursorTransport } from "@anchor-presence/core"
 import type { ResolvedCursor } from "@anchor-presence/dom";
 import { LiveCursorProvider } from "../src/provider";
 import { useCursorPresence, useRemoteCursors } from "../src/hooks";
-import { makeFakeBinding, makeFakeClient } from "./testUtils";
+import { makeFakeBinding, makeFakeClient } from "./test-utils";
 
 function cursors(n: number): ResolvedCursor[] {
   return Array.from({ length: n }, (_, i) => ({

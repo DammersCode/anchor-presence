@@ -10,8 +10,8 @@ import type {
   RafLike,
   ResizeObserverCtor,
 } from "./scheduler";
-import { startAutoRegister } from "./autoRegister";
-import type { AutoRegisterOptions } from "./autoRegister";
+import { startAutoRegister } from "./auto-register";
+import type { AutoRegisterOptions } from "./auto-register";
 import { RemoteResolver } from "./resolver";
 import type { ResolvedCursor, VisibilityPolicy } from "./resolver";
 

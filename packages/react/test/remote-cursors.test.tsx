@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { ResolvedCursor } from "@anchor-presence/dom";
 import { LiveCursorProvider } from "../src/provider";
 import { useRemoteCursors } from "../src/hooks";
-import { makeFakeBinding, makeFakeClient } from "./testUtils";
+import { makeFakeBinding, makeFakeClient } from "./test-utils";
 
 function sampleCursor(clientId: string): ResolvedCursor {
   return { clientId, x: 1, y: 2, visible: true, anchorId: null, tier: "viewport" };

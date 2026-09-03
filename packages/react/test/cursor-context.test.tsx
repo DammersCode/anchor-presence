@@ -7,7 +7,7 @@ import { createPresenceClient } from "@anchor-presence/core";
 import type { LiveCursorTransport } from "@anchor-presence/core";
 import { LiveCursorProvider } from "../src/provider";
 import { useCursorContext } from "../src/hooks";
-import { makeFakeBinding } from "./testUtils";
+import { makeFakeBinding } from "./test-utils";
 
 type TestContext = { route: string };
 

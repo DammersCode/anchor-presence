@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createFrameCache } from "../src/frameCache";
+import { createFrameCache } from "../src/frame-cache";
 import type { StyleValues } from "../src/occlusion";
 
 const styleStub: StyleValues = { overflow: "visible", overflowX: "visible", overflowY: "visible" };

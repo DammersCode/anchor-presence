@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { binaryCodec } from "../src/binaryCodec";
+import { binaryCodec } from "../src/binary-codec";
 import { jsonCodec } from "../src/codec";
-import { createInMemoryPair } from "../src/inMemoryTransport";
+import { createInMemoryPair } from "../src/in-memory-transport";
 import { createPresenceClient } from "../src/client";
 import { validatePresence } from "../src/validate";
 import type { CursorPresence } from "../src/protocol";

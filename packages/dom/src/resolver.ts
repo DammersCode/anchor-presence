@@ -3,7 +3,7 @@
 import type { CursorPresence, InterpolatorFactory } from "@anchor-presence/core";
 import { linearInterpolator } from "@anchor-presence/core";
 import type { AnchorRegistry } from "./registry";
-import { parentAcrossShadow } from "./domTree";
+import { parentAcrossShadow } from "./dom-tree";
 import type { Rect, ViewportSize } from "./geometry";
 import { computeVisibleRect, isPointInRect } from "./occlusion";
 import type { SchedulerReadState } from "./scheduler";

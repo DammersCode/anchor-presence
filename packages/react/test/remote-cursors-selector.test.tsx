@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { ResolvedCursor } from "@anchor-presence/dom";
 import { LiveCursorProvider } from "../src/provider";
 import { useRemoteCursorsSelector } from "../src/hooks";
-import { makeFakeBinding, makeFakeClient } from "./testUtils";
+import { makeFakeBinding, makeFakeClient } from "./test-utils";
 
 function cursor(clientId: string, overrides: Partial<ResolvedCursor> = {}): ResolvedCursor {
   return { clientId, x: 1, y: 2, visible: true, pointVisible: true, anchorId: null, tier: "viewport", ...overrides };

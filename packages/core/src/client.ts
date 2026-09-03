@@ -1,9 +1,9 @@
 import { jsonCodec } from "./codec";
-import { createOversizedWarning, isDevMode } from "./internal/devWarnings";
+import { createOversizedWarning, isDevMode } from "./internal/dev-warnings";
 import { defaultIdFactory } from "./internal/ids";
 import { wireInbound } from "./internal/ingest";
 import { startLiveness } from "./internal/liveness";
-import { createPublishLoop } from "./internal/publishLoop";
+import { createPublishLoop } from "./internal/publish-loop";
 import { createStatusMachine } from "./internal/reconnect";
 import type {
   PresenceClient,

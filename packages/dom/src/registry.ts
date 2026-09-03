@@ -1,6 +1,6 @@
 // Anchor registry — spec §8
 
-import { parentAcrossShadow } from "./domTree";
+import { parentAcrossShadow } from "./dom-tree";
 
 export interface AnchorRegistry {
   register(id: string, element: Element): () => void;

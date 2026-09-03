@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createAnchorRegistry } from "../src/registry";
-import { startAutoRegister } from "../src/autoRegister";
+import { startAutoRegister } from "../src/auto-register";
 import type { MutationObserverCtor } from "../src/scheduler";
 
 type MoInstance = {

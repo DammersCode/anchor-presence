@@ -4,7 +4,7 @@ import { renderToString } from "react-dom/server";
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import type { PresenceClient } from "@anchor-presence/core";
 import { usePresenceClient } from "../src/hooks";
-import { makeFakeClient } from "./testUtils";
+import { makeFakeClient } from "./test-utils";
 
 describe("usePresenceClient", () => {
   let container: HTMLDivElement;

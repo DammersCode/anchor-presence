@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { binaryCodec } from "../src/binaryCodec";
+import { binaryCodec } from "../src/binary-codec";
 import { createPresenceClient } from "../src/client";
-import { createInMemoryPair } from "../src/inMemoryTransport";
+import { createInMemoryPair } from "../src/in-memory-transport";
 
 const flushMicrotasks = async (): Promise<void> => {
   await Promise.resolve();

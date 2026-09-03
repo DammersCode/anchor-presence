@@ -1,5 +1,5 @@
 import type { Rect } from "./geometry";
-import { parentAcrossShadow } from "./domTree";
+import { parentAcrossShadow } from "./dom-tree";
 import type { SchedulerReadState } from "./scheduler";
 
 export type StyleValues = Pick<CSSStyleDeclaration, "overflow" | "overflowX" | "overflowY">;

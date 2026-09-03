@@ -1,5 +1,5 @@
 import type { ConnectionStatus } from "../protocol";
-import type { PublishLoop } from "./publishLoop";
+import type { PublishLoop } from "./publish-loop";
 import type { PresenceClientState } from "./types";
 
 /**

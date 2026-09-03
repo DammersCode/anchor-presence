@@ -29,13 +29,13 @@ export {
 export type { RemotePresenceStoreOptions } from "./store";
 
 export { jsonCodec } from "./codec";
-export { binaryCodec } from "./binaryCodec";
+export { binaryCodec } from "./binary-codec";
 export type { CursorCodec } from "./codec";
 
 export type { LiveCursorTransport } from "./transport";
 
-export { createInMemoryPair } from "./inMemoryTransport";
-export type { InMemoryPair, InMemoryPairOptions } from "./inMemoryTransport";
+export { createInMemoryPair } from "./in-memory-transport";
+export type { InMemoryPair, InMemoryPairOptions } from "./in-memory-transport";
 
 export {
   createPresenceClient,

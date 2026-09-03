@@ -1,5 +1,5 @@
 import { bench, describe } from "vitest";
-import { binaryCodec } from "../src/binaryCodec";
+import { binaryCodec } from "../src/binary-codec";
 import { jsonCodec } from "../src/codec";
 import { RemotePresenceStore } from "../src/store";
 import { validatePresence } from "../src/validate";

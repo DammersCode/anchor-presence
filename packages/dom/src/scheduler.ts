@@ -2,7 +2,7 @@
 
 import type { Rect, ViewportSize } from "./geometry";
 import type { StyleValues } from "./occlusion";
-import { createFrameCache } from "./frameCache";
+import { createFrameCache } from "./frame-cache";
 import { createSignalHub } from "./internal/signals";
 
 export type ResizeObserverLike = {

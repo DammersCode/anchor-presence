@@ -17,6 +17,8 @@ export const DEFAULT_HEARTBEAT_MS = 10_000;
 
 const MIN_TIMER_INTERVAL_MS = 1;
 const MIN_STALE_TIMEOUT_MS = 1000;
+const PUBLISH_RETRY_INITIAL_MS = 50;
+const PUBLISH_RETRY_MAX_MS = 2000;
 
 type TimerHandle = ReturnType<typeof setTimeout>;
 
@@ -156,6 +158,7 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
   let latestPointer: PointerInfo | undefined;
   let pendingPublish = false;
   let pendingFullPublish = false;
+  let failedSendCount = 0;
   let slowMode = false;
   let publishTimer: TimerHandle | null = null;
   let heartbeatTimer: TimerHandle | null = null;
@@ -281,19 +284,24 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     }
   }
 
-  function schedulePublish(): void {
+  function schedulePublish(retryDelayMs?: number): void {
     if (disposed || publishTimer !== null) return;
+    const interval = retryDelayMs ?? (slowMode ? slowPublishIntervalMs : publishIntervalMs);
     publishTimer = scheduler.setTimeout(() => {
       publishTimer = null;
       if (!pendingPublish) return;
       if (send(latestCursor, pendingFullPublish)) {
         pendingPublish = false;
         pendingFullPublish = false;
+        failedSendCount = 0;
       } else if (status === "connected") {
-        schedulePublish(); // transient send failure: retry instead of stalling until the next change
+        // transient send failure: retry on an exponential backoff instead of hammering a dead transport
+        const delay = Math.min(PUBLISH_RETRY_INITIAL_MS * 2 ** failedSendCount, PUBLISH_RETRY_MAX_MS);
+        failedSendCount += 1;
+        schedulePublish(delay);
       }
       // while unsendable, pendingPublish stays set; the transition into "connected" re-schedules
-    }, slowMode ? slowPublishIntervalMs : publishIntervalMs);
+    }, interval);
   }
 
   function markPending(): void {

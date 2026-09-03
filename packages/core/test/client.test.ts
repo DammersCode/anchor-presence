@@ -664,6 +664,71 @@ describe("createPresenceClient dirty-flag publishing", () => {
   });
 });
 
+describe("createPresenceClient publish retry backoff", () => {
+  function makeThrowingTransport() {
+    let failing = true;
+    const send = vi.fn(() => {
+      if (failing) throw new Error("boom");
+    });
+    const transport: LiveCursorTransport = { send, subscribe: vi.fn(() => () => {}) };
+    return { transport, send, setFailing: (value: boolean) => { failing = value; } };
+  }
+
+  it("backs off exponentially while sends keep failing, capped at 2 s", () => {
+    const { transport, send } = makeThrowingTransport();
+    const client = createPresenceClient({ transport, idFactory, publishIntervalMs: 50 });
+
+    client.updateLocalCursor({ anchors: [] });
+
+    vi.advanceTimersByTime(50); // t=50: initial attempt fails, retry in 50 ms
+    expect(send).toHaveBeenCalledTimes(1);
+    vi.advanceTimersByTime(50); // t=100
+    expect(send).toHaveBeenCalledTimes(2);
+    vi.advanceTimersByTime(100); // t=200
+    expect(send).toHaveBeenCalledTimes(3);
+    vi.advanceTimersByTime(200); // t=400
+    expect(send).toHaveBeenCalledTimes(4);
+    vi.advanceTimersByTime(400); // t=800
+    expect(send).toHaveBeenCalledTimes(5);
+    vi.advanceTimersByTime(800); // t=1600
+    expect(send).toHaveBeenCalledTimes(6);
+    vi.advanceTimersByTime(1600); // t=3200: backoff capped at 2 s
+    expect(send).toHaveBeenCalledTimes(7);
+    vi.advanceTimersByTime(2000); // t=5200
+    expect(send).toHaveBeenCalledTimes(8);
+    vi.advanceTimersByTime(2000); // t=7200
+    expect(send).toHaveBeenCalledTimes(9);
+
+    client.dispose();
+  });
+
+  it("resets the backoff after a successful send", () => {
+    const { transport, send, setFailing } = makeThrowingTransport();
+    const client = createPresenceClient({ transport, idFactory, publishIntervalMs: 50 });
+
+    client.updateLocalCursor({ anchors: [] });
+    vi.advanceTimersByTime(50); // t=50: fails, schedules retry in 50 ms
+    expect(send).toHaveBeenCalledTimes(1);
+
+    setFailing(false);
+    vi.advanceTimersByTime(50); // t=100: succeeds, backoff reset
+    expect(send).toHaveBeenCalledTimes(2);
+
+    // a new failing publish must start the backoff at 50 ms again, not the grown delay
+    setFailing(true);
+    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
+    vi.advanceTimersByTime(50); // t=150: fails, schedules retry in 50 ms
+    expect(send).toHaveBeenCalledTimes(3);
+
+    vi.advanceTimersByTime(49); // t=199: no retry yet
+    expect(send).toHaveBeenCalledTimes(3);
+    vi.advanceTimersByTime(1); // t=200: retry fires
+    expect(send).toHaveBeenCalledTimes(4);
+
+    client.dispose();
+  });
+});
+
 describe("createPresenceClient pointer type", () => {
   it("includes the pointer type on the wire and keeps it across single-arg updates", () => {
     const { transport, sent } = makeTransport();

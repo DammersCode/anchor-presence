@@ -505,6 +505,98 @@ describe("createPresenceClient session/context/user", () => {
   });
 });
 
+describe("createPresenceClient context subscription", () => {
+  it("notifies subscribers after setContext updates the value", () => {
+    const { transport } = makeTransport();
+    const client = createPresenceClient({ transport, idFactory });
+    const calls: Array<{ value: unknown }> = [];
+    const unsubscribe = client.subscribeContext(() => {
+      calls.push({ value: client.getContext() });
+    });
+
+    client.setContext({ route: "/a" });
+    client.setContext({ route: "/b" });
+    client.setContext(undefined);
+
+    expect(calls.map((c) => c.value)).toEqual([{ route: "/a" }, { route: "/b" }, undefined]);
+    unsubscribe();
+    client.dispose();
+  });
+
+  it("does not notify subscribers for the initial context or for changes made before subscribing", () => {
+    const { transport } = makeTransport();
+    const client = createPresenceClient({ transport, idFactory, context: { route: "/" } });
+
+    client.setContext({ route: "/before" });
+    let calls = 0;
+    const unsubscribe = client.subscribeContext(() => {
+      calls += 1;
+    });
+    expect(calls).toBe(0);
+
+    client.setContext({ route: "/after" });
+    expect(calls).toBe(1);
+    unsubscribe();
+    client.dispose();
+  });
+
+  it("stops notifying after unsubscribe", () => {
+    const { transport } = makeTransport();
+    const client = createPresenceClient({ transport, idFactory });
+    let calls = 0;
+    const unsubscribe = client.subscribeContext(() => {
+      calls += 1;
+    });
+
+    client.setContext({ route: "/a" });
+    expect(calls).toBe(1);
+
+    unsubscribe();
+    client.setContext({ route: "/b" });
+    expect(calls).toBe(1);
+
+    client.dispose();
+  });
+
+  it("does not notify when the value is reference-equal to the current value", () => {
+    const { transport } = makeTransport();
+    const client = createPresenceClient({ transport, idFactory });
+    const context = { route: "/a" };
+    let calls = 0;
+    const unsubscribe = client.subscribeContext(() => {
+      calls += 1;
+    });
+
+    client.setContext(context);
+    expect(calls).toBe(1);
+
+    client.setContext(context);
+    expect(calls).toBe(1);
+
+    unsubscribe();
+    client.dispose();
+  });
+
+  it("a throwing context listener does not break other listeners", () => {
+    const { transport } = makeTransport();
+    const client = createPresenceClient({ transport, idFactory });
+    let healthyCalls = 0;
+    const unsubscribeHealthy = client.subscribeContext(() => {
+      healthyCalls += 1;
+    });
+    const unsubscribeThrowing = client.subscribeContext(() => {
+      throw new Error("boom");
+    });
+
+    expect(() => client.setContext({ route: "/a" })).not.toThrow();
+    expect(healthyCalls).toBe(1);
+
+    unsubscribeHealthy();
+    unsubscribeThrowing();
+    client.dispose();
+  });
+});
+
 describe("createPresenceClient adaptive publish rate", () => {
   it("uses the slow interval while the transport reports buffered bytes above the high watermark", () => {
     const sent: Uint8Array[] = [];

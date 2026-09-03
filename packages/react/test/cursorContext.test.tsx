@@ -89,6 +89,36 @@ describe("useCursorContext", () => {
     });
     client.dispose();
   });
+
+  it("re-renders when the client's context is set directly, bypassing the hook", () => {
+    const client = createPresenceClient<TestContext>({ transport: makeStubTransport() });
+    const { binding } = makeFakeBinding<TestContext, unknown>();
+    const root = createRoot(container);
+
+    act(() => {
+      root.render(
+        <LiveCursorProvider client={client} binding={binding}>
+          <Reader />
+        </LiveCursorProvider>,
+      );
+    });
+    expect(renders.at(-1)).toBeUndefined();
+
+    act(() => {
+      client.setContext({ route: "/external" });
+    });
+    expect(renders.at(-1)).toEqual({ route: "/external" });
+
+    act(() => {
+      client.setContext({ route: "/elsewhere" });
+    });
+    expect(renders.at(-1)).toEqual({ route: "/elsewhere" });
+
+    act(() => {
+      root.unmount();
+    });
+    client.dispose();
+  });
 });
 
 describe("index re-exports", () => {

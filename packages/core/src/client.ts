@@ -61,6 +61,7 @@ export interface PresenceClient<TContext = unknown, TUser = unknown> {
   updateLocalCursor(cursor: CursorPosition | null, pointer?: PointerInfo): void;
   setContext(context: TContext | undefined): void;
   getContext(): TContext | undefined;
+  subscribeContext(listener: () => void): () => void;
   setUser(user: TUser | undefined): void;
   getUser(): TUser | undefined;
   getStatus(): ConnectionStatus;
@@ -177,6 +178,7 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     ? (transport.getStatus?.() ?? "connecting")
     : "connected";
   const statusListeners = new Set<(status: ConnectionStatus) => void>();
+  const contextListeners = new Set<() => void>();
 
   const devMode = isDevMode();
   let warnedAboutRemoteCap = false;
@@ -398,10 +400,24 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
       contextDirty = true;
       warnIfOversized();
       markPending();
+      for (const listener of contextListeners) {
+        try {
+          listener();
+        } catch {
+          // one throwing listener must not starve the rest
+        }
+      }
     },
 
     getContext() {
       return context;
+    },
+
+    subscribeContext(listener) {
+      contextListeners.add(listener);
+      return () => {
+        contextListeners.delete(listener);
+      };
     },
 
     setUser(next) {
@@ -469,6 +485,7 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
         }
       }
       statusListeners.clear();
+      contextListeners.clear();
       for (const teardown of teardowns.splice(0)) {
         teardown();
       }

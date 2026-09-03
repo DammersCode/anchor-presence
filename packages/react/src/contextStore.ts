@@ -12,19 +12,14 @@ const stores = new WeakMap<PresenceClient, ContextStore<unknown>>();
 function createContextStore<TContext, TUser>(
   client: PresenceClient<TContext, TUser>,
 ): ContextStore<TContext> {
-  const listeners = new Set<() => void>();
-
+  // the client is the single notify source so a direct client.setContext() also reaches subscribers
   return {
     getSnapshot: () => client.getContext(),
     subscribe(listener) {
-      listeners.add(listener);
-      return () => {
-        listeners.delete(listener);
-      };
+      return client.subscribeContext(listener);
     },
     setContext(next) {
       client.setContext(next);
-      for (const listener of listeners) listener();
     },
   };
 }

@@ -14,8 +14,10 @@ type OpenedSocket = {
 
 let hardening: ChildProcessWithoutNullStreams;
 let rateLimited: ChildProcessWithoutNullStreams;
+let capped: ChildProcessWithoutNullStreams;
 let hardeningPort = 0;
 let rateLimitedPort = 0;
+let cappedPort = 0;
 const sockets: WebSocket[] = [];
 
 function freePort(): Promise<number> {
@@ -94,25 +96,33 @@ function collectMessages(ws: WebSocket, ms: number): Promise<unknown[]> {
 beforeAll(async () => {
   hardeningPort = await freePort();
   rateLimitedPort = await freePort();
+  cappedPort = await freePort();
   hardening = startRelay(hardeningPort, {
-    MAX_ROOM_SOCKETS: "3",
+    RELAY_MAX_ROOM_SOCKETS: "3",
     MAX_MESSAGE_BYTES: "128",
     RATE_CAPACITY: "1000",
     RATE_REFILL_PER_SECOND: "1000",
   });
   rateLimited = startRelay(rateLimitedPort, {
-    MAX_ROOM_SOCKETS: "1000",
+    RELAY_MAX_ROOM_SOCKETS: "1000",
     MAX_MESSAGE_BYTES: "32768",
     RATE_CAPACITY: "5",
     RATE_REFILL_PER_SECOND: "1",
   });
-  await Promise.all([waitForPort(hardeningPort), waitForPort(rateLimitedPort)]);
+  capped = startRelay(cappedPort, {
+    RELAY_MAX_ROOM_SOCKETS: "1000",
+    RELAY_MAX_TOTAL_SOCKETS: "4",
+    RATE_CAPACITY: "1000",
+    RATE_REFILL_PER_SECOND: "1000",
+  });
+  await Promise.all([waitForPort(hardeningPort), waitForPort(rateLimitedPort), waitForPort(cappedPort)]);
 }, 10_000);
 
 afterAll(async () => {
   for (const ws of sockets) ws.close();
   hardening.kill();
   rateLimited.kill();
+  capped.kill();
   await new Promise((resolve) => setTimeout(resolve, 50));
 });
 
@@ -158,7 +168,7 @@ describe("reference relay hardening", () => {
     expect(b).toHaveLength(0);
   });
 
-  it("closes new sockets with 1013 when a room is full", async () => {
+  it("closes new sockets with 4001 when a room is full", async () => {
     const room = randomUUID();
     const first = await connect(`ws://127.0.0.1:${hardeningPort}/?room=${room}`);
     const second = await connect(`ws://127.0.0.1:${hardeningPort}/?room=${room}`);
@@ -166,10 +176,26 @@ describe("reference relay hardening", () => {
     const fourth = await connect(`ws://127.0.0.1:${hardeningPort}/?room=${room}`);
 
     const code = await fourth.closeCode;
-    expect(code).toBe(1013);
+    expect(code).toBe(4001);
     expect(first.ws.readyState).toBe(WebSocket.OPEN);
     expect(second.ws.readyState).toBe(WebSocket.OPEN);
     expect(third.ws.readyState).toBe(WebSocket.OPEN);
+  });
+
+  it("closes new sockets with 4002 when the total socket cap is hit", async () => {
+    const roomA = randomUUID();
+    const roomB = randomUUID();
+    const first = await connect(`ws://127.0.0.1:${cappedPort}/?room=${roomA}`);
+    const second = await connect(`ws://127.0.0.1:${cappedPort}/?room=${roomA}`);
+    const third = await connect(`ws://127.0.0.1:${cappedPort}/?room=${roomB}`);
+    const fourth = await connect(`ws://127.0.0.1:${cappedPort}/?room=${roomB}`);
+    const fifth = await connect(`ws://127.0.0.1:${cappedPort}/?room=${roomA}`);
+
+    expect(await fifth.closeCode).toBe(4002);
+    expect(first.ws.readyState).toBe(WebSocket.OPEN);
+    expect(second.ws.readyState).toBe(WebSocket.OPEN);
+    expect(third.ws.readyState).toBe(WebSocket.OPEN);
+    expect(fourth.ws.readyState).toBe(WebSocket.OPEN);
   });
 
   it("limits burst messages per socket and refills over time", async () => {

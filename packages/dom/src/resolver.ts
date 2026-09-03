@@ -132,6 +132,7 @@ type InterpolatorState = {
   lastRawX: number;
   lastRawY: number;
   lastPresence: unknown;
+  lastHidden: boolean;
 };
 
 /** Stateful resolver: tracks one interpolator per clientId, decides target() vs shift() per spec §13. */
@@ -185,21 +186,27 @@ export class RemoteResolver<TContext = unknown, TUser = unknown> {
       });
 
       let state = this.states.get(presence.clientId);
+      const hidden = raw.tier === "hidden";
       if (state === undefined) {
         state = {
           interpolator: this.interpolatorFactory(),
           lastRawX: raw.x,
           lastRawY: raw.y,
           lastPresence: presence,
+          lastHidden: hidden,
         };
-        state.interpolator.target(raw.x, raw.y, timestampMs);
+        if (!hidden) state.interpolator.target(raw.x, raw.y, timestampMs);
         this.states.set(presence.clientId, state);
-      } else if (state.lastPresence !== presence) {
+      } else if (hidden) {
+        // (0,0) is a degenerate position: clear the ease so re-entry snaps instead of sliding in from the corner
+        state.interpolator.reset?.();
+      } else if (state.lastHidden || state.lastPresence !== presence) {
         state.interpolator.target(raw.x, raw.y, timestampMs);
       } else if (raw.x !== state.lastRawX || raw.y !== state.lastRawY) {
         // local-only invalidation moved the resolved position: shift current+target by the delta, no easing
         state.interpolator.shift(raw.x - state.lastRawX, raw.y - state.lastRawY);
       }
+      state.lastHidden = hidden;
       state.lastRawX = raw.x;
       state.lastRawY = raw.y;
       state.lastPresence = presence;

@@ -125,9 +125,16 @@ describe("RemoteResolver (spec §10 + §13)", () => {
     registry.register("a", el);
   });
 
-  function spyInterpolator(): { factory: InterpolatorFactory; instance: Interpolator; targetSpy: ReturnType<typeof vi.fn>; shiftSpy: ReturnType<typeof vi.fn> } {
+  function spyInterpolator(): {
+    factory: InterpolatorFactory;
+    instance: Interpolator;
+    targetSpy: ReturnType<typeof vi.fn>;
+    shiftSpy: ReturnType<typeof vi.fn>;
+    resetSpy: ReturnType<typeof vi.fn>;
+  } {
     const targetSpy = vi.fn();
     const shiftSpy = vi.fn();
+    const resetSpy = vi.fn();
     let x = 0;
     let y = 0;
     const instance: Interpolator = {
@@ -142,8 +149,11 @@ describe("RemoteResolver (spec §10 + §13)", () => {
         shiftSpy(dx, dy);
       },
       sample: () => ({ x, y, settled: true }),
+      reset: () => {
+        resetSpy();
+      },
     };
-    return { factory: () => instance, instance, targetSpy, shiftSpy };
+    return { factory: () => instance, instance, targetSpy, shiftSpy, resetSpy };
   }
 
   it("calls target() for a brand-new clientId (first sighting)", () => {
@@ -203,6 +213,62 @@ describe("RemoteResolver (spec §10 + §13)", () => {
     resolver.resolveAll([p], state, 0);
     resolver.resolveAll([p], state, 16);
 
+    expect(shiftSpy).not.toHaveBeenCalled();
+  });
+
+  it("K12: a cursor re-entering after a cursor:null period snaps to the new position, not sliding in from (0,0)", () => {
+    const resolver = new RemoteResolver({ registry }); // default factory: linearInterpolator(80)
+    const rects = new Map<Element, Rect>([[el, { left: 0, top: 0, width: 100, height: 100 }]]);
+    const state = readState(rects);
+
+    resolver.resolveAll([presence()], state, 0); // (50, 50)
+
+    const absent = presence({ cursor: null, sequence: 2 });
+    const gone = resolver.resolveAll([absent], state, 16);
+    expect(gone.cursors[0]?.visible).toBe(false);
+    resolver.resolveAll([absent], state, 200); // long enough for any ease toward (0,0) to settle
+
+    const back = resolver.resolveAll(
+      [presence({ sequence: 3, cursor: { anchors: [{ id: "a", u: 0.9, v: 0.9 }] } })],
+      state,
+      216,
+    );
+    expect(back.cursors[0]?.visible).toBe(true);
+    expect(back.cursors[0]?.x).toBe(90);
+    expect(back.cursors[0]?.y).toBe(90);
+  });
+
+  it("K12: calls reset() instead of target() while the cursor is absent (cursor:null)", () => {
+    const { factory, targetSpy, resetSpy } = spyInterpolator();
+    const resolver = new RemoteResolver({ registry, interpolatorFactory: factory });
+    const rects = new Map<Element, Rect>([[el, { left: 0, top: 0, width: 100, height: 100 }]]);
+    const state = readState(rects);
+
+    resolver.resolveAll([presence()], state, 0);
+    targetSpy.mockClear();
+    resetSpy.mockClear();
+
+    resolver.resolveAll([presence({ cursor: null, sequence: 2 })], state, 16);
+
+    expect(resetSpy).toHaveBeenCalledTimes(1);
+    expect(targetSpy).not.toHaveBeenCalled();
+  });
+
+  it("K12: pushes target (snaps) when a cursor becomes resolvable after being hidden, with unchanged presence", () => {
+    const { factory, targetSpy, shiftSpy } = spyInterpolator();
+    const resolver = new RemoteResolver({ registry, interpolatorFactory: factory });
+    const rects = new Map<Element, Rect>([[el, { left: 0, top: 0, width: 0, height: 0 }]]); // zero-size: not measurable
+    const state = readState(rects);
+    const p = presence();
+
+    resolver.resolveAll([p], state, 0); // hidden tier
+    targetSpy.mockClear();
+    shiftSpy.mockClear();
+
+    rects.set(el, { left: 0, top: 0, width: 100, height: 100 }); // anchor becomes measurable, same presence object
+    resolver.resolveAll([p], state, 16);
+
+    expect(targetSpy).toHaveBeenCalledTimes(1);
     expect(shiftSpy).not.toHaveBeenCalled();
   });
 

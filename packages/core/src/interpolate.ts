@@ -3,6 +3,8 @@ export interface Interpolator {
   target(x: number, y: number, timestampMs: number): void;
   shift(dx: number, dy: number): void; // moves current AND target by a delta, no easing
   sample(timestampMs: number): { x: number; y: number; settled: boolean };
+  /** Clears the ease state so the next target() snaps like a first-ever target. */
+  reset?(): void;
 }
 
 export type InterpolatorFactory = () => Interpolator;
@@ -24,6 +26,8 @@ export const noneInterpolator: InterpolatorFactory = () => {
     sample() {
       return { x, y, settled: true };
     },
+    // no ease state to clear
+    reset() {},
   };
 };
 
@@ -82,6 +86,11 @@ export const linearInterpolator = (durationMs = 80): Interpolator => {
 
       if (t >= 1) settled = true;
       return { x: currentX, y: currentY, settled };
+    },
+    // the next target() must snap like a first-ever target instead of easing from a stale position
+    reset() {
+      hasTarget = false;
+      settled = true;
     },
   };
 };

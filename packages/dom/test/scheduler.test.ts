@@ -687,7 +687,7 @@ describe("createGeometryScheduler (spec §11)", () => {
     scheduler.dispose();
   });
 
-  it("D-3: getCachedRect returns undefined while an invalidation is pending", () => {
+  it("D-3: getCachedRect serves the last-measured rect while an invalidation is pending (at most one frame stale)", () => {
     const { raf, caf, flush } = makeRafStub();
     active = true;
     const el = document.createElement("div");
@@ -699,15 +699,19 @@ describe("createGeometryScheduler (spec §11)", () => {
     const scheduler = createGeometryScheduler(baseOptions({ raf, caf, compute }));
 
     scheduler.invalidate();
-    expect(scheduler.getCachedRect(el)).toBeUndefined(); // dirty, not yet re-measured
+    expect(scheduler.getCachedRect(el)).toBeUndefined(); // nothing measured yet
 
     flush();
     expect(scheduler.getCachedRect(el)).toBeDefined();
 
     scheduler.invalidate();
-    expect(scheduler.getCachedRect(el)).toBeUndefined();
+    expect(scheduler.getCachedRect(el)).toBeDefined(); // dirty: stale rect is served; the scheduler's next rAF tick re-measures
+
+    flush();
+    expect(scheduler.getCachedRect(el)).toBeDefined();
 
     scheduler.dispose();
+    expect(scheduler.getCachedRect(el)).toBeUndefined(); // frame cleared on detach
   });
 
   it("D-2: attaches scroll + mutation observers to open shadow roots hosting active anchors, and detaches them", () => {

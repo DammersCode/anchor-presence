@@ -158,12 +158,14 @@ test.describe("sender pointermove reflow cost (K3)", () => {
       }
     }
 
-    // live-gBCR exposure per pointer sample in the dirty scenarios — the K3 measurement
-    // (before the rect-cache fix this is ~4 per sample; after, ~0)
+    // K3 invariant: while the scheduler is dirty the pointer path reads the frame cache
+    // instead of live getBoundingClientRect, so pointer-tagged rect reads stay near zero
+    // even though every pointermove still resolves a 4-anchor fallback chain
     for (const scenario of ["scroll", "layout"] as const) {
       const r = reports.get(scenario)!;
       const liveRatio = r.gbcR.counts.pointer / r.pointerSamples;
       console.log(`[reflow-bench] ${scenario} live-gbcr-per-sample=${liveRatio.toFixed(3)}`);
+      expect(liveRatio, `${scenario}: live gBCR per pointer sample`).toBeLessThan(0.05);
     }
   });
 });

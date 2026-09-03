@@ -228,3 +228,84 @@ describe("RemotePresenceStore context/user field delta", () => {
     expect(store.getSnapshot()[0]!.sequence).toBe(2);
   });
 });
+
+describe("RemotePresenceStore stable snapshot", () => {
+  it("keeps stable array and entry identity across higher-sequence messages with unchanged content", () => {
+    const store = new RemotePresenceStore();
+    store.ingest(presence({ sequence: 0 }));
+    const stable0 = store.getStableSnapshot();
+    const raw0 = store.getSnapshot();
+    expect("sequence" in stable0[0]!).toBe(false);
+
+    store.ingest(presence({ sequence: 1 }));
+    expect(store.getStableSnapshot()).toBe(stable0);
+    expect(store.getStableSnapshot()[0]!).toBe(stable0[0]!);
+    expect(store.getSnapshot()).not.toBe(raw0);
+    expect(store.getSnapshot()[0]!.sequence).toBe(1);
+  });
+
+  it("changes the stable snapshot when an observable field changes", () => {
+    const store = new RemotePresenceStore();
+    store.ingest(presence({ sequence: 0, cursor: { anchors: [{ id: "a", u: 0.5, v: 0.5 }] } }));
+    let before = store.getStableSnapshot();
+
+    store.ingest(presence({ sequence: 1, cursor: { anchors: [{ id: "a", u: 0.9, v: 0.5 }] } }));
+    expect(store.getStableSnapshot()).not.toBe(before);
+    before = store.getStableSnapshot();
+
+    const anchored = { anchors: [{ id: "a", u: 0.9, v: 0.5 }] };
+    store.ingest(presence({ sequence: 2, cursor: anchored, context: { route: "/" } }));
+    expect(store.getStableSnapshot()).not.toBe(before);
+    before = store.getStableSnapshot();
+
+    store.ingest(presence({ sequence: 3, cursor: anchored, user: { name: "Ada" } }));
+    expect(store.getStableSnapshot()).not.toBe(before);
+    before = store.getStableSnapshot();
+
+    store.ingest(presence({ sequence: 4, cursor: anchored, pointer: { type: "pen" } }));
+    expect(store.getStableSnapshot()).not.toBe(before);
+    before = store.getStableSnapshot();
+
+    store.ingest(presence({ session: "session-2", sequence: 5 }));
+    expect(store.getStableSnapshot()).not.toBe(before);
+  });
+
+  it("treats inherited (omitted) context and user as unchanged", () => {
+    const store = new RemotePresenceStore();
+    store.ingest(presence({ sequence: 0, context: { route: "/" }, user: { name: "Ada" } }));
+    const before = store.getStableSnapshot();
+    store.ingest(presence({ sequence: 1 }));
+    expect(store.getStableSnapshot()).toBe(before);
+    expect(store.getStableSnapshot()[0]!.context).toEqual({ route: "/" });
+    expect(store.getStableSnapshot()[0]!.user).toEqual({ name: "Ada" });
+  });
+
+  it("keeps entry identity when another client joins, and rebuilds on removal and sweep", () => {
+    const clock = makeClock();
+    const store = new RemotePresenceStore({ staleTimeoutMs: 1000, now: clock.now });
+    store.ingest(presence({ clientId: "a", sequence: 0 }));
+    const withA = store.getStableSnapshot();
+    store.ingest(presence({ clientId: "b", sequence: 0 }));
+    const withAB = store.getStableSnapshot();
+    expect(withAB).not.toBe(withA);
+    expect(withAB[0]!).toBe(withA[0]!);
+
+    store.remove("b");
+    expect(store.getStableSnapshot()).not.toBe(withAB);
+    expect(store.getStableSnapshot()).toHaveLength(1);
+
+    clock.advance(1100);
+    store.sweep();
+    expect(store.getStableSnapshot()).toHaveLength(0);
+  });
+
+  it("notifies subscribers on accepted ingests that change no observable field", () => {
+    const store = new RemotePresenceStore();
+    const listener = vi.fn();
+    const unsubscribe = store.subscribe(listener);
+    store.ingest(presence({ sequence: 0 }));
+    store.ingest(presence({ sequence: 1 }));
+    expect(listener).toHaveBeenCalledTimes(2);
+    unsubscribe();
+  });
+});

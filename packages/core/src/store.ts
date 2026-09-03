@@ -1,4 +1,4 @@
-import type { CursorPresence } from "./protocol";
+import type { CursorPosition, CursorPresence, RemotePresence } from "./protocol";
 
 export const DEFAULT_MAX_REMOTE_CLIENTS = 64;
 export const DEFAULT_STALE_TIMEOUT_MS = 70_000;
@@ -13,6 +13,7 @@ export type RemotePresenceStoreOptions = {
 type Entry<TContext, TUser> = {
   presence: CursorPresence<TContext, TUser>;
   lastSeenAt: number;
+  projected: RemotePresence<TContext, TUser>;
 };
 
 /** Sequencing (spec §4.3) + expiry (§4.4) store for remote presences. */
@@ -27,6 +28,9 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
 
   private snapshot: CursorPresence<TContext, TUser>[] = [];
   private snapshotDirty = false;
+
+  private stableSnapshot: RemotePresence<TContext, TUser>[] = [];
+  private stableSnapshotDirty = false;
 
   constructor(options: RemotePresenceStoreOptions = {}) {
     this.maxRemoteClients = options.maxRemoteClients ?? DEFAULT_MAX_REMOTE_CLIENTS;
@@ -44,7 +48,9 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
         this.onDropNewClient?.();
         return false;
       }
-      this.entries.set(presence.clientId, { presence: this.normalizePresence(presence), lastSeenAt: this.now() });
+      const normalized = this.normalizePresence(presence);
+      this.entries.set(presence.clientId, { presence: normalized, lastSeenAt: this.now(), projected: projectPresence(normalized) });
+      this.stableSnapshotDirty = true;
       this.markDirty();
       return true;
     }
@@ -54,10 +60,17 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
       return false;
     }
 
-    existing.presence = sameSession
-      ? this.mergeFields(existing.presence, presence)
+    const previous = existing.presence;
+    const nextPresence = sameSession
+      ? this.mergeFields(previous, presence)
       : this.normalizePresence(presence);
+    existing.presence = nextPresence;
     existing.lastSeenAt = this.now();
+    // a higher-sequence message that changes no observable field keeps the cached projection
+    if (!sameObservedPresence(previous, nextPresence)) {
+      existing.projected = projectPresence(nextPresence);
+      this.stableSnapshotDirty = true;
+    }
     this.markDirty();
     return true;
   }
@@ -92,20 +105,35 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
         removedAny = true;
       }
     }
-    if (removedAny) this.markDirty();
+    if (removedAny) {
+      this.stableSnapshotDirty = true;
+      this.markDirty();
+    }
   }
 
   remove(clientId: string): void {
-    if (this.entries.delete(clientId)) this.markDirty();
+    if (this.entries.delete(clientId)) {
+      this.stableSnapshotDirty = true;
+      this.markDirty();
+    }
   }
 
-  /** Immutable snapshot; a new array identity is returned only when content has changed since the last call. */
+  /** Raw snapshot including `sequence`; new array identity per accepted ingest. */
   getSnapshot(): CursorPresence<TContext, TUser>[] {
     if (this.snapshotDirty) {
       this.snapshot = Array.from(this.entries.values(), (entry) => entry.presence);
       this.snapshotDirty = false;
     }
     return this.snapshot;
+  }
+
+  /** Render-stable snapshot: `sequence` excluded, entry and array identity hold until observable fields change. */
+  getStableSnapshot(): RemotePresence<TContext, TUser>[] {
+    if (this.stableSnapshotDirty) {
+      this.stableSnapshot = Array.from(this.entries.values(), (entry) => entry.projected);
+      this.stableSnapshotDirty = false;
+    }
+    return this.stableSnapshot;
   }
 
   subscribe(listener: () => void): () => void {
@@ -150,4 +178,48 @@ function applyFieldDeltas<TContext, TUser>(
   if (user === undefined) delete result.user;
   else result.user = user;
   return result;
+}
+
+function projectPresence<TContext, TUser>(
+  presence: CursorPresence<TContext, TUser>,
+): RemotePresence<TContext, TUser> {
+  const projected: RemotePresence<TContext, TUser> = {
+    version: presence.version,
+    clientId: presence.clientId,
+    session: presence.session,
+    cursor: presence.cursor,
+  };
+  if ("context" in presence) projected.context = presence.context;
+  if ("user" in presence) projected.user = presence.user;
+  if ("pointer" in presence) projected.pointer = presence.pointer;
+  return projected;
+}
+
+// `sequence` is excluded on purpose: it advances with every accepted message.
+function sameObservedPresence<TContext, TUser>(
+  a: CursorPresence<TContext, TUser>,
+  b: CursorPresence<TContext, TUser>,
+): boolean {
+  if (a.session !== b.session) return false;
+  if (!sameCursor(a.cursor, b.cursor)) return false;
+  if (!Object.is(a.context, b.context)) return false;
+  if (!Object.is(a.user, b.user)) return false;
+  return a.pointer?.type === b.pointer?.type;
+}
+
+function sameCursor(a: CursorPosition | null, b: CursorPosition | null): boolean {
+  if (a === b) return true;
+  if (a === null || b === null) return false;
+  if (a.anchors.length !== b.anchors.length) return false;
+  for (let i = 0; i < a.anchors.length; i++) {
+    const pa = a.anchors[i];
+    const pb = b.anchors[i];
+    if (pa === undefined || pb === undefined) return false;
+    if (pa.id !== pb.id || pa.u !== pb.u || pa.v !== pb.v) return false;
+  }
+  if (a.viewport !== b.viewport) {
+    if (a.viewport === undefined || b.viewport === undefined) return false;
+    if (a.viewport.u !== b.viewport.u || a.viewport.v !== b.viewport.v) return false;
+  }
+  return true;
 }

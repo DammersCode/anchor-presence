@@ -51,7 +51,7 @@ describe("startAutoRegister", () => {
     const { ctor } = makeMoStub();
     const registry = createAnchorRegistry();
     const el = document.createElement("div");
-    el.setAttribute("data-presence", "custom");
+    el.dataset.presence = "custom";
     document.body.append(el);
 
     const handle = startAutoRegister({ attribute: "data-presence", registry, MutationObserverCtor: ctor });
@@ -85,9 +85,9 @@ describe("startAutoRegister", () => {
     const { ctor } = makeMoStub();
     const registry = createAnchorRegistry();
     const empty = document.createElement("div");
-    empty.setAttribute("data-anchor", "");
+    empty.dataset.anchor = "";
     const whitespace = document.createElement("div");
-    whitespace.setAttribute("data-anchor", "   ");
+    whitespace.dataset.anchor = "   ";
     document.body.append(empty, whitespace);
 
     const handle = startAutoRegister({ attribute: "data-anchor", registry, MutationObserverCtor: ctor });
@@ -106,7 +106,7 @@ describe("startAutoRegister", () => {
     const handle = startAutoRegister({ attribute: "data-anchor", registry, MutationObserverCtor: ctor });
 
     const el = document.createElement("div");
-    el.setAttribute("data-anchor", "b");
+    el.dataset.anchor = "b";
     document.body.append(el);
     trigger();
 
@@ -124,7 +124,7 @@ describe("startAutoRegister", () => {
     const handle = startAutoRegister({ attribute: "data-anchor", registry, MutationObserverCtor: ctor });
     expect(registry.get("a")).toBe(el);
 
-    el.removeAttribute("data-anchor");
+    delete el.dataset.anchor;
     trigger();
 
     expect(registry.get("a")).toBe(null);
@@ -158,7 +158,7 @@ describe("startAutoRegister", () => {
     const handle = startAutoRegister({ attribute: "data-anchor", registry, MutationObserverCtor: ctor });
     expect(registry.get("a")).toBe(el);
 
-    el.setAttribute("data-anchor", "a2");
+    el.dataset.anchor = "a2";
     trigger();
 
     expect(registry.get("a")).toBe(null);
@@ -173,9 +173,9 @@ describe("startAutoRegister", () => {
     const registry = createAnchorRegistry();
 
     const el1 = document.createElement("div");
-    el1.setAttribute("data-anchor", "dup");
+    el1.dataset.anchor = "dup";
     const el2 = document.createElement("div");
-    el2.setAttribute("data-anchor", "dup");
+    el2.dataset.anchor = "dup";
     document.body.append(el1, el2);
 
     const handle = startAutoRegister({ attribute: "data-anchor", registry, MutationObserverCtor: ctor });
@@ -192,9 +192,9 @@ describe("startAutoRegister", () => {
     const registry = createAnchorRegistry();
 
     const el1 = document.createElement("div");
-    el1.setAttribute("data-anchor", "dup");
+    el1.dataset.anchor = "dup";
     const el2 = document.createElement("div");
-    el2.setAttribute("data-anchor", "dup");
+    el2.dataset.anchor = "dup";
     document.body.append(el1, el2);
 
     const handle = startAutoRegister({ attribute: "data-anchor", registry, MutationObserverCtor: ctor });
@@ -270,7 +270,7 @@ describe("startAutoRegister", () => {
     handle.setEnabled(false);
     expect(instances[0]?.disconnect).toHaveBeenCalled();
 
-    el.setAttribute("data-anchor", "b");
+    el.dataset.anchor = "b";
     handle.handleRecords();
 
     expect(registry.get("a")).toBe(null);
@@ -291,7 +291,7 @@ describe("startAutoRegister", () => {
     const handle = startAutoRegister({ attribute: "data-anchor", registry, MutationObserverCtor: ctor });
     expect(registry.get("a")).toBe(null);
 
-    el.setAttribute("data-anchor", "a");
+    el.dataset.anchor = "a";
     handle.handleRecords([{ type: "attributes", target: el, attributeName: "data-anchor" }] as unknown as MutationRecord[]);
 
     expect(registry.get("a")).toBe(el);
@@ -305,9 +305,9 @@ describe("startAutoRegister", () => {
     const registry = createAnchorRegistry();
 
     const el1 = document.createElement("div");
-    el1.setAttribute("data-anchor", "dup");
+    el1.dataset.anchor = "dup";
     const el2 = document.createElement("div");
-    el2.setAttribute("data-anchor", "dup");
+    el2.dataset.anchor = "dup";
     document.body.append(el1, el2);
 
     const handle = startAutoRegister({ attribute: "data-anchor", registry, MutationObserverCtor: ctor });

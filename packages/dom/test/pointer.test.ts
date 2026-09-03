@@ -55,9 +55,9 @@ function makeClient(): {
       pointers.push(pointer);
     },
     setContext: () => {},
-    getContext: () => undefined,
+    getContext: () => {},
     setUser: () => {},
-    getUser: () => undefined,
+    getUser: () => {},
     getStatus: () => "connected" as const,
     subscribeStatus: () => () => {},
     getRemoteSnapshot: () => [],
@@ -71,7 +71,7 @@ function makeClient(): {
       };
     },
     dispose: () => {
-      for (const fn of teardowns.splice(0, teardowns.length)) fn();
+      for (const fn of teardowns.splice(0)) fn();
     },
   } satisfies PresenceClient<unknown, unknown>;
   return { client, samples, pointers, teardowns };
@@ -88,8 +88,8 @@ describe("attachPointerSource (spec §9)", () => {
   it("builds a fallback chain from nested anchors, innermost first, computing u/v per anchor", () => {
     const outer = document.createElement("div");
     const inner = document.createElement("div");
-    outer.appendChild(inner);
-    document.body.appendChild(outer);
+    outer.append(inner);
+    document.body.append(outer);
 
     mockRect(outer, { left: 0, top: 0, width: 200, height: 100 });
     mockRect(inner, { left: 50, top: 20, width: 100, height: 40 });
@@ -121,12 +121,12 @@ describe("attachPointerSource (spec §9)", () => {
     for (let i = 0; i < 6; i++) {
       const el = document.createElement("div");
       mockRect(el, { left: 0, top: 0, width: 100, height: 100 });
-      parent.appendChild(el);
+      parent.append(el);
       registry.register(`level-${i}`, el);
       chain.push(el);
       parent = el;
     }
-    const deepest = chain[chain.length - 1]!;
+    const deepest = chain.at(-1)!;
 
     const { client, samples } = makeClient();
     const handle = attachPointerSource(client, registry);
@@ -143,8 +143,8 @@ describe("attachPointerSource (spec §9)", () => {
   it("skips zero-size rects when building the chain", () => {
     const outer = document.createElement("div");
     const zeroSize = document.createElement("div");
-    outer.appendChild(zeroSize);
-    document.body.appendChild(outer);
+    outer.append(zeroSize);
+    document.body.append(outer);
 
     mockRect(outer, { left: 0, top: 0, width: 200, height: 100 });
     mockRect(zeroSize, { left: 0, top: 0, width: 0, height: 0 });
@@ -165,7 +165,7 @@ describe("attachPointerSource (spec §9)", () => {
 
   it("computes the viewport fallback as clientX/innerWidth, clientY/innerHeight", () => {
     const el = document.createElement("div");
-    document.body.appendChild(el);
+    document.body.append(el);
     mockRect(el, { left: 0, top: 0, width: 0, height: 0 });
 
     const { client, samples } = makeClient();
@@ -202,7 +202,7 @@ describe("attachPointerSource (spec §9)", () => {
 
   it("uses getCachedRect when it returns a hit, skipping getBoundingClientRect for that element", () => {
     const el = document.createElement("div");
-    document.body.appendChild(el);
+    document.body.append(el);
     registry.register("a", el);
     mockRect(el, { left: 0, top: 0, width: 100, height: 100 });
     const getRectSpy = vi.spyOn(el, "getBoundingClientRect");
@@ -224,13 +224,14 @@ describe("attachPointerSource (spec §9)", () => {
 
   it("falls through to direct measurement on a cache miss (getCachedRect returns undefined)", () => {
     const el = document.createElement("div");
-    document.body.appendChild(el);
+    document.body.append(el);
     registry.register("a", el);
     mockRect(el, { left: 0, top: 0, width: 100, height: 100 });
     const getRectSpy = vi.spyOn(el, "getBoundingClientRect");
 
     const { client, samples } = makeClient();
     const handle = attachPointerSource(client, registry, {
+      // eslint-disable-next-line unicorn/no-useless-undefined -- the option type is `() => Rect | undefined`, so the undefined body is required
       getCachedRect: () => undefined,
     });
 
@@ -246,7 +247,7 @@ describe("attachPointerSource (spec §9)", () => {
 
   it("without the getCachedRect option, behavior is unchanged (always measures directly)", () => {
     const el = document.createElement("div");
-    document.body.appendChild(el);
+    document.body.append(el);
     registry.register("a", el);
     mockRect(el, { left: 0, top: 0, width: 100, height: 100 });
     const getRectSpy = vi.spyOn(el, "getBoundingClientRect");
@@ -266,7 +267,7 @@ describe("attachPointerSource (spec §9)", () => {
 
   it("D-4: pointerover produces a sample (pointerenter never reaches the document with an Element target)", () => {
     const el = document.createElement("div");
-    document.body.appendChild(el);
+    document.body.append(el);
     mockRect(el, { left: 0, top: 0, width: 100, height: 100 });
     registry.register("a", el);
 
@@ -284,7 +285,7 @@ describe("attachPointerSource (spec §9)", () => {
 
   it("C-4: passes the event's pointerType to updateLocalCursor; unknown or missing types pass undefined", () => {
     const el = document.createElement("div");
-    document.body.appendChild(el);
+    document.body.append(el);
     mockRect(el, { left: 0, top: 0, width: 100, height: 100 });
     registry.register("a", el);
 
@@ -304,7 +305,7 @@ describe("attachPointerSource (spec §9)", () => {
 
   it("registers its teardown with the client and detach() removes listeners", () => {
     const el = document.createElement("div");
-    document.body.appendChild(el);
+    document.body.append(el);
     mockRect(el, { left: 0, top: 0, width: 100, height: 100 });
     registry.register("a", el);
 

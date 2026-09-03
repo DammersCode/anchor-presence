@@ -5,7 +5,7 @@ import { createAnchorRegistry } from "../src/registry";
 import type { AnchorRegistry } from "../src/registry";
 import { defaultVisibilityPolicy, RemoteResolver, resolveGeometry } from "../src/resolver";
 import { readClientRect } from "../src/occlusion";
-import type { Rect } from "../src/geometry";
+import type { Rect, ViewportSize } from "../src/geometry";
 import type { SchedulerReadState } from "../src/scheduler";
 
 function presence(overrides: Partial<CursorPresence> = {}): CursorPresence {
@@ -19,13 +19,23 @@ function presence(overrides: Partial<CursorPresence> = {}): CursorPresence {
   };
 }
 
-function readState(rects: Map<Element, Rect>, viewportSize = { width: 1000, height: 800 }): SchedulerReadState {
+function readState(rects: Map<Element, Rect>, viewportSize?: ViewportSize): SchedulerReadState {
   return {
     getRect: (el) => rects.get(el),
     getClientRect: (el) => readClientRect(el, rects.get(el)!),
     getStyle: (el) => getComputedStyle(el),
-    viewportSize,
+    viewportSize: viewportSize ?? { width: 1000, height: 800 },
   };
+}
+
+function restoreElementFromPoint(target: object, descriptor: PropertyDescriptor | undefined): void {
+  if (descriptor === undefined) delete (target as { elementFromPoint?: unknown }).elementFromPoint;
+  else Object.defineProperty(target, "elementFromPoint", descriptor);
+}
+
+function firstThenFactory(first: InterpolatorFactory, rest: InterpolatorFactory): InterpolatorFactory {
+  let calls = 0;
+  return () => (calls++ === 0 ? first() : rest());
 }
 
 describe("resolveGeometry (spec §10)", () => {
@@ -121,7 +131,7 @@ describe("RemoteResolver (spec §10 + §13)", () => {
   beforeEach(() => {
     registry = createAnchorRegistry();
     el = document.createElement("div");
-    document.body.appendChild(el);
+    document.body.append(el);
     registry.register("a", el);
   });
 
@@ -286,8 +296,8 @@ describe("RemoteResolver (spec §10 + §13)", () => {
   it("surfaces clipping visibility to the resolved cursor and policy", () => {
     const clip = document.createElement("div");
     clip.style.overflow = "hidden";
-    clip.appendChild(el);
-    document.body.appendChild(clip);
+    clip.append(el);
+    document.body.append(clip);
     const rects = new Map<Element, Rect>([
       [el, { left: 80, top: 90, width: 40, height: 40 }],
       [clip, { left: 0, top: 0, width: 100, height: 100 }],
@@ -304,7 +314,8 @@ describe("RemoteResolver (spec §10 + §13)", () => {
   });
 
   it("uses hit testing when enabled", () => {
-    const overlay = document.body.appendChild(document.createElement("div"));
+    const overlay = document.createElement("div");
+    document.body.append(overlay);
     const original = Object.getOwnPropertyDescriptor(document, "elementFromPoint");
     Object.defineProperty(document, "elementFromPoint", { configurable: true, value: () => overlay });
     const rects = new Map<Element, Rect>([[el, { left: 0, top: 0, width: 100, height: 100 }]]);
@@ -312,17 +323,18 @@ describe("RemoteResolver (spec §10 + §13)", () => {
 
     const { cursors } = resolver.resolveAll([presence()], readState(rects), 0);
 
-    if (original === undefined) delete (document as { elementFromPoint?: unknown }).elementFromPoint;
-    else Object.defineProperty(document, "elementFromPoint", original);
+    restoreElementFromPoint(document, original);
     expect(cursors[0]?.pointVisible).toBe(false);
   });
 
   it("descends nested open shadow roots for hit testing", () => {
-    const outerHost = document.body.appendChild(document.createElement("div"));
+    const outerHost = document.createElement("div");
+    document.body.append(outerHost);
     const outerRoot = outerHost.attachShadow({ mode: "open" });
-    const innerHost = outerRoot.appendChild(document.createElement("div"));
+    const innerHost = document.createElement("div");
+    outerRoot.append(innerHost);
     const innerRoot = innerHost.attachShadow({ mode: "open" });
-    innerRoot.appendChild(el);
+    innerRoot.append(el);
     const documentHit = Object.getOwnPropertyDescriptor(document, "elementFromPoint");
     const outerHit = Object.getOwnPropertyDescriptor(outerRoot, "elementFromPoint");
     const innerHit = Object.getOwnPropertyDescriptor(innerRoot, "elementFromPoint");
@@ -334,12 +346,9 @@ describe("RemoteResolver (spec §10 + §13)", () => {
 
     const { cursors } = resolver.resolveAll([presence()], readState(rects), 0);
 
-    if (documentHit === undefined) delete (document as { elementFromPoint?: unknown }).elementFromPoint;
-    else Object.defineProperty(document, "elementFromPoint", documentHit);
-    if (outerHit === undefined) delete (outerRoot as { elementFromPoint?: unknown }).elementFromPoint;
-    else Object.defineProperty(outerRoot, "elementFromPoint", outerHit);
-    if (innerHit === undefined) delete (innerRoot as { elementFromPoint?: unknown }).elementFromPoint;
-    else Object.defineProperty(innerRoot, "elementFromPoint", innerHit);
+    restoreElementFromPoint(document, documentHit);
+    restoreElementFromPoint(outerRoot, outerHit);
+    restoreElementFromPoint(innerRoot, innerHit);
     expect(cursors[0]?.pointVisible).toBe(true);
   });
 
@@ -412,13 +421,12 @@ describe("RemoteResolver (spec §10 + §13)", () => {
 
   it("R-7: a changed value produces a new list and a new instance, while unchanged cursors keep identity", () => {
     const elB = document.createElement("div");
-    document.body.appendChild(elB);
+    document.body.append(elB);
     registry.register("b", elB);
 
     const { factory } = spyInterpolator();
     const factoryB = spyInterpolator().factory;
-    let calls = 0;
-    const perClientFactory: InterpolatorFactory = () => (calls++ === 0 ? factory() : factoryB());
+    const perClientFactory = firstThenFactory(factory, factoryB);
     const resolver = new RemoteResolver({ registry, interpolatorFactory: perClientFactory });
 
     const rects = new Map<Element, Rect>([

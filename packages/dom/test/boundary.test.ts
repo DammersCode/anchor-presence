@@ -6,7 +6,11 @@ import { describe, expect, it } from "vitest";
 const srcDir = join(process.cwd(), "packages/dom/src");
 
 // spec §3.2 / PLAN Phase 2 acceptance: dom imports only core and relative paths
-const importPattern = /import\s+(?:type\s+)?(?:[\s\S]*?)\s+from\s+["']([^"']+)["']/g;
+const importPattern = /import\s+(?:type\s+)?(?:[\s\S]*?)\s+from\s+["']([^"']+)["']/gu;
+
+function isAllowedSpecifier(specifier: string): boolean {
+  return specifier === "@anchor-presence/core" || specifier.startsWith("./") || specifier.startsWith("../");
+}
 
 function listTsFiles(dir: string): string[] {
   return readdirSync(dir).filter((name) => name.endsWith(".ts"));
@@ -24,9 +28,7 @@ describe("dom import boundary (spec §3.2)", () => {
       const contents = readFileSync(join(srcDir, file), "utf8");
       const specifiers = Array.from(contents.matchAll(importPattern), (m) => m[1]);
       for (const specifier of specifiers) {
-        const allowed =
-          specifier === "@anchor-presence/core" || specifier.startsWith("./") || specifier.startsWith("../");
-        expect(allowed, `unexpected import "${specifier}" in ${file}`).toBe(true);
+        expect(isAllowedSpecifier(specifier), `unexpected import "${specifier}" in ${file}`).toBe(true);
       }
     });
   }

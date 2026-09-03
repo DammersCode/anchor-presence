@@ -17,7 +17,7 @@ function makeRafStub() {
     if (idx >= 0) queue.splice(idx, 1);
   });
   function flush(ts = 0): void {
-    const pending = queue.splice(0, queue.length);
+    const pending = queue.splice(0);
     for (const entry of pending) entry.callback(ts);
   }
   return { raf, caf, queue, flush };
@@ -33,9 +33,9 @@ function makeFakeClient() {
     session: "s",
     updateLocalCursor: () => {},
     setContext: () => {},
-    getContext: () => undefined,
+    getContext: () => {},
     setUser: () => {},
-    getUser: () => undefined,
+    getUser: () => {},
     getStatus: () => "connected",
     subscribeStatus: () => () => {},
     getRemoteSnapshot: () => remoteSnapshot,
@@ -52,7 +52,7 @@ function makeFakeClient() {
       };
     },
     dispose: () => {
-      for (const fn of teardowns.splice(0, teardowns.length)) fn();
+      for (const fn of teardowns.splice(0)) fn();
     },
   };
 
@@ -73,9 +73,9 @@ function makeCapturingClient(samples: (CursorPosition | null)[]): PresenceClient
       samples.push(cursor);
     },
     setContext: () => {},
-    getContext: () => undefined,
+    getContext: () => {},
     setUser: () => {},
-    getUser: () => undefined,
+    getUser: () => {},
     getStatus: () => "connected",
     subscribeStatus: () => () => {},
     getRemoteSnapshot: () => [],
@@ -114,9 +114,9 @@ function buildNestedAnchors(count: number): Element {
   let parent: Element = document.body;
   for (let i = 0; i < count; i++) {
     const el = document.createElement("div");
-    el.setAttribute("data-anchor", `level-${i}`);
+    el.dataset.anchor = `level-${i}`;
     mockRect(el);
-    parent.appendChild(el);
+    parent.append(el);
     parent = el;
   }
   return parent;
@@ -139,8 +139,8 @@ describe("createDomBinding", () => {
 
   it("wires registry + pointer + scheduler + resolver: resolves a remote cursor against a registered anchor", () => {
     const el = document.createElement("div");
-    el.setAttribute("data-anchor", "a");
-    document.body.appendChild(el);
+    el.dataset.anchor = "a";
+    document.body.append(el);
     vi.spyOn(el, "getBoundingClientRect").mockReturnValue({
       left: 0,
       top: 0,
@@ -205,10 +205,12 @@ describe("createDomBinding", () => {
   });
 
   it("observes a clipping ancestor and updates point visibility after its resize", () => {
-    const clip = document.body.appendChild(document.createElement("div"));
+    const clip = document.createElement("div");
+    document.body.append(clip);
     clip.style.overflow = "hidden";
-    const el = clip.appendChild(document.createElement("div"));
-    el.setAttribute("data-anchor", "a");
+    const el = document.createElement("div");
+    clip.append(el);
+    el.dataset.anchor = "a";
     let clipHeight = 100;
     vi.spyOn(clip, "getBoundingClientRect").mockImplementation(() => ({
       left: 0,
@@ -411,8 +413,8 @@ describe("createDomBinding", () => {
 
   it("registers anchors from the default data-anchor attribute without manual registry access", () => {
     const el = document.createElement("div");
-    el.setAttribute("data-anchor", "a");
-    document.body.appendChild(el);
+    el.dataset.anchor = "a";
+    document.body.append(el);
     vi.spyOn(el, "getBoundingClientRect").mockReturnValue({
       left: 0,
       top: 0,

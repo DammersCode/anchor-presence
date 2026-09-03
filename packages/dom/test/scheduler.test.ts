@@ -4,10 +4,8 @@ import type {
   ClearTimeoutLike,
   ComputeResult,
   MutationObserverCtor,
-  MutationObserverLike,
   RafLike,
   ResizeObserverCtor,
-  ResizeObserverLike,
   SetTimeoutLike,
 } from "../src/scheduler";
 
@@ -26,7 +24,7 @@ function makeRafStub() {
     if (idx >= 0) queue.splice(idx, 1);
   });
   function flush(ts = 0): void {
-    const pending = queue.splice(0, queue.length);
+    const pending = queue.splice(0);
     for (const entry of pending) entry.callback(ts);
   }
   return { raf, caf, queue, flush };
@@ -54,13 +52,10 @@ function makeTimerStub() {
 
 function makeResizeObserverStub() {
   const instances: { observe: ReturnType<typeof vi.fn>; unobserve: ReturnType<typeof vi.fn>; disconnect: ReturnType<typeof vi.fn>; callback: () => void }[] = [];
-  const ctor: ResizeObserverCtor = class implements ResizeObserverLike {
-    observe = vi.fn();
-    unobserve = vi.fn();
-    disconnect = vi.fn();
-    constructor(private callback: () => void) {
-      instances.push(this as unknown as (typeof instances)[number]);
-    }
+  const ctor = function (callback: () => void) {
+    const instance = { observe: vi.fn(), unobserve: vi.fn(), disconnect: vi.fn(), callback };
+    instances.push(instance);
+    return instance;
   } as unknown as ResizeObserverCtor;
   return { ctor, instances };
 }
@@ -71,14 +66,16 @@ function makeMutationObserverStub() {
     disconnect: ReturnType<typeof vi.fn>;
     callback: (records?: MutationRecord[]) => void;
   }[] = [];
-  const ctor: MutationObserverCtor = class implements MutationObserverLike {
-    observe = vi.fn();
-    disconnect = vi.fn();
-    constructor(public callback: (records?: MutationRecord[]) => void) {
-      instances.push(this as unknown as (typeof instances)[number]);
-    }
+  const ctor = function (callback: (records?: MutationRecord[]) => void) {
+    const instance = { observe: vi.fn(), disconnect: vi.fn(), callback };
+    instances.push(instance);
+    return instance;
   } as unknown as MutationObserverCtor;
   return { ctor, instances };
+}
+
+function fakeComputedStyle(values: Record<string, string>): CSSStyleDeclaration {
+  return { getPropertyValue: (prop: string) => values[prop] ?? "" } as unknown as CSSStyleDeclaration;
 }
 
 function fakeRecord(target: Node): MutationRecord {
@@ -158,7 +155,7 @@ describe("createGeometryScheduler (spec §11)", () => {
     const { raf, caf, flush } = makeRafStub();
     active = true;
     const el = document.createElement("div");
-    document.body.appendChild(el);
+    document.body.append(el);
     const getRectSpy = vi.spyOn(el, "getBoundingClientRect");
 
     let returnedAnchors = [el];
@@ -298,7 +295,7 @@ describe("createGeometryScheduler (spec §11)", () => {
     scheduler.invalidate();
 
     const el = document.createElement("div");
-    document.body.appendChild(el);
+    document.body.append(el);
 
     const startEvent = new Event("transitionrun", { bubbles: true }) as TransitionEvent & { propertyName: string };
     Object.defineProperty(startEvent, "propertyName", { value: "opacity" });
@@ -327,14 +324,11 @@ describe("createGeometryScheduler (spec §11)", () => {
       const elA = document.createElement("div");
       const elB = document.createElement("div");
       document.body.append(elA, elB);
-      vi.spyOn(window, "getComputedStyle").mockReturnValue({
-        getPropertyValue: (prop: string) => {
-          if (prop === "transition-duration") return "5s";
-          if (prop === "transition-delay") return "0s";
-          if (prop === "animation-iteration-count") return "1";
-          return "";
-        },
-      } as unknown as CSSStyleDeclaration);
+      vi.spyOn(window, "getComputedStyle").mockReturnValue(fakeComputedStyle({
+        "transition-duration": "5s",
+        "transition-delay": "0s",
+        "animation-iteration-count": "1",
+      }));
 
       const startA = new Event("transitionrun", { bubbles: true }) as TransitionEvent & { propertyName: string };
       Object.defineProperty(startA, "propertyName", { value: "opacity" });
@@ -383,15 +377,12 @@ describe("createGeometryScheduler (spec §11)", () => {
       flush();
 
       const el = document.createElement("div");
-      document.body.appendChild(el);
-      vi.spyOn(window, "getComputedStyle").mockReturnValue({
-        getPropertyValue: (prop: string) => {
-          if (prop === "transition-duration") return "0.2s";
-          if (prop === "transition-delay") return "0s";
-          if (prop === "animation-iteration-count") return "1";
-          return "";
-        },
-      } as unknown as CSSStyleDeclaration);
+      document.body.append(el);
+      vi.spyOn(window, "getComputedStyle").mockReturnValue(fakeComputedStyle({
+        "transition-duration": "0.2s",
+        "transition-delay": "0s",
+        "animation-iteration-count": "1",
+      }));
 
       const startEvent = new Event("transitionrun", { bubbles: true }) as TransitionEvent & { propertyName: string };
       Object.defineProperty(startEvent, "propertyName", { value: "opacity" });
@@ -423,15 +414,12 @@ describe("createGeometryScheduler (spec §11)", () => {
     flush();
 
     const el = document.createElement("div");
-    document.body.appendChild(el);
-    vi.spyOn(window, "getComputedStyle").mockReturnValue({
-      getPropertyValue: (prop: string) => {
-        if (prop === "transition-duration") return "0.2s";
-        if (prop === "transition-delay") return "0s";
-        if (prop === "animation-iteration-count") return "1";
-        return "";
-      },
-    } as unknown as CSSStyleDeclaration);
+    document.body.append(el);
+    vi.spyOn(window, "getComputedStyle").mockReturnValue(fakeComputedStyle({
+      "transition-duration": "0.2s",
+      "transition-delay": "0s",
+      "animation-iteration-count": "1",
+    }));
 
     const startEvent = new Event("transitionrun", { bubbles: true }) as TransitionEvent & { propertyName: string };
     Object.defineProperty(startEvent, "propertyName", { value: "opacity" });
@@ -466,15 +454,12 @@ describe("createGeometryScheduler (spec §11)", () => {
       flush();
 
       const el = document.createElement("div");
-      document.body.appendChild(el);
-      vi.spyOn(window, "getComputedStyle").mockReturnValue({
-        getPropertyValue: (prop: string) => {
-          if (prop === "animation-duration") return "2s";
-          if (prop === "animation-delay") return "0s";
-          if (prop === "animation-iteration-count") return "infinite";
-          return "";
-        },
-      } as unknown as CSSStyleDeclaration);
+      document.body.append(el);
+      vi.spyOn(window, "getComputedStyle").mockReturnValue(fakeComputedStyle({
+        "animation-duration": "2s",
+        "animation-delay": "0s",
+        "animation-iteration-count": "infinite",
+      }));
 
       const startEvent = new Event("animationstart", { bubbles: true }) as AnimationEvent & { animationName: string };
       Object.defineProperty(startEvent, "animationName", { value: "spin" });
@@ -511,15 +496,12 @@ describe("createGeometryScheduler (spec §11)", () => {
       flush();
 
       const el = document.createElement("div");
-      document.body.appendChild(el);
-      vi.spyOn(window, "getComputedStyle").mockReturnValue({
-        getPropertyValue: (prop: string) => {
-          if (prop === "transition-duration") return "5s"; // long enough that the safety timeout won't fire mid-test
-          if (prop === "transition-delay") return "0s";
-          if (prop === "animation-iteration-count") return "1";
-          return "";
-        },
-      } as unknown as CSSStyleDeclaration);
+      document.body.append(el);
+      vi.spyOn(window, "getComputedStyle").mockReturnValue(fakeComputedStyle({
+        "transition-duration": "5s", // long enough that the safety timeout won't fire mid-test
+        "transition-delay": "0s",
+        "animation-iteration-count": "1",
+      }));
 
       const startEvent = new Event("transitionrun", { bubbles: true }) as TransitionEvent & { propertyName: string };
       Object.defineProperty(startEvent, "propertyName", { value: "transform" });
@@ -559,15 +541,12 @@ describe("createGeometryScheduler (spec §11)", () => {
       flush();
 
       const el = document.createElement("div");
-      document.body.appendChild(el);
-      vi.spyOn(window, "getComputedStyle").mockReturnValue({
-        getPropertyValue: (prop: string) => {
-          if (prop === "transition-duration") return "0.2s";
-          if (prop === "transition-delay") return "0s";
-          if (prop === "animation-iteration-count") return "1";
-          return "";
-        },
-      } as unknown as CSSStyleDeclaration);
+      document.body.append(el);
+      vi.spyOn(window, "getComputedStyle").mockReturnValue(fakeComputedStyle({
+        "transition-duration": "0.2s",
+        "transition-delay": "0s",
+        "animation-iteration-count": "1",
+      }));
 
       const startEvent = new Event("transitionrun", { bubbles: true }) as TransitionEvent & { propertyName: string };
       Object.defineProperty(startEvent, "propertyName", { value: "opacity" });
@@ -605,7 +584,7 @@ describe("createGeometryScheduler (spec §11)", () => {
     const { raf, caf, flush } = makeRafStub();
     active = true;
     const el = document.createElement("div");
-    document.body.appendChild(el);
+    document.body.append(el);
     const getRectSpy = vi.spyOn(el, "getBoundingClientRect");
     let clientMetricReads = 0;
     const metric = () => {
@@ -664,11 +643,14 @@ describe("createGeometryScheduler (spec §11)", () => {
     active = true;
     const mutationObs = makeMutationObserverStub();
     const cursorRoot = document.createElement("div");
-    cursorRoot.setAttribute("data-anchor-presence-cursor", "");
-    const cursorChild = cursorRoot.appendChild(document.createElement("div"));
-    const cursorText = cursorChild.appendChild(document.createTextNode("label"));
-    document.body.appendChild(cursorRoot);
-    const outside = document.body.appendChild(document.createElement("div"));
+    cursorRoot.dataset.anchorPresenceCursor = "";
+    const cursorChild = document.createElement("div");
+    cursorRoot.append(cursorChild);
+    const cursorText = document.createTextNode("label");
+    cursorChild.append(cursorText);
+    document.body.append(cursorRoot);
+    const outside = document.createElement("div");
+    document.body.append(outside);
 
     const scheduler = createGeometryScheduler(baseOptions({ raf, caf, MutationObserverCtor: mutationObs.ctor }));
     flush(); // consume the attach-time frame
@@ -691,7 +673,7 @@ describe("createGeometryScheduler (spec §11)", () => {
     const { raf, caf, flush } = makeRafStub();
     active = true;
     const el = document.createElement("div");
-    document.body.appendChild(el);
+    document.body.append(el);
     const compute = vi.fn((readState) => {
       readState.getRect(el);
       return { snapshot: [], activeAnchors: [el], needsAnotherFrame: false };
@@ -718,9 +700,11 @@ describe("createGeometryScheduler (spec §11)", () => {
     const { raf, caf, flush } = makeRafStub();
     active = true;
     const mutationObs = makeMutationObserverStub();
-    const host = document.body.appendChild(document.createElement("div"));
+    const host = document.createElement("div");
+    document.body.append(host);
     const shadow = host.attachShadow({ mode: "open" });
-    const anchor = shadow.appendChild(document.createElement("div"));
+    const anchor = document.createElement("div");
+    shadow.append(anchor);
 
     let activeAnchors: Element[] = [anchor];
     const compute = vi.fn(() => ({ snapshot: [], activeAnchors, needsAnotherFrame: false }));
@@ -759,11 +743,14 @@ describe("createGeometryScheduler (spec §11)", () => {
     const { raf, caf, flush } = makeRafStub();
     active = true;
     const mutationObs = makeMutationObserverStub();
-    const outerHost = document.body.appendChild(document.createElement("div"));
+    const outerHost = document.createElement("div");
+    document.body.append(outerHost);
     const outerShadow = outerHost.attachShadow({ mode: "open" });
-    const innerHost = outerShadow.appendChild(document.createElement("div"));
+    const innerHost = document.createElement("div");
+    outerShadow.append(innerHost);
     const innerShadow = innerHost.attachShadow({ mode: "open" });
-    const anchor = innerShadow.appendChild(document.createElement("div"));
+    const anchor = document.createElement("div");
+    innerShadow.append(anchor);
 
     const compute = vi.fn(() => ({ snapshot: [], activeAnchors: [anchor], needsAnotherFrame: false }));
     const scheduler = createGeometryScheduler(baseOptions({ raf, caf, compute, MutationObserverCtor: mutationObs.ctor }));
@@ -784,7 +771,7 @@ describe("createGeometryScheduler (spec §11)", () => {
     const { raf, caf, flush } = makeRafStub();
     active = true;
     const el = document.createElement("div");
-    document.body.appendChild(el);
+    document.body.append(el);
     let clientMetricReads = 0;
     const metric = () => {
       clientMetricReads += 1;

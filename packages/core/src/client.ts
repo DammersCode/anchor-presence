@@ -1,5 +1,6 @@
 import type { CursorCodec } from "./codec";
 import { jsonCodec } from "./codec";
+import { createOversizedWarning, isDevMode } from "./internal/devWarnings";
 import { defaultIdFactory } from "./internal/ids";
 import type { PresenceClientState, SchedulerLike } from "./internal/types";
 import { DEFAULT_MAX_FIELD_BYTES, DEFAULT_MAX_MESSAGE_BYTES } from "./protocol";
@@ -164,20 +165,6 @@ type DocumentLike = {
   removeEventListener: (type: string, listener: () => void) => void;
 };
 
-function isDevMode(): boolean {
-  const env = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env;
-  return env?.NODE_ENV !== "production";
-}
-
-function jsonByteLength(value: unknown): number {
-  try {
-    const json = JSON.stringify(value);
-    return json === undefined ? 0 : new TextEncoder().encode(json).length;
-  } catch {
-    return Number.POSITIVE_INFINITY;
-  }
-}
-
 /**
  * Creates one presence client.
  * The client sends and receives messages through the transport you give it.
@@ -290,38 +277,7 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     teardowns: [],
   };
 
-  // checked when context/user changes, not per message — receivers silently drop oversized fields
-  function warnIfOversized(): void {
-    if (!state.devMode) return;
-    try {
-      if (state.context !== undefined && jsonByteLength(state.context) > state.maxFieldBytes) {
-        console.warn(
-          `[anchor-presence] outbound context exceeds maxFieldBytes (${state.maxFieldBytes}); receivers will drop the field`,
-        );
-      }
-      if (state.user !== undefined && jsonByteLength(state.user) > state.maxFieldBytes) {
-        console.warn(
-          `[anchor-presence] outbound user exceeds maxFieldBytes (${state.maxFieldBytes}); receivers will drop the field`,
-        );
-      }
-      const probe: CursorPresence<TContext, TUser> = {
-        version: 1,
-        clientId: state.clientId,
-        session: state.session,
-        sequence: state.sequence,
-        cursor: state.latestCursor,
-      };
-      if (state.context !== undefined) probe.context = state.context;
-      if (state.user !== undefined) probe.user = state.user;
-      if (state.codec.encode(probe).byteLength > state.maxMessageBytes) {
-        console.warn(
-          `[anchor-presence] outbound message exceeds maxMessageBytes (${state.maxMessageBytes}); receivers will drop it`,
-        );
-      }
-    } catch {
-      // the sizing probe must never break the client
-    }
-  }
+  const warnIfOversized = createOversizedWarning(state);
 
   function setStatus(next: ConnectionStatus): void {
     if (state.status === next) return;

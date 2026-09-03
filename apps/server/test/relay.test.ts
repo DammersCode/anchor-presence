@@ -1,9 +1,10 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import net from "node:net";
-import { randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { slowPeerAction } from "../index";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 
@@ -12,11 +13,23 @@ type OpenedSocket = {
   closeCode: Promise<number>;
 };
 
+type RawSocket = {
+  socket: net.Socket;
+  frames: () => Buffer;
+};
+
 let hardening: ChildProcessWithoutNullStreams;
 let rateLimited: ChildProcessWithoutNullStreams;
+let capped: ChildProcessWithoutNullStreams;
+let origin: ChildProcessWithoutNullStreams;
+let slow: ChildProcessWithoutNullStreams;
 let hardeningPort = 0;
 let rateLimitedPort = 0;
+let cappedPort = 0;
+let originPort = 0;
+let slowPort = 0;
 const sockets: WebSocket[] = [];
+const rawSockets: net.Socket[] = [];
 
 function freePort(): Promise<number> {
   return new Promise((resolve, reject) => {
@@ -83,6 +96,108 @@ function connect(url: string): Promise<OpenedSocket> {
   });
 }
 
+function rawConnect(port: number, urlPath: string, originHeader: string | null): Promise<RawSocket> {
+  return new Promise((resolve, reject) => {
+    const socket = net.connect(port, "127.0.0.1");
+    rawSockets.push(socket);
+    const key = randomBytes(16).toString("base64");
+    const lines = [
+      `GET ${urlPath} HTTP/1.1`,
+      "Host: 127.0.0.1",
+      "Upgrade: websocket",
+      "Connection: Upgrade",
+      `Sec-WebSocket-Key: ${key}`,
+      "Sec-WebSocket-Version: 13",
+    ];
+    if (originHeader !== null) lines.push(`Origin: ${originHeader}`);
+    let settled = false;
+    let frames = Buffer.alloc(0);
+    let handshakeDone = false;
+    const data = (chunk: Buffer) => {
+      frames = Buffer.concat([frames, chunk]);
+      if (handshakeDone) return;
+      const headerEnd = frames.indexOf("\r\n\r\n");
+      if (headerEnd === -1) return;
+      handshakeDone = true;
+      const status = frames.subarray(0, headerEnd).toString();
+      frames = frames.subarray(headerEnd + 4);
+      if (!status.includes(" 101 ")) {
+        socket.destroy();
+        if (!settled) {
+          settled = true;
+          reject(new Error(`upgrade failed: ${status}`));
+        }
+        return;
+      }
+      if (!settled) {
+        settled = true;
+        resolve({ socket, frames: () => frames });
+      }
+    };
+    socket.once("connect", () => socket.write(`${lines.join("\r\n")}\r\n\r\n`));
+    socket.on("data", data);
+    socket.once("error", (err) => {
+      if (!settled) {
+        settled = true;
+        reject(err);
+      }
+    });
+  });
+}
+
+function closeCodeIn(data: Buffer): number | null {
+  let offset = 0;
+  while (offset + 2 <= data.length) {
+    const opcode = data[offset] & 0x0f;
+    let length = data[offset + 1] & 0x7f;
+    let header = 2;
+    if (length === 126) {
+      if (offset + 4 > data.length) return null;
+      length = data.readUInt16BE(offset + 2);
+      header = 4;
+    } else if (length === 127) {
+      if (offset + 10 > data.length) return null;
+      length = Number(data.readBigUInt64BE(offset + 2));
+      header = 10;
+    }
+    if (offset + header + length > data.length) return null;
+    if (opcode === 0x8 && length >= 2) return data.readUInt16BE(offset + header);
+    offset += header + length;
+  }
+  return null;
+}
+
+function awaitCloseCode(raw: RawSocket, timeoutMs = 5000): Promise<{ code: number; received: number }> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("timed out waiting for close frame")), timeoutMs);
+    const check = () => {
+      const frames = raw.frames();
+      const code = closeCodeIn(frames);
+      if (code === null) return;
+      clearTimeout(timer);
+      raw.socket.destroy();
+      resolve({ code, received: frames.length });
+    };
+    check();
+    raw.socket.on("data", check);
+    raw.socket.resume();
+  });
+}
+
+function collectUntil(ws: WebSocket, count: number, ms: number): Promise<number> {
+  return new Promise((resolve) => {
+    let received = 0;
+    const timer = setTimeout(() => resolve(received), ms);
+    ws.onmessage = () => {
+      received += 1;
+      if (received >= count) {
+        clearTimeout(timer);
+        resolve(received);
+      }
+    };
+  });
+}
+
 function collectMessages(ws: WebSocket, ms: number): Promise<unknown[]> {
   return new Promise((resolve) => {
     const messages: unknown[] = [];
@@ -94,25 +209,57 @@ function collectMessages(ws: WebSocket, ms: number): Promise<unknown[]> {
 beforeAll(async () => {
   hardeningPort = await freePort();
   rateLimitedPort = await freePort();
+  cappedPort = await freePort();
+  originPort = await freePort();
+  slowPort = await freePort();
   hardening = startRelay(hardeningPort, {
-    MAX_ROOM_SOCKETS: "3",
+    RELAY_MAX_ROOM_SOCKETS: "3",
     MAX_MESSAGE_BYTES: "128",
     RATE_CAPACITY: "1000",
     RATE_REFILL_PER_SECOND: "1000",
   });
   rateLimited = startRelay(rateLimitedPort, {
-    MAX_ROOM_SOCKETS: "1000",
+    RELAY_MAX_ROOM_SOCKETS: "1000",
     MAX_MESSAGE_BYTES: "32768",
     RATE_CAPACITY: "5",
     RATE_REFILL_PER_SECOND: "1",
   });
-  await Promise.all([waitForPort(hardeningPort), waitForPort(rateLimitedPort)]);
-}, 10_000);
+  capped = startRelay(cappedPort, {
+    RELAY_MAX_ROOM_SOCKETS: "1000",
+    RELAY_MAX_TOTAL_SOCKETS: "4",
+    RATE_CAPACITY: "1000",
+    RATE_REFILL_PER_SECOND: "1000",
+  });
+  origin = startRelay(originPort, {
+    RELAY_ALLOWED_ORIGINS: "http://allowed.example",
+    RATE_CAPACITY: "1000",
+    RATE_REFILL_PER_SECOND: "1000",
+  });
+  slow = startRelay(slowPort, {
+    RELAY_MAX_ROOM_SOCKETS: "1000",
+    MAX_MESSAGE_BYTES: String(1024 * 1024),
+    RATE_CAPACITY: "100000",
+    RATE_REFILL_PER_SECOND: "100000",
+    RELAY_SLOW_PEER_SOFT_BYTES: String(64 * 1024),
+    RELAY_SLOW_PEER_HARD_BYTES: String(192 * 1024),
+  });
+  await Promise.all([
+    waitForPort(hardeningPort),
+    waitForPort(rateLimitedPort),
+    waitForPort(cappedPort),
+    waitForPort(originPort),
+    waitForPort(slowPort),
+  ]);
+}, 15_000);
 
 afterAll(async () => {
   for (const ws of sockets) ws.close();
+  for (const socket of rawSockets) socket.destroy();
   hardening.kill();
   rateLimited.kill();
+  capped.kill();
+  origin.kill();
+  slow.kill();
   await new Promise((resolve) => setTimeout(resolve, 50));
 });
 
@@ -158,7 +305,7 @@ describe("reference relay hardening", () => {
     expect(b).toHaveLength(0);
   });
 
-  it("closes new sockets with 1013 when a room is full", async () => {
+  it("closes new sockets with 4001 when a room is full", async () => {
     const room = randomUUID();
     const first = await connect(`ws://127.0.0.1:${hardeningPort}/?room=${room}`);
     const second = await connect(`ws://127.0.0.1:${hardeningPort}/?room=${room}`);
@@ -166,10 +313,83 @@ describe("reference relay hardening", () => {
     const fourth = await connect(`ws://127.0.0.1:${hardeningPort}/?room=${room}`);
 
     const code = await fourth.closeCode;
-    expect(code).toBe(1013);
+    expect(code).toBe(4001);
     expect(first.ws.readyState).toBe(WebSocket.OPEN);
     expect(second.ws.readyState).toBe(WebSocket.OPEN);
     expect(third.ws.readyState).toBe(WebSocket.OPEN);
+  });
+
+  it("closes new sockets with 4002 when the total socket cap is hit", async () => {
+    const roomA = randomUUID();
+    const roomB = randomUUID();
+    const first = await connect(`ws://127.0.0.1:${cappedPort}/?room=${roomA}`);
+    const second = await connect(`ws://127.0.0.1:${cappedPort}/?room=${roomA}`);
+    const third = await connect(`ws://127.0.0.1:${cappedPort}/?room=${roomB}`);
+    const fourth = await connect(`ws://127.0.0.1:${cappedPort}/?room=${roomB}`);
+    const fifth = await connect(`ws://127.0.0.1:${cappedPort}/?room=${roomA}`);
+
+    expect(await fifth.closeCode).toBe(4002);
+    expect(first.ws.readyState).toBe(WebSocket.OPEN);
+    expect(second.ws.readyState).toBe(WebSocket.OPEN);
+    expect(third.ws.readyState).toBe(WebSocket.OPEN);
+    expect(fourth.ws.readyState).toBe(WebSocket.OPEN);
+  });
+
+  it(
+    "rejects a disallowed origin with 4004 and accepts an allowed one",
+    async () => {
+      const room = randomUUID();
+      const rejected = await rawConnect(originPort, `/?room=${room}`, "http://evil.example");
+      expect((await awaitCloseCode(rejected)).code).toBe(4004);
+
+      const noOrigin = await connect(`ws://127.0.0.1:${originPort}/?room=${room}`);
+      expect(await noOrigin.closeCode).toBe(4004);
+
+      const allowed = await rawConnect(originPort, `/?room=${room}`, "http://allowed.example");
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      expect(allowed.socket.destroyed).toBe(false);
+      allowed.socket.destroy();
+    },
+    10_000,
+  );
+
+  it("closes a stalled peer with 4003 and stops queueing messages for it", async () => {
+    const room = randomUUID();
+    const stalled = await rawConnect(slowPort, `/?room=${room}`, null);
+    stalled.socket.pause();
+
+    const sender = await connect(`ws://127.0.0.1:${slowPort}/?room=${room}`);
+    for (let i = 0; i < 8; i++) sender.ws.send(new Uint8Array(256 * 1024));
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    const { code, received } = await awaitCloseCode(stalled, 8000);
+    expect(code).toBe(4003);
+    expect(received).toBeGreaterThanOrEqual(262144);
+    expect(received).toBeLessThan(4 * 262154);
+  }, 20_000);
+
+  it("keeps delivering to healthy peers while a peer is stalled", async () => {
+    const room = randomUUID();
+    const stalled = await rawConnect(slowPort, `/?room=${room}`, null);
+    stalled.socket.pause();
+
+    const sender = await connect(`ws://127.0.0.1:${slowPort}/?room=${room}`);
+    const receiver = await connect(`ws://127.0.0.1:${slowPort}/?room=${room}`);
+
+    const received = collectUntil(receiver.ws, 10, 8000);
+    for (let i = 0; i < 10; i++) sender.ws.send(new Uint8Array(16 * 1024));
+    const delivered = await received;
+
+    expect(delivered).toBe(10);
+    stalled.socket.destroy();
+  }, 20_000);
+
+  it("classifies slow-peer actions by buffered amount", () => {
+    expect(slowPeerAction(0, 64, 192)).toBe("send");
+    expect(slowPeerAction(64, 64, 192)).toBe("send");
+    expect(slowPeerAction(65, 64, 192)).toBe("skip");
+    expect(slowPeerAction(192, 64, 192)).toBe("skip");
+    expect(slowPeerAction(193, 64, 192)).toBe("close");
   });
 
   it("limits burst messages per socket and refills over time", async () => {

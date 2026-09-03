@@ -1,4 +1,4 @@
-import type { ConnectionStatus, CursorPresence, PresenceClient } from "@anchor-presence/core";
+import type { ConnectionStatus, CursorPresence, PresenceClient, RemotePresence } from "@anchor-presence/core";
 import type { DomBinding, ResolvedCursor } from "@anchor-presence/dom";
 
 // react's `act` needs this flag set; every jsdom test importing testUtils gets it without a shared vitest setupFiles entry.
@@ -10,6 +10,7 @@ export function makeFakeClient<TContext = unknown, TUser = unknown>(): {
   setStatus: (status: ConnectionStatus) => void;
 } {
   let remoteSnapshot: CursorPresence<TContext, TUser>[] = [];
+  let remotePresence: RemotePresence<TContext, TUser>[] = [];
   const remoteListeners = new Set<() => void>();
   const statusListeners = new Set<(status: ConnectionStatus) => void>();
   let status: ConnectionStatus = "connected";
@@ -35,6 +36,7 @@ export function makeFakeClient<TContext = unknown, TUser = unknown>(): {
       return () => statusListeners.delete(listener);
     },
     getRemoteSnapshot: () => remoteSnapshot,
+    getRemotePresence: () => remotePresence,
     subscribeRemote: (listener) => {
       remoteListeners.add(listener);
       return () => remoteListeners.delete(listener);
@@ -55,6 +57,18 @@ export function makeFakeClient<TContext = unknown, TUser = unknown>(): {
     client,
     pushRemote(next) {
       remoteSnapshot = next;
+      remotePresence = next.map((presence) => {
+        const projected: RemotePresence<TContext, TUser> = {
+          version: presence.version,
+          clientId: presence.clientId,
+          session: presence.session,
+          cursor: presence.cursor,
+        };
+        if ("context" in presence) projected.context = presence.context;
+        if ("user" in presence) projected.user = presence.user;
+        if ("pointer" in presence) projected.pointer = presence.pointer;
+        return projected;
+      });
       for (const listener of remoteListeners) listener();
     },
     setStatus(next) {

@@ -59,6 +59,7 @@ function makeClient(): {
     getStatus: () => "connected" as const,
     subscribeStatus: () => () => {},
     getRemoteSnapshot: () => [],
+    getRemotePresence: () => [],
     subscribeRemote: () => () => {},
     registerTeardown: (fn: () => void) => {
       teardowns.push(fn);

@@ -6,6 +6,7 @@ import type {
   CursorPosition,
   CursorPresence,
   PointerInfo,
+  RemotePresence,
 } from "./protocol";
 import { DEFAULT_MAX_REMOTE_CLIENTS, DEFAULT_STALE_TIMEOUT_MS, RemotePresenceStore } from "./store";
 import type { LiveCursorTransport } from "./transport";
@@ -66,7 +67,10 @@ export interface PresenceClient<TContext = unknown, TUser = unknown> {
   getUser(): TUser | undefined;
   getStatus(): ConnectionStatus;
   subscribeStatus(listener: (status: ConnectionStatus) => void): () => void;
+  /** Raw remote snapshot including `sequence`; identity changes on every accepted message. */
   getRemoteSnapshot(): CursorPresence<TContext, TUser>[];
+  /** Render-stable remote snapshot: excludes `sequence`, holds identity until observable fields change. */
+  getRemotePresence(): RemotePresence<TContext, TUser>[];
   subscribeRemote(listener: () => void): () => void;
   /** Returns an unregister function; on an already-disposed client runs fn immediately. */
   registerTeardown(fn: () => void): () => void;
@@ -446,6 +450,10 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
 
     getRemoteSnapshot() {
       return store.getSnapshot();
+    },
+
+    getRemotePresence() {
+      return store.getStableSnapshot();
     },
 
     subscribeRemote(listener) {

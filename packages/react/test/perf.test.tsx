@@ -220,7 +220,7 @@ describe("useCursorPresence inbound render cost (K2)", () => {
     container.remove();
   });
 
-  it("100 inbound messages with unchanged visible content cause 100 consumer renders (baseline)", () => {
+  it("100 inbound messages with unchanged visible content cause 1 consumer render", () => {
     let presenceRenderCount = 0;
     function PresenceReader() {
       presenceRenderCount += 1;
@@ -247,10 +247,21 @@ describe("useCursorPresence inbound render cost (K2)", () => {
       });
     }
 
-    // all 100 accepted by the real store, yet the consumer rendered for every one of them
+    // all 100 accepted by the real store; only the first message (membership) is renderable
     expect(client.getRemoteSnapshot()).toHaveLength(1);
     expect(client.getRemoteSnapshot()[0]?.sequence).toBe(99);
-    expect(presenceRenderCount).toBe(101);
+    expect(presenceRenderCount).toBe(2);
+
+    // a message that changes visible content rerenders; a following no-op does not
+    act(() => {
+      push(sameAnchorMessage(100, 0.75));
+    });
+    expect(presenceRenderCount).toBe(3);
+    act(() => {
+      push(sameAnchorMessage(101, 0.75));
+    });
+    expect(presenceRenderCount).toBe(3);
+    expect(client.getRemoteSnapshot()[0]?.sequence).toBe(101);
 
     act(() => {
       client.dispose();

@@ -1,21 +1,24 @@
 import type { ConnectionStatus } from "./protocol";
 import type { LiveCursorTransport } from "./transport";
 
-// A wire-connected 2-peer mesh for tests that run without a browser or a relay.
-// send on one side delivers to the OTHER side's subscribers only (the "relay to the
-// other peer" model); the client does the encode/decode and validation.
-
+/**
+ * Options for `createInMemoryPair`.
+ */
 export type InMemoryPairOptions = {
-  /** Route delivery through a microtask so callers can interleave. Default false (synchronous). */
+  /** Deliver messages in a microtask instead of at once. Default `false` (synchronous). */
   async?: boolean;
 };
 
+/**
+ * Two in-memory transports wired to each other.
+ * Each client takes one side.
+ */
 export type InMemoryPair = {
-  /** Feed it to client A (send goes A → B). */
+  /** Side A. A send from side A reaches the listeners of side B. */
   a: LiveCursorTransport;
-  /** Feed it to client B (send goes B → A). */
+  /** Side B. A send from side B reaches the listeners of side A. */
   b: LiveCursorTransport;
-  /** Tear down both sides and stop delivery. */
+  /** Stops all delivery and clears both sides. */
   dispose(): void;
 };
 
@@ -31,6 +34,13 @@ function setStatus(side: Side, next: ConnectionStatus): void {
   for (const listener of side.statusListeners) listener(next);
 }
 
+/**
+ * Creates two in-memory transports wired to each other.
+ * A send on one side reaches the listeners of the other side only.
+ * The pair is for tests that run without a browser or a relay.
+ * @param options Optional settings. Omit for synchronous delivery.
+ * @returns A pair with one transport per side.
+ */
 export function createInMemoryPair(options: InMemoryPairOptions = {}): InMemoryPair {
   const isAsync = options.async === true;
 

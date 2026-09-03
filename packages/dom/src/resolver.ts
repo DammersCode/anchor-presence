@@ -8,20 +8,41 @@ import type { Rect, ViewportSize } from "./geometry";
 import { computeVisibleRect, isPointInRect } from "./occlusion";
 import type { SchedulerReadState } from "./scheduler";
 
+/**
+ * The tier that resolved a cursor.
+ * `anchor` means an anchor element won. `viewport` means the sender viewport won. `hidden` means no position exists.
+ */
 export type ResolutionTier = "anchor" | "viewport" | "hidden";
 
+/**
+ * One resolved remote cursor, in receiver coordinates.
+ * `x` and `y` are pixels in the receiver viewport.
+ */
 export type ResolvedCursor<TContext = unknown, TUser = unknown> = {
+  /** The remote client that owns this cursor. */
   clientId: string;
-  x: number; // receiver viewport px
+  /** The X position in receiver viewport pixels. */
+  x: number;
+  /** The Y position in receiver viewport pixels. */
   y: number;
+  /** Whether to render this cursor. The visibility policy decides. */
   visible: boolean;
+  /** Whether the point sits in a visible region of the anchor. */
   pointVisible: boolean;
-  anchorId: string | null; // which anchor won, null = viewport tier
+  /** The anchor that won the resolution. `null` when the viewport tier wins. */
+  anchorId: string | null;
+  /** The tier that resolved this cursor. */
   tier: ResolutionTier;
+  /** The remote context value, when the sender sent one. */
   context?: TContext;
+  /** The remote user value, when the sender sent one. */
   user?: TUser;
 };
 
+/**
+ * Decides whether to show one remote cursor.
+ * The resolver runs this policy for each cursor it resolves.
+ */
 export type VisibilityPolicy<TContext = unknown, TUser = unknown> = (input: {
   presence: CursorPresence<TContext, TUser>;
   resolution: { tier: ResolutionTier; anchorId: string | null; pointVisible: boolean };

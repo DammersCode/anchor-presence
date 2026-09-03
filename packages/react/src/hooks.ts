@@ -24,6 +24,10 @@ function useLiveCursorContext<TContext, TUser>(): LiveCursorContextValue<TContex
   return useContext(LiveCursorContext) as LiveCursorContextValue<TContext, TUser>;
 }
 
+/**
+ * Returns the presence client from the nearest provider.
+ * Returns `null` when the hook runs without a provider.
+ */
 export function useCursorClient<TContext = unknown, TUser = unknown>(): PresenceClient<TContext, TUser> | null {
   return useLiveCursorContext<TContext, TUser>().client;
 }
@@ -42,33 +46,29 @@ function wrapClient<TContext, TUser>(client: PresenceClient<TContext, TUser>, ke
   };
 }
 
+/**
+ * Options for `usePresenceClient`.
+ */
 export type PresenceClientFactoryOptions<TContext = unknown, TUser = unknown> = {
   /**
-   * Creates the client. It runs exactly once per `key` per page; the hook memoizes the
-   * result for the page lifetime and uses the first render's closure. Own the transport
-   * here: call `transport.connect()` inside the factory or before render.
+   * Creates the client. The hook runs it once per `key`, on first use.
+   * The factory owns the transport: call `transport.connect()` inside it.
    */
   factory: (opts: { key?: string }) => PresenceClient<TContext, TUser>;
   /**
-   * Identity for multi-client setups. The same `key` resolves to the same client across
-   * renders and StrictMode remounts. Omit it for the single-client case.
+   * Identity for multi-client setups.
+   * The same `key` resolves to the same client across renders and StrictMode remounts.
+   * The hook uses a default key when you omit it.
    */
   key?: string;
 };
 
 /**
- * Stable PresenceClient per `key`, memoized for the page lifetime (module-scoped registry).
- *
- * The hook never disposes on unmount: PresenceClient is a one-way latch, and remounts
- * (StrictMode, route changes) must keep working. Call `dispose()` explicitly. It clears
- * the `key` entry, so a later render re-creates the client through the factory.
- * The hook does not call `transport.connect()`: the factory owns the transport lifecycle.
- *
- * ```ts
- * const client = usePresenceClient({
- *   factory: () => createPresenceClient({ transport }), // connect the transport inside the factory
- * });
- * ```
+ * Returns one presence client per `key`.
+ * The hook runs the factory once, on first use, and keeps the client for the page lifetime.
+ * The hook never disposes on unmount. Call `client.dispose()` to end the client.
+ * After `dispose()`, the next render creates a new client.
+ * The hook does not connect the transport. The factory owns the transport.
  */
 export function usePresenceClient<TContext = unknown, TUser = unknown>(
   options: PresenceClientFactoryOptions<TContext, TUser>,
@@ -87,6 +87,11 @@ export function usePresenceClient<TContext = unknown, TUser = unknown>(
   return client as PresenceClient<TContext, TUser>;
 }
 
+/**
+ * Returns the resolved remote cursors.
+ * The hook rerenders on every new cursor snapshot.
+ * Returns an empty list on the server or without a binding.
+ */
 export function useRemoteCursors<TContext = unknown, TUser = unknown>(): ResolvedCursor<TContext, TUser>[] {
   const { binding } = useLiveCursorContext<TContext, TUser>();
   const subscribe = useCallback(
@@ -134,9 +139,9 @@ export function useRemoteCursorsSelector<TSelected, TContext = unknown, TUser = 
 }
 
 /**
- * Render-stable remote presence list. Rerenders only when an observable field
- * (cursor, context, user, pointer, session, or membership) changes. `sequence` is not
- * included; watch sequences with `client.getRemoteSnapshot()` + `client.subscribeRemote()`.
+ * Returns the stable list of remote presences, without `sequence`.
+ * The hook rerenders only when an observable field changes.
+ * Watch `sequence` with `client.getRemoteSnapshot()` and `client.subscribeRemote()`.
  */
 export function useCursorPresence<TContext = unknown, TUser = unknown>(): RemotePresence<TContext, TUser>[] {
   const { client } = useLiveCursorContext<TContext, TUser>();
@@ -151,9 +156,15 @@ export function useCursorPresence<TContext = unknown, TUser = unknown>(): Remote
   return useSyncExternalStore(subscribe, getSnapshot, getServerPresence as () => RemotePresence<TContext, TUser>[]);
 }
 
+/**
+ * One remote user, keyed by client.
+ */
 export type RemoteUser<TUser = unknown> = {
+  /** The client that sent the user value. */
   clientId: string;
+  /** The user value, or `undefined` when the sender sent none. */
   user: TUser | undefined;
+  /** The session ID of the client. */
   session: string;
 };
 
@@ -161,13 +172,21 @@ function projectRemoteUsers<TUser>(snapshot: RemotePresence<unknown, TUser>[]): 
   return snapshot.map((p) => ({ clientId: p.clientId, user: p.user === null ? undefined : p.user, session: p.session }));
 }
 
-// TContext keeps the generic arity aligned with the other hooks; the list mirrors the client's remote snapshot
+/**
+ * Returns the remote user values, one entry per client.
+ * The list follows the stable presence snapshot.
+ */
+// TContext keeps the generic arity aligned with the other hooks. The list mirrors the remote snapshot of the client.
 // oxlint-disable-next-line typescript/no-unnecessary-type-parameters
 export function useRemoteUsers<TContext = unknown, TUser = unknown>(): RemoteUser<TUser>[] {
   const presence = useCursorPresence<TContext, TUser>();
   return useMemo(() => projectRemoteUsers(presence), [presence]);
 }
 
+/**
+ * Returns the connection status of the client from the nearest provider.
+ * Returns `"disconnected"` on the server or without a provider.
+ */
 export function useCursorStatus(): ConnectionStatus {
   const { client } = useLiveCursorContext();
   const subscribe = useCallback(
@@ -178,7 +197,12 @@ export function useCursorStatus(): ConnectionStatus {
   return useSyncExternalStore(subscribe, getSnapshot, getServerStatus);
 }
 
-// TUser keeps the generic arity aligned with the other hooks; removing it would break existing call sites
+/**
+ * Reads the local context value and gives a setter.
+ * The setter calls `client.setContext`, which sends the value to remote peers.
+ * Returns `undefined` and a no-op setter on the server.
+ */
+// TUser keeps the generic arity aligned with the other hooks. Removing it breaks existing call sites.
 // oxlint-disable-next-line typescript/no-unnecessary-type-parameters
 export function useCursorContext<TContext = unknown, TUser = unknown>(): [
   TContext | undefined,

@@ -1,4 +1,4 @@
-// Top-level wiring: registry + pointer + scheduler + resolver — consumed by the React adapter
+// Top-level wiring: registry, pointer, scheduler, and resolver. The React adapter consumes it.
 
 import type { InterpolatorFactory, PresenceClient } from "@anchor-presence/core";
 import { createAnchorRegistry } from "./registry";
@@ -17,20 +17,34 @@ import type { ResolvedCursor, VisibilityPolicy } from "./resolver";
 
 export type { ResolvedCursor, ResolutionTier, VisibilityPolicy } from "./resolver";
 
-/** How remote cursors turn into screen positions. */
+/**
+ * How remote cursors turn into screen positions.
+ */
 export type ResolutionOptions<TContext = unknown, TUser = unknown> = {
+  /** Shows or hides one cursor. Default: hide a cursor that does not resolve. */
   visibilityPolicy?: VisibilityPolicy<TContext, TUser>;
+  /** Creates the interpolator per remote client. Default: `linearInterpolator`. */
   interpolatorFactory?: InterpolatorFactory;
+  /** Runs a DOM hit test on the resolved point. Default `false`. */
   hitTest?: boolean;
 };
 
-/** The DOM and timing hosts the binding runs against; every field defaults to the ambient browser globals. */
+/**
+ * The DOM and timing hosts the binding runs against.
+ * Every field defaults to the browser globals.
+ */
 export type EnvironmentOptions = {
+  /** The document root to watch. Default: the global `document`. */
   root?: Document;
+  /** The window for pointer and scroll events. Default: the global `window`. */
   window?: Window;
+  /** The requestAnimationFrame function to use. Default: the global one. */
   raf?: RafLike;
+  /** The cancelAnimationFrame function to use. Default: the global one. */
   caf?: CafLike;
+  /** The ResizeObserver constructor to use. Default: the global one. */
   ResizeObserverCtor?: ResizeObserverCtor;
+  /** The MutationObserver constructor to use. Default: the global one. */
   MutationObserverCtor?: MutationObserverCtor;
 };
 
@@ -39,24 +53,53 @@ const DEFAULT_ANCHOR_ATTRIBUTE = "data-anchor";
 const DEFAULT_MAX_ANCHORS = 4;
 const PROTOCOL_MAX_ANCHORS = 8;
 
+/**
+ * Options for `createDomBinding`.
+ */
 export type DomBindingOptions<TContext = unknown, TUser = unknown> = {
   /** Attribute whose value is the anchor ID. Default `"data-anchor"`. */
   anchorAttribute?: string;
   /** Maximum anchors in the outbound fallback chain. Default `4`, clamped to `1` through `8`. */
   maxAnchors?: number;
+  /** Settings for how remote cursors resolve. Omit for the defaults. */
   resolution?: ResolutionOptions<TContext, TUser>;
+  /** The DOM and timing hosts the binding runs against. Omit for the browser globals. */
   environment?: EnvironmentOptions;
 };
 
+/**
+ * The resolved-cursor surface of one client.
+ */
 export type DomBinding<TContext = unknown, TUser = unknown> = {
+  /**
+   * Marks the layout as dirty.
+   * The binding re-resolves the cursors on the next frame.
+   * @param reason An optional name for the trigger.
+   */
   invalidate(reason?: string): void;
+  /** Returns the latest resolved cursors. */
   getSnapshot(): ResolvedCursor<TContext, TUser>[];
+  /**
+   * Adds a listener for new cursor snapshots.
+   * @returns A function that removes the listener.
+   */
   subscribe(listener: () => void): () => void;
+  /**
+   * Stops the binding and clears its listeners.
+   * The binding sends one final empty snapshot before it stops.
+   */
   dispose(): void;
 };
 
 const EMPTY_SNAPSHOT: ResolvedCursor[] = [];
 
+/**
+ * Creates the DOM side of one client.
+ * The binding watches local anchors, remote presences, and layout changes, then publishes resolved cursors.
+ * @param client The client the binding reads from.
+ * @param options Optional binding settings.
+ * @returns The binding.
+ */
 export function createDomBinding<TContext = unknown, TUser = unknown>(
   client: PresenceClient<TContext, TUser>,
   options: DomBindingOptions<TContext, TUser> = {},

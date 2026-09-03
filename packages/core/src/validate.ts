@@ -10,14 +10,26 @@ import {
 } from "./protocol";
 import type { AnchorPoint, CursorPosition, CursorPresence } from "./protocol";
 
+/**
+ * Limits for `validatePresence`.
+ * Omit a field to keep its default.
+ */
 export type ValidationLimits = {
+  /** Maximum `clientId` length. Default `DEFAULT_MAX_CLIENT_ID_LENGTH`. */
   maxClientIdLength?: number;
+  /** Maximum `session` length. Default `DEFAULT_MAX_SESSION_LENGTH`. */
   maxSessionLength?: number;
+  /** Maximum `sequence` value. Default `DEFAULT_MAX_SEQUENCE`. */
   maxSequence?: number;
+  /** Maximum anchors in one cursor. Default `DEFAULT_MAX_ANCHORS`. */
   maxAnchors?: number;
+  /** Maximum anchor `id` length. Default `DEFAULT_MAX_ANCHOR_ID_LENGTH`. */
   maxAnchorIdLength?: number;
+  /** Maximum size of `context` or `user` as JSON, in bytes. Default `DEFAULT_MAX_FIELD_BYTES`. */
   maxFieldBytes?: number;
+  /** Maximum nesting depth of `context` or `user`. Default `DEFAULT_MAX_FIELD_DEPTH`. */
   maxFieldDepth?: number;
+  /** Maximum size of one encoded message, in bytes. Default `DEFAULT_MAX_MESSAGE_BYTES`. */
   maxMessageBytes?: number;
 };
 
@@ -149,7 +161,14 @@ function validateCursor(input: unknown, limits: ResolvedLimits): CursorPosition 
   return cursor;
 }
 
-/** Decodes and enforces every rule in spec §4.2. Never throws; returns null for anything unusable. */
+/**
+ * Returns a validated `CursorPresence` from one decoded message, or `null`.
+ * The function enforces every wire limit and never throws.
+ * It clamps anchor and viewport values into the `0` to `1` range.
+ * @param input The decoded message, from a codec.
+ * @param limits Optional limits. The defaults fill the fields you omit.
+ * @returns A validated message, or `null` when the message is invalid.
+ */
 export function validatePresence<TContext = unknown, TUser = unknown>(
   input: unknown,
   limits?: ValidationLimits,

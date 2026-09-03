@@ -1,12 +1,23 @@
 import type { CursorPosition, CursorPresence, RemotePresence } from "./protocol";
 
+/** Default maximum number of remote clients in one `RemotePresenceStore`. */
 export const DEFAULT_MAX_REMOTE_CLIENTS = 64;
+
+/** Default time before a remote client counts as stale, in milliseconds. */
 export const DEFAULT_STALE_TIMEOUT_MS = 70_000;
 
+/**
+ * Options for `RemotePresenceStore`.
+ * Omit every field to keep the defaults.
+ */
 export type RemotePresenceStoreOptions = {
+  /** Maximum number of remote clients. Default `DEFAULT_MAX_REMOTE_CLIENTS`. */
   maxRemoteClients?: number;
+  /** Time before a client counts as stale, in milliseconds. Default `DEFAULT_STALE_TIMEOUT_MS`. */
   staleTimeoutMs?: number;
+  /** Returns the current time in milliseconds. Default `Date.now`. */
   now?: () => number;
+  /** Runs when the store drops a new client because the store is full. */
   onDropNewClient?: () => void;
 };
 
@@ -16,7 +27,11 @@ type Entry<TContext, TUser> = {
   projected: RemotePresence<TContext, TUser>;
 };
 
-/** Sequencing (spec §4.3) + expiry (§4.4) store for remote presences. */
+/**
+ * Store for the remote presences one client receives.
+ * The store drops a same-session message when its sequence is not higher than the stored value.
+ * When the store is full, it drops a new `clientId` and calls `onDropNewClient`.
+ */
 export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
   private readonly maxRemoteClients: number;
   private readonly staleTimeoutMs: number;
@@ -32,6 +47,7 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
   private stableSnapshot: RemotePresence<TContext, TUser>[] = [];
   private stableSnapshotDirty = false;
 
+  /** Creates a store with the given options. */
   constructor(options: RemotePresenceStoreOptions = {}) {
     this.maxRemoteClients = options.maxRemoteClients ?? DEFAULT_MAX_REMOTE_CLIENTS;
     this.staleTimeoutMs = options.staleTimeoutMs ?? DEFAULT_STALE_TIMEOUT_MS;
@@ -39,7 +55,12 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
     this.onDropNewClient = options.onDropNewClient;
   }
 
-  /** Applies an inbound (already-validated) presence message. Returns true if it was accepted. */
+  /**
+   * Applies one validated inbound message.
+   * The store drops a same-session message with a sequence not higher than the stored value.
+   * @param presence The validated inbound message.
+   * @returns `true` when the store accepted the message.
+   */
   ingest(presence: CursorPresence<TContext, TUser>): boolean {
     const existing = this.entries.get(presence.clientId);
 
@@ -95,7 +116,10 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
     return applyFieldDeltas(presence, context, user);
   }
 
-  /** Removes entries not seen for staleTimeoutMs. Call periodically (e.g. from a client heartbeat timer). */
+  /**
+   * Removes clients with no message for `staleTimeoutMs`.
+   * If you use the store without a client, run this on a timer.
+   */
   sweep(): void {
     const cutoff = this.now() - this.staleTimeoutMs;
     let removedAny = false;
@@ -111,6 +135,11 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
     }
   }
 
+  /**
+   * Removes one client from the store.
+   * Removing a client that is not present changes nothing.
+   * @param clientId The client to remove.
+   */
   remove(clientId: string): void {
     if (this.entries.delete(clientId)) {
       this.stableSnapshotDirty = true;
@@ -118,7 +147,10 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
     }
   }
 
-  /** Raw snapshot including `sequence`; new array identity per accepted ingest. */
+  /**
+   * Returns the raw remote snapshot, including `sequence`.
+   * The store returns a new array when it accepts a message.
+   */
   getSnapshot(): CursorPresence<TContext, TUser>[] {
     if (this.snapshotDirty) {
       this.snapshot = Array.from(this.entries.values(), (entry) => entry.presence);
@@ -127,7 +159,11 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
     return this.snapshot;
   }
 
-  /** Render-stable snapshot: `sequence` excluded, entry and array identity hold until observable fields change. */
+  /**
+   * Returns the stable remote snapshot, without `sequence`.
+   * The store keeps the array and entry identity while nothing observable changes.
+   * Use this for rendering. Use `getSnapshot()` to watch `sequence`.
+   */
   getStableSnapshot(): RemotePresence<TContext, TUser>[] {
     if (this.stableSnapshotDirty) {
       this.stableSnapshot = Array.from(this.entries.values(), (entry) => entry.projected);
@@ -136,6 +172,11 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
     return this.stableSnapshot;
   }
 
+  /**
+   * Adds a listener for store changes.
+   * The store calls the listener on every accepted message and on every removal.
+   * @returns A function that removes the listener.
+   */
   subscribe(listener: () => void): () => void {
     this.listeners.add(listener);
     return () => {

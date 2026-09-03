@@ -13,7 +13,10 @@ import type { LiveCursorTransport } from "./transport";
 import { validatePresence } from "./validate";
 import type { ValidationLimits } from "./validate";
 
+/** Default publish interval, in milliseconds. */
 export const DEFAULT_PUBLISH_INTERVAL_MS = 50;
+
+/** Default heartbeat interval, in milliseconds. */
 export const DEFAULT_HEARTBEAT_MS = 10_000;
 
 const MIN_TIMER_INTERVAL_MS = 1;
@@ -23,57 +26,138 @@ const PUBLISH_RETRY_MAX_MS = 2000;
 
 type TimerHandle = ReturnType<typeof setTimeout>;
 
+/**
+ * Timer functions the client uses for its schedules.
+ * Tests can provide a fake timer here.
+ */
 export type SchedulerLike = {
+  /** Sets a timer and returns its handle. */
   setTimeout: (callback: () => void, ms: number) => TimerHandle;
+  /** Clears one timer. */
   clearTimeout: (handle: TimerHandle) => void;
 };
 
+/**
+ * Options for the adaptive publish rate.
+ * The client lowers the publish rate while the transport holds many bytes.
+ */
 export type AdaptivePublishOptions = {
-  /** Enter slow mode when the transport reports this many buffered bytes or more. Default 64 KiB. */
+  /** Buffered bytes that turn on slow mode. Default `64 KiB`. */
   highWatermarkBytes?: number;
-  /** Leave slow mode when the transport reports this many buffered bytes or fewer. Default half of `highWatermarkBytes`. */
+  /** Buffered bytes that turn off slow mode. Default half of `highWatermarkBytes`. */
   lowWatermarkBytes?: number;
-  /** Publish interval used in slow mode. Default `max(publishIntervalMs * 4, 100)`. */
+  /** Publish interval in slow mode, in milliseconds. Default `max(publishIntervalMs * 4, 100)`. */
   slowPublishIntervalMs?: number;
 };
 
+/**
+ * Options for `createPresenceClient`.
+ * Only `transport` is required.
+ */
 export type PresenceClientOptions<TContext = unknown, TUser = unknown> = {
+  /** The transport the client sends and receives over. */
   transport: LiveCursorTransport;
+  /** The codec for message bytes. Default `jsonCodec`. */
   codec?: CursorCodec;
+  /** A stable ID for this client. Default: a new random ID. */
   clientId?: string;
+  /** Publish interval, in milliseconds. Default `DEFAULT_PUBLISH_INTERVAL_MS`. */
   publishIntervalMs?: number;
+  /** Time before a remote client counts as stale, in milliseconds. Minimum `1000`. */
   staleTimeoutMs?: number;
+  /** Heartbeat interval, in milliseconds. Default `DEFAULT_HEARTBEAT_MS`. */
   heartbeatMs?: number;
+  /** Maximum remote clients in the store. Default `DEFAULT_MAX_REMOTE_CLIENTS`. */
   maxRemoteClients?: number;
-  /** Invoked whenever a new remote clientId is dropped because the store is full. */
+  /** Runs when the store drops a new `clientId` because the store is full. */
   onRemoteClientDrop?: () => void;
+  /** The user value the client sends to remote peers. */
   user?: TUser;
+  /** The context value the client sends to remote peers. */
   context?: TContext;
+  /** Returns a new random ID. The client uses it for `clientId` and `session`. */
   idFactory?: () => string;
+  /** Returns the current time in milliseconds. Default `Date.now`. */
   now?: () => number;
+  /** The timer surface for the client schedules. Default: the global timers. */
   scheduler?: SchedulerLike;
+  /** Limits for inbound messages. Default: the protocol defaults. */
   validationLimits?: ValidationLimits;
+  /** Settings for the adaptive publish rate. Omit to keep the fixed rate. */
   adaptivePublish?: AdaptivePublishOptions;
 };
 
+/**
+ * The public surface of one presence client.
+ */
 export interface PresenceClient<TContext = unknown, TUser = unknown> {
+  /** The stable ID of this client. */
   readonly clientId: string;
+  /** The session ID of this client. */
   readonly session: string;
+  /**
+   * Sets the local cursor position.
+   * The client sends the position to remote peers.
+   * A `null` value clears the cursor for remote peers.
+   * @param cursor The new position, or `null` to clear it.
+   * @param pointer Optional pointer info to send with the cursor.
+   */
   updateLocalCursor(cursor: CursorPosition | null, pointer?: PointerInfo): void;
+  /**
+   * Sets the context value the client sends to remote peers.
+   * `undefined` clears the value.
+   */
   setContext(context: TContext | undefined): void;
+  /** Returns the local context value. */
   getContext(): TContext | undefined;
+  /**
+   * Adds a listener for local context changes.
+   * The client calls the listener on every `setContext`.
+   * @returns A function that removes the listener.
+   */
   subscribeContext(listener: () => void): () => void;
+  /**
+   * Sets the user value the client sends to remote peers.
+   * `undefined` clears the value.
+   */
   setUser(user: TUser | undefined): void;
+  /** Returns the local user value. */
   getUser(): TUser | undefined;
+  /** Returns the current connection status. */
   getStatus(): ConnectionStatus;
+  /**
+   * Adds a listener for connection status changes.
+   * @returns A function that removes the listener.
+   */
   subscribeStatus(listener: (status: ConnectionStatus) => void): () => void;
-  /** Raw remote snapshot including `sequence`; identity changes on every accepted message. */
+  /**
+   * Returns the raw remote snapshot, including `sequence`.
+   * The client returns a new array when it accepts a message.
+   */
   getRemoteSnapshot(): CursorPresence<TContext, TUser>[];
-  /** Render-stable remote snapshot: excludes `sequence`, holds identity until observable fields change. */
+  /**
+   * Returns the stable remote snapshot, without `sequence`.
+   * The client keeps the array identity while nothing observable changes.
+   * Use this for rendering. Use `getRemoteSnapshot()` to watch `sequence`.
+   */
   getRemotePresence(): RemotePresence<TContext, TUser>[];
+  /**
+   * Adds a listener for remote presence changes.
+   * The client calls the listener when it accepts a message.
+   * @returns A function that removes the listener.
+   */
   subscribeRemote(listener: () => void): () => void;
-  /** Returns an unregister function; on an already-disposed client runs fn immediately. */
+  /**
+   * Registers a function to run on `dispose`.
+   * If the client is already disposed, the client runs the function at once.
+   * @param fn The function to run on dispose.
+   * @returns A function that unregisters `fn`.
+   */
   registerTeardown(fn: () => void): () => void;
+  /**
+   * Stops the client and clears its listeners.
+   * The client sends a final clear message when it can.
+   */
   dispose(): void;
 }
 
@@ -119,6 +203,12 @@ function jsonByteLength(value: unknown): number {
   }
 }
 
+/**
+ * Creates one presence client.
+ * The client sends and receives messages through the transport you give it.
+ * @param options The client options. `transport` is required.
+ * @returns The client.
+ */
 export function createPresenceClient<TContext = unknown, TUser = unknown>(
   options: PresenceClientOptions<TContext, TUser>,
 ): PresenceClient<TContext, TUser> {

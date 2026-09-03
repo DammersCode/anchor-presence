@@ -1,5 +1,7 @@
 import type { CursorCodec } from "./codec";
 import { jsonCodec } from "./codec";
+import { defaultIdFactory } from "./internal/ids";
+import type { PresenceClientState, SchedulerLike } from "./internal/types";
 import { DEFAULT_MAX_FIELD_BYTES, DEFAULT_MAX_MESSAGE_BYTES } from "./protocol";
 import type {
   ConnectionStatus,
@@ -9,7 +11,6 @@ import type {
   RemotePresence,
 } from "./protocol";
 import { DEFAULT_MAX_REMOTE_CLIENTS, DEFAULT_STALE_TIMEOUT_MS, RemotePresenceStore } from "./store";
-import type { PresenceClientState, SchedulerLike } from "./internal/types";
 import type { LiveCursorTransport } from "./transport";
 import { validatePresence } from "./validate";
 import type { ValidationLimits } from "./validate";
@@ -156,28 +157,12 @@ const defaultScheduler: SchedulerLike = {
   clearTimeout: (handle) => clearTimeout(handle),
 };
 
-type CryptoLike = {
-  randomUUID?: () => string;
-  getRandomValues?: (array: Uint8Array) => Uint8Array;
-};
-
 // Minimal DOM surface; core builds without the DOM lib so this stays a structural type.
 type DocumentLike = {
   readonly visibilityState: string;
   addEventListener: (type: string, listener: () => void) => void;
   removeEventListener: (type: string, listener: () => void) => void;
 };
-
-function defaultIdFactory(): string {
-  // randomUUID is secure-context-only; getRandomValues also works on plain http
-  const cryptoObj = (globalThis as { crypto?: CryptoLike }).crypto;
-  if (typeof cryptoObj?.randomUUID === "function") return cryptoObj.randomUUID();
-  if (typeof cryptoObj?.getRandomValues === "function") {
-    const bytes = cryptoObj.getRandomValues(new Uint8Array(16));
-    return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
-  }
-  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
-}
 
 function isDevMode(): boolean {
   const env = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env;

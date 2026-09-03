@@ -39,6 +39,7 @@ function makeFakeClient() {
     getStatus: () => "connected",
     subscribeStatus: () => () => {},
     getRemoteSnapshot: () => remoteSnapshot,
+    getRemotePresence: () => remoteSnapshot,
     subscribeRemote: (listener) => {
       remoteListeners.add(listener);
       return () => remoteListeners.delete(listener);
@@ -78,6 +79,7 @@ function makeCapturingClient(samples: (CursorPosition | null)[]): PresenceClient
     getStatus: () => "connected",
     subscribeStatus: () => () => {},
     getRemoteSnapshot: () => [],
+    getRemotePresence: () => [],
     subscribeRemote: () => () => {},
     registerTeardown: (fn) => {
       teardowns.push(fn);

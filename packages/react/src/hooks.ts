@@ -1,18 +1,18 @@
 import { useCallback, useContext, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import type { ConnectionStatus, CursorPresence, PresenceClient } from "@anchor-presence/core";
+import type { ConnectionStatus, PresenceClient, RemotePresence } from "@anchor-presence/core";
 import type { ResolvedCursor } from "@anchor-presence/dom";
 import { LiveCursorContext } from "./context";
 import type { LiveCursorContextValue } from "./context";
 import { getContextStore } from "./contextStore";
 
 const EMPTY_CURSORS: ResolvedCursor[] = [];
-const EMPTY_PRESENCE: CursorPresence[] = [];
+const EMPTY_PRESENCE: RemotePresence[] = [];
 
 function getServerCursors(): ResolvedCursor[] {
   return EMPTY_CURSORS;
 }
 
-function getServerPresence(): CursorPresence[] {
+function getServerPresence(): RemotePresence[] {
   return EMPTY_PRESENCE;
 }
 
@@ -133,17 +133,22 @@ export function useRemoteCursorsSelector<TSelected, TContext = unknown, TUser = 
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
 
-export function useCursorPresence<TContext = unknown, TUser = unknown>(): CursorPresence<TContext, TUser>[] {
+/**
+ * Render-stable remote presence list. Rerenders only when an observable field
+ * (cursor, context, user, pointer, session, or membership) changes. `sequence` is not
+ * included; watch sequences with `client.getRemoteSnapshot()` + `client.subscribeRemote()`.
+ */
+export function useCursorPresence<TContext = unknown, TUser = unknown>(): RemotePresence<TContext, TUser>[] {
   const { client } = useLiveCursorContext<TContext, TUser>();
   const subscribe = useCallback(
     (listener: () => void) => (client !== null ? client.subscribeRemote(listener) : () => {}),
     [client],
   );
   const getSnapshot = useCallback(
-    () => (client !== null ? client.getRemoteSnapshot() : (EMPTY_PRESENCE as CursorPresence<TContext, TUser>[])),
+    () => (client !== null ? client.getRemotePresence() : (EMPTY_PRESENCE as RemotePresence<TContext, TUser>[])),
     [client],
   );
-  return useSyncExternalStore(subscribe, getSnapshot, getServerPresence as () => CursorPresence<TContext, TUser>[]);
+  return useSyncExternalStore(subscribe, getSnapshot, getServerPresence as () => RemotePresence<TContext, TUser>[]);
 }
 
 export type RemoteUser<TUser = unknown> = {
@@ -152,7 +157,7 @@ export type RemoteUser<TUser = unknown> = {
   session: string;
 };
 
-function projectRemoteUsers<TUser>(snapshot: CursorPresence<unknown, TUser>[]): RemoteUser<TUser>[] {
+function projectRemoteUsers<TUser>(snapshot: RemotePresence<unknown, TUser>[]): RemoteUser<TUser>[] {
   return snapshot.map((p) => ({ clientId: p.clientId, user: p.user === null ? undefined : p.user, session: p.session }));
 }
 

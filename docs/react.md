@@ -71,6 +71,19 @@ Pass `client={null}` during server-side rendering. See "SSR" below.
 | `useCursorClient()` | the `PresenceClient` instance, or `null` |
 | `useCursorContext()` | `[context, setContext]` |
 
+### Render cost
+
+Each hook rerenders its component only when the value it returns changes.
+
+- `useRemoteCursors` rerenders on every resolved-cursor snapshot. While cursors move, that is every frame. Derive a smaller value with `useRemoteCursorsSelector` when your component needs less.
+- `useRemoteCursorsSelector` rerenders only when the `select` output changes under `isEqual`.
+- `useRemoteUsers` rerenders only when the set of remote clients, or their `user` or `session`, changes.
+- `useCursorPresence` rerenders only when a remote client's `cursor`, `context`, `user`, `pointer`, `session`, or membership changes. A message that only advances `sequence` does not rerender it.
+- `useCursorStatus` rerenders only when the connection status changes.
+- `useCursorContext` rerenders only when the local context value changes.
+
+An idle room costs nothing: no inbound messages, no rerenders.
+
 ### Anchor elements
 
 Anchors are declared with the binding's anchor attribute.
@@ -145,6 +158,8 @@ function useCursorPresence<TContext = unknown, TUser = unknown>(): CursorPresenc
 ```
 
 Returns the raw remote presence list, before geometry resolution. Use this only when you need fields resolution does not carry, such as `pointer.type`. Use `useRemoteCursors` for rendering instead.
+
+The list is a stable snapshot. It changes only when a remote client's `cursor`, `context`, `user`, `pointer`, `session`, or membership changes. The `sequence` field is not included. It is a wire-level ordering detail that changes with every accepted message. If you need per-message sequence updates, read `client.getRemoteSnapshot()` in a `client.subscribeRemote()` callback.
 
 ### useCursorStatus
 

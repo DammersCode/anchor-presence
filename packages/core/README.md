@@ -19,6 +19,8 @@ client.subscribeRemote(() => {
 });
 ```
 
+`getRemoteSnapshot()` returns the raw list, including `sequence`, and changes identity on every accepted message. `getRemotePresence()` returns the render-stable list, which excludes `sequence` and holds identity until an observable field changes.
+
 ## Boundary rule
 
 Core imports no DOM, React, transport, or codec library, so it does not know what a browser is. Every browser API call lives in `@anchor-presence/dom`.
@@ -29,6 +31,7 @@ Core imports no DOM, React, transport, or codec library, so it does not know wha
 |---|---|
 | `createPresenceClient(options)` | Wires the transport, codec, publishing, sequencing, expiry, and the remote presence store into one client |
 | `CursorPresence`, `AnchorPoint`, `CursorPosition` | Wire protocol types |
+| `RemotePresence` | A remote presence without `sequence`; the shape of the render-stable snapshot |
 | `validatePresence(input, limits?)` | Validates and clamps an untrusted decoded value |
 | `jsonCodec` | The default `CursorCodec` implementation |
 | `binaryCodec` | A compact `CursorCodec` for binary WebSocket relays |

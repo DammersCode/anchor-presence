@@ -1,9 +1,11 @@
 import { Profiler, act } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { createPresenceClient, jsonCodec } from "@anchor-presence/core";
+import type { CursorPresence, LiveCursorTransport } from "@anchor-presence/core";
 import type { ResolvedCursor } from "@anchor-presence/dom";
 import { LiveCursorProvider } from "../src/provider";
-import { useRemoteCursors } from "../src/hooks";
+import { useCursorPresence, useRemoteCursors } from "../src/hooks";
 import { makeFakeBinding, makeFakeClient } from "./testUtils";
 
 function cursors(n: number): ResolvedCursor[] {
@@ -175,5 +177,95 @@ describe("react adapter perf contracts", () => {
     }
 
     expect(listenerCount()).toBe(0);
+  });
+});
+
+// K2 baseline: a real PresenceClient (real store) behind a fake inbound transport.
+function makeInboundChannel(): { transport: LiveCursorTransport; push: (presence: CursorPresence) => void } {
+  const listeners = new Set<(data: Uint8Array) => void>();
+  const transport: LiveCursorTransport = {
+    send: () => {},
+    subscribe: (listener) => {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+  };
+  return {
+    transport,
+    push(presence: CursorPresence) {
+      for (const listener of listeners) listener(jsonCodec.encode(presence));
+    },
+  };
+}
+
+function sameAnchorMessage(sequence: number, u = 0.5): CursorPresence {
+  return {
+    version: 1,
+    clientId: "remote-1",
+    session: "remote-session",
+    sequence,
+    cursor: { anchors: [{ id: "doc.body", u, v: 0.25 }] },
+  };
+}
+
+describe("useCursorPresence inbound render cost (K2)", () => {
+  let container: HTMLDivElement;
+
+  beforeEach(() => {
+    container = document.createElement("div");
+    document.body.append(container);
+  });
+
+  afterEach(() => {
+    container.remove();
+  });
+
+  it("100 inbound messages with unchanged visible content cause 1 consumer render", () => {
+    let presenceRenderCount = 0;
+    function PresenceReader() {
+      presenceRenderCount += 1;
+      const presence = useCursorPresence();
+      return <div>{presence.length}</div>;
+    }
+
+    const { transport, push } = makeInboundChannel();
+    const client = createPresenceClient({ transport, clientId: "local" });
+    const root = createRoot(container);
+
+    act(() => {
+      root.render(
+        <LiveCursorProvider client={client} binding={makeFakeBinding().binding}>
+          <PresenceReader />
+        </LiveCursorProvider>,
+      );
+    });
+    expect(presenceRenderCount).toBe(1);
+
+    for (let i = 0; i < 100; i++) {
+      act(() => {
+        push(sameAnchorMessage(i));
+      });
+    }
+
+    // all 100 accepted by the real store; only the first message (membership) is renderable
+    expect(client.getRemoteSnapshot()).toHaveLength(1);
+    expect(client.getRemoteSnapshot()[0]?.sequence).toBe(99);
+    expect(presenceRenderCount).toBe(2);
+
+    // a message that changes visible content rerenders; a following no-op does not
+    act(() => {
+      push(sameAnchorMessage(100, 0.75));
+    });
+    expect(presenceRenderCount).toBe(3);
+    act(() => {
+      push(sameAnchorMessage(101, 0.75));
+    });
+    expect(presenceRenderCount).toBe(3);
+    expect(client.getRemoteSnapshot()[0]?.sequence).toBe(101);
+
+    act(() => {
+      client.dispose();
+      root.unmount();
+    });
   });
 });

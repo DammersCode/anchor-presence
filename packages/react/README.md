@@ -43,12 +43,32 @@ React holds no cursor state of its own. It reads the `core` and `dom` stores wit
 | `useRemoteUsers()` | One entry per remote client: `clientId`, `user`, and `session` |
 | `useRemoteCursors()` | Resolved cursor snapshot for rendering |
 | `useRemoteCursorsSelector(select, isEqual?)` | A derived value that rerenders only when it changes |
-| `useCursorPresence()` | Raw remote presence snapshot |
+| `useCursorPresence()` | Raw remote presence list, stable per client (without `sequence`) |
 | `useCursorStatus()` | Connection status |
 | `useCursorClient()` | The underlying `PresenceClient` |
 | `useCursorContext()` | `[context, setContext]` |
 | `CursorLayer` | Optional component that renders every visible remote cursor |
 | `DefaultCursor` | Optional neutral cursor visual, used by `CursorLayer` by default |
+
+## Hooks and render cost
+
+Every hook rerenders its component only when the value it returns changes. Pick the hook that matches the value you need.
+
+| Hook | Rerenders when |
+|---|---|
+| `useRemoteCursors()` | the resolved-cursor snapshot changes (every cursor frame while cursors move) |
+| `useRemoteCursorsSelector(select, isEqual?)` | only when the `select` output changes under `isEqual` |
+| `useRemoteUsers()` | only when the set of remote clients, or their `user` or `session`, changes |
+| `useCursorPresence()` | only when a remote client's `cursor`, `context`, `user`, `pointer`, `session`, or membership changes |
+| `useCursorStatus()` | only when the connection status changes |
+| `useCursorContext()` | only when the local context value changes |
+
+Two rules of thumb:
+
+- An idle room costs nothing: no inbound messages, no rerenders.
+- A message that only advances `sequence` does not rerender `useCursorPresence` consumers. `sequence` is a wire-level ordering field and is not part of the stable snapshot. If you need per-message sequence updates, read `client.getRemoteSnapshot()` inside a `client.subscribeRemote()` callback.
+
+`useRemoteCursors` rerenders every frame while cursors move, by design. When your component needs less than the full snapshot, derive a smaller value with `useRemoteCursorsSelector`.
 
 ## Client lifecycle
 

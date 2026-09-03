@@ -5,6 +5,7 @@ export type {
   CursorPresence,
   PointerInfo,
   PointerType,
+  RemotePresence,
 } from "./protocol";
 export {
   DEFAULT_MAX_ANCHORS,

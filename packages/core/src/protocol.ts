@@ -27,6 +27,13 @@ export type CursorPresence<TContext = unknown, TUser = unknown> = {
   pointer?: PointerInfo;
 };
 
+// `sequence` omitted: it changes on every accepted message and is not renderable content.
+// Render-stable snapshots expose this shape; watch sequences through the raw snapshot.
+export type RemotePresence<TContext = unknown, TUser = unknown> = Omit<
+  CursorPresence<TContext, TUser>,
+  "sequence"
+>;
+
 // Validation limits — spec §4.2 (overridable via ValidationLimits passed to validatePresence)
 export const DEFAULT_MAX_CLIENT_ID_LENGTH = 128;
 export const DEFAULT_MAX_SESSION_LENGTH = 64;

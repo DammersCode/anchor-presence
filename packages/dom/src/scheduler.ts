@@ -402,8 +402,9 @@ export function createGeometryScheduler<TSnapshot>(
     },
 
     getCachedRect(element) {
-      // a dirty flag means a layout-changing signal arrived after the last measure; the cache is not trustworthy
-      return dirty ? undefined : frameCache.getCachedRect(element);
+      // while dirty the rect is at most one frame stale; the scheduler's own rAF tick re-measures, so
+      // serving it keeps the pointer path off live getBoundingClientRect (spec §9 tolerance)
+      return frameCache.getCachedRect(element);
     },
 
     dispose() {

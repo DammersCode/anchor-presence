@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createAnchorRegistry } from "../src/registry";
 import type { AnchorRegistry } from "../src/registry";
 import { attachPointerSource, DEFAULT_MAX_SENT_ANCHORS } from "../src/pointer";
+import { createGeometryScheduler } from "../src/scheduler";
+import type { SchedulerReadState } from "../src/scheduler";
 import type { CursorPosition, PointerInfo, PresenceClient } from "@anchor-presence/core";
 
 // jsdom has no layout engine and no PointerEvent constructor; stub both.
@@ -313,5 +315,87 @@ describe("attachPointerSource (spec §9)", () => {
     samples.length = 0;
     firePointerEvent("pointermove", el, { clientX: 10, clientY: 10 });
     expect(samples).toHaveLength(0);
+  });
+});
+
+describe("pointer path with the scheduler's rect cache (spec §9/§11, K3)", () => {
+  it("does not call live getBoundingClientRect while the scheduler is dirty, and positions update on the scheduler's next tick", () => {
+    let nextHandle = 1;
+    const pending = new Map<number, (ts: number) => void>();
+    const raf = (cb: (ts: number) => void) => {
+      const handle = nextHandle++;
+      pending.set(handle, cb);
+      return handle;
+    };
+    const caf = (handle: number) => {
+      pending.delete(handle);
+    };
+    const flush = () => {
+      const cbs = [...pending.values()];
+      pending.clear();
+      for (const cb of cbs) cb(0);
+    };
+
+    document.body.innerHTML = "";
+    const el = document.createElement("div");
+    document.body.append(el);
+    let liveRect = { left: 0, top: 0, width: 100, height: 100 };
+    const getRectSpy = vi.spyOn(el, "getBoundingClientRect").mockImplementation(() => ({
+      left: liveRect.left,
+      top: liveRect.top,
+      width: liveRect.width,
+      height: liveRect.height,
+      right: liveRect.left + liveRect.width,
+      bottom: liveRect.top + liveRect.height,
+      x: liveRect.left,
+      y: liveRect.top,
+      toJSON() {
+        return this;
+      },
+    }));
+
+    const registry = createAnchorRegistry();
+    const scheduler = createGeometryScheduler({
+      hasActiveCursors: () => true,
+      compute: (readState: SchedulerReadState) => {
+        readState.getRect(el);
+        return { snapshot: [], activeAnchors: [el], needsAnotherFrame: false };
+      },
+      notify: () => {},
+      onRegistryChange: () => () => {},
+      onRemoteData: () => () => {},
+      raf,
+      caf,
+    });
+    flush(); // attach-time pass: measures el with left = 0
+
+    registry.register("a", el);
+    const { client, samples } = makeClient();
+    const handle = attachPointerSource(client, registry, {
+      getCachedRect: (element) => scheduler.getCachedRect(element),
+    });
+
+    firePointerEvent("pointermove", el, { clientX: 50, clientY: 50 });
+    expect(samples).toHaveLength(1);
+    expect(samples[0]?.anchors[0]?.u).toBeCloseTo(0.5);
+    const readsAfterWarmup = getRectSpy.mock.calls.length;
+
+    scheduler.invalidate(); // dirty: re-measure pending, not yet flushed
+    firePointerEvent("pointermove", el, { clientX: 50, clientY: 50 });
+    expect(getRectSpy.mock.calls.length).toBe(readsAfterWarmup); // no live read while dirty
+    expect(samples).toHaveLength(2);
+    expect(samples[1]?.anchors[0]?.u).toBeCloseTo(0.5); // positioned from the cached rect
+
+    liveRect = { left: 10, top: 0, width: 100, height: 100 };
+    flush(); // scheduler's next tick re-measures
+    expect(getRectSpy.mock.calls.length).toBe(readsAfterWarmup + 1);
+    expect(scheduler.getCachedRect(el)).toEqual({ left: 10, top: 0, width: 100, height: 100 });
+
+    firePointerEvent("pointermove", el, { clientX: 50, clientY: 50 });
+    expect(samples).toHaveLength(3);
+    expect(samples[2]?.anchors[0]?.u).toBeCloseTo(0.4); // (50 - 10) / 100
+
+    handle.detach();
+    scheduler.dispose();
   });
 });

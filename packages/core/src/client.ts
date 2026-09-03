@@ -1,6 +1,7 @@
 import { jsonCodec } from "./codec";
 import { createOversizedWarning, isDevMode } from "./internal/devWarnings";
 import { defaultIdFactory } from "./internal/ids";
+import { wireInbound } from "./internal/ingest";
 import { createPublishLoop } from "./internal/publishLoop";
 import { createStatusMachine } from "./internal/reconnect";
 import type {
@@ -11,7 +12,6 @@ import type {
 } from "./internal/types";
 import { DEFAULT_MAX_FIELD_BYTES, DEFAULT_MAX_MESSAGE_BYTES } from "./protocol";
 import { DEFAULT_MAX_REMOTE_CLIENTS, DEFAULT_STALE_TIMEOUT_MS, RemotePresenceStore } from "./store";
-import { validatePresence } from "./validate";
 
 /** Default publish interval, in milliseconds. */
 export const DEFAULT_PUBLISH_INTERVAL_MS = 50;
@@ -168,20 +168,7 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
   }
   scheduleSweep();
 
-  const unsubscribeTransport = transport.subscribe((data) => {
-    if (state.disposed) return;
-    try {
-      if (data.byteLength > state.maxMessageBytes) return; // oversized wire message: drop before parsing (spec §4.2)
-      const decoded = state.codec.decode(data);
-      const presence = validatePresence<TContext, TUser>(decoded, state.validationLimits);
-      if (presence === null) return;
-      if (presence.clientId === state.clientId) return; // ignore echoes of our own messages
-      state.store.ingest(presence);
-    } catch {
-      // a throwing codec or subscriber must not break the transport dispatch loop
-    }
-  });
-  state.teardowns.push(unsubscribeTransport);
+  wireInbound(state);
 
   statusMachine.wireTransport();
 

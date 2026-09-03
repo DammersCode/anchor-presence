@@ -3,16 +3,16 @@ import { useCursorContext } from "@anchor-presence/react";
 import { Sidebar } from "./components/dashboard/sidebar";
 import { Topbar } from "./components/dashboard/topbar";
 import { SettingsDialog } from "./components/dashboard/settings-dialog";
-import { CursorLayer } from "./cursors/CursorLayer";
+import { CursorLayer } from "./cursors/cursor-layer";
 import { WhoIsOnline } from "./components/who-is-online";
 import { localRoom, localUserName } from "./cursors/setup";
-import type { LocalViewState } from "./cursors/visibilityPolicy";
+import type { LocalViewState } from "./cursors/visibility-policy";
 import type { DemoContext } from "./cursors/setup";
 import { usePageRoute, isPageId } from "./use-page-route";
-import { DashboardPage } from "./pages/DashboardPage";
-import { OrdersPage } from "./pages/OrdersPage";
-import { CustomersPage } from "./pages/CustomersPage";
-import { ProductsPage } from "./pages/ProductsPage";
+import { DashboardPage } from "./pages/dashboard-page";
+import { OrdersPage } from "./pages/orders-page";
+import { CustomersPage } from "./pages/customers-page";
+import { ProductsPage } from "./pages/products-page";
 import type { InterpolatorStyle } from "./cursors/interpolators";
 
 export interface AppProps {

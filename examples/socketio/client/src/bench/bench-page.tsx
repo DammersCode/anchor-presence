@@ -3,9 +3,9 @@ import { createPresenceClient, jsonCodec, noneInterpolator } from "@anchor-prese
 import type { PresenceClient } from "@anchor-presence/core";
 import { createDomBinding } from "@anchor-presence/dom";
 import type { DomBinding } from "@anchor-presence/dom";
-import { createLoopbackTransport } from "./loopbackTransport";
-import type { LoopbackTransport } from "./loopbackTransport";
-import { BenchCell } from "./BenchCell";
+import { createLoopbackTransport } from "./loopback-transport";
+import type { LoopbackTransport } from "./loopback-transport";
+import { BenchCell } from "./bench-cell";
 import { RollingStats } from "./stats";
 
 const ANCHOR_COUNTS = [10, 100, 1000] as const;

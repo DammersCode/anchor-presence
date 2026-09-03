@@ -2,12 +2,12 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import { LiveCursorProvider } from "@anchor-presence/react";
-import App from "./App";
-import { BenchPage } from "./bench/BenchPage";
+import App from "./app";
+import { BenchPage } from "./bench/bench-page";
 import { getPresenceClient } from "./cursors/setup";
 import { SignalRProvider, useSignalR, SERVER_URL } from "./signalr";
-import { createVisibilityPolicy } from "./cursors/visibilityPolicy";
-import type { LocalViewState } from "./cursors/visibilityPolicy";
+import { createVisibilityPolicy } from "./cursors/visibility-policy";
+import type { LocalViewState } from "./cursors/visibility-policy";
 import {
   interpolatorRegistry,
   type InterpolatorStyle,

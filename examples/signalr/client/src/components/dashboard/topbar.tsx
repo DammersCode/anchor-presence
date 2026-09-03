@@ -1,6 +1,6 @@
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import { PresencePill } from "../../cursors/PresencePill";
+import { PresencePill } from "../../cursors/presence-pill";
 
 export interface TopbarProps {
   userName: string;

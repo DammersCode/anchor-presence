@@ -7,8 +7,8 @@ import { createPresenceClient, jsonCodec, noneInterpolator } from "@anchor-prese
 import type { PresenceClient } from "@anchor-presence/core";
 import { CURSOR_MARKER_ATTRIBUTE, createDomBinding } from "@anchor-presence/dom";
 import type { DomBinding } from "@anchor-presence/dom";
-import { createLoopbackTransport } from "../bench/loopbackTransport";
-import type { LoopbackTransport } from "../bench/loopbackTransport";
+import { createLoopbackTransport } from "../bench/loopback-transport";
+import type { LoopbackTransport } from "../bench/loopback-transport";
 
 export type ScenarioName = "idle" | "scroll" | "layout";
 

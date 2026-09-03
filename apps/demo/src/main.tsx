@@ -2,12 +2,12 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import { LiveCursorProvider } from "@anchor-presence/react";
-import App from "./App";
-import { BenchPage } from "./bench/BenchPage";
-import { ReflowBenchPage } from "./reflow/ReflowBenchPage";
+import App from "./app";
+import { BenchPage } from "./bench/bench-page";
+import { ReflowBenchPage } from "./reflow/reflow-bench-page";
 import { getPresenceClient } from "./cursors/setup";
-import { createVisibilityPolicy } from "./cursors/visibilityPolicy";
-import type { LocalViewState } from "./cursors/visibilityPolicy";
+import { createVisibilityPolicy } from "./cursors/visibility-policy";
+import type { LocalViewState } from "./cursors/visibility-policy";
 import { interpolatorRegistry } from "./cursors/interpolators";
 import { useInterpolatorStyle } from "./use-interpolator-style";
 

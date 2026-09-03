@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { CursorPresence } from "@anchor-presence/core";
 import type { ResolutionTier } from "@anchor-presence/dom";
-import { createVisibilityPolicy } from "./visibilityPolicy";
-import type { LocalViewState } from "./visibilityPolicy";
+import { createVisibilityPolicy } from "./visibility-policy";
+import type { LocalViewState } from "./visibility-policy";
 import type { DemoContext } from "./setup";
 
 function presence(context?: DemoContext): CursorPresence<DemoContext> {

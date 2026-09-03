@@ -1,7 +1,7 @@
 import { Avatar } from "../ui/avatar";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import { PresencePill } from "../../cursors/PresencePill";
+import { PresencePill } from "../../cursors/presence-pill";
 
 const PEERS = ["Sage", "Rowan", "Quinn"];
 const PEER_COLORS = ["bg-emerald-500", "bg-amber-500", "bg-sky-500"];

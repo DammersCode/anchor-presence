@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ConnectionStatus } from "@anchor-presence/core";
 import { createWebSocketTransport } from "../src/transport";
-import type { WebSocketLike } from "../src/transport";
+import type { WebSocketCtor, WebSocketLike } from "../src/transport";
 
 class FakeWebSocket implements WebSocketLike {
   static instances: FakeWebSocket[] = [];
@@ -153,6 +153,75 @@ describe("createWebSocketTransport", () => {
     expect(vi.getTimerCount()).toBe(0);
     vi.advanceTimersByTime(60_000);
     expect(FakeWebSocket.instances).toHaveLength(1);
+  });
+
+  // a constructor that throws on the given attempt and delegates to FakeWebSocket otherwise
+  function flakyCtor(throwOnAttempt: number): { ctor: WebSocketCtor; attempts: () => number } {
+    let attempts = 0;
+    const ctor = (function (url: string) {
+      attempts += 1;
+      if (attempts === throwOnAttempt) throw new Error("socket constructor failed");
+      return new FakeWebSocket(url);
+    }) as unknown as WebSocketCtor;
+    return { ctor, attempts: () => attempts };
+  }
+
+  it("reconnects with backoff when the socket constructor throws from a scheduled attempt", () => {
+    vi.useFakeTimers();
+    const { ctor: FlakyWebSocket, attempts } = flakyCtor(2);
+    const transport = createWebSocketTransport({
+      url: TEST_URL,
+      WebSocketCtor: FlakyWebSocket,
+      baseBackoffMs: 200,
+      random: () => 1,
+    });
+
+    void transport.connect?.();
+    FakeWebSocket.fire(FakeWebSocket.instances.at(-1)!, "open");
+    expect(transport.getStatus?.()).toBe("connected");
+
+    FakeWebSocket.fire(FakeWebSocket.instances.at(-1)!, "close");
+    expect(transport.getStatus?.()).toBe("reconnecting");
+
+    vi.advanceTimersByTime(200); // second attempt: the constructor throws
+    expect(attempts()).toBe(2);
+    expect(transport.getStatus?.()).toBe("reconnecting");
+    expect(vi.getTimerCount()).toBe(1); // next attempt scheduled instead of an uncaught throw
+
+    vi.advanceTimersByTime(400); // third attempt: constructor succeeds
+    expect(attempts()).toBe(3);
+    FakeWebSocket.fire(FakeWebSocket.instances.at(-1)!, "open");
+    expect(transport.getStatus?.()).toBe("connected");
+  });
+
+  it("does not throw from connect() when the socket constructor fails on the first attempt", () => {
+    vi.useFakeTimers();
+    const { ctor: FlakyWebSocket, attempts } = flakyCtor(1);
+    const transport = createWebSocketTransport({
+      url: TEST_URL,
+      WebSocketCtor: FlakyWebSocket,
+      baseBackoffMs: 200,
+      random: () => 1,
+    });
+
+    expect(() => transport.connect?.()).not.toThrow();
+    expect(attempts()).toBe(1);
+    expect(transport.getStatus?.()).toBe("reconnecting"); // not stuck in "connecting"
+    expect(vi.getTimerCount()).toBe(1);
+
+    vi.advanceTimersByTime(200);
+    expect(attempts()).toBe(2);
+    FakeWebSocket.fire(FakeWebSocket.instances.at(-1)!, "open");
+    expect(transport.getStatus?.()).toBe("connected");
+  });
+
+  it("goes disconnected without throwing when the constructor fails and reconnect is off", () => {
+    const { ctor: FailingWebSocket } = flakyCtor(1); // the only attempt throws
+    const transport = createWebSocketTransport({ url: TEST_URL, reconnect: false, WebSocketCtor: FailingWebSocket });
+
+    expect(() => transport.connect?.()).not.toThrow();
+    expect(transport.getStatus?.()).toBe("disconnected");
+    expect(FakeWebSocket.instances).toHaveLength(0);
   });
 
   it("replays the current status to a late subscriber synchronously", () => {

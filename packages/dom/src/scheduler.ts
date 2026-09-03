@@ -25,7 +25,10 @@ export type CafLike = (handle: number) => void;
 export type SetTimeoutLike = (callback: () => void, ms: number) => ReturnType<typeof setTimeout>;
 export type ClearTimeoutLike = (handle: ReturnType<typeof setTimeout>) => void;
 
-// cross-package DOM contract: marks a rendered cursor root element (the react adapter sets it)
+/**
+ * The attribute that marks a rendered remote cursor element.
+ * The React adapter sets it on each cursor root.
+ */
 export const CURSOR_MARKER_ATTRIBUTE = "data-anchor-presence-cursor";
 
 const TRANSITION_START_EVENTS = ["transitionrun", "animationstart"] as const;

@@ -1,4 +1,3 @@
-// Native WebSocket transport — spec §5, with backoff reconnect (default on)
 // oxlint-disable unicorn/prefer-add-event-listener -- WebSocketLike only exposes on* handlers
 
 import type { ConnectionStatus, LiveCursorTransport } from "@anchor-presence/core";
@@ -17,26 +16,32 @@ export type WebSocketLike = {
 
 export type WebSocketCtor = new (url: string) => WebSocketLike;
 
+/**
+ * Options for `createWebSocketTransport`.
+ */
 export type WebSocketTransportOptions = {
   /** WebSocket URL. Defaults to `ws(s)://<current host>:<relay port><path>` when omitted. */
   url?: string;
-  /** Host used when building the default URL. Defaults to `window.location.hostname`. */
+  /** The host used when building the default URL. Default: `window.location.hostname`. */
   host?: string;
-  /** Path including query. Defaults to `/`. */
+  /** The path, including the query. Default: `/`. */
   path?: string;
-  /** Relay port used when building the default URL. Defaults to 8787. */
+  /** The relay port used when building the default URL. Default: `8787`. */
   port?: number;
-  /** Relay room auth token (opt-in). URL-encoded and appended to the upgrade URL as `token=...`. */
+  /**
+   * Room token for the relay auth check.
+   * The transport URL-encodes the token and adds it to the URL as `token=...`.
+   */
   token?: string;
-  /** Enable automatic reconnect with exponential backoff. Default `true`. */
+  /** Enables automatic reconnect with exponential backoff. Default `true`. */
   reconnect?: boolean;
-  /** Base backoff in ms before the first reconnect attempt. Default 500. */
+  /** Base backoff, in milliseconds, before the first reconnect attempt. Default `500`. */
   baseBackoffMs?: number;
-  /** Cap on the reconnect backoff. Default 8000. */
+  /** Cap on the reconnect backoff, in milliseconds. Default `8000`. */
   maxBackoffMs?: number;
-  /** Randomness source for backoff jitter; returns a value in `[0, 1)`. Defaults to `Math.random`. */
+  /** Returns a value in `[0, 1)` for backoff jitter. Default: `Math.random`. */
   random?: () => number;
-  /** Inject a WebSocket constructor; defaults to `globalThis.WebSocket`. */
+  /** A WebSocket constructor to use. Default: `globalThis.WebSocket`. */
   WebSocketCtor?: WebSocketCtor;
 };
 
@@ -65,6 +70,13 @@ function withToken(url: string, token: string): string {
   return `${url}${url.includes("?") ? "&" : "?"}token=${encodeURIComponent(token)}`;
 }
 
+/**
+ * Creates a WebSocket transport for the presence relay.
+ * The transport reconnects after a connection drop.
+ * After `disconnect()`, the transport does not reconnect. Create a new transport.
+ * @param options Optional transport settings. Omit to use the defaults.
+ * @returns A transport for the client.
+ */
 export function createWebSocketTransport(options: WebSocketTransportOptions = {}): LiveCursorTransport {
   const url = options.token !== undefined ? withToken(resolveUrl(options), options.token) : resolveUrl(options);
   const reconnect = options.reconnect ?? true;

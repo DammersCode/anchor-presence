@@ -283,6 +283,10 @@ function decodeMessage(data: Uint8Array): unknown {
   return message;
 }
 
+/**
+ * Codec that encodes messages as compact binary frames.
+ * The `encode` method throws when a message breaks the frame limits.
+ */
 export const binaryCodec: CursorCodec = {
   encode(message: CursorPresence): Uint8Array {
     return encodeMessage(message);

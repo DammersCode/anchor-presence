@@ -1,12 +1,30 @@
-// Interpolation — spec §13
+/**
+ * Eases a cursor position toward a target.
+ */
 export interface Interpolator {
+  /**
+   * Sets a new target position.
+   * The ease starts from the current position.
+   */
   target(x: number, y: number, timestampMs: number): void;
-  shift(dx: number, dy: number): void; // moves current AND target by a delta, no easing
+  /**
+   * Moves the current position and the target by a delta.
+   * The ease does not restart.
+   */
+  shift(dx: number, dy: number): void;
+  /**
+   * Returns the eased position at a timestamp.
+   * `settled` is `true` when the position reaches the target.
+   */
   sample(timestampMs: number): { x: number; y: number; settled: boolean };
-  /** Clears the ease state so the next target() snaps like a first-ever target. */
+  /** Clears the ease state. The next `target` snaps to the new position. */
   reset?(): void;
 }
 
+/**
+ * Returns a new interpolator.
+ * The resolver creates one per remote client.
+ */
 export type InterpolatorFactory = () => Interpolator;
 
 /** No easing: sample always returns the latest target, always settled. */
@@ -31,7 +49,12 @@ export const noneInterpolator: InterpolatorFactory = () => {
   };
 };
 
-/** Fixed-duration ease from current toward target. shift() moves both endpoints so an in-flight ease continues. */
+/**
+ * Creates an interpolator that eases over a fixed duration.
+ * The default duration is `80` milliseconds.
+ * `shift` moves both endpoints, so an in-flight ease continues.
+ * @param durationMs The ease duration in milliseconds. Default `80`.
+ */
 export const linearInterpolator = (durationMs = 80): Interpolator => {
   let currentX = 0;
   let currentY = 0;

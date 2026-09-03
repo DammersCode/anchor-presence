@@ -61,7 +61,7 @@ describe("createInMemoryPair", () => {
     expect(initial?.cursor?.anchors[0]?.id).toBe("x");
     expect(initial?.cursor?.anchors[0]?.u).toBe(0.5);
     expect(initial?.user).toEqual({ name: "A" });
-    expect("context" in (initial ?? {})).toBe(false);
+    expect("context" in initial!).toBe(false);
 
     clientA.setContext({ page: "dashboard" });
     vi.advanceTimersByTime(50);
@@ -71,7 +71,7 @@ describe("createInMemoryPair", () => {
     clientA.setContext(null);
     vi.advanceTimersByTime(50);
     const cleared = clientB.getRemoteSnapshot().find((p) => p.clientId === "A");
-    expect("context" in (cleared ?? {})).toBe(false);
+    expect("context" in cleared!).toBe(false);
 
     clientA.dispose();
     clientB.dispose();

@@ -36,7 +36,7 @@ describe("core has zero DOM globals (spec §3.1)", () => {
     it(`${file} never references DOM globals (${tokens.join(", ")})`, () => {
       const contents = readFileSync(join(srcDir, file), "utf8");
       for (const token of tokens) {
-        const regex = new RegExp(`\\b${token}\\b`);
+        const regex = new RegExp(`\\b${token}\\b`, "u");
         expect(regex.test(contents)).toBe(false);
       }
     });

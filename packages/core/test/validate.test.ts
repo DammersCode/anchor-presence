@@ -25,8 +25,9 @@ describe("validatePresence", () => {
   });
 
   it("drops non-object input", () => {
+    const missing: unknown = undefined;
     expect(validatePresence(null)).toBeNull();
-    expect(validatePresence(undefined)).toBeNull();
+    expect(validatePresence(missing)).toBeNull();
     expect(validatePresence("string")).toBeNull();
     expect(validatePresence(42)).toBeNull();
     expect(validatePresence([])).toBeNull();

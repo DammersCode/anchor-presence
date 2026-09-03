@@ -81,7 +81,7 @@ describe("binaryCodec", () => {
 
     const decoded = binaryCodec.decode(binaryCodec.encode(message)) as CursorPresence;
     expect(decoded.cursor).toEqual({ anchors: [] });
-    expect("viewport" in (decoded.cursor ?? {})).toBe(false);
+    expect("viewport" in decoded.cursor!).toBe(false);
     expect("context" in decoded).toBe(false);
     expect("user" in decoded).toBe(false);
     expect("pointer" in decoded).toBe(false);

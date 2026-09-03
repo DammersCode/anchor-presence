@@ -44,6 +44,20 @@ function decodeSent(bytes: Uint8Array) {
   return JSON.parse(new TextDecoder().decode(bytes));
 }
 
+function makeBufferedTransport(sent: Uint8Array[], bufferedByCall: number[]): LiveCursorTransport {
+  let calls = 0;
+  let buffered = 0;
+  return {
+    send: vi.fn((data: Uint8Array) => {
+      sent.push(data);
+      buffered = bufferedByCall[calls] ?? 0;
+      calls += 1;
+    }),
+    subscribe: vi.fn(() => () => {}),
+    bufferedBytes: () => buffered,
+  };
+}
+
 let idCounter = 0;
 function idFactory() {
   idCounter += 1;
@@ -632,18 +646,7 @@ describe("createPresenceClient adaptive publish rate", () => {
 
   it("returns to the normal interval after the buffered bytes fall to the low watermark", () => {
     const sent: Uint8Array[] = [];
-    const bufferedByCall = [200, 0, 0];
-    let calls = 0;
-    let buffered = 0;
-    const transport: LiveCursorTransport = {
-      send: vi.fn((data: Uint8Array) => {
-        sent.push(data);
-        buffered = bufferedByCall[calls] ?? 0;
-        calls += 1;
-      }),
-      subscribe: vi.fn(() => () => {}),
-      bufferedBytes: () => buffered,
-    };
+    const transport = makeBufferedTransport(sent, [200, 0, 0]);
     const client = createPresenceClient({
       transport,
       idFactory,
@@ -730,15 +733,14 @@ describe("createPresenceClient dirty-flag publishing", () => {
 
   it("re-arms the publish timer when a send fails while connected", () => {
     const sent: Uint8Array[] = [];
-    let failures = 1;
+    const send = vi.fn((data: Uint8Array) => {
+      sent.push(data);
+    });
+    send.mockImplementationOnce(() => {
+      throw new Error("boom");
+    });
     const transport: LiveCursorTransport = {
-      send: vi.fn((data: Uint8Array) => {
-        if (failures > 0) {
-          failures -= 1;
-          throw new Error("boom");
-        }
-        sent.push(data);
-      }),
+      send,
       subscribe: vi.fn(() => () => {}),
     };
     const client = createPresenceClient({ transport, idFactory, publishIntervalMs: 50 });

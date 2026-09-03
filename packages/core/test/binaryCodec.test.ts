@@ -1,6 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { binaryCodec } from "../src/binaryCodec";
 import { jsonCodec } from "../src/codec";
+import { createInMemoryPair } from "../src/inMemoryTransport";
+import { createPresenceClient } from "../src/client";
 import { validatePresence } from "../src/validate";
 import type { CursorPresence } from "../src/protocol";
 
@@ -232,5 +234,87 @@ describe("binaryCodec", () => {
     expect(decoded.cursor?.anchors[0]?.id).toBe("navigation.Übersicht");
     expect(decoded.context).toEqual({ message: "ÄÖÜ 中文" });
     expect(decoded.user).toEqual({ name: "Zoë" });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("encode throws on JSON-unsafe context and user values", () => {
+    const base = {
+      version: 1,
+      clientId: "a",
+      session: "s",
+      sequence: 0,
+      cursor: null,
+    } as const;
+
+    // JSON.stringify(10n) throws a TypeError per spec
+    expect(() => binaryCodec.encode({ ...base, context: { big: 10n } })).toThrow(TypeError);
+
+    // a top-level function or symbol stringifies to undefined
+    for (const message of [
+      { ...base, context: (() => 1) },
+      { ...base, user: Symbol("tag") },
+    ] satisfies CursorPresence[]) {
+      expect(() => binaryCodec.encode(message)).toThrow("cannot encode field as JSON");
+    }
+  });
+
+  it("encode throws on unsupported pointer types, bad version, and oversized identifiers", () => {
+    const base = {
+      version: 1,
+      clientId: "a",
+      session: "s",
+      sequence: 0,
+      cursor: null,
+    } as const;
+
+    expect(() =>
+      binaryCodec.encode({ ...base, pointer: { type: "stylus" } as CursorPresence["pointer"] }),
+    ).toThrow("unsupported pointer type");
+    expect(() => binaryCodec.encode({ ...base, version: 2 } as CursorPresence)).toThrow(
+      "unsupported protocol version",
+    );
+    expect(() => binaryCodec.encode({ ...base, clientId: "a".repeat(65536) })).toThrow(
+      "clientId too large",
+    );
+    expect(() => binaryCodec.encode({ ...base, session: "s".repeat(65536) })).toThrow(
+      "session too large",
+    );
+  });
+
+  it("encode throws on more than 255 anchors", () => {
+    const anchors = Array.from({ length: 256 }, (_, i) => ({ id: `a${i}`, u: 0, v: 0 }));
+    expect(() =>
+      binaryCodec.encode({ version: 1, clientId: "a", session: "s", sequence: 0, cursor: { anchors } }),
+    ).toThrow("too many anchors");
+  });
+
+  it("the presence client skips unencodable messages without throwing and recovers once the value is fixed", () => {
+    vi.useFakeTimers();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { a, b } = createInMemoryPair();
+    const sender = createPresenceClient({ transport: a, codec: binaryCodec, publishIntervalMs: 10 });
+    const receiver = createPresenceClient({ transport: b, codec: binaryCodec, publishIntervalMs: 10 });
+    void a.connect();
+    void b.connect();
+
+    sender.setContext({ big: 10n });
+    sender.updateLocalCursor({ anchors: [] });
+    // the encode error is swallowed inside send(): no uncaught throw, nothing on the wire
+    expect(() => vi.advanceTimersByTime(10)).not.toThrow();
+    expect(receiver.getRemoteSnapshot()).toHaveLength(0);
+
+    sender.setContext({ ok: "fine" });
+    vi.advanceTimersByTime(200); // retry backoff delivers the fixed message
+    const snapshot = receiver.getRemoteSnapshot();
+    expect(snapshot).toHaveLength(1);
+    expect(snapshot[0]?.clientId).toBe(sender.clientId);
+    expect(snapshot[0]?.context).toEqual({ ok: "fine" });
+    expect(warn).toHaveBeenCalled();
+
+    sender.dispose();
+    receiver.dispose();
   });
 });

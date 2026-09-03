@@ -263,4 +263,20 @@ The client enters slow mode at the high watermark and leaves it at the low water
 
 ## Relay hardening boundary
 
-The shipped `apps/server/index.ts` relay is a reference room-broadcast relay with reference-side hardening: a per-room socket cap, a per-message byte cap, and a per-socket token-bucket rate limit. Defaults are 1000 sockets per room, 32 KiB per message, a burst of 40 messages, and 20 messages/s refill. The values can be overridden with `MAX_ROOM_SOCKETS`, `MAX_MESSAGE_BYTES`, `RATE_CAPACITY`, and `RATE_REFILL_PER_SECOND`. The relay is still not a production gateway. Authentication, broader connection quotas, pings, and horizontal scaling remain relay/server responsibilities, not library transport responsibilities. The client-side `adaptivePublish` option reduces sender pressure when the local socket buffer grows, but it does not replace relay-side limits.
+The shipped `apps/server/index.ts` relay is a reference room-broadcast relay with reference-side hardening:
+
+| Limit | Default | Env var | Close code |
+|---|---|---|---|
+| Sockets per room | 128 | `RELAY_MAX_ROOM_SOCKETS` | 4001 |
+| Total sockets | 10,000 | `RELAY_MAX_TOTAL_SOCKETS` | 4002 |
+| Slow-peer skip threshold | 1 MiB buffered | `RELAY_SLOW_PEER_SOFT_BYTES` | — |
+| Slow-peer close threshold | 8 MiB buffered | `RELAY_SLOW_PEER_HARD_BYTES` | 4003 |
+| Slow-peer resume threshold | 512 KiB buffered | `RELAY_SLOW_PEER_RESUME_BYTES` | — |
+| Origin allowlist | unset (allow all) | `RELAY_ALLOWED_ORIGINS` | 4004 |
+| Liveness ping / timeout | 30 s ping, 60 s timeout | — | 4005 |
+
+Plus a per-message byte cap (32 KiB, `MAX_MESSAGE_BYTES`) and a per-socket token-bucket rate limit (burst 40, 20 messages/s refill, `RATE_CAPACITY` and `RATE_REFILL_PER_SECOND`). Oversized or over-rate messages are dropped, not closed.
+
+Slow-peer handling uses hysteresis: once a peer is skipped, delivery to it resumes only below the resume threshold, so a peer hovering near the skip threshold does not flap. A peer past the close threshold is closed regardless of skip state; it resyncs via the 10 s heartbeat and the reconnect republish. When `RELAY_ALLOWED_ORIGINS` is set (comma-separated), the relay closes upgrades whose `Origin` header is missing or not in the list.
+
+The relay is still not a production gateway. Authentication and horizontal scaling remain relay/server responsibilities, not library transport responsibilities. The client-side `adaptivePublish` option reduces sender pressure when the local socket buffer grows, but it does not replace relay-side limits.

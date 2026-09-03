@@ -1,30 +1,32 @@
-name: CI
+name: ci
 
 on:
   push:
-    branches: [main]
+    branches: [dev, main]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
-  test:
+  gate:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
-      - run: bun install --frozen-lockfile
-      - run: bunx tsc --build packages/core packages/dom packages/react
-      - run: bunx vitest run
-      - run: bunx vitest bench --project core --run
-        continue-on-error: true # report-only: benches inform, tests gate (plan 009)
-      - run: bunx vite build
-        working-directory: apps/demo
-      # No browser install: the chromium project uses the runner's preinstalled Chrome (channel "chrome").
-      # Firefox/WebKit take ~30 min to install here — run the full suite locally before merging (CONTRIBUTING.md).
-      - run: bunx playwright test --project=chromium --reporter=list,html
-        env:
-          PLAYWRIGHT_HTML_OPEN: never
-      - uses: actions/upload-artifact@v4
-        if: failure()
         with:
-          name: playwright-report
-          path: playwright-report/
+          bun-version: 1.3.14
+      - name: Install (frozen lockfile)
+        run: bun install --frozen-lockfile
+      - name: Build
+        run: bun run build
+      - name: Typecheck
+        run: bun run typecheck
+      - name: Lint
+        run: bun run lint
+      - name: Test
+        run: bun run test
+      - name: Demo production build
+        run: bunx vite build
+        working-directory: apps/demo

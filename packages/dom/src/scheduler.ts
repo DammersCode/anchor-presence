@@ -22,6 +22,8 @@ export type MutationObserverCtor = new (
 
 export type RafLike = (callback: (timestampMs: number) => void) => number;
 export type CafLike = (handle: number) => void;
+export type SetTimeoutLike = (callback: () => void, ms: number) => ReturnType<typeof setTimeout>;
+export type ClearTimeoutLike = (handle: ReturnType<typeof setTimeout>) => void;
 
 // cross-package DOM contract: marks a rendered cursor root element (the react adapter sets it)
 export const CURSOR_MARKER_ATTRIBUTE = "data-anchor-presence-cursor";
@@ -63,6 +65,8 @@ export type GeometrySchedulerOptions<TSnapshot> = {
   window?: Window | undefined;
   raf?: RafLike | undefined;
   caf?: CafLike | undefined;
+  setTimeout?: SetTimeoutLike | undefined;
+  clearTimeout?: ClearTimeoutLike | undefined;
   ResizeObserverCtor?: ResizeObserverCtor | undefined;
   MutationObserverCtor?: MutationObserverCtor | undefined;
 };
@@ -108,6 +112,8 @@ export function createGeometryScheduler<TSnapshot>(
   const win = options.window ?? window;
   const raf: RafLike = options.raf ?? ((cb) => win.requestAnimationFrame(cb));
   const caf: CafLike = options.caf ?? ((handle) => win.cancelAnimationFrame(handle));
+  const setTimer: SetTimeoutLike = options.setTimeout ?? ((callback, ms) => setTimeout(callback, ms));
+  const clearTimer: ClearTimeoutLike = options.clearTimeout ?? ((handle) => clearTimeout(handle));
   const ResizeObserverImpl =
     options.ResizeObserverCtor ?? (win as unknown as { ResizeObserver?: ResizeObserverCtor }).ResizeObserver;
   const MutationObserverImpl =
@@ -229,7 +235,7 @@ export function createGeometryScheduler<TSnapshot>(
     const byName = transitionEntries.get(target);
     const entry = byName?.get(name);
     if (byName === undefined || entry === undefined) return;
-    clearTimeout(entry.safetyTimer);
+    clearTimer(entry.safetyTimer);
     byName.delete(name);
     if (byName.size === 0) transitionEntries.delete(target);
     openTransitionCount -= 1;
@@ -273,7 +279,7 @@ export function createGeometryScheduler<TSnapshot>(
       windowMs = Math.min(timingMs + CANCEL_SAFETY_MARGIN_MS, SAFETY_TIMEOUT_CAP_MS);
     }
 
-    const safetyTimer = setTimeout(() => {
+    const safetyTimer = setTimer(() => {
       closeTransitionEntry(target, name ?? "");
       markDirtyAndSchedule();
     }, windowMs);

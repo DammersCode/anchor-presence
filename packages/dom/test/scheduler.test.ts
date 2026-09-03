@@ -1,12 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createGeometryScheduler } from "../src/scheduler";
 import type {
+  ClearTimeoutLike,
   ComputeResult,
   MutationObserverCtor,
   MutationObserverLike,
   RafLike,
   ResizeObserverCtor,
   ResizeObserverLike,
+  SetTimeoutLike,
 } from "../src/scheduler";
 
 type RafQueueEntry = { handle: number; callback: (ts: number) => void };
@@ -28,6 +30,26 @@ function makeRafStub() {
     for (const entry of pending) entry.callback(ts);
   }
   return { raf, caf, queue, flush };
+}
+
+function makeTimerStub() {
+  const pending = new Map<ReturnType<typeof setTimeout>, { callback: () => void; ms: number }>();
+  let nextId = 1;
+  const setTimeoutFn: SetTimeoutLike = vi.fn((callback, ms) => {
+    const handle = (nextId++) as unknown as ReturnType<typeof setTimeout>;
+    pending.set(handle, { callback, ms });
+    return handle;
+  });
+  const clearTimeoutFn: ClearTimeoutLike = vi.fn((handle) => {
+    pending.delete(handle);
+  });
+  function fireAll(): void {
+    for (const [handle, entry] of Array.from(pending)) {
+      pending.delete(handle);
+      entry.callback();
+    }
+  }
+  return { setTimeoutFn, clearTimeoutFn, fireAll };
 }
 
 function makeResizeObserverStub() {
@@ -387,6 +409,50 @@ describe("createGeometryScheduler (spec §11)", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it("routes the transition safety timer through the injected setTimeout/clearTimeout", () => {
+    const { raf, caf, flush } = makeRafStub();
+    const timers = makeTimerStub();
+    active = true;
+    const compute = vi.fn(() => emptyCompute([]));
+    const scheduler = createGeometryScheduler(
+      baseOptions({ raf, caf, compute, setTimeout: timers.setTimeoutFn, clearTimeout: timers.clearTimeoutFn }),
+    );
+    scheduler.invalidate();
+    flush();
+
+    const el = document.createElement("div");
+    document.body.appendChild(el);
+    vi.spyOn(window, "getComputedStyle").mockReturnValue({
+      getPropertyValue: (prop: string) => {
+        if (prop === "transition-duration") return "0.2s";
+        if (prop === "transition-delay") return "0s";
+        if (prop === "animation-iteration-count") return "1";
+        return "";
+      },
+    } as unknown as CSSStyleDeclaration);
+
+    const startEvent = new Event("transitionrun", { bubbles: true }) as TransitionEvent & { propertyName: string };
+    Object.defineProperty(startEvent, "propertyName", { value: "opacity" });
+    el.dispatchEvent(startEvent);
+    flush(); // consume the frame scheduled by the transitionrun invalidation itself
+    compute.mockClear();
+
+    // 200ms duration + 500ms margin; only the injected stub knows about this timer
+    expect(timers.setTimeoutFn).toHaveBeenCalledTimes(1);
+    expect(timers.setTimeoutFn).toHaveBeenCalledWith(expect.any(Function), 700);
+
+    timers.fireAll();
+    flush(); // the safety-timeout invalidation's own pass
+    expect(compute).toHaveBeenCalledTimes(1);
+
+    compute.mockClear();
+    flush();
+    expect(compute).not.toHaveBeenCalled(); // window closed: no more auto-scheduled passes
+
+    expect(timers.clearTimeoutFn).toHaveBeenCalledTimes(1); // the entry closed itself via the injected clearTimeout
+    scheduler.dispose();
   });
 
   it("an infinite-iteration animation gets a single 500ms window instead of a tracked entry", () => {

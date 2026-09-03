@@ -82,6 +82,13 @@ type CryptoLike = {
   getRandomValues?: (array: Uint8Array) => Uint8Array;
 };
 
+// Minimal DOM surface; core builds without the DOM lib so this stays a structural type.
+type DocumentLike = {
+  readonly visibilityState: string;
+  addEventListener: (type: string, listener: () => void) => void;
+  removeEventListener: (type: string, listener: () => void) => void;
+};
+
 function defaultIdFactory(): string {
   // randomUUID is secure-context-only; getRandomValues also works on plain http
   const cryptoObj = (globalThis as { crypto?: CryptoLike }).crypto;
@@ -354,6 +361,21 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
   if (transport.subscribeStatus) {
     const unsubscribeStatus = transport.subscribeStatus((next) => setStatus(next));
     teardowns.push(unsubscribeStatus);
+  }
+
+  // browser-only: flush a pending publish as soon as the page becomes visible again
+  const browserDocument = (globalThis as { document?: DocumentLike }).document;
+  if (browserDocument !== undefined && typeof browserDocument.addEventListener === "function") {
+    const onVisibilityChange = () => {
+      if (disposed || browserDocument.visibilityState !== "visible" || !pendingPublish) return;
+      if (send(latestCursor, pendingFullPublish)) {
+        pendingPublish = false;
+        pendingFullPublish = false;
+        failedSendCount = 0;
+      }
+    };
+    browserDocument.addEventListener("visibilitychange", onVisibilityChange);
+    teardowns.push(() => browserDocument.removeEventListener("visibilitychange", onVisibilityChange));
   }
 
   if (context !== undefined || user !== undefined) warnIfOversized();

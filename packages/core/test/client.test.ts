@@ -1023,3 +1023,85 @@ describe("createPresenceClient onRemoteClientDrop", () => {
     client.dispose();
   });
 });
+
+describe("createPresenceClient visibilitychange publish flush", () => {
+  type VisibilityListener = () => void;
+
+  function installDocumentStub() {
+    const listeners = new Set<VisibilityListener>();
+    const documentStub = {
+      visibilityState: "hidden" as string,
+      addEventListener: vi.fn((type: string, listener: VisibilityListener) => {
+        if (type === "visibilitychange") listeners.add(listener);
+      }),
+      removeEventListener: vi.fn((type: string, listener: VisibilityListener) => {
+        if (type === "visibilitychange") listeners.delete(listener);
+      }),
+    };
+    Object.defineProperty(globalThis, "document", { value: documentStub, configurable: true });
+    return {
+      documentStub,
+      listeners,
+      fire: () => {
+        for (const listener of [...listeners]) listener();
+      },
+    };
+  }
+
+  afterEach(() => {
+    delete (globalThis as { document?: unknown }).document;
+  });
+
+  it("flushes a pending publish immediately when the page becomes visible", () => {
+    const { documentStub, fire, listeners } = installDocumentStub();
+    const { transport, sent } = makeTransport();
+    const client = createPresenceClient({ transport, idFactory, publishIntervalMs: 50 });
+
+    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
+    expect(sent).toHaveLength(0); // rate-limited: the 50 ms timer has not fired yet
+    expect(listeners).toHaveLength(1);
+
+    documentStub.visibilityState = "visible";
+    fire();
+
+    expect(sent).toHaveLength(1);
+    expect(decodeSent(sent[0]!).cursor.anchors[0].u).toBe(0.5);
+
+    vi.advanceTimersByTime(100); // the rate-limited timer must not double-send
+    expect(sent).toHaveLength(1);
+
+    client.dispose();
+  });
+
+  it("does not flush while the page is still hidden", () => {
+    const { documentStub, fire } = installDocumentStub();
+    const { transport, sent } = makeTransport();
+    const client = createPresenceClient({ transport, idFactory, publishIntervalMs: 50 });
+
+    client.updateLocalCursor({ anchors: [] });
+    documentStub.visibilityState = "hidden";
+    fire();
+    expect(sent).toHaveLength(0);
+
+    vi.advanceTimersByTime(50); // the normal rate-limited path still works
+    expect(sent).toHaveLength(1);
+
+    client.dispose();
+  });
+
+  it("removes the visibilitychange listener on dispose", () => {
+    const { documentStub, fire, listeners } = installDocumentStub();
+    const { transport, sent } = makeTransport();
+    const client = createPresenceClient({ transport, idFactory, publishIntervalMs: 50 });
+    expect(listeners).toHaveLength(1);
+
+    client.dispose();
+    expect(listeners).toHaveLength(0);
+    expect(documentStub.removeEventListener).toHaveBeenCalledTimes(1);
+
+    client.updateLocalCursor({ anchors: [] });
+    fire();
+    vi.advanceTimersByTime(100);
+    expect(sent).toHaveLength(1); // only the leave message
+  });
+});

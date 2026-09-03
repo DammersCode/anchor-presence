@@ -34,6 +34,7 @@ export const DEFAULT_MAX_SEQUENCE = 2_147_483_647;
 export const DEFAULT_MAX_ANCHORS = 8;
 export const DEFAULT_MAX_ANCHOR_ID_LENGTH = 256;
 export const DEFAULT_MAX_FIELD_BYTES = 8 * 1024; // 8 KiB, applies to context/user
+export const DEFAULT_MAX_FIELD_DEPTH = 8; // container nesting depth, applies to context/user
 export const DEFAULT_MAX_MESSAGE_BYTES = 32 * 1024; // 32 KiB, whole encoded message
 
 // Connection status — spec §5

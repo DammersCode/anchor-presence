@@ -23,6 +23,9 @@ export type MutationObserverCtor = new (
 export type RafLike = (callback: (timestampMs: number) => void) => number;
 export type CafLike = (handle: number) => void;
 
+// cross-package DOM contract: marks a rendered cursor root element (the react adapter sets it)
+export const CURSOR_MARKER_ATTRIBUTE = "data-anchor-presence-cursor";
+
 const TRANSITION_START_EVENTS = ["transitionrun", "animationstart"] as const;
 const TRANSITION_END_EVENTS = ["transitionend", "transitioncancel", "animationend", "animationcancel"] as const;
 
@@ -87,7 +90,7 @@ function collectShadowRoots(anchors: Iterable<Element>): Set<ShadowRoot> {
 function isCursorRootMutation(record: MutationRecord): boolean {
   const target = record.target;
   const element = target instanceof Element ? target : target.parentElement;
-  return element !== null && element.closest("[data-anchor-presence-cursor]") !== null;
+  return element !== null && element.closest(`[${CURSOR_MARKER_ATTRIBUTE}]`) !== null;
 }
 
 function parseCssTimeList(value: string): number[] {

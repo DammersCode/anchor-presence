@@ -1,10 +1,13 @@
 import { useCallback } from "react";
 import type { ComponentPropsWithoutRef, CSSProperties, ReactNode } from "react";
-import type { ResolvedCursor } from "@anchor-presence/dom";
+import { CURSOR_MARKER_ATTRIBUTE, type ResolvedCursor } from "@anchor-presence/dom";
 import { useRemoteCursorsSelector } from "./hooks";
 
 const DEFAULT_COLOR = "#6b7280";
 const DEFAULT_Z_INDEX = 50;
+
+// JSX cannot name an attribute dynamically; the marker wins over consumer props, as before
+const CURSOR_MARKER_PROPS: Record<string, string> = { [CURSOR_MARKER_ATTRIBUTE]: "" };
 
 function sameCursors(a: readonly unknown[], b: readonly unknown[]): boolean {
   return a.length === b.length && a.every((item, index) => item === b[index]);
@@ -107,9 +110,9 @@ export function CursorLayer<TContext = unknown, TUser = unknown>(
           <div
             key={cursor.clientId}
             {...consumerRest}
+            {...CURSOR_MARKER_PROPS}
             style={style}
             aria-hidden="true"
-            data-anchor-presence-cursor=""
             data-anchor-presence-client-id={cursor.clientId}
             data-anchor-presence-tier={cursor.tier}
             data-anchor-presence-anchor={cursor.anchorId ?? ""}

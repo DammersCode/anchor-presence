@@ -9,6 +9,8 @@ export type {
 export { createWebSocketTransport } from "./transport";
 export type { WebSocketTransportOptions } from "./transport";
 
+export { CURSOR_MARKER_ATTRIBUTE } from "./scheduler";
+
 export type {
   ResolvedCursor,
   ResolutionTier,

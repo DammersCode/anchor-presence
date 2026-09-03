@@ -2,6 +2,7 @@ import { jsonCodec } from "./codec";
 import { createOversizedWarning, isDevMode } from "./internal/devWarnings";
 import { defaultIdFactory } from "./internal/ids";
 import { wireInbound } from "./internal/ingest";
+import { startLiveness } from "./internal/liveness";
 import { createPublishLoop } from "./internal/publishLoop";
 import { createStatusMachine } from "./internal/reconnect";
 import type {
@@ -150,23 +151,7 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
   const publish = createPublishLoop(state);
   const statusMachine = createStatusMachine(state, publish);
 
-  function scheduleHeartbeat(): void {
-    if (state.disposed) return;
-    state.heartbeatTimer = state.scheduler.setTimeout(() => {
-      publish.sendHeartbeat();
-      scheduleHeartbeat();
-    }, state.heartbeatMs);
-  }
-  scheduleHeartbeat();
-
-  function scheduleSweep(): void {
-    if (state.disposed) return;
-    state.sweepTimer = state.scheduler.setTimeout(() => {
-      state.store.sweep();
-      scheduleSweep();
-    }, state.sweepIntervalMs);
-  }
-  scheduleSweep();
+  startLiveness(state, publish);
 
   wireInbound(state);
 

@@ -67,22 +67,13 @@ function useSchedulerPassStats(binding: DomBinding | null, stormActive: boolean,
       rafHandle = requestAnimationFrame(markFrameStart);
     });
 
-    // Per-pass publish re-renders the grid inside the measured pass, so the readout refreshes at 1 Hz
+    // The readout publishes at 1 Hz, outside the measured pass. In nostats mode it only writes
+    // window.benchStats, so the notify callback below does nothing but push one sample.
     const publishToPage = () => {
-      setStats({ mean: rolling.mean(), p95: rolling.p95(), count: rolling.count });
-      setStormStats({ mean: stormRolling.mean(), p95: stormRolling.p95(), count: stormRolling.count });
-    };
-    const refreshHandle = statsEnabled ? window.setInterval(publishToPage, 1000) : 0;
-
-    const unsubscribe = binding.subscribe(() => {
-      const elapsed = performance.now() - frameStartAt;
-      if (elapsed < 0) return;
-      if (stormActiveRef.current) {
-        stormRolling.push(elapsed);
+      if (statsEnabled) {
+        setStats({ mean: rolling.mean(), p95: rolling.p95(), count: rolling.count });
+        setStormStats({ mean: stormRolling.mean(), p95: stormRolling.p95(), count: stormRolling.count });
       } else {
-        rolling.push(elapsed);
-      }
-      if (!statsEnabled) {
         window.benchStats = {
           mean: rolling.mean(),
           p95: rolling.p95(),
@@ -92,11 +83,22 @@ function useSchedulerPassStats(binding: DomBinding | null, stormActive: boolean,
           stormCount: stormRolling.count,
         };
       }
+    };
+    const refreshHandle = window.setInterval(publishToPage, 1000);
+
+    const unsubscribe = binding.subscribe(() => {
+      const elapsed = performance.now() - frameStartAt;
+      if (elapsed < 0) return;
+      if (stormActiveRef.current) {
+        stormRolling.push(elapsed);
+      } else {
+        rolling.push(elapsed);
+      }
     });
 
     return () => {
       cancelAnimationFrame(rafHandle);
-      if (refreshHandle !== 0) window.clearInterval(refreshHandle);
+      window.clearInterval(refreshHandle);
       if (!statsEnabled) window.benchStats = undefined;
       unsubscribe();
     };

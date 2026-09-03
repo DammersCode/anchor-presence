@@ -2,6 +2,7 @@ import type { CursorCodec } from "./codec";
 import { jsonCodec } from "./codec";
 import { createOversizedWarning, isDevMode } from "./internal/devWarnings";
 import { defaultIdFactory } from "./internal/ids";
+import { createPublishLoop } from "./internal/publishLoop";
 import type { PresenceClientState, SchedulerLike } from "./internal/types";
 import { DEFAULT_MAX_FIELD_BYTES, DEFAULT_MAX_MESSAGE_BYTES } from "./protocol";
 import type {
@@ -24,8 +25,6 @@ export const DEFAULT_HEARTBEAT_MS = 10_000;
 
 const MIN_TIMER_INTERVAL_MS = 1;
 const MIN_STALE_TIMEOUT_MS = 1000;
-const PUBLISH_RETRY_INITIAL_MS = 50;
-const PUBLISH_RETRY_MAX_MS = 2000;
 
 export type { SchedulerLike };
 
@@ -158,13 +157,6 @@ const defaultScheduler: SchedulerLike = {
   clearTimeout: (handle) => clearTimeout(handle),
 };
 
-// Minimal DOM surface; core builds without the DOM lib so this stays a structural type.
-type DocumentLike = {
-  readonly visibilityState: string;
-  addEventListener: (type: string, listener: () => void) => void;
-  removeEventListener: (type: string, listener: () => void) => void;
-};
-
 /**
  * Creates one presence client.
  * The client sends and receives messages through the transport you give it.
@@ -279,14 +271,14 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
 
   const warnIfOversized = createOversizedWarning(state);
 
+  const publish = createPublishLoop(state);
+
   function setStatus(next: ConnectionStatus): void {
     if (state.status === next) return;
     state.status = next;
     // republish before listener fan-out so a throwing listener cannot kill the guarantee
     if (state.status === "connected") {
-      state.pendingPublish = true;
-      state.pendingFullPublish = true;
-      schedulePublish();
+      publish.markReconnected();
     }
     for (const listener of statusListeners) {
       try {
@@ -297,79 +289,10 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     }
   }
 
-  function buildMessage(cursor: CursorPosition | null, includeFull: boolean): CursorPresence<TContext, TUser> {
-    const message: CursorPresence<TContext, TUser> = {
-      version: 1,
-      clientId: state.clientId,
-      session: state.session,
-      sequence: state.sequence++,
-      cursor,
-    };
-    if (state.contextDirty || includeFull) message.context = state.context ?? null;
-    if (state.userDirty || includeFull) message.user = state.user ?? null;
-    if (state.latestPointer !== undefined) message.pointer = state.latestPointer;
-    return message;
-  }
-
-  function updateSlowMode(): void {
-    if (!state.adaptivePublish || typeof state.transport.bufferedBytes !== "function") return;
-    try {
-      const buffered = state.transport.bufferedBytes();
-      if (buffered >= state.highWatermarkBytes) state.slowMode = true;
-      else if (buffered <= state.lowWatermarkBytes) state.slowMode = false;
-    } catch {
-      // a throwing transport probe must not break publishing
-    }
-  }
-
-  function send(cursor: CursorPosition | null, includeFull = false): boolean {
-    if (state.status !== "connected") return false;
-    try {
-      const message = buildMessage(cursor, includeFull);
-      const bytes = state.codec.encode(message);
-      const result = state.transport.send(bytes);
-      if (result && typeof result.catch === "function") {
-        result.catch(() => {});
-      }
-      updateSlowMode();
-      if (message.context !== undefined) state.contextDirty = false;
-      if (message.user !== undefined) state.userDirty = false;
-      return true;
-    } catch {
-      // swallow send errors — presence is lossy by design
-      return false;
-    }
-  }
-
-  function schedulePublish(retryDelayMs?: number): void {
-    if (state.disposed || state.publishTimer !== null) return;
-    const interval = retryDelayMs ?? (state.slowMode ? state.slowPublishIntervalMs : state.publishIntervalMs);
-    state.publishTimer = state.scheduler.setTimeout(() => {
-      state.publishTimer = null;
-      if (!state.pendingPublish) return;
-      if (send(state.latestCursor, state.pendingFullPublish)) {
-        state.pendingPublish = false;
-        state.pendingFullPublish = false;
-        state.failedSendCount = 0;
-      } else if (state.status === "connected") {
-        // transient send failure: retry on an exponential backoff instead of hammering a dead transport
-        const delay = Math.min(PUBLISH_RETRY_INITIAL_MS * 2 ** state.failedSendCount, PUBLISH_RETRY_MAX_MS);
-        state.failedSendCount += 1;
-        schedulePublish(delay);
-      }
-      // while unsendable, pendingPublish stays set; the transition into "connected" re-schedules
-    }, interval);
-  }
-
-  function markPending(): void {
-    state.pendingPublish = true;
-    schedulePublish();
-  }
-
   function scheduleHeartbeat(): void {
     if (state.disposed) return;
     state.heartbeatTimer = state.scheduler.setTimeout(() => {
-      if (send(state.latestCursor, true)) state.pendingPublish = false;
+      publish.sendHeartbeat();
       scheduleHeartbeat();
     }, state.heartbeatMs);
   }
@@ -404,20 +327,7 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     state.teardowns.push(unsubscribeStatus);
   }
 
-  // browser-only: flush a pending publish as soon as the page becomes visible again
-  const browserDocument = (globalThis as { document?: DocumentLike }).document;
-  if (browserDocument !== undefined && typeof browserDocument.addEventListener === "function") {
-    const onVisibilityChange = () => {
-      if (state.disposed || browserDocument.visibilityState !== "visible" || !state.pendingPublish) return;
-      if (send(state.latestCursor, state.pendingFullPublish)) {
-        state.pendingPublish = false;
-        state.pendingFullPublish = false;
-        state.failedSendCount = 0;
-      }
-    };
-    browserDocument.addEventListener("visibilitychange", onVisibilityChange);
-    state.teardowns.push(() => browserDocument.removeEventListener("visibilitychange", onVisibilityChange));
-  }
+  publish.wireVisibility();
 
   if (state.context !== undefined || state.user !== undefined) warnIfOversized();
 
@@ -429,7 +339,7 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
       if (state.disposed) return;
       state.latestCursor = cursor;
       if (pointer !== undefined) state.latestPointer = pointer;
-      markPending();
+      publish.markPending();
     },
 
     setContext(next) {
@@ -438,7 +348,7 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
       state.context = next;
       state.contextDirty = true;
       warnIfOversized();
-      markPending();
+      publish.markPending();
       for (const listener of state.contextListeners) {
         try {
           listener();
@@ -465,7 +375,7 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
       state.user = next;
       state.userDirty = true;
       warnIfOversized();
-      markPending();
+      publish.markPending();
     },
 
     getUser() {
@@ -510,7 +420,7 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     dispose() {
       if (state.disposed) return;
       state.disposed = true;
-      send(null); // best-effort leave message so receivers hide the cursor immediately
+      publish.send(null); // best-effort leave message so receivers hide the cursor immediately
       if (state.publishTimer !== null) scheduler.clearTimeout(state.publishTimer);
       if (state.heartbeatTimer !== null) scheduler.clearTimeout(state.heartbeatTimer);
       if (state.sweepTimer !== null) scheduler.clearTimeout(state.sweepTimer);

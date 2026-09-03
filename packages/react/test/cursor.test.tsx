@@ -275,6 +275,47 @@ describe("cursor components", () => {
     act(() => root.unmount());
   });
 
+  it("a moved cursor does not rerender the static cursor items", () => {
+    const { client } = makeFakeClient();
+    const { binding, publish } = makeFakeBinding();
+    const root = createRoot(container);
+    let r1Renders = 0;
+    let r2Renders = 0;
+    let r3Renders = 0;
+
+    function ItemSpy(props: { id: string }) {
+      if (props.id === "r1") r1Renders += 1;
+      else if (props.id === "r2") r2Renders += 1;
+      else r3Renders += 1;
+      return <span>{props.id}</span>;
+    }
+    const renderCursor = (props: { cursor: ResolvedCursor }) => <ItemSpy id={props.cursor.clientId} />;
+
+    act(() => {
+      root.render(
+        <LiveCursorProvider client={client} binding={binding}>
+          <CursorLayer renderCursor={renderCursor} />
+        </LiveCursorProvider>,
+      );
+    });
+
+    const r1 = cursor({ clientId: "r1" });
+    const r2 = cursor({ clientId: "r2" });
+    const r3 = cursor({ clientId: "r3" });
+    act(() => {
+      publish([r1, r2, r3]);
+    });
+    expect([r1Renders, r2Renders, r3Renders]).toEqual([1, 1, 1]);
+
+    // r2 moves; r1 and r3 keep their object identity, as the resolver produces for unchanged cursors
+    act(() => {
+      publish([r1, { ...r2, x: 42, y: 42 }, r3]);
+    });
+    expect([r1Renders, r2Renders, r3Renders]).toEqual([1, 2, 1]);
+
+    act(() => root.unmount());
+  });
+
   it("does not run label and color callbacks for removed cursors", () => {
     const { client } = makeFakeClient();
     const { binding, publish } = makeFakeBinding();

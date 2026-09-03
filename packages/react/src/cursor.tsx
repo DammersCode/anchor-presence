@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { memo, useCallback } from "react";
 import type { ComponentPropsWithoutRef, CSSProperties, ReactNode } from "react";
 import { CURSOR_MARKER_ATTRIBUTE, type ResolvedCursor } from "@anchor-presence/dom";
 import { useRemoteCursorsSelector } from "./hooks";
@@ -76,6 +76,51 @@ export function DefaultCursor(props: DefaultCursorProps): ReactNode {
   );
 }
 
+type CursorItemProps<TContext = unknown, TUser = unknown> = {
+  cursor: ResolvedCursor<TContext, TUser>;
+  getLabel?: ((cursor: ResolvedCursor<TContext, TUser>) => ReactNode) | undefined;
+  getColor?: ((cursor: ResolvedCursor<TContext, TUser>) => string) | undefined;
+  getCursorProps?:
+    | ((cursor: ResolvedCursor<TContext, TUser>) => Omit<ComponentPropsWithoutRef<"div">, "children">)
+    | undefined;
+  renderCursor?: ((props: CursorRenderProps<TContext, TUser>) => ReactNode) | undefined;
+};
+
+function CursorItem<TContext = unknown, TUser = unknown>(props: CursorItemProps<TContext, TUser>): ReactNode {
+  const { cursor, getLabel, getColor, getCursorProps, renderCursor } = props;
+  const label = getLabel ? getLabel(cursor) : null;
+  const color = getColor ? getColor(cursor) : DEFAULT_COLOR;
+  const consumerProps = getCursorProps ? getCursorProps(cursor) : undefined;
+  const { style: consumerStyle, ...consumerRest } = consumerProps ?? {};
+
+  const style: CSSProperties = {
+    zIndex: DEFAULT_Z_INDEX,
+    ...consumerStyle,
+    position: "fixed",
+    left: 0,
+    top: 0,
+    pointerEvents: "none",
+    transform: `translate3d(${cursor.x}px, ${cursor.y}px, 0)`,
+  };
+
+  return (
+    <div
+      {...consumerRest}
+      {...CURSOR_MARKER_PROPS}
+      style={style}
+      aria-hidden="true"
+      data-anchor-presence-client-id={cursor.clientId}
+      data-anchor-presence-tier={cursor.tier}
+      data-anchor-presence-anchor={cursor.anchorId ?? ""}
+    >
+      {renderCursor ? renderCursor({ cursor, label, color }) : <DefaultCursor label={label} color={color} />}
+    </div>
+  );
+}
+
+// the resolver keeps result-object identity for unchanged cursors (spec §14.1), so memo skips static cursors for free
+const MemoizedCursorItem = memo(CursorItem) as typeof CursorItem;
+
 export function CursorLayer<TContext = unknown, TUser = unknown>(
   props: CursorLayerProps<TContext, TUser>,
 ): ReactNode {
@@ -90,37 +135,16 @@ export function CursorLayer<TContext = unknown, TUser = unknown>(
 
   return (
     <>
-      {filtered.map((cursor) => {
-        const label = getLabel ? getLabel(cursor) : null;
-        const color = getColor ? getColor(cursor) : DEFAULT_COLOR;
-        const consumerProps = getCursorProps ? getCursorProps(cursor) : undefined;
-        const { style: consumerStyle, ...consumerRest } = consumerProps ?? {};
-
-        const style: CSSProperties = {
-          zIndex: DEFAULT_Z_INDEX,
-          ...consumerStyle,
-          position: "fixed",
-          left: 0,
-          top: 0,
-          pointerEvents: "none",
-          transform: `translate3d(${cursor.x}px, ${cursor.y}px, 0)`,
-        };
-
-        return (
-          <div
-            key={cursor.clientId}
-            {...consumerRest}
-            {...CURSOR_MARKER_PROPS}
-            style={style}
-            aria-hidden="true"
-            data-anchor-presence-client-id={cursor.clientId}
-            data-anchor-presence-tier={cursor.tier}
-            data-anchor-presence-anchor={cursor.anchorId ?? ""}
-          >
-            {renderCursor ? renderCursor({ cursor, label, color }) : <DefaultCursor label={label} color={color} />}
-          </div>
-        );
-      })}
+      {filtered.map((cursor) => (
+        <MemoizedCursorItem
+          key={cursor.clientId}
+          cursor={cursor}
+          getLabel={getLabel}
+          getColor={getColor}
+          getCursorProps={getCursorProps}
+          renderCursor={renderCursor}
+        />
+      ))}
     </>
   );
 }

@@ -1,4 +1,4 @@
-name: ci
+name: CI
 
 on:
   push:
@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 jobs:
-  gate:
+  test:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -27,6 +27,18 @@ jobs:
         run: bun run lint
       - name: Test
         run: bun run test
+      - name: Bench (report-only)
+        run: bunx vitest bench --project core --run
+        continue-on-error: true
       - name: Demo production build
         run: bunx vite build
         working-directory: apps/demo
+      # No browser install: the chromium project uses the runner's preinstalled Chrome (channel "chrome").
+      # Firefox/WebKit take ~30 min to install here - run the full suite locally before merging.
+      - name: E2E (chromium, preinstalled Chrome)
+        run: bunx playwright test --project=chromium --reporter=list
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/

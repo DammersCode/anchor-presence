@@ -53,3 +53,7 @@ The remote presence store caps the number of distinct remote clients it tracks. 
 A message from a new `clientId` beyond the cap is dropped; existing clients are unaffected. This bounds every allocation driven by network data: store entries, resolved cursors, and observed anchors. Expiry and disconnects free slots for new clients as they occur. In development, the client warns once when the cap starts dropping new clients.
 
 Set `maxRemoteClients` to match your expected concurrent session count. A value far above real usage offers no benefit and only raises the worst-case cost of a flood of distinct `clientId` values.
+
+## Relay token auth
+
+When `RELAY_AUTH_TOKEN` is set, the reference relay requires a matching `token` query parameter on every room upgrade and closes missing or wrong tokens with code 4006. The token is a room credential for reaching the relay, not a presence credential: it does not authenticate who a message claims to be, and every message remains untrusted input that passes the same validation and sequencing rules as on an open relay. Auth is an app-level concern — use it to keep random visitors out of a room, not to authorize presence data.

@@ -51,7 +51,7 @@ transport.connect();
 const client = createPresenceClient({ transport });
 ```
 
-The default URL is `ws(s)://<current host>:8787/`. Room grouping is a relay/server concern, not part of the core protocol. If your relay uses rooms, pass a `url` or `path` such as `/?room=main`. Pass `reconnect: false` to turn off automatic reconnect. Pass `baseBackoffMs` and `maxBackoffMs` to change the backoff, and `random` to inject the jitter source used to spread reconnect attempts. Pass `WebSocketCtor` to inject a WebSocket constructor for tests. The transport also exposes `bufferedBytes()` from `WebSocket.bufferedAmount` for the client's optional adaptive publish rate.
+The default URL is `ws(s)://<current host>:8787/`. Room grouping is a relay/server concern, not part of the core protocol. If your relay uses rooms, pass a `url` or `path` such as `/?room=main`. If the relay is started with `RELAY_AUTH_TOKEN`, pass the same value as the `token` option; the transport URL-encodes it and appends it to the upgrade URL as `token=...`. Omit it when the relay has no token configured. Pass `reconnect: false` to turn off automatic reconnect. Pass `baseBackoffMs` and `maxBackoffMs` to change the backoff, and `random` to inject the jitter source used to spread reconnect attempts. Pass `WebSocketCtor` to inject a WebSocket constructor for tests. The transport also exposes `bufferedBytes()` from `WebSocket.bufferedAmount` for the client's optional adaptive publish rate.
 
 The Socket.IO and SignalR adapters stay in `examples/`. They need foreign dependencies. Only the native WebSocket transport is part of the library.
 
@@ -274,9 +274,10 @@ The shipped `apps/server/index.ts` relay is a reference room-broadcast relay wit
 | Slow-peer resume threshold | 512 KiB buffered | `RELAY_SLOW_PEER_RESUME_BYTES` | — |
 | Origin allowlist | unset (allow all) | `RELAY_ALLOWED_ORIGINS` | 4004 |
 | Liveness ping / timeout | 30 s ping, 60 s timeout | — | 4005 |
+| Room token auth | unset (no auth) | `RELAY_AUTH_TOKEN` | 4006 |
 
 Plus a per-message byte cap (32 KiB, `MAX_MESSAGE_BYTES`) and a per-socket token-bucket rate limit (burst 40, 20 messages/s refill, `RATE_CAPACITY` and `RATE_REFILL_PER_SECOND`). Oversized or over-rate messages are dropped, not closed.
 
-Slow-peer handling uses hysteresis: once a peer is skipped, delivery to it resumes only below the resume threshold, so a peer hovering near the skip threshold does not flap. A peer past the close threshold is closed regardless of skip state; it resyncs via the 10 s heartbeat and the reconnect republish. When `RELAY_ALLOWED_ORIGINS` is set (comma-separated), the relay closes upgrades whose `Origin` header is missing or not in the list.
+Slow-peer handling uses hysteresis: once a peer is skipped, delivery to it resumes only below the resume threshold, so a peer hovering near the skip threshold does not flap. A peer past the close threshold is closed regardless of skip state; it resyncs via the 10 s heartbeat and the reconnect republish. When `RELAY_ALLOWED_ORIGINS` is set (comma-separated), the relay closes upgrades whose `Origin` header is missing or not in the list. When `RELAY_AUTH_TOKEN` is set (non-empty), every room upgrade must carry a `token` query parameter that matches the env var; a missing or wrong token is closed with 4006. When it is unset, upgrades need no token and behavior is unchanged.
 
-The relay is still not a production gateway. Authentication and horizontal scaling remain relay/server responsibilities, not library transport responsibilities. The client-side `adaptivePublish` option reduces sender pressure when the local socket buffer grows, but it does not replace relay-side limits.
+The relay is still not a production gateway. Authentication is opt-in via `RELAY_AUTH_TOKEN` (a room credential, not a presence credential — see `security.md`), and horizontal scaling remains a relay/server responsibility, not a library transport responsibility. The client-side `adaptivePublish` option reduces sender pressure when the local socket buffer grows, but it does not replace relay-side limits.

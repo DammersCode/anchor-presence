@@ -1,10 +1,10 @@
-export { useCursorClient } from "./useCursorClient";
-export { useCursorContext } from "./useCursorContext";
-export { useCursorPresence } from "./useCursorPresence";
-export { useCursorStatus } from "./useCursorStatus";
-export { usePresenceClient } from "./usePresenceClient";
-export { useRemoteCursors, useRemoteCursorsSelector } from "./useRemoteCursors";
-export { useRemoteUsers } from "./useRemoteUsers";
+export { useCursorClient } from "./use-cursor-client";
+export { useCursorContext } from "./use-cursor-context";
+export { useCursorPresence } from "./use-cursor-presence";
+export { useCursorStatus } from "./use-cursor-status";
+export { usePresenceClient } from "./use-presence-client";
+export { useRemoteCursors, useRemoteCursorsSelector } from "./use-remote-cursors";
+export { useRemoteUsers } from "./use-remote-users";
 
-export type { PresenceClientFactoryOptions } from "./usePresenceClient";
-export type { RemoteUser } from "./useRemoteUsers";
+export type { PresenceClientFactoryOptions } from "./use-presence-client";
+export type { RemoteUser } from "./use-remote-users";

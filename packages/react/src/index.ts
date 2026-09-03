@@ -4,16 +4,16 @@ export type { LiveCursorProviderProps } from "./provider";
 export { LiveCursorContext } from "./context";
 export type { LiveCursorContextValue } from "./context";
 
-export { useCursorClient } from "./hooks/useCursorClient";
-export { useCursorContext } from "./hooks/useCursorContext";
-export { useCursorPresence } from "./hooks/useCursorPresence";
-export { useCursorStatus } from "./hooks/useCursorStatus";
-export { usePresenceClient } from "./hooks/usePresenceClient";
-export { useRemoteCursors, useRemoteCursorsSelector } from "./hooks/useRemoteCursors";
-export { useRemoteUsers } from "./hooks/useRemoteUsers";
+export { useCursorClient } from "./hooks/use-cursor-client";
+export { useCursorContext } from "./hooks/use-cursor-context";
+export { useCursorPresence } from "./hooks/use-cursor-presence";
+export { useCursorStatus } from "./hooks/use-cursor-status";
+export { usePresenceClient } from "./hooks/use-presence-client";
+export { useRemoteCursors, useRemoteCursorsSelector } from "./hooks/use-remote-cursors";
+export { useRemoteUsers } from "./hooks/use-remote-users";
 
-export type { PresenceClientFactoryOptions } from "./hooks/usePresenceClient";
-export type { RemoteUser } from "./hooks/useRemoteUsers";
+export type { PresenceClientFactoryOptions } from "./hooks/use-presence-client";
+export type { RemoteUser } from "./hooks/use-remote-users";
 
 export { CursorLayer, DefaultCursor } from "./cursor";
 export type { CursorLayerProps, CursorRenderProps, DefaultCursorProps } from "./cursor";

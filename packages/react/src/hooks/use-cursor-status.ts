@@ -1,6 +1,6 @@
 import { useCallback, useSyncExternalStore } from "react";
 import type { ConnectionStatus } from "@anchor-presence/core";
-import { getServerStatus, useLiveCursorContext } from "./useCursorClient";
+import { getServerStatus, useLiveCursorContext } from "./use-cursor-client";
 
 /**
  * Returns the connection status of the client from the nearest provider.

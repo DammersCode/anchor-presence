@@ -1,6 +1,6 @@
 import { useCallback, useSyncExternalStore } from "react";
 import type { RemotePresence } from "@anchor-presence/core";
-import { EMPTY_PRESENCE, getServerPresence, useLiveCursorContext } from "./useCursorClient";
+import { EMPTY_PRESENCE, getServerPresence, useLiveCursorContext } from "./use-cursor-client";
 
 /**
  * Returns the stable list of remote presences, without `sequence`.

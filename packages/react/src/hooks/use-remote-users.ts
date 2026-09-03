@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { RemotePresence } from "@anchor-presence/core";
-import { useCursorPresence } from "./useCursorPresence";
+import { useCursorPresence } from "./use-cursor-presence";
 
 /**
  * One remote user, keyed by client.

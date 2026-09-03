@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useSyncExternalStore } from "react";
-import { useLiveCursorContext } from "./useCursorClient";
+import { useLiveCursorContext } from "./use-cursor-client";
 import { getContextStore } from "../contextStore";
 
 /**

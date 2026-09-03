@@ -9,6 +9,7 @@ import type {
   RemotePresence,
 } from "./protocol";
 import { DEFAULT_MAX_REMOTE_CLIENTS, DEFAULT_STALE_TIMEOUT_MS, RemotePresenceStore } from "./store";
+import type { SchedulerLike, TimerHandle } from "./internal/types";
 import type { LiveCursorTransport } from "./transport";
 import { validatePresence } from "./validate";
 import type { ValidationLimits } from "./validate";
@@ -24,18 +25,7 @@ const MIN_STALE_TIMEOUT_MS = 1000;
 const PUBLISH_RETRY_INITIAL_MS = 50;
 const PUBLISH_RETRY_MAX_MS = 2000;
 
-type TimerHandle = ReturnType<typeof setTimeout>;
-
-/**
- * Timer functions the client uses for its schedules.
- * Tests can provide a fake timer here.
- */
-export type SchedulerLike = {
-  /** Sets a timer and returns its handle. */
-  setTimeout: (callback: () => void, ms: number) => TimerHandle;
-  /** Clears one timer. */
-  clearTimeout: (handle: TimerHandle) => void;
-};
+export type { SchedulerLike };
 
 /**
  * Options for the adaptive publish rate.

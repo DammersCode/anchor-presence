@@ -65,6 +65,17 @@ describe("validatePresence", () => {
     expect(validatePresence(baseMessage({ sequence: 9999 }))).not.toBeNull();
   });
 
+  it("drops the message when sequence exceeds the max (spoof lockout guard)", () => {
+    expect(validatePresence(baseMessage({ sequence: 2_147_483_647 }))).not.toBeNull();
+    expect(validatePresence(baseMessage({ sequence: 2_147_483_648 }))).toBeNull();
+    expect(validatePresence(baseMessage({ sequence: 1e21 }))).toBeNull();
+  });
+
+  it("respects an overridden maxSequence", () => {
+    expect(validatePresence(baseMessage({ sequence: 100 }), { maxSequence: 99 })).toBeNull();
+    expect(validatePresence(baseMessage({ sequence: 99 }), { maxSequence: 99 })).not.toBeNull();
+  });
+
   it("truncates anchors beyond the max of 8", () => {
     const anchors = Array.from({ length: 12 }, (_, i) => ({ id: `anchor-${i}`, u: 0.5, v: 0.5 }));
     const result = validatePresence(baseMessage({ cursor: { anchors } }));

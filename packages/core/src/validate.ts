@@ -4,6 +4,7 @@ import {
   DEFAULT_MAX_CLIENT_ID_LENGTH,
   DEFAULT_MAX_FIELD_BYTES,
   DEFAULT_MAX_MESSAGE_BYTES,
+  DEFAULT_MAX_SEQUENCE,
   DEFAULT_MAX_SESSION_LENGTH,
 } from "./protocol";
 import type { AnchorPoint, CursorPosition, CursorPresence } from "./protocol";
@@ -11,6 +12,7 @@ import type { AnchorPoint, CursorPosition, CursorPresence } from "./protocol";
 export type ValidationLimits = {
   maxClientIdLength?: number;
   maxSessionLength?: number;
+  maxSequence?: number;
   maxAnchors?: number;
   maxAnchorIdLength?: number;
   maxFieldBytes?: number;
@@ -22,6 +24,7 @@ type ResolvedLimits = Required<ValidationLimits>;
 const DEFAULT_RESOLVED_LIMITS: ResolvedLimits = {
   maxClientIdLength: DEFAULT_MAX_CLIENT_ID_LENGTH,
   maxSessionLength: DEFAULT_MAX_SESSION_LENGTH,
+  maxSequence: DEFAULT_MAX_SEQUENCE,
   maxAnchors: DEFAULT_MAX_ANCHORS,
   maxAnchorIdLength: DEFAULT_MAX_ANCHOR_ID_LENGTH,
   maxFieldBytes: DEFAULT_MAX_FIELD_BYTES,
@@ -37,6 +40,7 @@ function resolveLimits(limits?: ValidationLimits): ResolvedLimits {
     resolved = {
       maxClientIdLength: limits.maxClientIdLength ?? DEFAULT_MAX_CLIENT_ID_LENGTH,
       maxSessionLength: limits.maxSessionLength ?? DEFAULT_MAX_SESSION_LENGTH,
+      maxSequence: limits.maxSequence ?? DEFAULT_MAX_SEQUENCE,
       maxAnchors: limits.maxAnchors ?? DEFAULT_MAX_ANCHORS,
       maxAnchorIdLength: limits.maxAnchorIdLength ?? DEFAULT_MAX_ANCHOR_ID_LENGTH,
       maxFieldBytes: limits.maxFieldBytes ?? DEFAULT_MAX_FIELD_BYTES,
@@ -131,7 +135,9 @@ export function validatePresence<TContext = unknown, TUser = unknown>(
     if (typeof session !== "string" || session.length < 1 || session.length > resolved.maxSessionLength) {
       return null;
     }
-    if (!isFiniteNumber(sequence) || !Number.isInteger(sequence) || sequence < 0) return null;
+    if (!isFiniteNumber(sequence) || !Number.isInteger(sequence) || sequence < 0 || sequence > resolved.maxSequence) {
+      return null;
+    }
 
     const cursor = validateCursor(input.cursor, resolved);
     if (cursor === undefined) return null;

@@ -247,6 +247,36 @@ describe("createPresenceClient inbound pipeline", () => {
     client.dispose();
   });
 
+  it("K7: drops a spoofed huge-sequence message so later genuine messages still land", () => {
+    const { transport, emit } = makeTransport();
+    const client = createPresenceClient({ transport, idFactory });
+
+    emit(
+      jsonCodec.encode({
+        version: 1,
+        clientId: "remote-1",
+        session: "s",
+        sequence: 1e21,
+        cursor: { anchors: [] },
+      } as never),
+    );
+    expect(client.getRemoteSnapshot()).toHaveLength(0);
+
+    emit(
+      jsonCodec.encode({
+        version: 1,
+        clientId: "remote-1",
+        session: "s",
+        sequence: 1,
+        cursor: { anchors: [{ id: "a", u: 0.5, v: 0.5 }] },
+      } as never),
+    );
+    expect(client.getRemoteSnapshot()).toHaveLength(1);
+    expect(client.getRemoteSnapshot()[0]?.sequence).toBe(1);
+
+    client.dispose();
+  });
+
   it("ignores echoes of its own clientId", () => {
     const { transport, emit } = makeTransport();
     const client = createPresenceClient({ transport, clientId: "self", idFactory });

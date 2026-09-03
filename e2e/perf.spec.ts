@@ -42,17 +42,18 @@ test.describe("bench page perf budgets", () => {
 
     await page.getByRole("button", { name: "Pause" }).click();
 
-    // drain in-flight passes: record the counter only once it holds still for 500ms
+    // drain in-flight passes: the stats readout refreshes at 1 Hz, so probe at >1s intervals —
+    // two reads straddling a refresh both show the true window count, and equality means no new sample landed
     let countAfterPause = -1;
     await expect(async () => {
       const now = Number(await page.getByTestId("bench-count").textContent());
-      await page.waitForTimeout(500);
+      await page.waitForTimeout(1200);
       const later = Number(await page.getByTestId("bench-count").textContent());
       expect(later).toBe(now);
       countAfterPause = later;
-    }).toPass({ timeout: 10_000 });
+    }).toPass({ timeout: 15_000 });
 
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(1500);
     const countAfterWait = Number(await page.getByTestId("bench-count").textContent());
 
     expect(countAfterWait).toBe(countAfterPause);

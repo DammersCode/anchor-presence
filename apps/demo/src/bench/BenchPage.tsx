@@ -8,8 +8,24 @@ import type { LoopbackTransport } from "./loopbackTransport";
 import { BenchCell } from "./BenchCell";
 import { RollingStats } from "./stats";
 
+// ?nostats skips all stats DOM work so a measurement run re-renders nothing
+const STATS_ENABLED = !new URLSearchParams(window.location.search).has("nostats");
+
 const ANCHOR_COUNTS = [10, 100, 1000] as const;
 const CURSOR_COUNTS = [1, 10, 50, 100] as const;
+
+declare global {
+  interface Window {
+    benchStats?: {
+      mean: number;
+      p95: number;
+      count: number;
+      stormMean: number;
+      stormP95: number;
+      stormCount: number;
+    };
+  }
+}
 
 type AnchorCount = (typeof ANCHOR_COUNTS)[number];
 type CursorCount = (typeof CURSOR_COUNTS)[number];
@@ -27,7 +43,7 @@ const STORM_DURATION_MS = 5000;
 
 // frame-start → notify delta = the scheduler's per-pass scripting cost (§16 <2ms budget)
 // stormActive routes each sample into a separate rolling window so storm-phase cost is visible on its own
-function useSchedulerPassStats(binding: DomBinding | null, stormActive: boolean) {
+function useSchedulerPassStats(binding: DomBinding | null, stormActive: boolean, statsEnabled: boolean) {
   const [stats, setStats] = useState({ mean: 0, p95: 0, count: 0 });
   const [stormStats, setStormStats] = useState({ mean: 0, p95: 0, count: 0 });
   const rollingRef = useRef(new RollingStats());
@@ -51,23 +67,42 @@ function useSchedulerPassStats(binding: DomBinding | null, stormActive: boolean)
       rafHandle = requestAnimationFrame(markFrameStart);
     });
 
+    // The readout publishes at 1 Hz, outside the measured pass. In nostats mode it only writes
+    // window.benchStats, so the notify callback below does nothing but push one sample.
+    const publishToPage = () => {
+      if (statsEnabled) {
+        setStats({ mean: rolling.mean(), p95: rolling.p95(), count: rolling.count });
+        setStormStats({ mean: stormRolling.mean(), p95: stormRolling.p95(), count: stormRolling.count });
+      } else {
+        window.benchStats = {
+          mean: rolling.mean(),
+          p95: rolling.p95(),
+          count: rolling.count,
+          stormMean: stormRolling.mean(),
+          stormP95: stormRolling.p95(),
+          stormCount: stormRolling.count,
+        };
+      }
+    };
+    const refreshHandle = window.setInterval(publishToPage, 1000);
+
     const unsubscribe = binding.subscribe(() => {
       const elapsed = performance.now() - frameStartAt;
       if (elapsed < 0) return;
       if (stormActiveRef.current) {
         stormRolling.push(elapsed);
-        setStormStats({ mean: stormRolling.mean(), p95: stormRolling.p95(), count: stormRolling.count });
       } else {
         rolling.push(elapsed);
-        setStats({ mean: rolling.mean(), p95: rolling.p95(), count: rolling.count });
       }
     });
 
     return () => {
       cancelAnimationFrame(rafHandle);
+      window.clearInterval(refreshHandle);
+      if (!statsEnabled) window.benchStats = undefined;
       unsubscribe();
     };
-  }, [binding]);
+  }, [binding, statsEnabled]);
 
   return { stats, stormStats };
 }
@@ -157,7 +192,7 @@ export function BenchPage() {
 
   const anchorIds = useMemo(() => buildAnchorIds(anchorCount), [anchorCount]);
   const { binding, transportRef } = usePresenceHarness();
-  const { stats, stormStats } = useSchedulerPassStats(binding, stormActive || nestedScrollActive);
+  const { stats, stormStats } = useSchedulerPassStats(binding, stormActive || nestedScrollActive, STATS_ENABLED);
 
   const gridRef = useRef<HTMLDivElement | null>(null);
   const nestedScrollInnerRef = useRef<HTMLDivElement | null>(null);
@@ -291,17 +326,25 @@ export function BenchPage() {
           </a>
         </div>
 
-        <div className="grid grid-cols-3 gap-4 rounded-lg border border-gray-200 bg-white p-4">
-          <Stat label="Mean pass" value={`${stats.mean.toFixed(3)} ms`} testId="bench-mean" />
-          <Stat label="p95 pass" value={`${stats.p95.toFixed(3)} ms`} testId="bench-p95" />
-          <Stat label="Samples" value={String(stats.count)} testId="bench-count" />
-        </div>
+        {STATS_ENABLED ? (
+          <>
+            <div className="grid grid-cols-3 gap-4 rounded-lg border border-gray-200 bg-white p-4">
+              <Stat label="Mean pass" value={`${stats.mean.toFixed(3)} ms`} testId="bench-mean" />
+              <Stat label="p95 pass" value={`${stats.p95.toFixed(3)} ms`} testId="bench-p95" />
+              <Stat label="Samples" value={String(stats.count)} testId="bench-count" />
+            </div>
 
-        <div className="grid grid-cols-3 gap-4 rounded-lg border border-amber-200 bg-amber-50 p-4">
-          <Stat label="Storm mean pass" value={`${stormStats.mean.toFixed(3)} ms`} />
-          <Stat label="Storm p95 pass" value={`${stormStats.p95.toFixed(3)} ms`} />
-          <Stat label="Storm samples" value={String(stormStats.count)} />
-        </div>
+            <div className="grid grid-cols-3 gap-4 rounded-lg border border-amber-200 bg-amber-50 p-4">
+              <Stat label="Storm mean pass" value={`${stormStats.mean.toFixed(3)} ms`} />
+              <Stat label="Storm p95 pass" value={`${stormStats.p95.toFixed(3)} ms`} />
+              <Stat label="Storm samples" value={String(stormStats.count)} />
+            </div>
+          </>
+        ) : (
+          <p className="rounded-lg border border-gray-200 bg-white p-4 text-gray-500">
+            Stats readout is off (nostats). Read window.benchStats for the rolling numbers.
+          </p>
+        )}
 
         {nestedScrollActive ? (
           <div className="h-64 overflow-auto rounded-lg border border-gray-200 bg-white p-4">

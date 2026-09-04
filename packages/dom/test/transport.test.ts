@@ -79,7 +79,7 @@ describe("createWebSocketTransport", () => {
     const transport = make({ reconnect: false });
     expect(transport.getStatus?.()).toBe("connecting");
 
-    void transport.connect?.();
+    void transport.connect();
     expect(transport.getStatus?.()).toBe("connecting");
     expect(lastSocket().binaryType).toBe("arraybuffer");
 

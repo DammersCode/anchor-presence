@@ -2,9 +2,8 @@
 // installable by npm consumers, while an exact version keeps Bun linking the workspace.
 import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 
-const rootDir = dirname(dirname(fileURLToPath(import.meta.url)));
+const rootDir = dirname(import.meta.dirname);
 const rootPkg = JSON.parse(readFileSync(join(rootDir, "package.json"), "utf8"));
 const version = rootPkg.version;
 const SCOPE = "@anchor-presence/";
@@ -14,12 +13,12 @@ const manifests = [];
 for (const dir of ["packages", "apps", "examples"]) {
   for (const name of readdirSync(join(rootDir, dir))) {
     const base = join(rootDir, dir, name);
-    if (existsSync(join(base, "package.json"))) manifests.push([base, dir === "packages"]);
-    if (existsSync(join(base, "client", "package.json"))) manifests.push([join(base, "client"), false]);
+    if (existsSync(join(base, "package.json"))) manifests.push({ path: base, setsVersion: dir === "packages" });
+    if (existsSync(join(base, "client", "package.json"))) manifests.push({ path: join(base, "client"), setsVersion: false });
   }
 }
 
-for (const [base, setsVersion] of manifests) {
+for (const { path: base, setsVersion } of manifests) {
   const file = join(base, "package.json");
   const pkg = JSON.parse(readFileSync(file, "utf8"));
   if (setsVersion) pkg.version = version;

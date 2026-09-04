@@ -1,8 +1,7 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 
-const rootDir = dirname(dirname(fileURLToPath(import.meta.url)));
+const rootDir = dirname(import.meta.dirname);
 const rootVersion = JSON.parse(readFileSync(join(rootDir, "package.json"), "utf8")).version;
 const tag = process.argv[2];
 const DEP_FIELDS = ["dependencies", "devDependencies", "peerDependencies"];

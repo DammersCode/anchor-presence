@@ -4,10 +4,8 @@ import type { CursorPosition, PointerInfo, PresenceClient } from "@anchor-presen
 import type { AnchorRegistry } from "./registry.js";
 import type { Rect } from "./geometry.js";
 
-export const DEFAULT_MAX_SENT_ANCHORS = 4;
-
 export type PointerSourceOptions = {
-  maxAnchors?: number | undefined;
+  maxAnchors: number;
   root?: Document | undefined;
   window?: Window | undefined;
   getCachedRect?: ((element: Element) => Rect | undefined) | undefined;
@@ -61,9 +59,9 @@ function buildCursorPosition(
 export function attachPointerSource(
   client: PresenceClient,
   registry: AnchorRegistry,
-  options: PointerSourceOptions = {},
+  options: PointerSourceOptions,
 ): PointerSourceHandle {
-  const maxAnchors = options.maxAnchors ?? DEFAULT_MAX_SENT_ANCHORS;
+  const maxAnchors = options.maxAnchors;
   const doc = options.root ?? document;
   const win = options.window ?? window;
   const getCachedRect = options.getCachedRect;

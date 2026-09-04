@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createAnchorRegistry } from "../src/registry";
 import type { AnchorRegistry } from "../src/registry";
-import { attachPointerSource, DEFAULT_MAX_SENT_ANCHORS } from "../src/pointer";
+import { attachPointerSource } from "../src/pointer";
 import { createGeometryScheduler } from "../src/scheduler";
 import type { SchedulerReadState } from "../src/scheduler";
 import type { CursorPosition, PointerInfo, PresenceClient } from "@anchor-presence/core";
@@ -98,7 +98,7 @@ describe("attachPointerSource (spec §9)", () => {
     registry.register("inner", inner);
 
     const { client, samples } = makeClient();
-    const handle = attachPointerSource(client, registry);
+    const handle = attachPointerSource(client, registry, { maxAnchors: 4 });
 
     firePointerEvent("pointermove", inner, { clientX: 100, clientY: 40 });
 
@@ -115,7 +115,7 @@ describe("attachPointerSource (spec §9)", () => {
     handle.detach();
   });
 
-  it("caps the fallback chain at maxAnchors (default 4), most specific first", () => {
+  it("caps the fallback chain at maxAnchors, most specific first", () => {
     const chain: HTMLElement[] = [];
     let parent: HTMLElement = document.body;
     for (let i = 0; i < 6; i++) {
@@ -129,12 +129,12 @@ describe("attachPointerSource (spec §9)", () => {
     const deepest = chain.at(-1)!;
 
     const { client, samples } = makeClient();
-    const handle = attachPointerSource(client, registry);
+    const handle = attachPointerSource(client, registry, { maxAnchors: 4 });
 
     firePointerEvent("pointermove", deepest, { clientX: 10, clientY: 10 });
 
     const cursor = samples[0];
-    expect(cursor?.anchors).toHaveLength(DEFAULT_MAX_SENT_ANCHORS);
+    expect(cursor?.anchors).toHaveLength(4);
     expect(cursor?.anchors.map((a) => a.id)).toEqual(["level-5", "level-4", "level-3", "level-2"]);
 
     handle.detach();
@@ -153,7 +153,7 @@ describe("attachPointerSource (spec §9)", () => {
     registry.register("zero", zeroSize);
 
     const { client, samples } = makeClient();
-    const handle = attachPointerSource(client, registry);
+    const handle = attachPointerSource(client, registry, { maxAnchors: 4 });
 
     firePointerEvent("pointermove", zeroSize, { clientX: 10, clientY: 10 });
 
@@ -169,7 +169,7 @@ describe("attachPointerSource (spec §9)", () => {
     mockRect(el, { left: 0, top: 0, width: 0, height: 0 });
 
     const { client, samples } = makeClient();
-    const handle = attachPointerSource(client, registry);
+    const handle = attachPointerSource(client, registry, { maxAnchors: 4 });
 
     firePointerEvent("pointermove", el, { clientX: 100, clientY: 50 });
 
@@ -182,7 +182,7 @@ describe("attachPointerSource (spec §9)", () => {
 
   it("publishes cursor: null on document pointerleave", () => {
     const { client, samples } = makeClient();
-    const handle = attachPointerSource(client, registry);
+    const handle = attachPointerSource(client, registry, { maxAnchors: 4 });
 
     firePointerEvent("pointerleave", document.documentElement, { clientX: 0, clientY: 0 });
 
@@ -192,7 +192,7 @@ describe("attachPointerSource (spec §9)", () => {
 
   it("publishes cursor: null on window blur", () => {
     const { client, samples } = makeClient();
-    const handle = attachPointerSource(client, registry);
+    const handle = attachPointerSource(client, registry, { maxAnchors: 4 });
 
     window.dispatchEvent(new Event("blur"));
 
@@ -209,6 +209,7 @@ describe("attachPointerSource (spec §9)", () => {
 
     const { client, samples } = makeClient();
     const handle = attachPointerSource(client, registry, {
+      maxAnchors: 4,
       getCachedRect: () => ({ left: 10, top: 10, width: 50, height: 50 }),
     });
 
@@ -231,6 +232,7 @@ describe("attachPointerSource (spec §9)", () => {
 
     const { client, samples } = makeClient();
     const handle = attachPointerSource(client, registry, {
+      maxAnchors: 4,
       // eslint-disable-next-line unicorn/no-useless-undefined -- the option type is `() => Rect | undefined`, so the undefined body is required
       getCachedRect: () => undefined,
     });
@@ -253,7 +255,7 @@ describe("attachPointerSource (spec §9)", () => {
     const getRectSpy = vi.spyOn(el, "getBoundingClientRect");
 
     const { client, samples } = makeClient();
-    const handle = attachPointerSource(client, registry);
+    const handle = attachPointerSource(client, registry, { maxAnchors: 4 });
 
     firePointerEvent("pointermove", el, { clientX: 25, clientY: 25 });
 
@@ -272,7 +274,7 @@ describe("attachPointerSource (spec §9)", () => {
     registry.register("a", el);
 
     const { client, samples } = makeClient();
-    const handle = attachPointerSource(client, registry);
+    const handle = attachPointerSource(client, registry, { maxAnchors: 4 });
 
     firePointerEvent("pointerover", el, { clientX: 25, clientY: 75 });
 
@@ -290,7 +292,7 @@ describe("attachPointerSource (spec §9)", () => {
     registry.register("a", el);
 
     const { client, pointers } = makeClient();
-    const handle = attachPointerSource(client, registry);
+    const handle = attachPointerSource(client, registry, { maxAnchors: 4 });
 
     firePointerEvent("pointermove", el, { clientX: 10, clientY: 10, pointerType: "mouse" });
     firePointerEvent("pointermove", el, { clientX: 10, clientY: 10, pointerType: "touch" });
@@ -310,7 +312,7 @@ describe("attachPointerSource (spec §9)", () => {
     registry.register("a", el);
 
     const { client, samples } = makeClient();
-    attachPointerSource(client, registry);
+    attachPointerSource(client, registry, { maxAnchors: 4 });
 
     client.dispose(); // should invoke the registered teardown (detach)
     samples.length = 0;
@@ -373,6 +375,7 @@ describe("pointer path with the scheduler's rect cache (spec §9/§11, K3)", () 
     registry.register("a", el);
     const { client, samples } = makeClient();
     const handle = attachPointerSource(client, registry, {
+      maxAnchors: 4,
       getCachedRect: (element) => scheduler.getCachedRect(element),
     });
 

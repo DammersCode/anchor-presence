@@ -50,7 +50,7 @@ export type EnvironmentOptions = {
 
 const ANCHOR_ATTRIBUTE_PATTERN = /^[A-Za-z][A-Za-z0-9]*(-[A-Za-z0-9]+)*$/u;
 const DEFAULT_ANCHOR_ATTRIBUTE = "data-anchor";
-const DEFAULT_MAX_ANCHORS = 4;
+const DEFAULT_SENT_ANCHORS = 4;
 const PROTOCOL_MAX_ANCHORS = 8;
 
 /**
@@ -110,7 +110,7 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
     throw new TypeError(`anchorAttribute must be a valid DOM attribute name, got "${anchorAttribute}"`);
   }
 
-  let maxAnchors = DEFAULT_MAX_ANCHORS;
+  let maxAnchors = DEFAULT_SENT_ANCHORS;
   if (options.maxAnchors !== undefined) {
     if (!Number.isInteger(options.maxAnchors) || !Number.isFinite(options.maxAnchors)) {
       throw new TypeError(`maxAnchors must be a finite integer, got ${String(options.maxAnchors)}`);

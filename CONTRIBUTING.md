@@ -41,3 +41,26 @@ docker run --rm -v "$(pwd):/src:ro" mcr.microsoft.com/playwright:v1.62.1-noble b
 5. Core benchmarks (report-only).
 6. The demo production build.
 7. Browser tests on Chromium (preinstalled Chrome, no download).
+
+## Releasing
+
+Versions are lockstep: one number for `core`, `dom`, and `react`. Never edit a package `version` by hand.
+
+Release from `main`:
+
+```bash
+git checkout main && git merge dev
+npm version patch
+```
+
+Use `npm version minor` or `npm version major` for a bigger jump. `npm version` runs `preversion` (the full gate: build, typecheck, lint, test), then the `version` hook (syncs the version into every manifest and the lockfile, stages them, and creates the `v*` tag), then `postversion` (pushes the branch and the tag). The pushed `v*` tag starts `.github/workflows/release.yml`, which verifies the tag and versions agree, publishes each package with npm trusted publishing (OIDC, no token), and creates a GitHub release.
+
+Trusted publishing is set up once per package on npmjs.com: package settings → Publishing access → add a Trusted Publisher → GitHub, repository `DammersCode/anchor-presence`, workflow `release.yml`. The first version of a package cannot use OIDC, so publish it once by hand from an authenticated machine, in order core, dom, react (after `bun run build` and `node scripts/check-release.mjs`):
+
+```bash
+cd packages/core && npm publish --access public
+```
+
+If a run fails after a partial publish, fix and re-run the workflow; already published versions are skipped.
+
+`npm version` needs a clean working tree and a passing gate; it aborts otherwise.

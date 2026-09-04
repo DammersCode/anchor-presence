@@ -22,9 +22,7 @@ function projectRemoteUsers<TUser>(snapshot: RemotePresence<unknown, TUser>[]): 
  * Returns the remote user values, one entry per client.
  * The list follows the stable presence snapshot.
  */
-// TContext keeps the generic arity aligned with the other hooks. The list mirrors the remote snapshot of the client.
-// oxlint-disable-next-line typescript/no-unnecessary-type-parameters
-export function useRemoteUsers<TContext = unknown, TUser = unknown>(): RemoteUser<TUser>[] {
-  const presence = useCursorPresence<TContext, TUser>();
+export function useRemoteUsers<TUser = unknown>(): RemoteUser<TUser>[] {
+  const presence = useCursorPresence<unknown, TUser>();
   return useMemo(() => projectRemoteUsers(presence), [presence]);
 }

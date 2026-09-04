@@ -55,7 +55,7 @@ describe("useRemoteUsers", () => {
     const { client, pushRemote } = makeFakeClient<unknown, TestUser>();
     const seen: RemoteUser<TestUser>[] = [];
     function Probe() {
-      seen.push(useRemoteUsers<unknown, TestUser>());
+      seen.push(useRemoteUsers<TestUser>());
       return null;
     }
     const root = createRoot(container);

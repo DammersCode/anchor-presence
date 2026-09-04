@@ -7,13 +7,11 @@ import { getContextStore } from "../context-store.js";
  * The setter calls `client.setContext`, which sends the value to remote peers.
  * Returns `undefined` and a no-op setter on the server.
  */
-// TUser keeps the generic arity aligned with the other hooks. Removing it breaks existing call sites.
-// oxlint-disable-next-line typescript/no-unnecessary-type-parameters
-export function useCursorContext<TContext = unknown, TUser = unknown>(): [
+export function useCursorContext<TContext = unknown>(): [
   TContext | undefined,
   (next: TContext | undefined) => void,
 ] {
-  const { client } = useLiveCursorContext<TContext, TUser>();
+  const { client } = useLiveCursorContext<TContext, unknown>();
   const store = useMemo(() => (client !== null ? getContextStore(client) : null), [client]);
 
   const subscribe = useCallback(

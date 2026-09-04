@@ -180,7 +180,7 @@ Returns the client instance passed to `LiveCursorProvider`, or `null` outside a 
 ### useCursorContext
 
 ```ts
-function useCursorContext<TContext = unknown, TUser = unknown>(): [
+function useCursorContext<TContext = unknown>(): [
   TContext | undefined,
   (next: TContext | undefined) => void,
 ];

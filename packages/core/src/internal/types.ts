@@ -142,8 +142,7 @@ export interface PresenceClient<TContext = unknown, TUser = unknown> {
    */
   registerTeardown(fn: () => void): () => void;
   /**
-   * Stops the client and clears its listeners.
-   * The client sends a final clear message when it can.
+   * Sends a leave message, stops timers, and calls `transport.disconnect()` when the transport has one.
    */
   dispose(): void;
 }

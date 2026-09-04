@@ -8,6 +8,7 @@ function makeTransport(withStatus = false, initialStatus?: ConnectionStatus) {
   const sent: Uint8Array[] = [];
   const messageListeners = new Set<(data: Uint8Array) => void>();
   const statusListeners = new Set<(status: ConnectionStatus) => void>();
+  const disconnect = vi.fn();
 
   const transport: LiveCursorTransport = {
     send: vi.fn((data: Uint8Array) => {
@@ -17,6 +18,7 @@ function makeTransport(withStatus = false, initialStatus?: ConnectionStatus) {
       messageListeners.add(listener);
       return () => messageListeners.delete(listener);
     }),
+    disconnect,
   };
 
   if (withStatus) {
@@ -33,6 +35,7 @@ function makeTransport(withStatus = false, initialStatus?: ConnectionStatus) {
   return {
     transport,
     sent,
+    disconnect,
     emit: (data: Uint8Array) => messageListeners.forEach((l) => l(data)),
     setStatus: (status: ConnectionStatus) => statusListeners.forEach((l) => l(status)),
     messageListenerCount: () => messageListeners.size,
@@ -893,6 +896,15 @@ describe("createPresenceClient dispose lifecycle", () => {
 
     expect(seen).toEqual(["disconnected"]);
     expect(client.getStatus()).toBe("disconnected");
+  });
+
+  it("calls transport.disconnect once on dispose and not again on a second dispose", () => {
+    const { transport, disconnect } = makeTransport();
+    const client = createPresenceClient({ transport, idFactory });
+
+    client.dispose();
+    client.dispose();
+    expect(disconnect).toHaveBeenCalledTimes(1);
   });
 
   it("registerTeardown returns an unregister function", () => {

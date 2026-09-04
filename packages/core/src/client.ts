@@ -259,6 +259,11 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
       for (const teardown of state.teardowns.splice(0)) {
         teardown();
       }
+      try {
+        void transport.disconnect?.();
+      } catch {
+        // a throwing disconnect must not break dispose
+      }
     },
   };
 }

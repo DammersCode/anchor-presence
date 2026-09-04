@@ -27,9 +27,7 @@ jobs:
         run: bun run lint
       - name: Test
         run: bun run test
-      - name: Bench (report-only)
-        run: bunx vitest bench --project core --run
-        continue-on-error: true
+      # bench: vitest 5 --project filter bug, run locally with `bunx vitest bench --run --project core`
       - name: Demo production build
         run: bunx vite build
         working-directory: apps/demo

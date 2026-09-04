@@ -6,5 +6,7 @@ test-results/
 .vite/
 .claude/
 .agent/
-oss-refs/*
-!oss-refs/README.md
+plans/
+oss-refs/
+*.prompt.md
+TODO-*.md

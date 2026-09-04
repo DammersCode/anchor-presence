@@ -66,7 +66,7 @@ Pass `client={null}` during server-side rendering. See "SSR" below.
 | `useRemoteUsers()` | one entry per remote client: `clientId`, `user`, and `session` |
 | `useRemoteCursors()` | `ResolvedCursor[]` snapshot |
 | `useRemoteCursorsSelector(select, isEqual?)` | a value derived from the snapshot |
-| `useCursorPresence()` | raw remote `CursorPresence[]` |
+| `useCursorPresence()` | raw remote `RemotePresence<TContext, TUser>[]` |
 | `useCursorStatus()` | `ConnectionStatus` |
 | `useCursorClient()` | the `PresenceClient` instance, or `null` |
 | `useCursorContext()` | `[context, setContext]` |
@@ -154,7 +154,7 @@ function PresencePill() {
 ### useCursorPresence
 
 ```ts
-function useCursorPresence<TContext = unknown, TUser = unknown>(): CursorPresence<TContext, TUser>[];
+function useCursorPresence<TContext = unknown, TUser = unknown>(): RemotePresence<TContext, TUser>[];
 ```
 
 Returns the raw remote presence list, before geometry resolution. Use this only when you need fields resolution does not carry, such as `pointer.type`. Use `useRemoteCursors` for rendering instead.
@@ -224,7 +224,10 @@ function App() {
 ### Label and color mapping
 
 ```tsx
-<CursorLayer
+type MyContext = { pageId: string };
+type MyUser = { name: string; color?: string };
+
+<CursorLayer<MyContext, MyUser>
   getLabel={(cursor) => cursor.user?.name ?? "Guest"}
   getColor={(cursor) => cursor.user?.color ?? "#6b7280"}
 />

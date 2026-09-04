@@ -18,9 +18,12 @@ Create a client with a transport. Mark one element with `data-anchor`. Then rend
 
 ```tsx
 import { createPresenceClient } from "@anchor-presence/core";
+import { createWebSocketTransport } from "@anchor-presence/dom";
 import { LiveCursorProvider, CursorLayer } from "@anchor-presence/react";
 
-const client = createPresenceClient({ transport: myTransport });
+const transport = createWebSocketTransport({ url: "ws://localhost:8787/?room=main" });
+transport.connect();
+const client = createPresenceClient({ transport, user: { name: "Alice" } });
 
 function DashboardButton() {
   return <button data-anchor="nav.dashboard">Dashboard</button>;
@@ -36,7 +39,9 @@ function App() {
 }
 ```
 
-`myTransport` is any bidirectional byte channel that implements the transport interface. `@anchor-presence/dom` ships a ready-made WebSocket transport. See [docs/transports.md](docs/transports.md) for the WebSocket usage and the Socket.IO, SignalR, and BroadcastChannel examples.
+`apps/server` is the matching relay for this example: run `cd apps/server && bun run dev` to start it. `room` is a relay-side grouping key, not part of the protocol.
+
+Any bidirectional byte channel that implements the transport interface works in place of `createWebSocketTransport`. See [docs/transports.md](docs/transports.md) for the WebSocket usage and the Socket.IO, SignalR, and BroadcastChannel examples.
 
 Open your app in two browser windows. Move the pointer in one window. A live cursor appears in the second window, tracking the same element even at a different window size.
 
@@ -194,7 +199,8 @@ The skill teaches an agent the anchor model, the integration steps, and the trou
 ```sh
 bun install                  # install workspace dependencies
 bun run build                # build every package (tsc --build)
-bun run typecheck             # tsc --build with no emit, core/dom/react
+bun run typecheck             # build-mode typecheck for core, dom, react
+bun run lint                  # oxlint, type-aware
 bun run test                  # unit tests (vitest)
 bun run test:browser          # cross-layout browser tests (playwright)
 ```

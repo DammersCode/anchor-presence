@@ -117,7 +117,10 @@ function OnlineBar() {
 `CursorLayer` is optional. It renders every visible remote cursor. You can style it with the props `getLabel`, `getColor`, `filterCursor`, and `getCursorProps`. You can replace its contents entirely with `renderCursor`.
 
 ```tsx
-<CursorLayer
+type MyContext = { pageId: string };
+type MyUser = { name: string; color?: string };
+
+<CursorLayer<MyContext, MyUser>
   getLabel={(cursor) => cursor.user?.name ?? "Guest"}
   getColor={(cursor) => cursor.user?.color ?? "#6b7280"}
   filterCursor={(cursor) => cursor.tier !== "viewport"}

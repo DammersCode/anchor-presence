@@ -1,7 +1,6 @@
 # Anchor Presence — Technical Specification
 
 Version: 1.5
-Status: updated for the data-attribute-only anchor API and WebSocket transport room removal
 
 ## 1. Purpose
 
@@ -233,7 +232,7 @@ On `pointermove` (and `pointerdown`, `pointerover`):
 
 1. Read the event target. Inside shadow roots, use `event.composedPath()[0]` when available.
 2. Walk up through ancestors (crossing shadow boundaries via `host`) and collect registered anchors, innermost first.
-3. Build the fallback chain: up to `maxAnchors` (default `DEFAULT_MAX_SENT_ANCHORS` = 4) anchors, most specific first.
+3. Build the fallback chain: up to `maxAnchors` (default 4, clamped to 1 through 8) anchors, most specific first.
 4. For each anchor, compute `u = (clientX - rect.left) / rect.width`, same for `v`. Zero-size rects are skipped.
 5. Compute viewport fallback: `u = clientX / innerWidth`, `v = clientY / innerHeight`.
 6. Hand the sample to the core client, together with the pointer type (`event.pointerType`, when it is `mouse`, `pen`, or `touch`). The client keeps the latest pointer type and sends it as the wire `pointer` field.
@@ -346,11 +345,11 @@ interface Interpolator {
 type InterpolatorFactory = () => Interpolator;
 ```
 
-Ships: `none` and `linear` (fixed-duration ease toward target, default 80 ms). Spring/spline are future factories behind the same interface. While any interpolator is unsettled, the scheduler runs a rAF loop; when all are settled, it stops. Interpolation frames reuse cached bounding and client rects from the last read phase. A re-measure happens only when an invalidation arrived. Raw sender coordinates are never interpolated.
+Ships: `noneInterpolator` and `linearInterpolator` (fixed-duration ease toward target, default 80 ms), both exported from core and passed as `resolution.interpolatorFactory`. Spring/spline are future factories behind the same interface. While any interpolator is unsettled, the scheduler runs a rAF loop; when all are settled, it stops. Interpolation frames reuse cached bounding and client rects from the last read phase. A re-measure happens only when an invalidation arrived. Raw sender coordinates are never interpolated.
 
 When a resolved position changes because of a local-only invalidation (scroll, resize, mutation) with no new network data for that cursor, the scheduler calls `shift(dx, dy)` with the position delta. Current and target move together, so an in-flight ease continues instead of truncating, and the cursor tracks its anchor rigidly during local scrolling.
 
-Interpolation is applied in the dom layer's resolved snapshot, so all adapters get smoothed values for free; `interpolator: none` gives raw resolved values.
+Interpolation is applied in the dom layer's resolved snapshot, so all adapters get smoothed values for free; `resolution.interpolatorFactory: noneInterpolator` gives raw resolved values.
 
 The resolver keeps one interpolator instance per remote `clientId` and prunes it when that client leaves. It also keeps output identity: a resolved cursor whose fields did not change keeps its object across passes, and a pass in which no cursor changed returns the previous array. Consumers can compare snapshots and cursors by reference.
 

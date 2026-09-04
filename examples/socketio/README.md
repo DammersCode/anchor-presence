@@ -57,7 +57,7 @@ const client = createPresenceClient({
 
 ## Room routing
 
-The relay reads the room name from the handshake query of the client (`?room=main`). If your app picks rooms a different way, for example from an authenticated session, change the `roomFor` logic in `server.ts`.
+The relay reads the room name from the handshake query of the client (`?room=main`). If your app picks rooms a different way, for example from an authenticated session, change the room lookup at the top of `createSocketIoRelay` in `server.ts`.
 
 ## Binary payloads
 

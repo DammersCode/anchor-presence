@@ -10,11 +10,15 @@ CI runs the browser tests on Chromium only. The Firefox and WebKit installs take
 
 ```bash
 bun install
+bun run build
 bun run typecheck
+bun run lint
 bun run test
 bunx playwright install chromium firefox webkit
 bun run test:browser
 ```
+
+`bun run test:browser` starts the relay and the demo itself via `playwright.config.ts`.
 
 Make sure that all three browser projects pass. If a test fails only in CI, reproduce it in a Linux container first:
 
@@ -30,8 +34,10 @@ docker run --rm -v "$(pwd):/src:ro" mcr.microsoft.com/playwright:v1.62.1-noble b
 
 ## What CI runs on each push to main
 
-1. Typecheck (`tsc --build`) for core, dom, and react.
-2. All unit tests (`vitest run`).
-3. Core benchmarks (report-only).
-4. The demo production build.
-5. Browser tests on Chromium (preinstalled Chrome, no download).
+1. Build (`bun run build`) for core, dom, and react.
+2. Typecheck (`tsc --build`) for core, dom, and react.
+3. Lint (`bun run lint`).
+4. All unit tests (`vitest run`).
+5. Core benchmarks (report-only).
+6. The demo production build.
+7. Browser tests on Chromium (preinstalled Chrome, no download).

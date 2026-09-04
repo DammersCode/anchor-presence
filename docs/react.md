@@ -159,7 +159,7 @@ function useCursorPresence<TContext = unknown, TUser = unknown>(): RemotePresenc
 
 Returns the raw remote presence list, before geometry resolution. Use this only when you need fields resolution does not carry, such as `pointer.type`. Use `useRemoteCursors` for rendering instead.
 
-The list is a stable snapshot. It changes only when a remote client's `cursor`, `context`, `user`, `pointer`, `session`, or membership changes. The `sequence` field is not included. It is a wire-level ordering detail that changes with every accepted message. If you need per-message sequence updates, read `client.getRemoteSnapshot()` in a `client.subscribeRemote()` callback.
+The list is a stable snapshot. It changes only when a remote client's `cursor`, `context`, `user`, `pointer`, `session`, or membership changes. The `sequence` field is not included. It is a wire-level ordering detail that changes with every accepted message. If you need per-message sequence updates, read `client.getRemoteSnapshot()` in a `client.subscribeRemote()` callback. It returns a new array per accepted message, so use `client.getRemotePresence()` for rendering.
 
 ### useCursorStatus
 

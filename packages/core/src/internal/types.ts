@@ -120,6 +120,7 @@ export interface PresenceClient<TContext = unknown, TUser = unknown> {
   /**
    * Returns the raw remote snapshot, including `sequence`.
    * The client returns a new array when it accepts a message.
+   * @remarks Returns a new array per accepted message; use getRemotePresence() for rendering.
    */
   getRemoteSnapshot(): CursorPresence<TContext, TUser>[];
   /**

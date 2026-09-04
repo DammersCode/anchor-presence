@@ -35,7 +35,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc --build"
+    "build": "rm -rf dist tsconfig.tsbuildinfo && tsc --build"
   },
   "dependencies": {
     "@anchor-presence/core": "workspace:*",

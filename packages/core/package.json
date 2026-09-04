@@ -35,6 +35,6 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc --build"
+    "build": "rm -rf dist tsconfig.tsbuildinfo && tsc --build"
   }
 }

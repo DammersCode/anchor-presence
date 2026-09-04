@@ -302,6 +302,21 @@ describe("createWebSocketTransport", () => {
     expect(FakeWebSocket.instances).toHaveLength(1);
   });
 
+  it("severs an in-flight socket on a second connect() instead of orphaning it", () => {
+    const transport = make({ reconnect: false });
+    void transport.connect();
+    const first = lastSocket();
+    void transport.connect();
+    const second = lastSocket();
+
+    expect(FakeWebSocket.instances).toHaveLength(2);
+    expect(first.readyState).toBe(FakeWebSocket.CLOSED);
+    expect(second.readyState).toBe(FakeWebSocket.CONNECTING);
+
+    FakeWebSocket.fire(second, "open");
+    expect(transport.getStatus?.()).toBe("connected");
+  });
+
   it("delivers ArrayBuffer messages to data subscribers and ignores other payloads", () => {
     const transport = make();
     void transport.connect?.();

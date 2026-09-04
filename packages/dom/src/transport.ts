@@ -123,6 +123,15 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
 
   function open(): void {
     if (disposedByUser || WebSocketImpl === undefined) return;
+    // a reconnect or a double connect() must not orphan a live socket: sever and close the previous one
+    if (socket !== null) {
+      const previous = socket;
+      previous.onopen = null;
+      previous.onmessage = null;
+      previous.onerror = null;
+      previous.onclose = null;
+      previous.close();
+    }
     try {
       const ws = new WebSocketImpl(url);
       ws.binaryType = "arraybuffer";
@@ -167,6 +176,7 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
         }
         return;
       }
+      if (socket !== null && socket.readyState === WS_OPEN) return;
       setStatus("connecting");
       open();
     },

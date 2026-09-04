@@ -7,6 +7,6 @@
     "dev": "bun run index.ts"
   },
   "devDependencies": {
-    "@anchor-presence/core": "workspace:*"
+    "@anchor-presence/core": "0.1.0"
   }
 }

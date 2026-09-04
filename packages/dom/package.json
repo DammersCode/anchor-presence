@@ -40,6 +40,6 @@
     "build": "rm -rf dist tsconfig.tsbuildinfo && tsc --build"
   },
   "dependencies": {
-    "@anchor-presence/core": "workspace:*"
+    "@anchor-presence/core": "0.1.0"
   }
 }

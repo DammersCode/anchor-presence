@@ -8,9 +8,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@anchor-presence/core": "workspace:*",
-    "@anchor-presence/dom": "workspace:*",
-    "@anchor-presence/react": "workspace:*",
+    "@anchor-presence/core": "0.1.0",
+    "@anchor-presence/dom": "0.1.0",
+    "@anchor-presence/react": "0.1.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "socket.io-client": "^4.8.3"

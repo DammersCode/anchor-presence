@@ -40,8 +40,8 @@
     "build": "rm -rf dist tsconfig.tsbuildinfo && tsc --build"
   },
   "dependencies": {
-    "@anchor-presence/core": "workspace:*",
-    "@anchor-presence/dom": "workspace:*"
+    "@anchor-presence/core": "0.1.0",
+    "@anchor-presence/dom": "0.1.0"
   },
   "peerDependencies": {
     "react": ">=18"

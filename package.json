@@ -1,5 +1,6 @@
 {
   "name": "anchor-presence",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "packageManager": "bun@1.3.14",
@@ -15,7 +16,11 @@
     "typecheck": "tsc --build packages/core packages/dom packages/react",
     "lint": "oxlint --type-aware",
     "test": "vitest run",
-    "test:browser": "playwright test"
+    "test:browser": "playwright test",
+    "preversion": "bun run build && bun run typecheck && bun run lint && bun run test",
+    "version": "node scripts/sync-versions.mjs && bun install && git add package.json packages/*/package.json apps/*/package.json examples/*/package.json examples/*/client/package.json bun.lock",
+    "postversion": "git push && git push --tags",
+    "release:check": "node scripts/check-release.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",

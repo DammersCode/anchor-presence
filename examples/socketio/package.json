@@ -7,7 +7,7 @@
     "dev": "cd client && bun run dev"
   },
   "dependencies": {
-    "@anchor-presence/core": "workspace:*",
+    "@anchor-presence/core": "0.1.0",
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3"
   }

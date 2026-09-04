@@ -9,15 +9,23 @@ export type InMemoryPairOptions = {
   async?: boolean;
 };
 
+/** A `LiveCursorTransport` whose optional lifecycle and status members are always present. */
+export type InMemoryTransport = LiveCursorTransport & {
+  connect(): void;
+  disconnect(): void;
+  subscribeStatus(listener: (status: ConnectionStatus) => void): () => void;
+  getStatus(): ConnectionStatus;
+};
+
 /**
  * Two in-memory transports wired to each other.
  * Each client takes one side.
  */
 export type InMemoryPair = {
   /** Side A. A send from side A reaches the listeners of side B. */
-  a: LiveCursorTransport;
+  a: InMemoryTransport;
   /** Side B. A send from side B reaches the listeners of side A. */
-  b: LiveCursorTransport;
+  b: InMemoryTransport;
   /** Stops all delivery and clears both sides. */
   dispose(): void;
 };
@@ -61,7 +69,7 @@ export function createInMemoryPair(options: InMemoryPairOptions = {}): InMemoryP
     }
   }
 
-  function buildTransport(self: Side, other: Side): LiveCursorTransport {
+  function buildTransport(self: Side, other: Side): InMemoryTransport {
     return {
       connect() {
         setStatus(self, "connected");

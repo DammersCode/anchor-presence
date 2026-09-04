@@ -13,7 +13,7 @@
   ],
   "scripts": {
     "build": "bun run --filter '@anchor-presence/*' build",
-    "typecheck": "tsc --build packages/core packages/dom packages/react",
+    "typecheck": "tsc --build packages/core packages/dom packages/react && tsc -p tsconfig.test.json",
     "lint": "oxlint --type-aware",
     "test": "vitest run",
     "test:browser": "playwright test",

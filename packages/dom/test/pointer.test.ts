@@ -56,6 +56,7 @@ function makeClient(): {
     },
     setContext: () => {},
     getContext: () => {},
+    subscribeContext: () => () => {},
     setUser: () => {},
     getUser: () => {},
     getStatus: () => "connected" as const,

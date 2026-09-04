@@ -22,7 +22,7 @@ function cursor(overrides: Partial<ResolvedCursor> = {}): ResolvedCursor {
 
 function makeItemSpy(counts: Record<string, number>) {
   return function ItemSpy(props: { id: string }) {
-    counts[props.id] += 1;
+    counts[props.id] = (counts[props.id] ?? 0) + 1;
     return <span>{props.id}</span>;
   };
 }
@@ -191,7 +191,7 @@ describe("cursor components", () => {
       publish([cursor()]);
     });
 
-    const el = container.querySelector('[data-testid="remote-cursor"]');
+    const el = container.querySelector<HTMLElement>('[data-testid="remote-cursor"]');
     expect(el).not.toBeNull();
     expect(el?.className).toContain("demo-cursor");
     expect(el?.dataset.cursorName).toBe("Ada");
@@ -236,7 +236,7 @@ describe("cursor components", () => {
       publish([cursor({ clientId: "r1" }), cursor({ clientId: "r2" })]);
     });
 
-    const ids = Array.from(container.querySelectorAll("[data-anchor-presence-client-id]")).map((el) =>
+    const ids = Array.from(container.querySelectorAll<HTMLElement>("[data-anchor-presence-client-id]")).map((el) =>
       el.dataset.anchorPresenceClientId,
     );
     expect(ids).toEqual(["r1"]);

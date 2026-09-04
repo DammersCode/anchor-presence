@@ -105,7 +105,7 @@ describe("binaryCodec", () => {
     ];
 
     for (const { pointer, expected } of cases) {
-      const message = { ...base, pointer } as CursorPresence;
+      const message = { ...base, pointer } as unknown as CursorPresence;
       const decoded = binaryCodec.decode(binaryCodec.encode(message)) as CursorPresence;
       expect(decoded.pointer).toEqual(expected);
       expect("pointer" in decoded).toBe(pointer !== undefined);
@@ -271,9 +271,9 @@ describe("binaryCodec", () => {
     } as const;
 
     expect(() =>
-      binaryCodec.encode({ ...base, pointer: { type: "stylus" } as CursorPresence["pointer"] }),
+      binaryCodec.encode({ ...base, pointer: { type: "stylus" } } as unknown as CursorPresence),
     ).toThrow("unsupported pointer type");
-    expect(() => binaryCodec.encode({ ...base, version: 2 } as CursorPresence)).toThrow(
+    expect(() => binaryCodec.encode({ ...base, version: 2 } as unknown as CursorPresence)).toThrow(
       "unsupported protocol version",
     );
     expect(() => binaryCodec.encode({ ...base, clientId: "a".repeat(65536) })).toThrow(

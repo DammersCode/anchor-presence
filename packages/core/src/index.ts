@@ -35,7 +35,7 @@ export type { CursorCodec } from "./codec.js";
 export type { LiveCursorTransport } from "./transport.js";
 
 export { createInMemoryPair } from "./in-memory-transport.js";
-export type { InMemoryPair, InMemoryPairOptions } from "./in-memory-transport.js";
+export type { InMemoryPair, InMemoryPairOptions, InMemoryTransport } from "./in-memory-transport.js";
 
 export {
   createPresenceClient,

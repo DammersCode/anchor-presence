@@ -89,7 +89,7 @@ describe("linearInterpolator", () => {
     interp.target(100, 0, 0);
     expect(interp.sample(0)).toEqual({ x: 100, y: 0, settled: true });
 
-    interp.reset();
+    interp.reset?.();
     interp.target(0, 200, 1000);
     // without reset() this would ease from (100, 0) and sample(1000) would be (100, 0)
     expect(interp.sample(1000)).toEqual({ x: 0, y: 200, settled: true });

@@ -68,7 +68,7 @@ describe("createInMemoryPair", () => {
     const withContext = clientB.getRemoteSnapshot().find((p) => p.clientId === "A");
     expect(withContext?.context).toEqual({ page: "dashboard" });
 
-    clientA.setContext(null);
+    clientA.setContext(undefined);
     vi.advanceTimersByTime(50);
     const cleared = clientB.getRemoteSnapshot().find((p) => p.clientId === "A");
     expect("context" in cleared!).toBe(false);

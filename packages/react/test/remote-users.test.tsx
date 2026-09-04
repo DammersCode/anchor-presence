@@ -53,7 +53,7 @@ describe("useRemoteUsers", () => {
 
   it("projects one entry per remote client with clientId, session, and user", () => {
     const { client, pushRemote } = makeFakeClient<unknown, TestUser>();
-    const seen: RemoteUser<TestUser>[] = [];
+    const seen: RemoteUser<TestUser>[][] = [];
     function Probe() {
       seen.push(useRemoteUsers<TestUser>());
       return null;
@@ -90,7 +90,7 @@ describe("useRemoteUsers", () => {
     const { transportA, transportB } = makePeerPair();
     const clientA = createPresenceClient({ transport: transportA, clientId: "A" });
     const clientB = createPresenceClient({ transport: transportB, clientId: "B", publishIntervalMs: 50 });
-    const seen: RemoteUser[] = [];
+    const seen: RemoteUser[][] = [];
     function Probe() {
       const users = useRemoteUsers();
       seen.push(users);
@@ -124,7 +124,7 @@ describe("useRemoteUsers", () => {
   });
 
   it("returns an empty list without a provider (server snapshot)", () => {
-    const seen: RemoteUser[] = [];
+    const seen: RemoteUser[][] = [];
     function Probe() {
       seen.push(useRemoteUsers());
       return null;

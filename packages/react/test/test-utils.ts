@@ -26,6 +26,7 @@ export function makeFakeClient<TContext = unknown, TUser = unknown>(): {
       context = next;
     },
     getContext: () => context,
+    subscribeContext: () => () => {},
     setUser: (next) => {
       user = next;
     },

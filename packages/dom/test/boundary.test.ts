@@ -26,7 +26,7 @@ describe("dom import boundary (spec §3.2)", () => {
   for (const file of files) {
     it(`${file} imports only "@anchor-presence/core" or relative paths`, () => {
       const contents = readFileSync(join(srcDir, file), "utf8");
-      const specifiers = Array.from(contents.matchAll(importPattern), (m) => m[1]);
+      const specifiers = Array.from(contents.matchAll(importPattern), (m) => m[1]).filter((s) => s !== undefined);
       for (const specifier of specifiers) {
         expect(isAllowedSpecifier(specifier), `unexpected import "${specifier}" in ${file}`).toBe(true);
       }

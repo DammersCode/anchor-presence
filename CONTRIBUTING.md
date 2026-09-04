@@ -38,9 +38,8 @@ docker run --rm -v "$(pwd):/src:ro" mcr.microsoft.com/playwright:v1.62.1-noble b
 2. Typecheck (`tsc --build`) for core, dom, and react.
 3. Lint (`bun run lint`).
 4. All unit tests (`vitest run`).
-5. Core benchmarks (report-only).
-6. The demo production build.
-7. Browser tests on Chromium (preinstalled Chrome, no download).
+5. The demo production build.
+6. Browser tests on Chromium (preinstalled Chrome, no download).
 
 ## Releasing
 

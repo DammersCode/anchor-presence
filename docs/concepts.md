@@ -47,7 +47,7 @@ The receiver clamps `u` and `v` to `[0, 1]` during validation. See `docs/securit
 
 A cursor position carries an ordered list of anchors, most specific first, up to 8 entries. This list is the fallback chain.
 
-The sender builds the chain by walking up from the pointer target through registered ancestor anchors, up to `maxAnchors` (default 4, the dom constant `DEFAULT_MAX_SENT_ANCHORS`).
+The sender builds the chain by walking up from the pointer target through registered ancestor anchors, up to `maxAnchors` (default 4, clamped to 1 through 8).
 
 The receiver walks the chain in order and uses the first anchor that is connected to the DOM and has a non-zero size. This lets a cursor degrade gracefully when the exact element is missing on the receiver, for example a table row that does not exist on a shorter table.
 

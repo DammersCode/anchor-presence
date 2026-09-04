@@ -1,5 +1,7 @@
 # Socket.IO transport example
 
+Demo only. The server accepts any origin and has no size or rate limit; do not run it as-is in production.
+
 This example adds a Socket.IO transport to the demo. It has three parts:
 
 - `transport.ts`: wraps a Socket.IO client socket as a `LiveCursorTransport`.
@@ -57,7 +59,7 @@ const client = createPresenceClient({
 
 ## Room routing
 
-The relay reads the room name from the handshake query of the client (`?room=main`). If your app picks rooms a different way, for example from an authenticated session, change the `roomFor` logic in `server.ts`.
+The relay reads the room name from the handshake query of the client (`?room=main`). If your app picks rooms a different way, for example from an authenticated session, change the room lookup at the top of `createSocketIoRelay` in `server.ts`.
 
 ## Binary payloads
 

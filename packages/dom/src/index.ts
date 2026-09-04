@@ -7,7 +7,7 @@ export type {
 } from "./binding.js";
 
 export { createWebSocketTransport } from "./transport.js";
-export type { WebSocketTransportOptions } from "./transport.js";
+export type { WebSocketTransport, WebSocketTransportOptions } from "./transport.js";
 
 export { CURSOR_MARKER_ATTRIBUTE } from "./scheduler.js";
 

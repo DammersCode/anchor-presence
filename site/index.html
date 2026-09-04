@@ -383,18 +383,26 @@ h2{font-weight:800;font-size:clamp(28px,4.2vw,44px);letter-spacing:-.03em;margin
     </div>
     <div class="code reveal">
       <div class="ch"><span>no raw pixels cross the wire</span><span>ts</span></div>
-<pre><span class="c">// sender: mark the elements you want to share</span>
+<pre><span class="k">import</span> { createPresenceClient } <span class="k">from</span> <span class="s">"@anchor-presence/core"</span>
+<span class="k">import</span> { createDomBinding, createWebSocketTransport } <span class="k">from</span> <span class="s">"@anchor-presence/dom"</span>
+
+<span class="k">type</span> Ctx = { page: <span class="k">string</span> }
+<span class="k">type</span> User = { name: <span class="k">string</span> }
+
+<span class="c">// sender: mark the elements you want to share</span>
 <span class="c">// &lt;div data-anchor="stats.revenue"&gt;…&lt;/div&gt;</span>
 <span class="c">// &lt;tr data-anchor="orders.row:10482"&gt;…&lt;/tr&gt;</span>
 
-<span class="k">const</span> client = <span class="f">createPresenceClient</span>({ transport, user: { name: <span class="s">"Phil"</span> } })
-<span class="f">createDomBinding</span>(client)
+<span class="k">const</span> transport = <span class="f">createWebSocketTransport</span>({ url: <span class="s">"ws://localhost:8787/?room=main"</span> })
+transport.<span class="f">connect</span>()
+<span class="k">const</span> client = <span class="f">createPresenceClient</span>&lt;Ctx, User&gt;({ transport, user: { name: <span class="s">"Phil"</span> } })
+<span class="f">createDomBinding</span>&lt;Ctx, User&gt;(client)
 
 <span class="c">// a pointer move becomes a semantic address, never a screen coordinate</span>
 <span class="c">// { anchors: [{ id: "stats.revenue", u: 0.42, v: 0.88 }], viewport: { u, v } }</span>
 
 <span class="c">// receiver: same address, different layout → its own pixels</span>
-<span class="k">const</span> binding = <span class="f">createDomBinding</span>(theirClient)
+<span class="k">const</span> binding = <span class="f">createDomBinding</span>&lt;Ctx, User&gt;(theirClient)
  binding.<span class="f">subscribe</span>(() =&gt; {
    <span class="k">for</span> (<span class="k">const</span> c <span class="k">of</span> binding.<span class="f">getSnapshot</span>()) <span class="f">renderCursor</span>(c.user, c.x, c.y)
  })

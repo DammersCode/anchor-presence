@@ -16,6 +16,12 @@ export type WebSocketLike = {
 
 export type WebSocketCtor = new (url: string) => WebSocketLike;
 
+/** A `LiveCursorTransport` whose `connect`/`disconnect` are always present, not optional. */
+export type WebSocketTransport = LiveCursorTransport & {
+  connect(): void;
+  disconnect(): void;
+};
+
 /**
  * Options for `createWebSocketTransport`.
  */
@@ -77,7 +83,7 @@ function withToken(url: string, token: string): string {
  * @param options Optional transport settings. Omit to use the defaults.
  * @returns A transport for the client.
  */
-export function createWebSocketTransport(options: WebSocketTransportOptions = {}): LiveCursorTransport {
+export function createWebSocketTransport(options: WebSocketTransportOptions = {}): WebSocketTransport {
   const url = options.token !== undefined ? withToken(resolveUrl(options), options.token) : resolveUrl(options);
   const reconnect = options.reconnect ?? true;
   const baseBackoffMs = options.baseBackoffMs ?? 500;

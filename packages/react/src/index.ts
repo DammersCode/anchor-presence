@@ -19,5 +19,14 @@ export { CursorLayer, DefaultCursor } from "./cursor.js";
 export type { CursorLayerProps, CursorRenderProps, DefaultCursorProps } from "./cursor.js";
 
 // Foreign types used in this package's public signatures, re-exported for consumer convenience.
-export type { ConnectionStatus, CursorPresence, PresenceClient } from "@anchor-presence/core";
+export type {
+  AnchorPoint,
+  ConnectionStatus,
+  CursorPosition,
+  CursorPresence,
+  Interpolator,
+  InterpolatorFactory,
+  PresenceClient,
+  RemotePresence,
+} from "@anchor-presence/core";
 export type { DomBinding, DomBindingOptions, ResolutionTier, ResolvedCursor } from "@anchor-presence/dom";

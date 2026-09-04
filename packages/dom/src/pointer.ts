@@ -1,8 +1,8 @@
 // Pointer capture and target resolution — spec §9
 
 import type { CursorPosition, PointerInfo, PresenceClient } from "@anchor-presence/core";
-import type { AnchorRegistry } from "./registry";
-import type { Rect } from "./geometry";
+import type { AnchorRegistry } from "./registry.js";
+import type { Rect } from "./geometry.js";
 
 export const DEFAULT_MAX_SENT_ANCHORS = 4;
 

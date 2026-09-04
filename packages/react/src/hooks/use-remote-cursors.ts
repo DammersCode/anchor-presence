@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState, useSyncExternalStore } from "react";
 import type { ResolvedCursor } from "@anchor-presence/dom";
-import { EMPTY_CURSORS, getServerCursors, useLiveCursorContext } from "./use-cursor-client";
+import { EMPTY_CURSORS, getServerCursors, useLiveCursorContext } from "./use-cursor-client.js";
 
 /**
  * Returns the resolved remote cursors.

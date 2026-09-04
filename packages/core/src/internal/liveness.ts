@@ -1,5 +1,5 @@
-import type { PublishLoop } from "./publish-loop";
-import type { PresenceClientState } from "./types";
+import type { PublishLoop } from "./publish-loop.js";
+import type { PresenceClientState } from "./types.js";
 
 /**
  * The liveness schedules of one presence client.

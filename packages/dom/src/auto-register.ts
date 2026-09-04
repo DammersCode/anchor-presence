@@ -1,5 +1,5 @@
-import type { AnchorRegistry } from "./registry";
-import type { MutationObserverCtor } from "./scheduler";
+import type { AnchorRegistry } from "./registry.js";
+import type { MutationObserverCtor } from "./scheduler.js";
 
 export type AutoRegisterOptions = {
   attribute: string;

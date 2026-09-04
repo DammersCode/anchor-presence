@@ -1,8 +1,8 @@
 import { useContext } from "react";
 import type { ConnectionStatus, PresenceClient, RemotePresence } from "@anchor-presence/core";
 import type { ResolvedCursor } from "@anchor-presence/dom";
-import { LiveCursorContext } from "../context";
-import type { LiveCursorContextValue } from "../context";
+import { LiveCursorContext } from "../context.js";
+import type { LiveCursorContextValue } from "../context.js";
 
 export const EMPTY_CURSORS: ResolvedCursor[] = [];
 export const EMPTY_PRESENCE: RemotePresence[] = [];

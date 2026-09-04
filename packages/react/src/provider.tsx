@@ -3,8 +3,8 @@ import type { ReactNode } from "react";
 import type { PresenceClient } from "@anchor-presence/core";
 import { createDomBinding } from "@anchor-presence/dom";
 import type { DomBinding, DomBindingOptions } from "@anchor-presence/dom";
-import { LiveCursorContext } from "./context";
-import type { LiveCursorContextValue } from "./context";
+import { LiveCursorContext } from "./context.js";
+import type { LiveCursorContextValue } from "./context.js";
 
 /**
  * Props for `LiveCursorProvider`.

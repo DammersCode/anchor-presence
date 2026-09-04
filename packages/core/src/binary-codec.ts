@@ -1,5 +1,5 @@
-import type { CursorCodec } from "./codec";
-import { DEFAULT_MAX_SEQUENCE, type CursorPosition, type CursorPresence, type PointerInfo } from "./protocol";
+import type { CursorCodec } from "./codec.js";
+import { DEFAULT_MAX_SEQUENCE, type CursorPosition, type CursorPresence, type PointerInfo } from "./protocol.js";
 
 const MAGIC = 0x41;
 const FORMAT = 2;

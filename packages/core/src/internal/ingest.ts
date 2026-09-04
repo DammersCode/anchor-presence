@@ -1,5 +1,5 @@
-import { validatePresence } from "../validate";
-import type { PresenceClientState } from "./types";
+import { validatePresence } from "../validate.js";
+import type { PresenceClientState } from "./types.js";
 
 /**
  * Wires the transport inbound stream into the remote store.

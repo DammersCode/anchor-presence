@@ -1,6 +1,6 @@
-import type { Rect } from "./geometry";
-import { parentAcrossShadow } from "./dom-tree";
-import type { SchedulerReadState } from "./scheduler";
+import type { Rect } from "./geometry.js";
+import { parentAcrossShadow } from "./dom-tree.js";
+import type { SchedulerReadState } from "./scheduler.js";
 
 export type StyleValues = Pick<CSSStyleDeclaration, "overflow" | "overflowX" | "overflowY">;
 

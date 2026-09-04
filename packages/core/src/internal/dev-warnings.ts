@@ -1,5 +1,5 @@
-import type { CursorPresence } from "../protocol";
-import type { PresenceClientState } from "./types";
+import type { CursorPresence } from "../protocol.js";
+import type { PresenceClientState } from "./types.js";
 
 /** Returns `true` when `NODE_ENV` is not `production`. */
 export function isDevMode(): boolean {

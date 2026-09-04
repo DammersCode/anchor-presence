@@ -1,6 +1,6 @@
-import type { ConnectionStatus } from "../protocol";
-import type { PublishLoop } from "./publish-loop";
-import type { PresenceClientState } from "./types";
+import type { ConnectionStatus } from "../protocol.js";
+import type { PublishLoop } from "./publish-loop.js";
+import type { PresenceClientState } from "./types.js";
 
 /**
  * Connection status tracking for one presence client.

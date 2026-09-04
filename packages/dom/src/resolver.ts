@@ -2,11 +2,11 @@
 
 import type { CursorPresence, InterpolatorFactory } from "@anchor-presence/core";
 import { linearInterpolator } from "@anchor-presence/core";
-import type { AnchorRegistry } from "./registry";
-import { parentAcrossShadow } from "./dom-tree";
-import type { Rect, ViewportSize } from "./geometry";
-import { computeVisibleRect, isPointInRect } from "./occlusion";
-import type { SchedulerReadState } from "./scheduler";
+import type { AnchorRegistry } from "./registry.js";
+import { parentAcrossShadow } from "./dom-tree.js";
+import type { Rect, ViewportSize } from "./geometry.js";
+import { computeVisibleRect, isPointInRect } from "./occlusion.js";
+import type { SchedulerReadState } from "./scheduler.js";
 
 /**
  * The tier that resolved a cursor.

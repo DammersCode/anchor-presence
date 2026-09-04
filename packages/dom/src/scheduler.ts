@@ -1,9 +1,9 @@
 // Geometry scheduler — spec §11
 
-import type { Rect, ViewportSize } from "./geometry";
-import type { StyleValues } from "./occlusion";
-import { createFrameCache } from "./frame-cache";
-import { createSignalHub } from "./internal/signals";
+import type { Rect, ViewportSize } from "./geometry.js";
+import type { StyleValues } from "./occlusion.js";
+import { createFrameCache } from "./frame-cache.js";
+import { createSignalHub } from "./internal/signals.js";
 
 export type ResizeObserverLike = {
   observe(target: Element): void;

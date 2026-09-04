@@ -1,18 +1,18 @@
-import { jsonCodec } from "./codec";
-import { createOversizedWarning, isDevMode } from "./internal/dev-warnings";
-import { defaultIdFactory } from "./internal/ids";
-import { wireInbound } from "./internal/ingest";
-import { startLiveness } from "./internal/liveness";
-import { createPublishLoop } from "./internal/publish-loop";
-import { createStatusMachine } from "./internal/reconnect";
+import { jsonCodec } from "./codec.js";
+import { createOversizedWarning, isDevMode } from "./internal/dev-warnings.js";
+import { defaultIdFactory } from "./internal/ids.js";
+import { wireInbound } from "./internal/ingest.js";
+import { startLiveness } from "./internal/liveness.js";
+import { createPublishLoop } from "./internal/publish-loop.js";
+import { createStatusMachine } from "./internal/reconnect.js";
 import type {
   PresenceClient,
   PresenceClientOptions,
   PresenceClientState,
   SchedulerLike,
-} from "./internal/types";
-import { DEFAULT_MAX_FIELD_BYTES, DEFAULT_MAX_MESSAGE_BYTES } from "./protocol";
-import { DEFAULT_MAX_REMOTE_CLIENTS, DEFAULT_STALE_TIMEOUT_MS, RemotePresenceStore } from "./store";
+} from "./internal/types.js";
+import { DEFAULT_MAX_FIELD_BYTES, DEFAULT_MAX_MESSAGE_BYTES } from "./protocol.js";
+import { DEFAULT_MAX_REMOTE_CLIENTS, DEFAULT_STALE_TIMEOUT_MS, RemotePresenceStore } from "./store.js";
 
 /** Default publish interval, in milliseconds. */
 export const DEFAULT_PUBLISH_INTERVAL_MS = 50;
@@ -28,7 +28,7 @@ export type {
   PresenceClient,
   PresenceClientOptions,
   SchedulerLike,
-} from "./internal/types";
+} from "./internal/types.js";
 
 const defaultScheduler: SchedulerLike = {
   setTimeout: (callback, ms) => setTimeout(callback, ms),

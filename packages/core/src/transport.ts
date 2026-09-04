@@ -1,6 +1,6 @@
-import type { ConnectionStatus } from "./protocol";
+import type { ConnectionStatus } from "./protocol.js";
 
-export type { ConnectionStatus } from "./protocol";
+export type { ConnectionStatus } from "./protocol.js";
 
 /**
  * Byte channel that moves messages between the client and a network.

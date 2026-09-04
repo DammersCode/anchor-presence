@@ -1,5 +1,5 @@
-import type { CursorPosition, CursorPresence } from "../protocol";
-import type { PresenceClientState } from "./types";
+import type { CursorPosition, CursorPresence } from "../protocol.js";
+import type { PresenceClientState } from "./types.js";
 
 const PUBLISH_RETRY_INITIAL_MS = 50;
 const PUBLISH_RETRY_MAX_MS = 2000;

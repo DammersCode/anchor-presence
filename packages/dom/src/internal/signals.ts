@@ -7,7 +7,7 @@ import type {
   ResizeObserverCtor,
   ResizeObserverLike,
   SetTimeoutLike,
-} from "../scheduler";
+} from "../scheduler.js";
 
 const TRANSITION_START_EVENTS = ["transitionrun", "animationstart"] as const;
 const TRANSITION_END_EVENTS = ["transitionend", "transitioncancel", "animationend", "animationcancel"] as const;

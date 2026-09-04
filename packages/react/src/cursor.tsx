@@ -1,7 +1,7 @@
 import { memo, useCallback } from "react";
 import type { ComponentPropsWithoutRef, CSSProperties, ReactNode } from "react";
 import { CURSOR_MARKER_ATTRIBUTE, type ResolvedCursor } from "@anchor-presence/dom";
-import { useRemoteCursorsSelector } from "./hooks";
+import { useRemoteCursorsSelector } from "./hooks/index.js";
 
 const DEFAULT_COLOR = "#6b7280";
 const DEFAULT_Z_INDEX = 50;

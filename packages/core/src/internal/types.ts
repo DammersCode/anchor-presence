@@ -1,14 +1,14 @@
-import type { CursorCodec } from "../codec";
+import type { CursorCodec } from "../codec.js";
 import type {
   ConnectionStatus,
   CursorPosition,
   CursorPresence,
   PointerInfo,
   RemotePresence,
-} from "../protocol";
-import type { RemotePresenceStore } from "../store";
-import type { LiveCursorTransport } from "../transport";
-import type { ValidationLimits } from "../validate";
+} from "../protocol.js";
+import type { RemotePresenceStore } from "../store.js";
+import type { LiveCursorTransport } from "../transport.js";
+import type { ValidationLimits } from "../validate.js";
 
 /** Handle for one scheduled timer. */
 export type TimerHandle = ReturnType<typeof setTimeout>;

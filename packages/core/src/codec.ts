@@ -1,4 +1,4 @@
-import type { CursorPresence } from "./protocol";
+import type { CursorPresence } from "./protocol.js";
 
 /**
  * Turns presence messages into bytes, and bytes back into messages.

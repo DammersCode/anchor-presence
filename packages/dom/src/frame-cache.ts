@@ -1,9 +1,9 @@
 // Per-frame geometry cache for the scheduler's READ phase — spec §11
 
-import type { Rect } from "./geometry";
-import { readClientRect } from "./occlusion";
-import type { StyleValues } from "./occlusion";
-import type { SchedulerReadState } from "./scheduler";
+import type { Rect } from "./geometry.js";
+import { readClientRect } from "./occlusion.js";
+import type { StyleValues } from "./occlusion.js";
+import type { SchedulerReadState } from "./scheduler.js";
 
 export type FrameCacheHost = {
   window: Window;

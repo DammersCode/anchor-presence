@@ -1,21 +1,21 @@
 // Top-level wiring: registry, pointer, scheduler, and resolver. The React adapter consumes it.
 
 import type { InterpolatorFactory, PresenceClient } from "@anchor-presence/core";
-import { createAnchorRegistry } from "./registry";
-import { attachPointerSource } from "./pointer";
-import { createGeometryScheduler } from "./scheduler";
+import { createAnchorRegistry } from "./registry.js";
+import { attachPointerSource } from "./pointer.js";
+import { createGeometryScheduler } from "./scheduler.js";
 import type {
   CafLike,
   MutationObserverCtor,
   RafLike,
   ResizeObserverCtor,
-} from "./scheduler";
-import { startAutoRegister } from "./auto-register";
-import type { AutoRegisterOptions } from "./auto-register";
-import { RemoteResolver } from "./resolver";
-import type { ResolvedCursor, VisibilityPolicy } from "./resolver";
+} from "./scheduler.js";
+import { startAutoRegister } from "./auto-register.js";
+import type { AutoRegisterOptions } from "./auto-register.js";
+import { RemoteResolver } from "./resolver.js";
+import type { ResolvedCursor, VisibilityPolicy } from "./resolver.js";
 
-export type { ResolvedCursor, ResolutionTier, VisibilityPolicy } from "./resolver";
+export type { ResolvedCursor, ResolutionTier, VisibilityPolicy } from "./resolver.js";
 
 /**
  * How remote cursors turn into screen positions.

@@ -1,5 +1,5 @@
-import type { ConnectionStatus } from "./protocol";
-import type { LiveCursorTransport } from "./transport";
+import type { ConnectionStatus } from "./protocol.js";
+import type { LiveCursorTransport } from "./transport.js";
 
 /**
  * Options for `createInMemoryPair`.

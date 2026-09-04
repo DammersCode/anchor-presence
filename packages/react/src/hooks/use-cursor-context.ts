@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useSyncExternalStore } from "react";
-import { useLiveCursorContext } from "./use-cursor-client";
-import { getContextStore } from "../context-store";
+import { useLiveCursorContext } from "./use-cursor-client.js";
+import { getContextStore } from "../context-store.js";
 
 /**
  * Reads the local context value and gives a setter.

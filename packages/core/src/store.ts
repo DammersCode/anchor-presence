@@ -1,4 +1,4 @@
-import type { CursorPosition, CursorPresence, RemotePresence } from "./protocol";
+import type { CursorPosition, CursorPresence, RemotePresence } from "./protocol.js";
 
 /** Default maximum number of remote clients in one `RemotePresenceStore`. */
 export const DEFAULT_MAX_REMOTE_CLIENTS = 64;

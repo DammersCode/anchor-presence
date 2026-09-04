@@ -7,8 +7,8 @@ import {
   DEFAULT_MAX_MESSAGE_BYTES,
   DEFAULT_MAX_SEQUENCE,
   DEFAULT_MAX_SESSION_LENGTH,
-} from "./protocol";
-import type { AnchorPoint, CursorPosition, CursorPresence } from "./protocol";
+} from "./protocol.js";
+import type { AnchorPoint, CursorPosition, CursorPresence } from "./protocol.js";
 
 /**
  * Limits for `validatePresence`.

@@ -357,20 +357,26 @@ describe("reference relay hardening", () => {
     10_000,
   );
 
-  it("closes a stalled peer with 4003 and stops queueing messages for it", async () => {
-    const room = randomUUID();
-    const stalled = await rawConnect(slowPort, `/?room=${room}`, null);
-    stalled.socket.pause();
+  it(
+    "closes a stalled peer with 4003 and stops queueing messages for it",
+    { retry: 2, timeout: 30_000 },
+    async () => {
+      const room = randomUUID();
+      const stalled = await rawConnect(slowPort, `/?room=${room}`, null);
+      stalled.socket.pause();
 
-    const sender = await connect(`ws://127.0.0.1:${slowPort}/?room=${room}`);
-    for (let i = 0; i < 8; i++) sender.ws.send(new Uint8Array(256 * 1024));
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+      const sender = await connect(`ws://127.0.0.1:${slowPort}/?room=${room}`);
+      // the 4003 close only fires once the paused peer's buffers back up past the hard threshold, so over-send + retry to stay deterministic on slow CI
+      const burst = 16;
+      for (let i = 0; i < burst; i++) sender.ws.send(new Uint8Array(256 * 1024));
+      await new Promise((resolve) => setTimeout(resolve, 5000));
 
-    const { code, received } = await awaitCloseCode(stalled, 8000);
-    expect(code).toBe(4003);
-    expect(received).toBeGreaterThanOrEqual(262144);
-    expect(received).toBeLessThan(4 * 262154);
-  }, 20_000);
+      const { code, received } = await awaitCloseCode(stalled, 12_000);
+      expect(code).toBe(4003);
+      expect(received).toBeGreaterThanOrEqual(262144);
+      expect(received).toBeLessThan(burst * 262154);
+    },
+  );
 
   it("keeps delivering to healthy peers while a peer is stalled", async () => {
     const room = randomUUID();

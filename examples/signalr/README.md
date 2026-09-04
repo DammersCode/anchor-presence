@@ -1,5 +1,7 @@
 # SignalR transport example
 
+Demo only. `PresenceHub` broadcasts every message to all connections; it has no rooms and no size or rate limit. Do not run it as-is in production.
+
 This example adds a SignalR transport to the demo. It has three parts:
 
 - `client/src/transport.ts`: wraps a use-signalr hub connection as a `LiveCursorTransport`.

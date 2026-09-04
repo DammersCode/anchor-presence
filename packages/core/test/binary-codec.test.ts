@@ -220,9 +220,7 @@ describe("binaryCodec", () => {
       session: "Sitzung-1",
       sequence: 9,
       cursor: {
-        anchors: [
-          { id: "navigation.Übersicht", u: 0.5, v: 0.5 },
-        ],
+        anchors: [{ id: "navigation.Übersicht", u: 0.5, v: 0.5 }],
       },
       context: { message: "ÄÖÜ 中文" },
       user: { name: "Zoë" },
@@ -254,7 +252,7 @@ describe("binaryCodec", () => {
 
     // a top-level function or symbol stringifies to undefined
     for (const message of [
-      { ...base, context: (() => 1) },
+      { ...base, context: () => 1 },
       { ...base, user: Symbol("tag") },
     ] satisfies CursorPresence[]) {
       expect(() => binaryCodec.encode(message)).toThrow("cannot encode field as JSON");
@@ -276,12 +274,8 @@ describe("binaryCodec", () => {
     expect(() => binaryCodec.encode({ ...base, version: 2 } as unknown as CursorPresence)).toThrow(
       "unsupported protocol version",
     );
-    expect(() => binaryCodec.encode({ ...base, clientId: "a".repeat(65536) })).toThrow(
-      "clientId too large",
-    );
-    expect(() => binaryCodec.encode({ ...base, session: "s".repeat(65536) })).toThrow(
-      "session too large",
-    );
+    expect(() => binaryCodec.encode({ ...base, clientId: "a".repeat(65536) })).toThrow("clientId too large");
+    expect(() => binaryCodec.encode({ ...base, session: "s".repeat(65536) })).toThrow("session too large");
   });
 
   it("encode throws on more than 255 anchors", () => {

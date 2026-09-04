@@ -30,7 +30,9 @@ describe("react import boundary (spec §3.3)", () => {
       const contents = readFileSync(join(srcDir, file), "utf8");
       const specifiers = Array.from(contents.matchAll(importPattern), (m) => m[1]);
       for (const specifier of specifiers) {
-        expect(isAllowedSpecifier(specifier as string), `unexpected import "${specifier}" in ${file}`).toBe(true);
+        expect(isAllowedSpecifier(specifier as string), `unexpected import "${specifier}" in ${file}`).toBe(
+          true,
+        );
       }
     });
   }

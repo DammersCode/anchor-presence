@@ -18,7 +18,8 @@ for (const name of readdirSync(join(rootDir, "packages"))) {
       }
     }
   }
-  if (!existsSync(join(dir, "dist", "index.js"))) failures.push(`${name}: dist/index.js missing (run bun run build)`);
+  if (!existsSync(join(dir, "dist", "index.js")))
+    failures.push(`${name}: dist/index.js missing (run bun run build)`);
 }
 
 if (tag !== undefined && tag !== `v${rootVersion}`) failures.push(`tag ${tag} != v${rootVersion}`);

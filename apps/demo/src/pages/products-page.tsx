@@ -18,7 +18,11 @@ function CardBody({ product }: { product: Product }) {
 // Registers a semantic anchor: remote cursors resolve to this exact card regardless of layout.
 function AnchoredProductCard({ product, index }: { product: Product; index: number }) {
   return (
-    <Card data-anchor={`products.card:${index}`} data-testid={`anchor-products.card:${index}`} className="relative">
+    <Card
+      data-anchor={`products.card:${index}`}
+      data-testid={`anchor-products.card:${index}`}
+      className="relative"
+    >
       <Badge variant="success" className="absolute right-3 top-3">
         anchored
       </Badge>
@@ -45,8 +49,8 @@ export function ProductsPage() {
       <div>
         <h1 className="text-lg font-semibold text-gray-900">Products</h1>
         <p className="text-sm text-gray-500">
-          Half of these cards register a cursor anchor, half don't — compare how remote cursors
-          resolve on each as you move between them.
+          Half of these cards register a cursor anchor, half don't — compare how remote cursors resolve on
+          each as you move between them.
         </p>
       </div>
 

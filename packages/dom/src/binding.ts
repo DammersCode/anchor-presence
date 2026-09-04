@@ -4,12 +4,7 @@ import type { InterpolatorFactory, PresenceClient } from "@anchor-presence/core"
 import { createAnchorRegistry } from "./registry.js";
 import { attachPointerSource } from "./pointer.js";
 import { createGeometryScheduler } from "./scheduler.js";
-import type {
-  CafLike,
-  MutationObserverCtor,
-  RafLike,
-  ResizeObserverCtor,
-} from "./scheduler.js";
+import type { CafLike, MutationObserverCtor, RafLike, ResizeObserverCtor } from "./scheduler.js";
 import { startAutoRegister } from "./auto-register.js";
 import type { AutoRegisterOptions } from "./auto-register.js";
 import { RemoteResolver } from "./resolver.js";
@@ -124,7 +119,8 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
     registry,
   };
   if (environment.root !== undefined) autoOptions.root = environment.root;
-  if (environment.MutationObserverCtor !== undefined) autoOptions.MutationObserverCtor = environment.MutationObserverCtor;
+  if (environment.MutationObserverCtor !== undefined)
+    autoOptions.MutationObserverCtor = environment.MutationObserverCtor;
   const autoHandle = startAutoRegister(autoOptions);
 
   const resolver = new RemoteResolver<TContext, TUser>({ registry, ...resolution });

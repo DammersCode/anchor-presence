@@ -96,7 +96,15 @@ export function resolveGeometry(
 ): RawResolution {
   const cursor = presence.cursor;
   if (cursor === null) {
-    return { x: 0, y: 0, tier: "hidden", anchorId: null, pointVisible: false, element: null, activeAnchors: [] };
+    return {
+      x: 0,
+      y: 0,
+      tier: "hidden",
+      anchorId: null,
+      pointVisible: false,
+      element: null,
+      activeAnchors: [],
+    };
   }
 
   const resolved = findResolvableAnchor(presence, registry, (element) => readState.getRect(element));
@@ -138,7 +146,15 @@ export function resolveGeometry(
     };
   }
 
-  return { x: 0, y: 0, tier: "hidden", anchorId: null, pointVisible: false, element: null, activeAnchors: [] };
+  return {
+    x: 0,
+    y: 0,
+    tier: "hidden",
+    anchorId: null,
+    pointVisible: false,
+    element: null,
+    activeAnchors: [],
+  };
 }
 
 export type ResolverOptions<TContext = unknown, TUser = unknown> = {

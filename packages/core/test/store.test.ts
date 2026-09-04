@@ -213,7 +213,9 @@ describe("RemotePresenceStore context/user field delta", () => {
 
   it("does not inherit omitted context or user across a session change", () => {
     const store = new RemotePresenceStore();
-    store.ingest(presence({ session: "session-1", sequence: 5, context: { route: "/" }, user: { name: "Ada" } }));
+    store.ingest(
+      presence({ session: "session-1", sequence: 5, context: { route: "/" }, user: { name: "Ada" } }),
+    );
     store.ingest(presence({ session: "session-2", sequence: 0 }));
     const entry = store.getSnapshot()[0]!;
     expect(entry.session).toBe("session-2");

@@ -69,7 +69,15 @@ export function attachPointerSource(
   function onPointerEvent(event: PointerEvent): void {
     const target = eventTargetElement(event);
     if (target === null) return;
-    const position = buildCursorPosition(event.clientX, event.clientY, target, registry, maxAnchors, win, getCachedRect);
+    const position = buildCursorPosition(
+      event.clientX,
+      event.clientY,
+      target,
+      registry,
+      maxAnchors,
+      win,
+      getCachedRect,
+    );
     client.updateLocalCursor(position, pointerInfo(event));
   }
 

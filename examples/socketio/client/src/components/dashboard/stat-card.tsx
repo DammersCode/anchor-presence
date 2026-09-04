@@ -9,18 +9,9 @@ export interface StatCardProps {
   trend: "up" | "down";
 }
 
-export function StatCard({
-  anchorId,
-  label,
-  value,
-  delta,
-  trend,
-}: StatCardProps) {
+export function StatCard({ anchorId, label, value, delta, trend }: StatCardProps) {
   return (
-    <Card
-      data-anchor={`stats.${anchorId}`}
-      data-testid={`anchor-stats.${anchorId}`}
-    >
+    <Card data-anchor={`stats.${anchorId}`} data-testid={`anchor-stats.${anchorId}`}>
       <CardHeader>
         <CardTitle>{label}</CardTitle>
       </CardHeader>

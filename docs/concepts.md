@@ -68,11 +68,11 @@ Viewport fallback keeps a cursor visible even when every semantic anchor is miss
 
 Every resolved cursor carries a tier, one of three values:
 
-| Tier | Meaning |
-|---|---|
-| `anchor` | An anchor in the fallback chain resolved. `anchorId` names the winning anchor. |
-| `viewport` | No anchor resolved. The cursor used the viewport fallback position. |
-| `hidden` | Nothing resolved. The cursor has no valid position. |
+| Tier       | Meaning                                                                        |
+| ---------- | ------------------------------------------------------------------------------ |
+| `anchor`   | An anchor in the fallback chain resolved. `anchorId` names the winning anchor. |
+| `viewport` | No anchor resolved. The cursor used the viewport fallback position.            |
+| `hidden`   | Nothing resolved. The cursor has no valid position.                            |
 
 The resolution order is fixed: exact anchor, then nearest registered parent anchor, then a larger region anchor, then viewport fallback, then the visibility policy decides whether to show a hidden cursor at all (Invariant 4).
 

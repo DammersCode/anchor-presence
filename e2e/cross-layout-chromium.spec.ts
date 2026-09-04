@@ -1,9 +1,19 @@
 import { test, expect } from "@playwright/test";
-import { openPair, moveToAnchor, anchorLocator, expectAnchorNear, getRemoteCursorPos, uniqueRoom } from "./helpers";
+import {
+  openPair,
+  moveToAnchor,
+  anchorLocator,
+  expectAnchorNear,
+  getRemoteCursorPos,
+  uniqueRoom,
+} from "./helpers";
 
 // Scenarios 3-8 run chromium-only (per T13 instructions) to keep total CI time sane; scenarios 1-2
 // in cross-layout.spec.ts already cover all three browsers for the core resolution math.
-test.skip(({ browserName }) => browserName !== "chromium", "chromium-only: see cross-layout.spec.ts for cross-browser coverage");
+test.skip(
+  ({ browserName }) => browserName !== "chromium",
+  "chromium-only: see cross-layout.spec.ts for cross-browser coverage",
+);
 
 test.describe("cross-layout scenarios", () => {
   test("sidebar-mismatch: receiver's collapsed nav item still resolves correctly", async ({ browser }) => {
@@ -164,7 +174,9 @@ test.describe("cross-layout scenarios", () => {
     });
 
     await expect(async () => {
-      const count = await receiver.locator(`[data-testid="remote-cursor"][data-cursor-name="${senderName}"]`).count();
+      const count = await receiver
+        .locator(`[data-testid="remote-cursor"][data-cursor-name="${senderName}"]`)
+        .count();
       expect(count).toBe(0);
     }).toPass({ timeout: 5_000, intervals: [50, 100, 200] });
   });

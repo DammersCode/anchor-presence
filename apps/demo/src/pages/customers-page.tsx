@@ -12,8 +12,8 @@ export function CustomersPage() {
       </div>
 
       <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-        This page has no cursor anchors. Remote cursors here fall back to normalized viewport
-        coordinates instead of tracking a specific element.
+        This page has no cursor anchors. Remote cursors here fall back to normalized viewport coordinates
+        instead of tracking a specific element.
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">

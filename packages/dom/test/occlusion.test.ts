@@ -36,7 +36,13 @@ describe("computeVisibleRect", () => {
     document.body.append(element);
     const rect = { left: 10, top: 20, width: 100, height: 50 };
 
-    expect(computeVisibleRect(element, rect, reader(new Map(), () => visible))).toEqual(rect);
+    expect(
+      computeVisibleRect(
+        element,
+        rect,
+        reader(new Map(), () => visible),
+      ),
+    ).toEqual(rect);
   });
 
   it("intersects an overflow:auto ancestor", () => {
@@ -47,9 +53,20 @@ describe("computeVisibleRect", () => {
     const rect = { left: 10, top: 20, width: 100, height: 100 };
     const values = new Map<Element, Rect>([[clip, { left: 50, top: 40, width: 80, height: 60 }]]);
 
-    expect(computeVisibleRect(element, rect, reader(values, clippedStyle([clip], {
-      overflow: "auto", overflowX: "auto", overflowY: "auto",
-    })))).toEqual({ left: 50, top: 40, width: 60, height: 60 });
+    expect(
+      computeVisibleRect(
+        element,
+        rect,
+        reader(
+          values,
+          clippedStyle([clip], {
+            overflow: "auto",
+            overflowX: "auto",
+            overflowY: "auto",
+          }),
+        ),
+      ),
+    ).toEqual({ left: 50, top: 40, width: 60, height: 60 });
   });
 
   it("uses the padding box when a clipping ancestor has thick borders", () => {
@@ -59,12 +76,28 @@ describe("computeVisibleRect", () => {
     clip.append(element);
     const values = new Map<Element, Rect>([[clip, { left: 0, top: 0, width: 100, height: 100 }]]);
     setClientMetrics(clip, {
-      clientHeight: 80, clientLeft: 10, clientTop: 10, clientWidth: 80, offsetHeight: 100, offsetWidth: 100,
+      clientHeight: 80,
+      clientLeft: 10,
+      clientTop: 10,
+      clientWidth: 80,
+      offsetHeight: 100,
+      offsetWidth: 100,
     });
 
-    expect(computeVisibleRect(element, { left: 5, top: 5, width: 30, height: 30 }, reader(values, clippedStyle([clip], {
-      overflow: "hidden", overflowX: "hidden", overflowY: "hidden",
-    })))).toEqual({ left: 10, top: 10, width: 25, height: 25 });
+    expect(
+      computeVisibleRect(
+        element,
+        { left: 5, top: 5, width: 30, height: 30 },
+        reader(
+          values,
+          clippedStyle([clip], {
+            overflow: "hidden",
+            overflowX: "hidden",
+            overflowY: "hidden",
+          }),
+        ),
+      ),
+    ).toEqual({ left: 10, top: 10, width: 25, height: 25 });
   });
 
   it("uses scaled client metrics and excludes scrollbar space", () => {
@@ -74,12 +107,28 @@ describe("computeVisibleRect", () => {
     clip.append(element);
     const values = new Map<Element, Rect>([[clip, { left: 100, top: 50, width: 200, height: 100 }]]);
     setClientMetrics(clip, {
-      clientHeight: 40, clientLeft: 10, clientTop: 5, clientWidth: 85, offsetHeight: 50, offsetWidth: 100,
+      clientHeight: 40,
+      clientLeft: 10,
+      clientTop: 5,
+      clientWidth: 85,
+      offsetHeight: 50,
+      offsetWidth: 100,
     });
 
-    expect(computeVisibleRect(element, { left: 280, top: 70, width: 30, height: 30 }, reader(values, clippedStyle([clip], {
-      overflow: "auto", overflowX: "auto", overflowY: "auto",
-    })))).toEqual({ left: 280, top: 70, width: 10, height: 30 });
+    expect(
+      computeVisibleRect(
+        element,
+        { left: 280, top: 70, width: 30, height: 30 },
+        reader(
+          values,
+          clippedStyle([clip], {
+            overflow: "auto",
+            overflowX: "auto",
+            overflowY: "auto",
+          }),
+        ),
+      ),
+    ).toEqual({ left: 280, top: 70, width: 10, height: 30 });
   });
 
   it("falls back to the bounding rect without client metrics", () => {
@@ -96,9 +145,20 @@ describe("computeVisibleRect", () => {
     clip.append(element);
     const values = new Map<Element, Rect>([[clip, { left: 200, top: 200, width: 20, height: 20 }]]);
 
-    expect(computeVisibleRect(element, { left: 10, top: 20, width: 100, height: 100 }, reader(values, clippedStyle([clip], {
-      overflow: "hidden", overflowX: "hidden", overflowY: "hidden",
-    })))).toBeNull();
+    expect(
+      computeVisibleRect(
+        element,
+        { left: 10, top: 20, width: 100, height: 100 },
+        reader(
+          values,
+          clippedStyle([clip], {
+            overflow: "hidden",
+            overflowX: "hidden",
+            overflowY: "hidden",
+          }),
+        ),
+      ),
+    ).toBeNull();
   });
 
   it("marks a point beyond a scroll container's visible sub-rect as invisible", () => {
@@ -128,9 +188,20 @@ describe("computeVisibleRect", () => {
       [outer, { left: 50, top: 40, width: 60, height: 60 }],
     ]);
 
-    expect(computeVisibleRect(element, { left: 0, top: 0, width: 200, height: 200 }, reader(values, clippedStyle([inner, outer], {
-      overflow: "clip", overflowX: "clip", overflowY: "clip",
-    })))).toEqual({ left: 50, top: 40, width: 60, height: 60 });
+    expect(
+      computeVisibleRect(
+        element,
+        { left: 0, top: 0, width: 200, height: 200 },
+        reader(
+          values,
+          clippedStyle([inner, outer], {
+            overflow: "clip",
+            overflowX: "clip",
+            overflowY: "clip",
+          }),
+        ),
+      ),
+    ).toEqual({ left: 50, top: 40, width: 60, height: 60 });
   });
 
   it("ignores overflow:visible ancestors", () => {
@@ -141,7 +212,13 @@ describe("computeVisibleRect", () => {
     const rect = { left: 10, top: 20, width: 100, height: 50 };
     const values = new Map<Element, Rect>([[parent, { left: 30, top: 40, width: 20, height: 10 }]]);
 
-    expect(computeVisibleRect(element, rect, reader(values, () => visible))).toEqual(rect);
+    expect(
+      computeVisibleRect(
+        element,
+        rect,
+        reader(values, () => visible),
+      ),
+    ).toEqual(rect);
   });
 
   it("uses an element's owner document for an isolated document", () => {
@@ -152,9 +229,20 @@ describe("computeVisibleRect", () => {
     clip.append(element);
     const values = new Map<Element, Rect>([[clip, { left: 10, top: 10, width: 20, height: 20 }]]);
 
-    expect(computeVisibleRect(element, { left: 0, top: 0, width: 40, height: 40 }, reader(values, clippedStyle([clip], {
-      overflow: "hidden", overflowX: "hidden", overflowY: "hidden",
-    })))).toEqual({ left: 10, top: 10, width: 20, height: 20 });
+    expect(
+      computeVisibleRect(
+        element,
+        { left: 0, top: 0, width: 40, height: 40 },
+        reader(
+          values,
+          clippedStyle([clip], {
+            overflow: "hidden",
+            overflowX: "hidden",
+            overflowY: "hidden",
+          }),
+        ),
+      ),
+    ).toEqual({ left: 10, top: 10, width: 20, height: 20 });
   });
 
   it("treats a null visible rect as outside", () => {

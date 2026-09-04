@@ -336,26 +336,22 @@ describe("reference relay hardening", () => {
     expect(fourth.ws.readyState).toBe(WebSocket.OPEN);
   });
 
-  it(
-    "rejects a disallowed or missing origin with 4004 and accepts an allowed one",
-    async () => {
-      const room = randomUUID();
-      const rejected = await rawConnect(originPort, `/?room=${room}`, "http://evil.example");
-      expect((await awaitCloseCode(rejected)).code).toBe(4004);
+  it("rejects a disallowed or missing origin with 4004 and accepts an allowed one", async () => {
+    const room = randomUUID();
+    const rejected = await rawConnect(originPort, `/?room=${room}`, "http://evil.example");
+    expect((await awaitCloseCode(rejected)).code).toBe(4004);
 
-      const missingOrigin = await rawConnect(originPort, `/?room=${room}`, null);
-      expect((await awaitCloseCode(missingOrigin)).code).toBe(4004);
+    const missingOrigin = await rawConnect(originPort, `/?room=${room}`, null);
+    expect((await awaitCloseCode(missingOrigin)).code).toBe(4004);
 
-      const noOrigin = await connect(`ws://127.0.0.1:${originPort}/?room=${room}`);
-      expect(await noOrigin.closeCode).toBe(4004);
+    const noOrigin = await connect(`ws://127.0.0.1:${originPort}/?room=${room}`);
+    expect(await noOrigin.closeCode).toBe(4004);
 
-      const allowed = await rawConnect(originPort, `/?room=${room}`, "http://allowed.example");
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      expect(allowed.socket.destroyed).toBe(false);
-      allowed.socket.destroy();
-    },
-    10_000,
-  );
+    const allowed = await rawConnect(originPort, `/?room=${room}`, "http://allowed.example");
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    expect(allowed.socket.destroyed).toBe(false);
+    allowed.socket.destroy();
+  }, 10_000);
 
   it(
     "closes a stalled peer with 4003 and stops queueing messages for it",

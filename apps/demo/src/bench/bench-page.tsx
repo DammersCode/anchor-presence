@@ -192,7 +192,11 @@ export function BenchPage() {
 
   const anchorIds = useMemo(() => buildAnchorIds(anchorCount), [anchorCount]);
   const { binding, transportRef } = usePresenceHarness();
-  const { stats, stormStats } = useSchedulerPassStats(binding, stormActive || nestedScrollActive, STATS_ENABLED);
+  const { stats, stormStats } = useSchedulerPassStats(
+    binding,
+    stormActive || nestedScrollActive,
+    STATS_ENABLED,
+  );
 
   const gridRef = useRef<HTMLDivElement | null>(null);
   const nestedScrollInnerRef = useRef<HTMLDivElement | null>(null);
@@ -214,7 +218,14 @@ export function BenchPage() {
     const ids = anchorIds;
     if (ids.length === 0) return;
 
-    type SimState = { clientId: string; session: string; sequence: number; anchorId: string; u: number; v: number };
+    type SimState = {
+      clientId: string;
+      session: string;
+      sequence: number;
+      anchorId: string;
+      u: number;
+      v: number;
+    };
     const sims: SimState[] = Array.from({ length: cursorCount }, (_, i) => ({
       clientId: `bench-${i}`,
       session: `s-${i}`,

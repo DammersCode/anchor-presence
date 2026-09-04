@@ -17,7 +17,11 @@ export function useRemoteCursors<TContext = unknown, TUser = unknown>(): Resolve
     () => (binding !== null ? binding.getSnapshot() : (EMPTY_CURSORS as ResolvedCursor<TContext, TUser>[])),
     [binding],
   );
-  return useSyncExternalStore(subscribe, getSnapshot, getServerCursors as () => ResolvedCursor<TContext, TUser>[]);
+  return useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    getServerCursors as () => ResolvedCursor<TContext, TUser>[],
+  );
 }
 
 /**
@@ -37,7 +41,8 @@ export function useRemoteCursorsSelector<TSelected, TContext = unknown, TUser = 
   );
 
   const getSnapshot = useCallback(() => {
-    const cursors = binding !== null ? binding.getSnapshot() : (EMPTY_CURSORS as ResolvedCursor<TContext, TUser>[]);
+    const cursors =
+      binding !== null ? binding.getSnapshot() : (EMPTY_CURSORS as ResolvedCursor<TContext, TUser>[]);
     const next = select(cursors);
     const previous = selectedRef.current;
     // useSyncExternalStore compares by identity, so an equal selection must return the previous reference

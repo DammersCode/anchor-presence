@@ -10,7 +10,12 @@ import type {
 } from "../scheduler.js";
 
 const TRANSITION_START_EVENTS = ["transitionrun", "animationstart"] as const;
-const TRANSITION_END_EVENTS = ["transitionend", "transitioncancel", "animationend", "animationcancel"] as const;
+const TRANSITION_END_EVENTS = [
+  "transitionend",
+  "transitioncancel",
+  "animationend",
+  "animationcancel",
+] as const;
 
 const SAFETY_TIMEOUT_CAP_MS = 10_000;
 const INFINITE_ANIMATION_WINDOW_MS = 500;
@@ -39,11 +44,13 @@ function isCursorRootMutation(record: MutationRecord, markerAttribute: string): 
 }
 
 function parseCssTimeList(value: string): number[] {
-  return value
-    .split(",")
-    // oxlint-disable-next-line unicorn/prefer-number-coercion -- Number("0.3s") is NaN; parseFloat reads the leading number
-    .map((v) => Number.parseFloat(v))
-    .map((n) => (Number.isFinite(n) ? n * 1000 : 0));
+  return (
+    value
+      .split(",")
+      // oxlint-disable-next-line unicorn/prefer-number-coercion -- Number("0.3s") is NaN; parseFloat reads the leading number
+      .map((v) => Number.parseFloat(v))
+      .map((n) => (Number.isFinite(n) ? n * 1000 : 0))
+  );
 }
 
 export type SignalHubHost = {
@@ -67,7 +74,17 @@ export type SignalHub = {
 };
 
 export function createSignalHub(host: SignalHubHost): SignalHub {
-  const { doc, win, setTimer, clearTimer, markerAttribute, ResizeObserverCtor, MutationObserverCtor, onInvalidate, onMutationRecords } = host;
+  const {
+    doc,
+    win,
+    setTimer,
+    clearTimer,
+    markerAttribute,
+    ResizeObserverCtor,
+    MutationObserverCtor,
+    onInvalidate,
+    onMutationRecords,
+  } = host;
 
   let observedAnchors = new Set<Element>();
   let resizeObserver: ResizeObserverLike | null = null;
@@ -75,7 +92,10 @@ export function createSignalHub(host: SignalHubHost): SignalHub {
   const shadowRootObservers = new Map<ShadowRoot, MutationObserverLike | null>();
 
   // per-target keying: distinct elements with the same property/animation name must not collide (spec §11)
-  const transitionEntries = new Map<EventTarget, Map<string, { safetyTimer: ReturnType<typeof setTimeout> }>>();
+  const transitionEntries = new Map<
+    EventTarget,
+    Map<string, { safetyTimer: ReturnType<typeof setTimeout> }>
+  >();
   let openTransitionCount = 0;
 
   function onWindowResize(): void {
@@ -177,7 +197,9 @@ export function createSignalHub(host: SignalHubHost): SignalHub {
 
   function onTransitionStart(event: Event): void {
     const isAnimation = event.type === "animationstart";
-    const name = isAnimation ? (event as AnimationEvent).animationName : (event as TransitionEvent).propertyName;
+    const name = isAnimation
+      ? (event as AnimationEvent).animationName
+      : (event as TransitionEvent).propertyName;
     const target = event.target;
     if (target === null) return;
     closeTransitionEntry(target, name ?? "");
@@ -207,7 +229,9 @@ export function createSignalHub(host: SignalHubHost): SignalHub {
 
   function onTransitionEnd(event: Event): void {
     const isAnimation = event.type.startsWith("animation");
-    const name = isAnimation ? (event as AnimationEvent).animationName : (event as TransitionEvent).propertyName;
+    const name = isAnimation
+      ? (event as AnimationEvent).animationName
+      : (event as TransitionEvent).propertyName;
     closeTransitionEntry(event.target, name ?? "");
     onInvalidate();
   }

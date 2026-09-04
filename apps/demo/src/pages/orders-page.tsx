@@ -8,10 +8,7 @@ export function OrdersPage() {
         <p className="text-sm text-gray-500">All orders placed across the storefront.</p>
       </div>
 
-      <OrdersTable
-        onView={(id) => console.log("view", id)}
-        onDelete={(id) => console.log("delete", id)}
-      />
+      <OrdersTable onView={(id) => console.log("view", id)} onDelete={(id) => console.log("delete", id)} />
     </div>
   );
 }

@@ -45,7 +45,15 @@ function InterpolatorStyleRow({
   );
 }
 
-function ToggleRow({ anchorId, label, description }: { anchorId: string; label: string; description: string }) {
+function ToggleRow({
+  anchorId,
+  label,
+  description,
+}: {
+  anchorId: string;
+  label: string;
+  description: string;
+}) {
   const [enabled, setEnabled] = useState(true);
   return (
     <div data-anchor={`settings.dialog.${anchorId}`} className="flex items-center justify-between gap-4">
@@ -110,7 +118,12 @@ export function SettingsDialog({
           description="Allow this workspace to be listed publicly."
         />
 
-        <Button data-anchor="settings.dialog.invite" data-testid="anchor-settings.dialog.invite" variant="outline" className="self-start">
+        <Button
+          data-anchor="settings.dialog.invite"
+          data-testid="anchor-settings.dialog.invite"
+          variant="outline"
+          className="self-start"
+        >
           + Invite member
         </Button>
 

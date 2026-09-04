@@ -52,7 +52,10 @@ type BenchWindow = Window & {
 };
 
 // ?rows=N (clamped 20..2000) so the bench can be re-run at a heavier page size
-const ROW_COUNT = Math.min(2000, Math.max(20, Number(new URLSearchParams(window.location.search).get("rows") ?? 100) || 100));
+const ROW_COUNT = Math.min(
+  2000,
+  Math.max(20, Number(new URLSearchParams(window.location.search).get("rows") ?? 100) || 100),
+);
 const ROWS = Array.from({ length: ROW_COUNT }, (_, i) => i);
 
 const ANCHOR_IDS = ["reflow.1", "reflow.2", "reflow.3", "reflow.4"] as const;

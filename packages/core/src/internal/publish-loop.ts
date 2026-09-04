@@ -29,9 +29,7 @@ export type PublishLoop = {
   wireVisibility: () => void;
 };
 
-export function createPublishLoop<TContext, TUser>(
-  state: PresenceClientState<TContext, TUser>,
-): PublishLoop {
+export function createPublishLoop<TContext, TUser>(state: PresenceClientState<TContext, TUser>): PublishLoop {
   function updateSlowMode(): void {
     if (!state.adaptivePublish || typeof state.transport.bufferedBytes !== "function") return;
     try {
@@ -43,7 +41,10 @@ export function createPublishLoop<TContext, TUser>(
     }
   }
 
-  function buildMessage(cursor: CursorPosition | null, includeFull: boolean): CursorPresence<TContext, TUser> {
+  function buildMessage(
+    cursor: CursorPosition | null,
+    includeFull: boolean,
+  ): CursorPresence<TContext, TUser> {
     const message: CursorPresence<TContext, TUser> = {
       version: 1,
       clientId: state.clientId,

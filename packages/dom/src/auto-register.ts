@@ -42,7 +42,8 @@ export function startAutoRegister(options: AutoRegisterOptions): AutoRegisterHan
   let disposed = false;
   let enabled = true;
 
-  const observer = MutationObserverImpl !== undefined ? new MutationObserverImpl((records) => handleRecords(records)) : null;
+  const observer =
+    MutationObserverImpl !== undefined ? new MutationObserverImpl((records) => handleRecords(records)) : null;
 
   function connectObserver(): void {
     if (disposed || !enabled || observer === null) return;

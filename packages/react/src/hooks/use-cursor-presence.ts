@@ -14,8 +14,13 @@ export function useCursorPresence<TContext = unknown, TUser = unknown>(): Remote
     [client],
   );
   const getSnapshot = useCallback(
-    () => (client !== null ? client.getRemotePresence() : (EMPTY_PRESENCE as RemotePresence<TContext, TUser>[])),
+    () =>
+      client !== null ? client.getRemotePresence() : (EMPTY_PRESENCE as RemotePresence<TContext, TUser>[]),
     [client],
   );
-  return useSyncExternalStore(subscribe, getSnapshot, getServerPresence as () => RemotePresence<TContext, TUser>[]);
+  return useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    getServerPresence as () => RemotePresence<TContext, TUser>[],
+  );
 }

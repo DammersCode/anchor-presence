@@ -9,7 +9,11 @@ class FakeWebSocket implements WebSocketLike {
   static readonly OPEN = 1;
   static readonly CLOSED = 3;
 
-  static fire(instance: FakeWebSocket, kind: "open" | "close" | "error" | "message", payload?: unknown): void {
+  static fire(
+    instance: FakeWebSocket,
+    kind: "open" | "close" | "error" | "message",
+    payload?: unknown,
+  ): void {
     if (kind === "open") {
       instance.readyState = FakeWebSocket.OPEN;
       instance.onopen?.();
@@ -158,11 +162,11 @@ describe("createWebSocketTransport", () => {
   // a constructor that throws on the given attempt and delegates to FakeWebSocket otherwise
   function flakyCtor(throwOnAttempt: number): { ctor: WebSocketCtor; attempts: () => number } {
     let attempts = 0;
-    const ctor = (function (url: string) {
+    const ctor = function (url: string) {
       attempts += 1;
       if (attempts === throwOnAttempt) throw new Error("socket constructor failed");
       return new FakeWebSocket(url);
-    }) as unknown as WebSocketCtor;
+    } as unknown as WebSocketCtor;
     return { ctor, attempts: () => attempts };
   }
 
@@ -217,7 +221,11 @@ describe("createWebSocketTransport", () => {
 
   it("goes disconnected without throwing when the constructor fails and reconnect is off", () => {
     const { ctor: FailingWebSocket } = flakyCtor(1); // the only attempt throws
-    const transport = createWebSocketTransport({ url: TEST_URL, reconnect: false, WebSocketCtor: FailingWebSocket });
+    const transport = createWebSocketTransport({
+      url: TEST_URL,
+      reconnect: false,
+      WebSocketCtor: FailingWebSocket,
+    });
 
     expect(() => transport.connect?.()).not.toThrow();
     expect(transport.getStatus?.()).toBe("disconnected");
@@ -362,28 +370,45 @@ describe("createWebSocketTransport", () => {
   });
 
   it("builds the default URL from host, port, and path", () => {
-    const transport = createWebSocketTransport({ host: "relay.test", port: 9000, path: "/?room=main", WebSocketCtor: FakeWebSocket });
+    const transport = createWebSocketTransport({
+      host: "relay.test",
+      port: 9000,
+      path: "/?room=main",
+      WebSocketCtor: FakeWebSocket,
+    });
     void transport.connect?.();
 
     expect(lastSocket().url).toBe("ws://relay.test:9000/?room=main");
   });
 
   it("uses / as the default path when no query is supplied", () => {
-    const transport = createWebSocketTransport({ host: "relay.test", port: 9000, WebSocketCtor: FakeWebSocket });
+    const transport = createWebSocketTransport({
+      host: "relay.test",
+      port: 9000,
+      WebSocketCtor: FakeWebSocket,
+    });
     void transport.connect?.();
 
     expect(lastSocket().url).toBe("ws://relay.test:9000/");
   });
 
   it("appends an opt-in token to the upgrade URL, URL-encoded", () => {
-    const transport = createWebSocketTransport({ url: TEST_URL, token: "a b+c=d", WebSocketCtor: FakeWebSocket });
+    const transport = createWebSocketTransport({
+      url: TEST_URL,
+      token: "a b+c=d",
+      WebSocketCtor: FakeWebSocket,
+    });
     void transport.connect?.();
 
     expect(lastSocket().url).toBe("ws://relay.test/?room=main&token=a%20b%2Bc%3Dd");
   });
 
   it("appends the token with ? when the URL has no query", () => {
-    const transport = createWebSocketTransport({ url: "ws://relay.test/", token: "t", WebSocketCtor: FakeWebSocket });
+    const transport = createWebSocketTransport({
+      url: "ws://relay.test/",
+      token: "t",
+      WebSocketCtor: FakeWebSocket,
+    });
     void transport.connect?.();
 
     expect(lastSocket().url).toBe("ws://relay.test/?token=t");

@@ -6,7 +6,9 @@ import { openPair, moveToAnchor, expectAnchorNear, uniqueRoom } from "./helpers"
 // (cross-layout-chromium.spec.ts) runs chromium-only to keep CI time sane.
 
 test.describe("cross-layout core invariant", () => {
-  test("different-viewports: receiver resolves sender's anchor point onto its own layout", async ({ browser }) => {
+  test("different-viewports: receiver resolves sender's anchor point onto its own layout", async ({
+    browser,
+  }) => {
     const { sender, receiver, senderName } = await openPair(browser, {
       senderViewport: { width: 1280, height: 720 },
       receiverViewport: { width: 1920, height: 1080 },

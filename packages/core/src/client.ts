@@ -59,16 +59,10 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     options.publishIntervalMs ?? DEFAULT_PUBLISH_INTERVAL_MS,
   );
   const adaptiveOptions = options.adaptivePublish;
-  const highWatermarkBytes = Math.max(
-    0,
-    adaptiveOptions?.highWatermarkBytes ?? 64 * 1024,
-  );
+  const highWatermarkBytes = Math.max(0, adaptiveOptions?.highWatermarkBytes ?? 64 * 1024);
   const lowWatermarkBytes = Math.max(
     0,
-    Math.min(
-      adaptiveOptions?.lowWatermarkBytes ?? highWatermarkBytes / 2,
-      highWatermarkBytes,
-    ),
+    Math.min(adaptiveOptions?.lowWatermarkBytes ?? highWatermarkBytes / 2, highWatermarkBytes),
   );
   const slowPublishIntervalMs = Math.max(
     MIN_TIMER_INTERVAL_MS,
@@ -76,16 +70,12 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
   );
   const heartbeatMs = Math.max(MIN_TIMER_INTERVAL_MS, options.heartbeatMs ?? DEFAULT_HEARTBEAT_MS);
   const staleTimeoutMs =
-    options.staleTimeoutMs === undefined
-      ? undefined
-      : Math.max(MIN_STALE_TIMEOUT_MS, options.staleTimeoutMs);
+    options.staleTimeoutMs === undefined ? undefined : Math.max(MIN_STALE_TIMEOUT_MS, options.staleTimeoutMs);
 
   const clientId = options.clientId ?? idFactory();
   const session = idFactory();
 
-  const status = transport.subscribeStatus
-    ? (transport.getStatus?.() ?? "connecting")
-    : "connected";
+  const status = transport.subscribeStatus ? (transport.getStatus?.() ?? "connecting") : "connected";
 
   const devMode = isDevMode();
   let warnedAboutRemoteCap = false;

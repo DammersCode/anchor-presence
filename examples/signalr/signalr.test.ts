@@ -1,10 +1,6 @@
 import type { HubConnectionStatus } from "@dammers/use-signalr-react";
 import { describe, expect, it } from "vitest";
-import {
-  createSignalRTransport,
-  mapStatus,
-  type SignalRHarness,
-} from "./client/src/transport";
+import { createSignalRTransport, mapStatus, type SignalRHarness } from "./client/src/transport";
 
 // A fake harness standing in for the live use-signalr connection. The adapter
 // is the unit under test, so the connection is mocked, not spun up. `deliver`
@@ -123,17 +119,13 @@ describe("createSignalRTransport", () => {
     // No attachment while connecting.
     expect(fake.attachCount.n).toBe(0);
 
-    await expect(
-      transport.send(new TextEncoder().encode(JSON_MESSAGE)),
-    ).resolves.toBeUndefined();
+    await expect(transport.send(new TextEncoder().encode(JSON_MESSAGE))).resolves.toBeUndefined();
     expect(fake.received).toHaveLength(0);
 
     fake.setStatus("disconnected");
     fake.fireStatus();
 
-    await expect(
-      transport.send(new TextEncoder().encode(JSON_MESSAGE)),
-    ).resolves.toBeUndefined();
+    await expect(transport.send(new TextEncoder().encode(JSON_MESSAGE))).resolves.toBeUndefined();
     expect(fake.received).toHaveLength(0);
   });
 
@@ -141,9 +133,7 @@ describe("createSignalRTransport", () => {
     const fake = createHarness("connected");
     const { transport } = createSignalRTransport(fake.harness);
 
-    await expect(
-      transport.send(new TextEncoder().encode(JSON_MESSAGE)),
-    ).resolves.toBeUndefined();
+    await expect(transport.send(new TextEncoder().encode(JSON_MESSAGE))).resolves.toBeUndefined();
     expect(fake.received).toHaveLength(1);
     expect(JSON.parse(fake.received[0]!)).toMatchObject({
       clientId: "client-b",
@@ -207,12 +197,7 @@ describe("createSignalRTransport", () => {
 
     fake.setStatus("disconnected");
     fake.fireStatus();
-    expect(seen).toEqual([
-      "connecting",
-      "connected",
-      "reconnecting",
-      "disconnected",
-    ]);
+    expect(seen).toEqual(["connecting", "connected", "reconnecting", "disconnected"]);
 
     off();
   });

@@ -8,15 +8,11 @@ import { getPresenceClient } from "./cursors/setup";
 import { SignalRProvider, useSignalR, SERVER_URL } from "./signalr";
 import { createVisibilityPolicy } from "./cursors/visibility-policy";
 import type { LocalViewState } from "./cursors/visibility-policy";
-import {
-  interpolatorRegistry,
-  type InterpolatorStyle,
-} from "./cursors/interpolators";
+import { interpolatorRegistry, type InterpolatorStyle } from "./cursors/interpolators";
 import { useInterpolatorStyle } from "./use-interpolator-style";
 
 // Query-param routing (?page=bench) — no router dependency, per requirement 7.
-const isBenchRoute =
-  new URLSearchParams(window.location.search).get("page") === "bench";
+const isBenchRoute = new URLSearchParams(window.location.search).get("page") === "bench";
 
 // App's context effect is the single writer; the policy reads it synchronously each resolution.
 const localViewState: LocalViewState = { page: null, settingsOpen: false };
@@ -29,10 +25,7 @@ function Root() {
   if (isBenchRoute) return <BenchPage />;
 
   return (
-    <PresenceRoot
-      interpolatorStyle={interpolatorStyle}
-      onInterpolatorStyleChange={selectInterpolatorStyle}
-    />
+    <PresenceRoot interpolatorStyle={interpolatorStyle} onInterpolatorStyleChange={selectInterpolatorStyle} />
   );
 }
 

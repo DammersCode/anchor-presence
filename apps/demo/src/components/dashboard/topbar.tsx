@@ -14,7 +14,10 @@ export interface TopbarProps {
 
 export function Topbar({ userName, room, onOpenSettings }: TopbarProps) {
   return (
-    <header data-anchor="topbar" className="flex h-14 items-center gap-4 border-b border-gray-200 bg-white px-4">
+    <header
+      data-anchor="topbar"
+      className="flex h-14 items-center gap-4 border-b border-gray-200 bg-white px-4"
+    >
       <div data-anchor="topbar.search" className="max-w-sm flex-1">
         <Input placeholder="Search orders, customers, products…" aria-label="Search" />
       </div>

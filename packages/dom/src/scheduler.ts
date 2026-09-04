@@ -84,7 +84,8 @@ export function createGeometryScheduler<TSnapshot>(
   const ResizeObserverImpl =
     options.ResizeObserverCtor ?? (win as unknown as { ResizeObserver?: ResizeObserverCtor }).ResizeObserver;
   const MutationObserverImpl =
-    options.MutationObserverCtor ?? (win as unknown as { MutationObserver?: MutationObserverCtor }).MutationObserver;
+    options.MutationObserverCtor ??
+    (win as unknown as { MutationObserver?: MutationObserverCtor }).MutationObserver;
 
   let disposed = false;
   let attached = false;

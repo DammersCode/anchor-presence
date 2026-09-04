@@ -135,7 +135,10 @@ if (typeof Bun !== "undefined" && import.meta.main) {
         const now = Date.now();
         const elapsedMs = now - ws.data.lastRefill;
         if (elapsedMs > 0) {
-          ws.data.tokens = Math.min(RATE_CAPACITY, ws.data.tokens + (elapsedMs / 1000) * RATE_REFILL_PER_SECOND);
+          ws.data.tokens = Math.min(
+            RATE_CAPACITY,
+            ws.data.tokens + (elapsedMs / 1000) * RATE_REFILL_PER_SECOND,
+          );
           ws.data.lastRefill = now;
         }
         if (ws.data.tokens < 1) return;

@@ -61,9 +61,5 @@ export function LiveCursorProvider<TContext = unknown, TUser = unknown>(
     [client, activeBinding],
   );
 
-  return (
-    <LiveCursorContext.Provider value={value}>
-      {children}
-    </LiveCursorContext.Provider>
-  );
+  return <LiveCursorContext.Provider value={value}>{children}</LiveCursorContext.Provider>;
 }

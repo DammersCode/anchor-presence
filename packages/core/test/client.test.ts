@@ -768,7 +768,13 @@ describe("createPresenceClient publish retry backoff", () => {
       if (failing) throw new Error("boom");
     });
     const transport: LiveCursorTransport = { send, subscribe: vi.fn(() => () => {}) };
-    return { transport, send, setFailing: (value: boolean) => { failing = value; } };
+    return {
+      transport,
+      send,
+      setFailing: (value: boolean) => {
+        failing = value;
+      },
+    };
   }
 
   it("backs off exponentially while sends keep failing, capped at 2 s", () => {
@@ -1054,7 +1060,15 @@ describe("createPresenceClient dev-mode remote-cap warning", () => {
     });
 
     const remoteMessage = (clientId: string) =>
-      emit(jsonCodec.encode({ version: 1, clientId, session: `${clientId}-session`, sequence: 0, cursor: { anchors: [] } } as never));
+      emit(
+        jsonCodec.encode({
+          version: 1,
+          clientId,
+          session: `${clientId}-session`,
+          sequence: 0,
+          cursor: { anchors: [] },
+        } as never),
+      );
 
     remoteMessage("remote-1");
     expect(warnSpy).not.toHaveBeenCalled();

@@ -54,7 +54,9 @@ test.describe("clipped anchor occlusion", () => {
     }).toPass({ timeout: 5_000, intervals: [50, 100, 200] });
 
     const remoteCursor = receiver.locator(`[data-testid="remote-cursor"][data-cursor-name="${senderName}"]`);
-    const outOfView = receiver.locator(`[data-testid="presence-out-of-view"][data-cursor-name="${senderName}"]`);
+    const outOfView = receiver.locator(
+      `[data-testid="presence-out-of-view"][data-cursor-name="${senderName}"]`,
+    );
     await expect(receiver.locator('[data-testid="presence-count"]')).toHaveText(/[1-9]\d* online/);
     await expect(async () => {
       expect((await remoteCursor.count()) + (await outOfView.count())).toBeGreaterThan(0);
@@ -76,7 +78,11 @@ test.describe("clipped anchor occlusion", () => {
       room: uniqueRoom("precision-grid"),
     });
 
-    for (const [u, v] of [[0.1, 0.1], [0.5, 0.5], [0.9, 0.9]] as const) {
+    for (const [u, v] of [
+      [0.1, 0.1],
+      [0.5, 0.5],
+      [0.9, 0.9],
+    ] as const) {
       await moveToAnchor(sender, "stats.revenue", u, v);
       await expectAnchorNear(receiver, senderName, "stats.revenue", u, v, 2);
     }

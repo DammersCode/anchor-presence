@@ -188,7 +188,12 @@ export function validatePresence<TContext = unknown, TUser = unknown>(
     if (typeof session !== "string" || session.length < 1 || session.length > resolved.maxSessionLength) {
       return null;
     }
-    if (!isFiniteNumber(sequence) || !Number.isInteger(sequence) || sequence < 0 || sequence > resolved.maxSequence) {
+    if (
+      !isFiniteNumber(sequence) ||
+      !Number.isInteger(sequence) ||
+      sequence < 0 ||
+      sequence > resolved.maxSequence
+    ) {
       return null;
     }
 

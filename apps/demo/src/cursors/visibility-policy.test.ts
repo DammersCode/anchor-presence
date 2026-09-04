@@ -54,7 +54,9 @@ describe("createVisibilityPolicy", () => {
 
   it("hides a cursor on a different page", () => {
     const policy = policyFor({ page: "orders", settingsOpen: false });
-    expect(policy({ presence: presence({ page: "dashboard" }), resolution: resolution("anchor") })).toBe("hide");
+    expect(policy({ presence: presence({ page: "dashboard" }), resolution: resolution("anchor") })).toBe(
+      "hide",
+    );
   });
 
   it("shows a cursor on the same page", () => {
@@ -64,7 +66,9 @@ describe("createVisibilityPolicy", () => {
 
   it("shows a cursor while the local page is still unknown", () => {
     const policy = policyFor({ page: null, settingsOpen: false });
-    expect(policy({ presence: presence({ page: "dashboard" }), resolution: resolution("anchor") })).toBe("show");
+    expect(policy({ presence: presence({ page: "dashboard" }), resolution: resolution("anchor") })).toBe(
+      "show",
+    );
   });
 
   it("reads the current local state on every call", () => {

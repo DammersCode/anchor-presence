@@ -102,9 +102,9 @@ Wrap every decode call in `try`/`catch`. A malformed or truncated buffer must pr
 `decode` output is untrusted, even from a codec that never throws. Core passes every decoded value through `validatePresence()` before it reaches the store:
 
 ```ts
-const decoded = codec.decode(bytes);          // unknown
-const presence = validatePresence(decoded);   // CursorPresence | null
-if (presence === null) return;                // dropped
+const decoded = codec.decode(bytes); // unknown
+const presence = validatePresence(decoded); // CursorPresence | null
+if (presence === null) return; // dropped
 ```
 
 `validatePresence` checks every field against the limits in `docs/security.md`: version, ID lengths, sequence type, anchor count, coordinate ranges, and payload size. A message that fails any check is dropped in full; there is no partial acceptance of a malformed message.

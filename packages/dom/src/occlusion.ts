@@ -14,7 +14,9 @@ function intersect(first: Rect, second: Rect): Rect | null {
 }
 
 function clips(style: StyleValues): boolean {
-  return ![style.overflow, style.overflowX, style.overflowY].every((value) => value === "" || value === "visible");
+  return ![style.overflow, style.overflowX, style.overflowY].every(
+    (value) => value === "" || value === "visible",
+  );
 }
 
 type ClientBoxElement = Element & {
@@ -42,7 +44,8 @@ export function readClientRect(element: Element, rect: Rect): Rect {
     !isFiniteMetric(offsetWidth) ||
     offsetWidth <= 0 ||
     offsetHeight <= 0
-  ) return rect;
+  )
+    return rect;
   const scaleX = rect.width / offsetWidth;
   const scaleY = rect.height / offsetHeight;
   return {

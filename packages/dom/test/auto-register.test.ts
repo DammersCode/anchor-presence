@@ -292,7 +292,9 @@ describe("startAutoRegister", () => {
     expect(registry.get("a")).toBe(null);
 
     el.dataset.anchor = "a";
-    handle.handleRecords([{ type: "attributes", target: el, attributeName: "data-anchor" }] as unknown as MutationRecord[]);
+    handle.handleRecords([
+      { type: "attributes", target: el, attributeName: "data-anchor" },
+    ] as unknown as MutationRecord[]);
 
     expect(registry.get("a")).toBe(el);
 
@@ -314,7 +316,9 @@ describe("startAutoRegister", () => {
     expect(registry.get("dup")).toBe(el2);
 
     el2.remove();
-    handle.handleRecords([{ type: "childList", target: document.body, removedNodes: [el2], addedNodes: [] }] as unknown as MutationRecord[]);
+    handle.handleRecords([
+      { type: "childList", target: document.body, removedNodes: [el2], addedNodes: [] },
+    ] as unknown as MutationRecord[]);
 
     expect(registry.get("dup")).toBe(el1);
     expect(warnSpy).toHaveBeenCalledTimes(1);

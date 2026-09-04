@@ -31,13 +31,8 @@ export const CURSOR_PALETTE = [
 
 export const DEFAULT_CURSOR_COLOR = "#6b7280"; // gray-500 fallback for unrecognized colors
 
-export function isKnownCursorColor(
-  color: unknown,
-): color is (typeof CURSOR_PALETTE)[number] {
-  return (
-    typeof color === "string" &&
-    (CURSOR_PALETTE as readonly string[]).includes(color)
-  );
+export function isKnownCursorColor(color: unknown): color is (typeof CURSOR_PALETTE)[number] {
+  return typeof color === "string" && (CURSOR_PALETTE as readonly string[]).includes(color);
 }
 
 function hashString(value: string): number {
@@ -66,9 +61,7 @@ let client: PresenceClient<DemoContext, DemoUser> | null = null;
  * A PresenceClient is a one-way latch once disposed, so it must survive
  * StrictMode's double mount.
  */
-export function getPresenceClient(
-  ctx: UseSignalRCtx,
-): PresenceClient<DemoContext, DemoUser> {
+export function getPresenceClient(ctx: UseSignalRCtx): PresenceClient<DemoContext, DemoUser> {
   if (client !== null) return client;
 
   const { getConnection, statusStore } = ctx;
@@ -79,22 +72,18 @@ export function getPresenceClient(
   const hub: SignalRHarness = {
     send: (payload: string) => {
       const connection = getConnection(PRESENCE_HUB);
-      return connection
-        ? connection.send(METHOD_SEND, payload)
-        : Promise.resolve();
+      return connection ? connection.send(METHOD_SEND, payload) : Promise.resolve();
     },
     onConnected: (handler: (payload: string) => void) => {
       attachedHandler = handler;
       getConnection(PRESENCE_HUB)?.on(EVENT_RECEIVED, handler);
     },
     onDisconnected: () => {
-      if (attachedHandler !== null)
-        getConnection(PRESENCE_HUB)?.off(EVENT_RECEIVED, attachedHandler);
+      if (attachedHandler !== null) getConnection(PRESENCE_HUB)?.off(EVENT_RECEIVED, attachedHandler);
       attachedHandler = null;
     },
     getStatus: () => statusStore.get(PRESENCE_HUB),
-    subscribeStatus: (listener: () => void) =>
-      statusStore.subscribe(PRESENCE_HUB, listener),
+    subscribeStatus: (listener: () => void) => statusStore.subscribe(PRESENCE_HUB, listener),
   };
 
   // Shortened timeouts for a quick stale-cursor check: ?stale-ms=12000&heartbeat-ms=2000

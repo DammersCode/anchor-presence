@@ -36,7 +36,15 @@
     "no-lonely-if": "off",
     "unicorn/explicit-length-check": "off"
   },
-  "ignorePatterns": ["**/dist/**", "**/node_modules/**", "examples/**", "apps/**", "e2e/**", "test-results/**", ".claude/**"],
+  "ignorePatterns": [
+    "**/dist/**",
+    "**/node_modules/**",
+    "examples/**",
+    "apps/**",
+    "e2e/**",
+    "test-results/**",
+    ".claude/**"
+  ],
   "overrides": [
     {
       "files": ["**/*.test.ts", "**/*.test.tsx", "**/test/**", "**/bench/**"],

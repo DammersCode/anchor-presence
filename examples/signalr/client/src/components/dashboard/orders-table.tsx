@@ -1,20 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "../ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { orders, type Order, type OrderStatus } from "../../data/orders";
 
-const STATUS_VARIANT: Record<
-  OrderStatus,
-  "success" | "warning" | "danger" | "neutral"
-> = {
+const STATUS_VARIANT: Record<OrderStatus, "success" | "warning" | "danger" | "neutral"> = {
   paid: "success",
   pending: "warning",
   refunded: "neutral",
@@ -38,46 +28,26 @@ function OrderRow({
   onDelete: (orderId: string) => void;
 }) {
   return (
-    <TableRow
-      data-anchor={`orders.row:${index}`}
-      data-testid={`anchor-orders.row:${index}`}
-    >
-      <TableCell
-        data-anchor={`orders.row:${index}.id`}
-        className="font-medium text-gray-900"
-      >
+    <TableRow data-anchor={`orders.row:${index}`} data-testid={`anchor-orders.row:${index}`}>
+      <TableCell data-anchor={`orders.row:${index}.id`} className="font-medium text-gray-900">
         {order.id}
       </TableCell>
-      <TableCell
-        data-anchor={`orders.row:${index}.customer`}
-        className="min-w-32"
-      >
+      <TableCell data-anchor={`orders.row:${index}.customer`} className="min-w-32">
         <div className="flex flex-col">
           <span className="text-gray-900">{order.customer}</span>
-          <span className="text-xs text-gray-500 sm:text-gray-400">
-            {order.email}
-          </span>
+          <span className="text-xs text-gray-500 sm:text-gray-400">{order.email}</span>
         </div>
       </TableCell>
-      <TableCell
-        data-anchor={`orders.row:${index}.date`}
-        className="hidden whitespace-nowrap sm:table-cell"
-      >
+      <TableCell data-anchor={`orders.row:${index}.date`} className="hidden whitespace-nowrap sm:table-cell">
         {order.date}
       </TableCell>
       <TableCell data-anchor={`orders.row:${index}.status`}>
         <Badge variant={STATUS_VARIANT[order.status]}>{order.status}</Badge>
       </TableCell>
-      <TableCell
-        data-anchor={`orders.row:${index}.amount`}
-        className="text-right tabular-nums"
-      >
+      <TableCell data-anchor={`orders.row:${index}.amount`} className="text-right tabular-nums">
         ${order.amount.toFixed(2)}
       </TableCell>
-      <TableCell
-        data-anchor={`orders.row:${index}.actions`}
-        className="text-right"
-      >
+      <TableCell data-anchor={`orders.row:${index}.actions`} className="text-right">
         <div className="flex justify-end gap-2">
           <Button
             data-anchor={`orders.row:${index}.actions.view`}
@@ -105,9 +75,7 @@ export function OrdersTable({ onView, onDelete }: OrdersTableProps) {
   return (
     <Card data-anchor="orders">
       <CardHeader>
-        <CardTitle className="text-base font-semibold text-gray-900">
-          Orders
-        </CardTitle>
+        <CardTitle className="text-base font-semibold text-gray-900">Orders</CardTitle>
       </CardHeader>
       <CardContent className="overflow-hidden p-0">
         <Table data-anchor="orders.table" className="min-w-[28rem]">
@@ -123,13 +91,7 @@ export function OrdersTable({ onView, onDelete }: OrdersTableProps) {
           </TableHeader>
           <TableBody>
             {orders.map((order, index) => (
-              <OrderRow
-                key={order.id}
-                order={order}
-                index={index}
-                onView={onView}
-                onDelete={onDelete}
-              />
+              <OrderRow key={order.id} order={order} index={index} onView={onView} onDelete={onDelete} />
             ))}
           </TableBody>
         </Table>

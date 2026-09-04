@@ -13,8 +13,10 @@ const manifests = [];
 for (const dir of ["packages", "apps", "examples"]) {
   for (const name of readdirSync(join(rootDir, dir))) {
     const base = join(rootDir, dir, name);
-    if (existsSync(join(base, "package.json"))) manifests.push({ path: base, setsVersion: dir === "packages" });
-    if (existsSync(join(base, "client", "package.json"))) manifests.push({ path: join(base, "client"), setsVersion: false });
+    if (existsSync(join(base, "package.json")))
+      manifests.push({ path: base, setsVersion: dir === "packages" });
+    if (existsSync(join(base, "client", "package.json")))
+      manifests.push({ path: join(base, "client"), setsVersion: false });
   }
 }
 

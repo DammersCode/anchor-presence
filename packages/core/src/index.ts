@@ -21,11 +21,7 @@ export {
 export { validatePresence } from "./validate.js";
 export type { ValidationLimits } from "./validate.js";
 
-export {
-  DEFAULT_MAX_REMOTE_CLIENTS,
-  DEFAULT_STALE_TIMEOUT_MS,
-  RemotePresenceStore,
-} from "./store.js";
+export { DEFAULT_MAX_REMOTE_CLIENTS, DEFAULT_STALE_TIMEOUT_MS, RemotePresenceStore } from "./store.js";
 export type { RemotePresenceStoreOptions } from "./store.js";
 
 export { jsonCodec } from "./codec.js";
@@ -37,11 +33,7 @@ export type { LiveCursorTransport } from "./transport.js";
 export { createInMemoryPair } from "./in-memory-transport.js";
 export type { InMemoryPair, InMemoryPairOptions, InMemoryTransport } from "./in-memory-transport.js";
 
-export {
-  createPresenceClient,
-  DEFAULT_HEARTBEAT_MS,
-  DEFAULT_PUBLISH_INTERVAL_MS,
-} from "./client.js";
+export { createPresenceClient, DEFAULT_HEARTBEAT_MS, DEFAULT_PUBLISH_INTERVAL_MS } from "./client.js";
 export type {
   AdaptivePublishOptions,
   PresenceClient,

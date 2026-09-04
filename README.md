@@ -47,22 +47,22 @@ Open your app in two browser windows. Move the pointer in one window. A live cur
 
 ## Requirements
 
-| Requirement | Version |
-|---|---|
-| React | 18 or later |
-| TypeScript | 5.9 or later |
-| Browser | Current versions of Chrome, Edge, Firefox, and Safari |
-| Bun | Needed to run the demo and the relay |
+| Requirement | Version                                               |
+| ----------- | ----------------------------------------------------- |
+| React       | 18 or later                                           |
+| TypeScript  | 5.9 or later                                          |
+| Browser     | Current versions of Chrome, Edge, Firefox, and Safari |
+| Bun         | Needed to run the demo and the relay                  |
 
 ## Packages
 
-| Package | Description | Link |
-|---|---|---|
-| `@anchor-presence/core` | Protocol, validation, presence store, client orchestration. Zero dependencies, no DOM globals. | [`packages/core`](packages/core/README.md) |
-| `@anchor-presence/dom` | Anchor registry, pointer capture, geometry scheduler, resolver. | [`packages/dom`](packages/dom/README.md) |
-| `@anchor-presence/react` | Provider component and hooks, built on `useSyncExternalStore`. | [`packages/react`](packages/react/README.md) |
-| `apps/demo` | React admin dashboard demonstrating cross-layout cursor correctness. | [`apps/demo`](apps/demo/README.md) |
-| `apps/server` | Bun WebSocket relay for the demo. | [`apps/server`](apps/server) |
+| Package                  | Description                                                                                    | Link                                         |
+| ------------------------ | ---------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| `@anchor-presence/core`  | Protocol, validation, presence store, client orchestration. Zero dependencies, no DOM globals. | [`packages/core`](packages/core/README.md)   |
+| `@anchor-presence/dom`   | Anchor registry, pointer capture, geometry scheduler, resolver.                                | [`packages/dom`](packages/dom/README.md)     |
+| `@anchor-presence/react` | Provider component and hooks, built on `useSyncExternalStore`.                                 | [`packages/react`](packages/react/README.md) |
+| `apps/demo`              | React admin dashboard demonstrating cross-layout cursor correctness.                           | [`apps/demo`](apps/demo/README.md)           |
+| `apps/server`            | Bun WebSocket relay for the demo.                                                              | [`apps/server`](apps/server)                 |
 
 ## Features
 
@@ -75,29 +75,29 @@ Open your app in two browser windows. Move the pointer in one window. A live cur
 
 ## Docs
 
-| File | What it covers |
-|---|---|
-| [`docs/architecture.md`](docs/architecture.md) | Package layers, sender-to-receiver flow, the 10 invariants |
-| [`docs/concepts.md`](docs/concepts.md) | Anchors, anchor IDs, normalized coordinates, fallback chains, resolution tiers |
-| [`docs/responsive-layouts.md`](docs/responsive-layouts.md) | How layout differences resolve, with a worked example |
-| [`docs/ui-context.md`](docs/ui-context.md) | Opaque context, visibility policies, dialog mismatch handling |
-| [`docs/react.md`](docs/react.md) | Provider and hook reference, custom interpolation, examples |
-| [`docs/transports.md`](docs/transports.md) | The transport interface, plus WebSocket, Socket.IO, SignalR, and BroadcastChannel examples |
-| [`docs/codecs.md`](docs/codecs.md) | The codec interface, `jsonCodec`, `binaryCodec`, a MessagePack sketch, and the validation boundary |
-| [`docs/performance.md`](docs/performance.md) | The geometry scheduler model and performance guidance |
-| [`docs/security.md`](docs/security.md) | Validation limits, anchor ID safety, rendering rules |
-| [`docs/troubleshooting.md`](docs/troubleshooting.md) | Common problems and their causes |
+| File                                                       | What it covers                                                                                     |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| [`docs/architecture.md`](docs/architecture.md)             | Package layers, sender-to-receiver flow, the 10 invariants                                         |
+| [`docs/concepts.md`](docs/concepts.md)                     | Anchors, anchor IDs, normalized coordinates, fallback chains, resolution tiers                     |
+| [`docs/responsive-layouts.md`](docs/responsive-layouts.md) | How layout differences resolve, with a worked example                                              |
+| [`docs/ui-context.md`](docs/ui-context.md)                 | Opaque context, visibility policies, dialog mismatch handling                                      |
+| [`docs/react.md`](docs/react.md)                           | Provider and hook reference, custom interpolation, examples                                        |
+| [`docs/transports.md`](docs/transports.md)                 | The transport interface, plus WebSocket, Socket.IO, SignalR, and BroadcastChannel examples         |
+| [`docs/codecs.md`](docs/codecs.md)                         | The codec interface, `jsonCodec`, `binaryCodec`, a MessagePack sketch, and the validation boundary |
+| [`docs/performance.md`](docs/performance.md)               | The geometry scheduler model and performance guidance                                              |
+| [`docs/security.md`](docs/security.md)                     | Validation limits, anchor ID safety, rendering rules                                               |
+| [`docs/troubleshooting.md`](docs/troubleshooting.md)       | Common problems and their causes                                                                   |
 
 See also [SPECIFICATION.md](SPECIFICATION.md) for the full technical specification.
 
 ## Transport examples
 
-| Example | What it shows |
-|---|---|
-| [`apps/demo`](apps/demo/README.md) | The full React demo with a plain WebSocket relay |
-| [`apps/server`](apps/server) | The Bun WebSocket relay used by the demo |
-| [`examples/socketio`](examples/socketio/README.md) | A Socket.IO transport |
-| [`examples/signalr`](examples/signalr/README.md) | An ASP.NET Core SignalR transport |
+| Example                                            | What it shows                                    |
+| -------------------------------------------------- | ------------------------------------------------ |
+| [`apps/demo`](apps/demo/README.md)                 | The full React demo with a plain WebSocket relay |
+| [`apps/server`](apps/server)                       | The Bun WebSocket relay used by the demo         |
+| [`examples/socketio`](examples/socketio/README.md) | A Socket.IO transport                            |
+| [`examples/signalr`](examples/signalr/README.md)   | An ASP.NET Core SignalR transport                |
 
 ## Run the demo
 
@@ -151,38 +151,38 @@ The sender never measures the DOM of the receiver. It sends a semantic anchor ID
 
 ## Capability matrix
 
-| Capability | React |
-|---|---|
-| Semantic anchors | ✅ |
-| `[data-anchor]` anchors with always-on auto-registration and configurable `anchorAttribute` | ✅ |
-| Fallback chains | ✅ |
-| Viewport fallback | ✅ |
-| UI context visibility policies (route- or dialog-aware, application-defined) | ✅ |
-| Occlusion detection (clipped-ancestor + optional hit-test) | ✅ |
-| Interpolation (`none`, `linear`, or a custom `Interpolator`) | ✅ |
-| Transport-agnostic (bring your own WebSocket, Socket.IO, SignalR, `BroadcastChannel`) | ✅ |
-| Delta `context`/`user` wire encoding + optional adaptive publish rate | ✅ |
-| SSR-safe hooks | ✅ |
-| Mobile viewing (read-only presence) | ✅ |
-| Mobile sending (touch as a pointer source) | not supported |
+| Capability                                                                                  | React         |
+| ------------------------------------------------------------------------------------------- | ------------- |
+| Semantic anchors                                                                            | ✅            |
+| `[data-anchor]` anchors with always-on auto-registration and configurable `anchorAttribute` | ✅            |
+| Fallback chains                                                                             | ✅            |
+| Viewport fallback                                                                           | ✅            |
+| UI context visibility policies (route- or dialog-aware, application-defined)                | ✅            |
+| Occlusion detection (clipped-ancestor + optional hit-test)                                  | ✅            |
+| Interpolation (`none`, `linear`, or a custom `Interpolator`)                                | ✅            |
+| Transport-agnostic (bring your own WebSocket, Socket.IO, SignalR, `BroadcastChannel`)       | ✅            |
+| Delta `context`/`user` wire encoding + optional adaptive publish rate                       | ✅            |
+| SSR-safe hooks                                                                              | ✅            |
+| Mobile viewing (read-only presence)                                                         | ✅            |
+| Mobile sending (touch as a pointer source)                                                  | not supported |
 
 ## Pick by intent
 
 **Resolution tier.** What the receiver shows for a resolved cursor:
 
-| Tier | Use it when |
-|---|---|
-| `anchor` | The exact element, or a registered parent, exists on the receiver. Use this as the default. Most cursors land here. |
-| `viewport` | No anchor in the fallback chain resolved. Use it to keep a cursor visible on a page with no matching anchors. |
-| `hidden` | Nothing resolved, or a visibility policy chose to hide the cursor. |
+| Tier       | Use it when                                                                                                         |
+| ---------- | ------------------------------------------------------------------------------------------------------------------- |
+| `anchor`   | The exact element, or a registered parent, exists on the receiver. Use this as the default. Most cursors land here. |
+| `viewport` | No anchor in the fallback chain resolved. Use it to keep a cursor visible on a page with no matching anchors.       |
+| `hidden`   | Nothing resolved, or a visibility policy chose to hide the cursor.                                                  |
 
 **Visibility policy outcome.** What to return from a custom `VisibilityPolicy`:
 
-| Outcome | Use it when |
-|---|---|
-| `"show"` (default at `anchor`/`viewport`) | Geometric resolution alone decides correctly. Use this for most UI. |
-| `"hide"` on context mismatch | The `context.dialog` value of the sender names a dialog that the receiver has not opened. |
-| `"hide"` on `!pointVisible` | A clipping ancestor hides the resolved point. |
+| Outcome                                   | Use it when                                                                               |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `"show"` (default at `anchor`/`viewport`) | Geometric resolution alone decides correctly. Use this for most UI.                       |
+| `"hide"` on context mismatch              | The `context.dialog` value of the sender names a dialog that the receiver has not opened. |
+| `"hide"` on `!pointVisible`               | A clipping ancestor hides the resolved point.                                             |
 
 ## Agent skill
 

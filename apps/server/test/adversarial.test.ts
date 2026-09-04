@@ -299,7 +299,11 @@ describe("adversarial relay e2e", () => {
     junk.write(maskedFrame(0x2, unknownVersion));
     junk.write(maskedFrame(0x2, valid));
 
-    await waitUntil(() => entryFor(receiver, "junk-peer") !== undefined, 3000, "valid message from junk peer");
+    await waitUntil(
+      () => entryFor(receiver, "junk-peer") !== undefined,
+      3000,
+      "valid message from junk peer",
+    );
     expect(entryFor(receiver, "junk-peer")?.sequence).toBe(1);
     expect(receiver.getRemoteSnapshot()).toHaveLength(1);
     expect(transport.getStatus()).toBe("connected");
@@ -414,7 +418,13 @@ describe("adversarial relay e2e", () => {
     evil.write(maskedFrame(0x2, first));
     await waitUntil(() => entryFor(receiver, spoofedId)?.sequence === 1, 3000, "sequence 1 ingested");
 
-    const spoof = binaryCodec.encode({ version: 1, clientId: spoofedId, session: "s", sequence: 2, cursor: null });
+    const spoof = binaryCodec.encode({
+      version: 1,
+      clientId: spoofedId,
+      session: "s",
+      sequence: 2,
+      cursor: null,
+    });
     new DataView(spoof.buffer).setUint32(9, 0xffffffff, true); // above DEFAULT_MAX_SEQUENCE
     evil.write(maskedFrame(0x2, spoof));
     await new Promise((resolve) => setTimeout(resolve, 400));
@@ -539,7 +549,9 @@ describe("adversarial relay e2e", () => {
       ...readState,
       getRect: (element) => (element === stub ? { left: 0, top: 0, width: 100, height: 200 } : undefined),
       getClientRect: (element) =>
-        element === stub ? { left: 0, top: 0, width: 100, height: 200 } : { left: 0, top: 0, width: 1, height: 1 },
+        element === stub
+          ? { left: 0, top: 0, width: 100, height: 200 }
+          : { left: 0, top: 0, width: 1, height: 1 },
     });
     expect(registered.tier).toBe("anchor");
     expect(registered.element).toBe(stub);

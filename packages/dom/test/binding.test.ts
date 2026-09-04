@@ -125,7 +125,11 @@ function buildNestedAnchors(count: number): Element {
 }
 
 function firePointerMove(target: Element): void {
-  const event = new Event("pointermove", { bubbles: true, cancelable: true, composed: true }) as PointerEvent & {
+  const event = new Event("pointermove", {
+    bubbles: true,
+    cancelable: true,
+    composed: true,
+  }) as PointerEvent & {
     clientX: number;
     clientY: number;
   };
@@ -254,14 +258,18 @@ describe("createDomBinding", () => {
 
     const { raf, caf, flush } = makeRafStub();
     const { client, pushRemote } = makeFakeClient();
-    const binding = createDomBinding(client, { environment: { raf, caf, ResizeObserverCtor: ResizeObserverStub } });
-    pushRemote([{
-      version: 1,
-      clientId: "remote-1",
-      session: "s",
-      sequence: 1,
-      cursor: { anchors: [{ id: "a", u: 0.5, v: 0.5 }] },
-    }]);
+    const binding = createDomBinding(client, {
+      environment: { raf, caf, ResizeObserverCtor: ResizeObserverStub },
+    });
+    pushRemote([
+      {
+        version: 1,
+        clientId: "remote-1",
+        session: "s",
+        sequence: 1,
+        cursor: { anchors: [{ id: "a", u: 0.5, v: 0.5 }] },
+      },
+    ]);
     flush();
 
     expect(observe).toHaveBeenCalledWith(clip);
@@ -295,7 +303,10 @@ describe("createDomBinding", () => {
     flush();
 
     // active: scroll listener attached
-    expect(addEventListenerSpy).toHaveBeenCalledWith("scroll", expect.any(Function), { capture: true, passive: true });
+    expect(addEventListenerSpy).toHaveBeenCalledWith("scroll", expect.any(Function), {
+      capture: true,
+      passive: true,
+    });
 
     // the same clientId goes idle (cursor: null) — active must derive from non-null cursors, not store entry count
     pushRemote([{ version: 1, clientId: "remote-1", session: "s", sequence: 2, cursor: null }]);
@@ -478,7 +489,10 @@ describe("createDomBinding", () => {
     const { raf: raf2, caf: caf2 } = makeRafStub();
     const narrow: (CursorPosition | null)[] = [];
     const narrowClient = makeCapturingClient(narrow);
-    const narrowBinding = createDomBinding(narrowClient, { maxAnchors: 0, environment: { raf: raf2, caf: caf2 } });
+    const narrowBinding = createDomBinding(narrowClient, {
+      maxAnchors: 0,
+      environment: { raf: raf2, caf: caf2 },
+    });
 
     firePointerMove(deepestAgain);
     expect(narrow[0]?.anchors.map((a) => a.id)).toEqual(["level-8"]);

@@ -5,7 +5,10 @@ const DEFAULT_CLIENT_KEY = "__default__";
 
 const clientRegistry = new Map<string, PresenceClient>();
 
-function wrapClient<TContext, TUser>(client: PresenceClient<TContext, TUser>, key: string): PresenceClient<TContext, TUser> {
+function wrapClient<TContext, TUser>(
+  client: PresenceClient<TContext, TUser>,
+  key: string,
+): PresenceClient<TContext, TUser> {
   return {
     ...client,
     dispose: () => {

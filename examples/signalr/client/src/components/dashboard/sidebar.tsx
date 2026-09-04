@@ -46,14 +46,10 @@ function NavButton({
       className={cn(
         "flex h-9 items-center rounded-lg text-sm font-medium transition-colors",
         collapsed ? "w-9 justify-center" : "gap-3 px-3",
-        isActive
-          ? "bg-indigo-50 text-indigo-700"
-          : "text-gray-600 hover:bg-gray-100",
+        isActive ? "bg-indigo-50 text-indigo-700" : "text-gray-600 hover:bg-gray-100",
       )}
     >
-      <span className="flex w-4 shrink-0 justify-center text-center">
-        {item.icon}
-      </span>
+      <span className="flex w-4 shrink-0 justify-center text-center">{item.icon}</span>
       {!collapsed && <span className="truncate">{item.label}</span>}
     </button>
   );
@@ -84,10 +80,7 @@ export function Sidebar({
     >
       <div className="flex h-14 items-center justify-between px-3">
         {!collapsed && (
-          <span
-            data-anchor="sidebar.brand"
-            className="truncate text-sm font-semibold text-gray-900"
-          >
+          <span data-anchor="sidebar.brand" className="truncate text-sm font-semibold text-gray-900">
             Anchor Admin
           </span>
         )}
@@ -101,23 +94,15 @@ export function Sidebar({
           className="ml-auto hidden shrink-0 md:inline-flex"
         >
           {/* Chevron glyphs sit left of the em box; nudge them onto the optical center. */}
-          <span
-            className={
-              collapsed ? "translate-x-[0.5px]" : "-translate-x-[0.5px]"
-            }
-          >
+          <span className={collapsed ? "translate-x-[0.5px]" : "-translate-x-[0.5px]"}>
             {collapsed ? "»" : "«"}
           </span>
         </Button>
       </div>
 
-      <nav
-        data-anchor="sidebar.nav"
-        className="flex flex-1 flex-col gap-1 overflow-y-auto px-2 py-2"
-      >
+      <nav data-anchor="sidebar.nav" className="flex flex-1 flex-col gap-1 overflow-y-auto px-2 py-2">
         {NAV_ITEMS.map((item) => {
-          const handleClick =
-            item.id === "settings" ? onOpenSettings : () => onSelect(item.id);
+          const handleClick = item.id === "settings" ? onOpenSettings : () => onSelect(item.id);
           return (
             <NavButton
               key={item.id}

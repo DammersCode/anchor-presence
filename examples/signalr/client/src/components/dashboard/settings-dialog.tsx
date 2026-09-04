@@ -45,13 +45,18 @@ function InterpolatorStyleRow({
   );
 }
 
-function ToggleRow({ anchorId, label, description }: { anchorId: string; label: string; description: string }) {
+function ToggleRow({
+  anchorId,
+  label,
+  description,
+}: {
+  anchorId: string;
+  label: string;
+  description: string;
+}) {
   const [enabled, setEnabled] = useState(true);
   return (
-    <div
-      data-anchor={`settings.dialog.${anchorId}`}
-      className="flex items-center justify-between gap-4"
-    >
+    <div data-anchor={`settings.dialog.${anchorId}`} className="flex items-center justify-between gap-4">
       <div>
         <p className="text-sm font-medium text-gray-900">{label}</p>
         <p className="text-xs text-gray-500">{description}</p>
@@ -86,20 +91,12 @@ export function SettingsDialog({
   const [workspaceName, setWorkspaceName] = useState("Acme Storefront");
 
   return (
-    <Dialog
-      data-anchor="settings.dialog"
-      data-testid="anchor-settings.dialog"
-      open={open}
-      onClose={onClose}
-    >
+    <Dialog data-anchor="settings.dialog" data-testid="anchor-settings.dialog" open={open} onClose={onClose}>
       <DialogHeader>
         <DialogTitle>Workspace settings</DialogTitle>
       </DialogHeader>
       <DialogBody>
-        <div
-          data-anchor="settings.dialog.workspaceName"
-          className="flex flex-col gap-1.5"
-        >
+        <div data-anchor="settings.dialog.workspaceName" className="flex flex-col gap-1.5">
           <label htmlFor="workspace-name" className="text-sm font-medium text-gray-700">
             Workspace name
           </label>

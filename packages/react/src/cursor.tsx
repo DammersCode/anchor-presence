@@ -36,7 +36,9 @@ export type CursorLayerProps<TContext = unknown, TUser = unknown> = {
   /** Hides a cursor when it returns `false`. Default: show every visible cursor. */
   filterCursor?: (cursor: ResolvedCursor<TContext, TUser>) => boolean;
   /** Returns extra props for the cursor element. */
-  getCursorProps?: (cursor: ResolvedCursor<TContext, TUser>) => Omit<ComponentPropsWithoutRef<"div">, "children">;
+  getCursorProps?: (
+    cursor: ResolvedCursor<TContext, TUser>,
+  ) => Omit<ComponentPropsWithoutRef<"div">, "children">;
   /** Renders one cursor. Default: the `DefaultCursor` component. */
   renderCursor?: (props: CursorRenderProps<TContext, TUser>) => ReactNode;
 };
@@ -55,7 +57,9 @@ export type DefaultCursorProps = {
   style?: CSSProperties &
     Partial<
       Record<
-        "--anchor-presence-cursor-color" | "--anchor-presence-cursor-size" | "--anchor-presence-cursor-label-color",
+        | "--anchor-presence-cursor-color"
+        | "--anchor-presence-cursor-size"
+        | "--anchor-presence-cursor-label-color",
         string
       >
     >;

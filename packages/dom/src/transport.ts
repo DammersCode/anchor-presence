@@ -84,7 +84,8 @@ function withToken(url: string, token: string): string {
  * @returns A transport for the client.
  */
 export function createWebSocketTransport(options: WebSocketTransportOptions = {}): WebSocketTransport {
-  const url = options.token !== undefined ? withToken(resolveUrl(options), options.token) : resolveUrl(options);
+  const url =
+    options.token !== undefined ? withToken(resolveUrl(options), options.token) : resolveUrl(options);
   const reconnect = options.reconnect ?? true;
   const baseBackoffMs = options.baseBackoffMs ?? 500;
   const maxBackoffMs = options.maxBackoffMs ?? 8_000;

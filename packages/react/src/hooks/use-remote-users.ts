@@ -15,7 +15,11 @@ export type RemoteUser<TUser = unknown> = {
 };
 
 function projectRemoteUsers<TUser>(snapshot: RemotePresence<unknown, TUser>[]): RemoteUser<TUser>[] {
-  return snapshot.map((p) => ({ clientId: p.clientId, user: p.user === null ? undefined : p.user, session: p.session }));
+  return snapshot.map((p) => ({
+    clientId: p.clientId,
+    user: p.user === null ? undefined : p.user,
+    session: p.session,
+  }));
 }
 
 /**

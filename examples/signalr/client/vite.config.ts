@@ -3,10 +3,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 
 export default defineConfig({
-  plugins: [
-    react({ babel: { plugins: [["babel-plugin-react-compiler", {}]] } }),
-    tailwindcss(),
-  ],
+  plugins: [react({ babel: { plugins: [["babel-plugin-react-compiler", {}]] } }), tailwindcss()],
   server: {
     port: 5173,
   },

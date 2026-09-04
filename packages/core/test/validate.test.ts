@@ -81,9 +81,7 @@ describe("validatePresence", () => {
     const anchors = Array.from({ length: 12 }, (_, i) => ({ id: `anchor-${i}`, u: 0.5, v: 0.5 }));
     const result = validatePresence(baseMessage({ cursor: { anchors } }));
     expect(result?.cursor?.anchors).toHaveLength(8);
-    expect(result?.cursor?.anchors.map((a) => a.id)).toEqual(
-      anchors.slice(0, 8).map((a) => a.id),
-    );
+    expect(result?.cursor?.anchors.map((a) => a.id)).toEqual(anchors.slice(0, 8).map((a) => a.id));
   });
 
   it("drops an individual anchor entry with a bad id", () => {
@@ -194,8 +192,12 @@ describe("validatePresence", () => {
   });
 
   it("respects an overridden maxFieldDepth", () => {
-    expect(validatePresence(baseMessage({ context: nested(3) }), { maxFieldDepth: 2 })?.context).toBeUndefined();
-    expect(validatePresence(baseMessage({ context: nested(2) }), { maxFieldDepth: 2 })?.context).toBeDefined();
+    expect(
+      validatePresence(baseMessage({ context: nested(3) }), { maxFieldDepth: 2 })?.context,
+    ).toBeUndefined();
+    expect(
+      validatePresence(baseMessage({ context: nested(2) }), { maxFieldDepth: 2 })?.context,
+    ).toBeDefined();
   });
 
   it("drops a cyclic context field without throwing", () => {

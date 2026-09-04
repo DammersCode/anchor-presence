@@ -1,5 +1,10 @@
 import type { CursorCodec } from "./codec.js";
-import { DEFAULT_MAX_SEQUENCE, type CursorPosition, type CursorPresence, type PointerInfo } from "./protocol.js";
+import {
+  DEFAULT_MAX_SEQUENCE,
+  type CursorPosition,
+  type CursorPresence,
+  type PointerInfo,
+} from "./protocol.js";
 
 const MAGIC = 0x41;
 const FORMAT = 2;
@@ -80,7 +85,11 @@ function encodeMessage(message: CursorPresence): Uint8Array {
   if (clientIdBytes.byteLength > 0xffff) throw new Error("binaryCodec: clientId too large");
   const sessionBytes = encoder.encode(message.session);
   if (sessionBytes.byteLength > 0xffff) throw new Error("binaryCodec: session too large");
-  if (!Number.isSafeInteger(message.sequence) || message.sequence < 0 || message.sequence > DEFAULT_MAX_SEQUENCE) {
+  if (
+    !Number.isSafeInteger(message.sequence) ||
+    message.sequence < 0 ||
+    message.sequence > DEFAULT_MAX_SEQUENCE
+  ) {
     throw new Error("binaryCodec: sequence out of range");
   }
 
@@ -99,7 +108,8 @@ function encodeMessage(message: CursorPresence): Uint8Array {
     for (const anchor of cursor.anchors) {
       const id = encoder.encode(anchor.id);
       if (id.byteLength > 0xffff) throw new Error("binaryCodec: anchor id too large");
-      if (!Number.isFinite(anchor.u) || !Number.isFinite(anchor.v)) throw new Error("binaryCodec: invalid anchor");
+      if (!Number.isFinite(anchor.u) || !Number.isFinite(anchor.v))
+        throw new Error("binaryCodec: invalid anchor");
       anchorParts.push({ id, u: anchor.u, v: anchor.v });
       cursorSize += 2 + id.byteLength + 8;
     }

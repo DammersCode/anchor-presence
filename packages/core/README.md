@@ -27,18 +27,18 @@ Core imports no DOM, React, transport, or codec library, so it does not know wha
 
 ## Main exports
 
-| Export | What it does |
-|---|---|
-| `createPresenceClient(options)` | Wires the transport, codec, publishing, sequencing, expiry, and the remote presence store into one client |
-| `CursorPresence`, `AnchorPoint`, `CursorPosition` | Wire protocol types |
-| `RemotePresence` | A remote presence without `sequence`; the shape of the render-stable snapshot |
-| `validatePresence(input, limits?)` | Validates and clamps an untrusted decoded value |
-| `jsonCodec` | The default `CursorCodec` implementation |
-| `binaryCodec` | A compact `CursorCodec` for binary WebSocket relays |
-| `LiveCursorTransport`, `ConnectionStatus` | The transport interface |
-| `AdaptivePublishOptions` | Opt-in slow-mode options for the publish rate |
-| `createInMemoryPair` | A 2-peer in-memory transport for tests |
-| `RemotePresenceStore` | Sequencing, field-delta merge, and stale-expiry store for remote presences |
-| `linearInterpolator`, `noneInterpolator` | Interpolation factories |
+| Export                                            | What it does                                                                                              |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `createPresenceClient(options)`                   | Wires the transport, codec, publishing, sequencing, expiry, and the remote presence store into one client |
+| `CursorPresence`, `AnchorPoint`, `CursorPosition` | Wire protocol types                                                                                       |
+| `RemotePresence`                                  | A remote presence without `sequence`; the shape of the render-stable snapshot                             |
+| `validatePresence(input, limits?)`                | Validates and clamps an untrusted decoded value                                                           |
+| `jsonCodec`                                       | The default `CursorCodec` implementation                                                                  |
+| `binaryCodec`                                     | A compact `CursorCodec` for binary WebSocket relays                                                       |
+| `LiveCursorTransport`, `ConnectionStatus`         | The transport interface                                                                                   |
+| `AdaptivePublishOptions`                          | Opt-in slow-mode options for the publish rate                                                             |
+| `createInMemoryPair`                              | A 2-peer in-memory transport for tests                                                                    |
+| `RemotePresenceStore`                             | Sequencing, field-delta merge, and stale-expiry store for remote presences                                |
+| `linearInterpolator`, `noneInterpolator`          | Interpolation factories                                                                                   |
 
 See [docs/architecture.md](../../docs/architecture.md) and [docs/codecs.md](../../docs/codecs.md) in the repository root for full guides.

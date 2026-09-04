@@ -10,9 +10,21 @@ export interface Order {
 }
 
 const CUSTOMERS = [
-  "Ava Martinez", "Liam Chen", "Noor Haddad", "Priya Nair", "Oscar Lindqvist",
-  "Maya Fischer", "Diego Torres", "Yuki Tanaka", "Freya Solberg", "Amir Hassan",
-  "Elena Popescu", "Jonas Weber", "Chidi Okafor", "Ines Costa", "Tobias Reiter",
+  "Ava Martinez",
+  "Liam Chen",
+  "Noor Haddad",
+  "Priya Nair",
+  "Oscar Lindqvist",
+  "Maya Fischer",
+  "Diego Torres",
+  "Yuki Tanaka",
+  "Freya Solberg",
+  "Amir Hassan",
+  "Elena Popescu",
+  "Jonas Weber",
+  "Chidi Okafor",
+  "Ines Costa",
+  "Tobias Reiter",
 ];
 
 const STATUSES: OrderStatus[] = ["paid", "pending", "refunded", "failed"];

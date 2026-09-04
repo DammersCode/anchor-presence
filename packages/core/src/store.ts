@@ -70,7 +70,11 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
         return false;
       }
       const normalized = this.normalizePresence(presence);
-      this.entries.set(presence.clientId, { presence: normalized, lastSeenAt: this.now(), projected: projectPresence(normalized) });
+      this.entries.set(presence.clientId, {
+        presence: normalized,
+        lastSeenAt: this.now(),
+        projected: projectPresence(normalized),
+      });
       this.stableSnapshotDirty = true;
       this.markDirty();
       return true;
@@ -197,10 +201,7 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
 }
 
 // Wire encoding: `null` clears the field, `undefined` inherits the previous same-session value.
-function resolveFieldDelta<T>(
-  next: T | null | undefined,
-  previous?: T | null,
-): T | undefined {
+function resolveFieldDelta<T>(next: T | null | undefined, previous?: T | null): T | undefined {
   if (next === null) return undefined;
   if (next !== undefined) return next;
   if (previous === null) return undefined;

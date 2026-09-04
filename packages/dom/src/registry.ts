@@ -35,7 +35,11 @@ export function createAnchorRegistry(): AnchorRegistry {
       const existing = byId.get(id);
       if (existing !== undefined && existing !== element && isDev() && !warnedDuplicateIds.has(id)) {
         warnedDuplicateIds.add(id);
-        console.warn(`[anchor-presence] duplicate anchor id "${id}"; new element wins`, { id, previous: existing, next: element });
+        console.warn(`[anchor-presence] duplicate anchor id "${id}"; new element wins`, {
+          id,
+          previous: existing,
+          next: element,
+        });
       }
       byId.set(id, element);
       idByElement.set(element, id);

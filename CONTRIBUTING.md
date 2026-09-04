@@ -12,6 +12,7 @@ CI runs the browser tests on Chromium only. The Firefox and WebKit installs take
 bun install
 bun run build
 bun run typecheck
+bun run format:check
 bun run lint
 bun run test
 bunx playwright install chromium firefox webkit
@@ -31,15 +32,17 @@ docker run --rm -v "$(pwd):/src:ro" mcr.microsoft.com/playwright:v1.62.1-noble b
 - Write plain, descriptive commit messages.
 - Do not add Co-Authored-By trailers or tool references.
 - Keep comments to one short line, and only for a non-obvious why.
+- Run `bun run format` before you commit. Prettier owns formatting; the CI format check fails otherwise.
 
 ## What CI runs on each push to main
 
 1. Build (`bun run build`) for core, dom, and react.
 2. Typecheck (`tsc --build`) for core, dom, and react.
-3. Lint (`bun run lint`).
-4. All unit tests (`vitest run`).
-5. The demo production build.
-6. Browser tests on Chromium (preinstalled Chrome, no download).
+3. Format check (`bun run format:check`).
+4. Lint (`bun run lint`).
+5. All unit tests (`vitest run`).
+6. The demo production build.
+7. Browser tests on Chromium (preinstalled Chrome, no download).
 
 ## Releasing
 

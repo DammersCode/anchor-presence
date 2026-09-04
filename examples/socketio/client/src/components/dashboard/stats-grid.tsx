@@ -9,10 +9,7 @@ const STATS = [
 
 export function StatsGrid() {
   return (
-    <div
-      data-anchor="stats"
-      className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
-    >
+    <div data-anchor="stats" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
       {STATS.map((stat) => (
         <StatCard key={stat.anchorId} {...stat} />
       ))}

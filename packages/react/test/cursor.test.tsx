@@ -236,8 +236,8 @@ describe("cursor components", () => {
       publish([cursor({ clientId: "r1" }), cursor({ clientId: "r2" })]);
     });
 
-    const ids = Array.from(container.querySelectorAll<HTMLElement>("[data-anchor-presence-client-id]")).map((el) =>
-      el.dataset.anchorPresenceClientId,
+    const ids = Array.from(container.querySelectorAll<HTMLElement>("[data-anchor-presence-client-id]")).map(
+      (el) => el.dataset.anchorPresenceClientId,
     );
     expect(ids).toEqual(["r1"]);
 
@@ -346,7 +346,9 @@ describe("cursor components", () => {
 
 describe("DefaultCursor", () => {
   it("renders a pointer SVG and honors CSS variable precedence over color", () => {
-    const html = renderToString(<DefaultCursor color="#ff0000" style={{ "--anchor-presence-cursor-color": "#00ff00" }} />);
+    const html = renderToString(
+      <DefaultCursor color="#ff0000" style={{ "--anchor-presence-cursor-color": "#00ff00" }} />,
+    );
     expect(html).toContain("svg");
     expect(html).toContain("--anchor-presence-cursor-color:#00ff00");
   });

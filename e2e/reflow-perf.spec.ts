@@ -7,7 +7,10 @@
 // the assertions here are machine-independent (sanity + the post-fix no-live-gBCR invariant).
 import { test, expect } from "@playwright/test";
 
-test.skip(({ browserName }) => browserName !== "chromium", "chromium-only: reflow bench, not cross-browser coverage");
+test.skip(
+  ({ browserName }) => browserName !== "chromium",
+  "chromium-only: reflow bench, not cross-browser coverage",
+);
 
 const WARMUP_MS = 1500;
 const SCENARIO_MS = 2500;
@@ -124,13 +127,10 @@ test.describe("sender pointermove reflow cost (K3)", () => {
     await page.goto(`/?page=reflow-bench&rows=${ROWS}`);
     await page.getByText("ready — driven by e2e/reflow-perf.spec.ts").waitFor({ timeout: 20_000 });
 
-    await page.evaluate(
-      (ms: number) => {
-        const w = window as unknown as SpyWindow;
-        return w.__reflowBench!.runScenario("idle", ms);
-      },
-      WARMUP_MS,
-    );
+    await page.evaluate((ms: number) => {
+      const w = window as unknown as SpyWindow;
+      return w.__reflowBench!.runScenario("idle", ms);
+    }, WARMUP_MS);
 
     const reports = new Map<ScenarioName, ReflowReport>();
     for (const scenario of SCENARIOS) {

@@ -7,7 +7,16 @@ import { useRemoteCursorsSelector } from "../src/hooks";
 import { makeFakeBinding, makeFakeClient } from "./test-utils";
 
 function cursor(clientId: string, overrides: Partial<ResolvedCursor> = {}): ResolvedCursor {
-  return { clientId, x: 1, y: 2, visible: true, pointVisible: true, anchorId: null, tier: "viewport", ...overrides };
+  return {
+    clientId,
+    x: 1,
+    y: 2,
+    visible: true,
+    pointVisible: true,
+    anchorId: null,
+    tier: "viewport",
+    ...overrides,
+  };
 }
 
 const selectClientIds = (cursors: ResolvedCursor[]): string[] => cursors.map((c) => c.clientId);

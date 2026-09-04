@@ -118,9 +118,24 @@ describe("resolveGeometry (spec §10)", () => {
 describe("defaultVisibilityPolicy (spec §10.1)", () => {
   it("shows on anchor and viewport tiers, hides on hidden", () => {
     const p = presence();
-    expect(defaultVisibilityPolicy({ presence: p, resolution: { tier: "anchor", anchorId: "a", pointVisible: false } })).toBe("show");
-    expect(defaultVisibilityPolicy({ presence: p, resolution: { tier: "viewport", anchorId: null, pointVisible: true } })).toBe("show");
-    expect(defaultVisibilityPolicy({ presence: p, resolution: { tier: "hidden", anchorId: null, pointVisible: false } })).toBe("hide");
+    expect(
+      defaultVisibilityPolicy({
+        presence: p,
+        resolution: { tier: "anchor", anchorId: "a", pointVisible: false },
+      }),
+    ).toBe("show");
+    expect(
+      defaultVisibilityPolicy({
+        presence: p,
+        resolution: { tier: "viewport", anchorId: null, pointVisible: true },
+      }),
+    ).toBe("show");
+    expect(
+      defaultVisibilityPolicy({
+        presence: p,
+        resolution: { tier: "hidden", anchorId: null, pointVisible: false },
+      }),
+    ).toBe("hide");
   });
 });
 
@@ -308,9 +323,11 @@ describe("RemoteResolver (spec §10 + §13)", () => {
     const { cursors } = resolver.resolveAll([presence()], readState(rects), 0);
 
     expect(cursors[0]?.pointVisible).toBe(false);
-    expect(policy).toHaveBeenCalledWith(expect.objectContaining({
-      resolution: { tier: "anchor", anchorId: "a", pointVisible: false },
-    }));
+    expect(policy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        resolution: { tier: "anchor", anchorId: "a", pointVisible: false },
+      }),
+    );
   });
 
   it("uses hit testing when enabled", () => {

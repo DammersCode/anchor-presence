@@ -16,7 +16,12 @@ export interface OrdersTableProps {
   onDelete: (orderId: string) => void;
 }
 
-function OrderRow({ order, index, onView, onDelete }: {
+function OrderRow({
+  order,
+  index,
+  onView,
+  onDelete,
+}: {
   order: Order;
   index: number;
   onView: (orderId: string) => void;
@@ -42,10 +47,20 @@ function OrderRow({ order, index, onView, onDelete }: {
       </TableCell>
       <TableCell data-anchor={`orders.row:${index}.actions`} className="text-right">
         <div className="flex justify-end gap-2">
-          <Button data-anchor={`orders.row:${index}.actions.view`} variant="outline" size="sm" onClick={() => onView(order.id)}>
+          <Button
+            data-anchor={`orders.row:${index}.actions.view`}
+            variant="outline"
+            size="sm"
+            onClick={() => onView(order.id)}
+          >
             View
           </Button>
-          <Button data-anchor={`orders.row:${index}.actions.delete`} variant="destructive" size="sm" onClick={() => onDelete(order.id)}>
+          <Button
+            data-anchor={`orders.row:${index}.actions.delete`}
+            variant="destructive"
+            size="sm"
+            onClick={() => onDelete(order.id)}
+          >
             Delete
           </Button>
         </div>

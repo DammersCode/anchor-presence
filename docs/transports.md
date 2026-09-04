@@ -261,10 +261,10 @@ const client = createPresenceClient({
 
 Defaults:
 
-| Option | Default |
-|---|---|
-| `highWatermarkBytes` | `64 KiB` |
-| `lowWatermarkBytes` | half of `highWatermarkBytes` |
+| Option                  | Default                           |
+| ----------------------- | --------------------------------- |
+| `highWatermarkBytes`    | `64 KiB`                          |
+| `lowWatermarkBytes`     | half of `highWatermarkBytes`      |
 | `slowPublishIntervalMs` | `max(publishIntervalMs * 4, 100)` |
 
 The client enters slow mode at the high watermark and leaves it at the low watermark. Heartbeats and full reconnect publishes keep their own schedule.
@@ -273,16 +273,16 @@ The client enters slow mode at the high watermark and leaves it at the low water
 
 The shipped `apps/server/index.ts` relay is a reference room-broadcast relay with reference-side hardening:
 
-| Limit | Default | Env var | Close code |
-|---|---|---|---|
-| Sockets per room | 128 | `RELAY_MAX_ROOM_SOCKETS` | 4001 |
-| Total sockets | 10,000 | `RELAY_MAX_TOTAL_SOCKETS` | 4002 |
-| Slow-peer skip threshold | 1 MiB buffered | `RELAY_SLOW_PEER_SOFT_BYTES` | — |
-| Slow-peer close threshold | 8 MiB buffered | `RELAY_SLOW_PEER_HARD_BYTES` | 4003 |
-| Slow-peer resume threshold | 512 KiB buffered | `RELAY_SLOW_PEER_RESUME_BYTES` | — |
-| Origin allowlist | unset (allow all) | `RELAY_ALLOWED_ORIGINS` | 4004 |
-| Liveness ping / timeout | 30 s ping, 60 s timeout | — | 4005 |
-| Room token auth | unset (no auth) | `RELAY_AUTH_TOKEN` | 4006 |
+| Limit                      | Default                 | Env var                        | Close code |
+| -------------------------- | ----------------------- | ------------------------------ | ---------- |
+| Sockets per room           | 128                     | `RELAY_MAX_ROOM_SOCKETS`       | 4001       |
+| Total sockets              | 10,000                  | `RELAY_MAX_TOTAL_SOCKETS`      | 4002       |
+| Slow-peer skip threshold   | 1 MiB buffered          | `RELAY_SLOW_PEER_SOFT_BYTES`   | —          |
+| Slow-peer close threshold  | 8 MiB buffered          | `RELAY_SLOW_PEER_HARD_BYTES`   | 4003       |
+| Slow-peer resume threshold | 512 KiB buffered        | `RELAY_SLOW_PEER_RESUME_BYTES` | —          |
+| Origin allowlist           | unset (allow all)       | `RELAY_ALLOWED_ORIGINS`        | 4004       |
+| Liveness ping / timeout    | 30 s ping, 60 s timeout | —                              | 4005       |
+| Room token auth            | unset (no auth)         | `RELAY_AUTH_TOKEN`             | 4006       |
 
 Plus a per-message byte cap (32 KiB, `MAX_MESSAGE_BYTES`) and a per-socket token-bucket rate limit (burst 40, 20 messages/s refill, `RATE_CAPACITY` and `RATE_REFILL_PER_SECOND`). Oversized or over-rate messages are dropped, not closed.
 

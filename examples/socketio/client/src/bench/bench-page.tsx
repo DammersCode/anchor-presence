@@ -179,7 +179,14 @@ export function BenchPage() {
     const ids = anchorIds;
     if (ids.length === 0) return;
 
-    type SimState = { clientId: string; session: string; sequence: number; anchorId: string; u: number; v: number };
+    type SimState = {
+      clientId: string;
+      session: string;
+      sequence: number;
+      anchorId: string;
+      u: number;
+      v: number;
+    };
     const sims: SimState[] = Array.from({ length: cursorCount }, (_, i) => ({
       clientId: `bench-${i}`,
       session: `s-${i}`,

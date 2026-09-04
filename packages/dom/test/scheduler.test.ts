@@ -34,7 +34,7 @@ function makeTimerStub() {
   const pending = new Map<ReturnType<typeof setTimeout>, { callback: () => void; ms: number }>();
   let nextId = 1;
   const setTimeoutFn: SetTimeoutLike = vi.fn((callback, ms) => {
-    const handle = (nextId++) as unknown as ReturnType<typeof setTimeout>;
+    const handle = nextId++ as unknown as ReturnType<typeof setTimeout>;
     pending.set(handle, { callback, ms });
     return handle;
   });
@@ -51,7 +51,12 @@ function makeTimerStub() {
 }
 
 function makeResizeObserverStub() {
-  const instances: { observe: ReturnType<typeof vi.fn>; unobserve: ReturnType<typeof vi.fn>; disconnect: ReturnType<typeof vi.fn>; callback: () => void }[] = [];
+  const instances: {
+    observe: ReturnType<typeof vi.fn>;
+    unobserve: ReturnType<typeof vi.fn>;
+    disconnect: ReturnType<typeof vi.fn>;
+    callback: () => void;
+  }[] = [];
   const ctor = function (callback: () => void) {
     const instance = { observe: vi.fn(), unobserve: vi.fn(), disconnect: vi.fn(), callback };
     instances.push(instance);
@@ -219,7 +224,10 @@ describe("createGeometryScheduler (spec §11)", () => {
       document.body,
       expect.objectContaining({ childList: true, attributes: true, subtree: true }),
     );
-    expect(addEventListenerSpy).toHaveBeenCalledWith("scroll", expect.any(Function), { capture: true, passive: true });
+    expect(addEventListenerSpy).toHaveBeenCalledWith("scroll", expect.any(Function), {
+      capture: true,
+      passive: true,
+    });
     expect(winAddEventListenerSpy).toHaveBeenCalledWith("resize", expect.any(Function));
 
     scheduler.dispose();
@@ -231,7 +239,9 @@ describe("createGeometryScheduler (spec §11)", () => {
     const resizeObs = makeResizeObserverStub();
     const mutationObs = makeMutationObserverStub();
 
-    createGeometryScheduler(baseOptions({ raf, caf, ResizeObserverCtor: resizeObs.ctor, MutationObserverCtor: mutationObs.ctor }));
+    createGeometryScheduler(
+      baseOptions({ raf, caf, ResizeObserverCtor: resizeObs.ctor, MutationObserverCtor: mutationObs.ctor }),
+    );
 
     expect(mutationObs.instances).toHaveLength(0);
 
@@ -297,11 +307,15 @@ describe("createGeometryScheduler (spec §11)", () => {
     const el = document.createElement("div");
     document.body.append(el);
 
-    const startEvent = new Event("transitionrun", { bubbles: true }) as TransitionEvent & { propertyName: string };
+    const startEvent = new Event("transitionrun", { bubbles: true }) as TransitionEvent & {
+      propertyName: string;
+    };
     Object.defineProperty(startEvent, "propertyName", { value: "opacity" });
     el.dispatchEvent(startEvent);
 
-    const cancelEvent = new Event("transitioncancel", { bubbles: true }) as TransitionEvent & { propertyName: string };
+    const cancelEvent = new Event("transitioncancel", { bubbles: true }) as TransitionEvent & {
+      propertyName: string;
+    };
     Object.defineProperty(cancelEvent, "propertyName", { value: "opacity" });
     el.dispatchEvent(cancelEvent);
 
@@ -324,24 +338,32 @@ describe("createGeometryScheduler (spec §11)", () => {
       const elA = document.createElement("div");
       const elB = document.createElement("div");
       document.body.append(elA, elB);
-      vi.spyOn(window, "getComputedStyle").mockReturnValue(fakeComputedStyle({
-        "transition-duration": "5s",
-        "transition-delay": "0s",
-        "animation-iteration-count": "1",
-      }));
+      vi.spyOn(window, "getComputedStyle").mockReturnValue(
+        fakeComputedStyle({
+          "transition-duration": "5s",
+          "transition-delay": "0s",
+          "animation-iteration-count": "1",
+        }),
+      );
 
-      const startA = new Event("transitionrun", { bubbles: true }) as TransitionEvent & { propertyName: string };
+      const startA = new Event("transitionrun", { bubbles: true }) as TransitionEvent & {
+        propertyName: string;
+      };
       Object.defineProperty(startA, "propertyName", { value: "opacity" });
       elA.dispatchEvent(startA);
       flush();
 
-      const startB = new Event("transitionrun", { bubbles: true }) as TransitionEvent & { propertyName: string };
+      const startB = new Event("transitionrun", { bubbles: true }) as TransitionEvent & {
+        propertyName: string;
+      };
       Object.defineProperty(startB, "propertyName", { value: "opacity" });
       elB.dispatchEvent(startB);
       flush();
 
       // ending elA's transition must not close elB's window
-      const endA = new Event("transitionend", { bubbles: true }) as TransitionEvent & { propertyName: string };
+      const endA = new Event("transitionend", { bubbles: true }) as TransitionEvent & {
+        propertyName: string;
+      };
       Object.defineProperty(endA, "propertyName", { value: "opacity" });
       elA.dispatchEvent(endA);
       flush();
@@ -351,7 +373,9 @@ describe("createGeometryScheduler (spec §11)", () => {
       flush();
       expect(compute).toHaveBeenCalledTimes(1);
 
-      const endB = new Event("transitionend", { bubbles: true }) as TransitionEvent & { propertyName: string };
+      const endB = new Event("transitionend", { bubbles: true }) as TransitionEvent & {
+        propertyName: string;
+      };
       Object.defineProperty(endB, "propertyName", { value: "opacity" });
       elB.dispatchEvent(endB);
       flush();
@@ -378,13 +402,17 @@ describe("createGeometryScheduler (spec §11)", () => {
 
       const el = document.createElement("div");
       document.body.append(el);
-      vi.spyOn(window, "getComputedStyle").mockReturnValue(fakeComputedStyle({
-        "transition-duration": "0.2s",
-        "transition-delay": "0s",
-        "animation-iteration-count": "1",
-      }));
+      vi.spyOn(window, "getComputedStyle").mockReturnValue(
+        fakeComputedStyle({
+          "transition-duration": "0.2s",
+          "transition-delay": "0s",
+          "animation-iteration-count": "1",
+        }),
+      );
 
-      const startEvent = new Event("transitionrun", { bubbles: true }) as TransitionEvent & { propertyName: string };
+      const startEvent = new Event("transitionrun", { bubbles: true }) as TransitionEvent & {
+        propertyName: string;
+      };
       Object.defineProperty(startEvent, "propertyName", { value: "opacity" });
       el.dispatchEvent(startEvent);
       flush(); // consume the frame scheduled by the transitionrun invalidation itself
@@ -408,20 +436,30 @@ describe("createGeometryScheduler (spec §11)", () => {
     active = true;
     const compute = vi.fn(() => emptyCompute([]));
     const scheduler = createGeometryScheduler(
-      baseOptions({ raf, caf, compute, setTimeout: timers.setTimeoutFn, clearTimeout: timers.clearTimeoutFn }),
+      baseOptions({
+        raf,
+        caf,
+        compute,
+        setTimeout: timers.setTimeoutFn,
+        clearTimeout: timers.clearTimeoutFn,
+      }),
     );
     scheduler.invalidate();
     flush();
 
     const el = document.createElement("div");
     document.body.append(el);
-    vi.spyOn(window, "getComputedStyle").mockReturnValue(fakeComputedStyle({
-      "transition-duration": "0.2s",
-      "transition-delay": "0s",
-      "animation-iteration-count": "1",
-    }));
+    vi.spyOn(window, "getComputedStyle").mockReturnValue(
+      fakeComputedStyle({
+        "transition-duration": "0.2s",
+        "transition-delay": "0s",
+        "animation-iteration-count": "1",
+      }),
+    );
 
-    const startEvent = new Event("transitionrun", { bubbles: true }) as TransitionEvent & { propertyName: string };
+    const startEvent = new Event("transitionrun", { bubbles: true }) as TransitionEvent & {
+      propertyName: string;
+    };
     Object.defineProperty(startEvent, "propertyName", { value: "opacity" });
     el.dispatchEvent(startEvent);
     flush(); // consume the frame scheduled by the transitionrun invalidation itself
@@ -455,13 +493,17 @@ describe("createGeometryScheduler (spec §11)", () => {
 
       const el = document.createElement("div");
       document.body.append(el);
-      vi.spyOn(window, "getComputedStyle").mockReturnValue(fakeComputedStyle({
-        "animation-duration": "2s",
-        "animation-delay": "0s",
-        "animation-iteration-count": "infinite",
-      }));
+      vi.spyOn(window, "getComputedStyle").mockReturnValue(
+        fakeComputedStyle({
+          "animation-duration": "2s",
+          "animation-delay": "0s",
+          "animation-iteration-count": "infinite",
+        }),
+      );
 
-      const startEvent = new Event("animationstart", { bubbles: true }) as AnimationEvent & { animationName: string };
+      const startEvent = new Event("animationstart", { bubbles: true }) as AnimationEvent & {
+        animationName: string;
+      };
       Object.defineProperty(startEvent, "animationName", { value: "spin" });
       el.dispatchEvent(startEvent);
       flush(); // consume the frame scheduled by the animationstart invalidation itself
@@ -497,13 +539,17 @@ describe("createGeometryScheduler (spec §11)", () => {
 
       const el = document.createElement("div");
       document.body.append(el);
-      vi.spyOn(window, "getComputedStyle").mockReturnValue(fakeComputedStyle({
-        "transition-duration": "5s", // long enough that the safety timeout won't fire mid-test
-        "transition-delay": "0s",
-        "animation-iteration-count": "1",
-      }));
+      vi.spyOn(window, "getComputedStyle").mockReturnValue(
+        fakeComputedStyle({
+          "transition-duration": "5s", // long enough that the safety timeout won't fire mid-test
+          "transition-delay": "0s",
+          "animation-iteration-count": "1",
+        }),
+      );
 
-      const startEvent = new Event("transitionrun", { bubbles: true }) as TransitionEvent & { propertyName: string };
+      const startEvent = new Event("transitionrun", { bubbles: true }) as TransitionEvent & {
+        propertyName: string;
+      };
       Object.defineProperty(startEvent, "propertyName", { value: "transform" });
       el.dispatchEvent(startEvent);
       flush(); // consume the frame scheduled by the transitionrun invalidation itself
@@ -515,7 +561,9 @@ describe("createGeometryScheduler (spec §11)", () => {
         expect(compute).toHaveBeenCalledTimes(1);
       }
 
-      const endEvent = new Event("transitionend", { bubbles: true }) as TransitionEvent & { propertyName: string };
+      const endEvent = new Event("transitionend", { bubbles: true }) as TransitionEvent & {
+        propertyName: string;
+      };
       Object.defineProperty(endEvent, "propertyName", { value: "transform" });
       el.dispatchEvent(endEvent);
       flush(); // the closing invalidation's own pass
@@ -542,13 +590,17 @@ describe("createGeometryScheduler (spec §11)", () => {
 
       const el = document.createElement("div");
       document.body.append(el);
-      vi.spyOn(window, "getComputedStyle").mockReturnValue(fakeComputedStyle({
-        "transition-duration": "0.2s",
-        "transition-delay": "0s",
-        "animation-iteration-count": "1",
-      }));
+      vi.spyOn(window, "getComputedStyle").mockReturnValue(
+        fakeComputedStyle({
+          "transition-duration": "0.2s",
+          "transition-delay": "0s",
+          "animation-iteration-count": "1",
+        }),
+      );
 
-      const startEvent = new Event("transitionrun", { bubbles: true }) as TransitionEvent & { propertyName: string };
+      const startEvent = new Event("transitionrun", { bubbles: true }) as TransitionEvent & {
+        propertyName: string;
+      };
       Object.defineProperty(startEvent, "propertyName", { value: "opacity" });
       el.dispatchEvent(startEvent);
       flush();
@@ -652,11 +704,17 @@ describe("createGeometryScheduler (spec §11)", () => {
     const outside = document.createElement("div");
     document.body.append(outside);
 
-    const scheduler = createGeometryScheduler(baseOptions({ raf, caf, MutationObserverCtor: mutationObs.ctor }));
+    const scheduler = createGeometryScheduler(
+      baseOptions({ raf, caf, MutationObserverCtor: mutationObs.ctor }),
+    );
     flush(); // consume the attach-time frame
     expect(queue).toHaveLength(0);
 
-    mutationObs.instances[0]?.callback([fakeRecord(cursorRoot), fakeRecord(cursorChild), fakeRecord(cursorText)]);
+    mutationObs.instances[0]?.callback([
+      fakeRecord(cursorRoot),
+      fakeRecord(cursorChild),
+      fakeRecord(cursorText),
+    ]);
     expect(queue).toHaveLength(0); // all records filtered: not dirty
 
     mutationObs.instances[0]?.callback([fakeRecord(cursorChild), fakeRecord(outside)]);
@@ -708,7 +766,9 @@ describe("createGeometryScheduler (spec §11)", () => {
 
     let activeAnchors: Element[] = [anchor];
     const compute = vi.fn(() => ({ snapshot: [], activeAnchors, needsAnotherFrame: false }));
-    const scheduler = createGeometryScheduler(baseOptions({ raf, caf, compute, MutationObserverCtor: mutationObs.ctor }));
+    const scheduler = createGeometryScheduler(
+      baseOptions({ raf, caf, compute, MutationObserverCtor: mutationObs.ctor }),
+    );
     scheduler.invalidate();
     flush();
 
@@ -753,11 +813,15 @@ describe("createGeometryScheduler (spec §11)", () => {
     innerShadow.append(anchor);
 
     const compute = vi.fn(() => ({ snapshot: [], activeAnchors: [anchor], needsAnotherFrame: false }));
-    const scheduler = createGeometryScheduler(baseOptions({ raf, caf, compute, MutationObserverCtor: mutationObs.ctor }));
+    const scheduler = createGeometryScheduler(
+      baseOptions({ raf, caf, compute, MutationObserverCtor: mutationObs.ctor }),
+    );
     scheduler.invalidate();
     flush();
 
-    const observedRoots = mutationObs.instances.slice(1).flatMap((i) => i.observe.mock.calls.map((c) => c[0]));
+    const observedRoots = mutationObs.instances
+      .slice(1)
+      .flatMap((i) => i.observe.mock.calls.map((c) => c[0]));
     expect(observedRoots).toContain(innerShadow);
     expect(observedRoots).toContain(outerShadow);
 
@@ -812,7 +876,7 @@ describe("createGeometryScheduler (spec §11)", () => {
     const onDetach = vi.fn();
     const onMutationRecords = vi.fn();
     const scheduler = createGeometryScheduler(
-      baseOptions({ raf, caf, onAttach, onDetach, onMutationRecords, MutationObserverCtor: ctor })
+      baseOptions({ raf, caf, onAttach, onDetach, onMutationRecords, MutationObserverCtor: ctor }),
     );
 
     expect(onAttach).toHaveBeenCalledTimes(1);

@@ -23,7 +23,12 @@ export interface SidebarProps {
   onOpenSettings: () => void;
 }
 
-function NavButton({ item, isActive, collapsed, onClick }: {
+function NavButton({
+  item,
+  isActive,
+  collapsed,
+  onClick,
+}: {
   item: NavItem;
   isActive: boolean;
   collapsed: boolean;

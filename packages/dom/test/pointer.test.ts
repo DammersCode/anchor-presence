@@ -34,7 +34,8 @@ function firePointerEvent(
   };
   Object.defineProperty(event, "clientX", { value: init.clientX });
   Object.defineProperty(event, "clientY", { value: init.clientY });
-  if (init.pointerType !== undefined) Object.defineProperty(event, "pointerType", { value: init.pointerType });
+  if (init.pointerType !== undefined)
+    Object.defineProperty(event, "pointerType", { value: init.pointerType });
   target.dispatchEvent(event);
 }
 

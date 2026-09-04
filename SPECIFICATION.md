@@ -59,24 +59,24 @@ Responsibilities: provider component, hooks, SSR safety. React subscribes to cor
 
 ```ts
 type AnchorPoint = {
-  id: string;      // registered semantic anchor ID
-  u: number;       // 0..1 across the anchor, clamped by receiver
-  v: number;       // 0..1 down the anchor, clamped by receiver
+  id: string; // registered semantic anchor ID
+  u: number; // 0..1 across the anchor, clamped by receiver
+  v: number; // 0..1 down the anchor, clamped by receiver
 };
 
 type CursorPosition = {
-  anchors: AnchorPoint[];          // ordered, most specific first
-  viewport?: { u: number; v: number };  // normalized viewport fallback
+  anchors: AnchorPoint[]; // ordered, most specific first
+  viewport?: { u: number; v: number }; // normalized viewport fallback
 };
 
 type CursorPresence<TContext = unknown, TUser = unknown> = {
   version: 1;
-  clientId: string;                // identifies a client INSTANCE (tab/connection), not a user
-  session: string;                 // random per client instance, generated at client creation
-  sequence: number;                // monotonic per (clientId, session)
-  cursor: CursorPosition | null;   // null = pointer left / hidden
-  context?: TContext | null;       // opaque to core; `null` = cleared, missing = unchanged
-  user?: TUser | null;             // opaque to core; `null` = cleared, missing = unchanged
+  clientId: string; // identifies a client INSTANCE (tab/connection), not a user
+  session: string; // random per client instance, generated at client creation
+  sequence: number; // monotonic per (clientId, session)
+  cursor: CursorPosition | null; // null = pointer left / hidden
+  context?: TContext | null; // opaque to core; `null` = cleared, missing = unchanged
+  user?: TUser | null; // opaque to core; `null` = cleared, missing = unchanged
   pointer?: { type?: "mouse" | "pen" | "touch" };
 };
 ```
@@ -89,19 +89,19 @@ Leave messages use `cursor: null`. A separate `{ version: 1, clientId, sequence,
 
 All inbound data is untrusted. The decoder output passes through `validatePresence()` before it reaches the store. Limits (constants in core, overridable by config):
 
-| Field | Rule |
-|---|---|
-| version | must equal 1, else drop |
-| clientId | string, 1–128 chars, else drop |
-| session | string, 1–64 chars, else drop |
-| sequence | finite integer ≥ 0, else drop |
-| anchors | array, max 8 entries, else truncate to 8 |
-| anchor id | string, 1–256 chars, else drop that entry |
-| u, v | finite number, clamp to [0, 1] |
-| viewport u, v | finite number, clamp to [0, 1] |
-| context | max 8 KiB when JSON-encoded, else drop the field |
-| user | max 8 KiB when JSON-encoded, else drop the field |
-| whole message | max 32 KiB encoded, else drop |
+| Field         | Rule                                             |
+| ------------- | ------------------------------------------------ |
+| version       | must equal 1, else drop                          |
+| clientId      | string, 1–128 chars, else drop                   |
+| session       | string, 1–64 chars, else drop                    |
+| sequence      | finite integer ≥ 0, else drop                    |
+| anchors       | array, max 8 entries, else truncate to 8         |
+| anchor id     | string, 1–256 chars, else drop that entry        |
+| u, v          | finite number, clamp to [0, 1]                   |
+| viewport u, v | finite number, clamp to [0, 1]                   |
+| context       | max 8 KiB when JSON-encoded, else drop the field |
+| user          | max 8 KiB when JSON-encoded, else drop the field |
+| whole message | max 32 KiB encoded, else drop                    |
 
 Anchor IDs are opaque map keys. They are never used as CSS selectors, query strings, or code.
 
@@ -148,7 +148,7 @@ A transport that implements `subscribeStatus` SHOULD replay its current status t
 ```ts
 interface CursorCodec {
   encode(message: CursorPresence): Uint8Array;
-  decode(data: Uint8Array): unknown;   // validated afterwards by core
+  decode(data: Uint8Array): unknown; // validated afterwards by core
 }
 ```
 
@@ -202,7 +202,7 @@ Public binding configuration:
 ```ts
 type DomBindingOptions = {
   anchorAttribute?: string; // default "data-anchor"
-  maxAnchors?: number;      // default 4, clamped to 1..8
+  maxAnchors?: number; // default 4, clamped to 1..8
   resolution?: ResolutionOptions;
   environment?: EnvironmentOptions;
 };
@@ -270,7 +270,7 @@ Resolved output per cursor:
 ```ts
 type ResolvedCursor<TContext, TUser> = {
   clientId: string;
-  x: number;               // receiver viewport px
+  x: number; // receiver viewport px
   y: number;
   visible: boolean;
   pointVisible: boolean;
@@ -339,7 +339,7 @@ Interpolation runs after resolution, on receiver-local x/y:
 ```ts
 interface Interpolator {
   target(x: number, y: number, timestampMs: number): void;
-  shift(dx: number, dy: number): void;  // move current AND target by a delta, no easing
+  shift(dx: number, dy: number): void; // move current AND target by a delta, no easing
   sample(timestampMs: number): { x: number; y: number; settled: boolean };
 }
 type InterpolatorFactory = () => Interpolator;
@@ -361,16 +361,16 @@ The resolver keeps one interpolator instance per remote `clientId` and prunes it
 
 Hooks:
 
-| Hook | Returns |
-|---|---|
-| `usePresenceClient({ factory, key? })` | a stable `PresenceClient` per `key`, or `null` before the mount effect runs (page-lifetime registry) |
-| `useRemoteUsers()` | one entry per remote client: `clientId`, `user`, and `session` |
-| `useRemoteCursors()` | `ResolvedCursor[]` snapshot (useSyncExternalStore) |
-| `useRemoteCursorsSelector(select, isEqual?)` | a value derived from the snapshot, recomputed per frame |
-| `useCursorPresence()` | raw remote `CursorPresence[]` |
-| `useCursorStatus()` | `ConnectionStatus` |
-| `useCursorClient()` | the client instance |
-| `useCursorContext()` | `[context, setContext]` |
+| Hook                                         | Returns                                                                                              |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `usePresenceClient({ factory, key? })`       | a stable `PresenceClient` per `key`, or `null` before the mount effect runs (page-lifetime registry) |
+| `useRemoteUsers()`                           | one entry per remote client: `clientId`, `user`, and `session`                                       |
+| `useRemoteCursors()`                         | `ResolvedCursor[]` snapshot (useSyncExternalStore)                                                   |
+| `useRemoteCursorsSelector(select, isEqual?)` | a value derived from the snapshot, recomputed per frame                                              |
+| `useCursorPresence()`                        | raw remote `CursorPresence[]`                                                                        |
+| `useCursorStatus()`                          | `ConnectionStatus`                                                                                   |
+| `useCursorClient()`                          | the client instance                                                                                  |
+| `useCursorContext()`                         | `[context, setContext]`                                                                              |
 
 Anchors are declared in the DOM with the binding's anchor attribute. Cursor movement updates flow only to components using `useRemoteCursors`; the provider never rerenders the app tree per cursor frame.
 

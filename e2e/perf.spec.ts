@@ -2,7 +2,10 @@ import { test, expect } from "@playwright/test";
 
 // Browser perf gate per spec §16 (plan 009 step 4); dev-machine baseline re-based 2026-09-02 at
 // 1.1/2.0 ms for 100 anchors x 50 cursors — these bounds are 3x the spec budget plus CI headroom.
-test.skip(({ browserName }) => browserName !== "chromium", "chromium-only: perf gate, not cross-browser coverage");
+test.skip(
+  ({ browserName }) => browserName !== "chromium",
+  "chromium-only: perf gate, not cross-browser coverage",
+);
 
 const MEAN_BUDGET_MS = 6;
 const P95_BUDGET_MS = 20;

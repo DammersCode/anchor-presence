@@ -9,12 +9,7 @@ export interface TopbarProps {
   onOpenMobileNav: () => void;
 }
 
-export function Topbar({
-  userName,
-  room,
-  onOpenSettings,
-  onOpenMobileNav,
-}: TopbarProps) {
+export function Topbar({ userName, room, onOpenSettings, onOpenMobileNav }: TopbarProps) {
   return (
     <header
       data-anchor="topbar"
@@ -31,23 +26,15 @@ export function Topbar({
       </Button>
 
       <div data-anchor="topbar.search" className="min-w-16 max-w-sm flex-1">
-        <Input
-          placeholder="Search orders, customers, products…"
-          aria-label="Search"
-        />
+        <Input placeholder="Search orders, customers, products…" aria-label="Search" />
       </div>
 
       <div className="ml-auto flex items-center gap-3 sm:gap-4">
         <PresencePill />
 
-        <div
-          data-anchor="topbar.room"
-          className="hidden items-center gap-2 text-sm text-gray-500 sm:flex"
-        >
+        <div data-anchor="topbar.room" className="hidden items-center gap-2 text-sm text-gray-500 sm:flex">
           <span className="text-gray-400">Room</span>
-          <span className="rounded-md bg-gray-100 px-2 py-0.5 font-medium text-gray-700">
-            {room}
-          </span>
+          <span className="rounded-md bg-gray-100 px-2 py-0.5 font-medium text-gray-700">{room}</span>
         </div>
 
         <div data-anchor="topbar.user" className="hidden text-sm text-gray-500 md:block">

@@ -60,16 +60,16 @@ Pass `client={null}` during server-side rendering. See "SSR" below.
 
 ## Hooks
 
-| Hook | Returns |
-|---|---|
-| `usePresenceClient({ factory, key? })` | a stable `PresenceClient` per `key`, or `null` before the mount effect runs |
-| `useRemoteUsers()` | one entry per remote client: `clientId`, `user`, and `session` |
-| `useRemoteCursors()` | `ResolvedCursor[]` snapshot |
-| `useRemoteCursorsSelector(select, isEqual?)` | a value derived from the snapshot |
-| `useCursorPresence()` | raw remote `RemotePresence<TContext, TUser>[]` |
-| `useCursorStatus()` | `ConnectionStatus` |
-| `useCursorClient()` | the `PresenceClient` instance, or `null` |
-| `useCursorContext()` | `[context, setContext]` |
+| Hook                                         | Returns                                                                     |
+| -------------------------------------------- | --------------------------------------------------------------------------- |
+| `usePresenceClient({ factory, key? })`       | a stable `PresenceClient` per `key`, or `null` before the mount effect runs |
+| `useRemoteUsers()`                           | one entry per remote client: `clientId`, `user`, and `session`              |
+| `useRemoteCursors()`                         | `ResolvedCursor[]` snapshot                                                 |
+| `useRemoteCursorsSelector(select, isEqual?)` | a value derived from the snapshot                                           |
+| `useCursorPresence()`                        | raw remote `RemotePresence<TContext, TUser>[]`                              |
+| `useCursorStatus()`                          | `ConnectionStatus`                                                          |
+| `useCursorClient()`                          | the `PresenceClient` instance, or `null`                                    |
+| `useCursorContext()`                         | `[context, setContext]`                                                     |
 
 ### Render cost
 
@@ -180,10 +180,7 @@ Returns the client instance passed to `LiveCursorProvider`, or `null` outside a 
 ### useCursorContext
 
 ```ts
-function useCursorContext<TContext = unknown>(): [
-  TContext | undefined,
-  (next: TContext | undefined) => void,
-];
+function useCursorContext<TContext = unknown>(): [TContext | undefined, (next: TContext | undefined) => void];
 ```
 
 Returns the current context value and a setter. The initial value is the client's current context, including the `context` option passed to `createPresenceClient`. The setter calls `client.setContext()` and updates every subscribed component.
@@ -230,7 +227,7 @@ type MyUser = { name: string; color?: string };
 <CursorLayer<MyContext, MyUser>
   getLabel={(cursor) => cursor.user?.name ?? "Guest"}
   getColor={(cursor) => cursor.user?.color ?? "#6b7280"}
-/>
+/>;
 ```
 
 Validate `cursor.user` values before you return them. Remote `user` data is untrusted; treat it as text, never as HTML. See `docs/security.md`.
@@ -277,11 +274,7 @@ Validate `cursor.user` values before you return them. Remote `user` data is untr
 ```tsx
 <CursorLayer
   renderCursor={({ cursor, label, color }) => (
-    <DefaultCursor
-      label={label}
-      color={color}
-      style={{ "--anchor-presence-cursor-size": "28px" }}
-    />
+    <DefaultCursor label={label} color={color} style={{ "--anchor-presence-cursor-size": "28px" }} />
   )}
 />
 ```
@@ -313,7 +306,14 @@ Here is a trimmed spring, using semi-implicit Euler integration. The full versio
 
 ```ts
 function springInterpolator(stiffness = 170, damping = 26): Interpolator {
-  let x = 0, y = 0, vx = 0, vy = 0, targetX = 0, targetY = 0, lastMs = 0, settled = true;
+  let x = 0,
+    y = 0,
+    vx = 0,
+    vy = 0,
+    targetX = 0,
+    targetY = 0,
+    lastMs = 0,
+    settled = true;
 
   return {
     target(nx, ny, ms) {
@@ -323,17 +323,24 @@ function springInterpolator(stiffness = 170, damping = 26): Interpolator {
       lastMs = ms;
     },
     shift(dx, dy) {
-      x += dx; y += dy; targetX += dx; targetY += dy;
+      x += dx;
+      y += dy;
+      targetX += dx;
+      targetY += dy;
     },
     sample(ms) {
       const dt = Math.min(ms - lastMs, 64) / 1000;
       lastMs = ms;
       const ax = -stiffness * (x - targetX) - damping * vx;
       const ay = -stiffness * (y - targetY) - damping * vy;
-      vx += ax * dt; vy += ay * dt;
-      x += vx * dt; y += vy * dt;
+      vx += ax * dt;
+      vy += ay * dt;
+      x += vx * dt;
+      y += vy * dt;
       if (Math.hypot(vx, vy) < 0.05 && Math.hypot(x - targetX, y - targetY) < 0.05) {
-        x = targetX; y = targetY; settled = true;
+        x = targetX;
+        y = targetY;
+        settled = true;
       }
       return { x, y, settled };
     },
@@ -344,7 +351,10 @@ function springInterpolator(stiffness = 170, damping = 26): Interpolator {
 Register your style with `bindingOptions`:
 
 ```tsx
-<LiveCursorProvider client={client} bindingOptions={{ resolution: { interpolatorFactory: springInterpolator } }}>
+<LiveCursorProvider
+  client={client}
+  bindingOptions={{ resolution: { interpolatorFactory: springInterpolator } }}
+>
   <App />
 </LiveCursorProvider>
 ```
@@ -352,7 +362,11 @@ Register your style with `bindingOptions`:
 The provider reads `bindingOptions` once, at binding creation (see the note above). To switch interpolator styles at runtime, give the provider (or an ancestor) a `key` that changes with the style. A key change remounts the subtree and creates a fresh binding with the new factory:
 
 ```tsx
-<LiveCursorProvider key={style} client={client} bindingOptions={{ resolution: { interpolatorFactory: registry[style] } }}>
+<LiveCursorProvider
+  key={style}
+  client={client}
+  bindingOptions={{ resolution: { interpolatorFactory: registry[style] } }}
+>
   <App />
 </LiveCursorProvider>
 ```

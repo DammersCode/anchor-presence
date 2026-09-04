@@ -3,36 +3,23 @@ import type { HTMLAttributes, ReactNode } from "react";
 import type React from "react";
 import { cn } from "../../lib/cn";
 
-export interface DialogProps extends Omit<
-  HTMLAttributes<HTMLDialogElement>,
-  "onClick"
-> {
+export interface DialogProps extends Omit<HTMLAttributes<HTMLDialogElement>, "onClick"> {
   open: boolean;
   onClose: () => void;
   children: ReactNode;
   ref?: React.Ref<HTMLDialogElement>;
 }
 
-function mergeRefs<T>(
-  ...refs: Array<React.Ref<T> | undefined>
-): React.RefCallback<T> {
+function mergeRefs<T>(...refs: Array<React.Ref<T> | undefined>): React.RefCallback<T> {
   return (value) => {
     for (const ref of refs) {
       if (typeof ref === "function") ref(value);
-      else if (ref !== null && ref !== undefined)
-        (ref as React.RefObject<T | null>).current = value;
+      else if (ref !== null && ref !== undefined) (ref as React.RefObject<T | null>).current = value;
     }
   };
 }
 
-export function Dialog({
-  open,
-  onClose,
-  children,
-  className,
-  ref: externalRef,
-  ...props
-}: DialogProps) {
+export function Dialog({ open, onClose, children, className, ref: externalRef, ...props }: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -62,47 +49,18 @@ export function Dialog({
   );
 }
 
-export function DialogHeader({
-  className,
-  ...props
-}: HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div className={cn("border-b border-gray-100 p-4", className)} {...props} />
-  );
+export function DialogHeader({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
+  return <div className={cn("border-b border-gray-100 p-4", className)} {...props} />;
 }
 
-export function DialogTitle({
-  className,
-  ...props
-}: HTMLAttributes<HTMLHeadingElement>) {
-  return (
-    <h2
-      className={cn("text-base font-semibold text-gray-900", className)}
-      {...props}
-    />
-  );
+export function DialogTitle({ className, ...props }: HTMLAttributes<HTMLHeadingElement>) {
+  return <h2 className={cn("text-base font-semibold text-gray-900", className)} {...props} />;
 }
 
-export function DialogBody({
-  className,
-  ...props
-}: HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div className={cn("flex flex-col gap-4 p-4", className)} {...props} />
-  );
+export function DialogBody({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
+  return <div className={cn("flex flex-col gap-4 p-4", className)} {...props} />;
 }
 
-export function DialogFooter({
-  className,
-  ...props
-}: HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div
-      className={cn(
-        "flex justify-end gap-2 border-t border-gray-100 p-4",
-        className,
-      )}
-      {...props}
-    />
-  );
+export function DialogFooter({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
+  return <div className={cn("flex justify-end gap-2 border-t border-gray-100 p-4", className)} {...props} />;
 }

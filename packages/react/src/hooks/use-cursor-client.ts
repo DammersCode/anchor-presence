@@ -27,6 +27,9 @@ export function useLiveCursorContext<TContext, TUser>(): LiveCursorContextValue<
  * Returns the presence client from the nearest provider.
  * Returns `null` when the hook runs without a provider.
  */
-export function useCursorClient<TContext = unknown, TUser = unknown>(): PresenceClient<TContext, TUser> | null {
+export function useCursorClient<TContext = unknown, TUser = unknown>(): PresenceClient<
+  TContext,
+  TUser
+> | null {
   return useLiveCursorContext<TContext, TUser>().client;
 }

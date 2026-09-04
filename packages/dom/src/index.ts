@@ -1,10 +1,5 @@
 export { createDomBinding } from "./binding.js";
-export type {
-  DomBinding,
-  DomBindingOptions,
-  EnvironmentOptions,
-  ResolutionOptions,
-} from "./binding.js";
+export type { DomBinding, DomBindingOptions, EnvironmentOptions, ResolutionOptions } from "./binding.js";
 
 export { createWebSocketTransport } from "./transport.js";
 export type {
@@ -24,8 +19,4 @@ export type {
   ResizeObserverLike,
 } from "./scheduler.js";
 
-export type {
-  ResolvedCursor,
-  ResolutionTier,
-  VisibilityPolicy,
-} from "./resolver.js";
+export type { ResolvedCursor, ResolutionTier, VisibilityPolicy } from "./resolver.js";

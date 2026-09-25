@@ -15,4 +15,5 @@ Persona review: the performance guide has no numbers for 50–200 clients per ro
 
 ## Diagram
 
-- A theme-aware SVG diagram component for `get-started/concepts/how-it-works.mdx`: package layers (`@anchor-presence/react` → `dom` → `core`) and the message flow (pointer → anchor chain + normalized offset → transport → relay → receiver resolves against its own layout → cursor). Replaces the plain text box. Readable in light and dark, at 390 px, with a text alternative.
+- Owner choice: Mermaid. Diagrams are ` ```mermaid ` blocks in MDX, rendered by a client-side `Mermaid` component (Fumadocs Mermaid pattern), themed from the site tokens in light and dark. The LLM markdown keeps the Mermaid source as text.
+- `get-started/concepts/how-it-works.mdx`: package layers (`@anchor-presence/react` → `dom` → `core`) and the message flow (pointer → anchor chain + normalized offset → transport → relay → receiver resolves against its own layout → cursor). Replaces the plain text box. Readable at 390 px, with a one-sentence text summary.

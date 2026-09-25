@@ -4,7 +4,9 @@ Status: research note, not a spec. No code changed by this document.
 
 ## Executive summary
 
-Anchor Presence already documents the core failure mode: a pointer crossing a gap between anchors falls back to viewport, and viewport position maps to a different spot when layouts differ (`troubleshooting.mdx`, "Cursor jumps between two elements"). This note proposes a way to quantify that risk before a user hits it, a way to measure it (static and dynamic), a shape for shipping an audit skill, a fix catalogue mapped to the resolver's actual fallback order, and a docs page outline. Seven candidate metrics are evaluated against the resolver code; five combine into a proposed 0–100 "jump risk" score, styled after Cumulative Layout Shift (impact × distance) and Lighthouse (weighted, log-normal-curved sub-scores), with a worked example using the repo's own `table-and-cards` and `responsive-grid` demo scenes. Packaging recommendation: a new, separate, user-invoked skill (not a mode of the shipped `anchor-presence` skill), framework-agnostic at its measurement core with an optional React/Playwright driver. Open questions for the owner are listed at the end — mainly weight tuning, CI gating, and the minimum viewport list.
+Anchor Presence already documents the core failure mode: a pointer crossing a gap between anchors falls back to viewport, and viewport position maps to a different spot when layouts differ (`troubleshooting.mdx`, "Cursor jumps between two elements"). This note proposes a way to quantify that risk before a user hits it, a way to measure it (static and dynamic), a shape for shipping an audit skill, a fix catalogue mapped to the resolver's actual fallback order, and a docs page outline. Seven candidate metrics are evaluated against the resolver code; five combine into a proposed 0–100 "jump risk" score, styled after Cumulative Layout Shift (impact × distance) and Lighthouse (weighted, log-normal-curved sub-scores), with a worked example using the repo's own `table-and-cards` and `responsive-grid` demo scenes.
+
+Five packaging and workflow questions were resolved by the owner during this research pass (relayed 2026-09-25) and are folded in below as decisions, not options: the skill ships as a new, separate, installable sibling to `skills/anchor-presence/` for use by library users, and this repo also runs it on its own demo/docs app; measurement is a two-phase static-then-dynamic pipeline where the dynamic phase needs a running instance of the target app; view/state discovery is derive-then-confirm, not fully autonomous; the skill's workflow is an interactive loop — propose (file+change-level fixes) → user selects → apply selected → re-measure → re-report; and the skill asks the user to choose the output form (chat table, Markdown report file, Mermaid charts in Markdown, or a combination) before printing anything, with all formats rendered from one JSON computed once. The remaining open questions (weight tuning, CI gating, minimum viewport list, and others) are listed at the end.
 
 ---
 
@@ -59,15 +61,26 @@ Static scan **cannot** find: actual rect geometry, actual gap coverage, actual a
 
 **Dynamic measurement** (Playwright) is the only reliable source for the five score inputs in §1: emulate a viewport (`page.setViewportSize`), toggle a UI state (click a documented control), then run one `page.evaluate` that walks `document.querySelectorAll('[data-anchor]')` and calls `getBoundingClientRect()` per element, plus reconstructs each element's anchor chain via `closest` walks up the tree (mirroring `registry.ts`'s ancestor logic, since the registry itself is a private module-internal `Map`, not queryable from outside the page).
 
-### Recommendation (own proposal — no established standard covers this combination)
+### Decision 2 (owner decision, relayed 2026-09-25): hybrid, two-phase, requires a running app
 
-**Hybrid, dynamic-primary:** static scan first, to build the candidate anchor/route/state inventory cheaply and flag conditional-render and breakpoint-hiding risk; then Playwright to measure real geometry at each (viewport × state) combination the static scan or a fallback default list surfaced. Concretely, for auto-discovering an unfamiliar app's states without a human enumerating them:
+The measurement approach is **hybrid, two-phase, and requires a running target app** — not an open question. The two phases:
 
-- **Routes**: grep the app's router config/file-based routes (Next.js `app/`/`pages/`, React Router `<Route>` elements) for route paths; static, cheap.
-- **Toggle-able UI states**: grep for elements with `aria-expanded`, `role="switch"`, `aria-selected`, or a `<button>`/`<input type="checkbox">` adjacent to a `data-anchor` region — these are strong signals of a collapsible/tabbed panel a human would have manually enumerated. Click each candidate once dynamically and diff the anchor set before/after: a real toggle changes which `[data-anchor]` elements are connected.
-- **Breakpoints**: do not guess a single "mobile" number — walk the CSS actually shipped (extract `@media (min-width:|max-width:)` values from built CSS, or Tailwind's config breakpoints) and test one viewport width on each side of every discovered breakpoint boundary, plus the repo's own already-documented pair when one exists (`apps/docs/components/examples/*.tsx`'s `layout: "wide" | "narrow"` scenes use exactly two named states, not a continuum — cheapest fallback default when no CSS breakpoint is discoverable).
+**Phase 1 — static scan (no browser, no running app).** Finds the candidate inventory cheaply:
 
-This auto-discovery approach is this document's own proposal; it is not validated against a real unfamiliar app in this research pass — see Open Questions.
+- **Anchors**: every `data-anchor="..."` (or configured attribute) literal and template-literal usage, via a regex/AST pass over the app's source, plus the structural chain (parent nesting) implied by JSX/DOM nesting.
+- **Routes**: grep the app's router config/file-based routes (Next.js `app/`/`pages/`, React Router `<Route>` elements) for route paths.
+- **Breakpoint conditionals**: media queries (`@media (min-width:|max-width:)` in shipped or source CSS, Tailwind responsive prefixes, CSS-in-JS breakpoint helpers) and conditional rendering keyed on a breakpoint hook or matchMedia check.
+- **Toggle controls**: elements with `aria-expanded`, `role="switch"`, `aria-selected`, or a `<button>`/`<input type="checkbox">` adjacent to a `data-anchor` region — candidate sidebar-collapse, tab, and panel-open/close controls.
+
+Phase 1's output is a **derived candidate list**: routes, breakpoints, and toggles, each with the file/line evidence that produced it.
+
+**Phase 2 — human checkpoint (decision 4, owner decision).** The skill shows the derived list to the user and lets them confirm or extend it before anything runs. This is not fully autonomous discovery: a static scan can miss a toggle with no ARIA signal, or over-include a decorative `<button>`, so the human is the final filter on what the dynamic pass actually measures. This checkpoint also fixes the plan Phase 2 executes — it is the point where the skill commits to a concrete (route × breakpoint × toggle-state) matrix.
+
+**Phase 2 — dynamic measurement (Playwright / `agent-browser`), against a running app.** This phase needs a live dev server or deployed instance to point a browser at — it cannot run against source code alone. For each confirmed (viewport, state) combination: emulate the viewport (`page.setViewportSize`), reach the route, apply the toggles (click the confirmed controls in sequence), then run one `page.evaluate` that walks `document.querySelectorAll('[data-anchor]')` and calls `getBoundingClientRect()` per element, plus reconstructs each element's anchor chain via `closest` walks up the tree (mirroring `registry.ts`'s ancestor logic, since the registry itself is a private module-internal `Map`, not queryable from outside the page). The repo's own `agent-browser` skill (`.agents/skills/agent-browser/SKILL.md`) or Playwright directly can drive this phase; §3 below decides between them for the shipped script.
+
+Static findings feed the dynamic plan directly: Phase 1's route list becomes the set of pages to visit, its breakpoint list becomes the viewport widths to emulate (one width on each side of every discovered boundary), and its toggle list becomes the click sequence per state — all subject to the human checkpoint before Phase 2 executes.
+
+Static scan **cannot** find, and Phase 2 is the only source for: actual rect geometry, actual gap coverage, actual aspect-ratio change, or actual neighbor distance — all of that requires real layout, confirmed by `troubleshooting.mdx:64-70`'s statement that jsdom zeroes `getBoundingClientRect()`.
 
 ---
 
@@ -88,25 +101,81 @@ The audit skill is **not** a fit for the shipped `anchor-presence` skill:
 - Per `SKILL-MECHANICS.md`'s splitting rule: split off a new skill "when you have a distinct leading word that should trigger it on its own." "Audit my layouts for cursor jump risk" is a distinct trigger phrase from "add live cursors" or "cursor lands on the wrong element" (the current skill's triggers) — folding both into one description would blur the trigger and cost every future `anchor-presence` invocation the audit skill's irrelevant context.
 - Cramming both into one `SKILL.md` also breaks progressive disclosure: the audit workflow needs Playwright setup, a scoring reference, and a fix catalogue — none of which the plain integration flow ever needs, so bundling would force every integration run to skip past audit-only reference material.
 
-### Recommendation (own proposal)
+### Decision 1 (owner decision, relayed 2026-09-25): audience, shipping location, dual use
 
-Ship a **new, separate, model-invoked skill** (own name, e.g. `anchor-presence-layout-audit`, ≤64 chars, lowercase+hyphens per the frontmatter rule above), living beside `skills/anchor-presence/` in the same `skills/` tree (same install channel, same skills.sh distribution path), not inside `.agents/skills/` (that tree is for this repo's own contributors, not for library users, per `AGENTS.md:76-85`).
+Dropped as an open question. The decision:
 
-Proposed file layout, following the shipped skill's own disclosed-reference pattern (`anchors.md`, `transports.md`, `troubleshooting.md` beside `SKILL.md`):
+- **Audience is library users**, not just this repo's own maintainers — the same audience as `skills/anchor-presence/`.
+- **Shipping location**: a new **sibling directory** under `skills/`, alongside `skills/anchor-presence/` — not nested inside it, not a mode/branch of it, matching the "not a fit" findings above.
+- **Installable the same way**: must work with `npx skills add` like the existing skill. `skills/anchor-presence/` carries no skill-specific entry in `skills-lock.json` itself (that file only tracks *this repo's own installed* third-party skills, per §3's Sources above) — the installability requirement is about the *new skill being consumable the same way* by an external project's `skills add`, i.e., a valid `SKILL.md` with frontmatter meeting the `name`/`description` rules (§3 Sources, platform.claude.com fields) at a path skills.sh can discover, not about adding a lock entry to this repo's own file.
+- **Dual use**: the same skill must work both installed into an arbitrary external user app, and run against this repo's own demo/docs app for dogfooding. This constrains the design to make no repo-specific assumptions in its core (no hardcoded knowledge of `apps/demo` or `apps/docs`) — the discovery phase (§2) must find routes/anchors/breakpoints generically in both cases, and any repo-specific dogfooding config (e.g., which dev server command starts the demo) lives in a local, non-shipped config the skill reads if present, not in the skill's own instructions.
+
+### Decision 3 (owner decision, relayed 2026-09-25): fix workflow shape
+
+Dropped as an open question. The skill's flow is an interactive loop, not a one-shot scan-and-report:
+
+1. **Propose**: the report names, per finding, a specific file and a specific change (e.g. "`components/Sidebar.tsx:42` — add `data-anchor=\"nav\"` to the `<nav>` wrapper"), not just a fix category from §4's catalogue.
+2. **Select**: the user picks which proposed fixes to apply, from the report.
+3. **Apply**: the skill edits only the selected files with the selected changes.
+4. **Re-measure**: the skill re-runs the Phase 2 dynamic pass (§2) against the now-changed app.
+5. **Re-report**: the skill shows the before/after score change per view pair, using the same output-format choice as the first report (Decision 5, below).
+
+This changes `SKILL.md`'s step list from "scan → report" to "discover → confirm → measure → score → propose (file+change) → select → apply → re-measure → re-report," and it means the skill needs write access to the target app's source, not just read and browser-automation access.
+
+### Decision 5 (owner decision, relayed 2026-09-25): output format is a user choice, computed once
+
+Dropped as an open question ("which output formats should the skill support"). Before printing any result, the skill **asks the user** which output form they want:
+
+- **(a) Compact table in chat** — cheapest in chat tokens; a plain Markdown table, one row per view pair, columns for score and band.
+- **(b) Markdown report file** — a written file with the table plus per-anchor breakdowns and the file+change fix proposals; moderate chat cost (the skill states the file path in chat, not the full content).
+- **(c) Mermaid charts embedded in Markdown** — text-based diagrams, so this option stays cheap in chat tokens the same way (b) does: the diagram source is Mermaid syntax, generated by the bundled script into a `.md` file, and only the file path need reach chat.
+
+Any combination of (a)/(b)/(c) is available. The skill states each option's rough chat-token cost when asking, so the user can pick based on how much they want printed inline versus written to disk.
+
+**Architecture**: the bundled measurement/scoring script computes the underlying per-view-pair, per-anchor data **once**, as JSON (the same JSON `scripts/score.mjs` already produces per §1/§4). Each output format is a separate **renderer** consuming that one JSON, not a re-computation:
+
+- the chat-table renderer prints a small Markdown table straight from the JSON (no file I/O);
+- the Markdown-report renderer writes a `.md` file from the same JSON;
+- the Mermaid renderer writes Mermaid code blocks (generated from the same JSON) into a `.md` file — generation happens inside the bundled script, from data, never by the agent hand-writing chart syntax from a data dump in its own context.
+
+This keeps the heavy lifting (data-to-diagram-syntax generation) inside the bundled script and off the agent's own context — the agent never pastes chart data into chat, it only reports the output file's path, matching platform.claude.com's Level 3 guidance that a script's *output*, not its code or intermediate data, is what should enter context.
+
+**Mermaid diagram types, mapped to what each communicates, grounded in actual renderer support (verified 2026-09-25, not assumed):**
+
+| Diagram | Communicates | Renderer support |
+|---|---|---|
+| `flowchart` / `graph` | Fallback chains: which anchor chain segment resolved vs. fell back, one node per chain link, styled to show the winning depth (metric 2, §1) | Long-standing, broadly supported — GitHub's own diagram docs demonstrate `flowchart` explicitly as a working example. Safe default with no support risk. |
+| `xychart-beta` | Bar chart of score-per-view-pair, and a second use for per-anchor displacement magnitude | Present in current Mermaid (confirmed via mermaid.js.org's own XY Chart page, referenced against Mermaid 12.0.0), but the `-beta` suffix in its own directive name signals the feature is still new; this research pass could not confirm from mermaid.js.org whether it has graduated from beta or find an explicit stability statement. GitHub's Markdown docs do not name `xychart-beta` as a confirmed-supported type — they only confirm flowchart, sequence, and pie explicitly and otherwise tell the user to self-check with Mermaid's `info` directive inside their own renderer. **Treat as unconfirmed for GitHub rendering; verify with a live test render before depending on it, and fall back to a plain Markdown table (option a/b) for the score-per-view-pair chart if it fails to render.** |
+| `quadrantChart` | Plotting size-change (aspect-ratio amplification, metric c/4) against position-shift (displacement, metric a) per anchor, one point per anchor, one quadrant plot per view pair | Same caveat as `xychart-beta`: present in current Mermaid documentation but not confirmed as a GitHub-rendered type by GitHub's own docs. **Treat as unconfirmed; fall back to a plain data table (anchor, size-change %, position-shift %) if it fails to render.** |
+
+Because GitHub's own instructions are to verify Mermaid version/diagram support at the point of rendering rather than assume a fixed list, the skill's Mermaid renderer should degrade gracefully: attempt `xychart-beta`/`quadrantChart` where useful, but always pair them with (or fall back to) the universally-supported `flowchart` and plain tables, so a report never depends entirely on a diagram type whose support could not be confirmed in this research pass.
+
+**Before/after comparison for the re-measure step** (Decision 3's last step): render as a small Markdown table (before score, after score, delta, per view pair with an applied fix) rather than a chart — a two-column-plus-delta comparison is clearer as text than as a diagram, and it sidesteps the `xychart-beta` support question entirely for the one output every audit run will actually produce.
+
+### Recommendation (own proposal, updated for decisions 1/3/5)
+
+Ship a **new, separate, model-invoked skill** (own name, e.g. `anchor-presence-layout-audit`, ≤64 chars, lowercase+hyphens per the frontmatter rule above), living beside `skills/anchor-presence/` in the same `skills/` tree (same install channel, same skills.sh distribution path, per Decision 1), not inside `.agents/skills/` (that tree is for this repo's own contributors, not for library users, per `AGENTS.md:76-85`).
+
+Proposed file layout, following the shipped skill's own disclosed-reference pattern (`anchors.md`, `transports.md`, `troubleshooting.md` beside `SKILL.md`), extended for the decided propose/select/apply/re-measure loop and the JSON-once/render-per-format architecture:
 
 ```
 skills/anchor-presence-layout-audit/
-  SKILL.md              — steps: discover anchors/states → measure → score → report fixes
+  SKILL.md              — steps: discover → confirm → measure → score → propose → select → apply → re-measure → re-report
   scoring.md            — the formula, weights, thresholds (disclosed reference, §4 below)
-  discovery.md          — route/state/breakpoint auto-discovery heuristics (disclosed reference)
+  discovery.md          — route/state/breakpoint discovery heuristics and the confirm checkpoint (disclosed reference)
+  fixes.md              — the fix catalogue (§4), used to turn a score finding into a file+change proposal
   scripts/
-    measure.mjs         — Playwright script: viewport × state matrix → raw geometry JSON
-    score.mjs           — pure function: geometry JSON (two layouts) → score + explanation
+    discover.mjs        — static scan: anchors, routes, breakpoints, toggle candidates → candidate-list JSON
+    measure.mjs         — Playwright script: confirmed viewport × state matrix, against a running app → raw geometry JSON
+    score.mjs           — pure function: geometry JSON (two layouts) → one score JSON (§1/§4 data, computed once)
+    report-table.mjs    — renders the score JSON as a compact Markdown table (chat-cost: lowest)
+    report-markdown.mjs — renders the score JSON as a Markdown report file
+    report-mermaid.mjs  — renders the score JSON as Mermaid code blocks in a Markdown file (chat-cost: a file path only)
 ```
 
-**Framework-agnostic design**: the *measurement contract* is "given a URL/local dev server and an anchor attribute name, return `{anchorId, rect, chainDepth}[]` per (viewport, state) combination" — this is pure DOM (`querySelectorAll`, `getBoundingClientRect`, `closest`), with zero React/Next.js API surface, so it works against any framework's rendered output. The *state-toggle* step is the only framework-flavored part (finding "the sidebar collapse button" is app-specific, not framework-specific), and it is driven by the discovery heuristics in §2, not by React-specific selectors. The demo app being React is incidental — nothing in `packages/dom` (the layer the audit actually measures against) imports React (`packages/dom/src/*.ts`, confirmed zero React imports across resolver/binding/pointer/registry).
+**Framework-agnostic design**: the *measurement contract* is "given a URL/local dev server and an anchor attribute name, return `{anchorId, rect, chainDepth}[]` per (viewport, state) combination" — this is pure DOM (`querySelectorAll`, `getBoundingClientRect`, `closest`), with zero React/Next.js API surface, so it works against any framework's rendered output, for both the external-user-app case and this repo's own demo/docs case (Decision 1's dual use). The *state-toggle* step is the only framework-flavored part (finding "the sidebar collapse button" is app-specific, not framework-specific), and it is driven by the discovery heuristics in §2, not by React-specific selectors. The demo app being React is incidental — nothing in `packages/dom` (the layer the audit actually measures against) imports React (`packages/dom/src/*.ts`, confirmed zero React imports across resolver/binding/pointer/registry).
 
-`scripts/measure.mjs` should use Playwright directly (already the repo's dynamic-test tool of record per `AGENTS.md:52`) rather than depending on `agent-browser`: `agent-browser` is optimized for interactive, accessibility-tree-driven exploration by an agent session, not for a scripted, repeatable, CI-friendly geometry sweep across a fixed viewport×state matrix — and it is a separately-installed external CLI (`npm i -g agent-browser`), an extra dependency this skill does not need for a deterministic script.
+`scripts/measure.mjs` can use Playwright directly (already the repo's dynamic-test tool of record per `AGENTS.md:52`) or the repo's `agent-browser` skill — the owner's hybrid-measurement decision (§2) names both Playwright and `agent-browser` as acceptable dynamic drivers. Playwright is preferable for the shipped, deterministic, CI-friendly script since it needs no separately-installed external CLI (`agent-browser` requires `npm i -g agent-browser`), while `agent-browser` remains a reasonable choice when an agent session drives the audit interactively rather than through the bundled script.
 
 ---
 
@@ -124,6 +193,8 @@ skills/anchor-presence-layout-audit/
 | Choose breakpoints that preserve proportions | Not a resolver-level mechanism at all — this is a design-time choice upstream of anything the resolver can see. It reduces how often (4) triggers in the first place, by avoiding breakpoints that turn (say) a 3-column grid into 1 column with drastically different card proportions. | Preventive, upstream of (4); cannot be verified in resolver code because it is a choice made before any anchor exists |
 
 All eight example fixes given in the task check out against actual resolver/binding behavior; none required rejecting one as ineffective, but "reordering" and "icon-only square anchors" are shown above to be *narrower* than they first appear (mapped to one metric each, not several).
+
+**Per Decision 3 (§3)**, the skill's report does not stop at this catalogue's category level. Each finding names the specific fix category from this table, then a concrete file and change: for example, a gap-coverage finding on a discovered sidebar maps to "give a container its own anchor," which the skill turns into "`components/Sidebar.tsx:18` — add `data-anchor=\"nav\"` to the `<nav>` element wrapping the discovered nav items," using the file path and line the discovery phase (§2) already recorded for that DOM region. This table is therefore also the reference `fixes.md` (§3's file layout) uses to go from "which metric is bad" to "which category of edit to propose," before the skill fills in the specific file/line from its own discovery data.
 
 ---
 
@@ -215,9 +286,12 @@ Contrast with `apps/docs/components/examples/fallbacks.tsx`'s `orders.row:1042.r
 
 ## Open questions for the owner
 
+Five packaging/workflow questions this research pass originally listed here were resolved by the owner (relayed 2026-09-25) and are now decisions folded into §§2–3 above, not open questions: audience/shipping location/dual-use (§3, Decision 1), the static-then-dynamic measurement pipeline and its running-app requirement (§2), the propose/select/apply/re-measure fix workflow (§3, Decision 3), derive-then-confirm view/state discovery (§2), and the ask-first, JSON-once/render-per-format output choice including the Mermaid chart types (§3, Decision 5). The genuinely unresolved questions:
+
 1. **Weight tuning.** The 40/25/20/15 split and the good/poor thresholds in the score formula are this document's own proposal with no real-usage data behind them (unlike Lighthouse's log-normal curves, which are fitted to HTTP Archive). Should the first shipped version use these as fixed defaults, or ship them as configurable and gather real audit runs before treating any number as authoritative?
 2. **CI gating.** Should a failing score block a PR (like a Lighthouse budget), only warn, or only ever run on demand via the skill? The repo's own gate list (`AGENTS.md:45-52`) has no visual/geometry budget today.
 3. **Minimum supported viewport list.** §2 proposes deriving breakpoints from shipped CSS; is there a fixed minimum set (e.g. 375/768/1280/1920) the owner wants tested unconditionally regardless of what the CSS scan finds, similar to how Lighthouse fixes its own device emulation profiles?
 4. **Neighbor-distance path model.** The proposed `neighbor_ratio` assumes sibling anchors under a shared registered parent approximate a real pointer path. Is there a preferred way to model an actual likely pointer path (e.g. reading order, tab order) instead of raw sibling adjacency, for apps where visual and DOM order diverge?
 5. **Score for missing-both-sides anchors.** The current formula treats "anchor exists in A, missing in B" (parity=0) but does not define behavior for an anchor that is a known false-positive from the static scan (e.g. an anchor ID assembled dynamically that the static scanner cannot resolve to a literal). Should the skill require a manual anchor-ID allowlist for such cases, or attempt runtime discovery only?
-6. **Distribution channel for the new skill.** Ship `skills/anchor-presence-layout-audit/` in the same repo as a sibling to `skills/anchor-presence/`, or as a fully separate package/repo, given it needs Playwright as a runtime dependency that the integration skill does not?
+6. **Re-measure iteration limit.** Decision 3's propose/select/apply/re-measure loop has no stated stopping rule. If a re-measured score is still high after an applied fix, does the skill offer another propose/select/apply round automatically, cap the number of rounds, or always hand control back to the user after one re-measure?
+7. **Mermaid chart-type confirmation.** §3's Mermaid recommendation flags `xychart-beta` and `quadrantChart` as present in current Mermaid documentation but unconfirmed for GitHub's renderer specifically (GitHub's own docs point users to a runtime `info` self-check rather than publishing a fixed supported-type list). Should the skill attempt these richer types by default and fall back on render failure, or default to the confirmed-safe `flowchart`/table combination until someone verifies live GitHub rendering?

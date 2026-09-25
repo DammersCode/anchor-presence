@@ -1,8 +1,8 @@
 // Browser-only client creation — never imported by SSR/module-eval code paths.
-import { binaryCodec, createPresenceClient } from "@anchor-presence/core";
+import { createPresenceClient } from "@anchor-presence/core";
 import type { PresenceClient } from "@anchor-presence/core";
-import { createWebSocketTransport } from "@anchor-presence/dom";
 import { randomName } from "../lib/names";
+import { createBackendTransport, resolveBackendId } from "./backends";
 
 export type PageId = "dashboard" | "orders" | "customers" | "products";
 export type DemoContext = { page?: PageId; dialog?: "settings" };
@@ -41,16 +41,17 @@ export function colorForName(name: string): string {
 const params = new URLSearchParams(window.location.search);
 export const localUserName = params.get("name") || randomName();
 export const localRoom = params.get("room") || "main";
+export const backendId = resolveBackendId(window.location.search);
 
 let client: PresenceClient<DemoContext, DemoUser> | null = null;
 
 /** Module-safe: constructs the transport/client lazily so importing this module never touches the network at eval time. */
 export function getPresenceClient(): PresenceClient<DemoContext, DemoUser> {
   if (client !== null) return client;
-  const transport = createWebSocketTransport({ path: `/?room=${encodeURIComponent(localRoom)}` });
+  const { transport, codec } = createBackendTransport(backendId, localRoom);
   client = createPresenceClient<DemoContext, DemoUser>({
     transport,
-    codec: binaryCodec,
+    codec,
     user: { name: localUserName, color: colorForName(localUserName) },
   });
   transport.connect?.();

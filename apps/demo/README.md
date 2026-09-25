@@ -35,3 +35,26 @@ Both windows join the same relay room by default. Use `?room=` to use a differen
 - **Open Settings** in one window. In the other window, the cursor hides and an "in Settings" indicator appears in the topbar.
 - Visit `/?page=bench` for the performance page. It uses synthetic cursors, no network.
 - **Switch cursor motion** in Settings, or with `?interp=none|linear|spring`.
+
+## Switching the relay backend
+
+The demo picks its transport at runtime with `?backend=<id>` (or the `VITE_BACKEND` env var for a build-time default). The default, `bun`, is `apps/server` on port 8787.
+
+| `?backend=`     | Server                            | Run it                                        |
+| --------------- | --------------------------------- | --------------------------------------------- |
+| `bun` (default) | `apps/server` (:8787)             | `bun run --cwd apps/server dev`               |
+| `bun-native`    | `examples/bun-native` (:8788)     | `bun run --cwd examples/bun-native dev:relay` |
+| `node-ws`       | `examples/node-ws` (:8789)        | `bun run --cwd examples/node-ws dev:relay`    |
+| `hono`          | `examples/hono` (:8790)           | `bun run --cwd examples/hono dev:relay`       |
+| `elysia`        | `examples/elysia` (:8791)         | `bun run --cwd examples/elysia dev:relay`     |
+| `socketio`      | `examples/socketio` (:5001)       | `bun run --cwd examples/socketio dev:relay`   |
+| `signalr`       | `examples/signalr/server` (:5000) | `cd examples/signalr/server && dotnet run`    |
+
+For example, to try the Elysia backend:
+
+```sh
+bun run --cwd examples/elysia dev:relay
+bun run --cwd apps/demo dev
+```
+
+Then open `http://localhost:5173/?backend=elysia` in two windows.

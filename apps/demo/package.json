@@ -12,8 +12,11 @@
     "@anchor-presence/core": "0.1.0",
     "@anchor-presence/dom": "0.1.0",
     "@anchor-presence/react": "0.1.0",
+    "@dammers/use-signalr-react": "^0.5.0",
+    "@microsoft/signalr": "^10.0.11",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "socket.io-client": "^4.8.3"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",

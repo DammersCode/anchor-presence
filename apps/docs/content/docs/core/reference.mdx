@@ -3,7 +3,7 @@ title: core
 description: Every export of @anchor-presence/core.
 ---
 
-`@anchor-presence/core` has zero dependencies and no DOM globals. It runs in Node, Bun, workers, and browsers. See [Architecture](/docs/concepts/architecture) for how it fits with `dom` and `react`.
+`@anchor-presence/core` has zero dependencies and no DOM globals. It runs in Node, Bun, workers, and browsers. See [Architecture](/docs/get-started/concepts/architecture) for how it fits with `dom` and `react`.
 
 ## Client
 
@@ -22,7 +22,7 @@ import { createInMemoryPair } from "@anchor-presence/core";
 import type { LiveCursorTransport } from "@anchor-presence/core";
 ```
 
-`LiveCursorTransport` is the interface every transport implements. See [Transports](/docs/guides/transports) for the full contract. `createInMemoryPair()` returns two transports wired to each other, for tests and local prototyping without a relay.
+`LiveCursorTransport` is the interface every transport implements. See [Transports](/docs/core/transports) for the full contract. `createInMemoryPair()` returns two transports wired to each other, for tests and local prototyping without a relay.
 
 ## Codecs
 
@@ -31,7 +31,7 @@ import { jsonCodec, binaryCodec } from "@anchor-presence/core";
 import type { CursorCodec } from "@anchor-presence/core";
 ```
 
-`jsonCodec` is the default. `binaryCodec` is a compact fixed-layout binary codec. See [Codecs](/docs/guides/codecs) for the wire format of each.
+`jsonCodec` is the default. `binaryCodec` is a compact fixed-layout binary codec. See [Codecs](/docs/core/codecs) for the wire format of each.
 
 ## Validation
 
@@ -40,7 +40,7 @@ import { validatePresence } from "@anchor-presence/core";
 import type { ValidationLimits } from "@anchor-presence/core";
 ```
 
-`validatePresence(value, limits?)` checks a decoded, untrusted value and returns a `CursorPresence` or `null`. See [Security](/docs/guides/security) for every limit.
+`validatePresence(value, limits?)` checks a decoded, untrusted value and returns a `CursorPresence` or `null`. See [Security](/docs/get-started/security) for every limit.
 
 ## Interpolation
 
@@ -49,7 +49,7 @@ import { linearInterpolator, noneInterpolator } from "@anchor-presence/core";
 import type { Interpolator, InterpolatorFactory } from "@anchor-presence/core";
 ```
 
-See "Custom interpolation" in the [React guide](/docs/guides/react) for the interface and the settled-flag rule.
+See "Custom interpolation" in the [React guide](/docs/react) for the interface and the settled-flag rule.
 
 ## Store
 
@@ -77,9 +77,11 @@ import type {
 } from "@anchor-presence/core";
 ```
 
-These types describe the wire protocol. See [Anchors and fallbacks](/docs/concepts/anchors-and-fallbacks) for `AnchorPoint`'s `u`/`v` fields, and [Architecture](/docs/concepts/architecture) for `RemotePresence` versus the raw snapshot.
+These types describe the wire protocol. See [Anchors and fallbacks](/docs/get-started/concepts/anchors-and-fallbacks) for `AnchorPoint`'s `u`/`v` fields, and [Architecture](/docs/get-started/concepts/architecture) for `RemotePresence` versus the raw snapshot.
 
 ## Related
 
-- [API reference: dom](/docs/reference/dom)
-- [API reference: react](/docs/reference/react)
+- [Overview](/docs/core)
+- [Build a framework adapter](/docs/core/build-a-framework-adapter)
+- [API reference: dom](/docs/dom/reference)
+- [API reference: react](/docs/react/reference)

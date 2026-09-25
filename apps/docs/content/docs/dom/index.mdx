@@ -1,0 +1,35 @@
+---
+title: Overview
+description: The DOM binding, anchor registration, pointer capture, resolution, and the native WebSocket transport.
+---
+
+`@anchor-presence/dom` is the only package that calls browser APIs. It depends only on `core`, and turns a `PresenceClient` into cursors resolved against the page's own layout. See [Architecture](/docs/get-started/concepts/architecture) for how it fits between `core` and `react`.
+
+## The binding
+
+`createDomBinding(client, options?)` wires together every browser-facing concern: anchor auto-registration, pointer sampling, geometry scheduling, remote resolution, and interpolation. It returns a `DomBinding` you subscribe to for resolved cursor snapshots. See the [API reference](/docs/dom/reference#createdombinding) for the full options and return shape.
+
+## data-anchor auto-registration
+
+An element becomes an anchor the moment it has a non-empty value for the configured attribute, `data-anchor` by default. The binding watches the DOM with a `MutationObserver`, so no manual registration call is needed. See the [API reference](/docs/dom/reference#anchor-attributes) for the exact rules.
+
+## Pointer capture
+
+The binding listens for `pointermove` on the page, walks the anchor ancestors of the event target, and builds the local `CursorPosition` sent to `core`. Anchors closer to the pointer target win.
+
+## Resolver
+
+The resolver turns a remote `RemotePresence` into a `ResolvedCursor`. It measures the receiver's own anchor elements with `getBoundingClientRect()`, degrades through the anchor fallback chain when the exact anchor is missing, and applies the configured interpolator.
+
+## Visibility policy and occlusion
+
+A `VisibilityPolicy` decides whether a resolved cursor renders, based on its tier and position. The default policy hides a cursor whose point falls outside its scroll container's visible bounds, so a cursor never appears to float over clipped content. See [Occlusion and scroll containers](/docs/examples/occlusion-and-scroll-containers) for a worked example.
+
+## Native WebSocket transport
+
+`createWebSocketTransport` is the one transport shipped in a package. It reconnects with exponential backoff and matches the reference relay. See [Transports](/docs/core/transports) for the full contract and every transport option, native and example.
+
+## Related
+
+- [Build a framework adapter](/docs/core/build-a-framework-adapter)
+- [API reference](/docs/dom/reference)

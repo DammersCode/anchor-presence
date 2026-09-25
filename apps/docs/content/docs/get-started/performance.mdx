@@ -64,7 +64,7 @@ With no active remote cursors, no `requestAnimationFrame` loop runs, and every s
 
 The default relay forwards every message to every other socket in a room, so relay traffic grows with senders times receivers. The library reduces per-message cost through delta `context`/`user`, one validation pass, and an optional adaptive publish rate, but it does not change the room-broadcast fan-out. For a large room, move receivers into smaller rooms, add relay-side rate limits and message caps, or introduce a server-side aggregator.
 
-The reference relay in `apps/server/index.ts` enforces a per-room socket cap, a per-message byte cap, and a per-socket token-bucket rate limit. Production relay hardening, such as authentication, broader connection quotas, ping, or horizontal scale, remains a server concern, not a library transport concern. See [Transports](/docs/guides/transports) for the boundary.
+The reference relay in `apps/server/index.ts` enforces a per-room socket cap, a per-message byte cap, and a per-socket token-bucket rate limit. Production relay hardening, such as authentication, broader connection quotas, ping, or horizontal scale, remains a server concern, not a library transport concern. See [Transports](/docs/core/transports) for the boundary.
 
 ## Guidance
 
@@ -76,5 +76,5 @@ The reference relay in `apps/server/index.ts` enforces a per-room socket cap, a 
 
 ## Related
 
-- [Architecture](/docs/concepts/architecture)
-- [API reference: dom](/docs/reference/dom)
+- [Architecture](/docs/get-started/concepts/architecture)
+- [API reference: dom](/docs/dom/reference)

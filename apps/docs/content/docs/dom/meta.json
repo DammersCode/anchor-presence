@@ -1,0 +1,7 @@
+{
+  "title": "@anchor-presence/dom",
+  "icon": "mouse-pointer",
+  "description": "The DOM binding: anchors, resolution, and the native WebSocket transport",
+  "root": true,
+  "pages": ["index", "reference"]
+}

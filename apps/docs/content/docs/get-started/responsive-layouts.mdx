@@ -15,7 +15,7 @@ A raw pixel coordinate from the sender means nothing on a receiver with a differ
 
 The sender never sends a pixel coordinate as the primary signal. It sends an anchor ID (which named element the pointer was over) and a normalized `u`/`v` position inside that anchor's own rectangle.
 
-The receiver measures its own copy of the same anchor and computes a pixel position from the same `u`/`v` proportion. See [Anchors and fallbacks](/docs/concepts/anchors-and-fallbacks) for the exact formulas.
+The receiver measures its own copy of the same anchor and computes a pixel position from the same `u`/`v` proportion. See [Anchors and fallbacks](/docs/get-started/concepts/anchors-and-fallbacks) for the exact formulas.
 
 ## Worked example
 
@@ -53,9 +53,9 @@ Two clients can render the identical anchor at different sizes because of font c
 
 ## When no anchor matches
 
-If none of the anchors in the fallback chain exist on the receiver, for example a different page or component tree, resolution falls through to the viewport fallback, then to `hidden`. See [Anchors and fallbacks](/docs/concepts/anchors-and-fallbacks).
+If none of the anchors in the fallback chain exist on the receiver, for example a different page or component tree, resolution falls through to the viewport fallback, then to `hidden`. See [Anchors and fallbacks](/docs/get-started/concepts/anchors-and-fallbacks).
 
 ## Related
 
-- [Anchors and fallbacks](/docs/concepts/anchors-and-fallbacks)
+- [Anchors and fallbacks](/docs/get-started/concepts/anchors-and-fallbacks)
 - [Basics example](/docs/examples/basics)

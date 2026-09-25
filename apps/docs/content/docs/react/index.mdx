@@ -55,7 +55,7 @@ type DomBindingOptions<TContext = unknown, TUser = unknown> = {
 
 `resolution` controls how remote cursors turn into screen positions. `environment` supplies the DOM and timing hosts, and each field defaults to the ambient browser global. The provider reads `bindingOptions` only once, at binding creation. Later changes to the object do not recreate the binding.
 
-Pass `client={null}` during server-side rendering. See [SSR and Strict Mode](/docs/guides/ssr-and-strict-mode).
+Pass `client={null}` during server-side rendering. See [SSR and Strict Mode](/docs/react/ssr-and-strict-mode).
 
 ## Hooks
 
@@ -230,7 +230,7 @@ type MyUser = { name: string; color?: string };
 />;
 ```
 
-Validate `cursor.user` values before you return them. Remote `user` data is untrusted; treat it as text, never as HTML. See [Security](/docs/guides/security).
+Validate `cursor.user` values before you return them. Remote `user` data is untrusted; treat it as text, never as HTML. See [Security](/docs/get-started/security).
 
 ### Filtering cursors
 
@@ -331,6 +331,6 @@ A key change remounts the subtree and creates a fresh binding with the new facto
 
 ## Related
 
-- [SSR and Strict Mode](/docs/guides/ssr-and-strict-mode)
-- [API reference: react](/docs/reference/react)
+- [SSR and Strict Mode](/docs/react/ssr-and-strict-mode)
+- [API reference: react](/docs/react/reference)
 - [Custom cursor rendering example](/docs/examples/custom-cursor-rendering)

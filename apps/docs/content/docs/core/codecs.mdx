@@ -110,11 +110,11 @@ const presence = validatePresence(decoded); // CursorPresence | null
 if (presence === null) return; // dropped
 ```
 
-`validatePresence` checks every field against the limits in [Security](/docs/guides/security): version, ID lengths, sequence type, anchor count, coordinate ranges, and payload size. A message that fails any check is dropped in full; there is no partial acceptance of a malformed message.
+`validatePresence` checks every field against the limits in [Security](/docs/get-started/security): version, ID lengths, sequence type, anchor count, coordinate ranges, and payload size. A message that fails any check is dropped in full; there is no partial acceptance of a malformed message.
 
 This two-step boundary, where the codec returns `unknown` and `validatePresence` gates, means a codec author never needs to write validation logic. A codec's only job is turning bytes into a value and back, safely.
 
 ## Related
 
-- [Security](/docs/guides/security)
-- [Transports](/docs/guides/transports)
+- [Security](/docs/get-started/security)
+- [Transports](/docs/core/transports)

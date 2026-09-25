@@ -1,0 +1,17 @@
+{
+  "title": "Anchor Presence",
+  "icon": "compass",
+  "description": "Overview, setup, and cross-cutting guides",
+  "root": true,
+  "pages": [
+    "introduction",
+    "installation",
+    "quick-start",
+    "concepts",
+    "responsive-layouts",
+    "security",
+    "performance",
+    "troubleshooting",
+    "ai-agents"
+  ]
+}

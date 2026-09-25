@@ -17,13 +17,13 @@ Mark an anchor with the configured anchor attribute. The default attribute is `d
 <button data-anchor="nav.dashboard">Dashboard</button>
 ```
 
-A binding can use another attribute through `anchorAttribute`. See [`DomBindingOptions`](/docs/reference/dom).
+A binding can use another attribute through `anchorAttribute`. See [`DomBindingOptions`](/docs/dom/reference).
 
 ## Anchor IDs
 
 An anchor ID is an opaque string, 1 to 256 characters. Choose your own naming scheme, for example `nav.dashboard`, `stats.revenue`, or `orders.row:17.actions`.
 
-Anchor IDs are map keys only. They never become CSS selectors, query strings, or code. A remote message cannot make the receiver look up any DOM location except through the registered anchor map. See [Security](/docs/guides/security).
+Anchor IDs are map keys only. They never become CSS selectors, query strings, or code. A remote message cannot make the receiver look up any DOM location except through the registered anchor map. See [Security](/docs/get-started/security).
 
 If two elements register the same ID, the newest one wins. The registry logs a warning in development builds. This keeps remount-before-unmount cases deterministic, for example React Strict Mode or a virtualized list.
 
@@ -48,9 +48,9 @@ x = rect.left + rect.width * u
 y = rect.top + rect.height * v
 ```
 
-Because both sides use a proportion of the anchor's own size, a 75% mark stays a 75% mark, even when the anchor is a different width or height on each client. See [Responsive layouts](/docs/guides/responsive-layouts) for a worked example.
+Because both sides use a proportion of the anchor's own size, a 75% mark stays a 75% mark, even when the anchor is a different width or height on each client. See [Responsive layouts](/docs/get-started/responsive-layouts) for a worked example.
 
-The receiver clamps `u` and `v` to `[0, 1]` during validation. See [Security](/docs/guides/security).
+The receiver clamps `u` and `v` to `[0, 1]` during validation. See [Security](/docs/get-started/security).
 
 ## Fallback chains
 
@@ -83,14 +83,14 @@ Every resolved cursor carries a tier, one of three values:
 | `viewport` | No anchor resolved. The cursor used the viewport fallback position.            |
 | `hidden`   | Nothing resolved. The cursor has no valid position.                            |
 
-The resolution order is fixed: exact anchor, then nearest registered parent anchor, then a larger region anchor, then viewport fallback. A visibility policy then decides whether to show a hidden cursor at all. A visibility policy runs after tier resolution and can still hide an `anchor` or `viewport` tier cursor for application reasons. See [UI context](/docs/concepts/ui-context).
+The resolution order is fixed: exact anchor, then nearest registered parent anchor, then a larger region anchor, then viewport fallback. A visibility policy then decides whether to show a hidden cursor at all. A visibility policy runs after tier resolution and can still hide an `anchor` or `viewport` tier cursor for application reasons. See [UI context](/docs/get-started/concepts/ui-context).
 
 ## Interpolation
 
-The receiver eases a remote cursor from its last position to its new one, instead of jumping. The library ships two styles: `none` (snap) and `linear` (fixed-duration ease). Write a custom style, such as a spring, against the public `Interpolator` interface. See "Custom interpolation" in the [React guide](/docs/guides/react).
+The receiver eases a remote cursor from its last position to its new one, instead of jumping. The library ships two styles: `none` (snap) and `linear` (fixed-duration ease). Write a custom style, such as a spring, against the public `Interpolator` interface. See "Custom interpolation" in the [React guide](/docs/react).
 
 ## Related
 
-- [Responsive layouts](/docs/guides/responsive-layouts)
-- [UI context](/docs/concepts/ui-context)
-- [Security](/docs/guides/security)
+- [Responsive layouts](/docs/get-started/responsive-layouts)
+- [UI context](/docs/get-started/concepts/ui-context)
+- [Security](/docs/get-started/security)

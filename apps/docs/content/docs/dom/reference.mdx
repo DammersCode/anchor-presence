@@ -3,7 +3,7 @@ title: dom
 description: Every export of @anchor-presence/dom.
 ---
 
-`@anchor-presence/dom` is the only package that calls browser APIs: `getBoundingClientRect`, `ResizeObserver`, `MutationObserver`, `requestAnimationFrame`, and pointer events. It depends only on `core`. See [Architecture](/docs/concepts/architecture).
+`@anchor-presence/dom` is the only package that calls browser APIs: `getBoundingClientRect`, `ResizeObserver`, `MutationObserver`, `requestAnimationFrame`, and pointer events. It depends only on `core`. See [Architecture](/docs/get-started/concepts/architecture).
 
 ## createDomBinding
 
@@ -38,7 +38,7 @@ binding.subscribe(() => {
 
 ### invalidate
 
-`binding.invalidate(reason?)` marks the layout dirty. The binding re-resolves the cursors on the next frame. Call it after a programmatic layout change the built-in signals cannot see. See [Performance](/docs/guides/performance) for the full invalidation-signal list and when to call it yourself.
+`binding.invalidate(reason?)` marks the layout dirty. The binding re-resolves the cursors on the next frame. Call it after a programmatic layout change the built-in signals cannot see. See [Performance](/docs/get-started/performance) for the full invalidation-signal list and when to call it yourself.
 
 ## Anchor attributes
 
@@ -56,7 +56,7 @@ Empty or whitespace-only values are ignored. Changing the attribute value re-reg
 import { createWebSocketTransport } from "@anchor-presence/dom";
 ```
 
-Native WebSocket transport for the bundled relay or a compatible relay. Exposes `bufferedBytes()` and reconnect with exponential backoff. See [Transports](/docs/guides/transports) for a full walkthrough.
+Native WebSocket transport for the bundled relay or a compatible relay. Exposes `bufferedBytes()` and reconnect with exponential backoff. See [Transports](/docs/core/transports) for a full walkthrough.
 
 <AutoTypeTable path="../../packages/dom/src/transport.ts" name="WebSocketTransportOptions" />
 
@@ -70,5 +70,6 @@ import type { ResolvedCursor, ResolutionTier, VisibilityPolicy } from "@anchor-p
 
 ## Related
 
-- [API reference: core](/docs/reference/core)
-- [API reference: react](/docs/reference/react)
+- [Overview](/docs/dom)
+- [API reference: core](/docs/core/reference)
+- [API reference: react](/docs/react/reference)

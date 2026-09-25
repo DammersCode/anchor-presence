@@ -1,0 +1,7 @@
+{
+  "title": "@anchor-presence/react",
+  "icon": "atom",
+  "description": "The provider, hooks, and cursor components",
+  "root": true,
+  "pages": ["index", "ssr-and-strict-mode", "reference"]
+}

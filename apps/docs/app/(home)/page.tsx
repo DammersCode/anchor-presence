@@ -64,6 +64,12 @@ export default function HomePage() {
             >
               Read the docs
             </Link>
+            <Link
+              href="/docs/examples"
+              className="rounded-full border border-fd-border px-5 py-2.5 text-sm font-semibold"
+            >
+              Examples
+            </Link>
             <Link href="#how" className="border-b border-fd-border pb-px text-sm font-semibold">
               How it works &rarr;
             </Link>
@@ -140,7 +146,7 @@ export default function HomePage() {
         </p>
         <div className="flex flex-wrap gap-4">
           <Link
-            href="/docs/getting-started/quick-start"
+            href="/docs/get-started/quick-start"
             className="rounded-full bg-fd-primary px-5 py-2.5 text-sm font-semibold text-fd-primary-foreground"
           >
             Quick start

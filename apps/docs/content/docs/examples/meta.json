@@ -1,5 +1,8 @@
 {
   "title": "Examples",
+  "icon": "flask-conical",
+  "description": "Live demos and backend relays",
+  "root": true,
   "pages": [
     "basics",
     "anchors-and-fallbacks",

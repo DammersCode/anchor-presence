@@ -31,11 +31,11 @@ const client = createPresenceClient({ transport: createSocketIoTransport(socket)
 ## Behavior notes
 
 - `subscribeStatus` replays the current status to every new subscriber, so a component that mounts after the socket already connected still learns it can send.
-- The relay is deliberately dumb: it never parses `"presence"` payloads, so `validatePresence()` on the receiving client is still the only thing standing between the wire and the store. See [Security](/docs/guides/security).
+- The relay is deliberately dumb: it never parses `"presence"` payloads, so `validatePresence()` on the receiving client is still the only thing standing between the wire and the store. See [Security](/docs/get-started/security).
 - An integration test in `examples/socketio/socketio.test.ts` starts a real Socket.IO server on an ephemeral port, connects two clients, and checks that a cursor update sent from one reaches the other through `getRemoteSnapshot()`.
 - Run the relay with `cd examples/socketio && bun run dev:relay`, and the demo with `cd apps/demo && bun run dev`, then open it with `?backend=socketio`. Add `?room=<name>` to route into a separate room lane.
 
 ## Related
 
 - [Backends](/docs/examples/backends)
-- [Transports](/docs/guides/transports)
+- [Transports](/docs/core/transports)

@@ -1,13 +1,28 @@
 import { docs } from "collections/server";
 import { loader } from "fumadocs-core/source";
 import type { GeneratedDoc } from "fumadocs-typescript";
+import { createElement } from "react";
+import { Atom, Box, Compass, FlaskConical, MousePointer } from "lucide-react";
 import { readDocsSource, readExampleSource } from "./read-example-source";
 import { docsContentRoute, docsImageRoute, docsRoute } from "./shared";
 import { getTypeGenerator } from "./type-generator";
 
+const icons = {
+  compass: Compass,
+  box: Box,
+  "mouse-pointer": MousePointer,
+  atom: Atom,
+  "flask-conical": FlaskConical,
+};
+
 export const source = loader({
   baseUrl: docsRoute,
   source: docs.toFumadocsSource(),
+  icon(icon) {
+    if (!icon) return undefined;
+    const Icon = icons[icon as keyof typeof icons];
+    return Icon ? createElement(Icon) : undefined;
+  },
 });
 
 export function getPageImage(page: (typeof source)["$inferPage"]) {

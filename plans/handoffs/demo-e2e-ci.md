@@ -69,8 +69,14 @@ format:check`, `bun run lint` all clean. `bun run test`: 46 files / 437 tests pa
 
 ## Next
 
-Nothing outstanding for this branch's scope. All five tasks in the owner's instructions are done. Ready
-for review before a merge to `dev` is requested (this branch already targets `dev`).
+Nothing outstanding for this branch's scope. All five tasks in the owner's instructions are done.
+
+Before merging to `dev`: `dev` has moved ahead of this branch's merge-base (`21be278`) — `package-gaps`
+merged into `dev` as `1a66692` while this branch was in progress (reduced motion, idle stage, tinybench,
+perf fixes in `packages/**`, plus a `signalr-hub.test.ts` change). This branch never touched `packages/**`
+per its instructions, so there is no direct conflict, but `demo-e2e-ci` should be rebased onto (or merged
+with) current `dev` before it goes in, and the gates/three-browser suite re-run once on top of that to be
+safe — this handoff's gate results are against this branch's own (older) base only.
 
 ## Decisions
 
@@ -88,4 +94,4 @@ for review before a merge to `dev` is requested (this branch already targets `de
 
 ## Blockers
 
-None.
+None for this branch's own scope; see the `dev`-drift note under Next before merging.

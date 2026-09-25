@@ -32,6 +32,7 @@ These plans are done. The code, tests, and docs already show the result, so ther
 | API freeze fixes                                     | done   | Unexported option types are now exported, phantom generics are gone, `dispose()` disconnects the transport, and a second `connect()` call no longer orphans a socket.                                                                      |
 | Release tooling                                      | done   | `npm version` runs the gate and syncs versions across packages; `release.yml` publishes core, dom, and react through npm trusted publishing on a tag push.                                                                                 |
 | OSS readiness gate (2026-09-04 audit)                | done   | The audit that produced the five plans above. All five shipped; the repo is public-ready.                                                                                                                                                  |
+| 025 Docs rework                                      | done   | Docs site reworked into the planned page tree per tab, links fixed, duplicated facts trimmed to one source, names unified, and every page passed the simple-english self-check.                                                            |
 
 ## In progress
 
@@ -39,7 +40,6 @@ These plans are done. The code, tests, and docs already show the result, so ther
 | --------------------------------------------------- | ----------- | ----------------------------------------------------------------------------------------------------- |
 | Fumadocs docs site on Vercel                        | in progress | Replaces the GitHub Pages site in `site/` with a Fumadocs site deployed on Vercel.                    |
 | Backend examples cleanup                            | in progress | Adds Bun-native, Node `ws`, Hono, and Elysia backend examples, and removes duplicate example clients. |
-| [025 Docs rework](025-docs-rework.md)               | in progress | Structure, names, and page split for the docs site.                                                   |
 | [HANDOFF](HANDOFF.md)                               | in progress | Start here: program state, workstreams, next steps.                                                   |
 | [023 Fumadocs docs site](023-fumadocs-docs-site.md) | done        | Spec for the docs site.                                                                               |
 | [024 Backend examples](024-backend-examples.md)     | done        | Spec and security baseline for the backend examples.                                                  |

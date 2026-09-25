@@ -24,8 +24,20 @@ Owner decisions:
 | [023 Fumadocs docs site](023-fumadocs-docs-site.md)         | `docs-fumadocs`     | `C:/repos/danny/ap-wt-docs`     | done, merged (`3b17767`) |
 | [024 Backend examples](024-backend-examples.md)             | `examples-backends` | `C:/repos/danny/ap-wt-backends` | done, merged (`0f451ff`) |
 | 022 Gap closure — demo, e2e, CI                             | `demo-e2e-ci`       | `C:/repos/danny/ap-wt-ci`       | done, merged             |
+| 025 Docs rework                                             | `dev`               | main tree                       | done                     |
 
 Each branch keeps its own progress in `plans/handoffs/<branch>.md`. Read that file before you continue a branch.
+
+## Docs rework notes (025, whole-site QA pass)
+
+Final structure: five tabs (`get-started`, `core`, `dom`, `react`, `examples`), each a Fumadocs root folder with its own `meta.json`, sidebar groups, and an "API reference" group at the end where the tab has one. Every page has frontmatter `title`/`description`, an intro paragraph, and a `## Related` section. No page is titled with a bare package name; every folder index page is titled "Overview".
+
+- Fixed about 25 stale internal links left over from the tab restructure and the `get-started` guide/concept split: `/docs/get-started/security` to `/docs/get-started/guides/security`, `/docs/get-started/concepts/architecture` to `/docs/get-started/concepts/how-it-works`, `/docs/get-started/concepts/anchors-and-fallbacks` to `/docs/get-started/concepts/anchors`, and two stale `/docs/react#...` anchors in `examples/` pages to the real split-out pages (`react/custom-cursors`, `dom/motion`).
+- Removed duplicated facts across tabs: the resolution-tier table and viewport pixel formulas now live only on `/docs/dom/resolution`; the occlusion ancestor-walk mechanism and its `clippedPointPolicy` sample live only on `/docs/dom/occlusion-and-scroll`; the `ValidationLimits` table lives only on `/docs/get-started/guides/security`; the `maxRemoteClients` drop mechanism lives only on `/docs/core/remote-presence`. Concept pages (`get-started/concepts/*`) now link to the DOM/core pages instead of restating the mechanics.
+- Unified naming: fixed "Core"/"core" and "Dom"/"React" case mismatches next to each other in `core/index.mdx`, `get-started/concepts/how-it-works.mdx`, `README.md`, and `packages/react/README.md` (the exact inconsistency the owner flagged). House style for an unscoped package reference in prose is the lowercase code-formatted short name (`` `core` ``, `` `dom` ``, `` `react` ``), consistent with the majority of existing pages.
+- Added a "Cursor jumps between two elements" symptom to `get-started/guides/troubleshooting.mdx`.
+- Trimmed `get-started/concepts/how-it-works.mdx` from 135 to 119 lines (merged the package-layer bullet list with the per-package subsections) — no other page is over 120 lines.
+- All gates green: `format`, `format:check`, `lint`, `typecheck`, `test` (458/458), `docs:build` (206 static pages) alongside the running dev server.
 
 ## Docs site notes (from `docs-fumadocs`)
 
@@ -33,14 +45,13 @@ Each branch keeps its own progress in `plans/handoffs/<branch>.md`. Read that fi
 - The quick start's zero-backend sample uses `createInMemoryPair` (single realm).
 - Code on example pages comes from repo files through `lib/read-example-source.ts`, so it cannot drift.
 - Root `build` builds only `core`, `dom`, `react`. `bun run docs:build` builds the docs app.
-- Open: run a full `simple-english` self-check pass over all pages.
 
 ### Root-folder tabs (from the tab-switcher restructure)
 
 - `content/docs` now has five Fumadocs root folders (`meta.json` with `"root": true`, `icon`, `description`), giving the sidebar a tab switcher like fumadocs.dev: `get-started` ("Anchor Presence"), `core` (`@anchor-presence/core`), `dom` (`@anchor-presence/dom`), `react` (`@anchor-presence/react`), `examples`.
 - URLs moved to `/docs/<tab>/<page>`. `core`, `dom`, `react` each have an `index.mdx` overview page; `get-started` and `examples` do not, so `next.config.mjs` redirects their bare tab URL to a real page (`/docs/get-started` to `introduction`, `/docs/examples` to `basics`). A root folder with no `index.mdx` 404s at its own bare URL; add one or a redirect for any new tab.
 - `lib/source.ts` resolves `meta.json`'s `icon` string through a small `icons` map (`lucide-react`) passed to `loader({ icon })`.
-- Every old `/docs/getting-started/*`, `/docs/concepts/*`, `/docs/guides/*`, `/docs/reference/*` URL has a permanent redirect in `next.config.mjs`. `/docs/examples/*` did not move.
+- `next.config.mjs` redirects only the three bare tab URLs (`/docs`, `/docs/get-started`, `/docs/examples`) to a real page. There is no redirect for old `/docs/getting-started/*`, `/docs/concepts/*`, `/docs/guides/*`, or `/docs/reference/*` URLs: a page moved under the tab restructure or the 2026-09-25 rework 404s directly if a link still points at its old path. Grep the whole repo for a moved slug before renaming or removing a page.
 - The new `/docs/core/build-a-framework-adapter` page documents the provider/hook mechanics future Solid and Vue adapters need; see `plans/adapters/framework-adapters.md` for the adapter plan itself.
 - Top nav gained "Docs" and "Examples" links (`lib/layout.shared.tsx`); the home page gained an "Examples" button next to "Read the docs".
 
@@ -75,9 +86,8 @@ Each branch keeps its own progress in `plans/handoffs/<branch>.md`. Read that fi
 1. Owner review. Merge `dev` into `main` only after the owner says yes.
 2. After the merge: the owner imports the repo in Vercel (Root Directory `apps/docs`).
 3. After the first CI runs on `main`: re-record the bench baseline on CI hardware (`bun run bench -- --update-baseline`) and make the bench step blocking.
-4. Run a full `simple-english` self-check pass over the docs pages.
-5. Future backends: `plans/backends/`.
-6. Future framework adapters (Solid, Vue): `plans/adapters/framework-adapters.md`.
+4. Future backends: `plans/backends/`.
+5. Future framework adapters (Solid, Vue): `plans/adapters/framework-adapters.md`.
 
 ## How to resume
 

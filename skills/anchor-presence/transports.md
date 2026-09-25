@@ -14,12 +14,12 @@ Use the first row that matches the survey. Each docs page has the full server an
 | An Elysia app                          | `createWebSocketTransport`                             | Elysia `.ws()` route                 | `/docs/examples/backends/elysia`     |
 | A Node server (Express, Fastify, http) | `createWebSocketTransport`                             | `ws` package on the same HTTP server | `/docs/examples/backends/node-ws`    |
 | Bun, or no server yet                  | `createWebSocketTransport`                             | `Bun.serve` WebSocket relay          | `/docs/examples/backends/bun-native` |
-| Tests or a local prototype             | `createInMemoryPair` from `@anchor-presence/core`      | none                                 | `/docs/get-started/quick-start`      |
-| Two tabs on one origin, no server      | A `BroadcastChannel` transport                         | none                                 | `/docs/core/transports`              |
+| Tests or a local prototype             | `createInMemoryPair` from `@anchor-presence/core`      | none                                 | `/docs/core/in-memory-transport`     |
+| Two tabs on one origin, no server      | A `BroadcastChannel` transport                         | none                                 | `/docs/core/custom-transport`        |
 
 Base URL: `https://anchor-presence.vercel.app`. Every page also links the shared relay guard helpers (`/docs/examples/backends`).
 
-A managed service (Supabase Realtime, Ably, Pusher, Liveblocks) works through a custom transport over its pub/sub channel: implement the interface below and use one channel per room.
+A managed service (Supabase Realtime, Ably, Pusher, Liveblocks) works through a custom transport over its pub/sub channel: implement the interface below and use one channel per room. See `/docs/core/custom-transport`.
 
 ## The transport interface
 

@@ -20,6 +20,10 @@ Work down this list; each symptom names its usual cause and fix.
 - Programmatic layout changes the library cannot observe (canvas-driven layout, manual style writes outside the DOM) need a manual `invalidate()` call on the binding after the change.
 - Everything observable (scroll, resize, DOM mutation, CSS transitions) re-resolves automatically; a stationary remote cursor moving with your local scroll is correct behavior, not drift.
 
+## Cursor jumps while the pointer crosses a gap
+
+The pointer crossed space between two anchors with no anchored parent, so the **chain** fell to the viewport position, which lands elsewhere in another layout. Mark the container (sidebar, toolbar, list) with its own anchor. Keep item sizes equal across layouts where possible.
+
 ## Cursor flaps between two positions
 
 Two tabs share one `clientId`. `clientId` identifies a tab; put user identity in `user` and let each tab generate its own ID.

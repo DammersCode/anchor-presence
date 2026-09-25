@@ -9,17 +9,15 @@ All committed on `docs-fumadocs`:
 - `scaffold apps/docs fumadocs app with brand port and live demo shell` — package.json, tsconfig, next.config.mjs, postcss.config.mjs, source.config.ts, `lib/*`, `app/global.css` (brand tokens ported from `site/index.html`), `app/layout.tsx`, `app/(home)/*`, `app/docs/*`, LLM routes (`llms.txt`, `llms-full.txt`, `llms.mdx/docs/[[...slug]]`), OG route, search route, sitemap/robots, icon, `components/*` (mdx, page-actions, install-command, code-from-source, logo), the live `<Demo>` (two iframes over a `BroadcastChannel` transport), `content/docs/**/meta.json`. Also: `.prettierignore` updated, `packages/dom/README.md` exports table fixed to document `DomBinding`/`invalidate()`, `skills/anchor-presence/SKILL.md` Source section repointed at the docs site.
 - `write docs content: getting started, concepts, guides, reference, examples` — all 27 MDX pages: getting-started (introduction, installation, quick-start), concepts (anchors-and-fallbacks, architecture, ui-context), guides (react, ssr-and-strict-mode, responsive-layouts, transports, codecs, security, performance, ai-agents, troubleshooting), reference (core, dom, react, using `AutoTypeTable`), examples (basics, anchors-and-fallbacks, presence-list, custom-cursor-rendering, interpolation-styles, occlusion-and-scroll-containers, backends/{index,socketio,signalr}). Added `components/auto-type-table.tsx` (file-system-cached generator, matching gridcn's pattern).
 - `migrate docs/*.md into apps/docs and repoint readmes at the docs site` — deleted `docs/*.md`, rewrote every cross-reference in `README.md`, `SECURITY.md`, `packages/{core,dom,react}/README.md` to point at `https://anchor-presence.vercel.app/docs/...`, shortened the root README's quick start to use `usePresenceClient`, replaced the docs file table with one link, added a `CHANGELOG.md` Unreleased entry for the docs site.
-- Uncommitted as of this writing, staged next: `vercel.json`, removal of `site/` and `.github/workflows/pages.yml`, a `docs` job in `ci.yml`, root `docs:dev`/`docs:build` scripts, `.gitignore` additions for `apps/docs/.next`/`.source`/`next-env.d.ts`, a `bun run format` pass that normalized CRLF-vs-LF noise across the whole repo (see "Decisions made"), and a fix for `demo-scene.tsx`'s effect-cleanup type error plus missing `lucide-react`/`clsx`/`tailwind-merge` deps caught by the first real build.
+- `add vercel config, docs ci job, root scripts; remove github pages site` — `apps/docs/vercel.json`, removed `site/` and `.github/workflows/pages.yml`, added a `docs` job to `ci.yml`, root `docs:dev`/`docs:build` scripts, `.gitignore` additions for `apps/docs/.next`/`.source`/`next-env.d.ts`, a `bun run format` pass that normalized pre-existing CRLF-vs-LF noise across the whole repo (see "Decisions made"), a fix for `demo-scene.tsx`'s effect-cleanup type error, and the missing `lucide-react`/`clsx`/`tailwind-merge` deps caught by the first real build.
 
 ## In progress
 
-Nothing mid-file. All planned content and config exist. What's left is verification and the final commit.
+Nothing. All planned content, config, and cleanup are committed. Task complete as of `309ea0a`.
 
 ## Next
 
-1. Commit the remaining staged changes (vercel.json, site/pages.yml removal, ci.yml docs job, root scripts, gitignore, format normalization, demo-scene fix, package.json dep additions).
-2. Re-run the full AGENTS.md gate list once more against the final tree state (build, typecheck, format:check, lint, test, chromium e2e) — all passed as of this writing; re-run only if anything changes after this point.
-3. Hand back to the calling agent with the final report (page tree, gate results, commit list, open issues).
+Nothing required. If a future agent picks this up: the parallel Bun-native/Node-ws/Hono/Elysia backend pages are not part of this branch (see "Decisions made") — check whether that work landed elsewhere before adding them to `backends/meta.json`.
 
 ## Decisions made (and why)
 

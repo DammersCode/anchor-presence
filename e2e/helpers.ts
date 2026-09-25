@@ -67,7 +67,10 @@ export type SocketDropController = {
  * while keeping a handle on the current client-side route, so a test can sever just that one connection
  * and let the page's own transport reconnect through the real backoff path with a fresh socket.
  */
-export async function installSocketDropController(page: Page, wsUrlPattern: RegExp): Promise<SocketDropController> {
+export async function installSocketDropController(
+  page: Page,
+  wsUrlPattern: RegExp,
+): Promise<SocketDropController> {
   let current: WebSocketRoute | null = null;
 
   await page.routeWebSocket(wsUrlPattern, (ws) => {

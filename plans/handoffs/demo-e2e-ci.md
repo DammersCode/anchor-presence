@@ -12,7 +12,7 @@ Do not edit `packages/**` here (owned by `package-gaps`).
   with a throwaway contrast script before picking replacements). Added `apps/demo/src/cursors/contrast.ts`
   (pure WCAG contrast-ratio helper) and `apps/demo/src/cursors/contrast.test.ts` (parametrized over the
   palette, runs in the existing `demo` vitest project). `presence-pill.tsx`: added `role="status"
-  aria-live="polite"` to the connection status wrapper; `reconnecting` now also gets `animate-pulse` on its
+aria-live="polite"` to the connection status wrapper; `reconnecting` now also gets `animate-pulse` on its
   dot so it is visually distinct from `connecting` (both already had distinct text labels). Default room:
   checked `e2e/helpers.ts` — `openPair` always passes an explicit `room` (via `uniqueRoom()`), and the two
   `?page=bench` perf specs that omit `room=` are single-page, not pair, tests. Randomizing was safe; added
@@ -33,23 +33,32 @@ Do not edit `packages/**` here (owned by `package-gaps`).
   own `uniqueRoom()` never sees `[data-testid="remote-cursor"]` and its `presence-count` stays "0 online"
   (peer count excludes self) while the original pair actively moves cursors. Ran both specs with
   `--repeat-each=5` on chromium: 10/10 passed, no flakes. Full chromium suite (`bunx playwright
-  test --project=chromium`) also green (16/16) after this change, confirming the default-room
+test --project=chromium`) also green (16/16) after this change, confirming the default-room
   randomization from task 1 does not break `perf.spec.ts`/`reflow-perf.spec.ts` (they load `?page=bench`
   without `room=`, but are single-page, not pair, tests).
 
+- CI (hash pending commit): `.github/workflows/ci.yml` — added `concurrency: { group: ci-${{
+  github.ref }}, cancel-in-progress: true }` at the workflow level; cached `~/.bun/install/cache` keyed on
+  `hashFiles('bun.lock')` in both the `test` and `docs` jobs; added `actions/setup-dotnet@v4`
+  (`dotnet-version: "10.0.x"`) to the `test` job before the build/test steps, so
+  `examples/signalr/signalr-hub.test.ts` runs instead of skipping — verified locally first
+  (`dotnet --version` -> `10.0.401`, `bunx vitest run --project signalr-example` -> 13/13 passed, both the
+  real hub test and the fake-harness test). Kept the `docs` job as-is apart from adding its own Bun cache
+  plus a new `apps/docs/.next/cache` cache keyed on `bun.lock` + a hash of `apps/docs/content/**` and
+  `apps/docs/app/**`. The chromium E2E step is untouched, still `bunx playwright test --project=chromium`
+  with no browser install (preinstalled Chrome via `channel: chrome` on the `chromium` project in
+  `playwright.config.ts`). Removed the stale `# bench: vitest 5 --project filter bug...` comment; did not
+  add a bench step (bench script lands on the `package-gaps` branch per the plan's spec decisions).
+
 ## In progress
 
-- About to start task 3 (CI workflow) and task 4 (SPECIFICATION.md §17).
+- About to start task 4 (SPECIFICATION.md §17).
 
 ## Next
 
-1. CI: `concurrency` group, Bun cache keyed on `bun.lock`, `actions/setup-dotnet` 10.0.x before tests so
-   `examples/signalr/signalr-hub.test.ts` runs, keep `docs` job, verify Playwright still uses preinstalled
-   Chrome, remove stale bench comment (no bench step — that lands on another branch), cache
-   `apps/docs/.next/cache` keyed on bun.lock + content hash.
-2. `SPECIFICATION.md` §17: document which e2e specs run in all 3 browsers vs chromium-only
+1. `SPECIFICATION.md` §17: document which e2e specs run in all 3 browsers vs chromium-only
    (`*-chromium.spec.ts` + `test.skip` guards, now including `resilience.spec.ts`).
-3. Run all AGENTS.md gates plus the full 3-browser `bunx playwright test` locally.
+2. Run all AGENTS.md gates plus the full 3-browser `bunx playwright test` locally.
 
 ## Decisions
 

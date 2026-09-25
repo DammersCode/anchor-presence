@@ -5,6 +5,10 @@ on:
     branches: [dev, main]
   pull_request:
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -17,8 +21,17 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.14
+      - name: Cache Bun install cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: ${{ runner.os }}-bun-
       - name: Install (frozen lockfile)
         run: bun install --frozen-lockfile
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
       - name: Build
         run: bun run build
       - name: Typecheck
@@ -29,7 +42,6 @@ jobs:
         run: bun run lint
       - name: Test
         run: bun run test
-      # bench: vitest 5 --project filter bug, run locally with `bunx vitest bench --run --project core`
       - name: Demo production build
         run: bunx vite build
         working-directory: apps/demo
@@ -51,7 +63,20 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.14
+      - name: Cache Bun install cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: ${{ runner.os }}-bun-
       - name: Install (frozen lockfile)
         run: bun install --frozen-lockfile
+      - name: Cache docs build cache
+        uses: actions/cache@v4
+        with:
+          path: apps/docs/.next/cache
+          key: ${{ runner.os }}-docs-next-${{ hashFiles('bun.lock') }}-${{ hashFiles('apps/docs/content/**', 'apps/docs/app/**') }}
+          restore-keys: |
+            ${{ runner.os }}-docs-next-${{ hashFiles('bun.lock') }}-
       - name: Build docs site (typecheck + next build)
         run: bun run docs:build

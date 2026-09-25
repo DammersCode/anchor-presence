@@ -1,7 +1,25 @@
 {
-  "title": "@anchor-presence/dom",
+  "title": "DOM",
   "icon": "mouse-pointer",
-  "description": "The DOM binding: anchors, resolution, and the native WebSocket transport",
+  "description": "The DOM binding for @anchor-presence/dom: anchors, pointer capture, resolution, and the WebSocket transport",
   "root": true,
-  "pages": ["index", "reference"]
+  "pages": [
+    "---[MousePointer]DOM---",
+    "index",
+    "---[Anchor]Binding---",
+    "binding",
+    "anchor-registration",
+    "pointer-capture",
+    "---[Crosshair]Resolution---",
+    "resolution",
+    "visibility-policy",
+    "occlusion-and-scroll",
+    "motion",
+    "---[Cable]Transport---",
+    "websocket-transport",
+    "---[BookOpen]API reference---",
+    "api/binding",
+    "api/resolution",
+    "api/websocket-transport"
+  ]
 }

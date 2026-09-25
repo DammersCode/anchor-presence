@@ -1,0 +1,60 @@
+---
+title: Binding
+description: createDomBinding, its lifecycle, and how to mark the layout dirty with invalidate.
+---
+
+`createDomBinding(client, options?)` creates the DOM side of one presence client. It returns a `DomBinding`: an object with a resolved-cursor snapshot, a subscribe method, and a `dispose` method.
+
+## Create a binding
+
+Call `createDomBinding` with a `PresenceClient`:
+
+```ts
+import { createPresenceClient } from "@anchor-presence/core";
+import { createDomBinding } from "@anchor-presence/dom";
+
+const client = createPresenceClient({ transport: myTransport });
+const binding = createDomBinding(client);
+
+binding.subscribe(() => {
+  for (const cursor of binding.getSnapshot()) {
+    if (cursor.visible) renderCursor(cursor.clientId, cursor.x, cursor.y);
+  }
+});
+```
+
+The binding starts its geometry scheduler only while at least one remote client has a non-null cursor. It stays idle otherwise, so an empty room costs no frame work.
+
+## Options
+
+`maxAnchors` caps the fallback chain that the pointer source sends: default `4`, clamped to `1` through `8`. `anchorAttribute` sets the attribute that marks an anchor element: default `data-anchor`. See [Anchor registration](/docs/dom/anchor-registration).
+
+`resolution` configures how remote cursors turn into screen positions. See [Resolution](/docs/dom/resolution) and [Motion](/docs/dom/motion).
+
+`environment` replaces the DOM and timing hosts the binding runs against: `root`, `window`, `raf`, `caf`, `ResizeObserverCtor`, `MutationObserverCtor`. Every field defaults to the matching browser global. Tests use this to swap in a fake without touching the others.
+
+See [Binding API](/docs/dom/api/binding) for the full option and return types.
+
+## invalidate
+
+`binding.invalidate(reason?)` marks the layout dirty. The binding re-measures every active anchor and re-resolves the cursors on the next frame.
+
+The binding already reacts to resize, scroll, `ResizeObserver` entries, DOM mutations under the anchor attribute, and CSS transitions or animations on an active anchor. Call `invalidate` after a layout change none of those signals can see. One example is a programmatic scroll on an element with `overflow: hidden` and no `scroll` event. Another is a font that loads after first paint and changes text metrics.
+
+```ts
+document.fonts.ready.then(() => {
+  binding.invalidate("fonts-loaded");
+});
+```
+
+`reason` is for your own logging. The binding does not read it.
+
+## Dispose
+
+`binding.dispose()` stops the scheduler, detaches every listener, and clears the subscriber list. It sends one final empty snapshot first, so subscribers can render every cursor gone before the binding goes quiet. Call `dispose` once, when the surface that owns the binding unmounts.
+
+## Related
+
+- [Anchor registration](/docs/dom/anchor-registration)
+- [Resolution](/docs/dom/resolution)
+- [Binding API](/docs/dom/api/binding)

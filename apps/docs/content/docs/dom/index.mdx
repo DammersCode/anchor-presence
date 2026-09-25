@@ -1,35 +1,28 @@
 ---
 title: Overview
-description: The DOM binding, anchor registration, pointer capture, resolution, and the native WebSocket transport.
+description: What @anchor-presence/dom does and how it sits between the core client and a UI adapter.
 ---
 
-`@anchor-presence/dom` is the only package that calls browser APIs. It depends only on `core`, and turns a `PresenceClient` into cursors resolved against the page's own layout. See [Architecture](/docs/get-started/concepts/architecture) for how it fits between `core` and `react`.
+`@anchor-presence/dom` is the only package that calls browser APIs. It turns a `PresenceClient` from `@anchor-presence/core` into a stream of resolved cursor positions, ready for a renderer to draw. It depends only on `@anchor-presence/core` and has no React dependency.
 
-## The binding
+## What the binding does
 
-`createDomBinding(client, options?)` wires together every browser-facing concern: anchor auto-registration, pointer sampling, geometry scheduling, remote resolution, and interpolation. It returns a `DomBinding` you subscribe to for resolved cursor snapshots. See the [API reference](/docs/dom/reference#createdombinding) for the full options and return shape.
+`createDomBinding` wires together four jobs:
 
-## data-anchor auto-registration
+1. It watches the page for elements marked with an anchor attribute and registers them.
+2. It listens for pointer events and reports the local cursor position relative to the nearest anchors.
+3. It reads remote presence from the client and resolves each one against the page's own layout.
+4. It schedules geometry reads on the frame clock, so a resolve pass never runs more than once per frame.
 
-An element becomes an anchor the moment it has a non-empty value for the configured attribute, `data-anchor` by default. The binding watches the DOM with a `MutationObserver`, so no manual registration call is needed. See the [API reference](/docs/dom/reference#anchor-attributes) for the exact rules.
+The React package (`@anchor-presence/react`) calls `createDomBinding` for you and exposes its snapshot through hooks. Call it directly to build an adapter for another UI layer. See [Build a framework adapter](/docs/core/build-a-framework-adapter).
 
-## Pointer capture
+## Where it sits
 
-The binding listens for `pointermove` on the page, walks the anchor ancestors of the event target, and builds the local `CursorPosition` sent to `core`. Anchors closer to the pointer target win.
-
-## Resolver
-
-The resolver turns a remote `RemotePresence` into a `ResolvedCursor`. It measures the receiver's own anchor elements with `getBoundingClientRect()`, degrades through the anchor fallback chain when the exact anchor is missing, and applies the configured interpolator.
-
-## Visibility policy and occlusion
-
-A `VisibilityPolicy` decides whether a resolved cursor renders, based on its tier and position. The default policy hides a cursor whose point falls outside its scroll container's visible bounds, so a cursor never appears to float over clipped content. See [Occlusion and scroll containers](/docs/examples/occlusion-and-scroll-containers) for a worked example.
-
-## Native WebSocket transport
-
-`createWebSocketTransport` is the one transport shipped in a package. It reconnects with exponential backoff and matches the reference relay. See [Transports](/docs/core/transports) for the full contract and every transport option, native and example.
+`@anchor-presence/core` knows the protocol and the store, but not the DOM. `@anchor-presence/dom` reads and writes the DOM, but renders nothing. A UI adapter, such as `@anchor-presence/react`, renders the resolved cursors that the binding produces. See [How it works](/docs/get-started/concepts/how-it-works) for the full picture.
 
 ## Related
 
-- [Build a framework adapter](/docs/core/build-a-framework-adapter)
-- [API reference](/docs/dom/reference)
+- [Binding](/docs/dom/binding)
+- [Resolution](/docs/dom/resolution)
+- [WebSocket transport](/docs/dom/websocket-transport)
+- [How it works](/docs/get-started/concepts/how-it-works)

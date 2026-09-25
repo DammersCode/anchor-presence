@@ -1,0 +1,46 @@
+---
+title: Visibility policy
+description: VisibilityPolicy, the default policy, and how to write a custom one.
+---
+
+A `VisibilityPolicy` decides whether a resolved cursor renders. The resolver calls it once per remote client, per frame, after it computes the tier and the point's occlusion state.
+
+## The default policy
+
+`createDomBinding` uses `defaultVisibilityPolicy` unless `resolution.visibilityPolicy` overrides it:
+
+```ts
+const defaultVisibilityPolicy: VisibilityPolicy = ({ resolution }) =>
+  resolution.tier === "hidden" ? "hide" : "show";
+```
+
+The default policy hides a cursor only when nothing resolved. It shows an `anchor` or `viewport` tier cursor even when the point sits in a clipped, scrolled-away region. See [Occlusion and scroll](/docs/dom/occlusion-and-scroll) for a policy that also hides a clipped point.
+
+## Writing a custom policy
+
+A policy receives the full presence, including `context` and `user`, and the resolution result:
+
+```ts
+import type { VisibilityPolicy } from "@anchor-presence/dom";
+
+const hideStaffCursors: VisibilityPolicy<{ role: string }> = ({ presence }) =>
+  presence.context?.role === "staff" ? "hide" : "show";
+```
+
+Pass it through `resolution.visibilityPolicy`:
+
+```ts
+const binding = createDomBinding(client, {
+  resolution: { visibilityPolicy: hideStaffCursors },
+});
+```
+
+## What the policy can decide
+
+The policy runs after tier resolution. It can act on the resolution tier, the winning anchor ID, or whether the point sits in a visible region (`pointVisible`). It can also read the sender's `context` and `user` values. A common use is hiding cursors for a role, a permission, or a UI mode the receiver's own state defines. See [UI context](/docs/get-started/concepts/ui-context).
+
+## Related
+
+- [Resolution](/docs/dom/resolution)
+- [Occlusion and scroll](/docs/dom/occlusion-and-scroll)
+- [Resolution types](/docs/dom/api/resolution)

@@ -1,0 +1,38 @@
+---
+title: Pointer capture
+description: What the binding sends on pointer activity, and when it clears the local cursor.
+---
+
+The binding listens for pointer events on the document and reports the local cursor position to the presence client on every relevant event.
+
+## What is sent
+
+On `pointermove`, `pointerdown`, and `pointerover`, the binding reads the event target, walks its anchor ancestors, and builds a `CursorPosition`:
+
+- `anchors`: the fallback chain, most specific first, up to `maxAnchors` entries. Each entry carries the anchor ID and the `u`/`v` position inside that anchor's own rectangle.
+- `viewport`: the `u`/`v` position across the full window, when the window has a non-zero size.
+
+The chain uses a cached rectangle from the current scheduler frame when one is available, and falls back to a live `getBoundingClientRect()` call otherwise. The cache is at most one frame old.
+
+The binding also reports the pointer type, one of `mouse`, `pen`, or `touch`, taken from the event's `pointerType`. A pointer type the client does not recognize is omitted.
+
+## When the cursor clears
+
+The binding sends a `null` cursor position, which hides the local cursor on every receiver, on two events:
+
+- `pointerleave` on the document, when the pointer leaves the browser window.
+- `blur` on the window, when the tab or window loses focus.
+
+## Event choice
+
+The binding listens on `pointerover` instead of `pointerenter`, because `pointerenter` does not bubble to the document when the target is a plain element. `pointerover` bubbles, so one document-level listener covers every element without attaching a listener per anchor.
+
+## Touch behavior
+
+A touch pointer generates the same `pointermove`, `pointerdown`, and `pointerover` events as a mouse. The binding does not distinguish touch scrolling from touch dragging. An application that needs different behavior for a touch drag filters by pointer type in its own event handling, before the binding sees the event.
+
+## Related
+
+- [Anchor registration](/docs/dom/anchor-registration)
+- [Binding](/docs/dom/binding)
+- [Anchors](/docs/get-started/concepts/anchors)

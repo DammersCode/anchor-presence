@@ -1,0 +1,48 @@
+---
+title: Motion
+description: How the binding eases a remote cursor between positions, and reduced-motion behavior.
+---
+
+The binding eases a remote cursor from its last resolved position to its new one, instead of jumping every frame. The interpolator that does this is a property of the binding, chosen once when you create it.
+
+## Default interpolator
+
+`createDomBinding` chooses the interpolator with `resolution.interpolatorFactory`, or a default when you omit it:
+
+- `linearInterpolator` from `@anchor-presence/core`, a fixed-duration ease, unless the OS prefers reduced motion.
+- `noneInterpolator` from `@anchor-presence/core`, an instant snap, when `window.matchMedia("(prefers-reduced-motion: reduce)").matches` is `true` at the moment the binding is created.
+
+The reduced-motion check reads `environment.window`, or the global `window` when you omit it. The check runs once, so a preference change after the binding starts does not switch the interpolator on an existing binding.
+
+## Choosing a custom interpolator
+
+Pass `resolution.interpolatorFactory` to use a different easing style, for example a spring:
+
+```ts
+import { createDomBinding } from "@anchor-presence/dom";
+
+const binding = createDomBinding(client, {
+  resolution: { interpolatorFactory: mySpringInterpolatorFactory },
+});
+```
+
+Write a factory against the public `Interpolator` interface from `@anchor-presence/core`. See "Custom interpolation" in the React guide for the interface and the settled-flag rule.
+
+## Why interpolation lives here, not in core
+
+`@anchor-presence/core` defines the `Interpolator` interface and ships `linearInterpolator` and `noneInterpolator`, but it never calls them: core has no frame clock. The binding is what samples an interpolator on every scheduled frame and feeds its output into `ResolvedCursor.x`/`y`. A framework-free consumer of `@anchor-presence/core` alone sees only raw presence data, with no easing.
+
+## When motion restarts instead of easing
+
+The resolver restarts the interpolator at the new position, instead of easing to it, in three cases:
+
+1. The cursor was hidden and becomes visible again.
+2. The sender's presence object changed identity after being idle or hidden.
+3. The cursor's identity is new: its clientId first appears.
+
+A cursor that moves continuously while visible always eases.
+
+## Related
+
+- [Resolution](/docs/dom/resolution)
+- [Binding](/docs/dom/binding)

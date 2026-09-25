@@ -1,0 +1,42 @@
+---
+title: Occlusion and scroll
+description: How the resolver detects a resolved point clipped by a scroll container, and pointVisible.
+---
+
+An anchor inside a scrollable panel can be measurable, with a real size and position. At the same time, the panel's own scrolling can clip the resolved point out of view. The resolver detects this case and reports it through `pointVisible`, separate from the visibility policy's `show`/`hide` decision.
+
+## How the check works
+
+For an `anchor` tier resolution, the resolver walks the DOM ancestors of the winning anchor, up to the document element. It looks for an ancestor whose computed `overflow`, `overflow-x`, or `overflow-y` is not `visible`. Each such ancestor clips the anchor's visible rectangle to its own bounds, using an intersection of rectangles.
+
+The resolver sets `pointVisible` to `false` when the resolved `x`/`y` position falls outside the clipped rectangle. `pointVisible` is always `true` for the `viewport` tier, and always `false` for the `hidden` tier.
+
+## What this model does not do
+
+The check is a simplified walk, not a full containing-block or stacking-context computation:
+
+- It does not compute CSS containing blocks. An absolutely or fixed-positioned anchor that visually escapes a clipping ancestor is still treated as clipped, because the ancestor walk does not know about `position`.
+- It does not detect an overlay covering the point from above. A cursor can report `pointVisible: true` while a modal or dropdown visually covers that pixel.
+
+<Callout type="warn">
+  If an overlay can cover the resolved point and the extra cost is acceptable, pass `resolution: { hitTest: true }`. The resolver then confirms the point with `document.elementFromPoint`, including a walk into open shadow roots, instead of the ancestor-clipping estimate alone.
+</Callout>
+
+## Using pointVisible
+
+`pointVisible` is a field on the resolution passed to a `VisibilityPolicy`, and on every `ResolvedCursor`. The default visibility policy ignores it. A policy that hides a clipped cursor checks it directly:
+
+```ts
+import type { VisibilityPolicy } from "@anchor-presence/dom";
+
+const clippedPointPolicy: VisibilityPolicy = ({ resolution }) =>
+  !resolution.pointVisible || resolution.tier === "hidden" ? "hide" : "show";
+```
+
+For a portal-rendered overlay that must ignore the clipping check for one anchor, write a policy that skips the `pointVisible` test for that anchor's ID.
+
+## Related
+
+- [Occlusion and scroll containers example](/docs/examples/occlusion-and-scroll-containers)
+- [Visibility policy](/docs/dom/visibility-policy)
+- [Resolution](/docs/dom/resolution)

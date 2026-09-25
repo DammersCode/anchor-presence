@@ -32,28 +32,19 @@ A local pointer move never reaches the receiver as a raw pixel: the sender encod
 
 ```mermaid
 sequenceDiagram
-    participant SP as Sender pointer
-    participant SD as Sender DOM binding
-    participant SC as Sender core client
-    participant T as Transport
+    participant S as Sender browser
     participant R as Relay
-    participant RC as Receiver core client
-    participant RD as Receiver DOM binding
-    participant RCu as Receiver cursor
+    participant V as Receiver browser
 
-    SP->>SD: pointermove
-    SD->>SD: walk anchor ancestors, build anchor chain + normalized u/v
-    SD->>SC: updateLocalCursor(CursorPosition)
-    SC->>SC: encode, rate-limited publish
-    SC->>T: send(bytes)
-    T->>R: message
-    R->>R: forward to room (never reads payload)
-    R->>T: message
-    T->>RC: receive(bytes)
-    RC->>RC: decode, validate, store (sequencing, expiry)
-    RC->>RD: RemotePresence
-    RD->>RD: resolve against own layout (fallback chain, resolution tier)
-    RD->>RCu: ResolvedCursor { x, y, visible, tier }
+    Note over S: pointermove on an element
+    S->>S: DOM binding builds the<br/>anchor chain + normalized u/v
+    S->>S: core client encodes,<br/>rate-limited publish
+    S->>R: bytes over the transport
+    Note over R: forwards to the room,<br/>never reads the payload
+    R->>V: bytes to the other clients
+    V->>V: core client decodes,<br/>validates, stores
+    V->>V: DOM binding resolves<br/>against its own layout
+    Note over V: cursor renders at<br/>ResolvedCursor x, y
 ```
 
 The sender never measures the receiver's DOM. The sender sends a semantic anchor ID and a normalized position inside it. The receiver measures its own anchors and turns that data into pixels.

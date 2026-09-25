@@ -63,7 +63,7 @@ export function Mermaid({ chart }: { chart: string }) {
         fontFamily: "var(--font-sans, ui-sans-serif)",
         themeVariables: readThemeVariables(),
         flowchart: { useMaxWidth: false, wrappingWidth: 260 },
-        sequence: { useMaxWidth: false },
+        sequence: { useMaxWidth: false, mirrorActors: false },
       });
       const { svg: rendered } = await mermaid.render(`mermaid-${id}`, chart);
       if (!cancelled) setSvg(rendered);

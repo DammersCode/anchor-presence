@@ -14,6 +14,7 @@
     "@anchor-presence/react": "0.1.0",
     "@dammers/use-signalr-react": "^0.5.0",
     "@microsoft/signalr": "^10.0.11",
+    "cn": "^0.4.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "socket.io-client": "^4.8.3"
@@ -23,7 +24,6 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
-    "babel-plugin-react-compiler": "^1.0.0",
     "tailwindcss": "^4.3.3",
     "typescript": "^7.0.2",
     "vite": "^8.2.2"

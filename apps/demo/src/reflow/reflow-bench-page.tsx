@@ -104,7 +104,7 @@ function startLoop(callback: (timestampMs: number) => void): () => void {
 // Task-phase loop: fires between frames (after the previous frame's layout step), the same
 // phase real pointermove input events and async layout writes land in
 function startTimerLoop(delayMs: number, callback: () => void): () => void {
-  let handle = 0;
+  let handle: ReturnType<typeof setTimeout> | undefined;
   let stopped = false;
   function tick() {
     if (stopped) return;

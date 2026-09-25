@@ -20,7 +20,7 @@ Owner decisions:
 | ----------------------------------------------------------- | ------------------- | ------------------------------- | ------------------------ |
 | Agent rules, repo skills                                    | `dev`               | main tree                       | done (`4a0f916`)         |
 | Plans cleanup and future backend plans                      | `dev`               | main tree                       | done (`697692f`)         |
-| [022 Gap closure](022-gap-closure-2026-09-25.md) — packages | `package-gaps`      | `C:/repos/danny/ap-wt-packages` | in progress              |
+| [022 Gap closure](022-gap-closure-2026-09-25.md) — packages | `package-gaps`      | `C:/repos/danny/ap-wt-packages` | done, merged (`ea778b4`) |
 | [023 Fumadocs docs site](023-fumadocs-docs-site.md)         | `docs-fumadocs`     | `C:/repos/danny/ap-wt-docs`     | done, merged (`3b17767`) |
 | [024 Backend examples](024-backend-examples.md)             | `examples-backends` | `C:/repos/danny/ap-wt-backends` | done, merged (`0f451ff`) |
 | 022 Gap closure — demo, e2e, CI                             | `demo-e2e-ci`       | `C:/repos/danny/ap-wt-ci`       | in progress              |
@@ -44,12 +44,20 @@ Each branch keeps its own progress in `plans/handoffs/<branch>.md`. Read that fi
 - `ws` closes the socket on `maxPayload`, so `node-ws` sets it high and drops oversized frames in app code.
 - SignalR hub uses groups per room. `examples/signalr/signalr-hub.test.ts` runs the real hub and skips without `dotnet`.
 
+## Package gap notes (from `package-gaps`)
+
+- Reduced motion: `createDomBinding` defaults to `noneInterpolator` when `prefers-reduced-motion: reduce` matches (checked lazily, SSR-safe). An explicit `interpolatorFactory` wins.
+- Idle: `idleAfterMs` (default `DEFAULT_IDLE_AFTER_MS` = 15 s, clamped below `staleTimeoutMs`). Exposed as `RemotePresence.idle`, `ResolvedCursor.idle`, `RemoteUser.idle`. `CursorLayer` dims idle cursors.
+- Off-screen flag: not added. Spec §10 resolves off-screen anchors on purpose; apps compare `x`/`y` with the viewport (documented in troubleshooting).
+- Benchmarks: `bun run bench` (`scripts/bench.ts`, tinybench) against `packages/core/bench/baseline.json`, tolerance × 3, `-- --update-baseline`.
+- SignalR hub test builds once with `dotnet build -o <tmp>` and runs the dll directly (`dotnet run` orphans a child process on kill).
+
 ## Next steps
 
-1. Merge `package-gaps` into `dev` and fold its `plans/handoffs/package-gaps.md` into this file. (`docs-fumadocs` and `examples-backends` are merged.)
+1. Merge `demo-e2e-ci` into `dev` and fold its `plans/handoffs/demo-e2e-ci.md` into this file. (`docs-fumadocs`, `examples-backends`, and `package-gaps` are merged.)
 2. Demo fixes: WCAG AA label colors, `aria-live` on the presence pill, random default room.
 3. E2E: in-place socket drop and reconnect; room isolation.
-4. CI: `concurrency`, Bun cache, `setup-dotnet` 10.0.x so the SignalR hub test runs, `bun run bench` gate. (The docs build job exists.) Fix `SPECIFICATION.md` §17 browser claims.
+4. CI: after the `demo-e2e-ci` merge, add a `bun run bench` step (non-blocking with `continue-on-error` until the baseline settles on CI hardware). Fix `SPECIFICATION.md` §17 browser claims.
 5. Run all gates and the full three-browser e2e suite locally. Report to the owner. Merge to `main` only after the owner says yes.
 6. After the merge to `main`: the owner imports the repo in Vercel.
 

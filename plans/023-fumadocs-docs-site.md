@@ -1,6 +1,6 @@
 # 023 Fumadocs docs site
 
-Status: in progress · Branch: `docs-fumadocs` · Worktree: `C:/repos/danny/ap-wt-docs`
+Status: done (merged into `dev`) · Branch: `docs-fumadocs` · Worktree: `C:/repos/danny/ap-wt-docs`
 
 ## Goal
 

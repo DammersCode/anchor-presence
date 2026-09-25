@@ -42,7 +42,7 @@ These plans are done. The code, tests, and docs already show the result, so ther
 | [HANDOFF](HANDOFF.md)                               | in progress | Start here: program state, workstreams, next steps.                                                   |
 | [023 Fumadocs docs site](023-fumadocs-docs-site.md) | done        | Spec for the docs site.                                                                               |
 | [024 Backend examples](024-backend-examples.md)     | done        | Spec and security baseline for the backend examples.                                                  |
-| [022 Gap closure](022-gap-closure-2026-09-25.md)    | in progress | Closes the gaps from the 2026-09-25 advisor audit.                                                    |
+| [022 Gap closure](022-gap-closure-2026-09-25.md)    | done        | Closes the gaps from the 2026-09-25 advisor audit.                                                    |
 
 ## Future backends (planning only, not scheduled)
 

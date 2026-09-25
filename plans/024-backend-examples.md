@@ -1,6 +1,6 @@
 # 024 Backend examples
 
-Status: in progress · Branch: `examples-backends` · Worktree: `C:/repos/danny/ap-wt-backends`
+Status: done (merged into `dev`) · Branch: `examples-backends` · Worktree: `C:/repos/danny/ap-wt-backends`
 
 ## Goal
 

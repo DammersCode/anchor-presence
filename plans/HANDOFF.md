@@ -23,7 +23,7 @@ Owner decisions:
 | [022 Gap closure](022-gap-closure-2026-09-25.md) — packages | `package-gaps`      | `C:/repos/danny/ap-wt-packages` | done, merged (`ea778b4`) |
 | [023 Fumadocs docs site](023-fumadocs-docs-site.md)         | `docs-fumadocs`     | `C:/repos/danny/ap-wt-docs`     | done, merged (`3b17767`) |
 | [024 Backend examples](024-backend-examples.md)             | `examples-backends` | `C:/repos/danny/ap-wt-backends` | done, merged (`0f451ff`) |
-| 022 Gap closure — demo, e2e, CI                             | `demo-e2e-ci`       | `C:/repos/danny/ap-wt-ci`       | in progress              |
+| 022 Gap closure — demo, e2e, CI                             | `demo-e2e-ci`       | `C:/repos/danny/ap-wt-ci`       | done, merged             |
 
 Each branch keeps its own progress in `plans/handoffs/<branch>.md`. Read that file before you continue a branch.
 
@@ -52,14 +52,21 @@ Each branch keeps its own progress in `plans/handoffs/<branch>.md`. Read that fi
 - Benchmarks: `bun run bench` (`scripts/bench.ts`, tinybench) against `packages/core/bench/baseline.json`, tolerance × 3, `-- --update-baseline`.
 - SignalR hub test builds once with `dotnet build -o <tmp>` and runs the dll directly (`dotnet run` orphans a child process on kill).
 
+## Demo, e2e, and CI notes (from `demo-e2e-ci`)
+
+- Demo palette lives in `apps/demo/src/cursors/palette.ts` (Tailwind ~700 shades, all ≥ 5:1 against white). `contrast.test.ts` guards it.
+- The demo picks a random room when `?room=` is missing. Pair e2e tests always pass a room.
+- `e2e/resilience.spec.ts`: socket drop through `page.routeWebSocket` + `connectToServer()`, closing only the client side, so the real backoff path runs. Room isolation uses a third page.
+- CI: `concurrency` per ref, Bun cache, `setup-dotnet` 10.0.x (SignalR hub test runs), docs job with `.next/cache`, non-blocking `bun run bench`.
+- `SPECIFICATION.md` §17 lists which e2e specs run in three browsers (`cross-layout.spec.ts`) and which run in Chromium only.
+
 ## Next steps
 
-1. Merge `demo-e2e-ci` into `dev` and fold its `plans/handoffs/demo-e2e-ci.md` into this file. (`docs-fumadocs`, `examples-backends`, and `package-gaps` are merged.)
-2. Demo fixes: WCAG AA label colors, `aria-live` on the presence pill, random default room.
-3. E2E: in-place socket drop and reconnect; room isolation.
-4. CI: after the `demo-e2e-ci` merge, add a `bun run bench` step (non-blocking with `continue-on-error` until the baseline settles on CI hardware). Fix `SPECIFICATION.md` §17 browser claims.
-5. Run all gates and the full three-browser e2e suite locally. Report to the owner. Merge to `main` only after the owner says yes.
-6. After the merge to `main`: the owner imports the repo in Vercel.
+1. Owner review. Merge `dev` into `main` only after the owner says yes.
+2. After the merge: the owner imports the repo in Vercel (Root Directory `apps/docs`).
+3. After the first CI runs on `main`: re-record the bench baseline on CI hardware (`bun run bench -- --update-baseline`) and make the bench step blocking.
+4. Run a full `simple-english` self-check pass over the docs pages.
+5. Future backends: `plans/backends/`.
 
 ## How to resume
 

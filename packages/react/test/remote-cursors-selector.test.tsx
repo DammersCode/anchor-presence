@@ -1,6 +1,6 @@
 import { act, useCallback } from "react";
 import { createRoot } from "react-dom/client";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ResolvedCursor } from "@anchor-presence/dom";
 import { LiveCursorProvider } from "../src/provider";
 import { useRemoteCursorsSelector } from "../src/hooks";
@@ -129,6 +129,46 @@ describe("useRemoteCursorsSelector", () => {
     });
 
     expect(renders.at(-1)).toBe(first);
+
+    act(() => {
+      root.unmount();
+    });
+  });
+
+  it("does not call select again for a snapshot probe on an unchanged cursors array", () => {
+    const { client } = makeFakeClient();
+    const { binding, publish, notify } = makeFakeBinding();
+    const selectSpy = vi.fn((cursors: ResolvedCursor[]) => cursors.length);
+
+    function Reader() {
+      const count = useRemoteCursorsSelector(selectSpy);
+      renders.push(count);
+      return <div>{count}</div>;
+    }
+
+    const root = createRoot(container);
+    act(() => {
+      root.render(
+        <LiveCursorProvider client={client} binding={binding}>
+          <Reader />
+        </LiveCursorProvider>,
+      );
+    });
+
+    act(() => {
+      publish([cursor("r1")]);
+    });
+    const callsAfterPublish = selectSpy.mock.calls.length;
+
+    // the scheduler notifies subscribers every pass, even when the cursors array reference is unchanged
+    act(() => {
+      notify();
+    });
+    act(() => {
+      notify();
+    });
+
+    expect(selectSpy.mock.calls.length).toBe(callsAfterPublish);
 
     act(() => {
       root.unmount();

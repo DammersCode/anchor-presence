@@ -83,6 +83,7 @@ export function makeFakeClient<TContext = unknown, TUser = unknown>(): {
 export function makeFakeBinding<TContext = unknown, TUser = unknown>(): {
   binding: DomBinding<TContext, TUser>;
   publish: (next: ResolvedCursor<TContext, TUser>[]) => void;
+  notify: () => void;
   listenerCount: () => number;
 } {
   let snapshot: ResolvedCursor<TContext, TUser>[] = [];
@@ -104,6 +105,10 @@ export function makeFakeBinding<TContext = unknown, TUser = unknown>(): {
     binding,
     publish(next) {
       snapshot = next;
+      for (const listener of listeners) listener();
+    },
+    // fires listeners without changing the snapshot array, like the scheduler's every-frame notify()
+    notify() {
       for (const listener of listeners) listener();
     },
     listenerCount: () => listeners.size,

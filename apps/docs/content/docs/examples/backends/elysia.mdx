@@ -1,0 +1,61 @@
+---
+title: Elysia backend
+description: A room-broadcast relay built on Elysia's .ws() route for Bun.
+---
+
+You want a relay built on [Elysia](https://elysiajs.com)'s route-based API instead of raw `Bun.serve`. This example uses Elysia's `.ws()` route on Bun, backed by Elysia/Bun's own topic pub-sub, the same model `examples/bun-native` uses.
+
+## Install
+
+```sh
+bun add @anchor-presence/core @anchor-presence/dom elysia
+```
+
+## Server
+
+<include>../../../../../../examples/elysia/server.ts</include>
+
+## Client
+
+The client needs no custom transport. It connects with the native `createWebSocketTransport`:
+
+```tsx
+import { createPresenceClient } from "@anchor-presence/core";
+import { createWebSocketTransport } from "@anchor-presence/dom";
+
+const transport = createWebSocketTransport({ port: 8791, path: "/?room=main" });
+const client = createPresenceClient({ transport });
+transport.connect();
+```
+
+## Run it
+
+```sh
+cd examples/elysia
+bun run dev:relay
+```
+
+The relay listens on `http://localhost:8791`.
+
+## Production notes
+
+- **Room name validation.** `sanitizeRoomName` caps room names at 256 characters and restricts them to `[A-Za-z0-9_-]`. An invalid or missing name falls back to `"main"`.
+- **Max payload size.** `MAX_MESSAGE_BYTES` (default 32 KiB) drops an oversized message instead of closing the connection.
+- **Per-connection rate limit.** A token bucket limits inbound messages per socket (`RATE_CAPACITY`, `RATE_REFILL_PER_SECOND`).
+- **Origin allowlist.** `RELAY_ALLOWED_ORIGINS` is a comma-separated list of allowed origins. Leave it empty for local development. Every origin is accepted then.
+- **Auth hook placeholder.** Pass an `authCheck` function, or set `RELAY_AUTH_TOKEN` for a plain shared-token check.
+- **Room cleanup.** The relay drops a room's entry once its last socket closes.
+- **Per-room connection cap.** `RELAY_MAX_ROOM_SOCKETS` limits one room. There is no process-wide cap in this example.
+
+<Callout type="warn">
+  This relay publishes through Bun's pub-sub, which does not expose a per-subscriber buffered amount, so it
+  applies no slow-consumer backpressure. Use `examples/node-ws` or `apps/server` if you need that control.
+</Callout>
+
+Set `RELAY_ALLOWED_ORIGINS` and `RELAY_AUTH_TOKEN` before you expose this relay past local development. Put a TLS-terminating proxy in front of it.
+
+## Related
+
+- [Bun-native backend](/docs/examples/backends/bun-native)
+- [Node `ws` backend](/docs/examples/backends/node-ws)
+- [Hono backend](/docs/examples/backends/hono)

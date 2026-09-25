@@ -1,9 +1,9 @@
 ---
 title: Codecs
-description: The CursorCodec interface, jsonCodec, binaryCodec, a MessagePack sketch, and the validation boundary.
+description: The CursorCodec interface, jsonCodec, binaryCodec, a MessagePack sketch, debugging, and the validation boundary.
 ---
 
-A codec turns a `CursorPresence` message into bytes for the wire, and turns bytes back into a value. This page covers the `CursorCodec` interface, the shipped `jsonCodec` and `binaryCodec`, a MessagePack sketch, and the validation boundary.
+A codec turns a `CursorPresence` message into bytes for the wire, and turns bytes back into a value. This page covers the `CursorCodec` interface, the shipped `jsonCodec` and `binaryCodec`, a MessagePack sketch, debugging, and the validation boundary.
 
 ## CursorCodec
 
@@ -72,6 +72,20 @@ The wire layout is little-endian:
 
 Opaque `context` and `user` values remain JSON payloads inside the binary frame. The hot cursor fields use the compact fixed layout, which is why `binaryCodec` is smaller than `jsonCodec` for typical multi-anchor messages.
 
+`binaryCodec` stores the anchor and viewport `u` and `v` values as 32-bit floats. A decoded coordinate keeps about 7 significant digits, so it can differ slightly from the sent value. For coordinates from 0 to 1, the difference is less than 1e-7, far below one pixel.
+
+When a message breaks a frame limit, `binaryCodec.encode` throws an `Error`:
+
+- `version` is not `1`.
+- `clientId`, `session`, or an anchor `id` is longer than 65535 UTF-8 bytes.
+- The cursor has more than 255 anchors.
+- `sequence` is not a safe integer from 0 to `DEFAULT_MAX_SEQUENCE`.
+- An anchor or viewport coordinate is not a finite number.
+- `pointer.type` is not `mouse`, `pen`, or `touch`.
+- `JSON.stringify` cannot serialize `context` or `user`.
+
+The protocol limits on the [Security](/docs/get-started/security) page are tighter than the frame limits. For example, `DEFAULT_MAX_ANCHORS` is 8, and `@anchor-presence/dom` sends 4 anchors by default and never more than 8. A message inside the protocol limits never reaches a frame limit.
+
 All clients in the same room must use the same codec. The relay forwards bytes opaquely and does not mix `jsonCodec` and `binaryCodec` frames. `binaryCodec.decode` never throws, and returns `null` for malformed, truncated, or non-binary input.
 
 For a new deployment, `binaryCodec` is the recommended choice: about half the wire size of `jsonCodec`, and around 37% lower inbound CPU, measured. `jsonCodec` remains the default so a mixed-version room, where an older client still speaks JSON, keeps working.
@@ -99,6 +113,37 @@ export const messagePackCodec: CursorCodec = {
 ```
 
 Wrap every decode call in `try`/`catch`. A malformed or truncated buffer must produce `null`, never an uncaught exception.
+
+## Debugging
+
+The DevTools network tab cannot show the content of `binaryCodec` frames. Use one of these two options.
+
+**Option A:** use `jsonCodec` in development and `binaryCodec` in production. The network tab then shows every development message as readable JSON.
+
+<Callout type="warn">
+  If a development client and a production client join the same room, they drop each other's messages. All
+  clients in a room must use the same codec.
+</Callout>
+
+**Option B:** wrap the codec so that it logs every message. This wrapper keeps `binaryCodec` on the wire:
+
+```ts
+import { binaryCodec, type CursorCodec } from "@anchor-presence/core";
+
+const debugCodec: CursorCodec = {
+  encode(message) {
+    console.debug("[presence out]", message);
+    return binaryCodec.encode(message);
+  },
+  decode(data) {
+    const value = binaryCodec.decode(data);
+    console.debug("[presence in]", value);
+    return value;
+  },
+};
+```
+
+To read one captured frame, call `binaryCodec.decode(new Uint8Array([/* bytes */]))` in the console.
 
 ## Validation boundary
 

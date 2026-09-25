@@ -38,7 +38,7 @@ test --project=chromium`) also green (16/16) after this change, confirming the d
   without `room=`, but are single-page, not pair, tests).
 
 - CI (hash pending commit): `.github/workflows/ci.yml` — added `concurrency: { group: ci-${{
-  github.ref }}, cancel-in-progress: true }` at the workflow level; cached `~/.bun/install/cache` keyed on
+github.ref }}, cancel-in-progress: true }` at the workflow level; cached `~/.bun/install/cache` keyed on
   `hashFiles('bun.lock')` in both the `test` and `docs` jobs; added `actions/setup-dotnet@v4`
   (`dotnet-version: "10.0.x"`) to the `test` job before the build/test steps, so
   `examples/signalr/signalr-hub.test.ts` runs instead of skipping — verified locally first
@@ -50,15 +50,21 @@ test --project=chromium`) also green (16/16) after this change, confirming the d
   `playwright.config.ts`). Removed the stale `# bench: vitest 5 --project filter bug...` comment; did not
   add a bench step (bench script lands on the `package-gaps` branch per the plan's spec decisions).
 
+- `SPECIFICATION.md` §17 (hash pending commit): the old bullet claimed the whole "cross-layout" suite ran
+  in Chromium + Firefox + WebKit. Checked every `e2e/*.spec.ts` file's `test.skip` guard: only
+  `e2e/cross-layout.spec.ts` (2 scenarios, no skip guard) runs in all three browsers. Everything else —
+  `cross-layout-chromium.spec.ts`, `occlusion.spec.ts`, `perf.spec.ts`, `reflow-perf.spec.ts`, and the new
+  `resilience.spec.ts` — skips on non-Chromium via `test.skip(({ browserName }) => browserName !==
+"chromium", ...)`. Rewrote §17's last bullet into two bullets reflecting that split.
+
 ## In progress
 
-- About to start task 4 (SPECIFICATION.md §17).
+- About to run the full local gate suite (task 5): all AGENTS.md gates plus `bunx playwright test`
+  (chromium + firefox + webkit).
 
 ## Next
 
-1. `SPECIFICATION.md` §17: document which e2e specs run in all 3 browsers vs chromium-only
-   (`*-chromium.spec.ts` + `test.skip` guards, now including `resilience.spec.ts`).
-2. Run all AGENTS.md gates plus the full 3-browser `bunx playwright test` locally.
+1. Run all AGENTS.md gates plus the full 3-browser `bunx playwright test` locally; report results.
 
 ## Decisions
 

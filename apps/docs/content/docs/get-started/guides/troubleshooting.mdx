@@ -3,6 +3,8 @@ title: Troubleshooting
 description: Common problems and their causes.
 ---
 
+This page lists common problems, their causes, and the fix for each one.
+
 ## Cursor not visible
 
 Three separate causes produce the same symptom.
@@ -23,22 +25,7 @@ const offscreen = x < 0 || y < 0 || x >= window.innerWidth || y >= window.innerH
 
 ## Cursor floats over empty space
 
-An anchor can be measurable while an internal scroll container clips it. The resolver sets `pointVisible` to false when the resolved point is outside the clipped area. The default policy still shows the cursor.
-
-Hide these cursors with a custom policy:
-
-```ts
-const policy: VisibilityPolicy = ({ resolution }) =>
-  !resolution.pointVisible || resolution.tier === "hidden" ? "hide" : "show";
-```
-
-<Callout type="warn">
-  The occlusion check uses a simplified model. An absolutely or fixed-positioned anchor that escapes an
-  `overflow: hidden` ancestor is still treated as clipped, so this policy can hide a cursor that is actually
-  visible. Prefer portal-rendered overlays, or a custom policy for those anchors.
-</Callout>
-
-If an overlay can cover the point and the check cost is acceptable, set `hitTest: true`.
+An anchor can be measurable while an internal scroll container clips it. The resolver sets `pointVisible` to false when the resolved point is outside the clipped area. The default policy still shows the cursor. See [Occlusion and scroll](/docs/dom/occlusion-and-scroll) for a policy that hides these cursors, and for the check's limits.
 
 ## Cursor drifts
 
@@ -53,6 +40,12 @@ binding.invalidate("custom-layout-change");
 ```
 
 See [Performance](/docs/get-started/guides/performance) for the full signal list and when to call `invalidate()` yourself.
+
+## Cursor jumps between two elements
+
+If the pointer crosses a gap with no anchored parent, the fallback chain drops to the viewport position. The viewport position maps to a different spot in a receiver layout that arranges elements differently, so the cursor jumps.
+
+Give the parent container its own anchor, for example `data-anchor="nav"` on a sidebar. A pointer that crosses the gap between two child anchors still resolves against the shared parent, instead of falling back to the viewport. Keep item sizes equal across layouts where possible, so a resolved point lands on the same element on both sides. The live demo uses `data-anchor="nav"` on its sidebar for this reason.
 
 ## HTTP vs HTTPS
 
@@ -70,11 +63,11 @@ This is not an error the library reports. It is a sign of misuse. Give every tab
 
 ## jsdom vs a real browser
 
-A unit test suite that runs in jsdom lacks real layout: `getBoundingClientRect()` always returns zeros unless a test mocks it, and `ResizeObserver` and `MutationObserver` are often absent or behave differently from a real browser.
+A unit test suite that runs in jsdom lacks real layout. `getBoundingClientRect()` always returns zeros unless a test mocks it. `ResizeObserver` and `MutationObserver` are often absent, or behave differently from a real browser.
 
-Because of this, `dom` and `react` unit tests use injectable observer factories and mocked rects to test scheduler and resolver logic without real layout. Real cross-layout correctness, such as wrapping, sidebar states, and element-size proportionality, needs a real-browser test suite, for example Playwright across Chromium, Firefox, and WebKit.
+Because of this, `dom` and `react` unit tests use injectable observer factories and mocked rects to test scheduler and resolver logic without real layout. Real cross-layout correctness needs a real-browser test suite, for example Playwright across Chromium, Firefox, and WebKit. Examples of real cross-layout correctness are wrapping, sidebar states, and element-size proportionality.
 
-If a scheduler or resolver behavior looks correct in a jsdom unit test but wrong in the browser, suspect a jsdom API gap first: check that the real browser has the observer or CSS feature the test mocked.
+If a scheduler or resolver behavior looks correct in a jsdom unit test but wrong in the browser, suspect a jsdom API gap first. Check that the real browser has the observer or CSS feature the test mocked.
 
 ## Related
 

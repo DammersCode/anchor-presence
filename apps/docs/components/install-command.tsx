@@ -3,14 +3,14 @@
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
 
-const PACKAGES = "@anchor-presence/core @anchor-presence/dom @anchor-presence/react";
+import { installPackages } from "@/lib/shared";
 
 const ADD = { bun: "bun add", npm: "npm install", pnpm: "pnpm add" };
 const RUN = { bun: "bunx", npm: "npx", pnpm: "pnpm dlx" };
 type Manager = keyof typeof ADD;
 
 /** Package-manager-aware snippet with a one-click copy: installs `packages`, or executes `run` as a CLI. */
-export function InstallCommand({ packages = PACKAGES, run }: { packages?: string; run?: string }) {
+export function InstallCommand({ packages = installPackages, run }: { packages?: string; run?: string }) {
   const [tab, setTab] = useState<Manager>("bun");
   const [copied, setCopied] = useState(false);
   const command = run === undefined ? `${ADD[tab]} ${packages}` : `${RUN[tab]} ${run}`;

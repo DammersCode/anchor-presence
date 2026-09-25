@@ -11,3 +11,6 @@ export const gitConfig = {
   repo: "anchor-presence",
   branch: "main",
 };
+
+/** The packages every install command adds unless a page names others. */
+export const installPackages = "@anchor-presence/core @anchor-presence/dom @anchor-presence/react";

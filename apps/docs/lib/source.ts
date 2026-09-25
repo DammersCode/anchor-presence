@@ -4,7 +4,7 @@ import type { GeneratedDoc } from "fumadocs-typescript";
 import { createElement } from "react";
 import { Atom, Box, Compass, FlaskConical, MousePointer } from "lucide-react";
 import { readDocsSource, readExampleSource } from "./read-example-source";
-import { docsContentRoute, docsImageRoute, docsRoute } from "./shared";
+import { docsContentRoute, docsImageRoute, docsRoute, installPackages } from "./shared";
 import { getTypeGenerator } from "./type-generator";
 
 const icons = {
@@ -46,10 +46,11 @@ export function getPageMarkdownUrl(page: (typeof source)["$inferPage"]) {
 const CODE_FROM_SOURCE = /<CodeFromSource (repo|docs)="([^"]+)" lang="([^"]+)" \/>/g;
 const AUTO_TYPE_TABLE = /<AutoTypeTable path="([^"]+)" name="([^"]+)" \/>/g;
 const DEMO = /<Demo \/>\n?/g;
+const INSTALL_COMMAND = /<InstallCommand(?: packages="([^"]+)")? \/>/g;
 const FENCE = "```";
 
 function tableCell(text: string): string {
-  return text.replaceAll("|", "\|").replaceAll("\n", " ");
+  return text.replaceAll("|", "\\|").replaceAll("\n", " ");
 }
 
 function typeTableMarkdown(doc: GeneratedDoc): string {
@@ -66,6 +67,11 @@ function typeTableMarkdown(doc: GeneratedDoc): string {
 async function inlineComponents(markdown: string): Promise<string> {
   let out = markdown
     .replace(DEMO, "")
+    .replace(
+      INSTALL_COMMAND,
+      (_tag, packages: string | undefined) =>
+        `${FENCE}sh\nnpm install ${packages ?? installPackages}\n${FENCE}`,
+    )
     .replace(CODE_FROM_SOURCE, (_tag, kind: string, file: string, lang: string) => {
       const code = kind === "repo" ? readExampleSource(file) : readDocsSource(file);
       return `${FENCE}${lang}\n${code.trimEnd()}\n${FENCE}`;

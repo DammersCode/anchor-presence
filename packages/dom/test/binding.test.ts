@@ -26,6 +26,7 @@ function makeRafStub() {
 
 function makeFakeClient() {
   let remoteSnapshot: CursorPresence[] = [];
+  let idleClientIds = new Set<string>();
   const remoteListeners = new Set<() => void>();
   const teardowns: Array<() => void> = [];
 
@@ -41,7 +42,10 @@ function makeFakeClient() {
     getStatus: () => "connected",
     subscribeStatus: () => () => {},
     getRemoteSnapshot: () => remoteSnapshot,
-    getRemotePresence: () => remoteSnapshot,
+    getRemotePresence: () =>
+      remoteSnapshot.map((presence) =>
+        Object.assign({}, presence, { idle: idleClientIds.has(presence.clientId) }),
+      ),
     subscribeRemote: (listener) => {
       remoteListeners.add(listener);
       return () => remoteListeners.delete(listener);
@@ -58,8 +62,9 @@ function makeFakeClient() {
     },
   };
 
-  function pushRemote(next: CursorPresence[]): void {
+  function pushRemote(next: CursorPresence[], nextIdleClientIds: Set<string> = new Set()): void {
     remoteSnapshot = next;
+    idleClientIds = nextIdleClientIds;
     for (const listener of remoteListeners) listener();
   }
 
@@ -184,6 +189,47 @@ describe("createDomBinding", () => {
     expect(snapshot[0]?.tier).toBe("anchor");
     expect(snapshot[0]?.x).toBeCloseTo(50);
     expect(snapshot[0]?.y).toBeCloseTo(50);
+
+    binding.dispose();
+  });
+
+  it("carries idle from client.getRemotePresence() onto the resolved cursor", () => {
+    const el = document.createElement("div");
+    el.dataset.anchor = "a";
+    document.body.append(el);
+    vi.spyOn(el, "getBoundingClientRect").mockReturnValue({
+      left: 0,
+      top: 0,
+      width: 100,
+      height: 100,
+      right: 100,
+      bottom: 100,
+      x: 0,
+      y: 0,
+      toJSON() {
+        return this;
+      },
+    });
+
+    const { raf, caf, flush } = makeRafStub();
+    const { client, pushRemote } = makeFakeClient();
+    const binding = createDomBinding(client, { environment: { raf, caf } });
+
+    const presence: CursorPresence = {
+      version: 1,
+      clientId: "remote-1",
+      session: "s",
+      sequence: 1,
+      cursor: { anchors: [{ id: "a", u: 0.5, v: 0.5 }] },
+    };
+
+    pushRemote([presence]);
+    flush();
+    expect(binding.getSnapshot()[0]?.idle).toBe(false);
+
+    pushRemote([presence], new Set(["remote-1"]));
+    flush();
+    expect(binding.getSnapshot()[0]?.idle).toBe(true);
 
     binding.dispose();
   });

@@ -53,7 +53,16 @@ describe("rerender isolation", () => {
     expect(cursorRenderCount).toBe(1);
 
     const sample: ResolvedCursor[] = [
-      { clientId: "r1", x: 0, y: 0, visible: true, pointVisible: true, anchorId: null, tier: "viewport" },
+      {
+        clientId: "r1",
+        x: 0,
+        y: 0,
+        visible: true,
+        pointVisible: true,
+        anchorId: null,
+        tier: "viewport",
+        idle: false,
+      },
     ];
     act(() => {
       publish(sample);

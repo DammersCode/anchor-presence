@@ -152,10 +152,16 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
     hasActiveCursors: () => client.getRemoteSnapshot().some((presence) => presence.cursor !== null),
 
     compute(readState, timestampMs) {
+      const idleClientIds = new Set<string>();
+      for (const presence of client.getRemotePresence()) {
+        if (presence.idle) idleClientIds.add(presence.clientId);
+      }
+
       const { cursors, unsettled, activeAnchors } = resolver.resolveAll(
         client.getRemoteSnapshot(),
         readState,
         timestampMs,
+        (clientId) => idleClientIds.has(clientId),
       );
 
       const documentElement = (environment.root ?? document).documentElement;

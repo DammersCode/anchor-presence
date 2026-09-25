@@ -15,6 +15,7 @@ function cursor(clientId: string, overrides: Partial<ResolvedCursor> = {}): Reso
     pointVisible: true,
     anchorId: null,
     tier: "viewport",
+    idle: false,
     ...overrides,
   };
 }

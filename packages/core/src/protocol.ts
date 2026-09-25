@@ -41,14 +41,17 @@ export type CursorPresence<TContext = unknown, TUser = unknown> = {
 };
 
 /**
- * A remote presence without the `sequence` field.
+ * A remote presence without the `sequence` field, with `idle` added.
  * The stable snapshot behind `client.getRemotePresence()`.
  * The list keeps entry and array identity while nothing observable changes.
  */
 export type RemotePresence<TContext = unknown, TUser = unknown> = Omit<
   CursorPresence<TContext, TUser>,
   "sequence"
->;
+> & {
+  /** `true` when no message arrived from this client for `idleAfterMs`. */
+  idle: boolean;
+};
 
 /** Default maximum length of `clientId`. `validatePresence` drops a message with a longer `clientId`. */
 export const DEFAULT_MAX_CLIENT_ID_LENGTH = 128;

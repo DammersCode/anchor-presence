@@ -77,10 +77,36 @@ describe("useRemoteUsers", () => {
     });
 
     expect(seen.at(-1)).toEqual([
-      { clientId: "a", user: { name: "Ada" }, session: "sa" },
-      { clientId: "b", user: undefined, session: "sb" },
+      { clientId: "a", user: { name: "Ada" }, session: "sa", idle: false },
+      { clientId: "b", user: undefined, session: "sb", idle: false },
     ]);
     expect(seen.at(-1)?.[1]?.user).toBeUndefined();
+
+    act(() => root.unmount());
+  });
+
+  it("carries the idle flag from the presence snapshot", () => {
+    const { client, pushRemote } = makeFakeClient<unknown, TestUser>();
+    const seen: RemoteUser<TestUser>[][] = [];
+    function Probe() {
+      seen.push(useRemoteUsers<TestUser>());
+      return null;
+    }
+    const root = createRoot(container);
+
+    act(() => {
+      root.render(
+        <LiveCursorProvider client={client} binding={makeFakeBinding().binding}>
+          <Probe />
+        </LiveCursorProvider>,
+      );
+    });
+
+    act(() => {
+      pushRemote([{ version: 1, clientId: "a", session: "sa", sequence: 0, cursor: null }], new Set(["a"]));
+    });
+
+    expect(seen.at(-1)?.[0]?.idle).toBe(true);
 
     act(() => root.unmount());
   });
@@ -113,7 +139,7 @@ describe("useRemoteUsers", () => {
     });
 
     expect(container.querySelector("[data-testid=count]")?.textContent).toBe("1");
-    expect(seen.at(-1)).toEqual([{ clientId: "B", user: undefined, session: clientB.session }]);
+    expect(seen.at(-1)).toEqual([{ clientId: "B", user: undefined, session: clientB.session, idle: false }]);
 
     act(() => {
       clientB.dispose();

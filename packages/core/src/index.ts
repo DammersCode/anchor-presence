@@ -21,7 +21,12 @@ export {
 export { validatePresence } from "./validate.js";
 export type { ValidationLimits } from "./validate.js";
 
-export { DEFAULT_MAX_REMOTE_CLIENTS, DEFAULT_STALE_TIMEOUT_MS, RemotePresenceStore } from "./store.js";
+export {
+  DEFAULT_IDLE_AFTER_MS,
+  DEFAULT_MAX_REMOTE_CLIENTS,
+  DEFAULT_STALE_TIMEOUT_MS,
+  RemotePresenceStore,
+} from "./store.js";
 export type { RemotePresenceStoreOptions } from "./store.js";
 
 export { jsonCodec } from "./codec.js";

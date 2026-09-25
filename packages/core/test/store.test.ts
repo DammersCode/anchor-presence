@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { RemotePresenceStore } from "../src/store";
+import { DEFAULT_IDLE_AFTER_MS, RemotePresenceStore } from "../src/store";
 import type { CursorPresence } from "../src/protocol";
 
 function presence(overrides: Partial<CursorPresence> = {}): CursorPresence {
@@ -128,6 +128,68 @@ describe("RemotePresenceStore stale sweep", () => {
     clock.advance(900);
     store.sweep();
     expect(store.getSnapshot()).toHaveLength(1);
+  });
+});
+
+describe("RemotePresenceStore idle", () => {
+  it("starts not idle and becomes idle after idleAfterMs with no message", () => {
+    const clock = makeClock();
+    const store = new RemotePresenceStore({ idleAfterMs: 500, staleTimeoutMs: 10_000, now: clock.now });
+    store.ingest(presence({ clientId: "a" }));
+    expect(store.getStableSnapshot()[0]?.idle).toBe(false);
+
+    clock.advance(400);
+    store.sweep();
+    expect(store.getStableSnapshot()[0]?.idle).toBe(false);
+
+    clock.advance(200); // total 600ms since last seen
+    store.sweep();
+    expect(store.getStableSnapshot()[0]?.idle).toBe(true);
+  });
+
+  it("clears idle on the next accepted message, even one with unchanged content", () => {
+    const clock = makeClock();
+    const store = new RemotePresenceStore({ idleAfterMs: 500, staleTimeoutMs: 10_000, now: clock.now });
+    store.ingest(presence({ clientId: "a", sequence: 0 }));
+    clock.advance(600);
+    store.sweep();
+    expect(store.getStableSnapshot()[0]?.idle).toBe(true);
+
+    store.ingest(presence({ clientId: "a", sequence: 1 }));
+    expect(store.getStableSnapshot()[0]?.idle).toBe(false);
+  });
+
+  it("keeps stable snapshot and entry identity while idle does not change", () => {
+    const clock = makeClock();
+    const store = new RemotePresenceStore({ idleAfterMs: 500, staleTimeoutMs: 10_000, now: clock.now });
+    store.ingest(presence({ clientId: "a" }));
+    const before = store.getStableSnapshot();
+
+    clock.advance(100);
+    store.sweep();
+    expect(store.getStableSnapshot()).toBe(before);
+  });
+
+  it("clamps idleAfterMs below staleTimeoutMs, so a peer never reports idle after removal", () => {
+    const clock = makeClock();
+    const store = new RemotePresenceStore({ idleAfterMs: 10_000, staleTimeoutMs: 1000, now: clock.now });
+    store.ingest(presence({ clientId: "a" }));
+    clock.advance(1100);
+    store.sweep();
+    expect(store.getSnapshot()).toHaveLength(0);
+  });
+
+  it("defaults to DEFAULT_IDLE_AFTER_MS when omitted", () => {
+    const clock = makeClock();
+    const store = new RemotePresenceStore({ now: clock.now });
+    store.ingest(presence({ clientId: "a" }));
+    clock.advance(DEFAULT_IDLE_AFTER_MS - 1);
+    store.sweep();
+    expect(store.getStableSnapshot()[0]?.idle).toBe(false);
+
+    clock.advance(2);
+    store.sweep();
+    expect(store.getStableSnapshot()[0]?.idle).toBe(true);
   });
 });
 

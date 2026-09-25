@@ -6,7 +6,7 @@ import type { DomBinding, ResolvedCursor } from "@anchor-presence/dom";
 
 export function makeFakeClient<TContext = unknown, TUser = unknown>(): {
   client: PresenceClient<TContext, TUser>;
-  pushRemote: (next: CursorPresence<TContext, TUser>[]) => void;
+  pushRemote: (next: CursorPresence<TContext, TUser>[], idleClientIds?: Set<string>) => void;
   setStatus: (status: ConnectionStatus) => void;
 } {
   let remoteSnapshot: CursorPresence<TContext, TUser>[] = [];
@@ -56,7 +56,7 @@ export function makeFakeClient<TContext = unknown, TUser = unknown>(): {
 
   return {
     client,
-    pushRemote(next) {
+    pushRemote(next, idleClientIds = new Set()) {
       remoteSnapshot = next;
       remotePresence = next.map((presence) => {
         const projected: RemotePresence<TContext, TUser> = {
@@ -64,6 +64,7 @@ export function makeFakeClient<TContext = unknown, TUser = unknown>(): {
           clientId: presence.clientId,
           session: presence.session,
           cursor: presence.cursor,
+          idle: idleClientIds.has(presence.clientId),
         };
         if ("context" in presence) projected.context = presence.context;
         if ("user" in presence) projected.user = presence.user;

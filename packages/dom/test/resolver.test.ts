@@ -463,4 +463,54 @@ describe("RemoteResolver (spec §10 + §13)", () => {
     expect(second.cursors[1]).not.toBe(first.cursors[1]);
     expect(second.cursors[1]?.x).toBeCloseTo(350);
   });
+
+  it("carries the idle flag from the isIdle lookup onto the resolved cursor", () => {
+    const { factory } = spyInterpolator();
+    const resolver = new RemoteResolver({ registry, interpolatorFactory: factory });
+    const rects = new Map<Element, Rect>([[el, { left: 0, top: 0, width: 100, height: 100 }]]);
+    const state = readState(rects);
+    const p = presence();
+
+    const notIdle = resolver.resolveAll([p], state, 0, () => false);
+    expect(notIdle.cursors[0]?.idle).toBe(false);
+
+    const idle = resolver.resolveAll([p], state, 16, () => true);
+    expect(idle.cursors[0]?.idle).toBe(true);
+  });
+
+  it("defaults to not idle when no isIdle lookup is given", () => {
+    const resolver = new RemoteResolver({ registry });
+    const rects = new Map<Element, Rect>([[el, { left: 0, top: 0, width: 100, height: 100 }]]);
+
+    const result = resolver.resolveAll([presence()], readState(rects), 0);
+
+    expect(result.cursors[0]?.idle).toBe(false);
+  });
+
+  it("keeps cursor identity across calls when idle does not change", () => {
+    const { factory } = spyInterpolator();
+    const resolver = new RemoteResolver({ registry, interpolatorFactory: factory });
+    const rects = new Map<Element, Rect>([[el, { left: 0, top: 0, width: 100, height: 100 }]]);
+    const state = readState(rects);
+    const p = presence();
+
+    const first = resolver.resolveAll([p], state, 0, () => true);
+    const second = resolver.resolveAll([p], state, 16, () => true);
+
+    expect(second.cursors[0]).toBe(first.cursors[0]);
+  });
+
+  it("produces a new cursor instance when only idle changes", () => {
+    const { factory } = spyInterpolator();
+    const resolver = new RemoteResolver({ registry, interpolatorFactory: factory });
+    const rects = new Map<Element, Rect>([[el, { left: 0, top: 0, width: 100, height: 100 }]]);
+    const state = readState(rects);
+    const p = presence();
+
+    const first = resolver.resolveAll([p], state, 0, () => false);
+    const second = resolver.resolveAll([p], state, 16, () => true);
+
+    expect(second.cursors[0]).not.toBe(first.cursors[0]);
+    expect(second.cursors[0]?.idle).toBe(true);
+  });
 });

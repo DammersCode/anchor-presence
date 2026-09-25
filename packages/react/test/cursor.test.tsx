@@ -16,6 +16,7 @@ function cursor(overrides: Partial<ResolvedCursor> = {}): ResolvedCursor {
     pointVisible: true,
     anchorId: "nav.dashboard",
     tier: "anchor",
+    idle: false,
     ...overrides,
   };
 }
@@ -218,6 +219,91 @@ describe("cursor components", () => {
     expect(container.querySelectorAll("[data-anchor-presence-cursor]").length).toBe(0);
 
     act(() => root.unmount());
+  });
+
+  it("dims an idle cursor and marks it with a data attribute", () => {
+    const { client } = makeFakeClient();
+    const { binding, publish } = makeFakeBinding();
+    const root = createRoot(container);
+
+    act(() => {
+      root.render(
+        <LiveCursorProvider client={client} binding={binding}>
+          <CursorLayer />
+        </LiveCursorProvider>,
+      );
+    });
+    act(() => {
+      publish([cursor({ idle: true })]);
+    });
+
+    const el = container.querySelector<HTMLElement>("[data-anchor-presence-cursor]");
+    expect(el?.style.opacity).toBe("0.4");
+    expect(el?.dataset.anchorPresenceIdle).toBe("true");
+
+    act(() => root.unmount());
+  });
+
+  it("does not mark an active cursor as idle", () => {
+    const { client } = makeFakeClient();
+    const { binding, publish } = makeFakeBinding();
+    const root = createRoot(container);
+
+    act(() => {
+      root.render(
+        <LiveCursorProvider client={client} binding={binding}>
+          <CursorLayer />
+        </LiveCursorProvider>,
+      );
+    });
+    act(() => {
+      publish([cursor({ idle: false })]);
+    });
+
+    const el = container.querySelector<HTMLElement>("[data-anchor-presence-cursor]");
+    expect(el?.style.opacity).toBe("1");
+    expect(el?.dataset.anchorPresenceIdle).toBeUndefined();
+
+    act(() => root.unmount());
+  });
+
+  it("does not transition opacity when the OS prefers reduced motion", () => {
+    const original = window.matchMedia;
+    window.matchMedia = ((query: string) => ({
+      matches: query === "(prefers-reduced-motion: reduce)",
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    })) as typeof window.matchMedia;
+
+    try {
+      const { client } = makeFakeClient();
+      const { binding, publish } = makeFakeBinding();
+      const root = createRoot(container);
+
+      act(() => {
+        root.render(
+          <LiveCursorProvider client={client} binding={binding}>
+            <CursorLayer />
+          </LiveCursorProvider>,
+        );
+      });
+      act(() => {
+        publish([cursor({ idle: true })]);
+      });
+
+      const el = container.querySelector<HTMLElement>("[data-anchor-presence-cursor]");
+      expect(el?.style.transition).toBe("");
+      expect(el?.style.opacity).toBe("0.4");
+
+      act(() => root.unmount());
+    } finally {
+      window.matchMedia = original;
+    }
   });
 
   it("filterCursor removes selected visible cursors", () => {

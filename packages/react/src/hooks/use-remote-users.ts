@@ -12,6 +12,8 @@ export type RemoteUser<TUser = unknown> = {
   user: TUser | undefined;
   /** The session ID of the client. */
   session: string;
+  /** `true` when the client sent no update for a while. */
+  idle: boolean;
 };
 
 function projectRemoteUsers<TUser>(snapshot: RemotePresence<unknown, TUser>[]): RemoteUser<TUser>[] {
@@ -19,6 +21,7 @@ function projectRemoteUsers<TUser>(snapshot: RemotePresence<unknown, TUser>[]): 
     clientId: p.clientId,
     user: p.user === null ? undefined : p.user,
     session: p.session,
+    idle: p.idle,
   }));
 }
 

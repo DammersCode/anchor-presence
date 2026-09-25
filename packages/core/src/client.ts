@@ -12,7 +12,12 @@ import type {
   SchedulerLike,
 } from "./internal/types.js";
 import { DEFAULT_MAX_FIELD_BYTES, DEFAULT_MAX_MESSAGE_BYTES } from "./protocol.js";
-import { DEFAULT_MAX_REMOTE_CLIENTS, DEFAULT_STALE_TIMEOUT_MS, RemotePresenceStore } from "./store.js";
+import {
+  DEFAULT_IDLE_AFTER_MS,
+  DEFAULT_MAX_REMOTE_CLIENTS,
+  DEFAULT_STALE_TIMEOUT_MS,
+  RemotePresenceStore,
+} from "./store.js";
 
 /** Default publish interval, in milliseconds. */
 export const DEFAULT_PUBLISH_INTERVAL_MS = 50;
@@ -71,6 +76,7 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
   const heartbeatMs = Math.max(MIN_TIMER_INTERVAL_MS, options.heartbeatMs ?? DEFAULT_HEARTBEAT_MS);
   const staleTimeoutMs =
     options.staleTimeoutMs === undefined ? undefined : Math.max(MIN_STALE_TIMEOUT_MS, options.staleTimeoutMs);
+  const idleAfterMs = options.idleAfterMs === undefined ? undefined : Math.max(0, options.idleAfterMs);
 
   const clientId = options.clientId ?? idFactory();
   const session = idFactory();
@@ -82,6 +88,7 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
   const store = new RemotePresenceStore<TContext, TUser>({
     ...(maxRemoteClients !== undefined ? { maxRemoteClients } : {}),
     ...(staleTimeoutMs !== undefined ? { staleTimeoutMs } : {}),
+    ...(idleAfterMs !== undefined ? { idleAfterMs } : {}),
     now,
     onDropNewClient: () => {
       if (devMode && !warnedAboutRemoteCap) {
@@ -110,7 +117,9 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     lowWatermarkBytes,
     adaptivePublish: adaptiveOptions !== undefined,
     heartbeatMs,
-    sweepIntervalMs: (staleTimeoutMs ?? DEFAULT_STALE_TIMEOUT_MS) / 2,
+    // half the shorter of the two timeouts, so an idle or stale transition shows up within one sweep tick
+    sweepIntervalMs:
+      Math.min(staleTimeoutMs ?? DEFAULT_STALE_TIMEOUT_MS, idleAfterMs ?? DEFAULT_IDLE_AFTER_MS) / 2,
     maxFieldBytes: validationLimits?.maxFieldBytes ?? DEFAULT_MAX_FIELD_BYTES,
     maxMessageBytes: validationLimits?.maxMessageBytes ?? DEFAULT_MAX_MESSAGE_BYTES,
     validationLimits,

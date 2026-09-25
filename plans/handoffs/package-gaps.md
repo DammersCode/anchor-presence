@@ -5,7 +5,8 @@ Branch `package-gaps`, from `dev`. Closing the `packages/*` gaps in `plans/022-g
 ## Done
 
 - [P0] Reduced motion: `createDomBinding` now defaults `resolution.interpolatorFactory` to `noneInterpolator` when `matchMedia("(prefers-reduced-motion: reduce)")` matches, else `linearInterpolator`. Evaluated lazily inside `createDomBinding` (no `window` at import time). An explicit `resolution.interpolatorFactory` still wins. `packages/dom/src/binding.ts`. Tests in `packages/dom/test/binding.test.ts` (`describe("prefers-reduced-motion")`). Commit: `0d53361`.
-- [P0] Benchmarks: `packages/core/bench/hotpath.bench.ts` now exports `registerHotPathCases(bench)` for `tinybench` instead of using vitest's removed `bench`. New `scripts/bench.ts` runs it, prints a `console.table`, compares each op's mean against `packages/core/bench/baseline.json` × 3 tolerance, exits non-zero on a regression or a task error, and supports `bun run bench -- --update-baseline`. Root script `bun run bench`. Removed the stale `benchmark` block from `vitest.config.ts`. Added `packages/core/bench` and `scripts/bench.ts` to `tsconfig.test.json` so the script and cases are actually typechecked (they weren't before — the old vitest `bench` block only ran, never typechecked). Fixed a real TS7 closure-narrowing bug in the bench cases (`let subscriber` narrowed to `never`; switched to a `{ current }` box) that typecheck caught once the file was included. Not yet committed.
+- [P0] Benchmarks: `packages/core/bench/hotpath.bench.ts` now exports `registerHotPathCases(bench)` for `tinybench` instead of using vitest's removed `bench`. New `scripts/bench.ts` runs it, prints a `console.table`, compares each op's mean against `packages/core/bench/baseline.json` × 3 tolerance, exits non-zero on a regression or a task error, and supports `bun run bench -- --update-baseline`. Root script `bun run bench`. Removed the stale `benchmark` block from `vitest.config.ts`. Added `packages/core/bench` and `scripts/bench.ts` to `tsconfig.test.json` so the script and cases are actually typechecked (they weren't before — the old vitest `bench` block only ran, never typechecked). Fixed a real TS7 closure-narrowing bug in the bench cases (`let subscriber` narrowed to `never`; switched to a `{ current }` box) that typecheck caught once the file was included. Commit: `236a6fc`.
+- [P1] Idle stage: `RemotePresenceStore` gains `idleAfterMs` (default `DEFAULT_IDLE_AFTER_MS = 15_000`, clamped below `staleTimeoutMs`) and computes `idle` per entry in `sweep()` (which also now runs at `min(staleTimeoutMs, idleAfterMs) / 2` so an idle transition shows up within one tick). `RemotePresence.idle` and `ResolvedCursor.idle` (via `RemoteResolver.resolveAll`'s new optional `isIdle` lookup, wired in `createDomBinding` from `client.getRemotePresence()`) both carry it, preserving the existing identity-caching invariants (unchanged idle keeps object identity). `useRemoteUsers` entries and `CursorLayer` both surface it; `CursorLayer` dims an idle cursor to `opacity: 0.4` and skips the `transition` under `prefers-reduced-motion`. Stale timeout still removes the peer unchanged — idle is a new, earlier, rendering-only stage. `createPresenceClient` accepts `idleAfterMs` too. New tests: `packages/core/test/store.test.ts` (`describe("RemotePresenceStore idle")`), `packages/dom/test/resolver.test.ts` and `packages/dom/test/binding.test.ts` (idle carry-through + identity), `packages/react/test/cursor.test.tsx` (dimming + reduced motion) and `packages/react/test/remote-users.test.tsx`. Public API: `RemotePresence.idle: boolean`, `ResolvedCursor.idle: boolean`, `RemoteUser.idle: boolean`, `RemotePresenceStoreOptions.idleAfterMs?`, `PresenceClientOptions.idleAfterMs?`, `DEFAULT_IDLE_AFTER_MS` (new core export). Not yet committed.
 
 ## In progress
 
@@ -13,13 +14,12 @@ Branch `package-gaps`, from `dev`. Closing the `packages/*` gaps in `plans/022-g
 
 ## Next
 
-1. [P1] Idle stage in `packages/core/src/store.ts`: add `idleAfterMs` (below stale timeout), expose idle on the remote cursor/user; `packages/react` dims idle cursors (CSS opacity, respects reduced motion). Stale timeout still removes the peer — idle is a rendering stage, not a lifecycle change.
-2. [P1] Off-screen: check whether the resolver already exposes an in-viewport/visible flag; if not, add a minimal `offscreen` flag (no UI in the library).
-3. [P2] `packages/dom/src/auto-register.ts` `resyncId`: batch the per-id `querySelectorAll` into one pass over a Set.
-4. [P2] `packages/react/src/hooks/use-remote-cursors.ts`: cache `select` result by input-array identity.
-5. [P2] `packages/react/src/hooks/use-remote-users.ts`: preserve array/object identity when nothing user-relevant changed.
-6. [P2] `packages/react/src/cursor.tsx`: `forced-colors: active` support (`forced-color-adjust: none` or system-color outline).
-7. Run all AGENTS.md gates, incl. `bunx playwright test --project=chromium`, before wrapping up.
+1. [P1] Off-screen: check whether the resolver already exposes an in-viewport/visible flag; if not, add a minimal `offscreen` flag (no UI in the library).
+2. [P2] `packages/dom/src/auto-register.ts` `resyncId`: batch the per-id `querySelectorAll` into one pass over a Set.
+3. [P2] `packages/react/src/hooks/use-remote-cursors.ts`: cache `select` result by input-array identity.
+4. [P2] `packages/react/src/hooks/use-remote-users.ts`: preserve array/object identity when nothing user-relevant changed.
+5. [P2] `packages/react/src/cursor.tsx`: `forced-colors: active` support (`forced-color-adjust: none` or system-color outline).
+6. Run all AGENTS.md gates, incl. `bunx playwright test --project=chromium`, before wrapping up.
 
 ## Decisions made (and why)
 

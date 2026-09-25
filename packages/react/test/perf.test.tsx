@@ -17,6 +17,7 @@ function cursors(n: number): ResolvedCursor[] {
     pointVisible: true,
     anchorId: null,
     tier: "viewport" as const,
+    idle: false,
   }));
 }
 

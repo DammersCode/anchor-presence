@@ -1,0 +1,81 @@
+---
+title: core
+description: Every export of @anchor-presence/core.
+---
+
+`@anchor-presence/core` has zero dependencies and no DOM globals. It runs in Node, Bun, workers, and browsers. See [Architecture](/docs/concepts/architecture) for how it fits with `dom` and `react`.
+
+## Client
+
+```ts
+import { createPresenceClient } from "@anchor-presence/core";
+```
+
+`createPresenceClient(options)` builds a `PresenceClient`: it validates and stores remote presence, orchestrates outbound publishing on `DEFAULT_PUBLISH_INTERVAL_MS` (50 ms), and sends heartbeats on `DEFAULT_HEARTBEAT_MS` (10000 ms) so a receiver's stale-presence timer does not expire an idle sender.
+
+<AutoTypeTable path="../../packages/core/src/internal/types.ts" name="PresenceClientOptions" />
+
+## Transports
+
+```ts
+import { createInMemoryPair } from "@anchor-presence/core";
+import type { LiveCursorTransport } from "@anchor-presence/core";
+```
+
+`LiveCursorTransport` is the interface every transport implements. See [Transports](/docs/guides/transports) for the full contract. `createInMemoryPair()` returns two transports wired to each other, for tests and local prototyping without a relay.
+
+## Codecs
+
+```ts
+import { jsonCodec, binaryCodec } from "@anchor-presence/core";
+import type { CursorCodec } from "@anchor-presence/core";
+```
+
+`jsonCodec` is the default. `binaryCodec` is a compact fixed-layout binary codec. See [Codecs](/docs/guides/codecs) for the wire format of each.
+
+## Validation
+
+```ts
+import { validatePresence } from "@anchor-presence/core";
+import type { ValidationLimits } from "@anchor-presence/core";
+```
+
+`validatePresence(value, limits?)` checks a decoded, untrusted value and returns a `CursorPresence` or `null`. See [Security](/docs/guides/security) for every limit.
+
+## Interpolation
+
+```ts
+import { linearInterpolator, noneInterpolator } from "@anchor-presence/core";
+import type { Interpolator, InterpolatorFactory } from "@anchor-presence/core";
+```
+
+See "Custom interpolation" in the [React guide](/docs/guides/react) for the interface and the settled-flag rule.
+
+## Store
+
+```ts
+import { RemotePresenceStore, DEFAULT_MAX_REMOTE_CLIENTS, DEFAULT_STALE_TIMEOUT_MS } from "@anchor-presence/core";
+```
+
+`RemotePresenceStore` holds every accepted remote presence, with stale-entry expiry after `DEFAULT_STALE_TIMEOUT_MS` (70000 ms) and a cap of `DEFAULT_MAX_REMOTE_CLIENTS` (64) distinct clients.
+
+## Protocol types
+
+```ts
+import type {
+  AnchorPoint,
+  ConnectionStatus,
+  CursorPosition,
+  CursorPresence,
+  PointerInfo,
+  PointerType,
+  RemotePresence,
+} from "@anchor-presence/core";
+```
+
+These types describe the wire protocol. See [Anchors and fallbacks](/docs/concepts/anchors-and-fallbacks) for `AnchorPoint`'s `u`/`v` fields, and [Architecture](/docs/concepts/architecture) for `RemotePresence` versus the raw snapshot.
+
+## Related
+
+- [API reference: dom](/docs/reference/dom)
+- [API reference: react](/docs/reference/react)

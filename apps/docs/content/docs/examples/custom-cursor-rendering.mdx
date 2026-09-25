@@ -1,0 +1,55 @@
+---
+title: Custom cursor rendering
+description: Replace the default arrow with your own cursor component.
+---
+
+`CursorLayer` renders `DefaultCursor` by default, but no cursor component is required. `renderCursor` replaces the visual while `CursorLayer` keeps owning position, transform, and pointer events.
+
+<Demo />
+
+<InstallCommand />
+
+## Code
+
+```tsx
+import { CursorLayer } from "@anchor-presence/react";
+
+type MyUser = { name: string; color: string };
+
+function MyCursorGlyph({ color, children }: { color: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill={color}>
+        <path d="M5 2 L5 20 L9.5 15.5 L12.5 21.5 L15 20.3 L12 14.5 L18 13 Z" />
+      </svg>
+      <span className="rounded-full px-2 py-0.5 text-xs font-medium text-white" style={{ background: color }}>
+        {children}
+      </span>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <LiveCursorProvider client={client}>
+      <Dashboard />
+      <CursorLayer<unknown, MyUser>
+        getLabel={(cursor) => cursor.user?.name ?? "Guest"}
+        getColor={(cursor) => cursor.user?.color ?? "#6b7280"}
+        renderCursor={({ label, color }) => <MyCursorGlyph color={color}>{label}</MyCursorGlyph>}
+      />
+    </LiveCursorProvider>
+  );
+}
+```
+
+## Behavior notes
+
+- `renderCursor` replaces only the root's contents. `CursorLayer` still sets `position`, `left`, `top`, `transform`, and `pointerEvents` on the root, so a custom renderer cannot misplace the cursor or block clicks underneath it.
+- Pick label and cursor colors that reach WCAG AA contrast (4.5:1) against the label's own text color; a light cursor color with white label text can fail that check.
+- `cursor.user` is untrusted. Validate the shape and treat `name` as text, never as HTML, even inside a custom renderer.
+
+## Related
+
+- [React guide](/docs/guides/react#cursorlayer-and-defaultcursor)
+- [Security](/docs/guides/security)

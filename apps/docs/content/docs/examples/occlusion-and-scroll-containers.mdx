@@ -1,0 +1,38 @@
+---
+title: Occlusion and scroll containers
+description: Hide a cursor that resolves inside a scrolled-away part of a container.
+---
+
+An anchor inside a scrollable panel can be measurable, with a real size and position, while the scroll container clips the resolved point out of view. Without a policy for this, the cursor floats over the panel's visible edge instead of disappearing.
+
+<Demo />
+
+<InstallCommand />
+
+## Code
+
+```ts
+import type { VisibilityPolicy } from "@anchor-presence/dom";
+
+const clippedPointPolicy: VisibilityPolicy = ({ resolution }) =>
+  !resolution.pointVisible || resolution.tier === "hidden" ? "hide" : "show";
+```
+
+```tsx
+<LiveCursorProvider client={client} bindingOptions={{ resolution: { visibilityPolicy: clippedPointPolicy } }}>
+  <ScrollPanel />
+  <CursorLayer />
+</LiveCursorProvider>
+```
+
+## Behavior notes
+
+- The resolver sets `resolution.pointVisible` to `false` when a clipping ancestor hides the resolved point. The default policy still shows the cursor; this policy adds the hide rule.
+- The occlusion check uses a simplified model: it walks DOM ancestors for `overflow: hidden` or `overflow: auto` without computing containing blocks. An absolutely or fixed-positioned anchor that visually escapes a clipping ancestor is still treated as clipped.
+- For an overlay that must ignore this check, render it in a portal outside the clipping ancestor, or write a custom policy that skips the `pointVisible` check for that anchor's ID.
+- If an overlay can cover the point and the extra cost is acceptable, pass `resolution: { hitTest: true }` for a real hit test instead of the simplified walk.
+
+## Related
+
+- [UI context](/docs/concepts/ui-context)
+- [Troubleshooting: cursor floats over empty space](/docs/guides/troubleshooting#cursor-floats-over-empty-space)

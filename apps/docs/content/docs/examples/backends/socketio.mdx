@@ -1,0 +1,41 @@
+---
+title: Socket.IO
+description: A tested Socket.IO transport and its matching relay.
+---
+
+`examples/socketio` adds a Socket.IO transport to the demo. Only the backend changes: the client builds its presence client over `createSocketIoTransport` instead of a plain WebSocket, and every `@anchor-presence/react` hook behaves the same way.
+
+<InstallCommand packages="socket.io socket.io-client" />
+
+## Server
+
+A minimal room-broadcast relay. It joins each socket to a room from its query string and forwards `"presence"` events to the other sockets in that room, without inspecting the payload:
+
+<CodeFromSource repo="examples/socketio/server.ts" lang="ts" />
+
+## Client transport
+
+<CodeFromSource repo="examples/socketio/transport.ts" lang="ts" />
+
+Use it like any other transport:
+
+```ts
+import { createPresenceClient } from "@anchor-presence/core";
+import { io } from "socket.io-client";
+import { createSocketIoTransport } from "./transport";
+
+const socket = io("https://your-server.example", { query: { room: "main" } });
+const client = createPresenceClient({ transport: createSocketIoTransport(socket) });
+```
+
+## Behavior notes
+
+- `subscribeStatus` replays the current status to every new subscriber, so a component that mounts after the socket already connected still learns it can send.
+- The relay is deliberately dumb: it never parses `"presence"` payloads, so `validatePresence()` on the receiving client is still the only thing standing between the wire and the store. See [Security](/docs/guides/security).
+- An integration test in `examples/socketio/socketio.test.ts` starts a real Socket.IO server on an ephemeral port, connects two clients, and checks that a cursor update sent from one reaches the other through `getRemoteSnapshot()`.
+- Run the relay with `cd examples/socketio && bun run dev:relay`, and the demo client with `cd examples/socketio/client && bun run dev`. Add `?room=<name>` to route into a separate room lane.
+
+## Related
+
+- [Backends](/docs/examples/backends)
+- [Transports](/docs/guides/transports)

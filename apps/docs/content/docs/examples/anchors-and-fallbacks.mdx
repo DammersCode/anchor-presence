@@ -1,0 +1,47 @@
+---
+title: Anchors and fallbacks
+description: Mark a row and its actions, and watch the cursor degrade gracefully when one is missing.
+---
+
+A list page often has more structure per row than a receiver's shorter list can match: a row that exists on the sender's screen might be scrolled out or filtered away on the receiver's. Anchoring one element per level lets the cursor degrade to the nearest ancestor instead of disappearing.
+
+<Demo />
+
+<InstallCommand />
+
+## Code
+
+```tsx
+function OrdersTable({ orders }: { orders: Order[] }) {
+  return (
+    <table data-anchor="orders">
+      <tbody>
+        {orders.map((order) => (
+          <tr key={order.id} data-anchor={`orders.row:${order.id}`}>
+            <td>{order.customer}</td>
+            <td>
+              <button data-anchor={`orders.row:${order.id}.actions`} onClick={() => onView(order.id)}>
+                View
+              </button>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+```
+
+Three anchors describe the same button: the button itself, its row, and the table. A sender's cursor over the button sends a fallback chain that includes all three, most specific first.
+
+## Behavior notes
+
+- If the receiver has the same `order.id` row, the cursor lands on the button, exactly as the sender saw it.
+- If the receiver's list has been filtered and that row does not exist, the chain falls back to `orders.row:${id}`, which also does not exist, then to `orders`, the table itself.
+- If even the table is off-screen, the cursor falls back further to the [viewport position](/docs/concepts/anchors-and-fallbacks#viewport-fallback).
+- Give a row a stable ID from its own data, never from its render index; an index-based ID drifts when the list is sorted or filtered differently between clients.
+
+## Related
+
+- [Anchors and fallbacks](/docs/concepts/anchors-and-fallbacks)
+- [Responsive layouts](/docs/guides/responsive-layouts)

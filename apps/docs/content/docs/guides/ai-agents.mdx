@@ -1,0 +1,42 @@
+---
+title: AI agents
+description: Point a coding agent at this library with the shipped skill or with llms.txt.
+---
+
+This page covers two ways to give a coding agent working knowledge of Anchor Presence: the shipped skill, and the machine-readable `llms.txt` index.
+
+## Install the shipped skill
+
+The repository ships an installable skill at `skills/anchor-presence`. It teaches an agent the anchor model, the integration steps, and the hard rules (render untrusted data as text, create clients in browser-only code, treat anchor IDs as opaque keys) without needing to read the source.
+
+Install it with [skills.sh](https://skills.sh):
+
+```sh
+npx skills add DammersCode/anchor-presence
+```
+
+Point your agent at the installed skill file and ask it to wire up live cursors. The skill covers:
+
+- the five-method transport interface and how little a relay needs to be
+- how to mark anchors with `data-anchor` and why parent anchors matter for fallback
+- the visibility policy shape, including the `pointVisible` occlusion signal
+- the three hard rules: render `user`/`context` as text, create the client in browser-only code, and treat anchor IDs as opaque
+
+## Point an agent at llms.txt
+
+Every page on this site is also available as plain Markdown, for an agent that reads URLs directly instead of using the skill.
+
+- [`/llms.txt`](/llms.txt): an index of every doc page, with a link to its Markdown version.
+- [`/llms-full.txt`](/llms-full.txt): every page concatenated into one document, for an agent with a large context window and no crawler.
+- `/docs/<page>.md`: any single page's Markdown, for example [`/docs/getting-started/quick-start.md`](/docs/getting-started/quick-start.md).
+
+Every doc page also has a **Copy Markdown** button and **Open in ChatGPT** / **Open in Claude** actions at the top, so a person reading a page in a browser can hand it to a chat model in one click.
+
+## Which one to use
+
+Use the skill when the agent already runs inside this repository, or a project that depends on it: it is denser and includes integration steps the reference docs spread across several pages. Use `llms.txt` when the agent works from a URL with no repository access, or when it needs the full API reference alongside the integration steps.
+
+## Related
+
+- [Quick start](/docs/getting-started/quick-start)
+- [Security](/docs/guides/security)

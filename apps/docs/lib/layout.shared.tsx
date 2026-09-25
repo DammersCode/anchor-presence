@@ -1,6 +1,6 @@
 import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
 import { Logo } from "@/components/logo";
-import { appName, docsRoute, gitConfig } from "./shared";
+import { appName, gitConfig } from "./shared";
 
 export function baseOptions(): BaseLayoutProps {
   return {
@@ -12,10 +12,6 @@ export function baseOptions(): BaseLayoutProps {
         </span>
       ),
     },
-    links: [
-      { text: "Docs", url: docsRoute, active: "nested-url" },
-      { text: "Examples", url: `${docsRoute}/examples`, active: "nested-url" },
-    ],
     githubUrl: `https://github.com/${gitConfig.user}/${gitConfig.repo}`,
   };
 }

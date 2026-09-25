@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { PresenceClient, CursorPresence, CursorPosition } from "@anchor-presence/core";
+import { linearInterpolator } from "@anchor-presence/core";
 import { createDomBinding } from "../src/binding";
 
 type RafLike = (cb: (ts: number) => void) => number;
@@ -497,5 +498,114 @@ describe("createDomBinding", () => {
     firePointerMove(deepestAgain);
     expect(narrow[0]?.anchors.map((a) => a.id)).toEqual(["level-8"]);
     narrowBinding.dispose();
+  });
+
+  describe("prefers-reduced-motion", () => {
+    function stubMatchMedia(matches: boolean): () => void {
+      const original = window.matchMedia;
+      window.matchMedia = ((query: string) => ({
+        matches: query === "(prefers-reduced-motion: reduce)" && matches,
+        media: query,
+        onchange: null,
+        addListener: () => {},
+        removeListener: () => {},
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        dispatchEvent: () => false,
+      })) as typeof window.matchMedia;
+      return () => {
+        window.matchMedia = original;
+      };
+    }
+
+    it("snaps cursors instead of easing when the OS prefers reduced motion", () => {
+      const restore = stubMatchMedia(true);
+      const anchorA = document.createElement("div");
+      anchorA.dataset.anchor = "a";
+      const anchorB = document.createElement("div");
+      anchorB.dataset.anchor = "b";
+      document.body.append(anchorA, anchorB);
+      registerRect(anchorA, 0);
+      registerRect(anchorB, 200);
+
+      const { raf, caf, flush } = makeRafStub();
+      const { client, pushRemote } = makeFakeClient();
+      const binding = createDomBinding(client, { environment: { raf, caf } });
+
+      pushRemote([
+        {
+          version: 1,
+          clientId: "remote-1",
+          session: "s",
+          sequence: 1,
+          cursor: { anchors: [{ id: "a", u: 0, v: 0 }] },
+        },
+      ]);
+      flush(0);
+      expect(binding.getSnapshot()[0]?.x).toBeCloseTo(0);
+
+      // a same-duration linearInterpolator would still be mid-ease at this timestamp
+      pushRemote([
+        {
+          version: 1,
+          clientId: "remote-1",
+          session: "s",
+          sequence: 2,
+          cursor: { anchors: [{ id: "b", u: 0, v: 0 }] },
+        },
+      ]);
+      flush(1);
+
+      expect(binding.getSnapshot()[0]?.x).toBeCloseTo(200);
+      binding.dispose();
+      restore();
+    });
+
+    it("honors an explicit interpolatorFactory instead of the reduced-motion default", () => {
+      const restore = stubMatchMedia(true);
+      const anchorA = document.createElement("div");
+      anchorA.dataset.anchor = "a";
+      document.body.append(anchorA);
+      registerRect(anchorA, 0);
+
+      const { raf, caf, flush } = makeRafStub();
+      const { client, pushRemote } = makeFakeClient();
+      const factory = vi.fn(() => linearInterpolator(1_000));
+      const binding = createDomBinding(client, {
+        resolution: { interpolatorFactory: factory },
+        environment: { raf, caf },
+      });
+
+      pushRemote([
+        {
+          version: 1,
+          clientId: "remote-1",
+          session: "s",
+          sequence: 1,
+          cursor: { anchors: [{ id: "a", u: 0, v: 0 }] },
+        },
+      ]);
+      flush(0);
+
+      expect(factory).toHaveBeenCalled();
+      binding.dispose();
+      restore();
+    });
+
+    function registerRect(el: Element, left: number): void {
+      vi.spyOn(el, "getBoundingClientRect").mockReturnValue({
+        left,
+        top: 0,
+        width: 100,
+        height: 100,
+        right: left + 100,
+        bottom: 100,
+        x: left,
+        y: 0,
+        toJSON() {
+          return this;
+        },
+      });
+    }
   });
 });

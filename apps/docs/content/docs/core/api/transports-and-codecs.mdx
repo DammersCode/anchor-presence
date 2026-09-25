@@ -1,0 +1,45 @@
+---
+title: Transport and codec API
+description: LiveCursorTransport, createInMemoryPair, CursorCodec, and the shipped codecs.
+---
+
+Every name on this page is exported from `packages/core/src/index.ts`.
+
+## LiveCursorTransport
+
+The interface every transport implements. See [Transports](/docs/core/transports) for the full contract.
+
+<AutoTypeTable path="../../packages/core/src/transport.ts" name="LiveCursorTransport" />
+
+## createInMemoryPair
+
+```ts
+import { createInMemoryPair } from "@anchor-presence/core";
+```
+
+`createInMemoryPair(options?)` returns two transports wired to each other. See [In-memory transport](/docs/core/in-memory-transport).
+
+<AutoTypeTable path="../../packages/core/src/in-memory-transport.ts" name="InMemoryPairOptions" />
+
+<AutoTypeTable path="../../packages/core/src/in-memory-transport.ts" name="InMemoryPair" />
+
+## CursorCodec
+
+The interface every codec implements. See [Codecs](/docs/core/codecs) for the interface's rules.
+
+<AutoTypeTable path="../../packages/core/src/codec.ts" name="CursorCodec" />
+
+## jsonCodec and binaryCodec
+
+```ts
+import { jsonCodec, binaryCodec } from "@anchor-presence/core";
+```
+
+`jsonCodec` is the default codec. `binaryCodec` is a compact fixed-layout binary codec. See [Codecs](/docs/core/codecs) for choosing between them, and [Binary codec](/docs/core/binary-codec) for the wire layout.
+
+## Related
+
+- [Transports](/docs/core/transports)
+- [Custom transport](/docs/core/custom-transport)
+- [Codecs](/docs/core/codecs)
+- [Custom codec](/docs/core/custom-codec)

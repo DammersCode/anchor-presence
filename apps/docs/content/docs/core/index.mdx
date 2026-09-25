@@ -21,10 +21,12 @@ Core never imports `document`, `window`, React, or any transport or codec librar
 - `RemotePresenceStore`, which holds every accepted remote presence with stale-entry expiry.
 - `createPresenceClient`, which orchestrates publishing, heartbeats, and the transport and codec interfaces.
 - The `LiveCursorTransport` and `CursorCodec` interfaces, plus `createInMemoryPair`, `jsonCodec`, and `binaryCodec`.
+- The `Interpolator` interface, plus `linearInterpolator` and `noneInterpolator`.
 
 ## Related
 
+- [Presence client](/docs/core/presence-client)
 - [Transports](/docs/core/transports)
 - [Codecs](/docs/core/codecs)
 - [Build a framework adapter](/docs/core/build-a-framework-adapter)
-- [API reference](/docs/core/reference)
+- [Client API](/docs/core/api/client)

@@ -1,9 +1,9 @@
 ---
 title: Transports
-description: The transport interface, the shipped WebSocket transport, and every example adapter.
+description: The LiveCursorTransport contract, connect and disconnect ownership, and connection status.
 ---
 
-Core imports no transport library (Invariant 6). An application supplies a transport that implements `LiveCursorTransport`. This page shows the interface, the native WebSocket transport, `createInMemoryPair` for tests and local prototyping, and links to the example adapters.
+A transport is the byte channel between a presence client and the network. `@anchor-presence/core` imports no transport library. You supply a transport that implements `LiveCursorTransport`.
 
 ## The LiveCursorTransport interface
 
@@ -23,16 +23,6 @@ interface LiveCursorTransport {
 type ConnectionStatus = "connecting" | "connected" | "reconnecting" | "disconnected";
 ```
 
-Rules:
-
-- `send` receives already-encoded bytes. The client calls `codec.encode()` before calling `send`.
-- `subscribe` receives already-encoded bytes from the wire. The client calls `codec.decode()` and `validatePresence()` after your listener fires.
-- `connect`, `disconnect`, `subscribeStatus`, and `getStatus` are optional. When a transport omits `subscribeStatus`, the client reports a constant `"connected"` status.
-- `subscribeStatus` should replay the current status to every new subscriber. Without a replay, a client that subscribes after the connection opened never learns it can send. Every example below replays.
-- `getStatus` returns the current status. The client reads it once at creation for its initial status; without it, the client starts at `"connecting"` until the first status callback.
-- `bufferedBytes` is optional. It reports bytes currently queued by the transport, and is used only by the opt-in `adaptivePublish` client option.
-- A `send` failure must not throw past the transport boundary in a way that crashes the app. The client swallows send errors after a status check; presence is lossy by design.
-
 Pass a transport instance to `createPresenceClient`:
 
 ```ts
@@ -41,41 +31,29 @@ import { createPresenceClient } from "@anchor-presence/core";
 const client = createPresenceClient({ transport: myTransport });
 ```
 
-## Native WebSocket example
+## Connect and disconnect ownership
 
-`@anchor-presence/dom` ships `createWebSocketTransport`. It reconnects with exponential backoff, and matches the room-broadcast relay in `apps/server/index.ts` in the repository. That relay forwards size- and rate-bounded binary messages to the other sockets in the same room, and enforces a per-room socket cap:
+`connect` and `disconnect` are optional. The client never calls `connect` for you. Call it yourself after you build the transport, before or after you pass it to `createPresenceClient`.
 
-```ts
-import { createPresenceClient } from "@anchor-presence/core";
-import { createWebSocketTransport } from "@anchor-presence/dom";
+`client.dispose()` calls `transport.disconnect()` when the transport provides one. A throwing `disconnect` does not stop `dispose` from finishing its other cleanup.
 
-const transport = createWebSocketTransport({ path: "/?room=main" });
-transport.connect();
-const client = createPresenceClient({ transport });
-```
+`send` receives already-encoded bytes. The client calls `codec.encode()` before it calls `send`. A `send` failure must not throw past the transport boundary in a way that crashes the app: the client catches send errors and treats presence as lossy by design.
 
-The default URL is `ws(s)://<current host>:8787/`. Room grouping is a relay concern, not part of the core protocol. If your relay uses rooms, pass a `url` or `path` such as `/?room=main`. If the relay is started with `RELAY_AUTH_TOKEN`, pass the same value as the `token` option; the transport URL-encodes it and appends it to the upgrade URL as `token=...`. Omit it when the relay has no token configured.
+`subscribe` receives already-encoded bytes from the wire. The client calls `codec.decode()` and `validatePresence()` after your listener fires.
 
-Pass `reconnect: false` to turn off automatic reconnect. Pass `baseBackoffMs` and `maxBackoffMs` to change the backoff, and `random` to inject the jitter source used to spread reconnect attempts. Pass `WebSocketCtor` to inject a WebSocket constructor for tests. The transport also exposes `bufferedBytes()` from `WebSocket.bufferedAmount` for the client's optional adaptive publish rate.
+## Connection status
 
-The Socket.IO and SignalR adapters stay in `examples/`. They need foreign dependencies. Only the native WebSocket transport is part of the library.
+`subscribeStatus` and `getStatus` are optional. When a transport omits both, the client reports a constant `"connected"` status.
 
-## createInMemoryPair for tests and prototyping
+Replay the current status to every new subscriber inside `subscribeStatus`. Without a replay, a client that subscribes after the connection opened never learns that it can send.
 
-`@anchor-presence/core` ships `createInMemoryPair`, two transports wired directly to each other in one process:
+The client reads `getStatus()` once at creation for its initial status. Without `getStatus`, the client starts at `"connecting"` until the first status callback arrives.
 
-```ts
-import { createInMemoryPair, createPresenceClient } from "@anchor-presence/core";
-
-const { a, b } = createInMemoryPair();
-const clientA = createPresenceClient({ transport: a, user: { name: "Alice" } });
-const clientB = createPresenceClient({ transport: b, user: { name: "Bob" } });
-```
-
-A send from `a` reaches only `b`'s listeners, and a send from `b` reaches only `a`'s. Use it in unit tests, in `renderToString` samples like the ones on this site, and for a quick local check of provider or hook wiring before a relay exists. It cannot cross a process, tab, or iframe boundary: both sides must run in the same JavaScript realm. See [Backends](/docs/examples/backends) for options that do cross that boundary.
+`bufferedBytes` is optional. It reports the bytes a transport currently has queued. The client uses it only for the opt-in `adaptivePublish` option on [Presence client](/docs/core/presence-client).
 
 ## Related
 
-- [Backends](/docs/examples/backends): the transport-to-relay matrix, plus Socket.IO and SignalR adapters.
-- [Codecs](/docs/core/codecs): how a message becomes the bytes a transport sends.
-- [Security](/docs/get-started/security): validation limits every inbound message passes.
+- [In-memory transport](/docs/core/in-memory-transport)
+- [Custom transport](/docs/core/custom-transport)
+- [WebSocket transport](/docs/dom/websocket-transport)
+- [Backends](/docs/examples/backends)

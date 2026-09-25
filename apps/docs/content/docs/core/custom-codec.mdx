@@ -1,0 +1,66 @@
+---
+title: Custom codec
+description: Write your own codec with MessagePack, and debug binaryCodec traffic.
+---
+
+Write a codec when you need a wire format `jsonCodec` and `binaryCodec` do not cover, such as MessagePack. This page also shows how to debug a binary codec's traffic during development.
+
+## MessagePack sketch
+
+MessagePack produces smaller payloads than JSON for the same data. Use any MessagePack library that exposes an `encode`/`decode` pair operating on `Uint8Array`:
+
+```ts
+import { encode, decode } from "@msgpack/msgpack";
+import type { CursorCodec } from "@anchor-presence/core";
+
+export const messagePackCodec: CursorCodec = {
+  encode(message) {
+    return encode(message);
+  },
+  decode(data) {
+    try {
+      return decode(data);
+    } catch {
+      return null;
+    }
+  },
+};
+```
+
+Wrap every decode call in `try`/`catch`. A malformed or truncated buffer must produce `null`, never an uncaught exception.
+
+## Debugging binary traffic
+
+The DevTools network tab cannot show the content of `binaryCodec` frames. Use one of these two options.
+
+**Option A:** use `jsonCodec` in development and `binaryCodec` in production. The network tab then shows every development message as readable JSON.
+
+<Callout type="warn">
+  If a development client and a production client join the same room, they drop each other's messages. All
+  clients in a room must use the same codec.
+</Callout>
+
+**Option B:** wrap the codec so that it logs every message. This wrapper keeps `binaryCodec` on the wire:
+
+```ts
+import { binaryCodec, type CursorCodec } from "@anchor-presence/core";
+
+const debugCodec: CursorCodec = {
+  encode(message) {
+    console.debug("[presence out]", message);
+    return binaryCodec.encode(message);
+  },
+  decode(data) {
+    const value = binaryCodec.decode(data);
+    console.debug("[presence in]", value);
+    return value;
+  },
+};
+```
+
+To read one captured frame, call `binaryCodec.decode(new Uint8Array([/* bytes */]))` in the console.
+
+## Related
+
+- [Codecs](/docs/core/codecs)
+- [Binary codec](/docs/core/binary-codec)

@@ -57,14 +57,20 @@ github.ref }}, cancel-in-progress: true }` at the workflow level; cached `~/.bun
   `resilience.spec.ts` — skips on non-Chromium via `test.skip(({ browserName }) => browserName !==
 "chromium", ...)`. Rewrote §17's last bullet into two bullets reflecting that split.
 
-## In progress
-
-- About to run the full local gate suite (task 5): all AGENTS.md gates plus `bunx playwright test`
-  (chromium + firefox + webkit).
+- Gates (task 5, no code changes — verification only): `bun run build`, `bun run typecheck`, `bun run
+format:check`, `bun run lint` all clean. `bun run test`: 46 files / 437 tests passed; one run hit a
+  Windows worker-pool crash (exit code 3221226505) isolated to `apps/server/test/adversarial.test.ts`,
+  which passed standalone and on a full rerun (437/437) — a transient fork crash, not a real failure, per
+  AGENTS.md's "rerun once" guidance. `bunx playwright test --project=chromium`: 16/16 passed. Full
+  three-browser `bunx playwright test`: 48 total, 20 passed, 28 skipped (every chromium-only guard fired
+  correctly on firefox/webkit), 0 failed — matches the SPECIFICATION.md §17 rewrite exactly (only
+  `cross-layout.spec.ts`'s 2 scenarios run on all three browsers: 2×3 = 6 of the 20 passes, the rest are
+  chromium's other 14 specs).
 
 ## Next
 
-1. Run all AGENTS.md gates plus the full 3-browser `bunx playwright test` locally; report results.
+Nothing outstanding for this branch's scope. All five tasks in the owner's instructions are done. Ready
+for review before a merge to `dev` is requested (this branch already targets `dev`).
 
 ## Decisions
 

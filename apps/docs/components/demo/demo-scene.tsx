@@ -36,36 +36,45 @@ export function DemoScene({
     },
   });
 
-  const sidebarWidth = variant === "wide" ? "w-40" : "w-14";
+  const wide = variant === "wide";
+  // Same item height in both layouts, square when collapsed, so both sidebars line up vertically.
+  const item = `flex h-8 items-center rounded ${wide ? "px-2" : "w-8 justify-center"}`;
 
   return (
     <LiveCursorProvider client={client}>
       <div className="flex h-full flex-col">
         <div className="relative flex min-h-0 flex-1 overflow-hidden rounded-lg border border-fd-border bg-fd-card text-xs select-none">
           <div
-            className={`flex ${sidebarWidth} flex-none flex-col gap-2 border-r border-fd-border bg-fd-secondary/40 p-2`}
+            data-anchor="nav"
+            className={`flex ${wide ? "w-40" : "w-12"} flex-none flex-col gap-2 border-r border-fd-border bg-fd-secondary/40 p-2`}
           >
-            <div
-              data-anchor="nav.dashboard"
-              className="rounded bg-gradient-brand px-2 py-1.5 font-medium text-white"
-            >
-              {variant === "wide" ? "Dashboard" : "D"}
+            <div data-anchor="nav.dashboard" className={`${item} bg-gradient-brand font-medium text-white`}>
+              {wide ? "Dashboard" : "D"}
             </div>
-            <div data-anchor="nav.orders" className="rounded px-2 py-1.5 text-fd-muted-foreground">
-              {variant === "wide" ? "Orders" : "O"}
+            <div data-anchor="nav.orders" className={`${item} text-fd-muted-foreground`}>
+              {wide ? "Orders" : "O"}
             </div>
-            <div data-anchor="nav.customers" className="rounded px-2 py-1.5 text-fd-muted-foreground">
-              {variant === "wide" ? "Customers" : "C"}
+            <div data-anchor="nav.customers" className={`${item} text-fd-muted-foreground`}>
+              {wide ? "Customers" : "C"}
             </div>
           </div>
           <div data-anchor="main" className="flex min-w-0 flex-1 flex-col gap-2 p-3">
-            <div data-anchor="stats.revenue" className="rounded bg-fd-secondary/60 px-3 py-2 font-medium">
+            <div
+              data-anchor="stats.revenue"
+              className="truncate rounded bg-fd-secondary/60 px-3 py-2 font-medium"
+            >
               Revenue · $48.2k
             </div>
-            <div data-anchor="stats.orders" className="rounded bg-fd-secondary/60 px-3 py-2 font-medium">
+            <div
+              data-anchor="stats.orders"
+              className="truncate rounded bg-fd-secondary/60 px-3 py-2 font-medium"
+            >
               Orders · 1,204
             </div>
-            <div data-anchor="orders.row:10482" className="rounded border border-fd-border px-3 py-2">
+            <div
+              data-anchor="orders.row:10482"
+              className="truncate rounded border border-fd-border px-3 py-2"
+            >
               #10482 · A. Rivera
             </div>
           </div>
@@ -75,7 +84,7 @@ export function DemoScene({
           />
         </div>
         <p className="mt-1 text-center text-[11px] text-fd-muted-foreground">
-          {variant === "wide" ? "wide layout · sidebar expanded" : "narrow layout · sidebar collapsed"}
+          {wide ? "wide layout · sidebar expanded" : "narrow layout · sidebar collapsed"}
         </p>
       </div>
     </LiveCursorProvider>

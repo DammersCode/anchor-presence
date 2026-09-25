@@ -27,8 +27,16 @@ Owner decisions:
 | 025 Docs rework                                                                         | `dev`               | main tree                       | done                     |
 | [026 Example previews](026-example-previews.md)                                         | `dev`               | main tree                       | done                     |
 | [027 Scale benchmark and diagram](027-scale-benchmark-and-diagram.md) — scale benchmark | `dev`               | main tree                       | done                     |
+| [028 Layout audit skill](028-layout-audit-skill.md)                                     | `dev`               | main tree                       | done                     |
 
 Each branch keeps its own progress in `plans/handoffs/<branch>.md`. Read that file before you continue a branch.
+
+## Layout audit notes (028)
+
+- `skills/anchor-presence-audit/` ships to library users next to `skills/anchor-presence/`. The scripts are plain Node ESM with one dependency, `playwright`. `measure.mjs` resolves it from the current directory first, then from the skill folder, and accepts `@playwright/test` too (this repo has only `@playwright/test`).
+- `scripts/score.mjs` is pure and unit-tested (`test/audit-skill/score.test.mjs`). `measure.mjs` passes `collectInPage` to `page.evaluate`, so that function must stay self-contained.
+- Dogfood: `plans/research/presence-layout-audit-dogfood.config.json` scores the docs example scenes through `/demo-frame/<scene>/<layout>` on the docs dev server (:3001). Rerun it after a scene changes; the report is `plans/research/presence-layout-audit-dogfood.md`.
+- With full coverage and no missing anchors, a pair tops out at 50 (Jump + Aspect). Every reflow scene sits there on purpose.
 
 ## Scale benchmark notes (027)
 

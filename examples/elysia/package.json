@@ -1,0 +1,13 @@
+{
+  "name": "example-elysia",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev:relay": "bun relay.ts"
+  },
+  "dependencies": {
+    "@anchor-presence/core": "0.1.0",
+    "@anchor-presence/dom": "0.1.0",
+    "elysia": "^1.4.30"
+  }
+}

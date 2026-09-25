@@ -70,6 +70,6 @@ Each branch keeps its own progress in `plans/handoffs/<branch>.md`. Read that fi
 
 ## How to resume
 
-- A stopped branch: `git worktree list`, open the worktree, read `plans/handoffs/<branch>.md` and `git log dev..HEAD`.
+- All 2026-09-25 worktrees are merged and removed. For new parallel work, branch worktrees from `dev`.
 - A removed worktree: `git worktree add <path> <branch>`.
 - Gates: see `AGENTS.md`.

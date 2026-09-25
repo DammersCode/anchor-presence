@@ -3,6 +3,7 @@
   "jsonCodec.decode + validatePresence on encoded bytes": 0.0017125846301389955,
   "binaryCodec.decode + validatePresence on encoded bytes": 0.0013535743290797864,
   "store.ingest steady-state: 64 clients, sequential sequences": 0.014657771046073964,
+  "store.ingest steady-state: 200 clients, sequential sequences": 0.0505,
   "binaryCodec full inbound path: bytes -> snapshot listener fired": 0.0016995173816245414,
   "full inbound path: bytes -> snapshot listener fired": 0.0020047760336282605,
   "getSnapshot() identity: 10k calls with no changes": 0.005970720057316639

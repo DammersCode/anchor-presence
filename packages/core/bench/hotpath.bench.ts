@@ -57,6 +57,16 @@ export function registerHotPathCases(bench: Bench): void {
     });
   }
 
+  {
+    const store = new RemotePresenceStore({ maxRemoteClients: 200 });
+    for (let i = 0; i < 200; i++) store.ingest(fourAnchorMessage(`client-${i}`, 0));
+    let sequence = 1;
+    bench.add("store.ingest steady-state: 200 clients, sequential sequences", () => {
+      for (let i = 0; i < 200; i++) store.ingest(fourAnchorMessage(`client-${i}`, sequence));
+      sequence += 1;
+    });
+  }
+
   bench.add("binaryCodec full inbound path: bytes -> snapshot listener fired", () => {
     let fired = false;
     // a plain `let` here narrows to `never` at the read site under TS's closure flow analysis

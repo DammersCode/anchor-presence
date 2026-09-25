@@ -325,4 +325,39 @@ describe("startAutoRegister", () => {
 
     handle.dispose();
   });
+
+  it("reclaims duplicate ids from one removal batch with a single querySelectorAll pass", () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { ctor } = makeMoStub();
+    const registry = createAnchorRegistry();
+
+    const aFallback = document.createElement("div");
+    aFallback.dataset.anchor = "a";
+    const aWinner = document.createElement("div");
+    aWinner.dataset.anchor = "a";
+    const bFallback = document.createElement("div");
+    bFallback.dataset.anchor = "b";
+    const bWinner = document.createElement("div");
+    bWinner.dataset.anchor = "b";
+    document.body.append(aFallback, aWinner, bFallback, bWinner);
+
+    const handle = startAutoRegister({ attribute: "data-anchor", registry, MutationObserverCtor: ctor });
+    expect(registry.get("a")).toBe(aWinner);
+    expect(registry.get("b")).toBe(bWinner);
+
+    const qsaSpy = vi.spyOn(document, "querySelectorAll");
+    aWinner.remove();
+    bWinner.remove();
+    handle.handleRecords([
+      { type: "childList", target: document.body, removedNodes: [aWinner], addedNodes: [] },
+      { type: "childList", target: document.body, removedNodes: [bWinner], addedNodes: [] },
+    ] as unknown as MutationRecord[]);
+
+    expect(registry.get("a")).toBe(aFallback);
+    expect(registry.get("b")).toBe(bFallback);
+    // one pass resyncs both replaced ids, instead of one querySelectorAll per id
+    expect(qsaSpy).toHaveBeenCalledTimes(1);
+
+    handle.dispose();
+  });
 });

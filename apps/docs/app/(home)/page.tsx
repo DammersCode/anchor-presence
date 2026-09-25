@@ -37,8 +37,8 @@ const GUARANTEES = [
 
 export default function HomePage() {
   return (
-    <main className="mx-auto max-w-5xl px-4 py-12">
-      <section className="grid items-center gap-10 py-8 md:grid-cols-2 md:py-14">
+    <main className="mx-auto max-w-6xl px-4 py-12">
+      <section className="grid items-center gap-10 py-8 md:grid-cols-[5fr_6fr] md:py-14">
         <div>
           <span className="mb-5 inline-flex items-center gap-2 rounded-full border border-fd-border bg-fd-card px-3 py-1.5 text-sm shadow-sm">
             <span className="live-dot size-1.5 rounded-full bg-[#22d3ee]" />
@@ -56,7 +56,7 @@ export default function HomePage() {
           <p className="mt-4 mb-1.5 font-mono text-xs text-fd-muted-foreground">
             Your AI agent can wire it up too
           </p>
-          <InstallCommand packages="skills add DammersCode/anchor-presence" />
+          <InstallCommand run="skills add DammersCode/anchor-presence" />
           <div className="mt-5 flex flex-wrap items-center gap-4">
             <Link
               href="/docs"

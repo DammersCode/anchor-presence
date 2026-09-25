@@ -14,7 +14,7 @@ export function DemoPanes() {
   const narrowSrc = useMemo(() => `/demo-frame/narrow?channel=${encodeURIComponent(channel)}`, [channel]);
 
   return (
-    <div className="my-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+    <div className="my-6 grid grid-cols-1 gap-4 sm:grid-cols-[3fr_2fr]">
       <iframe
         title="Wide layout pane"
         src={wideSrc}

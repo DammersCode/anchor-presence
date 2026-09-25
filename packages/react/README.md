@@ -135,4 +135,4 @@ type MyUser = { name: string; color?: string };
 
 `CursorLayer` owns the cursor position and size. A custom style or `renderCursor` cannot change them. Remote user data is untrusted. Validate `cursor.user` before you render it.
 
-See the [React guide](https://anchor-presence.vercel.app/docs/guides/react) for the full hook reference, custom interpolation, and more examples.
+See the [React guide](https://anchor-presence.vercel.app/docs/react) for the full hook reference, custom interpolation, and more examples.

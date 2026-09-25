@@ -14,8 +14,8 @@ Use the first row that matches the survey. Each docs page has the full server an
 | An Elysia app                          | `createWebSocketTransport`                             | Elysia `.ws()` route                 | `/docs/examples/backends/elysia`     |
 | A Node server (Express, Fastify, http) | `createWebSocketTransport`                             | `ws` package on the same HTTP server | `/docs/examples/backends/node-ws`    |
 | Bun, or no server yet                  | `createWebSocketTransport`                             | `Bun.serve` WebSocket relay          | `/docs/examples/backends/bun-native` |
-| Tests or a local prototype             | `createInMemoryPair` from `@anchor-presence/core`      | none                                 | `/docs/getting-started/quick-start`  |
-| Two tabs on one origin, no server      | A `BroadcastChannel` transport                         | none                                 | `/docs/guides/transports`            |
+| Tests or a local prototype             | `createInMemoryPair` from `@anchor-presence/core`      | none                                 | `/docs/get-started/quick-start`      |
+| Two tabs on one origin, no server      | A `BroadcastChannel` transport                         | none                                 | `/docs/core/transports`              |
 
 Base URL: `https://anchor-presence.vercel.app`. Every page also links the shared relay guard helpers (`/docs/examples/backends`).
 

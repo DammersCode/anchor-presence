@@ -135,7 +135,7 @@ flowchart TD
     D --> E
 ```
 
-The sender never measures the DOM of the receiver. It sends a semantic anchor ID and a normalized position inside it. The receiver measures its own anchor and turns that into pixels. See [Architecture](https://anchor-presence.vercel.app/docs/concepts/architecture) for the full flow and the 10 invariants.
+The sender never measures the DOM of the receiver. It sends a semantic anchor ID and a normalized position inside it. The receiver measures its own anchor and turns that into pixels. See [Architecture](https://anchor-presence.vercel.app/docs/get-started/concepts/architecture) for the full flow and the 10 invariants.
 
 ## Capability matrix
 
@@ -197,6 +197,6 @@ Unit tests run through Vitest. Cross-layout tests run through Playwright against
 
 ## Contributing
 
-Read [Architecture](https://anchor-presence.vercel.app/docs/concepts/architecture) first for the package boundary rules. Then read [SPECIFICATION.md](SPECIFICATION.md) for the full protocol. Open an issue or a pull request at [github.com/DammersCode/anchor-presence](https://github.com/DammersCode/anchor-presence).
+Read [Architecture](https://anchor-presence.vercel.app/docs/get-started/concepts/architecture) first for the package boundary rules. Then read [SPECIFICATION.md](SPECIFICATION.md) for the full protocol. Open an issue or a pull request at [github.com/DammersCode/anchor-presence](https://github.com/DammersCode/anchor-presence).
 
 MIT © DammersCode. See [LICENSE](LICENSE).

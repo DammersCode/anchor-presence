@@ -102,6 +102,14 @@ describe("scorePair", () => {
     expect(pair.offenders.jumps[0]).toMatchObject({ from: "bar.a", to: "bar.b", sender: "row" });
   });
 
+  it("keeps a maximal jump in the high band even with full coverage and no missing anchors", () => {
+    const pair = scorePair(rowLayout, stackLayout);
+    expect(pair.sub.gap).toBe(0);
+    expect(pair.sub.parity).toBe(0);
+    expect(pair.total).toBe(100);
+    expect(pair.band).toBe("high");
+  });
+
   it("flags anchors missing in one view through parity and depth", () => {
     const withoutB = view("no-b", rowLayout.anchors.slice(0, 2));
     const pair = scorePair(rowLayout, withoutB);

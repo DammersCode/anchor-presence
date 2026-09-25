@@ -258,7 +258,8 @@ score(x, good, poor) = clamp(100 * (x - good) / (poor - good), 0, 100)
 **Combined score** (Lighthouse-style weighted sum):
 
 ```
-risk_0_100 = round(0.35 * Jump + 0.25 * Gap + 0.15 * Depth + 0.15 * Aspect + 0.10 * Parity)
+weighted   = 0.35 * Jump + 0.25 * Gap + 0.15 * Depth + 0.15 * Aspect + 0.10 * Parity
+risk_0_100 = round(max(weighted, Jump, Gap))   # second correction: the sum must not dilute a visible jump or gap
 ```
 
 Weights (own proposal, not tuned against real data): jump 35% (the owner's primary symptom), gap 25% (the documented viewport-fallback jump), depth 15%, aspect 15%, parity 10%. Each sub-score is reported next to the total, so a reader sees _why_ a pair scores badly, and every fix in the catalogue names the sub-score it lowers. Sibling reordering has no term of its own: it shows up directly in `jump_px`, because reordered neighbors sit far apart in the other layout.

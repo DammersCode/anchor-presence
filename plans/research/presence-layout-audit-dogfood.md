@@ -19,16 +19,16 @@ node skills/anchor-presence-audit/scripts/report.mjs --in anchor-audit.json --fo
 
 | Scene           | Total | Band            | Driving sub-scores        | Matches the scene?                                                                                                                                                                      |
 | --------------- | ----: | --------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| basics          |    50 | moderate        | jump 100, aspect 100      | No, against the expectation "small". Verified real in the live library (see below).                                                                                                     |
-| responsive-grid |    50 | moderate        | jump 100, aspect 100      | Yes. The reflow moves `metrics.orders` from the right of `metrics.revenue` to below it, and the traffic chart from a 2×2 block to a full-width row. Jumps near 300 px in a 317 px pane. |
-| presence        |    50 | moderate        | jump 100, aspect 100      | Yes. The three board columns turn into three rows; a move from one column to the next crosses the narrow pane.                                                                          |
-| custom-cursors  |    41 | moderate        | jump 100, aspect 37       | Yes. The hero moves from a left column to a full-width top row, so its neighbors change sides.                                                                                          |
-| table-and-cards |    39 | moderate        | jump 100, aspect 24       | Yes. Status to amount is a 0 px move in the table row and a 275 px move in the card (status top right, amount second line left), as the coordinator note in the research predicted.     |
+| basics          |   100 | high            | jump 100, aspect 100      | No, against the expectation "small". Verified real in the live library (see below).                                                                                                     |
+| responsive-grid |   100 | high            | jump 100, aspect 100      | Yes. The reflow moves `metrics.orders` from the right of `metrics.revenue` to below it, and the traffic chart from a 2×2 block to a full-width row. Jumps near 300 px in a 317 px pane. |
+| presence        |   100 | high            | jump 100, aspect 100      | Yes. The three board columns turn into three rows; a move from one column to the next crosses the narrow pane.                                                                          |
+| custom-cursors  |   100 | high            | jump 100, aspect 37       | Yes. The hero moves from a left column to a full-width top row, so its neighbors change sides.                                                                                          |
+| table-and-cards |   100 | high            | jump 100, aspect 24       | Yes. Status to amount is a 0 px move in the table row and a 275 px move in the card (status top right, amount second line left), as the coordinator note in the research predicted.     |
 | fallbacks       | 16–22 | low to moderate | depth 50–75, parity 67–94 | Yes. Depth and parity carry the score. Jumps stay small because every missing anchor falls back to a close parent (`orders.row:<id>`, `orders`, `shop`).                                |
 | scroll          |     2 | low             | none                      | Yes, after the clipping correction below. The threads keep their order and height.                                                                                                      |
 | interpolation   |     2 | low             | none                      | Yes. The four targets are identical 44 px circles in both panes and sit too far apart to count as neighbors.                                                                            |
 
-The shape of the scale: with full anchor coverage and every anchor in both views, a pair tops out at 50 (Jump 35 + Aspect 15). All five reflow scenes sit at or near that ceiling, which is correct for layouts that change neighbors on purpose. Only gaps, deep fallbacks, or missing anchors push a pair into the high band. No scene has an uncovered gap: each one anchors its outer container.
+The shape of the scale: the total never falls below the Jump or Gap sub-score (second correction to the formula, 2026-09-25). The first run used a plain weighted sum, which capped a pair with full coverage and no missing anchors at 50, so a 248 px jump read as moderate. With the floor, all five reflow scenes score high, which matches what a user sees in a 317 px pane. No scene has an uncovered gap: each one anchors its outer container.
 
 ## Where results contradicted expectations
 
@@ -42,7 +42,7 @@ Fix in `measure.mjs` and `score.mjs`: each anchor carries a visible box (its box
 
 The first run listed `invoices.row:INV-2042.status -> invoices.row:INV-2043.amount` as the worst table-and-cards jump: two cells that touch at one corner only. The binding definition speaks of facing edges, and a real pointer path rarely crosses a single corner point. Adjacency now requires the two boxes to overlap on one axis. The worst table-and-cards jumps are now status to amount in the same row, the case the coordinator note describes.
 
-### basics scored 50, not small: metric confirmed, expectation was wrong
+### basics scored high, not small: metric confirmed, expectation was wrong
 
 The basics wide pane shows three buttons in a row (`justify-end`, 66–82 px wide). The narrow pane uses `flex-col`, which stretches each button to 251 px. A move from the right edge of Save draft to the left edge of Preview is 8 px on the sender. The resolver maps the leave point to the right end of the stretched Save button, and the enter point to the left end of the stretched Preview button below it: 248 px.
 
@@ -60,8 +60,8 @@ A what-if run tested two fixes from `fixes.md` without code changes, through a `
 
 | Narrow button row                           | Total | Changed sub-scores         |
 | ------------------------------------------- | ----: | -------------------------- |
-| `flex flex-col` (shipped)                   |    50 | jump 100, aspect 100       |
-| `flex flex-col items-end` (keep sizes)      |    16 | jump 100→23, aspect 100→56 |
+| `flex flex-col` (shipped)                   |   100 | jump 100, aspect 100       |
+| `flex flex-col items-end` (keep sizes)      |    23 | jump 100→23, aspect 100→56 |
 | `flex flex-wrap justify-end` (keep the row) |     2 | jump 100→0, aspect 100→13  |
 
 Both fixes lower the sub-scores that `fixes.md` names for them. The scene stays as it is: its job is to show anchor resolution across a reflow.
@@ -69,7 +69,7 @@ Both fixes lower the sub-scores that `fixes.md` names for them. The scene stays 
 ## Follow-ups
 
 - The weights and thresholds are the research proposal, not fitted to data. Compare scores with user reports after audits of real apps.
-- The five reflow scenes all score at the 50 ceiling. Telling a mild reflow from a severe one inside that ceiling needs a change to the fixed formula; out of scope for plan 028.
+- In small panes every cross-row reflow jump exceeds the 240 px poor threshold, so the five reflow scenes all score 100. Telling a mild reflow from a severe one there needs a viewport-relative jump threshold; revisit after audits of real apps.
 
 ---
 
@@ -82,11 +82,11 @@ Higher is worse: 0-20 low, 21-50 moderate, 51-100 high.
 
 | View pair                                 | Total | Band     | Jump | Gap | Depth | Aspect | Parity |
 | ----------------------------------------- | ----: | -------- | ---: | --: | ----: | -----: | -----: |
-| basics: wide vs narrow                    |    50 | moderate |  100 |   0 |     0 |    100 |      0 |
-| responsive-grid: wide vs narrow           |    50 | moderate |  100 |   0 |     0 |    100 |      0 |
-| presence: wide vs narrow                  |    50 | moderate |  100 |   0 |     0 |    100 |      0 |
-| custom-cursors: wide vs narrow            |    41 | moderate |  100 |   0 |     0 |     37 |      0 |
-| table-and-cards: wide vs narrow           |    39 | moderate |  100 |   0 |     0 |     24 |      0 |
+| basics: wide vs narrow                    |   100 | high     |  100 |   0 |     0 |    100 |      0 |
+| responsive-grid: wide vs narrow           |   100 | high     |  100 |   0 |     0 |    100 |      0 |
+| table-and-cards: wide vs narrow           |   100 | high     |  100 |   0 |     0 |     24 |      0 |
+| presence: wide vs narrow                  |   100 | high     |  100 |   0 |     0 |    100 |      0 |
+| custom-cursors: wide vs narrow            |   100 | high     |  100 |   0 |     0 |     37 |      0 |
 | fallbacks: wide vs narrow orders-hidden   |    22 | moderate |    0 |   0 |    75 |     12 |     94 |
 | fallbacks: wide vs narrow                 |    18 | low      |    4 |   0 |    50 |     15 |     67 |
 | fallbacks: narrow vs narrow orders-hidden |    16 | low      |    0 |   0 |    50 |      0 |     83 |
@@ -95,7 +95,7 @@ Higher is worse: 0-20 low, 21-50 moderate, 51-100 high.
 
 ### Findings per view pair
 
-#### basics: wide vs narrow — 50 (moderate)
+#### basics: wide vs narrow — 100 (high)
 
 | Input               |                          Value | Sub-score |
 | ------------------- | -----------------------------: | --------: |
@@ -119,7 +119,7 @@ Largest shape changes:
 - `post.save`: 3.05x (82x32 on wide, 251x32 on narrow) at `div > div:nth-of-type(1) > section > div > button:nth-of-type(1)`
 - `post`: 2.25x (384x149 on wide, 285x248 on narrow) at `div:nth-of-type(3) > div > div:nth-of-type(1) > section`
 
-#### responsive-grid: wide vs narrow — 50 (moderate)
+#### responsive-grid: wide vs narrow — 100 (high)
 
 | Input               |                           Value | Sub-score |
 | ------------------- | ------------------------------: | --------: |
@@ -145,56 +145,7 @@ Largest shape changes:
 - `metrics.churn`: 3.56x (110x91 on wide, 146x34 on narrow) at `div:nth-of-type(3) > div > div:nth-of-type(1) > div:nth-of-type(6)`
 - `metrics.active`: 3.56x (110x91 on wide, 146x34 on narrow) at `div:nth-of-type(3) > div > div:nth-of-type(1) > div:nth-of-type(7)`
 
-#### presence: wide vs narrow — 50 (moderate)
-
-| Input               |                           Value | Sub-score |
-| ------------------- | ------------------------------: | --------: |
-| Jump p90            | 297.8 px over 22 adjacent moves |       100 |
-| Gap uncovered       |                              0% |         0 |
-| Depth delta (worst) |                               0 |         0 |
-| Aspect amp p90      |    6.41x over 10 shared anchors |       100 |
-| Missing in one view |                    0% of 10 IDs |         0 |
-
-Largest jumps (sender move -> receiver move):
-
-- `board.column:now` -> `board.column:next`: 8 px on wide becomes 305.2 px on narrow (`board.column:now` -> `board.column:next`)
-- `board.column:next` -> `board.column:later`: 8 px on wide becomes 305.2 px on narrow (`board.column:next` -> `board.column:later`)
-- `board.card:search` -> `board.column:next`: 14 px on wide becomes 297.8 px on narrow (`board.card:search` -> `board.column:next`)
-- `board.card:export` -> `board.column:later`: 14 px on wide becomes 297.8 px on narrow (`board.card:export` -> `board.column:later`)
-- `board.column:now` -> `board.column:next`: 8 px on narrow becomes 285.8 px on wide (`board.column:now` -> `board.column:next`)
-
-Largest shape changes:
-
-- `board.column:now`: 6.41x (147x247 on wide, 297x78 on narrow) at `div:nth-of-type(3) > div > div:nth-of-type(1) > div > section:nth-of-type(1)`
-- `board.column:next`: 6.41x (147x247 on wide, 297x78 on narrow) at `div:nth-of-type(3) > div > div:nth-of-type(1) > div > section:nth-of-type(2)`
-- `board.column:later`: 6.41x (147x247 on wide, 297x78 on narrow) at `div:nth-of-type(3) > div > div:nth-of-type(1) > div > section:nth-of-type(3)`
-- `board`: 1.5x (477x306 on wide, 317x306 on narrow) at `div:nth-of-type(3) > div > div:nth-of-type(1)`
-
-#### custom-cursors: wide vs narrow — 41 (moderate)
-
-| Input               |                          Value | Sub-score |
-| ------------------- | -----------------------------: | --------: |
-| Jump p90            | 342.1 px over 7 adjacent moves |       100 |
-| Gap uncovered       |                             0% |         0 |
-| Depth delta (worst) |                              0 |         0 |
-| Aspect amp p90      |    1.93x over 5 shared anchors |        37 |
-| Missing in one view |                    0% of 5 IDs |         0 |
-
-Largest jumps (sender move -> receiver move):
-
-- `canvas.hero` -> `canvas.logo`: 8 px on narrow becomes 342.1 px on wide (`canvas.hero` -> `canvas.logo`)
-- `canvas.hero` -> `canvas.note`: 8 px on wide becomes 287.5 px on narrow (`canvas.hero` -> `canvas.note`)
-- `canvas.hero` -> `canvas.button`: 21.8 px on narrow becomes 160.7 px on wide (`canvas.hero` -> `canvas.button`)
-- `canvas.hero` -> `canvas.button`: 8 px on wide becomes 146.4 px on narrow (`canvas.hero` -> `canvas.button`)
-- `canvas.logo` -> `canvas.note`: 8 px on narrow becomes 104.8 px on wide (`canvas.logo` -> `canvas.note`)
-
-Largest shape changes:
-
-- `canvas.note`: 1.93x (142x26 on wide, 275x26 on narrow) at `div:nth-of-type(3) > div > div:nth-of-type(1) > div > div:nth-of-type(3)`
-- `canvas.hero`: 1.68x (285x230 on wide, 275x132 on narrow) at `div:nth-of-type(3) > div > div:nth-of-type(1) > div > div:nth-of-type(1)`
-- `canvas`: 1.54x (457x252 on wide, 297x252 on narrow) at `div:nth-of-type(3) > div > div:nth-of-type(1) > div`
-
-#### table-and-cards: wide vs narrow — 39 (moderate)
+#### table-and-cards: wide vs narrow — 100 (high)
 
 | Input               |                           Value | Sub-score |
 | ------------------- | ------------------------------: | --------: |
@@ -219,6 +170,55 @@ Largest shape changes:
 - `invoices.row:INV-2042.amount`: 1.71x (116x53 on wide, 59x16 on narrow) at `div:nth-of-type(1) > table > tbody > tr:nth-of-type(2) > td:nth-of-type(3)`
 - `invoices.row:INV-2044.amount`: 1.71x (116x53 on wide, 59x16 on narrow) at `div:nth-of-type(1) > table > tbody > tr:nth-of-type(4) > td:nth-of-type(3)`
 - `invoices.row:INV-2041`: 1.69x (457x53 on wide, 297x59 on narrow) at `div > div:nth-of-type(1) > table > tbody > tr:nth-of-type(1)`
+
+#### presence: wide vs narrow — 100 (high)
+
+| Input               |                           Value | Sub-score |
+| ------------------- | ------------------------------: | --------: |
+| Jump p90            | 297.8 px over 22 adjacent moves |       100 |
+| Gap uncovered       |                              0% |         0 |
+| Depth delta (worst) |                               0 |         0 |
+| Aspect amp p90      |    6.41x over 10 shared anchors |       100 |
+| Missing in one view |                    0% of 10 IDs |         0 |
+
+Largest jumps (sender move -> receiver move):
+
+- `board.column:now` -> `board.column:next`: 8 px on wide becomes 305.2 px on narrow (`board.column:now` -> `board.column:next`)
+- `board.column:next` -> `board.column:later`: 8 px on wide becomes 305.2 px on narrow (`board.column:next` -> `board.column:later`)
+- `board.card:search` -> `board.column:next`: 14 px on wide becomes 297.8 px on narrow (`board.card:search` -> `board.column:next`)
+- `board.card:export` -> `board.column:later`: 14 px on wide becomes 297.8 px on narrow (`board.card:export` -> `board.column:later`)
+- `board.column:now` -> `board.column:next`: 8 px on narrow becomes 285.8 px on wide (`board.column:now` -> `board.column:next`)
+
+Largest shape changes:
+
+- `board.column:now`: 6.41x (147x247 on wide, 297x78 on narrow) at `div:nth-of-type(3) > div > div:nth-of-type(1) > div > section:nth-of-type(1)`
+- `board.column:next`: 6.41x (147x247 on wide, 297x78 on narrow) at `div:nth-of-type(3) > div > div:nth-of-type(1) > div > section:nth-of-type(2)`
+- `board.column:later`: 6.41x (147x247 on wide, 297x78 on narrow) at `div:nth-of-type(3) > div > div:nth-of-type(1) > div > section:nth-of-type(3)`
+- `board`: 1.5x (477x306 on wide, 317x306 on narrow) at `div:nth-of-type(3) > div > div:nth-of-type(1)`
+
+#### custom-cursors: wide vs narrow — 100 (high)
+
+| Input               |                          Value | Sub-score |
+| ------------------- | -----------------------------: | --------: |
+| Jump p90            | 342.1 px over 7 adjacent moves |       100 |
+| Gap uncovered       |                             0% |         0 |
+| Depth delta (worst) |                              0 |         0 |
+| Aspect amp p90      |    1.93x over 5 shared anchors |        37 |
+| Missing in one view |                    0% of 5 IDs |         0 |
+
+Largest jumps (sender move -> receiver move):
+
+- `canvas.hero` -> `canvas.logo`: 8 px on narrow becomes 342.1 px on wide (`canvas.hero` -> `canvas.logo`)
+- `canvas.hero` -> `canvas.note`: 8 px on wide becomes 287.5 px on narrow (`canvas.hero` -> `canvas.note`)
+- `canvas.hero` -> `canvas.button`: 21.8 px on narrow becomes 160.7 px on wide (`canvas.hero` -> `canvas.button`)
+- `canvas.hero` -> `canvas.button`: 8 px on wide becomes 146.4 px on narrow (`canvas.hero` -> `canvas.button`)
+- `canvas.logo` -> `canvas.note`: 8 px on narrow becomes 104.8 px on wide (`canvas.logo` -> `canvas.note`)
+
+Largest shape changes:
+
+- `canvas.note`: 1.93x (142x26 on wide, 275x26 on narrow) at `div:nth-of-type(3) > div > div:nth-of-type(1) > div > div:nth-of-type(3)`
+- `canvas.hero`: 1.68x (285x230 on wide, 275x132 on narrow) at `div:nth-of-type(3) > div > div:nth-of-type(1) > div > div:nth-of-type(1)`
+- `canvas`: 1.54x (457x252 on wide, 297x252 on narrow) at `div:nth-of-type(3) > div > div:nth-of-type(1) > div`
 
 #### fallbacks: wide vs narrow orders-hidden — 22 (moderate)
 
@@ -338,18 +338,18 @@ Largest shape changes:
 ```mermaid
 xychart-beta
   title "Total risk"
-  x-axis ["basics: wide vs narrow", "responsive-grid: wide vs narrow", "presence: wide vs narrow", "custom-cursors: wide vs narrow", "table-and-cards: wide vs narrow", "fallbacks: wide vs narrow orders-hidden", "fallbacks: wide vs narrow", "fallbacks: narrow vs narrow orders-hidden", "scroll: wide vs narrow", "interpolation: wide vs narrow"]
+  x-axis ["basics: wide vs narrow", "responsive-grid: wide vs narrow", "table-and-cards: wide vs narrow", "presence: wide vs narrow", "custom-cursors: wide vs narrow", "fallbacks: wide vs narrow orders-hidden", "fallbacks: wide vs narrow", "fallbacks: narrow vs narrow orders-hidden", "scroll: wide vs narrow", "interpolation: wide vs narrow"]
   y-axis "Total risk" 0 --> 100
-  bar [50, 50, 50, 41, 39, 22, 18, 16, 2, 2]
+  bar [100, 100, 100, 100, 100, 22, 18, 16, 2, 2]
 ```
 
 | View pair                                 | Total | Band     | Jump | Gap | Depth | Aspect | Parity |
 | ----------------------------------------- | ----: | -------- | ---: | --: | ----: | -----: | -----: |
-| basics: wide vs narrow                    |    50 | moderate |  100 |   0 |     0 |    100 |      0 |
-| responsive-grid: wide vs narrow           |    50 | moderate |  100 |   0 |     0 |    100 |      0 |
-| presence: wide vs narrow                  |    50 | moderate |  100 |   0 |     0 |    100 |      0 |
-| custom-cursors: wide vs narrow            |    41 | moderate |  100 |   0 |     0 |     37 |      0 |
-| table-and-cards: wide vs narrow           |    39 | moderate |  100 |   0 |     0 |     24 |      0 |
+| basics: wide vs narrow                    |   100 | high     |  100 |   0 |     0 |    100 |      0 |
+| responsive-grid: wide vs narrow           |   100 | high     |  100 |   0 |     0 |    100 |      0 |
+| table-and-cards: wide vs narrow           |   100 | high     |  100 |   0 |     0 |     24 |      0 |
+| presence: wide vs narrow                  |   100 | high     |  100 |   0 |     0 |    100 |      0 |
+| custom-cursors: wide vs narrow            |   100 | high     |  100 |   0 |     0 |     37 |      0 |
 | fallbacks: wide vs narrow orders-hidden   |    22 | moderate |    0 |   0 |    75 |     12 |     94 |
 | fallbacks: wide vs narrow                 |    18 | low      |    4 |   0 |    50 |     15 |     67 |
 | fallbacks: narrow vs narrow orders-hidden |    16 | low      |    0 |   0 |    50 |      0 |     83 |
@@ -361,18 +361,18 @@ xychart-beta
 ```mermaid
 xychart-beta
   title "Jump p90 px"
-  x-axis ["basics: wide vs narrow", "responsive-grid: wide vs narrow", "presence: wide vs narrow", "custom-cursors: wide vs narrow", "table-and-cards: wide vs narrow", "fallbacks: wide vs narrow orders-hidden", "fallbacks: wide vs narrow", "fallbacks: narrow vs narrow orders-hidden", "scroll: wide vs narrow", "interpolation: wide vs narrow"]
+  x-axis ["basics: wide vs narrow", "responsive-grid: wide vs narrow", "table-and-cards: wide vs narrow", "presence: wide vs narrow", "custom-cursors: wide vs narrow", "fallbacks: wide vs narrow orders-hidden", "fallbacks: wide vs narrow", "fallbacks: narrow vs narrow orders-hidden", "scroll: wide vs narrow", "interpolation: wide vs narrow"]
   y-axis "Jump p90 px" 0 --> 343
-  bar [247.7, 296.8, 297.8, 342.1, 256.4, 10.7, 47.7, 2, 2, 0]
+  bar [247.7, 296.8, 256.4, 297.8, 342.1, 10.7, 47.7, 2, 2, 0]
 ```
 
 | View pair                                 | Jump p90 (px) | Jump sub-score |
 | ----------------------------------------- | ------------: | -------------: |
 | basics: wide vs narrow                    |         247.7 |            100 |
 | responsive-grid: wide vs narrow           |         296.8 |            100 |
+| table-and-cards: wide vs narrow           |         256.4 |            100 |
 | presence: wide vs narrow                  |         297.8 |            100 |
 | custom-cursors: wide vs narrow            |         342.1 |            100 |
-| table-and-cards: wide vs narrow           |         256.4 |            100 |
 | fallbacks: wide vs narrow orders-hidden   |          10.7 |              0 |
 | fallbacks: wide vs narrow                 |          47.7 |              4 |
 | fallbacks: narrow vs narrow orders-hidden |             2 |              0 |

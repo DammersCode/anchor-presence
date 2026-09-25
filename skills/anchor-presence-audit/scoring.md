@@ -40,7 +40,8 @@ score(x, good, poor) = clamp(100 * (x - good) / (poor - good), 0, 100)
 ## Total and bands
 
 ```
-risk_0_100 = round(0.35 * Jump + 0.25 * Gap + 0.15 * Depth + 0.15 * Aspect + 0.10 * Parity)
+weighted   = 0.35 * Jump + 0.25 * Gap + 0.15 * Depth + 0.15 * Aspect + 0.10 * Parity
+risk_0_100 = round(max(weighted, Jump, Gap))
 ```
 
 | Total  | Band     |
@@ -49,7 +50,7 @@ risk_0_100 = round(0.35 * Jump + 0.25 * Gap + 0.15 * Depth + 0.15 * Aspect + 0.1
 | 21–50  | moderate |
 | 51–100 | high     |
 
-A pair with full anchor coverage and every anchor in both views tops out at 50 (Jump and Aspect at 100). A high band always involves gaps, deep fallbacks, or missing anchors.
+The total never falls below the Jump or Gap sub-score. A large pointer jump or a large uncovered area is visible to users on its own, so the weighted sum does not dilute it. Depth, Aspect, and Parity add to the total through the weighted sum only.
 
 ## Reading each sub-score
 

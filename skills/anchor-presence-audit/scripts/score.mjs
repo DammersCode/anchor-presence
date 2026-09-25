@@ -302,9 +302,9 @@ export function scorePair(viewA, viewB, options = DEFAULTS) {
     aspect: subScore(inputs.aspectAmp, THRESHOLDS.aspect.good, THRESHOLDS.aspect.poor),
     parity: subScore(inputs.parityMissing, THRESHOLDS.parity.good, THRESHOLDS.parity.poor),
   };
-  const total = Math.round(
-    Object.entries(WEIGHTS).reduce((sum, [key, weight]) => sum + weight * sub[key], 0),
-  );
+  const weighted = Object.entries(WEIGHTS).reduce((sum, [key, weight]) => sum + weight * sub[key], 0);
+  // A large jump or a large gap is visible on its own; the weighted sum must not dilute it.
+  const total = Math.round(Math.max(weighted, sub.jump, sub.gap));
 
   return {
     page: viewA.page,

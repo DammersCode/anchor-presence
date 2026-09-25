@@ -16,16 +16,24 @@ Owner decisions:
 
 ## Workstreams
 
-| Plan                                                        | Branch              | Worktree                        | Status              |
-| ----------------------------------------------------------- | ------------------- | ------------------------------- | ------------------- |
-| Agent rules, repo skills                                    | `dev`               | main tree                       | done (`4a0f916`)    |
-| Plans cleanup and future backend plans                      | `dev`               | main tree                       | done (`697692f`)    |
-| [022 Gap closure](022-gap-closure-2026-09-25.md) — packages | `package-gaps`      | `C:/repos/danny/ap-wt-packages` | in progress         |
-| [023 Fumadocs docs site](023-fumadocs-docs-site.md)         | `docs-fumadocs`     | `C:/repos/danny/ap-wt-docs`     | in progress         |
-| [024 Backend examples](024-backend-examples.md)             | `examples-backends` | `C:/repos/danny/ap-wt-backends` | in progress         |
-| 022 Gap closure — demo, e2e, CI                             | `dev`               | main tree                       | open (after merges) |
+| Plan                                                        | Branch              | Worktree                        | Status                   |
+| ----------------------------------------------------------- | ------------------- | ------------------------------- | ------------------------ |
+| Agent rules, repo skills                                    | `dev`               | main tree                       | done (`4a0f916`)         |
+| Plans cleanup and future backend plans                      | `dev`               | main tree                       | done (`697692f`)         |
+| [022 Gap closure](022-gap-closure-2026-09-25.md) — packages | `package-gaps`      | `C:/repos/danny/ap-wt-packages` | in progress              |
+| [023 Fumadocs docs site](023-fumadocs-docs-site.md)         | `docs-fumadocs`     | `C:/repos/danny/ap-wt-docs`     | done, merged (`3b17767`) |
+| [024 Backend examples](024-backend-examples.md)             | `examples-backends` | `C:/repos/danny/ap-wt-backends` | in progress              |
+| 022 Gap closure — demo, e2e, CI                             | `dev`               | main tree                       | open (after merges)      |
 
 Each branch keeps its own progress in `plans/handoffs/<branch>.md`. Read that file before you continue a branch.
+
+## Docs site notes (from `docs-fumadocs`)
+
+- Live `<Demo>` uses two iframes over a `BroadcastChannel` transport (`apps/docs/components/demo/`). One document cannot host two bindings: the pointer listener binds to `window`.
+- The quick start's zero-backend sample uses `createInMemoryPair` (single realm).
+- Code on example pages comes from repo files through `lib/read-example-source.ts`, so it cannot drift.
+- Root `build` builds only `core`, `dom`, `react`. `bun run docs:build` builds the docs app.
+- Open: add `bun-native`, `node-ws`, `hono`, `elysia` to `content/docs/examples/backends/meta.json` after plan 024 merges. Run a full `simple-english` self-check pass over all pages.
 
 ## Next steps
 

@@ -137,19 +137,19 @@ bun run scripts/relay-load.ts --clients 50,100,200 --seconds 10
 ```
 
 <Callout type="warn">
-  At 100 and 200 clients in one room, the reference relay's event loop cannot fan out messages fast enough.
-  Its own CPU saturates near 100%, and delivery latency grows into seconds. The relay's slow-peer and
-  rate-limit protections did not trigger during this run: every socket stayed open, with zero forced
-  disconnects. Messages queued and fell behind instead.
+  Read the 100 and 200 rows as the limit of this test setup, not as a proven relay limit. All clients run in
+  one load-generator process on the same machine, and at 100 clients that process uses a full CPU core too
+  (the script prints its CPU next to the relay's). The relay's slow-peer and rate-limit protections did not
+  trigger: every socket stayed open, and messages queued instead.
 </Callout>
 
 The test raised the room and socket caps through `RELAY_MAX_ROOM_SOCKETS` and `RELAY_MAX_TOTAL_SOCKETS`. This kept the relay from rejecting the client count under test. The rate limit stayed at the shipped default: a 40-message burst, with a refill of 20 messages/s per socket.
 
 ### What this means for capacity planning
 
-A single-threaded room-broadcast relay is fine at 50 clients. It becomes the bottleneck well before 200 clients. Past that point, CPU saturation on the relay process limits a room's size, not the network or the library's per-message cost.
+At 50 clients in one room, the reference relay delivers every message with a p99 latency under 200 ms and uses less than one CPU core. Relay work grows with senders × receivers: 100 moving clients need about 200,000 deliveries per second. Plan rooms of up to about 50 active clients per relay process, and measure your own relay on your own hardware before you allow larger rooms.
 
-See the [capacity planning](#capacity-planning) checklist above. Split large rooms, prefer `binaryCodec`, and measure your own relay and hardware before you set a room-size limit.
+See the [capacity planning](#capacity-planning) checklist above. Split large rooms and prefer `binaryCodec`.
 
 ## Related
 

@@ -207,6 +207,8 @@ type RunResult = {
   /** WebSocket close codes seen during the run, e.g. { 1000: 200 } for a clean close, or { 4003: 12 } for slow-peer. */
   closeCodes: Record<number, number>;
   avgCpuPercent: number;
+  /** CPU of this load-generator process; near 100% means the generator, not the relay, is the limit. */
+  generatorCpuPercent: number;
   peakRssBytes: number;
 };
 
@@ -276,6 +278,7 @@ async function runForClientCount(clientCount: number, seconds: number): Promise<
   const monitor = monitorRelay(relay.pid);
 
   runStartedAt.current = Date.now();
+  const generatorCpuStart = process.cpuUsage();
   let sequence = 0;
   const publishTimer = setInterval(() => {
     sequence += 1;
@@ -303,6 +306,10 @@ async function runForClientCount(clientCount: number, seconds: number): Promise<
 
   await sleep(seconds * 1000);
   clearInterval(publishTimer);
+  const generatorCpu = process.cpuUsage(generatorCpuStart);
+  // one core = 100%: near 100% means this load generator, not the relay, limits the numbers
+  const generatorCpuPercent =
+    ((generatorCpu.user + generatorCpu.system) / 1000 / (Date.now() - runStartedAt.current)) * 100;
   await sleep(500); // drain in-flight deliveries
 
   const { peakRssBytes, avgCpuPercent } = await monitor.stop();
@@ -336,6 +343,7 @@ async function runForClientCount(clientCount: number, seconds: number): Promise<
     dropped: Math.max(0, expectedDeliveredPerSec * steadySeconds - steadyDeliveredCount),
     closeCodes,
     avgCpuPercent,
+    generatorCpuPercent,
     peakRssBytes,
   };
 }
@@ -365,7 +373,7 @@ async function main(): Promise<void> {
     console.log(
       `N=${clientCount}: sent/s=${result.sentPerSec.toFixed(0)} delivered/s=${result.deliveredPerSec.toFixed(0)}` +
         ` ratio=${(result.deliveryRatio * 100).toFixed(1)}% p50=${result.latencyP50}ms p99=${result.latencyP99}ms` +
-        ` cpu=${result.avgCpuPercent.toFixed(1)}% rss=${(result.peakRssBytes / 1024 / 1024).toFixed(1)}MB` +
+        ` cpu=${result.avgCpuPercent.toFixed(1)}% generatorCpu=${result.generatorCpuPercent.toFixed(1)}% rss=${(result.peakRssBytes / 1024 / 1024).toFixed(1)}MB` +
         ` closeCodes=${JSON.stringify(result.closeCodes)}`,
     );
   }
@@ -383,7 +391,8 @@ async function main(): Promise<void> {
       "p99 ms": r.latencyP99,
       "p99.9 ms": r.latencyP99_9,
       dropped: Math.round(r.dropped),
-      "cpu %": r.avgCpuPercent.toFixed(1),
+      "relay cpu %": r.avgCpuPercent.toFixed(1),
+      "generator cpu %": r.generatorCpuPercent.toFixed(1),
       "rss MB": (r.peakRssBytes / 1024 / 1024).toFixed(1),
     })),
   );

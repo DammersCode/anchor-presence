@@ -1,0 +1,93 @@
+{
+  "baseUrl": "http://localhost:3001",
+  "anchorAttribute": "data-anchor",
+  "adjacencyPx": 24,
+  "maxAnchors": 4,
+  "settleMs": 800,
+  "views": [
+    { "page": "basics", "name": "wide", "url": "/demo-frame/basics/wide", "width": 477, "height": 338 },
+    { "page": "basics", "name": "narrow", "url": "/demo-frame/basics/narrow", "width": 317, "height": 338 },
+    {
+      "page": "responsive-grid",
+      "name": "wide",
+      "url": "/demo-frame/responsive-grid/wide",
+      "width": 477,
+      "height": 338
+    },
+    {
+      "page": "responsive-grid",
+      "name": "narrow",
+      "url": "/demo-frame/responsive-grid/narrow",
+      "width": 317,
+      "height": 338
+    },
+    {
+      "page": "table-and-cards",
+      "name": "wide",
+      "url": "/demo-frame/table-and-cards/wide",
+      "width": 477,
+      "height": 338
+    },
+    {
+      "page": "table-and-cards",
+      "name": "narrow",
+      "url": "/demo-frame/table-and-cards/narrow",
+      "width": 317,
+      "height": 338
+    },
+    { "page": "fallbacks", "name": "wide", "url": "/demo-frame/fallbacks/wide", "width": 477, "height": 338 },
+    {
+      "page": "fallbacks",
+      "name": "narrow",
+      "url": "/demo-frame/fallbacks/narrow",
+      "width": 317,
+      "height": 338
+    },
+    {
+      "page": "fallbacks",
+      "name": "narrow orders-hidden",
+      "url": "/demo-frame/fallbacks/narrow",
+      "width": 317,
+      "height": 338,
+      "steps": [{ "click": "button[role=switch]" }]
+    },
+    { "page": "scroll", "name": "wide", "url": "/demo-frame/scroll/wide", "width": 477, "height": 338 },
+    { "page": "scroll", "name": "narrow", "url": "/demo-frame/scroll/narrow", "width": 317, "height": 338 },
+    { "page": "presence", "name": "wide", "url": "/demo-frame/presence/wide", "width": 477, "height": 338 },
+    {
+      "page": "presence",
+      "name": "narrow",
+      "url": "/demo-frame/presence/narrow",
+      "width": 317,
+      "height": 338
+    },
+    {
+      "page": "custom-cursors",
+      "name": "wide",
+      "url": "/demo-frame/custom-cursors/wide",
+      "width": 477,
+      "height": 338
+    },
+    {
+      "page": "custom-cursors",
+      "name": "narrow",
+      "url": "/demo-frame/custom-cursors/narrow",
+      "width": 317,
+      "height": 338
+    },
+    {
+      "page": "interpolation",
+      "name": "wide",
+      "url": "/demo-frame/interpolation/wide",
+      "width": 477,
+      "height": 338
+    },
+    {
+      "page": "interpolation",
+      "name": "narrow",
+      "url": "/demo-frame/interpolation/narrow",
+      "width": 317,
+      "height": 338
+    }
+  ]
+}

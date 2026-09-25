@@ -96,7 +96,7 @@ export function createHonoRelay(port: number, options: HonoRelayOptions = {}) {
           if (!rateLimiter.tryConsume()) return;
 
           const data = evt.data;
-          const message = typeof data === "string" ? data : (data as ArrayBufferLike);
+          const message = typeof data === "string" ? data : (data as ArrayBuffer);
           if (messageByteLength(message, maxMessageBytes) > maxMessageBytes) return;
 
           const senderRaw = ws.raw as RawSocket;

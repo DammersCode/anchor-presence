@@ -1,6 +1,6 @@
 import { createPresenceClient, type PresenceClient } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
-import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
+import { spawn, type ChildProcess } from "node:child_process";
 import net from "node:net";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -45,7 +45,7 @@ function waitForPort(port: number): Promise<void> {
   });
 }
 
-let relay: ChildProcessWithoutNullStreams;
+let relay: ChildProcess;
 let port = 0;
 const clients: PresenceClient[] = [];
 

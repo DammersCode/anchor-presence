@@ -11,7 +11,7 @@
   ],
   "scripts": {
     "build": "bun run --filter '@anchor-presence/core' --filter '@anchor-presence/dom' --filter '@anchor-presence/react' build",
-    "typecheck": "tsc --build packages/core packages/dom packages/react && tsc -p tsconfig.test.json",
+    "typecheck": "tsc --build packages/core packages/dom packages/react && tsc -p tsconfig.test.json && bun run typecheck:examples",
     "lint": "oxlint --type-aware",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -23,10 +23,12 @@
     "preversion": "bun run build && bun run typecheck && bun run lint && bun run test",
     "version": "node scripts/sync-versions.mjs && bun install && git add package.json packages/*/package.json apps/*/package.json examples/*/package.json bun.lock",
     "postversion": "git push && git push --tags",
-    "release:check": "node scripts/check-release.mjs"
+    "release:check": "node scripts/check-release.mjs",
+    "typecheck:examples": "tsc -p examples/socketio && tsc -p examples/signalr && tsc -p examples/bun-native && tsc -p examples/node-ws && tsc -p examples/hono && tsc -p examples/elysia"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",
+    "@types/bun": "^1.4.2",
     "@types/node": "^26.4.1",
     "jsdom": "^30.0.1",
     "oxlint": "^1.81.0",

@@ -1,6 +1,6 @@
 import { createPresenceClient, type PresenceClient } from "@anchor-presence/core";
 import { HubConnectionBuilder, type HubConnection } from "@microsoft/signalr";
-import { spawn, spawnSync, type ChildProcessWithoutNullStreams } from "node:child_process";
+import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import net from "node:net";
 import os from "node:os";
 import path from "node:path";
@@ -92,7 +92,7 @@ function harnessFor(connection: HubConnection): SignalRHarness {
 const dotnetAvailable = hasDotnet();
 const describeIfDotnet = dotnetAvailable ? describe : describe.skip;
 
-let hub: ChildProcessWithoutNullStreams;
+let hub: ChildProcess;
 let port = 0;
 const connections: HubConnection[] = [];
 const clients: PresenceClient[] = [];

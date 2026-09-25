@@ -70,7 +70,7 @@ export function createElysiaRelay(port: number, options: ElysiaRelayOptions = {}
       if (!state) return;
       if (!state.rateLimiter.tryConsume()) return;
 
-      const payload = typeof message === "string" ? message : (message as ArrayBufferLike);
+      const payload = typeof message === "string" ? message : (message as ArrayBuffer);
       if (messageByteLength(payload, maxMessageBytes) > maxMessageBytes) return;
 
       const query = ws.data.query as Record<string, string | undefined>;

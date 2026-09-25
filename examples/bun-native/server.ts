@@ -46,7 +46,7 @@ export function createBunRelay(port: number, options: BunRelayOptions = {}) {
 
   const roomSizes = new Map<string, number>();
 
-  const server = Bun.serve<SocketData, object>({
+  const server = Bun.serve<SocketData>({
     port,
     fetch(req, srv) {
       const url = new URL(req.url);

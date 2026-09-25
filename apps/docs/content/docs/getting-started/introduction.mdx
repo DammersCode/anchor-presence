@@ -17,11 +17,11 @@ Anchor Presence never sends a screen coordinate as the primary signal. It sends 
 
 The library has three packages. Each adds one layer, and the dependency direction is one-way: `react` depends on `dom`, and `dom` depends on `core`.
 
-| Package                  | What it does                                                                | Depends on DOM or React |
-| ------------------------ | ---------------------------------------------------------------------------- | ------------------------ |
-| `@anchor-presence/core`  | Protocol, validation, presence store, client orchestration.                | No                        |
-| `@anchor-presence/dom`   | Anchor registry, pointer capture, geometry scheduler, resolver.            | DOM only                  |
-| `@anchor-presence/react` | Provider component and hooks, built on `useSyncExternalStore`.             | React                     |
+| Package                  | What it does                                                    | Depends on DOM or React |
+| ------------------------ | --------------------------------------------------------------- | ----------------------- |
+| `@anchor-presence/core`  | Protocol, validation, presence store, client orchestration.     | No                      |
+| `@anchor-presence/dom`   | Anchor registry, pointer capture, geometry scheduler, resolver. | DOM only                |
+| `@anchor-presence/react` | Provider component and hooks, built on `useSyncExternalStore`.  | React                   |
 
 ## Guarantees
 

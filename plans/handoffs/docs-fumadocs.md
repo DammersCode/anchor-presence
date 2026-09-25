@@ -4,35 +4,22 @@ Branch `docs-fumadocs`, worktree `C:/repos/danny/ap-wt-docs`. Spec: `plans/023-f
 
 ## Done
 
-Not yet committed — this is the first pass, uncommitted in the working tree as of writing. First commit lands right after this file.
+All committed on `docs-fumadocs`:
 
-- Scaffolded `apps/docs` (package.json, tsconfig, next.config.mjs, postcss.config.mjs, source.config.ts) targeting the same fumadocs-core/ui/mdx and Next 16.3.5 versions as gridcn, with `@anchor-presence/{core,dom,react}` as `workspace:*`.
-- `lib/shared.ts`, `lib/source.ts`, `lib/utils.ts`, `lib/layout.shared.tsx`, `lib/read-example-source.ts`.
-- Brand port into fd tokens: `app/global.css` (light/dark palette from `site/index.html`, Sora/Inter fonts, gradient utility, reduced-motion gates).
-- `app/layout.tsx`, `app/(home)/layout.tsx`, `app/(home)/page.tsx` (landing page port: hero, how-it-works, guarantees, run-it — ticker replaced by the real `<Demo>`), `app/docs/layout.tsx`, `app/docs/[[...slug]]/page.tsx`.
-- LLM routes: `app/llms.txt`, `app/llms-full.txt`, `app/llms.mdx/docs/[[...slug]]`, OG route `app/og/docs/[...slug]`, search route `app/api/search`, `sitemap.ts`, `robots.ts`, `public/icon.svg`.
-- `components/mdx.tsx`, `components/page-actions.tsx` (Copy Markdown / Open in ChatGPT / Open in Claude), `components/install-command.tsx`, `components/code-from-source.tsx`, `components/logo.tsx`.
-- Live demo: `components/demo.tsx` (dynamic import, `ssr:false`) -> `components/demo/demo-panes.tsx` (two `<iframe>`s) -> `app/demo-frame/[variant]/page.tsx` + `demo-frame-page.tsx` -> `components/demo/demo-scene.tsx` (real `createPresenceClient` + `usePresenceClient` + `LiveCursorProvider` + `CursorLayer`) -> `components/demo/broadcast-transport.ts` (a `BroadcastChannel`-backed `LiveCursorTransport`).
-- `content/docs/**/meta.json` for the full IA (see "Decisions made" for the tree).
-- `content/docs/getting-started/introduction.mdx` and `installation.mdx` written.
-- Root: `.prettierignore` updated with `apps/docs/.next`, `apps/docs/.source`.
-- `packages/dom/README.md`: exports table now documents `DomBinding` and `invalidate()`.
-- `skills/anchor-presence/SKILL.md`: Source section now points at the docs site and `llms.txt` first.
+- `scaffold apps/docs fumadocs app with brand port and live demo shell` — package.json, tsconfig, next.config.mjs, postcss.config.mjs, source.config.ts, `lib/*`, `app/global.css` (brand tokens ported from `site/index.html`), `app/layout.tsx`, `app/(home)/*`, `app/docs/*`, LLM routes (`llms.txt`, `llms-full.txt`, `llms.mdx/docs/[[...slug]]`), OG route, search route, sitemap/robots, icon, `components/*` (mdx, page-actions, install-command, code-from-source, logo), the live `<Demo>` (two iframes over a `BroadcastChannel` transport), `content/docs/**/meta.json`. Also: `.prettierignore` updated, `packages/dom/README.md` exports table fixed to document `DomBinding`/`invalidate()`, `skills/anchor-presence/SKILL.md` Source section repointed at the docs site.
+- `write docs content: getting started, concepts, guides, reference, examples` — all 27 MDX pages: getting-started (introduction, installation, quick-start), concepts (anchors-and-fallbacks, architecture, ui-context), guides (react, ssr-and-strict-mode, responsive-layouts, transports, codecs, security, performance, ai-agents, troubleshooting), reference (core, dom, react, using `AutoTypeTable`), examples (basics, anchors-and-fallbacks, presence-list, custom-cursor-rendering, interpolation-styles, occlusion-and-scroll-containers, backends/{index,socketio,signalr}). Added `components/auto-type-table.tsx` (file-system-cached generator, matching gridcn's pattern).
+- `migrate docs/*.md into apps/docs and repoint readmes at the docs site` — deleted `docs/*.md`, rewrote every cross-reference in `README.md`, `SECURITY.md`, `packages/{core,dom,react}/README.md` to point at `https://anchor-presence.vercel.app/docs/...`, shortened the root README's quick start to use `usePresenceClient`, replaced the docs file table with one link, added a `CHANGELOG.md` Unreleased entry for the docs site.
+- Uncommitted as of this writing, staged next: `vercel.json`, removal of `site/` and `.github/workflows/pages.yml`, a `docs` job in `ci.yml`, root `docs:dev`/`docs:build` scripts, `.gitignore` additions for `apps/docs/.next`/`.source`/`next-env.d.ts`, a `bun run format` pass that normalized CRLF-vs-LF noise across the whole repo (see "Decisions made"), and a fix for `demo-scene.tsx`'s effect-cleanup type error plus missing `lucide-react`/`clsx`/`tailwind-merge` deps caught by the first real build.
 
 ## In progress
 
-- Writing the rest of `content/docs/**`: quick-start (in-memory-pair-first, then `usePresenceClient` + relay), concepts (anchors-and-fallbacks, architecture, ui-context), guides (react, ssr-and-strict-mode, responsive-layouts, transports, codecs, security, performance, ai-agents, troubleshooting), reference (core, dom, react — consider `AutoTypeTable`), examples (basics, anchors-and-fallbacks, presence-list, custom-cursor-rendering, interpolation-styles, occlusion-and-scroll-containers, backends/{index,socketio,signalr}).
-- Source prose for concepts/guides is drafted from `docs/*.md` (already close to simple-english); still needs the per-page pass, then delete `docs/*.md` and repoint README links.
+Nothing mid-file. All planned content and config exist. What's left is verification and the final commit.
 
 ## Next
 
-1. Finish content migration (see "In progress"), run the `simple-english` self-check per AGENTS.md.
-2. Delete `docs/*.md`, update `README.md` and package READMEs to link the docs site instead.
-3. `vercel.json` in `apps/docs` (installCommand/buildCommand from repo root).
-4. Remove `site/` and `.github/workflows/pages.yml`; add a `docs` job to `ci.yml`; add root `docs:dev`/`docs:build` scripts.
-5. Update root `README.md` (short) and `CHANGELOG.md` Unreleased.
-6. `bun install` at worktree root, then `bun run build` inside `apps/docs` from a clean state.
-7. Run every AGENTS.md gate before the final commit.
+1. Commit the remaining staged changes (vercel.json, site/pages.yml removal, ci.yml docs job, root scripts, gitignore, format normalization, demo-scene fix, package.json dep additions).
+2. Re-run the full AGENTS.md gate list once more against the final tree state (build, typecheck, format:check, lint, test, chromium e2e) — all passed as of this writing; re-run only if anything changes after this point.
+3. Hand back to the calling agent with the final report (page tree, gate results, commit list, open issues).
 
 ## Decisions made (and why)
 
@@ -41,7 +28,9 @@ Not yet committed — this is the first pass, uncommitted in the working tree as
 - **`backends/meta.json` lists only `index`, `socketio`, `signalr`.** Direct instruction from this task's brief: another agent is adding Bun native/Node ws/Hono/Elysia in parallel. `plans/023-fumadocs-docs-site.md` on `dev` lists those four extra pages too — that plan text looks stale relative to the live parallel-work split; do not add those pages here.
 - **Landing-page ticker removed, not real-data-driven.** UX note said drive it from real data or drop it. The real live `<Demo>` already sits in the hero where the product screenshot was; a second live number readout felt redundant, so it was dropped rather than rebuilt.
 - **`gitConfig.branch = "main"`** in `lib/shared.ts` (not `docs-fumadocs`): it feeds GitHub "view source" links on the deployed site, which should point at the default branch readers actually see.
+- **Root `build` script now filters to only `core`/`dom`/`react`**, not a bare `@anchor-presence/*` glob. That glob would also match `@anchor-presence/docs` and run `next build` as part of every routine root build; `docs:build` is the explicit, separate entry point for that instead, matching the brief's ask for a `docs:build` script and keeping the fast root build fast.
+- **Ran `bun run format` (prettier `--write`) across the whole repo, not just `apps/docs`.** This worktree's checkout has CRLF line endings on disk (confirmed via `file` and `git config core.autocrlf=true`) even though `git diff` shows zero real changes for any file outside what this task touched (verified with `git diff --ignore-space-at-eol --ignore-all-space`, which reduced the diff to exactly this task's own files plus `bun.lock`). `format:check` failed repo-wide before this pass and passes clean after. This is a pre-existing worktree/environment artifact, not something introduced by this task's content; fixing it in git config was out of scope, so normalizing on disk via the repo's own formatter was the safe, in-scope fix. Re-verify with `git status`/`git diff` before committing to confirm no unintended semantic changes rode along (none were found).
 
 ## Blockers / open questions
 
-- None yet. `bun install` / `bun run build` in `apps/docs` has not been run yet (next step) — version or peer-dep conflicts against the workspace's `typescript ^7.0.2` are the main risk to watch (gridcn pins `@typescript/typescript6`; this repo's root is plain `typescript@^7.0.2`, and `apps/docs/package.json` currently declares its own `typescript ^5.9.0` devDependency, which may get hoisted/deduped oddly under Bun workspaces — verify after install).
+None. `bun install` and `bun run build` (root and `apps/docs`) both succeed from a clean state (`.next`/`.source` removed first). All AGENTS.md gates pass: build, typecheck, format:check, lint, chromium e2e, and unit tests (409 passed).

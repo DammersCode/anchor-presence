@@ -10,7 +10,11 @@ export default function Layout({ children }: { children: ReactNode }) {
       {...baseOptions()}
       sidebar={{
         footer: (
-          <a key="llms" href="/llms.txt" className="text-fd-muted-foreground hover:text-fd-foreground text-xs">
+          <a
+            key="llms"
+            href="/llms.txt"
+            className="text-fd-muted-foreground hover:text-fd-foreground text-xs"
+          >
             llms.txt
           </a>
         ),

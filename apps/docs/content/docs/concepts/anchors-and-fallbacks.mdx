@@ -80,8 +80,8 @@ Every resolved cursor carries a tier, one of three values:
 | Tier       | Meaning                                                                        |
 | ---------- | ------------------------------------------------------------------------------ |
 | `anchor`   | An anchor in the fallback chain resolved. `anchorId` names the winning anchor. |
-| `viewport` | No anchor resolved. The cursor used the viewport fallback position.           |
-| `hidden`   | Nothing resolved. The cursor has no valid position.                           |
+| `viewport` | No anchor resolved. The cursor used the viewport fallback position.            |
+| `hidden`   | Nothing resolved. The cursor has no valid position.                            |
 
 The resolution order is fixed: exact anchor, then nearest registered parent anchor, then a larger region anchor, then viewport fallback. A visibility policy then decides whether to show a hidden cursor at all. A visibility policy runs after tier resolution and can still hide an `anchor` or `viewport` tier cursor for application reasons. See [UI context](/docs/concepts/ui-context).
 

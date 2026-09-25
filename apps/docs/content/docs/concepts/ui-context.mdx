@@ -48,9 +48,9 @@ const clippedPointPolicy: VisibilityPolicy = ({ resolution }) =>
 
 <Callout type="warn">
   Occlusion uses a simplified model. An absolutely or fixed-positioned anchor that escapes an `overflow:
-  hidden` ancestor still counts as clipped, because the check walks DOM ancestors without computing
-  containing blocks. For such overlays, render them in a portal outside the clipping ancestor, or use a
-  custom policy that ignores `pointVisible` for those anchors.
+  hidden` ancestor still counts as clipped, because the check walks DOM ancestors without computing containing
+  blocks. For such overlays, render them in a portal outside the clipping ancestor, or use a custom policy
+  that ignores `pointVisible` for those anchors.
 </Callout>
 
 ## Dialog mismatch handling

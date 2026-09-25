@@ -13,17 +13,32 @@ export type DemoVariant = "wide" | "narrow";
  * The scene both demo panes render. Same anchors (`data-anchor`), different layout per
  * variant, proving the cursor tracks the element and not a pixel position.
  */
-export function DemoScene({ variant, channel, name }: { variant: DemoVariant; channel: string; name: string }) {
+export function DemoScene({
+  variant,
+  channel,
+  name,
+}: {
+  variant: DemoVariant;
+  channel: string;
+  name: string;
+}) {
   const transport = useMemo(() => createBroadcastChannelTransport(channel), [channel]);
   const client = usePresenceClient({
     key: `${channel}-${name}`,
     factory: () => {
       transport.connect();
-      return createPresenceClient({ transport, user: { name, color: CURSOR_COLORS[name as "alice" | "bob"] } });
+      return createPresenceClient({
+        transport,
+        user: { name, color: CURSOR_COLORS[name as "alice" | "bob"] },
+      });
     },
   });
 
-  useEffect(() => () => transport.disconnect(), [transport]);
+  useEffect(() => {
+    return () => {
+      transport.disconnect();
+    };
+  }, [transport]);
 
   const sidebarWidth = variant === "wide" ? "w-40" : "w-14";
 
@@ -35,8 +50,13 @@ export function DemoScene({ variant, channel, name }: { variant: DemoVariant; ch
           /* pointer capture is wired by the binding itself; this only proves the pane is interactive */
         }}
       >
-        <div className={`flex ${sidebarWidth} flex-none flex-col gap-2 border-r border-fd-border bg-fd-secondary/40 p-2`}>
-          <div data-anchor="nav.dashboard" className="rounded bg-gradient-brand px-2 py-1.5 font-medium text-white">
+        <div
+          className={`flex ${sidebarWidth} flex-none flex-col gap-2 border-r border-fd-border bg-fd-secondary/40 p-2`}
+        >
+          <div
+            data-anchor="nav.dashboard"
+            className="rounded bg-gradient-brand px-2 py-1.5 font-medium text-white"
+          >
             {variant === "wide" ? "Dashboard" : "D"}
           </div>
           <div data-anchor="nav.orders" className="rounded px-2 py-1.5 text-fd-muted-foreground">

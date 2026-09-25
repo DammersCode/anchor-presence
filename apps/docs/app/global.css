@@ -9,8 +9,7 @@
   --ap-ind: #4f46e5;
   --ap-cyn: #22d3ee;
   --ap-grad: linear-gradient(100deg, var(--ap-ind), var(--ap-cyn));
-  --font-display:
-    "Sora", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Sora", ui-sans-serif, system-ui, sans-serif;
 }
 
 :root,

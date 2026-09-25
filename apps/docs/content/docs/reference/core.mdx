@@ -54,7 +54,11 @@ See "Custom interpolation" in the [React guide](/docs/guides/react) for the inte
 ## Store
 
 ```ts
-import { RemotePresenceStore, DEFAULT_MAX_REMOTE_CLIENTS, DEFAULT_STALE_TIMEOUT_MS } from "@anchor-presence/core";
+import {
+  RemotePresenceStore,
+  DEFAULT_MAX_REMOTE_CLIENTS,
+  DEFAULT_STALE_TIMEOUT_MS,
+} from "@anchor-presence/core";
 ```
 
 `RemotePresenceStore` holds every accepted remote presence, with stale-entry expiry after `DEFAULT_STALE_TIMEOUT_MS` (70000 ms) and a cap of `DEFAULT_MAX_REMOTE_CLIENTS` (64) distinct clients.

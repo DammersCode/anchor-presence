@@ -3,8 +3,16 @@ import { InstallCommand } from "@/components/install-command";
 import { Demo } from "@/components/demo";
 
 const GUARANTEES = [
-  { n: "01", title: "No pixels on the wire", body: "Position is a label plus an offset, never a coordinate." },
-  { n: "02", title: "Your layout is the source of truth", body: "Each browser resolves against its own DOM." },
+  {
+    n: "01",
+    title: "No pixels on the wire",
+    body: "Position is a label plus an offset, never a coordinate.",
+  },
+  {
+    n: "02",
+    title: "Your layout is the source of truth",
+    body: "Each browser resolves against its own DOM.",
+  },
   { n: "03", title: "Survives reflow and resize", body: "The cursor follows the element, not the frame." },
   {
     n: "04",
@@ -13,7 +21,11 @@ const GUARANTEES = [
   },
   { n: "05", title: "Adapters stay thin", body: "The framework layer never owns the engine's state." },
   { n: "06", title: "The channel is swappable", body: "The engine imports no transport." },
-  { n: "07", title: "Reflow costs nothing", body: "A local layout change moves a still cursor with zero packets." },
+  {
+    n: "07",
+    title: "Reflow costs nothing",
+    body: "A local layout change moves a still cursor with zero packets.",
+  },
   {
     n: "08",
     title: "Messages can't run code",
@@ -41,7 +53,9 @@ export default function HomePage() {
             screen size differs from yours.
           </p>
           <InstallCommand />
-          <p className="mt-4 mb-1.5 font-mono text-xs text-fd-muted-foreground">Your AI agent can wire it up too</p>
+          <p className="mt-4 mb-1.5 font-mono text-xs text-fd-muted-foreground">
+            Your AI agent can wire it up too
+          </p>
           <InstallCommand packages="skills add DammersCode/anchor-presence" />
           <div className="mt-5 flex flex-wrap items-center gap-4">
             <Link
@@ -64,8 +78,8 @@ export default function HomePage() {
           A cursor is an address, not a coordinate.
         </h2>
         <p className="mb-8 max-w-[60ch] text-fd-muted-foreground">
-          No screen position ever crosses the wire. You send a label plus an offset; each person&apos;s browser
-          turns it into pixels for their own layout.
+          No screen position ever crosses the wire. You send a label plus an offset; each person&apos;s
+          browser turns it into pixels for their own layout.
         </p>
         <div className="grid gap-4 md:grid-cols-3">
           <div className="rounded-2xl border border-fd-border bg-fd-card p-6">
@@ -102,7 +116,10 @@ export default function HomePage() {
         </p>
         <div className="grid gap-x-11 gap-y-0 rounded-2xl border border-fd-border bg-fd-card p-8 md:grid-cols-2">
           {GUARANTEES.map((g) => (
-            <div key={g.n} className="grid grid-cols-[44px_1fr] gap-3.5 border-t border-fd-border/60 py-4 first:border-t-0">
+            <div
+              key={g.n}
+              className="grid grid-cols-[44px_1fr] gap-3.5 border-t border-fd-border/60 py-4 first:border-t-0"
+            >
               <span className="font-mono text-sm font-semibold text-[#4f46e5]">{g.n}</span>
               <div>
                 <b className="block text-sm font-semibold">{g.title}</b>

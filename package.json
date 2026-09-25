@@ -12,13 +12,15 @@
     "examples/socketio/client"
   ],
   "scripts": {
-    "build": "bun run --filter '@anchor-presence/*' build",
+    "build": "bun run --filter '@anchor-presence/core' --filter '@anchor-presence/dom' --filter '@anchor-presence/react' build",
     "typecheck": "tsc --build packages/core packages/dom packages/react && tsc -p tsconfig.test.json",
     "lint": "oxlint --type-aware",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:browser": "playwright test",
+    "docs:dev": "bun run --cwd apps/docs dev",
+    "docs:build": "bun run build && bun run --cwd apps/docs build",
     "preversion": "bun run build && bun run typecheck && bun run lint && bun run test",
     "version": "node scripts/sync-versions.mjs && bun install && git add package.json packages/*/package.json apps/*/package.json examples/*/package.json examples/*/client/package.json bun.lock",
     "postversion": "git push && git push --tags",

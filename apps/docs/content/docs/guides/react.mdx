@@ -59,16 +59,16 @@ Pass `client={null}` during server-side rendering. See [SSR and Strict Mode](/do
 
 ## Hooks
 
-| Hook                                          | Returns                                                                      |
-| ---------------------------------------------- | ----------------------------------------------------------------------------- |
-| `usePresenceClient({ factory, key? })`        | a stable `PresenceClient` per `key`, or `null` before the mount effect runs  |
-| `useRemoteUsers()`                            | one entry per remote client: `clientId`, `user`, and `session`               |
-| `useRemoteCursors()`                          | `ResolvedCursor[]` snapshot                                                   |
-| `useRemoteCursorsSelector(select, isEqual?)`  | a value derived from the snapshot                                             |
-| `useCursorPresence()`                         | raw remote `RemotePresence<TContext, TUser>[]`                               |
-| `useCursorStatus()`                           | `ConnectionStatus`                                                            |
-| `useCursorClient()`                           | the `PresenceClient` instance, or `null`                                     |
-| `useCursorContext()`                          | `[context, setContext]`                                                      |
+| Hook                                         | Returns                                                                     |
+| -------------------------------------------- | --------------------------------------------------------------------------- |
+| `usePresenceClient({ factory, key? })`       | a stable `PresenceClient` per `key`, or `null` before the mount effect runs |
+| `useRemoteUsers()`                           | one entry per remote client: `clientId`, `user`, and `session`              |
+| `useRemoteCursors()`                         | `ResolvedCursor[]` snapshot                                                 |
+| `useRemoteCursorsSelector(select, isEqual?)` | a value derived from the snapshot                                           |
+| `useCursorPresence()`                        | raw remote `RemotePresence<TContext, TUser>[]`                              |
+| `useCursorStatus()`                          | `ConnectionStatus`                                                          |
+| `useCursorClient()`                          | the `PresenceClient` instance, or `null`                                    |
+| `useCursorContext()`                         | `[context, setContext]`                                                     |
 
 ### Render cost
 

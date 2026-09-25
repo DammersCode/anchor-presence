@@ -21,19 +21,22 @@ import { usePresenceClient } from "@anchor-presence/react";
 
 Returns the presence client for `key`, or `null` until the client exists. See [SSR and Strict Mode](/docs/guides/ssr-and-strict-mode).
 
-<AutoTypeTable path="../../packages/react/src/hooks/use-presence-client.ts" name="PresenceClientFactoryOptions" />
+<AutoTypeTable
+  path="../../packages/react/src/hooks/use-presence-client.ts"
+  name="PresenceClientFactoryOptions"
+/>
 
 ## Hooks
 
-| Hook                                          | Returns                                                                     |
-| ---------------------------------------------- | ------------------------------------------------------------------------------ |
-| `useRemoteUsers()`                            | one entry per remote client: `clientId`, `user`, and `session`                |
-| `useRemoteCursors()`                          | `ResolvedCursor[]` snapshot                                                     |
-| `useRemoteCursorsSelector(select, isEqual?)`  | a value derived from the snapshot                                              |
-| `useCursorPresence()`                         | raw remote `RemotePresence<TContext, TUser>[]`                                 |
-| `useCursorStatus()`                           | `ConnectionStatus`                                                              |
-| `useCursorClient()`                           | the `PresenceClient` instance, or `null`                                       |
-| `useCursorContext()`                          | `[context, setContext]`                                                        |
+| Hook                                         | Returns                                                        |
+| -------------------------------------------- | -------------------------------------------------------------- |
+| `useRemoteUsers()`                           | one entry per remote client: `clientId`, `user`, and `session` |
+| `useRemoteCursors()`                         | `ResolvedCursor[]` snapshot                                    |
+| `useRemoteCursorsSelector(select, isEqual?)` | a value derived from the snapshot                              |
+| `useCursorPresence()`                        | raw remote `RemotePresence<TContext, TUser>[]`                 |
+| `useCursorStatus()`                          | `ConnectionStatus`                                             |
+| `useCursorClient()`                          | the `PresenceClient` instance, or `null`                       |
+| `useCursorContext()`                         | `[context, setContext]`                                        |
 
 Every hook's render cost is documented in the [React guide](/docs/guides/react#render-cost).
 

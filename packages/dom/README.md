@@ -71,4 +71,4 @@ const binding = createDomBinding(client, {
 
 Empty or whitespace-only values are ignored. Changing the attribute value re-registers the element under the new ID. Removing the attribute or the element unregisters the anchor. Duplicate anchor IDs use the newest registration and warn once in development.
 
-See [docs/architecture.md](../../docs/architecture.md) and [docs/responsive-layouts.md](../../docs/responsive-layouts.md) in the repository root for full guides.
+See [Architecture](https://anchor-presence.vercel.app/docs/concepts/architecture) and [Responsive layouts](https://anchor-presence.vercel.app/docs/guides/responsive-layouts) for full guides.

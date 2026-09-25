@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
@@ -42,10 +42,8 @@ jobs:
         run: bun run lint
       - name: Test
         run: bun run test
-      # Non-blocking until the baseline is re-recorded on CI hardware (`bun run bench -- --update-baseline`).
       - name: Bench (3x baseline guard)
         run: bun run bench
-        continue-on-error: true
       - name: Demo production build
         run: bunx vite build
         working-directory: apps/demo
@@ -60,7 +58,7 @@ jobs:
           path: playwright-report/
 
   docs:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7

@@ -78,16 +78,15 @@ Final structure: five tabs (`get-started`, `core`, `dom`, `react`, `examples`), 
 - Demo palette lives in `apps/demo/src/cursors/palette.ts` (Tailwind ~700 shades, all ≥ 5:1 against white). `contrast.test.ts` guards it.
 - The demo picks a random room when `?room=` is missing. Pair e2e tests always pass a room.
 - `e2e/resilience.spec.ts`: socket drop through `page.routeWebSocket` + `connectToServer()`, closing only the client side, so the real backoff path runs. Room isolation uses a third page.
-- CI: `concurrency` per ref, Bun cache, `setup-dotnet` 10.0.x (SignalR hub test runs), docs job with `.next/cache`, non-blocking `bun run bench`.
+- CI: `concurrency` per ref, Bun cache, `setup-dotnet` 10.0.x (SignalR hub test runs), docs job with `.next/cache`, blocking `bun run bench` (first CI run: 1.0–1.5× baseline, limit 3×), runners pinned to `ubuntu-24.04`.
 - `SPECIFICATION.md` §17 lists which e2e specs run in three browsers (`cross-layout.spec.ts`) and which run in Chromium only.
 
 ## Next steps
 
 1. Owner review. Merge `dev` into `main` only after the owner says yes.
 2. After the merge: the owner imports the repo in Vercel (Root Directory `apps/docs`).
-3. After the first CI runs on `main`: re-record the bench baseline on CI hardware (`bun run bench -- --update-baseline`) and make the bench step blocking.
-4. Future backends: `plans/backends/`.
-5. Future framework adapters (Solid, Vue): `plans/adapters/framework-adapters.md`.
+3. Future backends: `plans/backends/`.
+4. Future framework adapters (Solid, Vue): `plans/adapters/framework-adapters.md`.
 
 ## How to resume
 

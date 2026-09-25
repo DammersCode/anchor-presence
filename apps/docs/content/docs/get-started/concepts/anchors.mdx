@@ -41,12 +41,7 @@ u = (pointerX - rect.left) / rect.width
 v = (pointerY - rect.top) / rect.height
 ```
 
-The receiver computes a pixel position from its own anchor rectangle and the same `u`/`v` values:
-
-```text
-x = rect.left + rect.width * u
-y = rect.top + rect.height * v
-```
+The receiver reverses the formula against its own anchor rectangle to place the cursor. See [Resolution](/docs/dom/resolution) for the pixel formula.
 
 Both sides use a proportion of the anchor's own size. A 75% mark stays a 75% mark, even if the anchor is a different width or height on each client. See [Responsive layouts](/docs/get-started/concepts/responsive-layouts) for a worked example.
 
@@ -55,5 +50,6 @@ The receiver clamps `u` and `v` to `[0, 1]` during validation. See [Security](/d
 ## Related
 
 - [Fallback chain](/docs/get-started/concepts/fallback-chain)
+- [Resolution](/docs/dom/resolution)
 - [Responsive layouts](/docs/get-started/concepts/responsive-layouts)
 - [Security](/docs/get-started/guides/security)

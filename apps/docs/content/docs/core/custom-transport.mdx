@@ -50,7 +50,7 @@ function createBroadcastChannelTransport(channelName: string): LiveCursorTranspo
 
 ## Managed real-time services
 
-A managed service, such as a hosted pub/sub or a serverless WebSocket gateway, usually exposes its own SDK with a `send` method and a message event. Wrap that SDK the same way: forward `send` calls to the SDK, forward the SDK's message event to `subscribe` listeners, and map the SDK's own connection events to `ConnectionStatus`.
+A managed service, such as a hosted pub/sub or a serverless WebSocket gateway, usually exposes its own SDK with a `send` method and a message event. Wrap that SDK the same way. Forward `send` calls to the SDK. Forward the SDK's message event to `subscribe` listeners. Map the SDK's own connection events to `ConnectionStatus`.
 
 <Callout type="warn">
   If the SDK delivers text or JSON instead of bytes, encode and decode at the transport boundary so the codec

@@ -40,10 +40,11 @@ export function WhoIsOnline() {
 
 - `useRemoteUsers` rerenders only when the set of remote clients, or their `user`, `session`, or `idle` state, changes. It does not rerender on cursor movement, so a presence bar built from it costs nothing while cursors move.
 - `user` is untrusted network data. Render `u.user?.name` as text, as shown above. Never interpolate it into HTML.
-- A client is `idle` after `idleAfterMs` (default 15000 ms) with no message. Show idle users dimmed or with an "away" label. The store removes the client later, after `staleTimeoutMs`.
+- A client is `idle` after `idleAfterMs` with no message. Show idle users dimmed or with an "away" label. See [Remote presence](/docs/core/remote-presence) for the idle and stale timeouts.
 - A client appears in this list even if its cursor currently resolves to `hidden`. Presence and cursor visibility are two different signals.
 
 ## Related
 
 - [React guide](/docs/react)
+- [Remote presence](/docs/core/remote-presence)
 - [Security](/docs/get-started/guides/security)

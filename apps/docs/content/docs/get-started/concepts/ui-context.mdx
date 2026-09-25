@@ -39,19 +39,7 @@ export const defaultVisibilityPolicy: VisibilityPolicy = ({ resolution }) =>
 
 Pass a custom policy through `DomBindingOptions.resolution.visibilityPolicy` (`dom`) or `bindingOptions.resolution.visibilityPolicy` on `LiveCursorProvider` (`react`). A custom policy can inspect `presence.context` to apply application-specific rules on top of geometric resolution.
 
-The resolver sets `resolution.pointVisible` to false when a clipping ancestor hides the resolved point:
-
-```ts
-const clippedPointPolicy: VisibilityPolicy = ({ resolution }) =>
-  !resolution.pointVisible || resolution.tier === "hidden" ? "hide" : "show";
-```
-
-<Callout type="warn">
-  Occlusion uses a simplified model. An absolutely or fixed-positioned anchor that escapes an `overflow:
-  hidden` ancestor still counts as clipped, because the check walks DOM ancestors without computing containing
-  blocks. For such overlays, render them in a portal outside the clipping ancestor, or use a custom policy
-  that ignores `pointVisible` for those anchors.
-</Callout>
+A policy can also read `resolution.pointVisible` to hide a cursor clipped by a scroll container. See [Occlusion and scroll](/docs/dom/occlusion-and-scroll) for how the resolver computes it and where the check falls short.
 
 ## Dialog mismatch handling
 
@@ -82,5 +70,6 @@ Do not write code that reacts to `useRemoteCursors()` or `useCursorPresence()` o
 ## Related
 
 - [Fallback chain](/docs/get-started/concepts/fallback-chain)
+- [Visibility policy](/docs/dom/visibility-policy)
+- [Occlusion and scroll](/docs/dom/occlusion-and-scroll)
 - [Security](/docs/get-started/guides/security)
-- [Occlusion and scroll containers example](/docs/examples/occlusion-and-scroll-containers)

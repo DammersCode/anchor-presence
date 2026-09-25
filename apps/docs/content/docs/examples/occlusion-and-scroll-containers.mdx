@@ -27,12 +27,13 @@ const clippedPointPolicy: VisibilityPolicy = ({ resolution }) =>
 
 ## Behavior notes
 
-- The resolver sets `resolution.pointVisible` to `false` when a clipping ancestor hides the resolved point. The default policy still shows the cursor. This policy adds the hide rule.
-- The occlusion check uses a simplified model: it walks DOM ancestors for `overflow: hidden` or `overflow: auto` without computing containing blocks. An absolutely or fixed-positioned anchor that visually escapes a clipping ancestor is still treated as clipped.
-- For an overlay that must ignore this check, render it in a portal outside the clipping ancestor, or write a custom policy that skips the `pointVisible` check for that anchor's ID.
-- If an overlay can cover the point and the extra cost is acceptable, pass `resolution: { hitTest: true }` for a real hit test instead of the simplified walk.
+- This demo's scroll panel triggers the clip, so `clippedPointPolicy` hides the cursor while the panel is scrolled away from the anchor.
+- The demo's fallback chain has no other anchor to degrade to, so the visible choice is between showing a floating cursor and hiding it.
+
+See [Occlusion and scroll](/docs/dom/occlusion-and-scroll) for how the resolver detects a clipped point and what `pointVisible` does not cover.
 
 ## Related
 
+- [Occlusion and scroll](/docs/dom/occlusion-and-scroll)
 - [UI context](/docs/get-started/concepts/ui-context)
 - [Troubleshooting: cursor floats over empty space](/docs/get-started/guides/troubleshooting#cursor-floats-over-empty-space)

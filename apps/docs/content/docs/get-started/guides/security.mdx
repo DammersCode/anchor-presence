@@ -34,7 +34,7 @@ Wire encoding for `context` and `user`: a missing field means "unchanged since t
 
 An anchor ID is an opaque string. The resolver looks it up as a plain object key in the registry's `Map<string, Element>`. It is never passed to `querySelector`, `eval`, a template engine, or any other code path that interprets a string as a program or a selector.
 
-A malicious or malformed anchor ID from the network cannot make the receiver address any DOM location outside the set the application registered itself, no matter what string it contains. The worst outcome from an unrecognized anchor ID is a lookup miss, which the fallback chain already treats as a normal case.
+A malicious or malformed anchor ID from the network cannot address any DOM location outside the set the application registered. This holds no matter what string it contains. The worst outcome from an unrecognized anchor ID is a lookup miss, which the fallback chain already treats as a normal case.
 
 ## Render user and context as text
 
@@ -58,17 +58,16 @@ The relay token, when set, gates access to a room. It does not authenticate the 
 
 ## maxRemoteClients
 
-The remote presence store caps the number of distinct remote clients it tracks. `maxRemoteClients` defaults to 64, and is configurable through `PresenceClientOptions.maxRemoteClients` on `createPresenceClient`.
-
-A message from a new `clientId` beyond the cap is dropped. Existing clients are unaffected. This bounds every allocation driven by network data: store entries, resolved cursors, and observed anchors. Expiry and disconnects free slots for new clients as they occur. In development, the client warns once when the cap starts dropping new clients.
+`maxRemoteClients` bounds every allocation driven by network data: store entries, resolved cursors, and observed anchors. It defaults to 64. See [Remote presence](/docs/core/remote-presence) for the drop rule and how to react to it.
 
 Set `maxRemoteClients` to match your expected concurrent session count. Because the cap drops newcomers once full, a flooder that claims every slot with distinct `clientId` values can keep out real clients until those slots expire after `staleTimeoutMs`.
 
 ## Relay token auth
 
-When `RELAY_AUTH_TOKEN` is set, the reference relay requires a matching `token` query parameter on every room upgrade, and closes a missing or wrong token with code 4006. The token is a room credential for reaching the relay, not a presence credential: it does not authenticate who a message claims to be, and every message remains untrusted input that passes the same validation and sequencing rules as on an open relay. Use it to keep random visitors out of a room, not to authorize presence data.
+When `RELAY_AUTH_TOKEN` is set, the reference relay requires a matching `token` query parameter on every room upgrade. It closes a missing or wrong token with code 4006. The token is a room credential for reaching the relay, not a presence credential: it does not authenticate who a message claims to be. Every message still passes the same validation and sequencing rules as on an open relay. Use it to keep random visitors out of a room, not to authorize presence data.
 
 ## Related
 
 - [UI context](/docs/get-started/concepts/ui-context)
+- [Remote presence](/docs/core/remote-presence)
 - [Codecs](/docs/core/codecs)

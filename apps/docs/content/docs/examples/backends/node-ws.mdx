@@ -1,0 +1,58 @@
+---
+title: Node ws backend
+description: A room-broadcast relay built on the ws package over node:http.
+---
+
+You want a relay that runs on plain Node, not Bun, with a well-known WebSocket library. This example uses [`ws`](https://github.com/websockets/ws) over `node:http`, with each room kept as a plain `Set<WebSocket>`.
+
+## Install
+
+```sh
+bun add @anchor-presence/core @anchor-presence/dom ws
+bun add -D @types/ws
+```
+
+## Server
+
+<include>../../../../../../examples/node-ws/server.ts</include>
+
+## Client
+
+The client needs no custom transport. It connects with the native `createWebSocketTransport`:
+
+```tsx
+import { createPresenceClient } from "@anchor-presence/core";
+import { createWebSocketTransport } from "@anchor-presence/dom";
+
+const transport = createWebSocketTransport({ port: 8789, path: "/?room=main" });
+const client = createPresenceClient({ transport });
+transport.connect();
+```
+
+## Run it
+
+```sh
+cd examples/node-ws
+bun run dev:relay
+```
+
+The relay listens on `http://localhost:8789`.
+
+## Production notes
+
+- **Room name validation.** `sanitizeRoomName` caps room names at 256 characters and restricts them to `[A-Za-z0-9_-]`. An invalid or missing name falls back to `"main"`.
+- **Max payload size.** `ws`'s own `maxPayload` is set well above the app limit, as a hard backstop. The real drop-don't-crash check runs in the message handler against `MAX_MESSAGE_BYTES` (default 32 KiB).
+- **Per-connection rate limit.** A token bucket limits inbound messages per socket (`RATE_CAPACITY`, `RATE_REFILL_PER_SECOND`).
+- **Origin allowlist.** `RELAY_ALLOWED_ORIGINS` is a comma-separated list of allowed origins. A rejected upgrade gets its raw socket destroyed before the WebSocket handshake completes.
+- **Auth hook placeholder.** Pass an `authCheck` function, or set `RELAY_AUTH_TOKEN` for a plain shared-token check.
+- **Room cleanup.** The relay drops a room's entry once its last socket closes.
+- **Per-room connection cap.** `RELAY_MAX_ROOM_SOCKETS` limits one room. There is no process-wide cap in this example.
+- **Backpressure on slow consumers.** `ws` exposes `bufferedAmount` per socket. The relay skips sends above a soft watermark and closes the connection above a hard one.
+
+Set `RELAY_ALLOWED_ORIGINS` and `RELAY_AUTH_TOKEN` before you expose this relay past local development. Put a TLS-terminating proxy in front of it.
+
+## Related
+
+- [Bun-native backend](/docs/examples/backends/bun-native)
+- [Hono backend](/docs/examples/backends/hono)
+- [Elysia backend](/docs/examples/backends/elysia)

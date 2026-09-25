@@ -1,12 +1,12 @@
 # SignalR transport example
 
-Demo only. `PresenceHub` broadcasts every message to all connections; it has no rooms and no size or rate limit. Do not run it as-is in production.
+Demo only. Read the security notes below before you run this beyond local development.
 
 This example adds a SignalR transport to the demo. It has three parts:
 
-- `client/src/transport.ts`: wraps a use-signalr hub connection as a `LiveCursorTransport`.
-- `client/`: the same demo page as `apps/demo`.
-- `server/`: a minimal .NET 10 app. It runs one SignalR hub that relays presence messages.
+- `transport.ts`: wraps a use-signalr hub connection as a `LiveCursorTransport`.
+- `apps/demo`: the shared demo client. Pass `?backend=signalr` to make it connect through this transport instead of a plain WebSocket.
+- `server/`: a minimal .NET 10 app. It runs one SignalR hub that relays presence messages per room.
 
 Only the backend changes. The client builds its presence client over `createSignalRTransport` instead of a plain WebSocket. The UI still uses the same `@anchor-presence/react` hooks.
 
@@ -30,13 +30,13 @@ The server listens on <http://localhost:5000>. It needs no further setup.
 ## Start the client
 
 ```sh
-cd examples/signalr/client
-bun run dev
+cd apps/demo
+bun run dev -- --open "/?backend=signalr"
 ```
 
-The client serves at <http://localhost:5173/>. Open that address in two browser windows.
+The client serves at <http://localhost:5173/>. Open that address in two browser windows, both with `?backend=signalr`.
 
-Add `?name=<name>` to change the cursor label.
+Add `&name=<name>` to change the cursor label. Add `&room=<name>` to use a room lane other than `main`.
 
 ## What the demo shows
 
@@ -44,25 +44,34 @@ Move the pointer in one window and the other window draws the same cursor on the
 
 ## How the relay works
 
-The hub is a dumb relay. It forwards every payload to every other connection. It keeps no state and never parses the payload.
+The hub groups connections by room and relays within the group.
 
 ```csharp
-public class PresenceHub : Hub
+public partial class PresenceHub : Hub
 {
-    public void OnPresence(string payload)
+    public override async Task OnConnectedAsync()
     {
-        Clients.Others.SendAsync("PresenceReceived", payload);
+        var room = RoomFor(Context.GetHttpContext());
+        await Groups.AddToGroupAsync(Context.ConnectionId, room);
+        await base.OnConnectedAsync();
+    }
+
+    public Task OnPresence(string payload)
+    {
+        var room = RoomFor(Context.GetHttpContext());
+        return Clients.OthersInGroup(room).SendAsync("PresenceReceived", payload);
     }
 }
 ```
 
-- A client sends an update by invoking the `OnPresence` hub method. It passes the JSON presence message as a string.
-- The hub sends the same string as a `PresenceReceived` event to all other connections.
-- If you want a client to receive its own messages, use `Clients.All`.
+- A client connects with a `room` query parameter on the hub URL (`/hubs/presence?room=main`). `OnConnectedAsync` adds the connection to that room's group.
+- A client sends an update by invoking the `OnPresence` hub method, passing the JSON presence message as a string.
+- The hub sends the same string as a `PresenceReceived` event to every other connection in the same room.
+- An invalid or missing room name falls back to `"main"` (see `RoomFor` in `Hub/PresenceHub.cs`).
 
 ## Receiver-side validation
 
-The relay does not validate payloads. The receiving client does. Core validates every incoming message against the presence schema before it stores it.
+The relay does not validate payloads beyond size. The receiving client does. Core validates every incoming message against the presence schema before it stores it.
 
 ## Stale cursor removal
 
@@ -79,3 +88,32 @@ bunx vitest run --project signalr-example
 ```
 
 They cover data delivery, dropping a send while the hub is not connected, status mappings, and the event-handler attach and detach path.
+
+`signalr-hub.test.ts`, in the same project, runs the real `dotnet run` hub instead of a mock. It checks same-room relay, cross-room isolation, and an oversized frame being dropped instead of crashing the hub. It skips automatically when `dotnet` is not on `PATH`, so `bun run test` still passes on a machine without the .NET SDK.
+
+### Running the hub test in CI
+
+The main CI workflow (`.github/workflows/ci.yml`) does not install .NET, so `signalr-hub.test.ts` skips there today. To run it in CI, add a step before `bun run test`:
+
+```yaml
+- uses: actions/setup-dotnet@v4
+  with:
+    dotnet-version: "10.0.x"
+```
+
+No other CI change is needed: the test only activates when `dotnet --version` succeeds.
+
+## Production notes (security baseline)
+
+| Control                                 | Status                                                                                                                                                  |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Room name validation (length + charset) | Yes — `RoomFor` in `Hub/PresenceHub.cs` matches `^[A-Za-z0-9_-]{1,256}$`, falling back to `"main"`.                                                     |
+| Max payload size                        | Yes — `MaximumReceiveMessageSize = 32 * 1024` in `Program.cs`. SignalR closes the connection on an oversized frame rather than crashing the process.    |
+| Per-connection rate limit               | **No.** ASP.NET Core has no built-in per-hub-method rate limiter. Add `Microsoft.AspNetCore.RateLimiting` if you need one.                              |
+| Origin allowlist                        | Yes — `RELAY_ALLOWED_ORIGINS`, comma-separated, read in `Program.cs`. Defaults to `http://localhost:5173` for local dev.                                |
+| Auth hook placeholder                   | **No.** Wire ASP.NET Core's standard `[Authorize]` attribute and an auth scheme on `PresenceHub` for real auth. This example has none.                  |
+| Room cleanup on close                   | Yes — SignalR removes a closed connection from its groups automatically.                                                                                |
+| Per-room / total connection caps        | **No.** Add `Microsoft.AspNetCore.RateLimiting` or a custom `IHubFilter` if you need a cap.                                                             |
+| Backpressure on slow consumers          | Partial — SignalR buffers per connection and applies its own backpressure internally, but this example does not configure or expose a custom watermark. |
+
+Set `RELAY_ALLOWED_ORIGINS` before exposing this beyond local development, and put it behind a TLS-terminating proxy.

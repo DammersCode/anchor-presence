@@ -53,6 +53,36 @@ export default defineConfig({
           name: "signalr-example",
           environment: "node",
           include: ["examples/signalr/**/*.test.ts"],
+          testTimeout: 20_000,
+          hookTimeout: 20_000,
+        },
+      },
+      {
+        test: {
+          name: "bun-native-example",
+          environment: "node",
+          include: ["examples/bun-native/**/*.test.ts"],
+        },
+      },
+      {
+        test: {
+          name: "node-ws-example",
+          environment: "node",
+          include: ["examples/node-ws/**/*.test.ts"],
+        },
+      },
+      {
+        test: {
+          name: "hono-example",
+          environment: "node",
+          include: ["examples/hono/**/*.test.ts"],
+        },
+      },
+      {
+        test: {
+          name: "elysia-example",
+          environment: "node",
+          include: ["examples/elysia/**/*.test.ts"],
         },
       },
     ],

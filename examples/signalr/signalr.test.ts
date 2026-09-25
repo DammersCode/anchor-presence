@@ -1,6 +1,6 @@
 import type { HubConnectionStatus } from "@dammers/use-signalr-react";
 import { describe, expect, it } from "vitest";
-import { createSignalRTransport, mapStatus, type SignalRHarness } from "./client/src/transport";
+import { createSignalRTransport, mapStatus, type SignalRHarness } from "./transport";
 
 // A fake harness standing in for the live use-signalr connection. The adapter
 // is the unit under test, so the connection is mocked, not spun up. `deliver`

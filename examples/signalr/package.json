@@ -1,0 +1,10 @@
+{
+  "name": "example-signalr",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@anchor-presence/core": "0.1.0",
+    "@dammers/use-signalr-react": "^0.5.0",
+    "@microsoft/signalr": "^10.0.11"
+  }
+}

@@ -4,9 +4,8 @@ import { binaryCodec, jsonCodec, type CursorCodec, type LiveCursorTransport } fr
 import { createWebSocketTransport } from "@anchor-presence/dom";
 import { io } from "socket.io-client";
 import { createSocketIoTransport } from "../../../../examples/socketio/transport";
-import { createSignalRTransport, type SignalRHarness } from "../../../../examples/signalr/transport";
-import { HubConnectionBuilder, type HubConnection } from "@microsoft/signalr";
-import type { HubConnectionStatus } from "@dammers/use-signalr-react";
+import { createSignalRTransport } from "../../../../examples/signalr/transport";
+import { HubConnectionBuilder } from "@microsoft/signalr";
 
 export type BackendId = "bun" | "bun-native" | "node-ws" | "hono" | "elysia" | "socketio" | "signalr";
 
@@ -50,40 +49,6 @@ const NATIVE_WS_PORTS: Record<"bun" | "bun-native" | "node-ws" | "hono" | "elysi
   elysia: 8791,
 };
 
-function mapHubStatus(state: HubConnection["state"]): HubConnectionStatus {
-  switch (state) {
-    case "Connected":
-      return "connected";
-    case "Reconnecting":
-      return "reconnecting";
-    case "Disconnected":
-      return "disconnected";
-    default:
-      return "connecting";
-  }
-}
-
-function createSignalRHarness(connection: HubConnection): SignalRHarness {
-  const statusListeners = new Set<() => void>();
-  const notify = () => {
-    for (const listener of statusListeners) listener();
-  };
-  connection.onclose(notify);
-  connection.onreconnecting(notify);
-  connection.onreconnected(notify);
-
-  return {
-    send: (payload) => connection.send("OnPresence", payload),
-    onConnected: (handler) => connection.on("PresenceReceived", handler),
-    onDisconnected: () => connection.off("PresenceReceived"),
-    getStatus: () => mapHubStatus(connection.state),
-    subscribeStatus: (listener) => {
-      statusListeners.add(listener);
-      return () => statusListeners.delete(listener);
-    },
-  };
-}
-
 /** Builds the transport and codec for one backend. Call once per app load; the room is baked into the URL/query. */
 export function createBackendTransport(
   backend: BackendId,
@@ -99,8 +64,8 @@ export function createBackendTransport(
       .withUrl(`http://localhost:5000/hubs/presence?room=${encodeURIComponent(room)}`)
       .withAutomaticReconnect()
       .build();
-    const { transport } = createSignalRTransport(createSignalRHarness(connection));
-    void connection.start();
+    const transport = createSignalRTransport(connection);
+    void transport.connect?.();
     return { transport, codec: jsonCodec };
   }
 

@@ -13,54 +13,61 @@ description: An ASP.NET Core SignalR hub and a shipped client transport.
 
 ## Client transport
 
-The shipped client wraps a small connection harness (`SignalRHarness`) rather than a raw `HubConnection` directly, so it can share status and reconnect handling with the rest of the demo app:
+`createSignalRTransport` takes a plain `@microsoft/signalr` `HubConnection` and wraps it as a `LiveCursorTransport`:
 
 <CodeFromSource repo="examples/signalr/transport.ts" lang="ts" />
 
-## A simpler sketch
-
-If your app talks to the hub directly with `@microsoft/signalr`'s `HubConnection`, wrap it more directly:
+Use it like any other transport:
 
 ```ts
-import type { LiveCursorTransport, ConnectionStatus } from "@anchor-presence/core";
-import type { HubConnection } from "@microsoft/signalr";
+import { createPresenceClient } from "@anchor-presence/core";
+import { HubConnectionBuilder } from "@microsoft/signalr";
+import { createSignalRTransport } from "./transport";
 
-export function createSignalRTransport(connection: HubConnection): LiveCursorTransport {
-  const statusListeners = new Set<(status: ConnectionStatus) => void>();
-  let status: ConnectionStatus = "connecting";
-  const setStatus = (next: ConnectionStatus) => {
-    status = next;
-    for (const listener of statusListeners) listener(next);
-  };
+const connection = new HubConnectionBuilder()
+  .withUrl("https://your-server.example/hubs/presence?room=main")
+  .withAutomaticReconnect()
+  .build();
 
-  connection.onreconnecting(() => setStatus("reconnecting"));
-  connection.onreconnected(() => setStatus("connected"));
-  connection.onclose(() => setStatus("disconnected"));
+const transport = createSignalRTransport(connection);
+const client = createPresenceClient({ transport });
+await transport.connect?.();
+```
 
-  return {
-    connect: async () => {
-      setStatus("connecting");
-      await connection.start();
-      setStatus("connected");
+## Already using use-signalr?
+
+If your app already uses [`use-signalr`](https://www.npmjs.com/package/@dammers/use-signalr-react) for its other hubs, add the presence hub to its contract instead of opening a second connection. Presence then shares the app's single connection, auth, and reconnect policy.
+
+```ts
+// signalr.ts
+import { createSignalRClient, event, method } from "@dammers/use-signalr-react";
+
+export const { SignalRProvider, useSignalR } = createSignalRClient({
+  hubs: {
+    "/hubs/presence": {
+      events: { PresenceReceived: event<[payload: string]>() },
+      methods: { OnPresence: method<[payload: string]>() },
     },
-    disconnect: () => connection.stop(),
-    send: (data) => connection.send("OnPresence", data),
-    subscribe: (listener) => {
-      const handler = (data: Uint8Array) => listener(data);
-      connection.on("PresenceReceived", handler);
-      return () => connection.off("PresenceReceived", handler);
-    },
-    subscribeStatus: (listener) => {
-      statusListeners.add(listener);
-      listener(status); // replay so a late subscriber sees the current state
-      return () => statusListeners.delete(listener);
-    },
-    getStatus: () => status,
-  };
+    // ...your app's other hubs
+  },
+});
+```
+
+Build the presence transport on the provider's connection with `getConnection`, the escape hatch `useSignalR` exposes to the raw `HubConnection`:
+
+```ts
+import { createPresenceClient } from "@anchor-presence/core";
+import { createSignalRTransport } from "../examples/signalr/transport";
+import { useSignalR } from "./signalr";
+
+function usePresenceClient() {
+  const { getConnection } = useSignalR();
+  const connection = getConnection("/hubs/presence");
+  return connection && createPresenceClient({ transport: createSignalRTransport(connection) });
 }
 ```
 
-This sketch does not run in this repository's tests. The shipped `examples/signalr/transport.ts` does. Check the sketch against your hub version before you ship it.
+`getConnection` returns `null` until `use-signalr` opens the hub, so guard for that before building the client.
 
 ## Behavior notes
 

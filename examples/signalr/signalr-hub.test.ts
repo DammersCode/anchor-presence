@@ -6,7 +6,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { createSignalRTransport, type SignalRHarness } from "./transport";
+import { createSignalRTransport } from "./transport";
 
 // Real integration test: runs the actual .NET hub (PresenceHub.cs), not a mock. Skips entirely
 // when the .NET SDK is not on PATH, so `bun run test` still works without .NET installed.
@@ -51,42 +51,6 @@ function waitForPort(port: number): Promise<void> {
     };
     tryConnect();
   });
-}
-
-/** Adapts a real @microsoft/signalr HubConnection to the SignalRHarness the transport expects. */
-function harnessFor(connection: HubConnection): SignalRHarness {
-  const statusListeners = new Set<() => void>();
-  connection.onclose(() => {
-    for (const listener of statusListeners) listener();
-  });
-  connection.onreconnecting(() => {
-    for (const listener of statusListeners) listener();
-  });
-  connection.onreconnected(() => {
-    for (const listener of statusListeners) listener();
-  });
-
-  return {
-    send: (payload) => connection.send("OnPresence", payload),
-    onConnected: (handler) => connection.on("PresenceReceived", handler),
-    onDisconnected: () => connection.off("PresenceReceived"),
-    getStatus: () => {
-      switch (connection.state) {
-        case "Connected":
-          return "connected";
-        case "Reconnecting":
-          return "reconnecting";
-        case "Disconnected":
-          return "disconnected";
-        default:
-          return "connecting";
-      }
-    },
-    subscribeStatus: (listener) => {
-      statusListeners.add(listener);
-      return () => statusListeners.delete(listener);
-    },
-  };
 }
 
 const dotnetAvailable = hasDotnet();
@@ -135,8 +99,8 @@ async function connectClient(room: string): Promise<PresenceClient> {
     .withUrl(`http://localhost:${port}/hubs/presence?room=${encodeURIComponent(room)}`)
     .build();
   connections.push(connection);
-  await connection.start();
-  const { transport } = createSignalRTransport(harnessFor(connection));
+  const transport = createSignalRTransport(connection);
+  await transport.connect?.();
   const client = createPresenceClient({ transport });
   clients.push(client);
   return client;

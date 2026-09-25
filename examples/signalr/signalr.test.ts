@@ -1,60 +1,59 @@
-import type { HubConnectionStatus } from "@dammers/use-signalr-react";
+import { HubConnectionState, type HubConnection } from "@microsoft/signalr";
 import { describe, expect, it } from "vitest";
-import { createSignalRTransport, mapStatus, type SignalRHarness } from "./transport";
+import { createSignalRTransport, mapStatus } from "./transport";
 
-// A fake harness standing in for the live use-signalr connection. The adapter
-// is the unit under test, so the connection is mocked, not spun up. `deliver`
-// pushes a payload to only the handler the adapter has attached, so the test
-// can model the "attached while connected / detached otherwise" lifecycle the
-// transport drives via onConnected / onDisconnected.
-function createHarness(initial: HubConnectionStatus = "connected"): {
-  harness: SignalRHarness;
+// A minimal fake standing in for the parts of HubConnection the transport touches.
+// signalr-hub.test.ts covers the real hub; this file covers status mapping and the
+// send-while-disconnected drop, which the real hub test cannot exercise deterministically.
+function createFakeConnection(initial: HubConnectionState = HubConnectionState.Connected): {
+  connection: HubConnection;
   received: string[];
-  attachCount: { n: number };
-  detachCount: { n: number };
   deliver: (payload: string) => void;
-  fireStatus: () => void;
-  setStatus: (s: HubConnectionStatus) => void;
+  setState: (state: HubConnectionState) => void;
+  fireClose: () => void;
+  fireReconnecting: () => void;
+  fireReconnected: () => void;
 } {
-  let status: HubConnectionStatus = initial;
+  let state = initial;
   let handler: ((payload: string) => void) | null = null;
   const received: string[] = [];
-  const statusListeners = new Set<() => void>();
-  const attachCount = { n: 0 };
-  const detachCount = { n: 0 };
+  const closedCallbacks: Array<() => void> = [];
+  const reconnectingCallbacks: Array<() => void> = [];
+  const reconnectedCallbacks: Array<() => void> = [];
+
+  const connection = {
+    get state() {
+      return state;
+    },
+    send: async (_method: string, payload: string) => {
+      received.push(payload);
+    },
+    on: (_event: string, next: (payload: string) => void) => {
+      handler = next;
+    },
+    off: () => {
+      handler = null;
+    },
+    onclose: (callback: () => void) => closedCallbacks.push(callback),
+    onreconnecting: (callback: () => void) => reconnectingCallbacks.push(callback),
+    onreconnected: (callback: () => void) => reconnectedCallbacks.push(callback),
+  } as unknown as HubConnection;
 
   return {
-    harness: {
-      send: async (payload) => {
-        received.push(payload);
-      },
-      onConnected: (next) => {
-        handler = next;
-        attachCount.n += 1;
-      },
-      onDisconnected: () => {
-        handler = null;
-        detachCount.n += 1;
-      },
-      getStatus: () => status,
-      subscribeStatus: (listener) => {
-        statusListeners.add(listener);
-        return () => {
-          statusListeners.delete(listener);
-        };
-      },
-    },
+    connection,
     received,
-    attachCount,
-    detachCount,
-    deliver: (payload) => {
-      handler?.(payload);
+    deliver: (payload) => handler?.(payload),
+    setState: (next) => {
+      state = next;
     },
-    setStatus: (s) => {
-      status = s;
+    fireClose: () => {
+      for (const callback of closedCallbacks) callback();
     },
-    fireStatus: () => {
-      for (const listener of statusListeners) listener();
+    fireReconnecting: () => {
+      for (const callback of reconnectingCallbacks) callback();
+    },
+    fireReconnected: () => {
+      for (const callback of reconnectedCallbacks) callback();
     },
   };
 }
@@ -68,11 +67,9 @@ const JSON_MESSAGE = JSON.stringify({
 });
 
 describe("createSignalRTransport", () => {
-  it("attaches the event handler while the hub is connected and delivers payloads", () => {
-    const fake = createHarness("connected");
-    const { transport } = createSignalRTransport(fake.harness);
-
-    expect(fake.attachCount.n).toBe(1);
+  it("delivers PresenceReceived payloads to subscribers", () => {
+    const fake = createFakeConnection();
+    const transport = createSignalRTransport(fake.connection);
 
     const seen: Uint8Array[] = [];
     const off = transport.subscribe((data) => seen.push(data));
@@ -85,8 +82,8 @@ describe("createSignalRTransport", () => {
   });
 
   it("stops delivering after the data subscription is removed", () => {
-    const fake = createHarness("connected");
-    const { transport } = createSignalRTransport(fake.harness);
+    const fake = createFakeConnection();
+    const transport = createSignalRTransport(fake.connection);
 
     const seen: Uint8Array[] = [];
     const off = transport.subscribe((data) => seen.push(data));
@@ -98,8 +95,8 @@ describe("createSignalRTransport", () => {
   });
 
   it("fans out to every active data subscriber", () => {
-    const fake = createHarness("connected");
-    const { transport } = createSignalRTransport(fake.harness);
+    const fake = createFakeConnection();
+    const transport = createSignalRTransport(fake.connection);
 
     const first: Uint8Array[] = [];
     const second: Uint8Array[] = [];
@@ -113,25 +110,16 @@ describe("createSignalRTransport", () => {
   });
 
   it("drops a send while the hub is not connected", async () => {
-    const fake = createHarness("connecting");
-    const { transport } = createSignalRTransport(fake.harness);
-
-    // No attachment while connecting.
-    expect(fake.attachCount.n).toBe(0);
-
-    await expect(transport.send(new TextEncoder().encode(JSON_MESSAGE))).resolves.toBeUndefined();
-    expect(fake.received).toHaveLength(0);
-
-    fake.setStatus("disconnected");
-    fake.fireStatus();
+    const fake = createFakeConnection(HubConnectionState.Connecting);
+    const transport = createSignalRTransport(fake.connection);
 
     await expect(transport.send(new TextEncoder().encode(JSON_MESSAGE))).resolves.toBeUndefined();
     expect(fake.received).toHaveLength(0);
   });
 
   it("sends the JSON payload once connected", async () => {
-    const fake = createHarness("connected");
-    const { transport } = createSignalRTransport(fake.harness);
+    const fake = createFakeConnection(HubConnectionState.Connected);
+    const transport = createSignalRTransport(fake.connection);
 
     await expect(transport.send(new TextEncoder().encode(JSON_MESSAGE))).resolves.toBeUndefined();
     expect(fake.received).toHaveLength(1);
@@ -142,100 +130,45 @@ describe("createSignalRTransport", () => {
     });
   });
 
-  it("attaches when the hub transitions to connected and detaches when it leaves", () => {
-    const fake = createHarness("connecting");
-    const { transport } = createSignalRTransport(fake.harness);
-
-    const seen: Uint8Array[] = [];
-    transport.subscribe((data) => seen.push(data));
-
-    // Not attached while connecting, so payloads do not reach subscribers.
-    fake.deliver(JSON_MESSAGE);
-    expect(seen).toHaveLength(0);
-
-    // Transition to connected: attach.
-    fake.setStatus("connected");
-    fake.fireStatus();
-    expect(fake.attachCount.n).toBe(1);
-
-    fake.deliver(JSON_MESSAGE);
-    expect(seen).toHaveLength(1);
-
-    // Transition to reconnecting: detach, payloads ignored while down.
-    fake.setStatus("reconnecting");
-    fake.fireStatus();
-    expect(fake.detachCount.n).toBe(1);
-    fake.deliver(JSON_MESSAGE);
-    expect(seen).toHaveLength(1);
-
-    // Transition back to connected: re-attach.
-    fake.setStatus("connected");
-    fake.fireStatus();
-    expect(fake.attachCount.n).toBe(2);
-    expect(fake.detachCount.n).toBe(1);
-
-    fake.deliver(JSON_MESSAGE);
-    expect(seen).toHaveLength(2);
-  });
-
   it("reports the current status on subscribe and tracks hub status changes", () => {
-    const fake = createHarness("connecting");
-    const { transport } = createSignalRTransport(fake.harness);
+    const fake = createFakeConnection(HubConnectionState.Connecting);
+    const transport = createSignalRTransport(fake.connection);
 
     const seen: string[] = [];
     const off = transport.subscribeStatus!((status) => seen.push(status));
 
     expect(seen).toEqual(["connecting"]);
 
-    fake.setStatus("connected");
-    fake.fireStatus();
+    fake.fireReconnected();
     expect(seen).toEqual(["connecting", "connected"]);
 
-    fake.setStatus("reconnecting");
-    fake.fireStatus();
+    fake.fireReconnecting();
     expect(seen).toEqual(["connecting", "connected", "reconnecting"]);
 
-    fake.setStatus("disconnected");
-    fake.fireStatus();
+    fake.fireClose();
     expect(seen).toEqual(["connecting", "connected", "reconnecting", "disconnected"]);
 
     off();
   });
 
-  it("maps the 'reconnected' hub status onto 'connected'", () => {
-    expect(mapStatus("reconnected")).toBe("connected");
-    expect(mapStatus("disconnected")).toBe("disconnected");
-    expect(mapStatus("connected")).toBe("connected");
-  });
-
   it("stops emitting status after the status subscription is removed", () => {
-    const fake = createHarness("connecting");
-    const { transport } = createSignalRTransport(fake.harness);
+    const fake = createFakeConnection(HubConnectionState.Connecting);
+    const transport = createSignalRTransport(fake.connection);
 
     const seen: string[] = [];
     const off = transport.subscribeStatus!((status) => seen.push(status));
     off();
 
-    fake.setStatus("connected");
-    fake.fireStatus();
+    fake.fireReconnected();
 
-    // No emission to the detached listener, but the transport still tracks
-    // the status internally (so a later subscribeStatus sees the new value).
     expect(seen).toEqual(["connecting"]);
   });
 
-  it("dispose detaches the event handler and stops emitting", () => {
-    const fake = createHarness("connected");
-    const { transport, dispose } = createSignalRTransport(fake.harness);
-    transport.subscribe(() => {});
-
-    dispose();
-    expect(fake.detachCount.n).toBe(1);
-
-    // After dispose, no delivery.
-    const seen: Uint8Array[] = [];
-    transport.subscribe((data) => seen.push(data));
-    fake.deliver(JSON_MESSAGE);
-    expect(seen).toHaveLength(0);
+  it("maps every HubConnectionState onto a ConnectionStatus", () => {
+    expect(mapStatus(HubConnectionState.Connected)).toBe("connected");
+    expect(mapStatus(HubConnectionState.Reconnecting)).toBe("reconnecting");
+    expect(mapStatus(HubConnectionState.Disconnected)).toBe("disconnected");
+    expect(mapStatus(HubConnectionState.Connecting)).toBe("connecting");
+    expect(mapStatus(HubConnectionState.Disconnecting)).toBe("connecting");
   });
 });

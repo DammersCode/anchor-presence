@@ -4,13 +4,15 @@ Demo only. Read the security notes below before you run this beyond local develo
 
 This example adds a SignalR transport to the demo. It has three parts:
 
-- `transport.ts`: wraps a use-signalr hub connection as a `LiveCursorTransport`.
+- `transport.ts`: wraps a plain `@microsoft/signalr` `HubConnection` as a `LiveCursorTransport`.
 - `apps/demo`: the shared demo client. Pass `?backend=signalr` to make it connect through this transport instead of a plain WebSocket.
 - `server/`: a minimal .NET 10 app. It runs one SignalR hub that relays presence messages per room.
 
 Only the backend changes. The client builds its presence client over `createSignalRTransport` instead of a plain WebSocket. The UI still uses the same `@anchor-presence/react` hooks.
 
-The React client layer is [`use-signalr`](https://github.com/DammersCode/use-signalr) (`@dammers/use-signalr-react`). It owns the hub connection, the typed events, reconnection, and status. This transport only adapts that connection to the presence client.
+`createSignalRTransport` takes a `HubConnection` you build with `@microsoft/signalr`'s `HubConnectionBuilder`. It attaches the wire handlers, maps `HubConnectionState` onto core's `ConnectionStatus`, and drives `connect()` / `disconnect()` from `connection.start()` / `connection.stop()`.
+
+If your app already uses [`use-signalr`](https://www.npmjs.com/package/@dammers/use-signalr-react) for its other hubs, see the docs page's "Already using use-signalr?" section for building the transport on that provider's connection instead.
 
 ## Prerequisites
 
@@ -81,15 +83,15 @@ To check this quickly, add `?stale-ms=12000&heartbeat-ms=2000` to the URL, then 
 
 ## Transport adapter tests
 
-The tests in `signalr.test.ts` mock the hub connection. They do not use a real server. Run them from the repository root:
+The tests in `signalr.test.ts` use a minimal fake `HubConnection`. They do not use a real server. Run them from the repository root:
 
 ```sh
 bunx vitest run --project signalr-example
 ```
 
-They cover data delivery, dropping a send while the hub is not connected, status mappings, and the event-handler attach and detach path.
+They cover data delivery, dropping a send while the hub is not connected, and status mappings.
 
-`signalr-hub.test.ts`, in the same project, runs the real `dotnet run` hub instead of a mock. It checks same-room relay, cross-room isolation, and an oversized frame being dropped instead of crashing the hub. It skips automatically when `dotnet` is not on `PATH`, so `bun run test` still passes on a machine without the .NET SDK.
+`signalr-hub.test.ts`, in the same project, runs the real `dotnet run` hub instead of a fake. It checks same-room relay, cross-room isolation, and an oversized frame being dropped instead of crashing the hub. It skips automatically when `dotnet` is not on `PATH`, so `bun run test` still passes on a machine without the .NET SDK.
 
 ### Running the hub test in CI
 

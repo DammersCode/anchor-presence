@@ -35,10 +35,11 @@ These plans are done. The code, tests, and docs already show the result, so ther
 
 ## In progress
 
-| Plan                         | Status      | Summary                                                                                               |
-| ---------------------------- | ----------- | ----------------------------------------------------------------------------------------------------- |
-| Fumadocs docs site on Vercel | in progress | Replaces the GitHub Pages site in `site/` with a Fumadocs site deployed on Vercel.                    |
-| Backend examples cleanup     | in progress | Adds Bun-native, Node `ws`, Hono, and Elysia backend examples, and removes duplicate example clients. |
+| Plan                                             | Status      | Summary                                                                                               |
+| ------------------------------------------------ | ----------- | ----------------------------------------------------------------------------------------------------- |
+| Fumadocs docs site on Vercel                     | in progress | Replaces the GitHub Pages site in `site/` with a Fumadocs site deployed on Vercel.                    |
+| Backend examples cleanup                         | in progress | Adds Bun-native, Node `ws`, Hono, and Elysia backend examples, and removes duplicate example clients. |
+| [022 Gap closure](022-gap-closure-2026-09-25.md) | in progress | Closes the gaps from the 2026-09-25 advisor audit.                                                    |
 
 ## Future backends (planning only, not scheduled)
 

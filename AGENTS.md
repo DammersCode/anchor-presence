@@ -64,6 +64,10 @@ A single failed browser test: rerun that file once before you debug it. Still re
 
 A user-facing change to a package (behavior, API, new export) gets an entry under `## Unreleased` in `CHANGELOG.md` in the same commit. Docs prose and test-only changes get no entry.
 
+### Handoff
+
+`plans/HANDOFF.md` is the entry point for any agent that continues work: program goal, owner decisions, workstreams, next steps. A branch with open work keeps `plans/handoffs/<branch>.md` current (done, in progress, next, decisions, blockers) and commits it with each step. When the branch merges, fold that file into `plans/HANDOFF.md` and delete it.
+
 ### Plans
 
 Non-trivial work gets a short plan in `plans/` before implementation. `plans/README.md` is the index: one line per plan with its status. Delete a plan's body once it is done and its outcome is in the code, docs, or changelog.

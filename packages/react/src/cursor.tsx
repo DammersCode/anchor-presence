@@ -88,7 +88,8 @@ export function DefaultCursor(props: DefaultCursorProps): ReactNode {
   const cssLabelColor = "var(--anchor-presence-cursor-label-color, white)";
 
   return (
-    <span className={className} style={style}>
+    // forced-color-adjust keeps the cursor's own colors under forced-colors mode instead of flattening to system colors
+    <span className={className} style={{ forcedColorAdjust: "none", ...style }}>
       {/* size via CSS properties: var() does not resolve in SVG presentation attributes */}
       <svg style={{ width: cssSize, height: cssSize }} viewBox="0 0 20 20">
         <path d="M2 2 L18 9 L10.5 11 L8 18.5 Z" fill={cssColor} stroke="white" strokeWidth={1} />

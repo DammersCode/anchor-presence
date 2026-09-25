@@ -9,3 +9,4 @@
 - `@anchor-presence/dom`: `ResolvedCursor` gains `idle`
 - `@anchor-presence/react`: initial release
 - `@anchor-presence/react`: `useRemoteUsers` entries gain `idle`; `CursorLayer` dims an idle cursor's opacity (no transition under reduced motion)
+- `@anchor-presence/react`: `DefaultCursor` keeps its own colors under `forced-colors: active` instead of flattening to system colors

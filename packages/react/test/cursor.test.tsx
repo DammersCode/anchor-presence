@@ -438,4 +438,9 @@ describe("DefaultCursor", () => {
     expect(html).toContain("svg");
     expect(html).toContain("--anchor-presence-cursor-color:#00ff00");
   });
+
+  it("keeps its own colors under forced-colors mode", () => {
+    const html = renderToString(<DefaultCursor />);
+    expect(html).toContain("forced-color-adjust:none");
+  });
 });

@@ -6,6 +6,7 @@ describe("@anchor-presence/core public runtime API", () => {
 
     expect(Object.keys(mod).toSorted()).toEqual([
       "DEFAULT_HEARTBEAT_MS",
+      "DEFAULT_IDLE_AFTER_MS",
       "DEFAULT_MAX_ANCHORS",
       "DEFAULT_MAX_ANCHOR_ID_LENGTH",
       "DEFAULT_MAX_CLIENT_ID_LENGTH",

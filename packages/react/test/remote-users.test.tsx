@@ -77,10 +77,132 @@ describe("useRemoteUsers", () => {
     });
 
     expect(seen.at(-1)).toEqual([
-      { clientId: "a", user: { name: "Ada" }, session: "sa" },
-      { clientId: "b", user: undefined, session: "sb" },
+      { clientId: "a", user: { name: "Ada" }, session: "sa", idle: false },
+      { clientId: "b", user: undefined, session: "sb", idle: false },
     ]);
     expect(seen.at(-1)?.[1]?.user).toBeUndefined();
+
+    act(() => root.unmount());
+  });
+
+  it("carries the idle flag from the presence snapshot", () => {
+    const { client, pushRemote } = makeFakeClient<unknown, TestUser>();
+    const seen: RemoteUser<TestUser>[][] = [];
+    function Probe() {
+      seen.push(useRemoteUsers<TestUser>());
+      return null;
+    }
+    const root = createRoot(container);
+
+    act(() => {
+      root.render(
+        <LiveCursorProvider client={client} binding={makeFakeBinding().binding}>
+          <Probe />
+        </LiveCursorProvider>,
+      );
+    });
+
+    act(() => {
+      pushRemote([{ version: 1, clientId: "a", session: "sa", sequence: 0, cursor: null }], new Set(["a"]));
+    });
+
+    expect(seen.at(-1)?.[0]?.idle).toBe(true);
+
+    act(() => root.unmount());
+  });
+
+  it("keeps entry and list identity across a presence update that changes only cursor position", () => {
+    const { client, pushRemote } = makeFakeClient<unknown, TestUser>();
+    const seen: RemoteUser<TestUser>[][] = [];
+    function Probe() {
+      seen.push(useRemoteUsers<TestUser>());
+      return null;
+    }
+    const root = createRoot(container);
+    // a real store inherits an omitted same-session field, so the projected `user` keeps its reference
+    const ada = { name: "Ada" };
+
+    act(() => {
+      root.render(
+        <LiveCursorProvider client={client} binding={makeFakeBinding().binding}>
+          <Probe />
+        </LiveCursorProvider>,
+      );
+    });
+
+    act(() => {
+      pushRemote([
+        {
+          version: 1,
+          clientId: "a",
+          session: "sa",
+          sequence: 0,
+          cursor: { anchors: [{ id: "x", u: 0, v: 0 }] },
+          user: ada,
+        },
+      ]);
+    });
+    const first = seen.at(-1);
+
+    // a new presence snapshot array, but only `cursor` differs — nothing RemoteUser exposes changed
+    act(() => {
+      pushRemote([
+        {
+          version: 1,
+          clientId: "a",
+          session: "sa",
+          sequence: 1,
+          cursor: { anchors: [{ id: "x", u: 0.5, v: 0.5 }] },
+          user: ada,
+        },
+      ]);
+    });
+    const second = seen.at(-1);
+
+    expect(second).toBe(first);
+    expect(second?.[0]).toBe(first?.[0]);
+
+    act(() => root.unmount());
+  });
+
+  it("gives a changed client a new entry while an unrelated client keeps identity", () => {
+    const { client, pushRemote } = makeFakeClient<unknown, TestUser>();
+    const seen: RemoteUser<TestUser>[][] = [];
+    function Probe() {
+      seen.push(useRemoteUsers<TestUser>());
+      return null;
+    }
+    const root = createRoot(container);
+    const bea = { name: "Bea" };
+
+    act(() => {
+      root.render(
+        <LiveCursorProvider client={client} binding={makeFakeBinding().binding}>
+          <Probe />
+        </LiveCursorProvider>,
+      );
+    });
+
+    act(() => {
+      pushRemote([
+        { version: 1, clientId: "a", session: "sa", sequence: 0, cursor: null, user: { name: "Ada" } },
+        { version: 1, clientId: "b", session: "sb", sequence: 0, cursor: null, user: bea },
+      ]);
+    });
+    const first = seen.at(-1);
+
+    act(() => {
+      pushRemote([
+        { version: 1, clientId: "a", session: "sa", sequence: 1, cursor: null, user: { name: "Ada 2" } },
+        { version: 1, clientId: "b", session: "sb", sequence: 0, cursor: null, user: bea },
+      ]);
+    });
+    const second = seen.at(-1);
+
+    expect(second).not.toBe(first);
+    expect(second?.[0]).not.toBe(first?.[0]);
+    expect(second?.[0]?.user).toEqual({ name: "Ada 2" });
+    expect(second?.[1]).toBe(first?.[1]);
 
     act(() => root.unmount());
   });
@@ -113,7 +235,7 @@ describe("useRemoteUsers", () => {
     });
 
     expect(container.querySelector("[data-testid=count]")?.textContent).toBe("1");
-    expect(seen.at(-1)).toEqual([{ clientId: "B", user: undefined, session: clientB.session }]);
+    expect(seen.at(-1)).toEqual([{ clientId: "B", user: undefined, session: clientB.session, idle: false }]);
 
     act(() => {
       clientB.dispose();

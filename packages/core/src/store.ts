@@ -6,6 +6,9 @@ export const DEFAULT_MAX_REMOTE_CLIENTS = 64;
 /** Default time before a remote client counts as stale, in milliseconds. */
 export const DEFAULT_STALE_TIMEOUT_MS = 70_000;
 
+/** Default time before a remote client counts as idle, in milliseconds. Below `staleTimeoutMs`. */
+export const DEFAULT_IDLE_AFTER_MS = 15_000;
+
 /**
  * Options for `RemotePresenceStore`.
  * Omit every field to keep the defaults.
@@ -15,6 +18,8 @@ export type RemotePresenceStoreOptions = {
   maxRemoteClients?: number;
   /** Time before a client counts as stale, in milliseconds. Default `DEFAULT_STALE_TIMEOUT_MS`. */
   staleTimeoutMs?: number;
+  /** Time before a client counts as idle, in milliseconds. Default `DEFAULT_IDLE_AFTER_MS`, clamped below `staleTimeoutMs`. */
+  idleAfterMs?: number;
   /** Returns the current time in milliseconds. Default `Date.now`. */
   now?: () => number;
   /** Runs when the store drops a new client because the store is full. */
@@ -24,6 +29,7 @@ export type RemotePresenceStoreOptions = {
 type Entry<TContext, TUser> = {
   presence: CursorPresence<TContext, TUser>;
   lastSeenAt: number;
+  idle: boolean;
   projected: RemotePresence<TContext, TUser>;
 };
 
@@ -35,6 +41,7 @@ type Entry<TContext, TUser> = {
 export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
   private readonly maxRemoteClients: number;
   private readonly staleTimeoutMs: number;
+  private readonly idleAfterMs: number;
   private readonly now: () => number;
   private readonly onDropNewClient: (() => void) | undefined;
 
@@ -51,6 +58,8 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
   constructor(options: RemotePresenceStoreOptions = {}) {
     this.maxRemoteClients = options.maxRemoteClients ?? DEFAULT_MAX_REMOTE_CLIENTS;
     this.staleTimeoutMs = options.staleTimeoutMs ?? DEFAULT_STALE_TIMEOUT_MS;
+    // idleAfterMs must stay below staleTimeoutMs: idle is an earlier stage, not a replacement
+    this.idleAfterMs = Math.min(options.idleAfterMs ?? DEFAULT_IDLE_AFTER_MS, this.staleTimeoutMs - 1);
     this.now = options.now ?? (() => Date.now());
     this.onDropNewClient = options.onDropNewClient;
   }
@@ -73,7 +82,8 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
       this.entries.set(presence.clientId, {
         presence: normalized,
         lastSeenAt: this.now(),
-        projected: projectPresence(normalized),
+        idle: false,
+        projected: projectPresence(normalized, false),
       });
       this.stableSnapshotDirty = true;
       this.markDirty();
@@ -91,9 +101,11 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
       : this.normalizePresence(presence);
     existing.presence = nextPresence;
     existing.lastSeenAt = this.now();
-    // a higher-sequence message that changes no observable field keeps the cached projection
-    if (!sameObservedPresence(previous, nextPresence)) {
-      existing.projected = projectPresence(nextPresence);
+    // any accepted message ends idle, even one that changes no observable field
+    const wasIdle = existing.idle;
+    existing.idle = false;
+    if (wasIdle || !sameObservedPresence(previous, nextPresence)) {
+      existing.projected = projectPresence(nextPresence, false);
       this.stableSnapshotDirty = true;
     }
     this.markDirty();
@@ -121,19 +133,28 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
   }
 
   /**
-   * Removes clients with no message for `staleTimeoutMs`.
+   * Removes clients with no message for `staleTimeoutMs`, and marks clients idle after `idleAfterMs`.
    * If you use the store without a client, run this on a timer.
    */
   sweep(): void {
-    const cutoff = this.now() - this.staleTimeoutMs;
-    let removedAny = false;
+    const now = this.now();
+    const staleCutoff = now - this.staleTimeoutMs;
+    const idleCutoff = now - this.idleAfterMs;
+    let changedAny = false;
     for (const [clientId, entry] of this.entries) {
-      if (entry.lastSeenAt < cutoff) {
+      if (entry.lastSeenAt < staleCutoff) {
         this.entries.delete(clientId);
-        removedAny = true;
+        changedAny = true;
+        continue;
+      }
+      const shouldBeIdle = entry.lastSeenAt < idleCutoff;
+      if (shouldBeIdle !== entry.idle) {
+        entry.idle = shouldBeIdle;
+        entry.projected = projectPresence(entry.presence, shouldBeIdle);
+        changedAny = true;
       }
     }
-    if (removedAny) {
+    if (changedAny) {
       this.stableSnapshotDirty = true;
       this.markDirty();
     }
@@ -224,12 +245,14 @@ function applyFieldDeltas<TContext, TUser>(
 
 function projectPresence<TContext, TUser>(
   presence: CursorPresence<TContext, TUser>,
+  idle: boolean,
 ): RemotePresence<TContext, TUser> {
   const projected: RemotePresence<TContext, TUser> = {
     version: presence.version,
     clientId: presence.clientId,
     session: presence.session,
     cursor: presence.cursor,
+    idle,
   };
   if ("context" in presence) projected.context = presence.context;
   if ("user" in presence) projected.user = presence.user;

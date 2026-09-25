@@ -14,5 +14,5 @@
       "@anchor-presence/react": ["./packages/react/src/index.ts"]
     }
   },
-  "include": ["packages/*/test", "apps/demo/src/cursors"]
+  "include": ["packages/*/test", "packages/core/bench", "apps/demo/src/cursors", "scripts/bench.ts"]
 }

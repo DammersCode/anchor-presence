@@ -65,14 +65,17 @@ export function startAutoRegister(options: AutoRegisterOptions): AutoRegisterHan
       sync();
       return;
     }
+    const replacedIds = new Set<string>();
     for (const record of records) {
       if (record.type === "attributes") {
         if (record.attributeName === attribute && isElement(record.target)) syncElement(record.target);
         continue;
       }
-      for (const node of Array.from(record.removedNodes)) releaseNode(node);
+      for (const node of Array.from(record.removedNodes)) releaseNode(node, replacedIds);
       for (const node of Array.from(record.addedNodes)) adoptNode(node);
     }
+    // one querySelectorAll pass for every id a removal replaced, instead of one pass per id
+    if (replacedIds.size > 0) resyncIds(replacedIds);
   }
 
   function warnEmpty(element: Element): void {
@@ -108,9 +111,11 @@ export function startAutoRegister(options: AutoRegisterOptions): AutoRegisterHan
     }
   }
 
-  function resyncId(id: string): void {
+  // one querySelectorAll pass covers every id in `ids`, instead of one pass per id
+  function resyncIds(ids: ReadonlySet<string>): void {
     for (const element of Array.from(root.querySelectorAll(`[${attribute}]`))) {
-      if ((element.getAttribute(attribute)?.trim() ?? "") === id) syncElement(element);
+      const id = element.getAttribute(attribute)?.trim() ?? "";
+      if (ids.has(id)) syncElement(element);
     }
   }
 
@@ -120,9 +125,9 @@ export function startAutoRegister(options: AutoRegisterOptions): AutoRegisterHan
     for (const element of Array.from(node.querySelectorAll(`[${attribute}]`))) syncElement(element);
   }
 
-  function releaseNode(node: Node): void {
+  // accumulates the ids this removal frees into `replacedIds`; the caller resyncs them in one pass
+  function releaseNode(node: Node, replacedIds: Set<string>): void {
     if (!isElement(node)) return;
-    const replacedIds = new Set<string>();
     const release = (element: Element): void => {
       const entry = autoAnchors.get(element);
       if (entry !== undefined) replacedIds.add(entry.id);
@@ -131,7 +136,6 @@ export function startAutoRegister(options: AutoRegisterOptions): AutoRegisterHan
 
     release(node);
     for (const element of Array.from(node.querySelectorAll(`[${attribute}]`))) release(element);
-    for (const id of replacedIds) resyncId(id);
   }
 
   function sync(): void {

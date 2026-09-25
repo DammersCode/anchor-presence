@@ -5,9 +5,18 @@ import { useRemoteCursorsSelector } from "./hooks/index.js";
 
 const DEFAULT_COLOR = "#6b7280";
 const DEFAULT_Z_INDEX = 50;
+const IDLE_OPACITY = 0.4;
 
 // JSX cannot name an attribute dynamically. The marker wins over consumer props.
 const CURSOR_MARKER_PROPS: Record<string, string> = { [CURSOR_MARKER_ATTRIBUTE]: "" };
+
+// called during render, never at import time, so this stays SSR-safe
+function prefersReducedMotion(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false)
+  );
+}
 
 function sameCursors(a: readonly unknown[], b: readonly unknown[]): boolean {
   return a.length === b.length && a.every((item, index) => item === b[index]);
@@ -79,7 +88,8 @@ export function DefaultCursor(props: DefaultCursorProps): ReactNode {
   const cssLabelColor = "var(--anchor-presence-cursor-label-color, white)";
 
   return (
-    <span className={className} style={style}>
+    // forced-color-adjust keeps the cursor's own colors under forced-colors mode instead of flattening to system colors
+    <span className={className} style={{ forcedColorAdjust: "none", ...style }}>
       {/* size via CSS properties: var() does not resolve in SVG presentation attributes */}
       <svg style={{ width: cssSize, height: cssSize }} viewBox="0 0 20 20">
         <path d="M2 2 L18 9 L10.5 11 L8 18.5 Z" fill={cssColor} stroke="white" strokeWidth={1} />
@@ -131,6 +141,8 @@ function CursorItem<TContext = unknown, TUser = unknown>(props: CursorItemProps<
     top: 0,
     pointerEvents: "none",
     transform: `translate3d(${cursor.x}px, ${cursor.y}px, 0)`,
+    opacity: cursor.idle ? IDLE_OPACITY : 1,
+    ...(prefersReducedMotion() ? null : { transition: "opacity 200ms ease-out" }),
   };
 
   return (
@@ -142,6 +154,7 @@ function CursorItem<TContext = unknown, TUser = unknown>(props: CursorItemProps<
       data-anchor-presence-client-id={cursor.clientId}
       data-anchor-presence-tier={cursor.tier}
       data-anchor-presence-anchor={cursor.anchorId ?? ""}
+      data-anchor-presence-idle={cursor.idle || undefined}
     >
       {renderCursor ? renderCursor({ cursor, label, color }) : <DefaultCursor label={label} color={color} />}
     </div>

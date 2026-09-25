@@ -52,6 +52,8 @@ export type PresenceClientOptions<TContext = unknown, TUser = unknown> = {
   publishIntervalMs?: number;
   /** Time before a remote client counts as stale, in milliseconds. Minimum `1000`. */
   staleTimeoutMs?: number;
+  /** Time before a remote client counts as idle, in milliseconds. Default `DEFAULT_IDLE_AFTER_MS`, clamped below `staleTimeoutMs`. */
+  idleAfterMs?: number;
   /** Heartbeat interval, in milliseconds. Default `DEFAULT_HEARTBEAT_MS`. */
   heartbeatMs?: number;
   /** Maximum remote clients in the store. Default `DEFAULT_MAX_REMOTE_CLIENTS`. */

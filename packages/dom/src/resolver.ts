@@ -37,6 +37,8 @@ export type ResolvedCursor<TContext = unknown, TUser = unknown> = {
   context?: TContext;
   /** The remote user value, when the sender sent one. */
   user?: TUser;
+  /** `true` when the client sent no update for a while. */
+  idle: boolean;
 };
 
 /**
@@ -204,6 +206,7 @@ export class RemoteResolver<TContext = unknown, TUser = unknown> {
     presences: readonly CursorPresence<TContext, TUser>[],
     readState: SchedulerReadState,
     timestampMs: number,
+    isIdle: (clientId: string) => boolean = () => false,
   ): { cursors: ResolvedCursor<TContext, TUser>[]; unsettled: boolean; activeAnchors: Element[] } {
     const activeIds = new Set(presences.map((p) => p.clientId));
     this.prune(activeIds);
@@ -251,6 +254,7 @@ export class RemoteResolver<TContext = unknown, TUser = unknown> {
       const sample = state.interpolator.sample(timestampMs);
       if (!sample.settled) unsettled = true;
 
+      const idle = isIdle(presence.clientId);
       const prev = this.lastResults.get(presence.clientId);
       let result: ResolvedCursor<TContext, TUser>;
       if (
@@ -262,7 +266,8 @@ export class RemoteResolver<TContext = unknown, TUser = unknown> {
         prev.anchorId === raw.anchorId &&
         prev.tier === raw.tier &&
         prev.context === presence.context &&
-        prev.user === presence.user
+        prev.user === presence.user &&
+        prev.idle === idle
       ) {
         result = prev;
       } else {
@@ -274,6 +279,7 @@ export class RemoteResolver<TContext = unknown, TUser = unknown> {
           pointVisible,
           anchorId: raw.anchorId,
           tier: raw.tier,
+          idle,
         };
         if (presence.context !== null && presence.context !== undefined) result.context = presence.context;
         if (presence.user !== null && presence.user !== undefined) result.user = presence.user;

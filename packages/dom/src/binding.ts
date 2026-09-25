@@ -1,6 +1,7 @@
 // Top-level wiring: registry, pointer, scheduler, and resolver. The React adapter consumes it.
 
 import type { InterpolatorFactory, PresenceClient } from "@anchor-presence/core";
+import { linearInterpolator, noneInterpolator } from "@anchor-presence/core";
 import { createAnchorRegistry } from "./registry.js";
 import { attachPointerSource } from "./pointer.js";
 import { createGeometryScheduler } from "./scheduler.js";
@@ -18,7 +19,10 @@ export type { ResolvedCursor, ResolutionTier, VisibilityPolicy } from "./resolve
 export type ResolutionOptions<TContext = unknown, TUser = unknown> = {
   /** Shows or hides one cursor. Default: hide a cursor that does not resolve. */
   visibilityPolicy?: VisibilityPolicy<TContext, TUser>;
-  /** Creates the interpolator per remote client. Default: `linearInterpolator`. */
+  /**
+   * Creates the interpolator per remote client.
+   * Default: `linearInterpolator`, or `noneInterpolator` when the OS prefers reduced motion.
+   */
   interpolatorFactory?: InterpolatorFactory;
   /** Runs a DOM hit test on the resolved point. Default `false`. */
   hitTest?: boolean;
@@ -47,6 +51,16 @@ const ANCHOR_ATTRIBUTE_PATTERN = /^[A-Za-z][A-Za-z0-9]*(-[A-Za-z0-9]+)*$/u;
 const DEFAULT_ANCHOR_ATTRIBUTE = "data-anchor";
 const DEFAULT_SENT_ANCHORS = 4;
 const PROTOCOL_MAX_ANCHORS = 8;
+
+// evaluated lazily inside createDomBinding, never at import time, so this stays SSR-safe
+function prefersReducedMotion(win: Window | undefined): boolean {
+  const target = win ?? (typeof window !== "undefined" ? window : undefined);
+  return target?.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+}
+
+function defaultInterpolatorFactory(win: Window | undefined): InterpolatorFactory {
+  return prefersReducedMotion(win) ? noneInterpolator : linearInterpolator;
+}
 
 /**
  * Options for `createDomBinding`.
@@ -123,7 +137,9 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
     autoOptions.MutationObserverCtor = environment.MutationObserverCtor;
   const autoHandle = startAutoRegister(autoOptions);
 
-  const resolver = new RemoteResolver<TContext, TUser>({ registry, ...resolution });
+  const interpolatorFactory =
+    resolution.interpolatorFactory ?? defaultInterpolatorFactory(environment.window);
+  const resolver = new RemoteResolver<TContext, TUser>({ registry, ...resolution, interpolatorFactory });
 
   let snapshot: ResolvedCursor<TContext, TUser>[] = EMPTY_SNAPSHOT as ResolvedCursor<TContext, TUser>[];
   const snapshotListeners = new Set<() => void>();
@@ -136,10 +152,16 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
     hasActiveCursors: () => client.getRemoteSnapshot().some((presence) => presence.cursor !== null),
 
     compute(readState, timestampMs) {
+      const idleClientIds = new Set<string>();
+      for (const presence of client.getRemotePresence()) {
+        if (presence.idle) idleClientIds.add(presence.clientId);
+      }
+
       const { cursors, unsettled, activeAnchors } = resolver.resolveAll(
         client.getRemoteSnapshot(),
         readState,
         timestampMs,
+        (clientId) => idleClientIds.has(clientId),
       );
 
       const documentElement = (environment.root ?? document).documentElement;

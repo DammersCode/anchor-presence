@@ -7,7 +7,16 @@ import { useRemoteCursors } from "../src/hooks";
 import { makeFakeBinding, makeFakeClient } from "./test-utils";
 
 function sampleCursor(clientId: string): ResolvedCursor {
-  return { clientId, x: 1, y: 2, visible: true, pointVisible: true, anchorId: null, tier: "viewport" };
+  return {
+    clientId,
+    x: 1,
+    y: 2,
+    visible: true,
+    pointVisible: true,
+    anchorId: null,
+    tier: "viewport",
+    idle: false,
+  };
 }
 
 describe("useRemoteCursors", () => {

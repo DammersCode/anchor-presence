@@ -36,12 +36,12 @@ describe("codecs docs: debugCodec", () => {
     const decoded = debugCodec.decode(debugCodec.encode(message)) as CursorPresence;
 
     const { cursor, ...rest } = decoded;
-    const { cursor: sentCursor, ...sentRest } = message;
+    const { cursor: _sentCursor, ...sentRest } = message;
     expect(rest).toEqual(sentRest);
-    const [anchor] = cursor?.anchors ?? [];
+    const anchor = cursor?.anchors[0];
     expect(anchor?.id).toBe("nav.dashboard");
-    expect(anchor?.u).toBeCloseTo(sentCursor?.anchors[0]?.u ?? Number.NaN, 6);
-    expect(anchor?.v).toBeCloseTo(sentCursor?.anchors[0]?.v ?? Number.NaN, 6);
+    expect(anchor?.u).toBeCloseTo(0.1, 6);
+    expect(anchor?.v).toBeCloseTo(0.3, 6);
     expect(cursor?.viewport?.u).toBeCloseTo(0.7, 6);
     expect(cursor?.viewport?.v).toBeCloseTo(0.9, 6);
     expect(debug).toHaveBeenCalledWith("[presence out]", message);
@@ -51,8 +51,8 @@ describe("codecs docs: debugCodec", () => {
   it("keeps a float32 coordinate within 1e-7 of the sent value", () => {
     vi.spyOn(console, "debug").mockImplementation(() => {});
     const decoded = debugCodec.decode(debugCodec.encode(message)) as CursorPresence;
-    const u = decoded.cursor?.anchors[0]?.u ?? Number.NaN;
+    const u = decoded.cursor?.anchors[0]?.u;
     expect(u).not.toBe(0.1);
-    expect(Math.abs(u - 0.1)).toBeLessThan(1e-7);
+    expect(u).toBeCloseTo(0.1, 7);
   });
 });

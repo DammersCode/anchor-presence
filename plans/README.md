@@ -42,6 +42,7 @@ These plans are done. The code, tests, and docs already show the result, so ther
 | Backend examples cleanup                                              | in progress | Adds Bun-native, Node `ws`, Hono, and Elysia backend examples, and removes duplicate example clients. |
 | [026 Example previews](026-example-previews.md)                       | done        | One distinct live preview per example page, with guided tour and receiver insight.                    |
 | [027 Scale benchmark and diagram](027-scale-benchmark-and-diagram.md) | in progress | 200-client benchmarks and a how-it-works diagram.                                                     |
+| [028 Layout audit skill](028-layout-audit-skill.md)                   | in progress | Shipped skill that scores cursor-jump risk across layouts, plus a layout design guide.                |
 | [HANDOFF](HANDOFF.md)                                                 | in progress | Start here: program state, workstreams, next steps.                                                   |
 | [023 Fumadocs docs site](023-fumadocs-docs-site.md)                   | done        | Spec for the docs site.                                                                               |
 | [024 Backend examples](024-backend-examples.md)                       | done        | Spec and security baseline for the backend examples.                                                  |

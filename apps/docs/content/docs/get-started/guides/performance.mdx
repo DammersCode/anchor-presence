@@ -45,7 +45,7 @@ const binding = createDomBinding(client);
 binding.invalidate("manual-layout-shift");
 ```
 
-`invalidate` marks the layout dirty; the binding re-resolves the cursors on the next frame. Most application code never needs to call this. The built-in signals cover ordinary DOM mutation, resize, scroll, and animation.
+`invalidate` marks the layout dirty. The binding re-resolves the cursors on the next frame. Most application code never needs to call this. The built-in signals cover ordinary DOM mutation, resize, scroll, and animation.
 
 ## Idle behavior
 
@@ -68,13 +68,13 @@ The reference relay in `apps/server/index.ts` enforces a per-room socket cap, a 
 
 ## Guidance
 
-**Register stable anchors.** Map an anchor ID to one long-lived semantic location: a button, a row template, a section. Do not generate a new anchor ID per render for the same logical element; each new ID is a fresh registry entry and forces re-registration.
+**Register stable anchors.** Map an anchor ID to one long-lived semantic location: a button, a row template, a section. Do not generate a new anchor ID per render for the same logical element. Each new ID is a fresh registry entry and forces re-registration.
 
 **Avoid registering thousands of ephemeral anchors.** A very long, fully-rendered list that registers one anchor per row scales the registry and the `MutationObserver` surface with row count. Prefer registering anchors on visible or windowed rows only, and fall back to a coarser anchor, such as the list container, for off-screen rows.
 
-**Call `invalidate()` after programmatic layout changes** the built-in signals cannot see. Do not call it on every render; the scheduler already coalesces signal-driven invalidation into one pass per frame, and an unnecessary call only adds a dirty flag, not a full reflow, so it is cheap but still unneeded in most cases.
+**Call `invalidate()` after programmatic layout changes** the built-in signals cannot see. Do not call it on every render. The scheduler already coalesces signal-driven invalidation into one pass per frame, so an unnecessary call only adds a dirty flag, not a full reflow. It is cheap but still unneeded in most cases.
 
 ## Related
 
-- [Architecture](/docs/get-started/concepts/architecture)
-- [API reference: dom](/docs/dom/reference)
+- [How it works](/docs/get-started/concepts/how-it-works)
+- [Binding API](/docs/dom/api/binding)

@@ -38,7 +38,7 @@ A malicious or malformed anchor ID from the network cannot make the receiver add
 
 ## Render user and context as text
 
-`user` and `context` values are untrusted, even after validation passes. Validation checks size, not content; the field can hold attacker-controlled strings, numbers, or nested objects.
+`user` and `context` values are untrusted, even after validation passes. Validation checks size, not content. The field can hold attacker-controlled strings, numbers, or nested objects.
 
 Render both fields as text: text nodes in plain DOM code, or framework text interpolation such as JSX's `{value}`. Never render them as HTML, and never pass them to `innerHTML`, `dangerouslySetInnerHTML`, or an equivalent.
 
@@ -60,7 +60,7 @@ The relay token, when set, gates access to a room. It does not authenticate the 
 
 The remote presence store caps the number of distinct remote clients it tracks. `maxRemoteClients` defaults to 64, and is configurable through `PresenceClientOptions.maxRemoteClients` on `createPresenceClient`.
 
-A message from a new `clientId` beyond the cap is dropped; existing clients are unaffected. This bounds every allocation driven by network data: store entries, resolved cursors, and observed anchors. Expiry and disconnects free slots for new clients as they occur. In development, the client warns once when the cap starts dropping new clients.
+A message from a new `clientId` beyond the cap is dropped. Existing clients are unaffected. This bounds every allocation driven by network data: store entries, resolved cursors, and observed anchors. Expiry and disconnects free slots for new clients as they occur. In development, the client warns once when the cap starts dropping new clients.
 
 Set `maxRemoteClients` to match your expected concurrent session count. Because the cap drops newcomers once full, a flooder that claims every slot with distinct `clientId` values can keep out real clients until those slots expire after `staleTimeoutMs`.
 

@@ -4,14 +4,20 @@
   "description": "Overview, setup, and cross-cutting guides",
   "root": true,
   "pages": [
+    "---[Rocket]Get started---",
     "introduction",
     "installation",
     "quick-start",
-    "concepts",
-    "responsive-layouts",
-    "security",
-    "performance",
-    "troubleshooting",
-    "ai-agents"
+    "---[Blocks]Concepts---",
+    "concepts/how-it-works",
+    "concepts/anchors",
+    "concepts/fallback-chain",
+    "concepts/ui-context",
+    "concepts/responsive-layouts",
+    "---[BookOpen]Guides---",
+    "guides/security",
+    "guides/performance",
+    "guides/troubleshooting",
+    "guides/ai-agents"
   ]
 }

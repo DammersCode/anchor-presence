@@ -9,9 +9,9 @@ Three separate causes produce the same symptom.
 
 **The anchor is not registered.** If the sender's cursor sits over an element with no matching anchor ID on the receiver, and the fallback chain and viewport both miss, the resolution tier is `hidden`. Make sure both sender and receiver render the same non-empty anchor attribute value for the same semantic location.
 
-**A visibility policy hides it.** A custom `VisibilityPolicy` can return `"hide"` for a tier that otherwise shows. Check the policy passed to `bindingOptions.resolution.visibilityPolicy` or `DomBindingOptions.resolution.visibilityPolicy`. The default policy hides only the `hidden` tier; anything else hiding an `anchor` or `viewport` tier cursor is application logic. See [UI context](/docs/get-started/concepts/ui-context).
+**A visibility policy hides it.** A custom `VisibilityPolicy` can return `"hide"` for a tier that otherwise shows. Check the policy passed to `bindingOptions.resolution.visibilityPolicy` or `DomBindingOptions.resolution.visibilityPolicy`. The default policy hides only the `hidden` tier. Anything else hiding an `anchor` or `viewport` tier cursor is application logic. See [UI context](/docs/get-started/concepts/ui-context).
 
-**The presence is stale.** A remote client with no message for `idleAfterMs` (default 15000 ms) is idle: `CursorLayer` dims its cursor. The store removes the client after `staleTimeoutMs` (default 70000 ms) with no message. The client clamps `idleAfterMs` below `staleTimeoutMs`. A sender on a backgrounded tab still sends a heartbeat every `heartbeatMs` (default 10000 ms), but a browser can clamp hidden-tab timers to one minute; a very long background period can still expire the entry. Make sure the sender tab is not fully suspended, and make sure the transport is still connected on both sides.
+**The presence is stale.** A remote client with no message for `idleAfterMs` (default 15000 ms) is idle: `CursorLayer` dims its cursor. The store removes the client after `staleTimeoutMs` (default 70000 ms) with no message. The client clamps `idleAfterMs` below `staleTimeoutMs`. A sender on a backgrounded tab still sends a heartbeat every `heartbeatMs` (default 10000 ms), but a browser can clamp hidden-tab timers to one minute. A very long background period can still expire the entry. Make sure the sender tab is not fully suspended, and make sure the transport is still connected on both sides.
 
 ## Cursor is outside the visible area
 
@@ -52,7 +52,7 @@ Call the binding's `invalidate()` after any programmatic layout change the built
 binding.invalidate("custom-layout-change");
 ```
 
-See [Performance](/docs/get-started/performance) for the full signal list and when to call `invalidate()` yourself.
+See [Performance](/docs/get-started/guides/performance) for the full signal list and when to call `invalidate()` yourself.
 
 ## HTTP vs HTTPS
 
@@ -66,7 +66,7 @@ A `clientId` identifies a client instance, not a user. Two live tabs that share 
 
 The receiver's sequencing rule treats a session change as a restart: it accepts the new session's messages and resets the stored sequence number. With two tabs sharing a `clientId`, every message from either tab looks like a restart from the other tab's point of view, and the visible cursor flaps between the two tabs' positions.
 
-This is not an error the library reports; it is a sign of misuse. Give every tab or connection its own `clientId`. Attach user identity through the `user` field instead of reusing `clientId` across tabs.
+This is not an error the library reports. It is a sign of misuse. Give every tab or connection its own `clientId`. Attach user identity through the `user` field instead of reusing `clientId` across tabs.
 
 ## jsdom vs a real browser
 
@@ -78,5 +78,5 @@ If a scheduler or resolver behavior looks correct in a jsdom unit test but wrong
 
 ## Related
 
-- [Performance](/docs/get-started/performance)
+- [Performance](/docs/get-started/guides/performance)
 - [UI context](/docs/get-started/concepts/ui-context)

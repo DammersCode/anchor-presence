@@ -46,10 +46,10 @@ function App() {
 ## Behavior notes
 
 - `renderCursor` replaces only the root's contents. `CursorLayer` still sets `position`, `left`, `top`, `transform`, and `pointerEvents` on the root, so a custom renderer cannot misplace the cursor or block clicks underneath it.
-- Pick label and cursor colors that reach WCAG AA contrast (4.5:1) against the label's own text color; a light cursor color with white label text can fail that check.
+- Pick label and cursor colors that reach WCAG AA contrast (4.5:1) against the label's own text color. A light cursor color with white label text can fail that check.
 - `cursor.user` is untrusted. Validate the shape and treat `name` as text, never as HTML, even inside a custom renderer.
 
 ## Related
 
 - [React guide](/docs/react#cursorlayer-and-defaultcursor)
-- [Security](/docs/get-started/security)
+- [Security](/docs/get-started/guides/security)

@@ -1,0 +1,59 @@
+---
+title: Anchors
+description: Semantic anchors, anchor IDs, and normalized u/v coordinates.
+---
+
+This page defines an anchor: a marked DOM element, its ID, and the normalized position inside it.
+
+## Semantic anchors
+
+A semantic anchor is a DOM element that the application marks with a stable string ID. Anchors mark locations that matter: a button, a table row, or a sidebar link.
+
+The sender expresses cursor position relative to an anchor, not as an absolute screen coordinate. The receiver measures its own copy of that anchor and places the cursor there.
+
+Mark an anchor with the configured anchor attribute. The default attribute is `data-anchor`:
+
+```tsx
+<button data-anchor="nav.dashboard">Dashboard</button>
+```
+
+A binding can use another attribute through `anchorAttribute`. See [`DomBindingOptions`](/docs/dom/api/binding).
+
+## Anchor IDs
+
+An anchor ID is an opaque string, 1 to 256 characters. Choose your own naming scheme, for example `nav.dashboard`, `stats.revenue`, or `orders.row:17.actions`.
+
+Anchor IDs are map keys only. They never become CSS selectors, query strings, or code. A remote message cannot make the receiver look up any DOM location except through the registered anchor map. See [Security](/docs/get-started/guides/security).
+
+If two elements register the same ID, the newest one wins. The registry logs a warning in development builds. This keeps remount-before-unmount cases deterministic, for example React Strict Mode or a virtualized list.
+
+## Normalized u/v coordinates
+
+Each anchor point carries `u` and `v`, both in the range 0 to 1.
+
+- `u` is the horizontal position across the anchor's width: 0 at the left edge, 1 at the right edge.
+- `v` is the vertical position across the anchor's height: 0 at the top edge, 1 at the bottom edge.
+
+The sender computes `u` and `v` from its own anchor rectangle:
+
+```text
+u = (pointerX - rect.left) / rect.width
+v = (pointerY - rect.top) / rect.height
+```
+
+The receiver computes a pixel position from its own anchor rectangle and the same `u`/`v` values:
+
+```text
+x = rect.left + rect.width * u
+y = rect.top + rect.height * v
+```
+
+Both sides use a proportion of the anchor's own size. A 75% mark stays a 75% mark, even if the anchor is a different width or height on each client. See [Responsive layouts](/docs/get-started/concepts/responsive-layouts) for a worked example.
+
+The receiver clamps `u` and `v` to `[0, 1]` during validation. See [Security](/docs/get-started/guides/security).
+
+## Related
+
+- [Fallback chain](/docs/get-started/concepts/fallback-chain)
+- [Responsive layouts](/docs/get-started/concepts/responsive-layouts)
+- [Security](/docs/get-started/guides/security)

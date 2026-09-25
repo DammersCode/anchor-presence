@@ -1,0 +1,49 @@
+---
+title: Fallback chain
+description: How a cursor degrades from an exact anchor to viewport, and the resolution tiers.
+---
+
+A fallback chain is the ordered list of anchors a cursor position carries. It lets a receiver still place the cursor when the exact element is missing.
+
+## Fallback chains
+
+A cursor position carries an ordered list of anchors, most specific first, up to 8 entries. This list is the fallback chain.
+
+The sender builds the chain by walking up from the pointer target through registered ancestor anchors. The chain length is capped at `maxAnchors` (default 4, clamped to 1 through 8).
+
+The receiver walks the chain in order and uses the first anchor that is connected to the DOM and has a non-zero size. If the exact element is missing on the receiver, for example a table row that does not exist on a shorter table, the cursor degrades to the next anchor in the chain.
+
+## Viewport fallback
+
+Every cursor position can also carry a `viewport` field: a normalized `u`/`v` position across the full browser window, computed from `pointerX / innerWidth` and `pointerY / innerHeight`.
+
+When no anchor in the fallback chain resolves, the receiver falls back to the viewport position:
+
+```text
+x = viewport.u * innerWidth
+y = viewport.v * innerHeight
+```
+
+Viewport fallback keeps a cursor visible even when every semantic anchor is missing on the receiver.
+
+## Resolution tiers
+
+Every resolved cursor carries a tier, one of three values:
+
+| Tier       | Meaning                                                                        |
+| ---------- | ------------------------------------------------------------------------------ |
+| `anchor`   | An anchor in the fallback chain resolved. `anchorId` names the winning anchor. |
+| `viewport` | No anchor resolved. The cursor used the viewport fallback position.            |
+| `hidden`   | Nothing resolved. The cursor has no valid position.                            |
+
+The resolution order is fixed: exact anchor, then nearest registered parent anchor, then a larger region anchor, then viewport fallback. A visibility policy then decides whether to show a hidden cursor at all. A visibility policy runs after tier resolution and can still hide an `anchor` or `viewport` tier cursor for application reasons. See [UI context](/docs/get-started/concepts/ui-context).
+
+## Interpolation
+
+The receiver eases a remote cursor from its last position to its new one, instead of jumping. The library ships two styles: `none` (snap) and `linear` (fixed-duration ease). Write a custom style, such as a spring, against the public `Interpolator` interface. See [Interpolation](/docs/core/interpolation).
+
+## Related
+
+- [Anchors](/docs/get-started/concepts/anchors)
+- [UI context](/docs/get-started/concepts/ui-context)
+- [Security](/docs/get-started/guides/security)

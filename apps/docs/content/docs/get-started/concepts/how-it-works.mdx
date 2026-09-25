@@ -1,6 +1,6 @@
 ---
-title: Architecture
-description: The three package layers, the sender-to-receiver flow, and the 10 invariants.
+title: How it works
+description: The three package layers, the sender-to-receiver flow, and the invariants.
 ---
 
 Anchor Presence shows remote user cursors at the correct semantic position. It does not use a canvas. It works even when two clients have different layouts.
@@ -37,7 +37,7 @@ Dom owns the anchor registry, pointer capture, pointer target resolution, normal
 
 ### react
 
-React owns the provider component, the hooks, and SSR safety. Anchors are declared in the DOM with the binding's anchor attribute; React has no separate anchor registration helper.
+React owns the provider component, the hooks, and SSR safety. Anchors are declared in the DOM with the binding's anchor attribute. React has no separate anchor registration helper.
 
 ## Sender to receiver flow
 
@@ -123,16 +123,13 @@ The receiver's client stores every accepted remote presence. It exposes two read
 
 ## Why receiver layout is authoritative
 
-Two clients rarely show the same layout. Screen sizes differ, sidebars collapse, and tables wrap. A button can sit at a different pixel position on each screen.
+A sender that transmits raw pixel coordinates points at the wrong element on a receiver with a different layout. Anchor Presence transmits a semantic location instead: an anchor ID plus a normalized position inside that anchor, resolved against the receiver's own DOM.
 
-A sender that transmits raw pixel coordinates points at the wrong element on a receiver with a different layout. Anchor Presence transmits a semantic location instead: an anchor ID plus a normalized position inside that anchor.
-
-The receiver resolves this data against its own current DOM. It measures its own anchor element with `getBoundingClientRect()` and computes a pixel position from the normalized `u`/`v` values. The result is correct for the receiver's layout, regardless of the sender's layout.
-
-This design also makes local scrolling and resizing free. When the receiver's layout changes, the geometry scheduler re-measures the same anchor and moves the cursor. No new network message is required (Invariant 7).
+This design also makes local scrolling and resizing free. When the receiver's layout changes, the geometry scheduler re-measures the same anchor and moves the cursor. No new network message is required (Invariant 7). See [Anchors](/docs/get-started/concepts/anchors) for the coordinate math, and [Responsive layouts](/docs/get-started/concepts/responsive-layouts) for a worked example across two different layouts.
 
 ## Related
 
-- [Anchors and fallbacks](/docs/get-started/concepts/anchors-and-fallbacks)
-- [Responsive layouts](/docs/get-started/responsive-layouts)
-- [Performance](/docs/get-started/performance)
+- [Anchors](/docs/get-started/concepts/anchors)
+- [Fallback chain](/docs/get-started/concepts/fallback-chain)
+- [Responsive layouts](/docs/get-started/concepts/responsive-layouts)
+- [Performance](/docs/get-started/guides/performance)

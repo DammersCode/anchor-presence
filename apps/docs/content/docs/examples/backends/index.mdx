@@ -1,5 +1,5 @@
 ---
-title: Backends
+title: Overview
 description: How transports and relays fit together, the transport interface, and a matrix of options.
 ---
 
@@ -7,13 +7,13 @@ Anchor Presence needs a bidirectional byte channel between clients: a relay that
 
 ## What a relay does
 
-A relay is deliberately simple. It does not understand the presence protocol; it only forwards bytes between the sockets in one room:
+A relay is deliberately simple. It does not understand the presence protocol. It only forwards bytes between the sockets in one room:
 
 ```text
 sender.send(bytes) -> relay -> every other socket in the same room -> receiver.subscribe(listener)
 ```
 
-The reference relay in `apps/server/index.ts` enforces a per-room socket cap, a per-message byte cap, and a per-socket rate limit, and forwards binary frames opaquely. It never inspects a message's `anchors`, `context`, or `user` fields. See [Performance](/docs/get-started/performance#scaling-limits) for the scaling shape of a room-broadcast relay.
+The reference relay in `apps/server/index.ts` enforces a per-room socket cap, a per-message byte cap, and a per-socket rate limit, and forwards binary frames opaquely. It never inspects a message's `anchors`, `context`, or `user` fields. See [Performance](/docs/get-started/guides/performance#scaling-limits) for the scaling shape of a room-broadcast relay.
 
 ## The transport interface
 
@@ -33,15 +33,15 @@ See [Transports](/docs/core/transports) for the full contract and the shipped We
 
 ## Backend matrix
 
-| Backend                                          | Relay                 | Client transport              | Tested by                             |
-| ------------------------------------------------ | --------------------- | ----------------------------- | ------------------------------------- |
-| Native WebSocket                                 | your own server       | `createWebSocketTransport`    | Unit tests in `packages/dom`          |
-| [Bun native](/docs/examples/backends/bun-native) | `examples/bun-native` | `createWebSocketTransport`    | Integration test against a real relay |
-| [Node `ws`](/docs/examples/backends/node-ws)     | `examples/node-ws`    | `createWebSocketTransport`    | Integration test against a real relay |
-| [Hono](/docs/examples/backends/hono)             | `examples/hono`       | `createWebSocketTransport`    | Integration test against a real relay |
-| [Elysia](/docs/examples/backends/elysia)         | `examples/elysia`     | `createWebSocketTransport`    | Integration test against a real relay |
-| [Socket.IO](/docs/examples/backends/socketio)    | `examples/socketio`   | Socket.IO transport (example) | Integration test against a real relay |
-| [SignalR](/docs/examples/backends/signalr)       | `examples/signalr`    | SignalR transport (example)   | Integration test against a real hub   |
+| Backend                                         | Relay                 | Client transport              | Tested by                             |
+| ----------------------------------------------- | --------------------- | ----------------------------- | ------------------------------------- |
+| Native WebSocket                                | your own server       | `createWebSocketTransport`    | Unit tests in `packages/dom`          |
+| [Bun](/docs/examples/backends/bun-native)       | `examples/bun-native` | `createWebSocketTransport`    | Integration test against a real relay |
+| [Node.js (ws)](/docs/examples/backends/node-ws) | `examples/node-ws`    | `createWebSocketTransport`    | Integration test against a real relay |
+| [Hono](/docs/examples/backends/hono)            | `examples/hono`       | `createWebSocketTransport`    | Integration test against a real relay |
+| [Elysia](/docs/examples/backends/elysia)        | `examples/elysia`     | `createWebSocketTransport`    | Integration test against a real relay |
+| [Socket.IO](/docs/examples/backends/socketio)   | `examples/socketio`   | Socket.IO transport (example) | Integration test against a real relay |
+| [SignalR](/docs/examples/backends/signalr)      | `examples/signalr`    | SignalR transport (example)   | Integration test against a real hub   |
 
 A transport that needs a third-party library lives in `examples/`, never in a package. `core`, `dom`, and `react` stay free of framework and vendor dependencies. See [Package boundaries](https://github.com/DammersCode/anchor-presence/blob/main/AGENTS.md) in the repository for the full rule.
 
@@ -59,11 +59,11 @@ Two options need no relay at all: `createInMemoryPair` from `@anchor-presence/co
 
 ## Shared guard helpers
 
-The Bun native, Node `ws`, Hono, and Elysia relays share one file of guard helpers: room-name validation, a per-connection rate limiter, a message size check, and Origin and token checks. Copy it together with the server you pick:
+The Bun, Node.js (ws), Hono, and Elysia relays share one file of guard helpers: room-name validation, a per-connection rate limiter, a message size check, and Origin and token checks. Copy it together with the server you pick:
 
 <CodeFromSource repo="examples/_shared/relay-guard.ts" lang="ts" />
 
 ## Related
 
 - [Transports](/docs/core/transports)
-- [Performance](/docs/get-started/performance)
+- [Performance](/docs/get-started/guides/performance)

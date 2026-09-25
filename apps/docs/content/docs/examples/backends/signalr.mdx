@@ -9,7 +9,7 @@ description: An ASP.NET Core SignalR hub and a shipped client transport.
 
 <CodeFromSource repo="examples/signalr/server/Hub/PresenceHub.cs" lang="csharp" />
 
-`withAutomaticReconnect()` on the client's `HubConnectionBuilder` is required on the ASP.NET Core side for reconnection to work; without it, a drop goes straight to the closed state with no retry.
+`withAutomaticReconnect()` on the client's `HubConnectionBuilder` is required on the ASP.NET Core side for reconnection to work. Without it, a drop goes straight to the closed state with no retry.
 
 ## Client transport
 
@@ -73,7 +73,7 @@ function usePresenceClient() {
 
 - The hub adds each connection to a SignalR group for its room. `PresenceHub.OnPresence` forwards to `Clients.OthersInGroup(room)`, so a sender never receives its own message and other rooms never receive it.
 - `examples/signalr/signalr-hub.test.ts` starts the real ASP.NET Core hub and runs two clients through it. The test skips when `dotnet` is not on `PATH`.
-- `connection.send` and `connection.on` are fire-and-forget over the hub's method name; there is no acknowledgment, matching the transport interface's `send` contract.
+- `connection.send` and `connection.on` are fire-and-forget over the hub's method name. There is no acknowledgment, matching the transport interface's `send` contract.
 
 ## Related
 

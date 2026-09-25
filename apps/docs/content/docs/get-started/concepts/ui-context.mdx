@@ -15,9 +15,9 @@ Set context on the client:
 client.setContext({ route: "/settings", dialog: "invite" });
 ```
 
-A change to context is sent once, and full publishes (reconnect and heartbeat) include the current context. A missing field means "unchanged since the previous same-session message"; an explicit `null` clears it. On the receiver, context reaches two places: the visibility policy input, and the `context` field on each `ResolvedCursor`.
+A change to context is sent once, and full publishes (reconnect and heartbeat) include the current context. A missing field means "unchanged since the previous same-session message". An explicit `null` clears it. On the receiver, context reaches two places: the visibility policy input, and the `context` field on each `ResolvedCursor`.
 
-Use context for information the receiver needs to decide how to show a cursor: current route, open dialog, active tab, or similar semantic state. Do not use context for anything that must stay private. It reaches every receiver in the room when it changes and on full publishes. See [Security](/docs/get-started/security) for validation limits and rendering rules.
+Use context for information the receiver needs to decide how to show a cursor: current route, open dialog, active tab, or similar semantic state. Do not use context for anything that must stay private. It reaches every receiver in the room when it changes and on full publishes. See [Security](/docs/get-started/guides/security) for validation limits and rendering rules.
 
 ## Visibility policies
 
@@ -81,6 +81,6 @@ Do not write code that reacts to `useRemoteCursors()` or `useCursorPresence()` o
 
 ## Related
 
-- [Anchors and fallbacks](/docs/get-started/concepts/anchors-and-fallbacks)
-- [Security](/docs/get-started/security)
+- [Fallback chain](/docs/get-started/concepts/fallback-chain)
+- [Security](/docs/get-started/guides/security)
 - [Occlusion and scroll containers example](/docs/examples/occlusion-and-scroll-containers)

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { binaryCodec, type CursorCodec, type CursorPresence } from "@anchor-presence/core";
 
-// Copied verbatim from apps/docs/content/docs/core/codecs.mdx (Debugging, option B).
+// Copied verbatim from apps/docs/content/docs/core/custom-codec.mdx (Debugging, option B).
 const debugCodec: CursorCodec = {
   encode(message) {
     console.debug("[presence out]", message);

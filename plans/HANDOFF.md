@@ -25,8 +25,17 @@ Owner decisions:
 | [024 Backend examples](024-backend-examples.md)             | `examples-backends` | `C:/repos/danny/ap-wt-backends` | done, merged (`0f451ff`) |
 | 022 Gap closure — demo, e2e, CI                             | `demo-e2e-ci`       | `C:/repos/danny/ap-wt-ci`       | done, merged             |
 | 025 Docs rework                                             | `dev`               | main tree                       | done                     |
+| [026 Example previews](026-example-previews.md)             | `dev`               | main tree                       | done                     |
 
 Each branch keeps its own progress in `plans/handoffs/<branch>.md`. Read that file before you continue a branch.
+
+## Example previews notes (026)
+
+- Every example page embeds `<ExamplePreview scene="..." />`: two iframes (`/demo-frame/<scene>/<layout>`) on one `BroadcastChannel`, plus a control channel (`<channel>:control`) for tour state, reader input, and visibility. The home hero and quick start keep `<Demo />` (scene `home` on the same route).
+- Scene files (`components/examples/<scene>.tsx`) are the code the page shows. Keep plumbing out of them: a scene takes `client`, `layout`, and `children` (the status bar), and owns its `LiveCursorProvider` and `CursorLayer`.
+- The tour runs only in the wide pane: each track is a real presence client (`clientId` `tour-<name>`, one-hour heartbeat so a `quiet` step goes idle). It builds anchor chains from the DOM like the binding does. It pauses on reader input (resumes after 4 s), when the preview leaves the viewport (parent `IntersectionObserver`), when the tab is hidden, and on the Pause button. Under reduced motion it jumps instead of gliding.
+- To add a scene: write the scene file, add it to `SCENE_COMPONENTS`, add captions and a tour to `SCENES`, and embed `<ExamplePreview scene="..." />`. Tour anchors must exist in the wide layout.
+- Dev server caveat: moving `app/demo-frame/[variant]` to `[scene]/[layout]` broke the running `next dev` route table ("different slug names for the same dynamic path"). After that, it served no new dynamic route. Restart `next dev` once after pulling this change.
 
 ## Docs rework notes (025, whole-site QA pass)
 

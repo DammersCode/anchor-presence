@@ -1,6 +1,6 @@
 # 026 Example previews
 
-Status: in progress · Branch: `dev`
+Status: done · Branch: `dev`
 
 Owner feedback (2026-09-25): every example page embeds the same `<Demo />` (sidebar + three cards). The pages look identical, so a reader cannot see what each example shows. Model: gridcn example pages (`C:/repos/danny/gridcn/content/docs/examples/**`): each page has its own demo, a "What's in the demo" list that says what to try, and links to the behavior docs.
 
@@ -38,3 +38,10 @@ The home page hero and the quick start keep the existing `<Demo />`.
 - The tour runs without input, stops on pointer input, and pauses off-screen.
 - `bun run docs:build`, `bun run typecheck`, `bun run lint`, `bun run format:check` pass.
 - Checked with `agent-browser` screenshots: every page, light and dark, 1440 px and 390 px.
+
+## Outcome
+
+- Framework: `apps/docs/components/examples/_preview/` (`example-preview.tsx` page component, `example-frame.tsx` pane, `tour.ts` scripted users, `use-tour-control.ts` input/visibility control, `resolution-insight.tsx` status bar and outline, `scenes.ts` captions and tours, `scene-components.ts` scene registry, `control.ts` control messages).
+- Route: `app/demo-frame/[scene]/[layout]`. Scene `home` serves the unchanged home and quick-start `<Demo />`.
+- Scenes: `apps/docs/components/examples/<scene>.tsx`, shown on each page through `<CodeFromSource docs=... />`.
+- LLM markdown drops `<ExamplePreview ... />` like `<Demo />`.

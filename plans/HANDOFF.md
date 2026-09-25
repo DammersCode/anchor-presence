@@ -35,6 +35,15 @@ Each branch keeps its own progress in `plans/handoffs/<branch>.md`. Read that fi
 - Root `build` builds only `core`, `dom`, `react`. `bun run docs:build` builds the docs app.
 - Open: run a full `simple-english` self-check pass over all pages.
 
+### Root-folder tabs (from the tab-switcher restructure)
+
+- `content/docs` now has five Fumadocs root folders (`meta.json` with `"root": true`, `icon`, `description`), giving the sidebar a tab switcher like fumadocs.dev: `get-started` ("Anchor Presence"), `core` (`@anchor-presence/core`), `dom` (`@anchor-presence/dom`), `react` (`@anchor-presence/react`), `examples`.
+- URLs moved to `/docs/<tab>/<page>`. `core`, `dom`, `react` each have an `index.mdx` overview page; `get-started` and `examples` do not, so `next.config.mjs` redirects their bare tab URL to a real page (`/docs/get-started` to `introduction`, `/docs/examples` to `basics`). A root folder with no `index.mdx` 404s at its own bare URL; add one or a redirect for any new tab.
+- `lib/source.ts` resolves `meta.json`'s `icon` string through a small `icons` map (`lucide-react`) passed to `loader({ icon })`.
+- Every old `/docs/getting-started/*`, `/docs/concepts/*`, `/docs/guides/*`, `/docs/reference/*` URL has a permanent redirect in `next.config.mjs`. `/docs/examples/*` did not move.
+- The new `/docs/core/build-a-framework-adapter` page documents the provider/hook mechanics future Solid and Vue adapters need; see `plans/adapters/framework-adapters.md` for the adapter plan itself.
+- Top nav gained "Docs" and "Examples" links (`lib/layout.shared.tsx`); the home page gained an "Examples" button next to "Read the docs".
+
 ## Backend examples notes (from `examples-backends`)
 
 - `apps/demo` is the only demo client. `apps/demo/src/cursors/backends.ts` reads `?backend=` (or `VITE_BACKEND`). IDs and ports: `bun` = `apps/server` :8787 (default; e2e depends on it), `bun-native` :8788, `node-ws` :8789, `hono` :8790, `elysia` :8791, `socketio` :5001, `signalr` :5000.
@@ -67,6 +76,7 @@ Each branch keeps its own progress in `plans/handoffs/<branch>.md`. Read that fi
 3. After the first CI runs on `main`: re-record the bench baseline on CI hardware (`bun run bench -- --update-baseline`) and make the bench step blocking.
 4. Run a full `simple-english` self-check pass over the docs pages.
 5. Future backends: `plans/backends/`.
+6. Future framework adapters (Solid, Vue): `plans/adapters/framework-adapters.md`.
 
 ## How to resume
 

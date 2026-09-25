@@ -935,6 +935,95 @@ describe("createPresenceClient dispose lifecycle", () => {
   });
 });
 
+describe("createPresenceClient autoConnect", () => {
+  it("calls transport.connect() exactly once, after subscribe and subscribeStatus, when autoConnect is true", () => {
+    const calls: string[] = [];
+    const connect = vi.fn(() => {
+      calls.push("connect");
+    });
+    const transport: LiveCursorTransport = {
+      connect,
+      disconnect: vi.fn(),
+      send: vi.fn(),
+      subscribe: vi.fn((_listener) => {
+        calls.push("subscribe");
+        return () => {};
+      }),
+      subscribeStatus: vi.fn((listener) => {
+        calls.push("subscribeStatus");
+        listener("connecting");
+        return () => {};
+      }),
+    };
+
+    const client = createPresenceClient({ transport, idFactory, autoConnect: true });
+
+    expect(connect).toHaveBeenCalledTimes(1);
+    expect(calls).toEqual(["subscribe", "subscribeStatus", "connect"]);
+    client.dispose();
+  });
+
+  it("never calls transport.connect() when autoConnect is omitted or false", () => {
+    const { transport: transportDefault } = makeTransport();
+    const connectDefault = vi.fn();
+    transportDefault.connect = connectDefault;
+    const clientDefault = createPresenceClient({ transport: transportDefault, idFactory });
+    expect(connectDefault).not.toHaveBeenCalled();
+    clientDefault.dispose();
+
+    const { transport: transportFalse } = makeTransport();
+    const connectFalse = vi.fn();
+    transportFalse.connect = connectFalse;
+    const clientFalse = createPresenceClient({
+      transport: transportFalse,
+      idFactory,
+      autoConnect: false,
+    });
+    expect(connectFalse).not.toHaveBeenCalled();
+    clientFalse.dispose();
+  });
+
+  it("works with autoConnect true against a transport with no connect method", () => {
+    const { transport } = makeTransport();
+    expect(() => createPresenceClient({ transport, idFactory, autoConnect: true })).not.toThrow();
+  });
+
+  it("does not let a throwing connect() escape client creation", () => {
+    const { transport } = makeTransport();
+    transport.connect = vi.fn(() => {
+      throw new Error("boom");
+    });
+
+    expect(() => createPresenceClient({ transport, idFactory, autoConnect: true })).not.toThrow();
+  });
+
+  it("does not produce an unhandled rejection when connect() rejects", async () => {
+    const { transport } = makeTransport();
+    transport.connect = vi.fn(() => Promise.reject(new Error("boom")));
+
+    const unhandled = vi.fn();
+    process.on("unhandledRejection", unhandled);
+    try {
+      const client = createPresenceClient({ transport, idFactory, autoConnect: true });
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(unhandled).not.toHaveBeenCalled();
+      client.dispose();
+    } finally {
+      process.off("unhandledRejection", unhandled);
+    }
+  });
+
+  it("calls transport.disconnect() on dispose with autoConnect true, same as the default", () => {
+    const { transport, disconnect } = makeTransport();
+    transport.connect = vi.fn();
+    const client = createPresenceClient({ transport, idFactory, autoConnect: true });
+
+    client.dispose();
+    expect(disconnect).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe("createPresenceClient guarded fan-out", () => {
   it("a throwing status listener does not break others or the reconnect republish", () => {
     const { transport, sent, setStatus } = makeTransport(true);

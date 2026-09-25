@@ -43,6 +43,8 @@ const defaultScheduler: SchedulerLike = {
 /**
  * Creates one presence client.
  * The client sends and receives messages through the transport you give it.
+ * Pass `autoConnect: true` to have the client call `transport.connect()` for you; the default
+ * leaves that call to you.
  * @param options The client options. `transport` is required.
  * @returns The client.
  */
@@ -157,6 +159,19 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
   statusMachine.wireTransport();
 
   publish.wireVisibility();
+
+  if (options.autoConnect === true) {
+    try {
+      const result = transport.connect?.();
+      if (result && typeof result.then === "function") {
+        result.catch(() => {
+          // a rejecting connect must not escape as an unhandled rejection; the transport reports failure via status
+        });
+      }
+    } catch {
+      // a throwing connect must not escape creation; the transport reports failure via status
+    }
+  }
 
   if (state.context !== undefined || state.user !== undefined) warnIfOversized();
 

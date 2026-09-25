@@ -1,9 +1,9 @@
 ---
 title: Anchors and fallbacks
-description: Mark a row and its actions, and watch the cursor degrade gracefully when one is missing.
+description: Mark a row and its actions, and watch the cursor degrade in order when one is missing.
 ---
 
-A list page often has more structure per row than a receiver's shorter list can match: a row that exists on the sender's screen might be scrolled out or filtered away on the receiver's. Anchoring one element per level lets the cursor degrade to the nearest ancestor instead of disappearing.
+A list page often has more structure per row than a receiver's shorter list can match. A row that exists on the sender's screen can be scrolled out or filtered away on the receiver's. Anchoring one element per level lets the cursor degrade to the nearest ancestor instead of disappearing.
 
 <Demo />
 
@@ -37,7 +37,7 @@ Three anchors describe the same button: the button itself, its row, and the tabl
 ## Behavior notes
 
 - If the receiver has the same `order.id` row, the cursor lands on the button, exactly as the sender saw it.
-- If the receiver's list has been filtered and that row does not exist, the chain falls back to `orders.row:${id}`, which also does not exist, then to `orders`, the table itself.
+- If a filter on the receiver removes that row, the row anchor does not exist, so the chain falls back to `orders`, the table itself.
 - If even the table is off-screen, the cursor falls back further to the [viewport position](/docs/get-started/concepts/fallback-chain#viewport-fallback).
 - Give a row a stable ID from its own data, never from its render index. An index-based ID drifts when the list is sorted or filtered differently between clients.
 

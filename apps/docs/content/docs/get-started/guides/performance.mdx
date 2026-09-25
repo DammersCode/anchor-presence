@@ -17,7 +17,7 @@ COMPUTE PHASE  resolve every remote cursor from the cached rects
 NOTIFY PHASE   publish one immutable snapshot to subscribers
 ```
 
-Active anchors are the union of anchor IDs referenced by current remote cursors: the first resolvable anchor per cursor, probed in fallback-chain order. Each element is measured at most once per frame. All reads happen before any consumer code runs, so one pass causes at most one forced reflow.
+Active anchors are the union of anchor IDs referenced by current remote cursors: the first resolvable anchor per cursor, probed in fallback chain order. Each element is measured at most once per frame. All reads happen before any consumer code runs, so one pass causes at most one forced reflow.
 
 ## Invalidation signals
 
@@ -37,7 +37,7 @@ The scheduler listens for these signals while at least one remote cursor is acti
 
 ### When to call invalidate() yourself
 
-Call the binding's `invalidate()` after a programmatic layout change the built-in signals cannot see, for example an instant CSS Custom Highlight or canvas-driven layout shift, or any case where you already know geometry changed and want the next frame to reflect it immediately:
+If a programmatic layout change is invisible to the built-in signals, call the binding's `invalidate()` yourself. Two examples are an instant CSS Custom Highlight and a canvas-driven layout shift.
 
 ```ts
 const binding = createDomBinding(client);

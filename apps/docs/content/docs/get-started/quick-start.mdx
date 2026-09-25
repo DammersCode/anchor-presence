@@ -3,6 +3,8 @@ title: Quick start
 description: Run live cursors with no backend, then connect a real relay.
 ---
 
+This page runs live cursors two ways: first with no backend, using an in-process transport, then with a real relay between two browser tabs.
+
 ## Try it with no backend
 
 `createInMemoryPair` gives you two connected transports in one process. Use it to see the library work before you wire up a relay:
@@ -73,13 +75,10 @@ Open your app in two browser windows. Move the pointer in one window. A live cur
 
 <Demo />
 
-## Next
-
-- [Anchors](/docs/get-started/concepts/anchors) and [Fallback chain](/docs/get-started/concepts/fallback-chain) for how a cursor position is built and resolved.
-- [React guide](/docs/react) for every hook and `CursorLayer` option.
-- [Examples](/docs/examples/basics) for a minimal setup you can copy.
-
 ## Related
 
+- [Anchors](/docs/get-started/concepts/anchors)
+- [Fallback chain](/docs/get-started/concepts/fallback-chain)
 - [SSR and Strict Mode](/docs/react/ssr-and-strict-mode)
 - [Transports](/docs/core/transports)
+- [Examples](/docs/examples/basics)

@@ -7,9 +7,7 @@
   "workspaces": [
     "packages/*",
     "apps/*",
-    "examples/*",
-    "examples/signalr/client",
-    "examples/socketio/client"
+    "examples/*"
   ],
   "scripts": {
     "build": "bun run --filter '@anchor-presence/*' build",
@@ -20,7 +18,7 @@
     "test": "vitest run",
     "test:browser": "playwright test",
     "preversion": "bun run build && bun run typecheck && bun run lint && bun run test",
-    "version": "node scripts/sync-versions.mjs && bun install && git add package.json packages/*/package.json apps/*/package.json examples/*/package.json examples/*/client/package.json bun.lock",
+    "version": "node scripts/sync-versions.mjs && bun install && git add package.json packages/*/package.json apps/*/package.json examples/*/package.json bun.lock",
     "postversion": "git push && git push --tags",
     "release:check": "node scripts/check-release.mjs"
   },

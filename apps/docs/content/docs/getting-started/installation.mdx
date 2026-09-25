@@ -1,0 +1,32 @@
+---
+title: Installation
+description: Install the three packages and check the requirements.
+---
+
+Install the three packages with your package manager:
+
+<InstallCommand />
+
+## Requirements
+
+| Requirement | Version                                               |
+| ----------- | ----------------------------------------------------- |
+| React       | 18 or later                                           |
+| TypeScript  | 5.9 or later                                          |
+| Browser     | Current versions of Chrome, Edge, Firefox, and Safari |
+
+## Which packages you need
+
+Add only the packages your app uses:
+
+- Use `@anchor-presence/core` alone in a non-React app, or on a server.
+- Add `@anchor-presence/dom` for browser anchors, pointer capture, and cursor resolution without React.
+- Add `@anchor-presence/react` for the provider component and hooks. It depends on `dom` and `core`.
+
+## A transport
+
+The library needs a bidirectional byte channel between clients: a WebSocket relay, Socket.IO, SignalR, or your own. `@anchor-presence/dom` ships a native WebSocket transport. See [Transports](/docs/guides/transports) for the interface and every shipped example.
+
+## Next
+
+Continue with [Quick start](/docs/getting-started/quick-start).

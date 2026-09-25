@@ -25,4 +25,4 @@ Out of scope:
 - The demo relay server in `apps/server` (for local development and demos only)
 - The example applications under `examples/`
 
-See [`docs/security.md`](docs/security.md) for details on the library's security model.
+See [Security](https://anchor-presence.vercel.app/docs/guides/security) for details on the library's security model.

@@ -1,0 +1,43 @@
+---
+title: Introduction
+description: What Anchor Presence does and why receiver layout is authoritative.
+---
+
+Anchor Presence is a live-cursor layer for web apps. It shows where your teammates are looking and clicking. It keeps every cursor on the correct element, even when their layout, sidebar, or screen size differs from yours.
+
+## The problem
+
+A remote cursor is usually a screen coordinate. Two clients rarely show the same layout: a sidebar can be collapsed on one screen and open on another, and a table can wrap to one column on a narrow screen. A pixel coordinate from one screen can land on the wrong element, or on no element at all, on another screen.
+
+## The fix
+
+Anchor Presence never sends a screen coordinate as the primary signal. It sends a semantic anchor ID plus a normalized position inside that anchor. Each receiver measures its own copy of the anchor and computes a pixel position from that proportion. Read [Anchors and fallbacks](/docs/concepts/anchors-and-fallbacks) for the full model.
+
+## Packages
+
+The library has three packages. Each adds one layer, and the dependency direction is one-way: `react` depends on `dom`, and `dom` depends on `core`.
+
+| Package                  | What it does                                                    | Depends on DOM or React |
+| ------------------------ | --------------------------------------------------------------- | ----------------------- |
+| `@anchor-presence/core`  | Protocol, validation, presence store, client orchestration.     | No                      |
+| `@anchor-presence/dom`   | Anchor registry, pointer capture, geometry scheduler, resolver. | DOM only                |
+| `@anchor-presence/react` | Provider component and hooks, built on `useSyncExternalStore`.  | React                   |
+
+## Guarantees
+
+The library holds these rules on every message:
+
+1. Position is a label plus an offset, never a screen coordinate.
+2. Each receiver resolves the position against its own layout.
+3. The cursor follows the anchor element through reflow and resize.
+4. A missing anchor degrades in order: element, then parent, then region, then viewport, then hidden.
+5. The React adapter holds no engine state of its own.
+6. The engine imports no transport library.
+7. A local layout change moves a stationary remote cursor with no new network packet.
+8. An anchor ID is a map key. It never runs as a selector or as code.
+9. No cursor component is required.
+10. The transport, codec, and framework boundaries are designed to extend without touching the core.
+
+## Next
+
+Continue with [Installation](/docs/getting-started/installation), then [Quick start](/docs/getting-started/quick-start).

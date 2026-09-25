@@ -14,36 +14,27 @@ Install the three packages.
 bun add @anchor-presence/react @anchor-presence/dom @anchor-presence/core
 ```
 
-Create a client with a transport. Mark one element with `data-anchor`. Then render the provider and the cursor layer.
+Create a client with a transport, inside `usePresenceClient`. Mark one element with `data-anchor`. Then render the provider and the cursor layer.
 
 ```tsx
 import { createPresenceClient } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
-import { LiveCursorProvider, CursorLayer } from "@anchor-presence/react";
-
-const transport = createWebSocketTransport({ url: "ws://localhost:8787/?room=main" });
-transport.connect();
-const client = createPresenceClient({ transport, user: { name: "Alice" } });
-
-function DashboardButton() {
-  return <button data-anchor="nav.dashboard">Dashboard</button>;
-}
+import { CursorLayer, LiveCursorProvider, usePresenceClient } from "@anchor-presence/react";
 
 function App() {
+  const client = usePresenceClient({
+    factory: () => createPresenceClient({ transport: createWebSocketTransport({ path: "/?room=main" }) }),
+  });
   return (
     <LiveCursorProvider client={client}>
-      <DashboardButton />
+      <button data-anchor="nav.dashboard">Dashboard</button>
       <CursorLayer />
     </LiveCursorProvider>
   );
 }
 ```
 
-`apps/server` is the matching relay for this example: run `cd apps/server && bun run dev` to start it. `room` is a relay-side grouping key, not part of the protocol.
-
-Any bidirectional byte channel that implements the transport interface works in place of `createWebSocketTransport`. See [docs/transports.md](docs/transports.md) for the WebSocket usage and the Socket.IO, SignalR, and BroadcastChannel examples.
-
-Open your app in two browser windows. Move the pointer in one window. A live cursor appears in the second window, tracking the same element even at a different window size.
+`apps/server` is the matching relay for this example: run `cd apps/server && bun run dev` to start it. Open your app in two browser windows and move the pointer in one; a live cursor appears in the other, tracking the same element even at a different window size. See the [docs site](https://anchor-presence.vercel.app/docs) for the full quick start, every transport, and the API reference.
 
 ## Requirements
 
@@ -75,18 +66,7 @@ Open your app in two browser windows. Move the pointer in one window. A live cur
 
 ## Docs
 
-| File                                                       | What it covers                                                                                     |
-| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| [`docs/architecture.md`](docs/architecture.md)             | Package layers, sender-to-receiver flow, the 10 invariants                                         |
-| [`docs/concepts.md`](docs/concepts.md)                     | Anchors, anchor IDs, normalized coordinates, fallback chains, resolution tiers                     |
-| [`docs/responsive-layouts.md`](docs/responsive-layouts.md) | How layout differences resolve, with a worked example                                              |
-| [`docs/ui-context.md`](docs/ui-context.md)                 | Opaque context, visibility policies, dialog mismatch handling                                      |
-| [`docs/react.md`](docs/react.md)                           | Provider and hook reference, custom interpolation, examples                                        |
-| [`docs/transports.md`](docs/transports.md)                 | The transport interface, plus WebSocket, Socket.IO, SignalR, and BroadcastChannel examples         |
-| [`docs/codecs.md`](docs/codecs.md)                         | The codec interface, `jsonCodec`, `binaryCodec`, a MessagePack sketch, and the validation boundary |
-| [`docs/performance.md`](docs/performance.md)               | The geometry scheduler model and performance guidance                                              |
-| [`docs/security.md`](docs/security.md)                     | Validation limits, anchor ID safety, rendering rules                                               |
-| [`docs/troubleshooting.md`](docs/troubleshooting.md)       | Common problems and their causes                                                                   |
+Full documentation, guides, the API reference, and live examples: **[anchor-presence.vercel.app](https://anchor-presence.vercel.app/docs)**.
 
 See also [SPECIFICATION.md](SPECIFICATION.md) for the full technical specification.
 
@@ -147,7 +127,7 @@ flowchart TD
     D --> E
 ```
 
-The sender never measures the DOM of the receiver. It sends a semantic anchor ID and a normalized position inside it. The receiver measures its own anchor and turns that into pixels. See [docs/architecture.md](docs/architecture.md) for the full flow and the 10 invariants.
+The sender never measures the DOM of the receiver. It sends a semantic anchor ID and a normalized position inside it. The receiver measures its own anchor and turns that into pixels. See [Architecture](https://anchor-presence.vercel.app/docs/concepts/architecture) for the full flow and the 10 invariants.
 
 ## Capability matrix
 
@@ -209,6 +189,6 @@ Unit tests run through Vitest. Cross-layout tests run through Playwright against
 
 ## Contributing
 
-Read [docs/architecture.md](docs/architecture.md) first for the package boundary rules. Then read [SPECIFICATION.md](SPECIFICATION.md) for the full protocol. Open an issue or a pull request at [github.com/DammersCode/anchor-presence](https://github.com/DammersCode/anchor-presence).
+Read [Architecture](https://anchor-presence.vercel.app/docs/concepts/architecture) first for the package boundary rules. Then read [SPECIFICATION.md](SPECIFICATION.md) for the full protocol. Open an issue or a pull request at [github.com/DammersCode/anchor-presence](https://github.com/DammersCode/anchor-presence).
 
 MIT © DammersCode. See [LICENSE](LICENSE).

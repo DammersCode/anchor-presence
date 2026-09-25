@@ -3,6 +3,7 @@ dist
 node_modules
 playwright-report
 test-results
-site/index.html
 examples/signalr/server
 .agents/skills
+apps/docs/.next
+apps/docs/.source

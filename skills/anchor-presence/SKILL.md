@@ -69,4 +69,6 @@ The policy also receives `resolution.pointVisible` — false when the resolved p
 
 ## Source
 
-Docs, transports (Socket.IO, SignalR, BroadcastChannel), and examples: https://github.com/DammersCode/anchor-presence
+Docs site: https://anchor-presence.vercel.app/docs — machine-readable index at https://anchor-presence.vercel.app/llms.txt
+
+Repository, transports (Socket.IO, SignalR, BroadcastChannel), and examples: https://github.com/DammersCode/anchor-presence

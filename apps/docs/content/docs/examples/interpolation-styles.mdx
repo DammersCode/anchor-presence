@@ -1,0 +1,40 @@
+---
+title: Interpolation styles
+description: Compare the shipped none and linear interpolators against a custom spring.
+---
+
+A remote cursor arrives as a series of discrete positions. An interpolator decides how the cursor moves between them: snap instantly, ease at a fixed rate, or something richer, like a spring. The library ships the first two; a spring is application code, built against the public `Interpolator` interface.
+
+<Demo />
+
+<InstallCommand />
+
+## Code
+
+The demo app's spring interpolator, read from its real source so this sample never drifts from the code that runs:
+
+<CodeFromSource repo="apps/demo/src/cursors/interpolators.ts" lang="ts" />
+
+Register it on the provider:
+
+```tsx
+<LiveCursorProvider
+  key={style}
+  client={client}
+  bindingOptions={{ resolution: { interpolatorFactory: springInterpolator } }}
+>
+  <App />
+</LiveCursorProvider>
+```
+
+## Behavior notes
+
+- `target` sets a new destination without resetting velocity, so a spring keeps its momentum across consecutive updates instead of restarting from rest each time.
+- `shift` moves the current position and the target by the same delta, with no easing. The resolver calls it for a local-only change, such as scroll, where the anchor moved but no new network packet arrived.
+- `sample` must eventually report `settled: true`, or the scheduler's animation-frame loop never stops for that cursor.
+- The provider reads `bindingOptions` once, at binding creation. Give the provider a `key` that changes with the selected style, so a style switch remounts the binding with the new factory. Remote cursor state lives on the server, not in the binding, so the remount does not reset any position.
+
+## Related
+
+- [React guide](/docs/guides/react#custom-interpolation)
+- [Performance](/docs/guides/performance)

@@ -1,0 +1,46 @@
+---
+title: Basics
+description: The smallest setup that shows a remote cursor.
+---
+
+A new integration needs three things: a client, a provider, and at least one anchor. This page is the minimal shape, with no relay required to see it work.
+
+<Demo />
+
+<InstallCommand />
+
+## Code
+
+```tsx
+import { createInMemoryPair, createPresenceClient } from "@anchor-presence/core";
+import { LiveCursorProvider, CursorLayer } from "@anchor-presence/react";
+
+const { a: transport } = createInMemoryPair();
+const client = createPresenceClient({ transport, user: { name: "Alice" } });
+
+function DashboardButton() {
+  return <button data-anchor="nav.dashboard">Dashboard</button>;
+}
+
+function App() {
+  return (
+    <LiveCursorProvider client={client}>
+      <DashboardButton />
+      <CursorLayer />
+    </LiveCursorProvider>
+  );
+}
+```
+
+Swap `createInMemoryPair` for a real transport, such as `createWebSocketTransport` from `@anchor-presence/dom`, once you have a relay. See [Quick start](/docs/getting-started/quick-start) for both setups side by side.
+
+## Behavior notes
+
+- `CursorLayer` renders nothing until a remote client's cursor resolves to a visible position.
+- The anchor attribute, `data-anchor` by default, is the only thing that makes an element trackable. No registration call is needed.
+- With a single in-memory transport pair, only one side has a client in this example; add a second `createPresenceClient` on `transport.b` to see a cursor appear.
+
+## Related
+
+- [Anchors and fallbacks](/docs/examples/anchors-and-fallbacks)
+- [Quick start](/docs/getting-started/quick-start)

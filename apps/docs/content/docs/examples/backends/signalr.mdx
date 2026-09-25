@@ -1,0 +1,74 @@
+---
+title: SignalR
+description: An ASP.NET Core SignalR hub and a shipped client transport.
+---
+
+`examples/signalr` runs the demo over an ASP.NET Core SignalR hub instead of a WebSocket relay. The hub is a dumb relay, same as the Socket.IO example: it forwards one method call to every other connection and never parses the payload.
+
+## Server
+
+<CodeFromSource repo="examples/signalr/server/Hub/PresenceHub.cs" lang="csharp" />
+
+`withAutomaticReconnect()` on the client's `HubConnectionBuilder` is required on the ASP.NET Core side for reconnection to work; without it, a drop goes straight to the closed state with no retry.
+
+## Client transport
+
+The shipped client wraps a small connection harness (`SignalRHarness`) rather than a raw `HubConnection` directly, so it can share status and reconnect handling with the rest of the demo app:
+
+<CodeFromSource repo="examples/signalr/client/src/transport.ts" lang="ts" />
+
+## A simpler sketch
+
+If your app talks to the hub directly with `@microsoft/signalr`'s `HubConnection`, wrap it more directly:
+
+```ts
+import type { LiveCursorTransport, ConnectionStatus } from "@anchor-presence/core";
+import type { HubConnection } from "@microsoft/signalr";
+
+export function createSignalRTransport(connection: HubConnection): LiveCursorTransport {
+  const statusListeners = new Set<(status: ConnectionStatus) => void>();
+  let status: ConnectionStatus = "connecting";
+  const setStatus = (next: ConnectionStatus) => {
+    status = next;
+    for (const listener of statusListeners) listener(next);
+  };
+
+  connection.onreconnecting(() => setStatus("reconnecting"));
+  connection.onreconnected(() => setStatus("connected"));
+  connection.onclose(() => setStatus("disconnected"));
+
+  return {
+    connect: async () => {
+      setStatus("connecting");
+      await connection.start();
+      setStatus("connected");
+    },
+    disconnect: () => connection.stop(),
+    send: (data) => connection.send("OnPresence", data),
+    subscribe: (listener) => {
+      const handler = (data: Uint8Array) => listener(data);
+      connection.on("PresenceReceived", handler);
+      return () => connection.off("PresenceReceived", handler);
+    },
+    subscribeStatus: (listener) => {
+      statusListeners.add(listener);
+      listener(status); // replay so a late subscriber sees the current state
+      return () => statusListeners.delete(listener);
+    },
+    getStatus: () => status,
+  };
+}
+```
+
+This sketch has not run against a real hub in this repository's tests; the shipped `examples/signalr/client/src/transport.ts` has. Check it against your hub version before you ship it.
+
+## Behavior notes
+
+- `PresenceHub.OnPresence` forwards to `Clients.Others`, so a sender never receives its own message back. Compare this with a Socket.IO or WebSocket relay, which typically needs the client to filter its own echo, or the relay to exclude the sender explicitly.
+- An integration test in `examples/signalr/signalr.test.ts` runs the transport against a real hub.
+- `connection.send` and `connection.on` are fire-and-forget over the hub's method name; there is no acknowledgment, matching the transport interface's `send` contract.
+
+## Related
+
+- [Backends](/docs/examples/backends)
+- [Transports](/docs/guides/transports)

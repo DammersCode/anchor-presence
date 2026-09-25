@@ -26,13 +26,14 @@ Dom is the only package that calls browser APIs: `getBoundingClientRect`, `Resiz
 
 ## Main exports
 
-| Export                                                         | What it does                                                                                                           |
-| -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `createDomBinding(client, options?)`                           | Wires anchor auto-registration, pointer sampling, geometry scheduling, and remote resolution to a `PresenceClient`     |
-| `createWebSocketTransport(options?)`                           | Native WebSocket transport for the bundled relay or a compatible relay; exposes `bufferedBytes()` and reconnect jitter |
-| `DomBindingOptions`, `ResolutionOptions`, `EnvironmentOptions` | Binding configuration types                                                                                            |
-| `WebSocketTransportOptions`                                    | WebSocket transport configuration types                                                                                |
-| `ResolvedCursor`, `ResolutionTier`, `VisibilityPolicy`         | Resolution types                                                                                                       |
+| Export                                                         | What it does                                                                                                                                              |
+| -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `createDomBinding(client, options?)`                           | Wires anchor auto-registration, pointer sampling, geometry scheduling, and remote resolution to a `PresenceClient`; returns a `DomBinding`                |
+| `DomBinding`                                                   | `invalidate(reason?)` marks the layout dirty for the next frame; `getSnapshot()`, `subscribe(listener)`, and `dispose()` read and manage resolved cursors |
+| `createWebSocketTransport(options?)`                           | Native WebSocket transport for the bundled relay or a compatible relay; exposes `bufferedBytes()` and reconnect jitter                                    |
+| `DomBindingOptions`, `ResolutionOptions`, `EnvironmentOptions` | Binding configuration types                                                                                                                               |
+| `WebSocketTransportOptions`                                    | WebSocket transport configuration types                                                                                                                   |
+| `ResolvedCursor`, `ResolutionTier`, `VisibilityPolicy`         | Resolution types                                                                                                                                          |
 
 ## Binding options
 
@@ -70,4 +71,4 @@ const binding = createDomBinding(client, {
 
 Empty or whitespace-only values are ignored. Changing the attribute value re-registers the element under the new ID. Removing the attribute or the element unregisters the anchor. Duplicate anchor IDs use the newest registration and warn once in development.
 
-See [docs/architecture.md](../../docs/architecture.md) and [docs/responsive-layouts.md](../../docs/responsive-layouts.md) in the repository root for full guides.
+See [Architecture](https://anchor-presence.vercel.app/docs/concepts/architecture) and [Responsive layouts](https://anchor-presence.vercel.app/docs/guides/responsive-layouts) for full guides.

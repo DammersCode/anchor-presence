@@ -1,0 +1,334 @@
+---
+title: React
+description: The provider component, every hook, CursorLayer, and custom interpolation.
+---
+
+`@anchor-presence/react` provides a provider component, hooks, and two optional cursor components. It holds no engine state. It subscribes to `core` and `dom` stores with `useSyncExternalStore`.
+
+## LiveCursorProvider
+
+```tsx
+import { LiveCursorProvider } from "@anchor-presence/react";
+import type { LiveCursorProviderProps } from "@anchor-presence/react";
+```
+
+Its props:
+
+```ts
+type LiveCursorProviderProps<TContext = unknown, TUser = unknown> = {
+  client: PresenceClient<TContext, TUser> | null;
+  binding?: DomBinding<TContext, TUser>;
+  bindingOptions?: DomBindingOptions<TContext, TUser>;
+  children?: ReactNode;
+};
+```
+
+Pass a `PresenceClient` created with `createPresenceClient` from `@anchor-presence/core`. The provider creates a `DomBinding` for the client automatically, unless you pass one yourself through `binding`:
+
+```tsx
+import { createPresenceClient } from "@anchor-presence/core";
+import { LiveCursorProvider } from "@anchor-presence/react";
+
+const client = createPresenceClient({ transport: myTransport });
+
+function App() {
+  return (
+    <LiveCursorProvider client={client}>
+      <Dashboard />
+    </LiveCursorProvider>
+  );
+}
+```
+
+`bindingOptions` configures the automatically created binding. The binding always watches the configured anchor attribute. The default attribute is `data-anchor`; pass `bindingOptions.anchorAttribute` to use another attribute, such as `data-presence` or `id`.
+
+It has four parts:
+
+```ts
+type DomBindingOptions<TContext = unknown, TUser = unknown> = {
+  anchorAttribute?: string;
+  maxAnchors?: number;
+  resolution?: { visibilityPolicy?; interpolatorFactory?; hitTest? };
+  environment?: { root?; window?; raf?; caf?; ResizeObserverCtor?; MutationObserverCtor? };
+};
+```
+
+`resolution` controls how remote cursors turn into screen positions. `environment` supplies the DOM and timing hosts, and each field defaults to the ambient browser global. The provider reads `bindingOptions` only once, at binding creation. Later changes to the object do not recreate the binding.
+
+Pass `client={null}` during server-side rendering. See [SSR and Strict Mode](/docs/guides/ssr-and-strict-mode).
+
+## Hooks
+
+| Hook                                         | Returns                                                                     |
+| -------------------------------------------- | --------------------------------------------------------------------------- |
+| `usePresenceClient({ factory, key? })`       | a stable `PresenceClient` per `key`, or `null` before the mount effect runs |
+| `useRemoteUsers()`                           | one entry per remote client: `clientId`, `user`, and `session`              |
+| `useRemoteCursors()`                         | `ResolvedCursor[]` snapshot                                                 |
+| `useRemoteCursorsSelector(select, isEqual?)` | a value derived from the snapshot                                           |
+| `useCursorPresence()`                        | raw remote `RemotePresence<TContext, TUser>[]`                              |
+| `useCursorStatus()`                          | `ConnectionStatus`                                                          |
+| `useCursorClient()`                          | the `PresenceClient` instance, or `null`                                    |
+| `useCursorContext()`                         | `[context, setContext]`                                                     |
+
+### Render cost
+
+Each hook rerenders its component only when the value it returns changes.
+
+- `useRemoteCursors` rerenders on every resolved-cursor snapshot. While cursors move, that is every frame. Derive a smaller value with `useRemoteCursorsSelector` when your component needs less.
+- `useRemoteCursorsSelector` rerenders only when the `select` output changes under `isEqual`.
+- `useRemoteUsers` rerenders only when the set of remote clients, or their `user` or `session`, changes.
+- `useCursorPresence` rerenders only when a remote client's `cursor`, `context`, `user`, `pointer`, `session`, or membership changes. A message that only advances `sequence` does not rerender it.
+- `useCursorStatus` rerenders only when the connection status changes.
+- `useCursorContext` rerenders only when the local context value changes.
+
+An idle room costs nothing: no inbound messages, no rerenders.
+
+### Anchor elements
+
+Anchors are declared with the binding's anchor attribute:
+
+```tsx
+<button data-anchor="nav.dashboard">Dashboard</button>
+```
+
+In list rows, give each row a unique anchor ID built from its own data:
+
+```tsx
+<tr data-anchor={`orders.row:${order.id}`}>
+  <td>{order.customer}</td>
+  <td>
+    <button data-anchor={`orders.row:${order.id}.actions`} onClick={() => onView(order.id)}>
+      View
+    </button>
+  </td>
+</tr>
+```
+
+Mark the parents too. The fallback chain degrades to them when the exact anchor is absent on a receiver.
+
+### useRemoteCursors
+
+```ts
+function useRemoteCursors<TContext = unknown, TUser = unknown>(): ResolvedCursor<TContext, TUser>[];
+```
+
+Returns the current resolved-cursor snapshot: `{ clientId, x, y, visible, pointVisible, anchorId, tier, context?, user? }[]`. Values are receiver-viewport pixels. Position with `position: fixed`.
+
+Cursor movement updates flow only to components that call this hook. The provider never rerenders the rest of the app tree per cursor frame.
+
+### useRemoteCursorsSelector
+
+```ts
+function useRemoteCursorsSelector<TSelected, TContext = unknown, TUser = unknown>(
+  select: (cursors: ResolvedCursor<TContext, TUser>[]) => TSelected,
+  isEqual?: (a: TSelected, b: TSelected) => boolean, // default Object.is
+): TSelected;
+```
+
+Use this hook when a component needs a small derived value instead of the full snapshot. It applies `select` to each snapshot and rerenders only when `isEqual` reports the selected value changed.
+
+Keep `select` and `isEqual` stable across renders. Declare them at module level, or wrap them in `useCallback`.
+
+A presence indicator needs only the set of clients whose cursor is clipped out of view:
+
+```tsx
+function selectClippedClientIds(cursors: ResolvedCursor[]): ReadonlySet<string> {
+  const clipped = new Set<string>();
+  for (const cursor of cursors) {
+    if (cursor.tier === "anchor" && !cursor.pointVisible) clipped.add(cursor.clientId);
+  }
+  return clipped;
+}
+
+function sameClientIds(a: ReadonlySet<string>, b: ReadonlySet<string>): boolean {
+  return a.size === b.size && [...a].every((id) => b.has(id));
+}
+
+function PresencePill() {
+  const clipped = useRemoteCursorsSelector(selectClippedClientIds, sameClientIds);
+  return <span>{clipped.size} out of view</span>;
+}
+```
+
+`select` builds a new `Set` each frame, so the default `Object.is` would rerender every frame. The `sameClientIds` comparison stops that.
+
+### useCursorPresence
+
+```ts
+function useCursorPresence<TContext = unknown, TUser = unknown>(): RemotePresence<TContext, TUser>[];
+```
+
+Returns the raw remote presence list, before geometry resolution. Use this only when you need a field resolution does not carry, such as `pointer.type`. Use `useRemoteCursors` for rendering instead.
+
+### useCursorStatus
+
+```ts
+function useCursorStatus(): ConnectionStatus;
+```
+
+Returns one of `"connecting"`, `"connected"`, `"reconnecting"`, `"disconnected"`.
+
+### useCursorClient
+
+```ts
+function useCursorClient<TContext = unknown, TUser = unknown>(): PresenceClient<TContext, TUser> | null;
+```
+
+Returns the client instance passed to `LiveCursorProvider`, or `null` outside a provider or during SSR.
+
+### useCursorContext
+
+```ts
+function useCursorContext<TContext = unknown>(): [TContext | undefined, (next: TContext | undefined) => void];
+```
+
+Returns the current context value and a setter. The setter calls `client.setContext()` and updates every subscribed component.
+
+<Callout type="warn">
+  A direct `client.setContext()` call outside the hook updates the client, but subscribed components rerender
+  only on the next hook-driven update. Set context through the hook's setter.
+</Callout>
+
+```tsx
+function SettingsDialog({ open }: { open: boolean }) {
+  const [, setContext] = useCursorContext();
+  useEffect(() => {
+    setContext({ dialog: open ? "settings" : undefined });
+  }, [open, setContext]);
+  return open ? <DialogBody /> : null;
+}
+```
+
+## CursorLayer and DefaultCursor
+
+No cursor component is required. `@anchor-presence/react` also exports `CursorLayer` and `DefaultCursor` as an optional, configurable cursor renderer.
+
+```tsx
+import { CursorLayer } from "@anchor-presence/react";
+
+function App() {
+  return (
+    <LiveCursorProvider client={client}>
+      <Dashboard />
+      <CursorLayer />
+    </LiveCursorProvider>
+  );
+}
+```
+
+`CursorLayer` renders one fixed-position root for each visible cursor, and renders `DefaultCursor` inside it by default.
+
+### Label and color mapping
+
+```tsx
+type MyContext = { pageId: string };
+type MyUser = { name: string; color?: string };
+
+<CursorLayer<MyContext, MyUser>
+  getLabel={(cursor) => cursor.user?.name ?? "Guest"}
+  getColor={(cursor) => cursor.user?.color ?? "#6b7280"}
+/>;
+```
+
+Validate `cursor.user` values before you return them. Remote `user` data is untrusted; treat it as text, never as HTML. See [Security](/docs/guides/security).
+
+### Filtering cursors
+
+```tsx
+<CursorLayer filterCursor={(cursor) => cursor.tier !== "viewport"} />
+```
+
+`filterCursor` runs after the visibility check. `CursorLayer` skips `getLabel` and `getColor` for a cursor `filterCursor` removes.
+
+### Root properties
+
+```tsx
+<CursorLayer
+  getCursorProps={(cursor) => ({
+    className: "my-cursor",
+    "data-testid": "remote-cursor",
+  })}
+/>
+```
+
+`getCursorProps` can add classes, non-geometry styles, and attributes to the root. The package always sets `position`, `left`, `top`, `transform`, and `pointerEvents` after the consumer style, so a consumer value can never replace them. A consumer value can replace `zIndex` (package default `50`).
+
+### Custom cursor content
+
+```tsx
+<CursorLayer
+  renderCursor={({ cursor, label, color }) => (
+    <MyCursorGlyph color={color}>
+      <span>{label}</span>
+    </MyCursorGlyph>
+  )}
+/>
+```
+
+`renderCursor` replaces only the root's contents. The package still owns the root's position, transform, pointer events, `aria-hidden`, and identity data attributes.
+
+### DefaultCursor styling
+
+`DefaultCursor` has no Tailwind dependency and no external stylesheet. Three CSS variables control its visual:
+
+```tsx
+<CursorLayer
+  renderCursor={({ cursor, label, color }) => (
+    <DefaultCursor label={label} color={color} style={{ "--anchor-presence-cursor-size": "28px" }} />
+  )}
+/>
+```
+
+An explicit CSS variable on `style` takes precedence over the `color` prop.
+
+## Custom interpolation
+
+The library ships two interpolators: `noneInterpolator` (snap, no easing) and `linearInterpolator` (fixed-duration ease). Anything richer, such as a spring, is application code. Pass a custom factory through `bindingOptions.resolution.interpolatorFactory`.
+
+Implement the `Interpolator` interface from `@anchor-presence/core`:
+
+```ts
+interface Interpolator {
+  target(x: number, y: number, timestampMs: number): void;
+  shift(dx: number, dy: number): void;
+  sample(timestampMs: number): { x: number; y: number; settled: boolean };
+}
+type InterpolatorFactory = () => Interpolator;
+```
+
+The resolver calls your interpolator once per remote cursor:
+
+- `target` sets a new destination. Do not reset velocity or other internal motion state here.
+- `shift` moves the current position and the target by the same delta, with no easing. The resolver calls `shift` for local-only changes, such as a scroll, where the anchor moved but no new network packet arrived.
+- `sample` returns the position for one frame. Set `settled: true` once motion has finished, so the scheduler can stop its animation-frame loop.
+
+Register your style with `bindingOptions`:
+
+```tsx
+<LiveCursorProvider
+  client={client}
+  bindingOptions={{ resolution: { interpolatorFactory: springInterpolator } }}
+>
+  <App />
+</LiveCursorProvider>
+```
+
+The provider reads `bindingOptions` once, at binding creation. To switch interpolator styles at runtime, give the provider (or an ancestor) a `key` that changes with the style:
+
+```tsx
+<LiveCursorProvider
+  key={style}
+  client={client}
+  bindingOptions={{ resolution: { interpolatorFactory: registry[style] } }}
+>
+  <App />
+</LiveCursorProvider>
+```
+
+A key change remounts the subtree and creates a fresh binding with the new factory. Cursor state lives on the server, not in the binding, so a remount does not lose or reset any remote cursor's position. See the [interpolation styles example](/docs/examples/interpolation-styles) for a complete spring interpolator.
+
+## Related
+
+- [SSR and Strict Mode](/docs/guides/ssr-and-strict-mode)
+- [API reference: react](/docs/reference/react)
+- [Custom cursor rendering example](/docs/examples/custom-cursor-rendering)

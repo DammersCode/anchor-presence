@@ -1,0 +1,14 @@
+{
+  "title": "Guides",
+  "pages": [
+    "react",
+    "ssr-and-strict-mode",
+    "responsive-layouts",
+    "transports",
+    "codecs",
+    "security",
+    "performance",
+    "ai-agents",
+    "troubleshooting"
+  ]
+}

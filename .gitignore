@@ -9,3 +9,6 @@ test-results/
 oss-refs/
 *.prompt.md
 TODO-*.md
+apps/docs/.next/
+apps/docs/.source/
+apps/docs/next-env.d.ts

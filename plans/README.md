@@ -53,3 +53,9 @@ These plans describe backends the library does not ship today. They are referenc
 | [Edge and serverless backends](backends/edge-serverless.md) | open   | Cloudflare Durable Objects with the WebSocket hibernation API, and PartyKit.                    |
 | [Managed realtime backends](backends/managed-realtime.md)   | open   | Supabase Realtime Broadcast, Ably, and Pusher as transport carriers, with no server of our own. |
 | [Other-language backends](backends/other-languages.md)      | open   | Go, Python, and Elixir relays, since the wire protocol is language-agnostic.                    |
+
+## Future framework adapters (planning only, not scheduled)
+
+| Plan                                                     | Status | Summary                                                                           |
+| -------------------------------------------------------- | ------ | --------------------------------------------------------------------------------- |
+| [Solid and Vue adapters](adapters/framework-adapters.md) | open   | `@anchor-presence/solid` and `@anchor-presence/vue`, mirroring the react adapter. |

@@ -2,6 +2,7 @@ import { createPresenceClient, type PresenceClient } from "@anchor-presence/core
 import { HubConnectionBuilder, type HubConnection } from "@microsoft/signalr";
 import { spawn, spawnSync, type ChildProcessWithoutNullStreams } from "node:child_process";
 import net from "node:net";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
@@ -44,7 +45,6 @@ function waitForPort(port: number): Promise<void> {
       socket.once("error", () => {
         socket.destroy();
         attempts += 1;
-        // dotnet run rebuilds on first launch; allow up to the beforeAll hook's 60s budget.
         if (attempts >= 300) reject(new Error(`port ${port} did not open`));
         else setTimeout(tryConnect, 200);
       });
@@ -99,15 +99,23 @@ const clients: PresenceClient[] = [];
 
 beforeAll(async () => {
   if (!dotnetAvailable) return;
+  // Build first and run the dll directly: `dotnet run` leaves an orphaned child process on kill.
+  const outDir = path.join(os.tmpdir(), `signalr-relay-${process.pid}`);
+  const build = spawnSync("dotnet", ["build", "--nologo", "-c", "Release", "-o", outDir], {
+    cwd: serverDir,
+    stdio: "ignore",
+    windowsHide: true,
+  });
+  if (build.status !== 0) throw new Error("dotnet build failed for examples/signalr/server");
   port = await freePort();
-  hub = spawn("dotnet", ["run"], {
+  hub = spawn("dotnet", [path.join(outDir, "SignalRRelay.dll")], {
     cwd: serverDir,
     env: { ...process.env, ASPNETCORE_URLS: `http://localhost:${port}` },
     stdio: "ignore",
     windowsHide: true,
   });
   await waitForPort(port);
-}, 60_000);
+}, 180_000);
 
 afterAll(async () => {
   if (!dotnetAvailable) return;

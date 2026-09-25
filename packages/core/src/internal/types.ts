@@ -76,11 +76,11 @@ export type PresenceClientOptions<TContext = unknown, TUser = unknown> = {
   adaptivePublish?: AdaptivePublishOptions;
   /**
    * When `true`, `createPresenceClient` calls `transport.connect()` itself, once, during creation.
-   * @default false
    * With the default, you call `transport.connect()` yourself, before or right after creating
    * the client (for example inside the `usePresenceClient` factory). A transport with no `connect`
    * method needs no call either way. `dispose()` always calls `transport.disconnect()` when the
    * transport provides one, regardless of this option.
+   * @default false
    * @example
    * ```ts
    * const client = createPresenceClient({ transport, autoConnect: true });

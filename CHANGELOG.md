@@ -7,6 +7,7 @@
 - examples: add `bun-native`, `node-ws`, `hono`, and `elysia` relay examples, each with a security baseline (room validation, size cap, rate limit, origin allowlist, auth hook placeholder) and an integration test.
 - examples: `socketio` and `signalr` gain the same security baseline; the SignalR hub now relays per room instead of to every connection.
 - examples: `examples/socketio/client` and `examples/signalr/client` are removed. Use `apps/demo` with `?backend=socketio` or `?backend=signalr` instead.
+- examples: `examples/signalr`'s `createSignalRTransport` now takes a plain `@microsoft/signalr` `HubConnection` directly instead of a `SignalRHarness`, and the example drops its `@dammers/use-signalr-react` dependency. The docs page shows how to build the transport on a `use-signalr` provider's connection instead, for apps that already use it.
 
 ## 0.1.0 - unreleased
 

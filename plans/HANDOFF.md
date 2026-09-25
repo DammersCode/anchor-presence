@@ -52,6 +52,7 @@ Each branch keeps its own progress in `plans/handoffs/<branch>.md`. Read that fi
 - Bun native and Elysia use `ws.publish` (excludes the sender), not `server.publish`.
 - `ws` closes the socket on `maxPayload`, so `node-ws` sets it high and drops oversized frames in app code.
 - SignalR hub uses groups per room. `examples/signalr/signalr-hub.test.ts` runs the real hub and skips without `dotnet`.
+- `examples/signalr/transport.ts`'s `createSignalRTransport` takes a plain `@microsoft/signalr` `HubConnection`, not a `use-signalr` harness; the example has no `@dammers/use-signalr-react` dependency. The docs page's "Already using use-signalr?" section covers building the transport on that provider's connection instead.
 
 ## Package gap notes (from `package-gaps`)
 

@@ -40,6 +40,13 @@ export default defineConfig({
       },
       {
         test: {
+          name: "audit-skill",
+          environment: "node",
+          include: ["test/audit-skill/**/*.test.mjs"],
+        },
+      },
+      {
+        test: {
           name: "socketio-example",
           environment: "node",
           include: ["examples/socketio/**/*.test.ts"],

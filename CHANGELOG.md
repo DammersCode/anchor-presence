@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- skills: add `anchor-presence-audit`, an agent skill that measures a running app with Playwright, scores cursor-jump risk for each pair of layouts (jump, gap, depth, aspect, parity), and applies the fixes the user picks. `measure.mjs --fail-above <score>` can gate CI.
 - `@anchor-presence/core`: `createPresenceClient` gains `autoConnect` (default `false`); when `true`, the client calls `transport.connect()` itself, once, during creation, after it subscribes to messages and status.
 - `@anchor-presence/dom`: `createWebSocketTransport`'s `connect()` is idempotent: a second call while a socket is connecting or open no longer opens a second socket.
 - demo: cursor label colors meet WCAG AA contrast (4.5:1) against their white label text; the connection status pill exposes `role="status" aria-live="polite"` and gives `reconnecting` a distinct dot animation from `connecting`; the default room (no `?room=`) is now random per visitor instead of the shared `main` room.

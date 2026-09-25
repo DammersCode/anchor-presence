@@ -181,6 +181,8 @@ npx skills add DammersCode/anchor-presence
 
 The skill teaches an agent the anchor model, the integration steps, and the troubleshooting paths. The source is in [`skills/anchor-presence/`](skills/anchor-presence/).
 
+A second skill, [`skills/anchor-presence-audit/`](skills/anchor-presence-audit/), scores a running app for cursor jumps between layouts and proposes fixes. See [AI agents](https://anchor-presence.vercel.app/docs/get-started/guides/ai-agents#audit-layouts-with-the-audit-skill).
+
 ## Development commands
 
 ```sh

@@ -41,7 +41,7 @@ CI splits the checks so that no check runs twice and CI minutes stay low.
 On a pull request from the repository owner (`.github/workflows/pr.yml`), the fast checks run:
 
 1. Build (`bun run build`).
-2. Typecheck (`bun run typecheck`): packages, tests, demo, and backend examples.
+2. Typecheck (`bun run typecheck`): packages, tests, demo, docs site, and backend examples.
 3. Format check (`bun run format:check`).
 4. Lint (`bun run lint`).
 5. Unit and integration tests (`bun run test`). The real SignalR hub test skips itself because the runner has no .NET.

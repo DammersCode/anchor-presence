@@ -11,7 +11,7 @@
   ],
   "scripts": {
     "build": "bun run --filter '@anchor-presence/core' --filter '@anchor-presence/dom' --filter '@anchor-presence/react' build",
-    "typecheck": "tsc --build packages/core packages/dom packages/react && tsc -p tsconfig.test.json && tsc -p apps/demo && bun run typecheck:examples",
+    "typecheck": "tsc --build packages/core packages/dom packages/react && tsc -p tsconfig.test.json && tsc -p apps/demo && bun run --cwd apps/docs typecheck && bun run typecheck:examples",
     "lint": "oxlint --type-aware",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

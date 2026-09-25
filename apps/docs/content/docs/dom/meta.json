@@ -4,7 +4,6 @@
   "description": "The DOM binding for @anchor-presence/dom: anchors, pointer capture, resolution, and the WebSocket transport",
   "root": true,
   "pages": [
-    "---[MousePointer]DOM---",
     "index",
     "---[Anchor]Binding---",
     "binding",

@@ -64,8 +64,8 @@ function App() {
 - **Layout-independent positioning.** Cursors track a semantic anchor, not a pixel.
 - **Receiver-authoritative.** Each client measures its own DOM.
 - **No network on reposition.** A scroll or resize moves a stationary remote cursor for free.
-- **Transport-agnostic.** `core` imports no transport library.
-- **Framework-optional.** `core` and `dom` run without React. `react` is a thin adapter.
+- **Transport-agnostic.** `@anchor-presence/core` imports no transport library.
+- **Framework-optional.** `@anchor-presence/core` and `@anchor-presence/dom` run without React. `@anchor-presence/react` is a thin adapter.
 - **Validated input.** Every inbound message passes size and shape limits first.
 
 ## Docs

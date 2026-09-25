@@ -65,7 +65,7 @@ This is not an error the library reports. It is a sign of misuse. Give every tab
 
 A unit test suite that runs in jsdom lacks real layout. `getBoundingClientRect()` always returns zeros unless a test mocks it. `ResizeObserver` and `MutationObserver` are often absent, or behave differently from a real browser.
 
-Because of this, `dom` and `react` unit tests use injectable observer factories and mocked rects to test scheduler and resolver logic without real layout. Real cross-layout correctness needs a real-browser test suite, for example Playwright across Chromium, Firefox, and WebKit. Examples of real cross-layout correctness are wrapping, sidebar states, and element-size proportionality.
+Because of this, `@anchor-presence/dom` and `@anchor-presence/react` unit tests use injectable observer factories and mocked rects to test scheduler and resolver logic without real layout. Real cross-layout correctness needs a real-browser test suite, for example Playwright across Chromium, Firefox, and WebKit. Examples of real cross-layout correctness are wrapping, sidebar states, and element-size proportionality.
 
 If a scheduler or resolver behavior looks correct in a jsdom unit test but wrong in the browser, suspect a jsdom API gap first. Check that the real browser has the observer or CSS feature the test mocked.
 

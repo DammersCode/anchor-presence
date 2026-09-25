@@ -4,7 +4,6 @@
   "description": "@anchor-presence/core: protocol, codecs, client, and transport contract",
   "root": true,
   "pages": [
-    "---[LayoutGrid]Core---",
     "index",
     "---[Radio]Client---",
     "presence-client",

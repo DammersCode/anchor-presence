@@ -15,7 +15,7 @@ Anchor Presence never sends a screen coordinate as the primary signal. It sends 
 
 ## Packages
 
-The library has three packages. Each adds one layer, and the dependency direction is one-way: `react` depends on `dom`, and `dom` depends on `core`.
+The library has three packages. Each adds one layer, and the dependency direction is one-way: `@anchor-presence/react` depends on `@anchor-presence/dom`, and `@anchor-presence/dom` depends on `@anchor-presence/core`.
 
 | Package                  | What it does                                                    | Depends on DOM or React |
 | ------------------------ | --------------------------------------------------------------- | ----------------------- |
@@ -25,7 +25,7 @@ The library has three packages. Each adds one layer, and the dependency directio
 
 ## Guarantees
 
-The library holds a fixed set of rules on every message: layout independence, predictable degradation, and no engine state outside `core`. See [How it works](/docs/get-started/concepts/how-it-works) for the full list of invariants.
+The library holds a fixed set of rules on every message: layout independence, predictable degradation, and no engine state outside `@anchor-presence/core`. See [How it works](/docs/get-started/concepts/how-it-works) for the full list of invariants.
 
 ## Related
 

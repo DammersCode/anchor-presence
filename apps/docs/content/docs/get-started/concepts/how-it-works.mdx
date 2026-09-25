@@ -19,11 +19,11 @@ The system has three packages. Each package adds one layer:
 @anchor-presence/core    protocol types, validation, presence store, client orchestration
 ```
 
-The dependency direction is one-way: `react` depends on `dom`, and `dom` depends on `core`.
+The dependency direction is one-way: `@anchor-presence/react` depends on `@anchor-presence/dom`, and `@anchor-presence/dom` depends on `@anchor-presence/core`.
 
-- `core` has zero dependencies and no DOM globals. It runs in Node.js, Bun, workers, and browsers. It owns the protocol, validation, sequencing, the remote presence store, and client orchestration.
-- `dom` depends only on `core`. It owns every browser API call, the anchor registry, pointer capture, the geometry scheduler, and visibility policies.
-- `react` is an adapter only. It holds no engine state. It subscribes to `core` and `dom` stores with `useSyncExternalStore`, and declares anchors through the binding's anchor attribute, with no separate registration helper of its own.
+- `@anchor-presence/core` has zero dependencies and no DOM globals. It runs in Node.js, Bun, workers, and browsers. It owns the protocol, validation, sequencing, the remote presence store, and client orchestration.
+- `@anchor-presence/dom` depends only on `@anchor-presence/core`. It owns every browser API call, the anchor registry, pointer capture, the geometry scheduler, and visibility policies.
+- `@anchor-presence/react` is an adapter only. It holds no engine state. It subscribes to `@anchor-presence/core` and `@anchor-presence/dom` stores with `useSyncExternalStore`, and declares anchors through the binding's anchor attribute, with no separate registration helper of its own.
 
 ## Sender to receiver flow
 
@@ -101,7 +101,7 @@ The receiver's client stores every accepted remote presence. It exposes two read
 3. Semantic anchors survive responsive layout changes.
 4. Missing exact anchors degrade predictably: exact anchor, then nearest registered parent, then larger region, then viewport fallback, then visibility policy.
 5. Framework adapters do not own core presence state.
-6. Transport implementation is independent from cursor logic. `core` imports no transport library.
+6. Transport implementation is independent from cursor logic. `@anchor-presence/core` imports no transport library.
 7. A local layout change repositions a stationary remote cursor without a new network packet.
 8. Network messages cannot execute arbitrary DOM selectors. Anchor IDs resolve only against the registered anchor map.
 9. Rendering is consumer-controlled. No cursor component is required. `@anchor-presence/react` provides optional, configurable cursor components.

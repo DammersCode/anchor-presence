@@ -4,7 +4,6 @@
   "description": "Overview, setup, and cross-cutting guides",
   "root": true,
   "pages": [
-    "---[Rocket]Get started---",
     "introduction",
     "installation",
     "quick-start",

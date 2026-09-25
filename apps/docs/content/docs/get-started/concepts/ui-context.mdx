@@ -37,7 +37,7 @@ export const defaultVisibilityPolicy: VisibilityPolicy = ({ resolution }) =>
   resolution.tier === "hidden" ? "hide" : "show";
 ```
 
-Pass a custom policy through `DomBindingOptions.resolution.visibilityPolicy` (`dom`) or `bindingOptions.resolution.visibilityPolicy` on `LiveCursorProvider` (`react`). A custom policy can inspect `presence.context` to apply application-specific rules on top of geometric resolution.
+Pass a custom policy through `DomBindingOptions.resolution.visibilityPolicy` (`@anchor-presence/dom`) or `bindingOptions.resolution.visibilityPolicy` on `LiveCursorProvider` (`@anchor-presence/react`). A custom policy can inspect `presence.context` to apply application-specific rules on top of geometric resolution.
 
 A policy can also read `resolution.pointVisible` to hide a cursor clipped by a scroll container. See [Occlusion and scroll](/docs/dom/occlusion-and-scroll) for how the resolver computes it and where the check falls short.
 

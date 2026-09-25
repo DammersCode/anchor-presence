@@ -4,7 +4,6 @@
   "description": "The provider, hooks, and cursor components of @anchor-presence/react",
   "root": true,
   "pages": [
-    "---[Atom]React---",
     "index",
     "---[Plug]Setup---",
     "use-presence-client",

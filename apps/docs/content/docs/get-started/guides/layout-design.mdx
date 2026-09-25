@@ -1,0 +1,116 @@
+---
+title: Designing layouts for presence
+description: Rules that keep remote cursors steady when two users see different layouts.
+---
+
+Two users often see one page in two layouts: a wide and a narrow screen, an open and a collapsed sidebar, a table and a stack of cards. The receiver places each cursor inside its own copy of the anchor, so a cursor on one element lands on the same element. Between elements, the result depends on the layout. A short move for one user becomes a large jump for the other when anchors differ in size or position across the two layouts. This page gives rules that keep that difference small, and shows how to measure it.
+
+## How a short move becomes a jump
+
+A remote cursor moves from anchor to anchor the same way the pointer moves on the sender. When the pointer crosses from one anchor to its neighbor, the remote cursor moves from that anchor to the same neighbor in the receiver's layout.
+
+In the [Basics example](/docs/examples/basics), the wide pane shows three buttons in a row, and the narrow pane stacks them at full width. The pointer moves 10 pixels in the wide pane, from the right edge of **Save draft** to the left edge of **Preview**. In the narrow pane, the remote cursor moves about 250 pixels: from the far right of one full-width button to the far left of the next.
+
+Four layout differences cause jumps:
+
+- Two neighbors in one layout sit far apart in the other layout.
+- The pointer crosses a gap with no anchored parent, so the cursor falls back to the viewport position. See [Cursor jumps between two elements](/docs/get-started/guides/troubleshooting#cursor-jumps-between-two-elements).
+- An anchor changes shape, so the same relative position lands on a different spot inside it.
+- An anchor exists in one layout only, so the cursor falls back to a parent. See [Fallback chain](/docs/get-started/concepts/fallback-chain).
+
+## Anchor every container
+
+Give each container of anchors its own anchor: the sidebar, the toolbar, the list, the table. A pointer in the space between two child anchors then resolves against the container.
+
+Do, with a container anchor:
+
+```tsx
+<nav data-anchor="nav">
+  <a data-anchor="nav.home">Home</a>
+  <a data-anchor="nav.orders">Orders</a>
+</nav>
+```
+
+Avoid, with no anchored parent for the gap between the links:
+
+```tsx
+<nav>
+  <a data-anchor="nav.home">Home</a>
+  <a data-anchor="nav.orders">Orders</a>
+</nav>
+```
+
+## Keep neighbors next to each other
+
+Change the number of columns, not the order or the axis. A row that wraps keeps most neighbors on one line. A row that turns into a column moves every neighbor to another side.
+
+Do, a row that wraps on a narrow screen:
+
+```tsx
+<div className="flex flex-wrap justify-end gap-2">{buttons}</div>
+```
+
+Avoid, a row that turns into a column on a narrow screen:
+
+```tsx
+<div className={wide ? "flex justify-end gap-2" : "flex flex-col gap-2"}>{buttons}</div>
+```
+
+When a table becomes cards, keep adjacent cells adjacent inside the card, in the same order. See the [Table and cards example](/docs/examples/table-and-cards) and the [Responsive grid example](/docs/examples/responsive-grid).
+
+## Keep item sizes and shapes alike
+
+The receiver applies the sender's relative position to its own box. A button that is 80 pixels wide on one screen and 250 pixels wide on the other puts a point near its edge far from its label. When a layout stacks items, keep their intrinsic width. Give icon-only items a square box.
+
+Do, stacked buttons at their own width:
+
+```tsx
+<div className="flex flex-col items-end gap-2">{buttons}</div>
+```
+
+Avoid, stacked buttons stretched to the full width:
+
+```tsx
+<div className="flex flex-col gap-2">{buttons}</div>
+```
+
+## Keep the same anchor IDs in every state
+
+A collapsed and an expanded sidebar are two layouts of one page. Give each item the same anchor ID in both variants, so the receiver finds the exact anchor in either state. See [Responsive layouts](/docs/get-started/concepts/responsive-layouts#how-sidebar-state-resolves).
+
+```tsx
+const id = `nav.${item.key}`;
+return collapsed ? <IconLink data-anchor={id} /> : <LabeledLink data-anchor={id} />;
+```
+
+## Keep the parent of a hidden anchor anchored
+
+A layout can drop an anchor: a narrow table without its action column, a list that shows fewer rows. The cursor then falls back to the nearest parent that remains. Anchor each level (the button, its row, the table), so the fallback lands one step up and not on the viewport. See the [Anchors and fallbacks example](/docs/examples/anchors-and-fallbacks).
+
+## Anchor meaning, not wrappers
+
+The fallback chain carries at most four anchors. An anchor on a padding or grid wrapper spends one of them on a box with no meaning. Put anchors on elements that a user can name: a card, a row, a button, a panel. See [Anchors](/docs/get-started/concepts/anchors).
+
+## Check a layout with the audit skill
+
+The `anchor-presence-audit` agent skill measures these rules in the running app. It opens each route at several viewport widths and UI states, and scores each pair of layouts from 0 (low risk) to 100 (high risk). Each score has five parts, and each part maps to a rule on this page:
+
+| Part   | What it measures                                         | Rule                                        |
+| ------ | -------------------------------------------------------- | ------------------------------------------- |
+| Jump   | Receiver distance for a short move between two neighbors | Keep neighbors next to each other           |
+| Gap    | Container area with no anchored parent                   | Anchor every container                      |
+| Depth  | How far an anchor falls back in the other layout         | Keep the parent of a hidden anchor anchored |
+| Aspect | Shape change of one anchor between layouts               | Keep item sizes and shapes alike            |
+| Parity | Share of anchor IDs that exist in one layout only        | Keep the same anchor IDs in every state     |
+
+To install and run the skill, see [AI agents](/docs/get-started/guides/ai-agents#audit-layouts-with-the-audit-skill).
+
+## Related
+
+- [Troubleshooting: Cursor jumps between two elements](/docs/get-started/guides/troubleshooting#cursor-jumps-between-two-elements)
+- [Anchors](/docs/get-started/concepts/anchors)
+- [Fallback chain](/docs/get-started/concepts/fallback-chain)
+- [Responsive layouts](/docs/get-started/concepts/responsive-layouts)
+- [Responsive grid example](/docs/examples/responsive-grid)
+- [Table and cards example](/docs/examples/table-and-cards)
+- [Anchors and fallbacks example](/docs/examples/anchors-and-fallbacks)

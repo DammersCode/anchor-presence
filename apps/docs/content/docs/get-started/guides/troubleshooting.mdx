@@ -45,7 +45,9 @@ See [Performance](/docs/get-started/guides/performance) for the full signal list
 
 If the pointer crosses a gap with no anchored parent, the fallback chain drops to the viewport position. The viewport position maps to a different spot in a receiver layout that arranges elements differently, so the cursor jumps.
 
-Give the parent container its own anchor, for example `data-anchor="nav"` on a sidebar. A pointer that crosses the gap between two child anchors still resolves against the shared parent, instead of falling back to the viewport. Keep item sizes equal across layouts where possible, so a resolved point lands on the same element on both sides. The live demo uses `data-anchor="nav"` on its sidebar for this reason.
+Give the parent container its own anchor, for example `data-anchor="nav"` on a sidebar. A pointer that crosses the gap between two child anchors still resolves against the shared parent, instead of falling back to the viewport. The live demo uses `data-anchor="nav"` on its sidebar for this reason.
+
+A jump can also occur with no gap: two neighbors in one layout can sit far apart in the other layout. For layout rules that prevent both cases, and a skill that measures them, see [Designing layouts for presence](/docs/get-started/guides/layout-design).
 
 ## HTTP vs HTTPS
 
@@ -72,4 +74,5 @@ If a scheduler or resolver behavior looks correct in a jsdom unit test but wrong
 ## Related
 
 - [Performance](/docs/get-started/guides/performance)
+- [Designing layouts for presence](/docs/get-started/guides/layout-design)
 - [UI context](/docs/get-started/concepts/ui-context)

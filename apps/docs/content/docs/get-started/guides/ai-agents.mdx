@@ -22,6 +22,29 @@ Point your agent at the installed skill file and ask it to wire up live cursors.
 - the visibility policy shape, including the `pointVisible` occlusion signal
 - the three hard rules: render `user`/`context` as text, create the client in browser-only code, and treat anchor IDs as opaque
 
+## Audit layouts with the audit skill
+
+The repository ships a second skill at `skills/anchor-presence-audit`. It checks a running app for cursor jumps between layouts, against the rules in [Designing layouts for presence](/docs/get-started/guides/layout-design).
+
+Install only this skill:
+
+```sh
+npx skills add DammersCode/anchor-presence --skill anchor-presence-audit
+```
+
+The skill measures the app in a real browser through Playwright. If the app has no `playwright` package, the skill gives you the install command for your package manager.
+
+To run it, start the app and ask your agent to audit the layouts for cursor jumps. The agent then does these steps with you:
+
+1. It scans the code for anchors, routes, breakpoints, and toggles such as a collapsible sidebar, tabs, or dialogs.
+2. It proposes a list of views (routes, viewport widths, and UI states). You confirm or change the list.
+3. It measures every view and scores each pair of views from 0 to 100.
+4. It asks for the report format: a table in chat, a Markdown file, Mermaid charts, or a combination.
+5. It proposes fixes, each with a file and a change. You pick the fixes to apply.
+6. It applies the fixes, measures again, and shows the scores before and after.
+
+To use the score as a CI gate, run the measure script with `--fail-above <score>`. The script then exits with code 1 when a pair of views scores above that value.
+
 ## Point an agent at llms.txt
 
 Every page on this site is also available as plain Markdown, for an agent that reads URLs directly instead of using the skill.
@@ -39,4 +62,5 @@ Use the skill when the agent already runs inside this repository, or a project t
 ## Related
 
 - [Quick start](/docs/get-started/quick-start)
+- [Designing layouts for presence](/docs/get-started/guides/layout-design)
 - [Security](/docs/get-started/guides/security)

@@ -38,7 +38,7 @@ const client = createPresenceClient({
 });
 ```
 
-`onRemoteClientDrop` runs each time the store drops a new client because it is full. See [maxRemoteClients](/docs/get-started/security#maxremoteclients) on the Security page for the capacity-planning guidance.
+`onRemoteClientDrop` runs each time the store drops a new client because it is full. See [maxRemoteClients](/docs/get-started/guides/security#maxremoteclients) on the Security page for the capacity-planning guidance.
 
 ## Message ordering
 
@@ -48,4 +48,4 @@ The store drops a same-session message whose `sequence` is not higher than the s
 
 - [Presence client](/docs/core/presence-client)
 - [Validation](/docs/core/validation)
-- [Security](/docs/get-started/security)
+- [Security](/docs/get-started/guides/security)

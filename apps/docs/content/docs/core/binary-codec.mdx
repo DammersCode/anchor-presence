@@ -44,7 +44,7 @@ Opaque `context` and `user` values stay JSON payloads inside the binary frame. T
 - `pointer.type` is not `mouse`, `pen`, or `touch`.
 - `JSON.stringify` cannot serialize `context` or `user`.
 
-The protocol limits on the [Security](/docs/get-started/security) page are tighter than these frame limits. For example, `DEFAULT_MAX_ANCHORS` is 8, and `@anchor-presence/dom` sends 4 anchors by default and never more than 8. A message inside the protocol limits never reaches a frame limit.
+The protocol limits on the [Security](/docs/get-started/guides/security) page are tighter than these frame limits: the anchor count limit alone keeps every real message far below the 255-anchor frame limit. A message inside the protocol limits never reaches a frame limit.
 
 `binaryCodec.decode` never throws. It returns `null` for malformed, truncated, or non-binary input.
 
@@ -52,4 +52,4 @@ The protocol limits on the [Security](/docs/get-started/security) page are tight
 
 - [Codecs](/docs/core/codecs)
 - [Custom codec](/docs/core/custom-codec)
-- [Security](/docs/get-started/security)
+- [Security](/docs/get-started/guides/security)

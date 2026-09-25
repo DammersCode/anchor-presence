@@ -32,7 +32,7 @@ function App() {
 
 ## Boundary rule
 
-React holds no cursor state of its own. It reads the `core` and `dom` stores with `useSyncExternalStore`. The package never touches the DOM at load time, so it is safe to import on a server.
+`react` holds no cursor state of its own. It reads the `core` and `dom` stores with `useSyncExternalStore`. The package never touches the DOM at load time, so it is safe to import on a server.
 
 ## Main exports
 

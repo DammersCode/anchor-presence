@@ -41,4 +41,4 @@ Core imports no DOM, React, transport, or codec library, so it does not know wha
 | `RemotePresenceStore`                             | Sequencing, field-delta merge, and stale-expiry store for remote presences                                |
 | `linearInterpolator`, `noneInterpolator`          | Interpolation factories                                                                                   |
 
-See [Architecture](https://anchor-presence.vercel.app/docs/get-started/concepts/architecture) and [Codecs](https://anchor-presence.vercel.app/docs/core/codecs) for full guides.
+See [How it works](https://anchor-presence.vercel.app/docs/get-started/concepts/how-it-works) and [Codecs](https://anchor-presence.vercel.app/docs/core/codecs) for full guides.

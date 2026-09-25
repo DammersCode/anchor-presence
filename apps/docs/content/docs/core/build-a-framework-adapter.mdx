@@ -13,7 +13,7 @@ Anchor Presence has three layers. `core` runs the protocol, `dom` runs the brows
 @anchor-presence/core    protocol types, validation, presence store, client orchestration
 ```
 
-An adapter depends on `dom` and `core`, never the other way around. It holds no protocol state of its own (Invariant 5 in [Architecture](/docs/get-started/concepts/architecture)). Every value it exposes comes from a `PresenceClient` or a `DomBinding`, not from logic the adapter builds itself.
+An adapter depends on `dom` and `core`, never the other way around. It holds no protocol state of its own (Invariant 5 in [How it works](/docs/get-started/concepts/how-it-works)). Every value it exposes comes from a `PresenceClient` or a `DomBinding`, not from logic the adapter builds itself.
 
 ## What the React adapter does
 
@@ -68,7 +68,7 @@ A future adapter follows the same rule as `react`: no third-party framework code
 
 ## Related
 
-- [Architecture](/docs/get-started/concepts/architecture)
+- [How it works](/docs/get-started/concepts/how-it-works)
 - [React overview](/docs/react)
 - [Client API](/docs/core/api/client)
 - [Binding API](/docs/dom/api/binding)

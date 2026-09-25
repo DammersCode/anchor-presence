@@ -21,23 +21,9 @@ The system has three packages. Each package adds one layer:
 
 The dependency direction is one-way: `react` depends on `dom`, and `dom` depends on `core`.
 
-- `core` has zero dependencies and no DOM globals. It runs in Node, Bun, workers, and browsers.
-- `dom` depends only on `core`. It owns every browser API call: `getBoundingClientRect`, `ResizeObserver`, `MutationObserver`, `requestAnimationFrame`.
-- `react` is an adapter only. It holds no engine state. It subscribes to `core` and `dom` stores with `useSyncExternalStore`.
-
-### core
-
-Core owns the protocol, message validation, sequencing, the remote presence store, stale-presence expiry, the transport interface, the codec interface, the context-policy interface, the interpolation interface, and client orchestration.
-
-Core imports no DOM types, no React, no transport library, and no codec library.
-
-### dom
-
-Dom owns the anchor registry, pointer capture, pointer target resolution, normalized coordinate math, viewport fallback, the geometry scheduler, remote anchor resolution, and visibility policies.
-
-### react
-
-React owns the provider component, the hooks, and SSR safety. Anchors are declared in the DOM with the binding's anchor attribute. React has no separate anchor registration helper.
+- `core` has zero dependencies and no DOM globals. It runs in Node.js, Bun, workers, and browsers. It owns the protocol, validation, sequencing, the remote presence store, and client orchestration.
+- `dom` depends only on `core`. It owns every browser API call, the anchor registry, pointer capture, the geometry scheduler, and visibility policies.
+- `react` is an adapter only. It holds no engine state. It subscribes to `core` and `dom` stores with `useSyncExternalStore`, and declares anchors through the binding's anchor attribute, with no separate registration helper of its own.
 
 ## Sender to receiver flow
 
@@ -115,7 +101,7 @@ The receiver's client stores every accepted remote presence. It exposes two read
 3. Semantic anchors survive responsive layout changes.
 4. Missing exact anchors degrade predictably: exact anchor, then nearest registered parent, then larger region, then viewport fallback, then visibility policy.
 5. Framework adapters do not own core presence state.
-6. Transport implementation is independent from cursor logic. Core imports no transport library.
+6. Transport implementation is independent from cursor logic. `core` imports no transport library.
 7. A local layout change repositions a stationary remote cursor without a new network packet.
 8. Network messages cannot execute arbitrary DOM selectors. Anchor IDs resolve only against the registered anchor map.
 9. Rendering is consumer-controlled. No cursor component is required. `@anchor-presence/react` provides optional, configurable cursor components.
@@ -123,9 +109,7 @@ The receiver's client stores every accepted remote presence. It exposes two read
 
 ## Why receiver layout is authoritative
 
-A sender that transmits raw pixel coordinates points at the wrong element on a receiver with a different layout. Anchor Presence transmits a semantic location instead: an anchor ID plus a normalized position inside that anchor, resolved against the receiver's own DOM.
-
-This design also makes local scrolling and resizing free. When the receiver's layout changes, the geometry scheduler re-measures the same anchor and moves the cursor. No new network message is required (Invariant 7). See [Anchors](/docs/get-started/concepts/anchors) for the coordinate math, and [Responsive layouts](/docs/get-started/concepts/responsive-layouts) for a worked example across two different layouts.
+Resolving against the receiver's own DOM also makes local scrolling and resizing free: the geometry scheduler re-measures the same anchor and moves the cursor with no new network message (Invariant 7). See [Anchors](/docs/get-started/concepts/anchors) for the coordinate math, and [Responsive layouts](/docs/get-started/concepts/responsive-layouts) for a worked example across two different layouts.
 
 ## Related
 

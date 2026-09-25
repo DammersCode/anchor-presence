@@ -30,18 +30,7 @@ if (presence !== null) {
 
 ## ValidationLimits
 
-`ValidationLimits` overrides one or more of the default limits. Omit a field to keep its default.
-
-| Field               | Default                              |
-| ------------------- | ------------------------------------ |
-| `maxClientIdLength` | `DEFAULT_MAX_CLIENT_ID_LENGTH` (128) |
-| `maxSessionLength`  | `DEFAULT_MAX_SESSION_LENGTH` (64)    |
-| `maxSequence`       | `DEFAULT_MAX_SEQUENCE` (2147483647)  |
-| `maxAnchors`        | `DEFAULT_MAX_ANCHORS` (8)            |
-| `maxAnchorIdLength` | `DEFAULT_MAX_ANCHOR_ID_LENGTH` (256) |
-| `maxFieldBytes`     | `DEFAULT_MAX_FIELD_BYTES` (8192)     |
-| `maxFieldDepth`     | `DEFAULT_MAX_FIELD_DEPTH` (8)        |
-| `maxMessageBytes`   | `DEFAULT_MAX_MESSAGE_BYTES` (32768)  |
+`ValidationLimits` overrides one or more of the default limits. Omit a field to keep its default. See [Security](/docs/get-started/guides/security) for the full limits table and the rule each field enforces.
 
 Pass limits directly to `validatePresence`, or through `validationLimits` on `createPresenceClient`:
 
@@ -52,10 +41,8 @@ const client = createPresenceClient({
 });
 ```
 
-See [Security](/docs/get-started/security) for the rule each limit enforces and what happens to a message or field that fails it.
-
 ## Related
 
 - [Remote presence](/docs/core/remote-presence)
-- [Security](/docs/get-started/security)
+- [Security](/docs/get-started/guides/security)
 - [Protocol types](/docs/core/api/protocol)

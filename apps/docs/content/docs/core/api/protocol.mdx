@@ -13,7 +13,7 @@ The wire format of one presence message.
 
 ## AnchorPoint
 
-One anchor point in a cursor position. See [Anchors and fallbacks](/docs/get-started/concepts/anchors-and-fallbacks) for the `u`/`v` fields.
+One anchor point in a cursor position. See [Anchors](/docs/get-started/concepts/anchors) for the `u`/`v` fields.
 
 <AutoTypeTable path="../../packages/core/src/protocol.ts" name="AnchorPoint" />
 
@@ -25,7 +25,7 @@ The cursor position inside one presence message: an anchor chain plus an optiona
 
 ## RemotePresence
 
-A remote presence without the `sequence` field, with `idle` added. The stable snapshot behind `client.getRemotePresence()`. See [Architecture](/docs/get-started/concepts/architecture) for how this differs from the raw snapshot.
+A remote presence without the `sequence` field, with `idle` added. The stable snapshot behind `client.getRemotePresence()`. See [How it works](/docs/get-started/concepts/how-it-works) for how this differs from the raw snapshot.
 
 <AutoTypeTable path="../../packages/core/src/protocol.ts" name="RemotePresence" />
 
@@ -60,7 +60,7 @@ import {
 } from "@anchor-presence/core";
 ```
 
-These constants are the defaults behind `ValidationLimits`. See [Validation](/docs/core/validation) for the field each one bounds, and [Security](/docs/get-started/security) for the rule each limit enforces.
+These constants are the defaults behind `ValidationLimits`. See [Validation](/docs/core/validation) for the field each one bounds, and [Security](/docs/get-started/guides/security) for the rule each limit enforces.
 
 ## Related
 

@@ -78,7 +78,7 @@ Final structure: five tabs (`get-started`, `core`, `dom`, `react`, `examples`), 
 - Demo palette lives in `apps/demo/src/cursors/palette.ts` (Tailwind ~700 shades, all ≥ 5:1 against white). `contrast.test.ts` guards it.
 - The demo picks a random room when `?room=` is missing. Pair e2e tests always pass a room.
 - `e2e/resilience.spec.ts`: socket drop through `page.routeWebSocket` + `connectToServer()`, closing only the client side, so the real backoff path runs. Room isolation uses a third page.
-- CI: `concurrency` per ref, Bun cache, `setup-dotnet` 10.0.x (SignalR hub test runs), docs job with `.next/cache`, blocking `bun run bench` (first CI run: 1.0–1.5× baseline, limit 3×), runners pinned to `ubuntu-24.04`.
+- CI (split to save minutes, no check runs twice): `pr.yml` on owner PRs = build, typecheck, format, lint, unit tests; `main.yml` on push to main = .NET hub test, bench (3×), demo build, chromium e2e, docs build, one job; pushes to `dev` run nothing; `release.yml` waits for the tagged commit's green Main checks instead of rerunning them. Runners pinned to `ubuntu-24.04`.
 - `SPECIFICATION.md` §17 lists which e2e specs run in three browsers (`cross-layout.spec.ts`) and which run in Chromium only.
 
 ## Next steps

@@ -55,7 +55,7 @@ A single failed browser test: rerun that file once before you debug it. Still re
 
 ### Branches and commits
 
-- Work on `dev`. A merge to `main` triggers CI and the docs deploy; merge only when the user asks.
+- Work on `dev` (being retired; later only `main` plus short-lived PR branches). Pushes to `dev` run no CI. A pull request runs the fast checks (`pr.yml`); a push to `main` runs the slow suites once (`main.yml`) and the docs deploy. Merge only when the user asks.
 - Worktrees for parallel work branch from `dev`, not `main`.
 - Plain, descriptive, lowercase commit subjects (see `git log`). Never add a `Co-Authored-By` trailer.
 - Push only when the user asks.

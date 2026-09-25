@@ -2,7 +2,7 @@
 
 ## Branches
 
-Do daily work on the `dev` branch. Merge `dev` into `main` only when the work is ready. Each push to `main` triggers one CI run.
+Do daily work on the `dev` branch. Merge `dev` into `main` only when the work is ready. Pushes to `dev` run no CI.
 
 ## Before you push or merge to main
 
@@ -34,15 +34,29 @@ docker run --rm -v "$(pwd):/src:ro" mcr.microsoft.com/playwright:v1.62.1-noble b
 - Keep comments to one short line, and only for a non-obvious why.
 - Run `bun run format` before you commit. Prettier owns formatting; the CI format check fails otherwise.
 
-## What CI runs on each push to main
+## What CI runs
 
-1. Build (`bun run build`) for core, dom, and react.
-2. Typecheck (`tsc --build`) for core, dom, and react.
+CI splits the checks so that no check runs twice and CI minutes stay low.
+
+On a pull request from the repository owner (`.github/workflows/pr.yml`), the fast checks run:
+
+1. Build (`bun run build`).
+2. Typecheck (`bun run typecheck`): packages, tests, demo, and backend examples.
 3. Format check (`bun run format:check`).
 4. Lint (`bun run lint`).
-5. All unit tests (`vitest run`).
-6. The demo production build.
-7. Browser tests on Chromium (preinstalled Chrome, no download).
+5. Unit and integration tests (`bun run test`). The real SignalR hub test skips itself because the runner has no .NET.
+
+Pull requests from other authors skip at zero minutes. To check one, run the workflow on its branch from the Actions tab.
+
+On a push to `main` (`.github/workflows/main.yml`), the slow suites run once:
+
+1. The real SignalR hub test (.NET 10).
+2. The benchmark guard (`bun run bench`, 3× the committed baseline).
+3. The demo production build.
+4. Browser tests on Chromium (preinstalled Chrome, no download).
+5. The docs build.
+
+A release does not repeat these checks. `.github/workflows/release.yml` waits for the Main checks run of the tagged commit and publishes only when it is green.
 
 ## Releasing
 

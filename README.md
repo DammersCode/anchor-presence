@@ -92,12 +92,16 @@ See also [SPECIFICATION.md](SPECIFICATION.md) for the full technical specificati
 
 ## Transport examples
 
-| Example                                            | What it shows                                    |
-| -------------------------------------------------- | ------------------------------------------------ |
-| [`apps/demo`](apps/demo/README.md)                 | The full React demo with a plain WebSocket relay |
-| [`apps/server`](apps/server)                       | The Bun WebSocket relay used by the demo         |
-| [`examples/socketio`](examples/socketio/README.md) | A Socket.IO transport                            |
-| [`examples/signalr`](examples/signalr/README.md)   | An ASP.NET Core SignalR transport                |
+| Example                                                | What it shows                                          |
+| ------------------------------------------------------ | ------------------------------------------------------ |
+| [`apps/demo`](apps/demo/README.md)                     | The full React demo. Pick the backend with `?backend=` |
+| [`apps/server`](apps/server)                           | The reference Bun WebSocket relay, default backend     |
+| [`examples/bun-native`](examples/bun-native/README.md) | A `Bun.serve` relay using topic pub-sub                |
+| [`examples/node-ws`](examples/node-ws/README.md)       | A relay on the `ws` package over `node:http`           |
+| [`examples/hono`](examples/hono/README.md)             | A relay on Hono's `upgradeWebSocket` helper            |
+| [`examples/elysia`](examples/elysia/README.md)         | A relay on Elysia's `.ws()` route                      |
+| [`examples/socketio`](examples/socketio/README.md)     | A Socket.IO transport                                  |
+| [`examples/signalr`](examples/signalr/README.md)       | An ASP.NET Core SignalR transport                      |
 
 ## Run the demo
 

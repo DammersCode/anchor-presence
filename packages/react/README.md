@@ -83,8 +83,7 @@ function App() {
   const client = usePresenceClient({
     factory: () => {
       const transport = createWebSocketTransport({ path: "/?room=main" });
-      transport.connect();
-      return createPresenceClient({ transport });
+      return createPresenceClient({ transport, autoConnect: true });
     },
   });
   return (
@@ -99,7 +98,7 @@ function App() {
 
 The registry lives at module scope. Clients survive route changes and component remounts until the page unloads. Pass a different `key` for a second client, for example an admin overlay.
 
-The hook does not call `transport.connect()`. Connect the transport inside the factory or before render.
+The hook does not call `transport.connect()` itself. Either pass `autoConnect: true` to `createPresenceClient` so it connects the transport for you, or call `transport.connect()` inside the factory before render.
 
 ## Who's online
 

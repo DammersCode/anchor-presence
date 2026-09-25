@@ -15,6 +15,25 @@ const client = createPresenceClient({ transport: myTransport });
 
 `transport` is the only required option. See [Transports](/docs/core/transports) for the transport contract, and [Codecs](/docs/core/codecs) for the `codec` option.
 
+## Connecting the transport
+
+`createPresenceClient` never connects the transport for you by default. Call `transport.connect()` yourself, before or right after you create the client:
+
+```ts
+import { createPresenceClient } from "@anchor-presence/core";
+
+const client = createPresenceClient({ transport: myTransport });
+myTransport.connect();
+```
+
+Pass `autoConnect: true` to have the client call `transport.connect()` for you, once, during creation:
+
+```ts
+const client = createPresenceClient({ transport: myTransport, autoConnect: true });
+```
+
+`autoConnect` defaults to `false`. With `true`, the client calls `connect()` after it subscribes to the transport's messages and status, so it misses no inbound message or status change. A transport with no `connect` method needs no call either way. A `connect()` call that throws or rejects never escapes client creation: the transport reports the failure through its own status instead. `dispose()` calls `transport.disconnect()` in both modes.
+
 ## Lifecycle
 
 Call `client.updateLocalCursor(cursor, pointer?)` to set the local cursor position. A `null` cursor clears it for remote peers. The client batches updates and sends the latest value on its next publish tick, not on every call.

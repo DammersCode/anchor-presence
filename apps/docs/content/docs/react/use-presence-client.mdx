@@ -7,7 +7,7 @@ description: Create a presence client once and reuse it across renders and Stric
 
 ## Basic use
 
-Pass a `factory` that builds the transport, connects it, then builds the client:
+Pass a `factory` that builds the transport, then builds the client with `autoConnect: true`:
 
 ```tsx
 import { createPresenceClient } from "@anchor-presence/core";
@@ -18,15 +18,14 @@ function App() {
   const client = usePresenceClient({
     factory: () => {
       const transport = createWebSocketTransport({ path: "/?room=main" });
-      transport.connect();
-      return createPresenceClient({ transport });
+      return createPresenceClient({ transport, autoConnect: true });
     },
   });
   // client is null until the mount effect runs
 }
 ```
 
-The factory owns the transport. Create the transport, call `transport.connect()`, then create the client with `createPresenceClient({ transport })`. No part of the library connects a transport for you.
+The factory owns the transport. Create the transport, then create the client. Either pass `autoConnect: true` so `createPresenceClient` connects the transport for you, or call `transport.connect()` yourself before returning the client. No part of the library connects a transport for you unless you opt in with `autoConnect`.
 
 ## Behavior
 
@@ -37,7 +36,7 @@ The hook runs `factory` once per `key`, inside a mount effect, and stores the re
 
 A `key` option identifies a client for multi-client setups, such as a second presence room. Two calls with the same `key` resolve to the same client. The hook uses a default key when you omit `key`.
 
-The hook never calls `transport.connect()` itself and never disposes the client on unmount. A client survives route changes and component remounts until you call `client.dispose()`, which also calls `transport.disconnect()` and removes the `key` entry. The next render after `dispose()` creates a new client.
+The hook never calls `transport.connect()` itself; the factory owns that call, directly or through `autoConnect: true`. The hook never disposes the client on unmount. A client survives route changes and component remounts until you call `client.dispose()`, which also calls `transport.disconnect()` and removes the `key` entry. The next render after `dispose()` creates a new client.
 
 <Callout type="warn">
   If a factory creates a transport at module scope instead of inside the factory function, the transport

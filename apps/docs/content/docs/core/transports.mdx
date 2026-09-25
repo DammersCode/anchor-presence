@@ -33,9 +33,9 @@ const client = createPresenceClient({ transport: myTransport });
 
 ## Connect and disconnect ownership
 
-`connect` and `disconnect` are optional. The client never calls `connect` for you. Call it yourself after you build the transport, before or after you pass it to `createPresenceClient`.
+`connect` and `disconnect` are optional. By default, the client never calls `connect` for you. Call it yourself after you build the transport, before or after you pass it to `createPresenceClient`. Pass `autoConnect: true` to have the client call `connect()` for you, once, during creation. See [Presence client](/docs/core/presence-client#connecting-the-transport) for both modes.
 
-`client.dispose()` calls `transport.disconnect()` when the transport provides one. A throwing `disconnect` does not stop `dispose` from finishing its other cleanup.
+`client.dispose()` calls `transport.disconnect()` when the transport provides one, in both modes. A throwing `disconnect` does not stop `dispose` from finishing its other cleanup.
 
 `send` receives already-encoded bytes. The client calls `codec.encode()` before it calls `send`. A `send` failure must not throw past the transport boundary in a way that crashes the app: the client catches send errors and treats presence as lossy by design.
 

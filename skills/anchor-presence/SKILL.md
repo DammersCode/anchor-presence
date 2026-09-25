@@ -42,7 +42,7 @@ Use the project's package manager. Install the relay dependencies from the chose
 
 ### 4. Create the client and render the cursor layer
 
-Create the client inside `usePresenceClient`, in a client component. The factory creates the transport, connects it, and returns the client:
+Create the client inside `usePresenceClient`, in a client component. The factory creates the transport and returns the client with `autoConnect: true`:
 
 ```tsx
 "use client";
@@ -64,8 +64,7 @@ export function PresenceRoot({
       const transport = createWebSocketTransport({
         url: `wss://relay.example.com/?room=${encodeURIComponent(room)}`,
       });
-      transport.connect();
-      return createPresenceClient({ transport, user: { name: userName } });
+      return createPresenceClient({ transport, user: { name: userName }, autoConnect: true });
     },
   });
 

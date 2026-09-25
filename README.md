@@ -25,8 +25,7 @@ function App() {
   const client = usePresenceClient({
     factory: () => {
       const transport = createWebSocketTransport({ path: "/?room=main" });
-      transport.connect();
-      return createPresenceClient({ transport });
+      return createPresenceClient({ transport, autoConnect: true });
     },
   });
   return (

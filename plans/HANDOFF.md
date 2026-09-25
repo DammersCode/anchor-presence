@@ -16,18 +16,28 @@ Owner decisions:
 
 ## Workstreams
 
-| Plan                                                        | Branch              | Worktree                        | Status                   |
-| ----------------------------------------------------------- | ------------------- | ------------------------------- | ------------------------ |
-| Agent rules, repo skills                                    | `dev`               | main tree                       | done (`4a0f916`)         |
-| Plans cleanup and future backend plans                      | `dev`               | main tree                       | done (`697692f`)         |
-| [022 Gap closure](022-gap-closure-2026-09-25.md) — packages | `package-gaps`      | `C:/repos/danny/ap-wt-packages` | done, merged (`ea778b4`) |
-| [023 Fumadocs docs site](023-fumadocs-docs-site.md)         | `docs-fumadocs`     | `C:/repos/danny/ap-wt-docs`     | done, merged (`3b17767`) |
-| [024 Backend examples](024-backend-examples.md)             | `examples-backends` | `C:/repos/danny/ap-wt-backends` | done, merged (`0f451ff`) |
-| 022 Gap closure — demo, e2e, CI                             | `demo-e2e-ci`       | `C:/repos/danny/ap-wt-ci`       | done, merged             |
-| 025 Docs rework                                             | `dev`               | main tree                       | done                     |
-| [026 Example previews](026-example-previews.md)             | `dev`               | main tree                       | done                     |
+| Plan                                                                                    | Branch              | Worktree                        | Status                   |
+| --------------------------------------------------------------------------------------- | ------------------- | ------------------------------- | ------------------------ |
+| Agent rules, repo skills                                                                | `dev`               | main tree                       | done (`4a0f916`)         |
+| Plans cleanup and future backend plans                                                  | `dev`               | main tree                       | done (`697692f`)         |
+| [022 Gap closure](022-gap-closure-2026-09-25.md) — packages                             | `package-gaps`      | `C:/repos/danny/ap-wt-packages` | done, merged (`ea778b4`) |
+| [023 Fumadocs docs site](023-fumadocs-docs-site.md)                                     | `docs-fumadocs`     | `C:/repos/danny/ap-wt-docs`     | done, merged (`3b17767`) |
+| [024 Backend examples](024-backend-examples.md)                                         | `examples-backends` | `C:/repos/danny/ap-wt-backends` | done, merged (`0f451ff`) |
+| 022 Gap closure — demo, e2e, CI                                                         | `demo-e2e-ci`       | `C:/repos/danny/ap-wt-ci`       | done, merged             |
+| 025 Docs rework                                                                         | `dev`               | main tree                       | done                     |
+| [026 Example previews](026-example-previews.md)                                         | `dev`               | main tree                       | done                     |
+| [027 Scale benchmark and diagram](027-scale-benchmark-and-diagram.md) — scale benchmark | `dev`               | main tree                       | done                     |
 
 Each branch keeps its own progress in `plans/handoffs/<branch>.md`. Read that file before you continue a branch.
+
+## Scale benchmark notes (027)
+
+- Receiver: the demo bench page (`apps/demo/src/bench/bench-page.tsx`) now offers 500 and 2000 anchors and 200 cursors. `e2e/perf-scale.spec.ts` is opt-in (`PERF_SCALE=1`, chromium only) and measures 500×100, 1000×200, 2000×200; it is skipped in a normal `bunx playwright test`, so it adds no CI time.
+- Relay: `scripts/relay-load.ts` spawns `apps/server/index.ts` directly, not through its `dev` package script — `bun run --cwd apps/server dev` re-execs a child process, which would make CPU/RSS sampling read the wrong pid. Room/socket caps are raised via env for the client count under test; the rate limit stays at the shipped default.
+- Timer drift: on this Windows/Bun setup, `setInterval(fn, 50)` (20 Hz) can run under its nominal rate under load. `relay-load.ts` measures the rate clients actually achieved and reports delivery against that, plus the nominal-rate figure for reference, rather than asserting a fixed target.
+- Finding: past ~100 clients in one room, the reference relay's own single-threaded event loop saturates its CPU (near 100%) and delivery latency grows into seconds — confirmed via WebSocket close-code tracking that zero sockets were force-closed by the slow-peer or rate-limit protections. The bottleneck is CPU, not those protections.
+- Core: `packages/core/bench/hotpath.bench.ts` gained a `store.ingest steady-state: 200 clients` case; `baseline.json` got only that one new key, the rest are untouched.
+- Docs: `get-started/guides/performance.mdx` "Measured at scale" section has both tables, the machine spec, and reproduce commands.
 
 ## Example previews notes (026)
 

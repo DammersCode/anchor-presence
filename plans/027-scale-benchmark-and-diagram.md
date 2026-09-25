@@ -6,12 +6,16 @@ Owner decision (2026-09-25): add a benchmark for large rooms and a diagram for "
 
 ## Scale benchmark
 
+Status: done.
+
 Persona review: the performance guide has no numbers for 50–200 clients per room or thousands of anchors.
 
-- Receiver main thread: 200 remote cursors over 2000 registered anchors in Chromium, scripting time per resolve pass. Extend the existing perf e2e pattern (`e2e/perf.spec.ts`, the demo bench page). Keep the CI e2e run fast: the large scenario is opt-in (for example an env flag or a separate project) and runs locally.
-- Relay: a local load script (`scripts/relay-load.ts`) that starts `apps/server` and N WebSocket clients (50, 100, 200) sending 20 messages per second with `binaryCodec`; it reports delivered messages per second, delivery latency p50/p99, and relay CPU. Local only, not in CI.
-- Core: add a 200-client case to `scripts/bench.ts` and re-record the baseline for it only.
-- Docs: a "Measured at scale" section in `get-started/guides/performance.mdx` with the numbers, the machine, and the commands to reproduce. Replace the sentence that says no such benchmark exists.
+- Receiver main thread: extended the demo bench page (`apps/demo/src/bench/bench-page.tsx`) with 500/2000-anchor and 200-cursor options. `e2e/perf-scale.spec.ts` is opt-in (`PERF_SCALE=1`, chromium only), measures 500×100, 1000×200, and 2000×200, prints a table, and asserts loose sanity bounds only. It is skipped (not run) in a normal `bunx playwright test`, so the gated `e2e/perf.spec.ts` (100×50) is the only perf spec in the default run.
+- Relay: `scripts/relay-load.ts` starts `apps/server` directly (not through its `dev` script wrapper, so the sampled pid is the real worker) with room/socket caps raised via env, opens N native WebSocket clients in one room each publishing a real `binaryCodec` message at 20 Hz, and reports sent/delivered rate (measured, not the assumed rate — see the timer-drift note in the script's own output), latency p50/p99/p99.9, relay CPU/RSS, and WebSocket close codes (to distinguish a forced disconnect from the event loop falling behind). Run locally for 50/100/200 clients; not in CI.
+- Core: added a `store.ingest steady-state: 200 clients` case to `packages/core/bench/hotpath.bench.ts`; only that key was added to `packages/core/bench/baseline.json`, the other entries are untouched.
+- Docs: `get-started/guides/performance.mdx` has a "Measured at scale" section with both tables, the machine, and the reproduce commands. Replaced the sentence claiming no 200-client benchmark exists.
+
+Finding: the reference relay's single-threaded event loop, not its rate-limit or slow-peer protections, is the bottleneck past ~100 clients in one room — CPU saturates near 100% and delivery latency grows into seconds, with zero forced disconnects (confirmed via close-code tracking in `relay-load.ts`).
 
 ## Diagram
 

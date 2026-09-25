@@ -48,7 +48,12 @@ const AUTO_TYPE_TABLE = /<AutoTypeTable path="([^"]+)" name="([^"]+)" \/>/g;
 const DEMO = /<Demo \/>\n?/g;
 const EXAMPLE_PREVIEW = /<ExamplePreview scene="[^"]+" \/>\n?/g;
 const INSTALL_COMMAND = /<InstallCommand(?: packages="([^"]+)")? \/>/g;
+const MERMAID = /<Mermaid\s+chart="([\s\S]*?)"\s*\/>/g;
 const FENCE = "```";
+
+function unescapeMdxAttribute(value: string): string {
+  return value.replaceAll("&#x22;", '"').replaceAll("&#x0A;", "\n").replaceAll("&#x26;", "&");
+}
 
 function tableCell(text: string): string {
   return text.replaceAll("|", "\\|").replaceAll("\n", " ");
@@ -77,7 +82,8 @@ async function inlineComponents(markdown: string): Promise<string> {
     .replace(CODE_FROM_SOURCE, (_tag, kind: string, file: string, lang: string) => {
       const code = kind === "repo" ? readExampleSource(file) : readDocsSource(file);
       return `${FENCE}${lang}\n${code.trimEnd()}\n${FENCE}`;
-    });
+    })
+    .replace(MERMAID, (_tag, chart: string) => `${FENCE}mermaid\n${unescapeMdxAttribute(chart)}\n${FENCE}`);
   for (const [tag, path, name] of markdown.matchAll(AUTO_TYPE_TABLE)) {
     const docs = await getTypeGenerator().generateTypeTable({ path, name });
     out = out.replace(tag, docs.map(typeTableMarkdown).join("\n\n"));

@@ -7,6 +7,7 @@ import { InstallCommand } from "@/components/install-command";
 import { Demo } from "@/components/demo";
 import { ExamplePreview } from "@/components/examples/_preview/example-preview";
 import { CodeFromSource } from "@/components/code-from-source";
+import { Mermaid } from "@/components/mermaid";
 
 export function getMDXComponents(components?: MDXComponents) {
   return {
@@ -16,6 +17,7 @@ export function getMDXComponents(components?: MDXComponents) {
     Demo,
     ExamplePreview,
     CodeFromSource,
+    Mermaid,
     Step,
     Steps,
     Tabs,

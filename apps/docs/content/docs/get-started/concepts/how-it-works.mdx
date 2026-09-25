@@ -11,15 +11,16 @@ The central invariant:
 
 ## Package layers
 
-The system has three packages. Each package adds one layer:
+The system has three packages. Each package adds one layer, and the dependency direction is one-way: `@anchor-presence/react` depends on `@anchor-presence/dom`, and `@anchor-presence/dom` depends on `@anchor-presence/core`.
 
-```text
-@anchor-presence/react   provider component, hooks, SSR safety
-@anchor-presence/dom     anchor registry, pointer capture, geometry scheduler, resolver
-@anchor-presence/core    protocol types, validation, presence store, client orchestration
+```mermaid
+flowchart TB
+    react["@anchor-presence/react<br/>provider component, hooks, SSR safety"]
+    dom["@anchor-presence/dom<br/>anchor registry, pointer capture, geometry scheduler, resolver"]
+    core["@anchor-presence/core<br/>protocol types, validation, presence store, client orchestration"]
+
+    react --> dom --> core
 ```
-
-The dependency direction is one-way: `@anchor-presence/react` depends on `@anchor-presence/dom`, and `@anchor-presence/dom` depends on `@anchor-presence/core`.
 
 - `@anchor-presence/core` has zero dependencies and no DOM globals. It runs in Node.js, Bun, workers, and browsers. It owns the protocol, validation, sequencing, the remote presence store, and client orchestration.
 - `@anchor-presence/dom` depends only on `@anchor-presence/core`. It owns every browser API call, the anchor registry, pointer capture, the geometry scheduler, and visibility policies.
@@ -27,61 +28,32 @@ The dependency direction is one-way: `@anchor-presence/react` depends on `@ancho
 
 ## Sender to receiver flow
 
-```text
-SENDER TAB                                          RECEIVER TAB
------------                                          ------------
+A local pointer move never reaches the receiver as a raw pixel: the sender encodes a semantic position, and the receiver resolves it against its own layout.
 
-pointermove event
-       |
-       v
-walk anchor ancestors            core client
-(dom: pointer.ts)                 orchestration
-       |                                |
-       v                                |
-build CursorPosition                    |
-  { anchors: [...],                     |
-    viewport: {u, v} }                  |
-       |                                |
-       v                                |
-client.updateLocalCursor()  ---------> latest-state slot
-                                         |
-                                         v
-                                rate-limited publisher
-                                (publishIntervalMs, default 50ms)
-                                         |
-                                         v
-                                codec.encode()
-                                         |
-                                         v
-                                transport.send() -------> [network] -------> transport.subscribe()
-                                                                                    |
-                                                                                    v
-                                                                             codec.decode()
-                                                                                    |
-                                                                                    v
-                                                                             validatePresence()
-                                                                                    |
-                                                                                    v
-                                                                        remote presence store
-                                                                        (sequencing, expiry)
-                                                                                    |
-                                                                                    v
-                                                                        geometry scheduler
-                                                                        (dom: scheduler.ts)
-                                                                                    |
-                                                            +-----------------------+-----------------------+
-                                                            |                       |                       |
-                                                            v                       v                       v
-                                                       READ PHASE            COMPUTE PHASE            NOTIFY PHASE
-                                                       measure anchors        resolve tier,          publish one
-                                                       against RECEIVER       run visibility          immutable
-                                                       DOM layout             policy, interpolate     snapshot
-                                                            |
-                                                            v
-                                                   ResolvedCursor { x, y, visible, anchorId, tier }
-                                                            |
-                                                            v
-                                                   consumer-rendered cursor (react: useRemoteCursors)
+```mermaid
+sequenceDiagram
+    participant SP as Sender pointer
+    participant SD as Sender DOM binding
+    participant SC as Sender core client
+    participant T as Transport
+    participant R as Relay
+    participant RC as Receiver core client
+    participant RD as Receiver DOM binding
+    participant RCu as Receiver cursor
+
+    SP->>SD: pointermove
+    SD->>SD: walk anchor ancestors, build anchor chain + normalized u/v
+    SD->>SC: updateLocalCursor(CursorPosition)
+    SC->>SC: encode, rate-limited publish
+    SC->>T: send(bytes)
+    T->>R: message
+    R->>R: forward to room (never reads payload)
+    R->>T: message
+    T->>RC: receive(bytes)
+    RC->>RC: decode, validate, store (sequencing, expiry)
+    RC->>RD: RemotePresence
+    RD->>RD: resolve against own layout (fallback chain, resolution tier)
+    RD->>RCu: ResolvedCursor { x, y, visible, tier }
 ```
 
 The sender never measures the receiver's DOM. The sender sends a semantic anchor ID and a normalized position inside it. The receiver measures its own anchors and turns that data into pixels.

@@ -22,7 +22,7 @@ Owner decisions:
 | Plans cleanup and future backend plans                      | `dev`               | main tree                       | done (`697692f`)         |
 | [022 Gap closure](022-gap-closure-2026-09-25.md) — packages | `package-gaps`      | `C:/repos/danny/ap-wt-packages` | in progress              |
 | [023 Fumadocs docs site](023-fumadocs-docs-site.md)         | `docs-fumadocs`     | `C:/repos/danny/ap-wt-docs`     | done, merged (`3b17767`) |
-| [024 Backend examples](024-backend-examples.md)             | `examples-backends` | `C:/repos/danny/ap-wt-backends` | in progress              |
+| [024 Backend examples](024-backend-examples.md)             | `examples-backends` | `C:/repos/danny/ap-wt-backends` | done, merged (`0f451ff`) |
 | 022 Gap closure — demo, e2e, CI                             | `dev`               | main tree                       | open (after merges)      |
 
 Each branch keeps its own progress in `plans/handoffs/<branch>.md`. Read that file before you continue a branch.
@@ -33,14 +33,23 @@ Each branch keeps its own progress in `plans/handoffs/<branch>.md`. Read that fi
 - The quick start's zero-backend sample uses `createInMemoryPair` (single realm).
 - Code on example pages comes from repo files through `lib/read-example-source.ts`, so it cannot drift.
 - Root `build` builds only `core`, `dom`, `react`. `bun run docs:build` builds the docs app.
-- Open: add `bun-native`, `node-ws`, `hono`, `elysia` to `content/docs/examples/backends/meta.json` after plan 024 merges. Run a full `simple-english` self-check pass over all pages.
+- Open: run a full `simple-english` self-check pass over all pages.
+
+## Backend examples notes (from `examples-backends`)
+
+- `apps/demo` is the only demo client. `apps/demo/src/cursors/backends.ts` reads `?backend=` (or `VITE_BACKEND`). IDs and ports: `bun` = `apps/server` :8787 (default; e2e depends on it), `bun-native` :8788, `node-ws` :8789, `hono` :8790, `elysia` :8791, `socketio` :5001, `signalr` :5000.
+- `examples/_shared/relay-guard.ts` holds the security baseline helpers for the four native-WebSocket relays.
+- Hono uses `hono/bun`. Hono wraps each WebSocket event in a new `WSContext`, so room state keys off `ws.raw`.
+- Bun native and Elysia use `ws.publish` (excludes the sender), not `server.publish`.
+- `ws` closes the socket on `maxPayload`, so `node-ws` sets it high and drops oversized frames in app code.
+- SignalR hub uses groups per room. `examples/signalr/signalr-hub.test.ts` runs the real hub and skips without `dotnet`.
 
 ## Next steps
 
-1. Merge `examples-backends`, `package-gaps`, and `docs-fumadocs` into `dev` (in this order; conflicts expected in `ci.yml`, `vitest.config.ts`, `package.json`, `CHANGELOG.md`, `backends/meta.json`). Fold each `plans/handoffs/<branch>.md` into this file, then delete it.
+1. Merge `package-gaps` into `dev` and fold its `plans/handoffs/package-gaps.md` into this file. (`docs-fumadocs` and `examples-backends` are merged.)
 2. Demo fixes: WCAG AA label colors, `aria-live` on the presence pill, random default room.
 3. E2E: in-place socket drop and reconnect; room isolation.
-4. CI: `concurrency`, Bun cache, docs build job, SignalR job with `setup-dotnet`, `bun run bench` gate. Fix `SPECIFICATION.md` §17 browser claims.
+4. CI: `concurrency`, Bun cache, `setup-dotnet` 10.0.x so the SignalR hub test runs, `bun run bench` gate. (The docs build job exists.) Fix `SPECIFICATION.md` §17 browser claims.
 5. Run all gates and the full three-browser e2e suite locally. Report to the owner. Merge to `main` only after the owner says yes.
 6. After the merge to `main`: the owner imports the repo in Vercel.
 

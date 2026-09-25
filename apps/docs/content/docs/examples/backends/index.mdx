@@ -33,22 +33,33 @@ See [Transports](/docs/guides/transports) for the full contract and the shipped 
 
 ## Backend matrix
 
-| Backend                                       | Ships in                    | Needs a foreign dependency | Tested                                   |
-| --------------------------------------------- | --------------------------- | -------------------------- | ---------------------------------------- |
-| Native WebSocket                              | `@anchor-presence/dom`      | No                         | Unit tests in `packages/dom`             |
-| [Socket.IO](/docs/examples/backends/socketio) | `examples/socketio`         | Yes (`socket.io-client`)   | Integration test against a real relay    |
-| [SignalR](/docs/examples/backends/signalr)    | `examples/signalr`          | Yes (`@microsoft/signalr`) | Integration test against a real hub      |
-| `createInMemoryPair`                          | `@anchor-presence/core`     | No                         | Used by the docs site's own code samples |
-| `BroadcastChannel`                            | not shipped, write your own | No                         | Used by the live demos on this site      |
+| Backend                                          | Ships in                    | Needs a foreign dependency | Tested                                   |
+| ------------------------------------------------ | --------------------------- | -------------------------- | ---------------------------------------- |
+| Native WebSocket                                 | `@anchor-presence/dom`      | No                         | Unit tests in `packages/dom`             |
+| [Bun native](/docs/examples/backends/bun-native) | `examples/bun-native`       | No                         | Integration test against a real relay    |
+| [Node `ws`](/docs/examples/backends/node-ws)     | `examples/node-ws`          | No                         | Integration test against a real relay    |
+| [Hono](/docs/examples/backends/hono)             | `examples/hono`             | No                         | Integration test against a real relay    |
+| [Elysia](/docs/examples/backends/elysia)         | `examples/elysia`           | No                         | Integration test against a real relay    |
+| [Socket.IO](/docs/examples/backends/socketio)    | `examples/socketio`         | Yes (`socket.io-client`)   | Integration test against a real relay    |
+| [SignalR](/docs/examples/backends/signalr)       | `examples/signalr`          | Yes (`@microsoft/signalr`) | Integration test against a real hub      |
+| `createInMemoryPair`                             | `@anchor-presence/core`     | No                         | Used by the docs site's own code samples |
+| `BroadcastChannel`                               | not shipped, write your own | No                         | Used by the live demos on this site      |
 
 A transport that needs a third-party library lives in `examples/`, never in a package. `core`, `dom`, and `react` stay free of framework and vendor dependencies. See [Package boundaries](https://github.com/DammersCode/anchor-presence/blob/main/AGENTS.md) in the repository for the full rule.
 
 ## Choosing one
 
 - **Already running a plain WebSocket server, or starting fresh?** Use `createWebSocketTransport` from `@anchor-presence/dom`. It is the only transport that ships in a package, with reconnect and backoff built in.
+- **Already on Bun, Node, Hono, or Elysia?** Use the matching relay example. The client uses `createWebSocketTransport` with no custom transport.
 - **Already running Socket.IO for other real-time features?** Reuse that connection with the [Socket.IO example](/docs/examples/backends/socketio) instead of running a second WebSocket server.
 - **Already on ASP.NET Core?** The [SignalR example](/docs/examples/backends/signalr) wraps a `HubConnection` as a transport.
 - **Prototyping, writing tests, or building this docs site's demos?** Use `createInMemoryPair` for a single process, or a `BroadcastChannel` transport for two tabs or iframes on the same origin with no server at all.
+
+## Shared guard helpers
+
+The Bun native, Node `ws`, Hono, and Elysia relays share one file of guard helpers: room-name validation, a per-connection rate limiter, a message size check, and Origin and token checks. Copy it together with the server you pick:
+
+<CodeFromSource repo="examples/_shared/relay-guard.ts" lang="ts" />
 
 ## Related
 

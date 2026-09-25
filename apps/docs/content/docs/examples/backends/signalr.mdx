@@ -15,7 +15,7 @@ description: An ASP.NET Core SignalR hub and a shipped client transport.
 
 The shipped client wraps a small connection harness (`SignalRHarness`) rather than a raw `HubConnection` directly, so it can share status and reconnect handling with the rest of the demo app:
 
-<CodeFromSource repo="examples/signalr/client/src/transport.ts" lang="ts" />
+<CodeFromSource repo="examples/signalr/transport.ts" lang="ts" />
 
 ## A simpler sketch
 
@@ -60,12 +60,12 @@ export function createSignalRTransport(connection: HubConnection): LiveCursorTra
 }
 ```
 
-This sketch has not run against a real hub in this repository's tests; the shipped `examples/signalr/client/src/transport.ts` has. Check it against your hub version before you ship it.
+This sketch does not run in this repository's tests. The shipped `examples/signalr/transport.ts` does. Check the sketch against your hub version before you ship it.
 
 ## Behavior notes
 
-- `PresenceHub.OnPresence` forwards to `Clients.Others`, so a sender never receives its own message back. Compare this with a Socket.IO or WebSocket relay, which typically needs the client to filter its own echo, or the relay to exclude the sender explicitly.
-- An integration test in `examples/signalr/signalr.test.ts` runs the transport against a real hub.
+- The hub adds each connection to a SignalR group for its room. `PresenceHub.OnPresence` forwards to `Clients.OthersInGroup(room)`, so a sender never receives its own message and other rooms never receive it.
+- `examples/signalr/signalr-hub.test.ts` starts the real ASP.NET Core hub and runs two clients through it. The test skips when `dotnet` is not on `PATH`.
 - `connection.send` and `connection.on` are fire-and-forget over the hub's method name; there is no acknowledgment, matching the transport interface's `send` contract.
 
 ## Related

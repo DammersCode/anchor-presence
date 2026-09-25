@@ -11,7 +11,15 @@ Three separate causes produce the same symptom.
 
 **A visibility policy hides it.** A custom `VisibilityPolicy` can return `"hide"` for a tier that otherwise shows. Check the policy passed to `bindingOptions.resolution.visibilityPolicy` or `DomBindingOptions.resolution.visibilityPolicy`. The default policy hides only the `hidden` tier; anything else hiding an `anchor` or `viewport` tier cursor is application logic. See [UI context](/docs/concepts/ui-context).
 
-**The presence is stale.** The store removes a remote client after `staleTimeoutMs` (default 70000 ms) with no message. A sender on a backgrounded tab still sends a heartbeat every `heartbeatMs` (default 10000 ms), but a browser can clamp hidden-tab timers to one minute; a very long background period can still expire the entry. Make sure the sender tab is not fully suspended, and make sure the transport is still connected on both sides.
+**The presence is stale.** A remote client with no message for `idleAfterMs` (default 15000 ms) is idle: `CursorLayer` dims its cursor. The store removes the client after `staleTimeoutMs` (default 70000 ms) with no message. The client clamps `idleAfterMs` below `staleTimeoutMs`. A sender on a backgrounded tab still sends a heartbeat every `heartbeatMs` (default 10000 ms), but a browser can clamp hidden-tab timers to one minute; a very long background period can still expire the entry. Make sure the sender tab is not fully suspended, and make sure the transport is still connected on both sides.
+
+## Cursor is outside the visible area
+
+The resolver also resolves anchors that are scrolled out of view or clipped. `ResolvedCursor.x` and `ResolvedCursor.y` are viewport pixels. To show an edge hint, compare them with the viewport:
+
+```ts
+const offscreen = x < 0 || y < 0 || x >= window.innerWidth || y >= window.innerHeight;
+```
 
 ## Cursor floats over empty space
 

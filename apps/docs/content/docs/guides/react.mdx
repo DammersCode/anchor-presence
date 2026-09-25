@@ -62,7 +62,7 @@ Pass `client={null}` during server-side rendering. See [SSR and Strict Mode](/do
 | Hook                                         | Returns                                                                     |
 | -------------------------------------------- | --------------------------------------------------------------------------- |
 | `usePresenceClient({ factory, key? })`       | a stable `PresenceClient` per `key`, or `null` before the mount effect runs |
-| `useRemoteUsers()`                           | one entry per remote client: `clientId`, `user`, and `session`              |
+| `useRemoteUsers()`                           | one entry per remote client: `clientId`, `user`, `session`, and `idle`      |
 | `useRemoteCursors()`                         | `ResolvedCursor[]` snapshot                                                 |
 | `useRemoteCursorsSelector(select, isEqual?)` | a value derived from the snapshot                                           |
 | `useCursorPresence()`                        | raw remote `RemotePresence<TContext, TUser>[]`                              |
@@ -76,7 +76,7 @@ Each hook rerenders its component only when the value it returns changes.
 
 - `useRemoteCursors` rerenders on every resolved-cursor snapshot. While cursors move, that is every frame. Derive a smaller value with `useRemoteCursorsSelector` when your component needs less.
 - `useRemoteCursorsSelector` rerenders only when the `select` output changes under `isEqual`.
-- `useRemoteUsers` rerenders only when the set of remote clients, or their `user` or `session`, changes.
+- `useRemoteUsers` rerenders only when the set of remote clients, or their `user`, `session`, or `idle` state, changes.
 - `useCursorPresence` rerenders only when a remote client's `cursor`, `context`, `user`, `pointer`, `session`, or membership changes. A message that only advances `sequence` does not rerender it.
 - `useCursorStatus` rerenders only when the connection status changes.
 - `useCursorContext` rerenders only when the local context value changes.
@@ -284,6 +284,8 @@ An explicit CSS variable on `style` takes precedence over the `color` prop.
 ## Custom interpolation
 
 The library ships two interpolators: `noneInterpolator` (snap, no easing) and `linearInterpolator` (fixed-duration ease). Anything richer, such as a spring, is application code. Pass a custom factory through `bindingOptions.resolution.interpolatorFactory`.
+
+With no factory, the binding uses `linearInterpolator`. If the operating system prefers reduced motion, the binding uses `noneInterpolator` instead. A factory that you pass applies to every user, including users who prefer reduced motion.
 
 Implement the `Interpolator` interface from `@anchor-presence/core`:
 

@@ -1,74 +1,129 @@
 ---
 name: anchor-presence
-description: Integrate anchor-presence live cursors into a React app — semantic anchors, presence client, transports, cursor rendering, visibility policies. Use when adding live cursors or multiplayer presence to a DOM app, wiring @anchor-presence packages, choosing anchor IDs, or when remote cursors drift, vanish, or point at the wrong element.
+description: Add anchor-presence live cursors to a React app, or fix them. Use when adding live cursors, multiplayer presence, or a who-is-online list; wiring @anchor-presence packages or a relay; choosing anchor IDs; or when remote cursors drift, vanish, or land on the wrong element.
 ---
 
-Anchor-presence shows remote user cursors in DOM apps without a canvas. A cursor is transmitted as a semantic **anchor** ID plus a normalized offset inside it, with a fallback **chain** and a viewport fallback. The receiver resolves everything against its own layout — the receiver is authoritative, so different window sizes, sidebar states, and responsive wrapping all show the cursor over the semantically same element.
+Anchor-presence shows remote cursors in DOM apps. A cursor travels as a semantic **anchor** ID plus a normalized offset inside that element, with a fallback **chain** of parent anchors and a viewport position. The **receiver** is authoritative: it resolves the anchor against its own layout, so the cursor lands on the same element at any window size, sidebar state, or responsive wrap.
 
-Read [anchors.md](anchors.md) before choosing anchor IDs. Read [troubleshooting.md](troubleshooting.md) when a cursor drifts, vanishes, or lands on the wrong element.
+Sources of truth, in order:
+
+- After install: `node_modules/@anchor-presence/{core,dom,react}/README.md` and the package `.d.ts` files. Trust them over any sample here.
+- Docs as markdown: `https://anchor-presence.vercel.app/docs/<page>.md`, index at `https://anchor-presence.vercel.app/llms.txt`.
+
+To fix a broken integration, go straight to [troubleshooting.md](troubleshooting.md).
 
 ## Integration steps
 
-1. Install the packages with the project's package manager:
+### 1. Survey the project
+
+Read the code and record:
+
+- package manager and React version (18 or later required);
+- framework and rendering: Vite SPA, Next.js App Router, Remix, or other; whether components render on the server;
+- existing real-time channel: Socket.IO, SignalR, a WebSocket server, a managed service, or none;
+- where the current user's display name comes from;
+- which views get live cursors.
+
+**Done when** every item has an answer. Ask the user only for items the code cannot answer, usually the target views and, when no real-time channel exists, where a **relay** may run.
+
+### 2. Choose the transport and relay
+
+Read [transports.md](transports.md) and pick the row that matches the survey.
+
+**Done when** the transport, the relay location, and the room key are decided.
+
+### 3. Install
 
 ```bash
 npm install @anchor-presence/core @anchor-presence/dom @anchor-presence/react
 ```
 
-2. Create a transport and a client in browser-only code. Any bidirectional byte channel works — the interface is five methods (`send`, `subscribe`, optional `connect`/`disconnect`/`subscribeStatus`). A WebSocket relay that broadcasts each message to the other sockets in a room is a complete server.
+Use the project's package manager. Install the relay dependencies from the chosen row too.
 
-```ts
+### 4. Create the client and render the cursor layer
+
+Create the client inside `usePresenceClient`, in a client component. The factory creates the transport, connects it, and returns the client:
+
+```tsx
+"use client";
 import { createPresenceClient } from "@anchor-presence/core";
+import { createWebSocketTransport } from "@anchor-presence/dom";
+import { CursorLayer, LiveCursorProvider, usePresenceClient } from "@anchor-presence/react";
 
-const client = createPresenceClient({
-  transport: myTransport,
-  user: { name: currentUserName, color: pickFromKnownPalette(currentUserName) },
-});
+export function PresenceRoot({
+  room,
+  userName,
+  children,
+}: {
+  room: string;
+  userName: string;
+  children: React.ReactNode;
+}) {
+  const client = usePresenceClient({
+    factory: () => {
+      const transport = createWebSocketTransport({
+        url: `wss://relay.example.com/?room=${encodeURIComponent(room)}`,
+      });
+      transport.connect();
+      return createPresenceClient({ transport, user: { name: userName } });
+    },
+  });
+
+  return (
+    <LiveCursorProvider client={client}>
+      {children}
+      <CursorLayer<unknown, { name: string }> getLabel={(cursor) => cursor.user?.name ?? null} />
+    </LiveCursorProvider>
+  );
+}
 ```
 
-`clientId` identifies a browser tab, never a user. Put user identity in `user`. Two tabs sharing a `clientId` produce visible cursor flapping.
+- `usePresenceClient` returns `null` on the server and on the first client render; the provider accepts `null`. This keeps SSR and React Strict Mode safe.
+- A client identifies one browser tab. User identity goes in `user`.
+- `CursorLayer` owns positioning. Customize it with `getLabel`, `getColor`, `filterCursor`, `getCursorProps`, or `renderCursor`.
 
-3. Wrap the app once:
+**Done when** the provider wraps every target view and the project typechecks.
+
+### 5. Mark anchors
+
+Read [anchors.md](anchors.md), then add `data-anchor` to the elements users point at.
+
+**Done when** every navigation item, card, table row, row action, dialog, and primary control in the target views has an anchor, and every specific anchor has a marked parent.
+
+### 6. Scope cursors with context and a policy
+
+This step applies when one anchor ID can appear in different app states (pages, tabs, open dialogs). Publish the state as **context** and hide cursors from other states with a visibility **policy**:
 
 ```tsx
-<LiveCursorProvider client={client}>
-  <App />
-  <CursorLayer />
-</LiveCursorProvider>
+const [, setContext] = useCursorContext<{ page: string }>();
+useEffect(() => setContext({ page: currentPage }), [currentPage, setContext]);
+
+<LiveCursorProvider<{ page: string }>
+  client={client}
+  bindingOptions={{
+    resolution: {
+      visibilityPolicy: ({ presence, resolution }) =>
+        presence.context?.page !== currentPage || resolution.tier === "hidden" ? "hide" : "show",
+    },
+  }}
+/>;
 ```
 
-`<CursorLayer />` alone renders a neutral cursor. Configure visuals through its props — `getLabel`, `getColor`, `filterCursor`, `getCursorProps`, or replace the contents entirely with `renderCursor`. The package owns positioning; a custom renderer only fills the positioned root.
+The provider reads `bindingOptions` once. Read changing values (such as `currentPage`) through a ref inside the policy.
 
-4. Mark an **anchor** on every element users point at meaningfully with the binding's anchor attribute. The default attribute is `data-anchor`; the binding watches it automatically.
+### 7. Add a presence list
 
-```tsx
-<button data-anchor="orders.row:3.actions.delete">Delete</button>
-```
+This step applies when the user asked for a who-is-online list. `useRemoteUsers()` returns one entry per remote tab with `clientId`, `user`, `session`, and `idle`. Render `user.name` as text.
 
-Mark the parents too (`orders.row:3`, `orders`) — the **chain** degrades to them when the exact anchor is absent on a receiver.
+### 8. Verify with two clients
 
-5. Publish UI state as context, and hide cursors that stop making sense with a **policy**:
+Run the project's typecheck and build. Then run two clients in the same room with different viewport widths, for example two Playwright browser contexts at 1440 px and 900 px. Move the pointer over an anchored element in the wide one.
 
-```tsx
-const [, setContext] = useCursorContext();
-setContext({ page: currentPage });
-// bindingOptions on the provider:
-const policy = ({ presence, resolution }) =>
-  presence.context?.page !== localPage || resolution.tier === "hidden" ? "hide" : "show";
-```
-
-The policy also receives `resolution.pointVisible` — false when the resolved point is clipped by a scroll container — so apps can hide cursors that would float over empty space.
-
-**Done when**: two browser windows at different sizes, pointing at the same anchored element, each show the other's cursor over that element — and collapsing a sidebar or wrapping a flex row in one window keeps its cursor attached.
+**Done when** the narrow client shows an element matching `[data-anchor-presence-anchor="<that anchor ID>"]`, positioned over the same element. When no browser automation exists, give the user these steps to run by hand.
 
 ## Hard rules
 
-- Render `user` and `context` values as text nodes; they arrive from the network untrusted. Map colors through a known palette instead of applying arbitrary strings as CSS.
-- Create the client in browser-only code; every hook has a server-safe snapshot, so SSR renders work with `client={null}`.
-- Anchor IDs are opaque map keys on the receiver — they never run as selectors, so any stable string is safe.
-
-## Source
-
-Docs site: https://anchor-presence.vercel.app/docs — machine-readable index at https://anchor-presence.vercel.app/llms.txt
-
-Repository, transports (Socket.IO, SignalR, BroadcastChannel), and examples: https://github.com/DammersCode/anchor-presence
+- Render `user` and `context` values as text nodes: they arrive from the network untrusted. Map colors through a fixed palette.
+- Create clients and transports only in browser code, through `usePresenceClient`.
+- Treat anchor IDs as opaque keys: the receiver looks them up in a map and never runs them as selectors.
+- Every client in a room uses the same codec. The default is `jsonCodec`.

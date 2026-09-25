@@ -23,7 +23,11 @@ import { CursorLayer, LiveCursorProvider, usePresenceClient } from "@anchor-pres
 
 function App() {
   const client = usePresenceClient({
-    factory: () => createPresenceClient({ transport: createWebSocketTransport({ path: "/?room=main" }) }),
+    factory: () => {
+      const transport = createWebSocketTransport({ path: "/?room=main" });
+      transport.connect();
+      return createPresenceClient({ transport });
+    },
   });
   return (
     <LiveCursorProvider client={client}>

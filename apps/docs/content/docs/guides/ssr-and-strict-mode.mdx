@@ -16,7 +16,11 @@ import { CursorLayer, LiveCursorProvider, usePresenceClient } from "@anchor-pres
 
 function App() {
   const client = usePresenceClient({
-    factory: () => createPresenceClient({ transport: createWebSocketTransport({ path: "/?room=main" }) }),
+    factory: () => {
+      const transport = createWebSocketTransport({ path: "/?room=main" });
+      transport.connect();
+      return createPresenceClient({ transport });
+    },
   });
   return (
     <LiveCursorProvider client={client}>
@@ -28,7 +32,7 @@ function App() {
 
 The hook returns `null` until the effect has run, then the same instance across renders and Strict Mode remounts. Server renders return `null` and never run the factory. `LiveCursorProvider` accepts `client={null}` and renders normally, so this pattern is safe end to end.
 
-The factory owns the transport: call `transport.connect()` inside it, as `createWebSocketTransport`'s connect does implicitly when you pass it straight through, or explicitly for a transport that needs it.
+The factory owns the transport: create it, call `transport.connect()`, then create the client. No part of the library connects a transport for you. `client.dispose()` calls `transport.disconnect()`.
 
 The hook does not call `transport.connect()` itself, and it never disposes the client on unmount. Clients survive route changes and component remounts until the page unloads. Call `client.dispose()` on an explicit user action, such as logout; the call clears the `key` entry, and a later render creates a new client through the factory.
 

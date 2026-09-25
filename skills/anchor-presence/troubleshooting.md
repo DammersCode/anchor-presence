@@ -4,6 +4,8 @@ Work down this list; each symptom names its usual cause and fix.
 
 ## Cursor invisible
 
+- The transport never connected. The `usePresenceClient` factory must call `transport.connect()`; nothing else does. `useCursorStatus()` stays `connecting` when this is missing.
+- The two clients use different room keys or different codecs.
 - The sender and receiver publish different `context` values and a **policy** hides the cursor — log the policy inputs first.
 - The resolution **tier** is `hidden`: no anchor in the **chain** exists on the receiver and the message carried no viewport fallback. Register a shared parent anchor.
 - The client never connected: check the transport's `subscribeStatus` output; a transport without `subscribeStatus` reports a constant `connected`.
@@ -30,6 +32,10 @@ Two tabs share one `clientId`. `clientId` identifies a tab; put user identity in
 
 Each browsing context needs its own client — pointer and viewport coordinates do not cross iframe boundaries, regardless of origin.
 
-## A cursor stays after a user leaves
+## A cursor turns faint, then stays after a user leaves
 
-Presence expires after the stale timeout (70 s default) without a heartbeat. Closing the pointer path (`cursor: null` on leave/blur) hides immediately; abrupt disconnects wait for expiry. Shorten `staleTimeoutMs` only above 60 s — browsers clamp hidden-tab timers to one minute, so lower values make backgrounded users flicker.
+A peer with no message for `idleAfterMs` (15 s default) is idle: `CursorLayer` dims it. Presence expires after the stale timeout (70 s default) without a heartbeat. Closing the pointer path (`cursor: null` on leave/blur) hides immediately; abrupt disconnects wait for expiry. Shorten `staleTimeoutMs` only above 60 s — browsers clamp hidden-tab timers to one minute, so lower values make backgrounded users flicker.
+
+## Cursors jump instead of gliding
+
+The user's system prefers reduced motion, so the binding snaps cursors. This is intended. A custom `interpolatorFactory` overrides it for every user.

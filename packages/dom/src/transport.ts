@@ -51,6 +51,7 @@ export type WebSocketTransportOptions = {
   WebSocketCtor?: WebSocketCtor;
 };
 
+const WS_CONNECTING = 0;
 const WS_OPEN = 1;
 
 function isDev(): boolean {
@@ -177,7 +178,8 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
         }
         return;
       }
-      if (socket !== null && socket.readyState === WS_OPEN) return;
+      // a socket already connecting or open must not be replaced: connect() is idempotent while one is live
+      if (socket !== null && (socket.readyState === WS_CONNECTING || socket.readyState === WS_OPEN)) return;
       setStatus("connecting");
       open();
     },

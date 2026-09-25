@@ -1,0 +1,34 @@
+import type { PresenceClient, PresenceClientOptions } from "@anchor-presence/core";
+import type { ComponentType, ReactNode } from "react";
+import { BasicsScene } from "../basics";
+import { CustomCursorsScene } from "../custom-cursors";
+import { FallbacksScene } from "../fallbacks";
+import { InterpolationScene } from "../interpolation";
+import { PresenceScene, presenceTimeouts } from "../presence";
+import { ResponsiveGridScene } from "../responsive-grid";
+import { ScrollScene } from "../scroll";
+import { TableAndCardsScene } from "../table-and-cards";
+import type { Layout, SceneName } from "./scenes";
+import type { TourUser } from "./tour";
+
+type SceneProps = {
+  client: PresenceClient<unknown, TourUser> | null;
+  layout: Layout;
+  children?: ReactNode;
+};
+
+type SceneEntry = {
+  Scene: ComponentType<SceneProps>;
+  clientOptions?: Pick<PresenceClientOptions, "heartbeatMs" | "idleAfterMs" | "staleTimeoutMs">;
+};
+
+export const SCENE_COMPONENTS: Record<SceneName, SceneEntry> = {
+  basics: { Scene: BasicsScene },
+  "responsive-grid": { Scene: ResponsiveGridScene },
+  "table-and-cards": { Scene: TableAndCardsScene },
+  fallbacks: { Scene: FallbacksScene },
+  scroll: { Scene: ScrollScene },
+  presence: { Scene: PresenceScene, clientOptions: presenceTimeouts },
+  "custom-cursors": { Scene: CustomCursorsScene },
+  interpolation: { Scene: InterpolationScene },
+};

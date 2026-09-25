@@ -5,6 +5,7 @@ import { Step, Steps } from "fumadocs-ui/components/steps";
 import { AutoTypeTable } from "@/components/auto-type-table";
 import { InstallCommand } from "@/components/install-command";
 import { Demo } from "@/components/demo";
+import { ExamplePreview } from "@/components/examples/_preview/example-preview";
 import { CodeFromSource } from "@/components/code-from-source";
 
 export function getMDXComponents(components?: MDXComponents) {
@@ -13,6 +14,7 @@ export function getMDXComponents(components?: MDXComponents) {
     AutoTypeTable,
     InstallCommand,
     Demo,
+    ExamplePreview,
     CodeFromSource,
     Step,
     Steps,

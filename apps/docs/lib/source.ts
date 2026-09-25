@@ -46,6 +46,7 @@ export function getPageMarkdownUrl(page: (typeof source)["$inferPage"]) {
 const CODE_FROM_SOURCE = /<CodeFromSource (repo|docs)="([^"]+)" lang="([^"]+)" \/>/g;
 const AUTO_TYPE_TABLE = /<AutoTypeTable path="([^"]+)" name="([^"]+)" \/>/g;
 const DEMO = /<Demo \/>\n?/g;
+const EXAMPLE_PREVIEW = /<ExamplePreview scene="[^"]+" \/>\n?/g;
 const INSTALL_COMMAND = /<InstallCommand(?: packages="([^"]+)")? \/>/g;
 const FENCE = "```";
 
@@ -67,6 +68,7 @@ function typeTableMarkdown(doc: GeneratedDoc): string {
 async function inlineComponents(markdown: string): Promise<string> {
   let out = markdown
     .replace(DEMO, "")
+    .replace(EXAMPLE_PREVIEW, "")
     .replace(
       INSTALL_COMMAND,
       (_tag, packages: string | undefined) =>

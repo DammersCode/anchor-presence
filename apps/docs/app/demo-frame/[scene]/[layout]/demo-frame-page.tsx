@@ -1,7 +1,6 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import "../../global.css";
 import { DemoScene, type DemoVariant } from "@/components/demo/demo-scene";
 
 export function DemoFramePage({ variant }: { variant: DemoVariant }) {

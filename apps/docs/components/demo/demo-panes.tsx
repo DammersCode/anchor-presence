@@ -10,8 +10,11 @@ import { useId, useMemo, useState } from "react";
 export function DemoPanes() {
   const reactId = useId();
   const [channel] = useState(() => `anchor-presence-demo-${reactId}-${Math.random().toString(36).slice(2)}`);
-  const wideSrc = useMemo(() => `/demo-frame/wide?channel=${encodeURIComponent(channel)}`, [channel]);
-  const narrowSrc = useMemo(() => `/demo-frame/narrow?channel=${encodeURIComponent(channel)}`, [channel]);
+  const wideSrc = useMemo(() => `/demo-frame/home/wide?channel=${encodeURIComponent(channel)}`, [channel]);
+  const narrowSrc = useMemo(
+    () => `/demo-frame/home/narrow?channel=${encodeURIComponent(channel)}`,
+    [channel],
+  );
 
   return (
     <div className="my-6 grid grid-cols-1 gap-4 sm:grid-cols-[3fr_2fr]">

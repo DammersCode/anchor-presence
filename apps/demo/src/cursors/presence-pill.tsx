@@ -27,7 +27,7 @@ const STATUS_LABEL: Record<ConnectionStatus, string> = {
 const STATUS_DOT: Record<ConnectionStatus, string> = {
   connecting: "bg-amber-400",
   connected: "bg-emerald-500",
-  reconnecting: "bg-amber-400",
+  reconnecting: "bg-amber-400 animate-pulse",
   disconnected: "bg-red-500",
 };
 
@@ -42,7 +42,7 @@ export function PresencePill() {
       data-testid="presence"
       className="flex items-center gap-3 text-sm text-gray-500"
     >
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1.5" role="status" aria-live="polite">
         <span className={`h-2 w-2 rounded-full ${STATUS_DOT[status]}`} aria-hidden="true" />
         <span>{STATUS_LABEL[status]}</span>
       </div>

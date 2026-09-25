@@ -1,4 +1,4 @@
-import type { Browser, Page } from "@playwright/test";
+import type { Browser, Page, WebSocketRoute } from "@playwright/test";
 import { expect } from "@playwright/test";
 
 const BASE_URL = `http://localhost:${process.env.E2E_DEMO_PORT ?? 5917}/`;
@@ -25,6 +25,8 @@ export type OpenPairOptions = {
   senderName?: string;
   receiverName?: string;
   receiverExtraQuery?: string;
+  /** Runs right after the sender's page is created, before it navigates (e.g. to install a WS route). */
+  beforeSenderGoto?: (sender: Page) => Promise<void>;
 };
 
 export async function openPair(browser: Browser, options: OpenPairOptions): Promise<Pair> {
@@ -39,6 +41,8 @@ export async function openPair(browser: Browser, options: OpenPairOptions): Prom
   const sender = await senderContext.newPage();
   const receiver = await receiverContext.newPage();
 
+  if (options.beforeSenderGoto) await options.beforeSenderGoto(sender);
+
   await Promise.all([
     sender.goto(`${BASE_URL}?name=${encodeURIComponent(senderName)}&room=${encodeURIComponent(room)}`),
     receiver.goto(
@@ -51,6 +55,38 @@ export async function openPair(browser: Browser, options: OpenPairOptions): Prom
   await waitForPeer(receiver);
 
   return { sender, receiver, senderName, receiverName, room };
+}
+
+export type SocketDropController = {
+  /** Closes the page's current live WebSocket, as a real network drop would, without reloading the page. */
+  dropOnce(): Promise<void>;
+};
+
+/**
+ * Transparently proxies the page's relay WebSocket (real bytes flow both ways via `connectToServer`)
+ * while keeping a handle on the current client-side route, so a test can sever just that one connection
+ * and let the page's own transport reconnect through the real backoff path with a fresh socket.
+ */
+export async function installSocketDropController(
+  page: Page,
+  wsUrlPattern: RegExp,
+): Promise<SocketDropController> {
+  let current: WebSocketRoute | null = null;
+
+  await page.routeWebSocket(wsUrlPattern, (ws) => {
+    current = ws;
+    ws.connectToServer();
+    ws.onClose(() => {
+      if (current === ws) current = null;
+    });
+  });
+
+  return {
+    async dropOnce() {
+      if (current === null) throw new Error("no live WebSocket to drop");
+      await current.close();
+    },
+  };
 }
 
 /** Presence pill shows peer count independent of cursor movement, so this works before any mouse.move. */

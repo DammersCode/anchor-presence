@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- demo: cursor label colors meet WCAG AA contrast (4.5:1) against their white label text; the connection status pill exposes `role="status" aria-live="polite"` and gives `reconnecting` a distinct dot animation from `connecting`; the default room (no `?room=`) is now random per visitor instead of the shared `main` room.
 - examples: `apps/demo` picks its relay backend at runtime with `?backend=` (or `VITE_BACKEND`), so one demo client works against every backend example.
 - examples: add `bun-native`, `node-ws`, `hono`, and `elysia` relay examples, each with a security baseline (room validation, size cap, rate limit, origin allowlist, auth hook placeholder) and an integration test.
 - examples: `socketio` and `signalr` gain the same security baseline; the SignalR hub now relays per room instead of to every connection.

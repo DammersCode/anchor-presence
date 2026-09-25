@@ -1,0 +1,34 @@
+---
+title: Responsive grid
+description: A cursor stays on the same dashboard card when the grid changes from four columns to two.
+---
+
+A dashboard grid changes its column count at each breakpoint. Cards move to new rows and change their size. In this demo, the wide pane shows a 4-column grid with cards of mixed sizes. The narrow pane shows the same cards in 2 columns. The remote cursor stays on the same card, and on the same day in the chart.
+
+<ExamplePreview scene="responsive-grid" />
+
+## What's in the demo
+
+- Every card has an anchor ID from its data, for example `metrics.revenue` and `metrics.churn`. The grid position is not part of the ID.
+- Each day of the chart is an anchor inside the chart anchor: `metrics.traffic.fri`. A cursor on Friday lands on Friday, also when the chart has a different size.
+- The `u` and `v` values are relative to the card. A cursor near the right edge of a wide card stays near the right edge of the narrow card.
+- Move your pointer into a gap between two cards. The cursor resolves to the grid anchor `metrics`, so it stays in the grid.
+
+## Code
+
+The scene of this demo:
+
+<CodeFromSource docs="components/examples/responsive-grid.tsx" lang="tsx" />
+
+The scene gets `layout` as a prop, so that the two panes can show different layouts on one page. In your app, your breakpoints select the layout. The anchor IDs stay the same in all layouts.
+
+## Behavior reference
+
+- [How wrapping and breakpoints resolve](/docs/get-started/concepts/responsive-layouts#how-wrapping-and-breakpoints-resolve): why the cursor follows a card to its new row.
+- [How element-size differences resolve](/docs/get-started/concepts/responsive-layouts#how-element-size-differences-resolve): how `u` and `v` scale with the card size.
+- [Normalized u/v coordinates](/docs/get-started/concepts/anchors#normalized-uv-coordinates): the position inside an anchor.
+
+## Related
+
+- [Table and cards](/docs/examples/table-and-cards): one record as a table row and as a card.
+- [Basics](/docs/examples/basics): the smallest setup.

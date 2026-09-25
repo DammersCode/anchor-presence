@@ -1,41 +1,36 @@
 ---
 title: Interpolation styles
-description: Compare the shipped none and linear interpolators against a custom spring.
+description: Compare no easing, linear easing, and a custom spring on the same cursor updates.
 ---
 
-A remote cursor arrives as a series of discrete positions. An interpolator decides how the cursor moves between them: snap instantly, ease at a fixed rate, or something richer, like a spring. The library ships the first two. A spring is application code, built against the public `Interpolator` interface.
+A remote cursor arrives as a series of positions. An interpolator decides how the cursor moves between them. The library ships `noneInterpolator` and `linearInterpolator`. A spring is application code on the public `Interpolator` interface. In this demo, the remote cursor jumps between four far-apart targets. The wide pane shows each update with no easing. In the narrow pane, you select the interpolator.
 
-<Demo />
+<ExamplePreview scene="interpolation" />
 
-<InstallCommand />
+## What's in the demo
+
+- The dots behind the cursor show its last path. With `none`, the cursor jumps. With `linear`, it moves in a straight line. With the spring, it overshoots the target a little and comes back.
+- Select an interpolator in the narrow pane. The next jump uses it.
+- The tour sends only one update per target, so all motion in the narrow pane comes from the interpolator.
+- If your system asks for reduced motion, the narrow pane starts with `none`.
 
 ## Code
 
-The demo app's spring interpolator, read from its real source so this sample never drifts from the code that runs:
+The scene of this demo, with the spring:
 
-<CodeFromSource repo="apps/demo/src/cursors/interpolators.ts" lang="ts" />
+<CodeFromSource docs="components/examples/interpolation.tsx" lang="tsx" />
 
-Register it on the provider:
+The provider reads `bindingOptions` once, when it creates the binding. The `key` on the provider changes with the selected style, so a new style mounts a new binding. The remote state lives in the client, not in the binding, so the remount keeps every cursor.
 
-```tsx
-<LiveCursorProvider
-  key={style}
-  client={client}
-  bindingOptions={{ resolution: { interpolatorFactory: springInterpolator } }}
->
-  <App />
-</LiveCursorProvider>
-```
+`target` keeps the velocity of the spring, so a new target during a glide curves the path. `sample` must return `settled: true` at the end. If it never does, the animation frame loop never stops for that cursor.
 
-## Behavior notes
+## Behavior reference
 
-- `target` sets a new destination without resetting velocity, so a spring keeps its momentum across consecutive updates instead of restarting from rest each time.
-- `shift` moves the current position and the target by the same delta, with no easing. The resolver calls it for a local-only change, such as scroll, where the anchor moved but no new network packet arrived.
-- `sample` must eventually report `settled: true`, or the scheduler's animation-frame loop never stops for that cursor.
-- The provider reads `bindingOptions` once, at binding creation. Give the provider a `key` that changes with the selected style, so a style switch remounts the binding with the new factory. Remote cursor state lives on the server, not in the binding, so the remount does not reset any position.
+- [The Interpolator interface](/docs/core/interpolation#the-interpolator-interface): `target`, `shift`, `sample`, and `reset`.
+- [Choosing a custom interpolator](/docs/dom/motion#choosing-a-custom-interpolator): where to pass the factory.
+- [When motion restarts instead of easing](/docs/dom/motion#when-motion-restarts-instead-of-easing): the cases that snap the cursor.
 
 ## Related
 
-- [Motion](/docs/dom/motion)
-- [Interpolation](/docs/core/interpolation)
+- [Custom cursor rendering](/docs/examples/custom-cursor-rendering): change how a cursor looks, not how it moves.
 - [Performance](/docs/get-started/guides/performance)

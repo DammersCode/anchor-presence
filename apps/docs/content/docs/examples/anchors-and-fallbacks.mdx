@@ -1,48 +1,35 @@
 ---
 title: Anchors and fallbacks
-description: Mark a row and its actions, and watch the cursor degrade in order when one is missing.
+description: Mark a button, its row, the table, and the page, and watch the cursor fall back when one is missing.
 ---
 
-A list page often has more structure per row than a receiver's shorter list can match. A row that exists on the sender's screen can be scrolled out or filtered away on the receiver's. Anchoring one element per level lets the cursor degrade to the nearest ancestor instead of disappearing.
+A receiver often shows less than the sender. A filter can remove a row, and a small screen can drop an action column. If you anchor one element per level, the cursor falls back to the nearest ancestor that exists. In this demo, the wide pane shows 8 orders with refund buttons. The narrow pane shows 4 orders and no buttons.
 
-<Demo />
+<ExamplePreview scene="fallbacks" />
 
-<InstallCommand />
+## What's in the demo
+
+- A refund button sends four anchors, most specific first: `orders.row:1042.refund`, `orders.row:1042`, `orders`, and `shop`.
+- Order 1042 exists in the narrow pane, but its button does not. The cursor falls back one level to the row. The status bar shows "fallback +1", and a dashed outline marks the row.
+- Order 1046 does not exist in the narrow pane. The cursor falls back two levels to the table.
+- Turn off "Show orders" in the narrow pane. The table disappears, and the cursor falls back to the page anchor `shop`.
 
 ## Code
 
-```tsx
-function OrdersTable({ orders }: { orders: Order[] }) {
-  return (
-    <table data-anchor="orders">
-      <tbody>
-        {orders.map((order) => (
-          <tr key={order.id} data-anchor={`orders.row:${order.id}`}>
-            <td>{order.customer}</td>
-            <td>
-              <button data-anchor={`orders.row:${order.id}.actions`} onClick={() => onView(order.id)}>
-                View
-              </button>
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  );
-}
-```
+The scene of this demo:
 
-Three anchors describe the same button: the button itself, its row, and the table. A sender's cursor over the button sends a fallback chain that includes all three, most specific first.
+<CodeFromSource docs="components/examples/fallbacks.tsx" lang="tsx" />
 
-## Behavior notes
+Give a row a stable ID from its own data, never from its render index. An index-based ID points to a different order when the list has a different sort or filter on each client.
 
-- If the receiver has the same `order.id` row, the cursor lands on the button, exactly as the sender saw it.
-- If a filter on the receiver removes that row, the row anchor does not exist, so the chain falls back to `orders`, the table itself.
-- If even the table is off-screen, the cursor falls back further to the [viewport position](/docs/get-started/concepts/fallback-chain#viewport-fallback).
-- Give a row a stable ID from its own data, never from its render index. An index-based ID drifts when the list is sorted or filtered differently between clients.
+## Behavior reference
+
+- [Fallback chains](/docs/get-started/concepts/fallback-chain#fallback-chains): how the sender builds the chain, and how the receiver walks it.
+- [Viewport fallback](/docs/get-started/concepts/fallback-chain#viewport-fallback): what happens when no anchor in the chain exists.
+- [The three tiers](/docs/dom/resolution#the-three-tiers): `anchor`, `viewport`, and `hidden`.
+- [What is sent](/docs/dom/pointer-capture#what-is-sent): the anchors that the binding puts in one cursor update.
 
 ## Related
 
-- [Anchors](/docs/get-started/concepts/anchors)
-- [Fallback chain](/docs/get-started/concepts/fallback-chain)
-- [Responsive layouts](/docs/get-started/concepts/responsive-layouts)
+- [Occlusion and scroll containers](/docs/examples/occlusion-and-scroll-containers): an anchor that exists, but is out of view.
+- [Table and cards](/docs/examples/table-and-cards): all fields exist in both layouts.

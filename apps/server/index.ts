@@ -1,4 +1,6 @@
 // Room-broadcast relay with reference-side size, rate, room, origin, and liveness limits.
+import { timingSafeEqual } from "node:crypto";
+
 function limitFromEnv(name: string, fallback: number): number {
   const parsed = Number(process.env[name]);
   return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback;
@@ -47,17 +49,33 @@ const allowedOrigins = new Set(
 );
 let totalSockets = 0;
 
+const ROOM_CHARSET = /^[A-Za-z0-9_-]+$/;
+
 function roomFor(req: Request): string {
   const url = new URL(req.url);
   const fromQuery = url.searchParams.get("room");
   const fromPath = url.pathname.replace(/^\/+|\/+$/g, "");
-  return (fromQuery || fromPath || "main").slice(0, 256);
+  const candidate = (fromQuery || fromPath || "main").slice(0, 256);
+  return ROOM_CHARSET.test(candidate) ? candidate : "main";
 }
 
 // Opt-in room auth: when AUTH_TOKEN is set, the upgrade must carry a matching `token` query param.
 function authOkFor(req: Request): boolean {
   if (AUTH_TOKEN === "") return true;
-  return new URL(req.url).searchParams.get("token") === AUTH_TOKEN;
+  const provided = new URL(req.url).searchParams.get("token") ?? "";
+  return timingSafeEqualString(provided, AUTH_TOKEN);
+}
+
+// constant-time compare guards against timing side-channels; unequal lengths compare padded copies.
+function timingSafeEqualString(a: string, b: string): boolean {
+  const aBytes = encoder.encode(a);
+  const bBytes = encoder.encode(b);
+  const length = Math.max(aBytes.length, bBytes.length, 1);
+  const aPadded = new Uint8Array(length);
+  const bPadded = new Uint8Array(length);
+  aPadded.set(aBytes);
+  bPadded.set(bBytes);
+  return timingSafeEqual(aPadded, bPadded) && aBytes.length === bBytes.length;
 }
 
 function messageByteLength(message: string | ArrayBuffer): number {

@@ -10,7 +10,8 @@ export function DemoFramePage({ variant }: { variant: DemoVariant }) {
   const name = variant === "wide" ? "alice" : "bob";
 
   return (
-    <div className="bg-fd-background p-2">
+    <div className="h-screen overflow-hidden bg-fd-background p-2">
+      <style>{"html, body { overflow: hidden; }"}</style>
       <DemoScene variant={variant} channel={channel} name={name} />
     </div>
   );

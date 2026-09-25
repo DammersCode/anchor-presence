@@ -6,7 +6,6 @@ test-results/
 .vite/
 .claude/
 .agent/
-plans/
 oss-refs/
 *.prompt.md
 TODO-*.md

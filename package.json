@@ -19,6 +19,7 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:browser": "playwright test",
+    "bench": "bun run scripts/bench.ts",
     "preversion": "bun run build && bun run typecheck && bun run lint && bun run test",
     "version": "node scripts/sync-versions.mjs && bun install && git add package.json packages/*/package.json apps/*/package.json examples/*/package.json examples/*/client/package.json bun.lock",
     "postversion": "git push && git push --tags",
@@ -31,6 +32,7 @@
     "oxlint": "^1.81.0",
     "oxlint-tsgolint": "^7.0.2001",
     "prettier": "^3.9.6",
+    "tinybench": "^6.2.0",
     "typescript": "^7.0.2",
     "vitest": "^5.0.0"
   }

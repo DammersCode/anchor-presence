@@ -11,7 +11,7 @@ Install the three packages with your package manager:
 
 | Requirement | Version                                               |
 | ----------- | ----------------------------------------------------- |
-| React       | 18 or later                                           |
+| React       | 18 or later, only if you use `@anchor-presence/react` |
 | TypeScript  | 5.9 or later                                          |
 | Browser     | Current versions of Chrome, Edge, Firefox, and Safari |
 
@@ -19,9 +19,9 @@ Install the three packages with your package manager:
 
 Add only the packages your app uses:
 
-- Use `@anchor-presence/core` alone in a non-React app, or on a server.
-- Add `@anchor-presence/dom` for browser anchors, pointer capture, and cursor resolution without React.
-- Add `@anchor-presence/react` for the provider component and hooks. It depends on `@anchor-presence/dom` and `@anchor-presence/core`.
+- React app: install all three. `@anchor-presence/react` depends on `@anchor-presence/dom` and `@anchor-presence/core`.
+- Framework-free DOM app: install `@anchor-presence/core` and `@anchor-presence/dom` for browser anchors, pointer capture, and cursor resolution with no React.
+- Server or test tooling: install `@anchor-presence/core` alone. It has no DOM and no framework dependency.
 
 ## A transport
 

@@ -60,6 +60,15 @@ Remote `user` data is untrusted. Treat it as text, never as HTML. See [Security]
 
 `CursorLayer` sets `position`, `left`, `top`, `transform`, and `pointerEvents` after your style, so your value never replaces them. Your `zIndex` value replaces the default of `50`.
 
+## Accessibility
+
+- Each cursor root has `aria-hidden="true"` and `pointerEvents: "none"`, so a screen reader and pointer input both skip it.
+- The opacity transition on a cursor's root follows the OS reduced-motion setting: `CursorLayer` skips it when the operating system prefers reduced motion.
+- `DefaultCursor` keeps its own arrow and label colors under Windows forced-colors mode instead of flattening to system colors.
+- Label text contrast is your app's palette choice: `getLabel`, `getColor`, and `renderCursor` control the content and colors `CursorLayer` renders.
+
+See [Custom cursors](/docs/react/custom-cursors) to change what a cursor renders, and [Motion](/docs/dom/motion) for the interpolator and reduced-motion behavior underneath it.
+
 ## Related
 
 - [Custom cursors](/docs/react/custom-cursors)

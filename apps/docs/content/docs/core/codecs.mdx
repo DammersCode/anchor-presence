@@ -47,7 +47,7 @@ export const jsonCodec: CursorCodec = {
 
 ## Choosing a codec
 
-For a new deployment, `binaryCodec` is the recommended choice: about half the wire size of `jsonCodec`, and around 37% lower inbound CPU, measured. `jsonCodec` remains the default so a mixed-version room, where an older client still speaks JSON, keeps working. See [Binary codec](/docs/core/binary-codec) for the wire layout and encode limits.
+For a new deployment, `binaryCodec` is the recommended choice: about half the wire size of `jsonCodec` (144 bytes against 292 bytes for a typical 4-anchor message), and a modestly lower decode cost. `jsonCodec` remains the default so a mixed-version room, where an older client still speaks JSON, keeps working. Run `bun run bench` to measure both codecs on your own hardware. See [Binary codec](/docs/core/binary-codec) for the wire layout and encode limits.
 
 ## Same codec per room
 

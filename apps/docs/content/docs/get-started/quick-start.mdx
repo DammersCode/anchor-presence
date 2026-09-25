@@ -60,11 +60,7 @@ function App() {
 
 `usePresenceClient` runs the factory once, in a mount effect, and returns `null` until it has run. `LiveCursorProvider` accepts `client={null}` and renders normally, so the first render before the effect (and every server render) is safe. See [SSR and Strict Mode](/docs/react/ssr-and-strict-mode) for the full rule.
 
-`apps/server` in the repository is a matching Bun WebSocket relay. Run it locally:
-
-```sh
-cd apps/server && bun run dev
-```
+Copy a relay from [Backends](/docs/examples/backends) to pair with it. [Bun](/docs/examples/backends/bun-native) is the smallest runnable relay.
 
 `room` is a relay-side grouping key, not part of the protocol. Any bidirectional byte channel that implements the transport interface works in place of `createWebSocketTransport`. See [Transports](/docs/core/transports).
 
@@ -73,6 +69,10 @@ cd apps/server && bun run dev
 Open your app in two browser windows. Move the pointer in one window. A live cursor appears in the second window, tracking the same element, even at a different window size:
 
 <Demo />
+
+## Without React
+
+`@anchor-presence/core` and `@anchor-presence/dom` work with no React in the tree. Subscribe to the binding's resolved cursors directly and render them yourself in plain DOM updates or another framework. See [Binding](/docs/dom/binding) for the subscribe method, and [Build a framework adapter](/docs/core/build-a-framework-adapter) if you want to connect the binding to a framework's own reactivity.
 
 ## Related
 

@@ -74,6 +74,28 @@ The reference relay in `apps/server/index.ts` enforces a per-room socket cap, a 
 
 **Call `invalidate()` after programmatic layout changes** the built-in signals cannot see. Do not call it on every render. The scheduler already coalesces signal-driven invalidation into one pass per frame, so an unnecessary call only adds a dirty flag, not a full reflow. It is cheap but still unneeded in most cases.
 
+## Capacity planning
+
+A typical 4-anchor cursor message is 292 bytes with `jsonCodec` and 144 bytes with `binaryCodec`, measured from the fixture in `packages/core/bench/hotpath.bench.ts`. Run `bun run bench` to measure on your own hardware and message shape.
+
+A client publishes at most once every `publishIntervalMs` (`DEFAULT_PUBLISH_INTERVAL_MS`, 50 ms) while the pointer moves. That is up to 20 messages per second per moving client. A stationary pointer sends nothing until it moves again. The one exception is a heartbeat every `heartbeatMs` (`DEFAULT_HEARTBEAT_MS`, 10 seconds), which keeps every field current for a client that just joined.
+
+**Worked example.** A room of 50 clients, 10 of them moving their pointer at once, on `binaryCodec`:
+
+- Each client receives from the 10 movers: 10 × 20 messages/s × 144 bytes ≈ 29 KB/s.
+- The relay forwards every sender to every other client in the room. Its egress is 10 senders × 49 receivers × 20 messages/s × 144 bytes ≈ 1.4 MB/s.
+
+Recompute both numbers for your own anchor count, codec, and room size before you commit to a capacity plan.
+
+**Checklist:**
+
+- Pick `binaryCodec` over the default `jsonCodec` for the smaller wire size. See [Codecs](/docs/core/codecs).
+- Split a large room into smaller rooms. Relay traffic grows with senders times receivers, so halving room size roughly quarters egress.
+- Raise `maxRemoteClients` above its default of 64 when a room holds more clients than that. See [Remote presence](/docs/core/remote-presence).
+- Set relay-side limits: connection quotas, message size caps, and rate limits. See [Security](/docs/get-started/guides/security).
+
+The library ships a benchmark for per-message cost (`bun run bench`), gated against a committed baseline. It ships no benchmark for a 200-client room. Measure that scenario against your own relay before you rely on it.
+
 ## Related
 
 - [How it works](/docs/get-started/concepts/how-it-works)

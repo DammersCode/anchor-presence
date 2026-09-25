@@ -5,6 +5,8 @@ description: Write a transport for BroadcastChannel or a managed real-time servi
 
 Write your own transport when your app already has a byte channel, such as `BroadcastChannel`, or when you use a managed real-time service. A transport only moves bytes. It never validates or interprets them.
 
+Already on Socket.IO or SignalR? Use the shipped [Socket.IO](/docs/examples/backends/socketio) or [SignalR](/docs/examples/backends/signalr) example instead of writing a transport.
+
 ## BroadcastChannel sketch
 
 `BroadcastChannel` sends messages between browsing contexts (tabs, iframes, workers) on the same origin. It never crosses a network, so it fits demos and same-origin multi-tab apps, not real presence over the internet.

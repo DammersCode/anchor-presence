@@ -1,2 +1,2 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# LF everywhere so prettier passes on Windows checkouts
+* text=auto eol=lf

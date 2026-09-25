@@ -19,22 +19,37 @@ Do not edit `packages/**` here (owned by `package-gaps`).
   `randomRoom()` to `apps/demo/src/lib/names.ts` and used it as the fallback in `setup.ts` instead of the
   fixed `"main"`.
 
+- E2E (hash pending commit): added `e2e/resilience.spec.ts`, chromium-only (`test.skip` on non-chromium,
+  needs `page.routeWebSocket`). (a) "in-place socket drop": `installSocketDropController` in
+  `e2e/helpers.ts` calls `page.routeWebSocket(/:8787\//, ...)` on the sender's page before it navigates
+  (new `beforeSenderGoto` hook on `openPair`), transparently proxies real relay bytes via
+  `connectToServer()`, and exposes `dropOnce()` which closes only the current client-side route. That
+  fires the page's real `WebSocket.onclose`, so `packages/dom/src/transport.ts`'s actual
+  `scheduleReconnect()`/exponential-backoff runs unmodified — no `page.evaluate` fakery, no reload. The
+  test asserts the sender's status pill shows `Reconnecting`/`Connecting` then `Connected`, then moves the
+  sender's mouse to a new anchor and asserts the receiver's cursor tracks the new position (proves live
+  data flow resumed, not a stale cached cursor — the store's stale timeout is 70s, far outside the test
+  window, so the receiver never drops the cursor either way). (b) "room isolation": a third page in its
+  own `uniqueRoom()` never sees `[data-testid="remote-cursor"]` and its `presence-count` stays "0 online"
+  (peer count excludes self) while the original pair actively moves cursors. Ran both specs with
+  `--repeat-each=5` on chromium: 10/10 passed, no flakes. Full chromium suite (`bunx playwright
+  test --project=chromium`) also green (16/16) after this change, confirming the default-room
+  randomization from task 1 does not break `perf.spec.ts`/`reflow-perf.spec.ts` (they load `?page=bench`
+  without `room=`, but are single-page, not pair, tests).
+
 ## In progress
 
-- Nothing in flight; about to start E2E task 2 (in-place socket drop/reconnect, room isolation).
+- About to start task 3 (CI workflow) and task 4 (SPECIFICATION.md §17).
 
 ## Next
 
-1. E2E: in-place socket drop + reconnect (chromium, no reload, assert via real backoff in
-   `packages/dom/src/transport.ts`); room isolation (third page/room sees no cursor, peer count 0). No fixed
-   sleeps. Run new specs with `--repeat-each=5`.
-2. CI: `concurrency` group, Bun cache keyed on `bun.lock`, `actions/setup-dotnet` 10.0.x before tests so
+1. CI: `concurrency` group, Bun cache keyed on `bun.lock`, `actions/setup-dotnet` 10.0.x before tests so
    `examples/signalr/signalr-hub.test.ts` runs, keep `docs` job, verify Playwright still uses preinstalled
    Chrome, remove stale bench comment (no bench step — that lands on another branch), cache
    `apps/docs/.next/cache` keyed on bun.lock + content hash.
-3. `SPECIFICATION.md` §17: document which e2e specs run in all 3 browsers vs chromium-only
-   (`*-chromium.spec.ts` + `test.skip` guards).
-4. Run all AGENTS.md gates plus the full 3-browser `bunx playwright test` locally.
+2. `SPECIFICATION.md` §17: document which e2e specs run in all 3 browsers vs chromium-only
+   (`*-chromium.spec.ts` + `test.skip` guards, now including `resilience.spec.ts`).
+3. Run all AGENTS.md gates plus the full 3-browser `bunx playwright test` locally.
 
 ## Decisions
 
@@ -44,6 +59,11 @@ Do not edit `packages/**` here (owned by `package-gaps`).
 - Extracted `apps/demo/src/cursors/palette.ts` out of `setup.ts` rather than mocking `window` in the test,
   because `setup.ts` intentionally touches `window.location` at module-eval time (see its top comment) and
   the vitest `demo` project runs in a `node` environment.
+- Socket drop via `page.routeWebSocket` + `connectToServer()` + closing only the client-side route, rather
+  than `context.setOffline()` (which also blocks the receiver's page if used on a shared context, and
+  offers no way to reconnect except toggling offline back, which does not exercise the transport's own
+  `onclose`/backoff timing) or a second relay instance on a free port (more moving parts, and the plan
+  explicitly names `routeWebSocket`/`setOffline` as acceptable options).
 
 ## Blockers
 

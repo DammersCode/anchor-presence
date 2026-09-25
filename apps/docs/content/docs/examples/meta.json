@@ -1,0 +1,12 @@
+{
+  "title": "Examples",
+  "pages": [
+    "basics",
+    "anchors-and-fallbacks",
+    "presence-list",
+    "custom-cursor-rendering",
+    "interpolation-styles",
+    "occlusion-and-scroll-containers",
+    "backends"
+  ]
+}

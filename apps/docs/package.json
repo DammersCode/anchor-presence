@@ -1,0 +1,33 @@
+{
+  "name": "@anchor-presence/docs",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "fumadocs-mdx && next typegen && tsc --noEmit && next build",
+    "start": "next start",
+    "postinstall": "fumadocs-mdx"
+  },
+  "dependencies": {
+    "@anchor-presence/core": "workspace:*",
+    "@anchor-presence/dom": "workspace:*",
+    "@anchor-presence/react": "workspace:*",
+    "fumadocs-core": "^16.15.11",
+    "fumadocs-mdx": "^15.4.1",
+    "fumadocs-typescript": "^5.4.1",
+    "fumadocs-ui": "^16.15.11",
+    "next": "16.3.5",
+    "next-themes": "0.4.6",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/mdx": "^2.0.14",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5.9.0"
+  }
+}

@@ -1,0 +1,106 @@
+@import "tailwindcss";
+@import "fumadocs-ui/css/neutral.css";
+@import "fumadocs-ui/css/preset.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Brand palette ported from site/index.html: Sora display font, Inter body, indigo -> cyan gradient. */
+:root {
+  --ap-ind: #4f46e5;
+  --ap-cyn: #22d3ee;
+  --ap-grad: linear-gradient(100deg, var(--ap-ind), var(--ap-cyn));
+  --font-display:
+    "Sora", ui-sans-serif, system-ui, sans-serif;
+}
+
+:root,
+.light {
+  --color-fd-background: #f6f7fb;
+  --color-fd-foreground: #0b0b16;
+  --color-fd-muted: #eef0f6;
+  --color-fd-muted-foreground: #5a5f6b;
+  --color-fd-popover: #ffffff;
+  --color-fd-popover-foreground: #0b0b16;
+  --color-fd-card: #ffffff;
+  --color-fd-card-foreground: #0b0b16;
+  --color-fd-border: #e7e9f0;
+  --color-fd-primary: #0b0b16;
+  --color-fd-primary-foreground: #ffffff;
+  --color-fd-secondary: #eef0f6;
+  --color-fd-secondary-foreground: #0b0b16;
+  --color-fd-accent: #eaf0fb;
+  --color-fd-accent-foreground: #4338ca;
+  --color-fd-ring: var(--ap-ind);
+}
+
+.dark {
+  --color-fd-background: #0b0b16;
+  --color-fd-foreground: #f4f5fa;
+  --color-fd-muted: #171726;
+  --color-fd-muted-foreground: #9aa0ae;
+  --color-fd-popover: #12121f;
+  --color-fd-popover-foreground: #f4f5fa;
+  --color-fd-card: #12121f;
+  --color-fd-card-foreground: #f4f5fa;
+  --color-fd-border: #22222f;
+  --color-fd-primary: #f4f5fa;
+  --color-fd-primary-foreground: #0b0b16;
+  --color-fd-secondary: #171726;
+  --color-fd-secondary-foreground: #f4f5fa;
+  --color-fd-accent: #1c1e33;
+  --color-fd-accent-foreground: #a5b4fc;
+  --color-fd-ring: var(--ap-cyn);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.025em;
+}
+
+.text-gradient {
+  background-image: var(--ap-grad);
+  background-clip: text;
+  color: transparent;
+}
+
+.bg-gradient-brand {
+  background-image: var(--ap-grad);
+}
+
+.live-dot {
+  animation: ap-live-ping 1.8s ease-out infinite;
+}
+
+@keyframes ap-live-ping {
+  0% {
+    box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.45);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 7px rgba(34, 211, 238, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-dot {
+    animation: none;
+  }
+}

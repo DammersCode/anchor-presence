@@ -1,0 +1,67 @@
+---
+title: CursorLayer
+description: Render every visible remote cursor with labels, colors, and filtering.
+---
+
+`CursorLayer` renders one fixed-position root per visible remote cursor. No cursor component is required. If you need a different rendering model, build your own with [useRemoteCursors](/docs/react/remote-cursors) instead.
+
+## Basic use
+
+```tsx
+import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
+
+function App() {
+  return (
+    <LiveCursorProvider client={client}>
+      <Dashboard />
+      <CursorLayer />
+    </LiveCursorProvider>
+  );
+}
+```
+
+With no props, `CursorLayer` renders `DefaultCursor` for each visible cursor. See [Custom cursors](/docs/react/custom-cursors) to replace the cursor content or its default styling.
+
+## Label and color
+
+`getLabel` and `getColor` run once per visible cursor:
+
+```tsx
+type MyUser = { name: string; color?: string };
+
+<CursorLayer<unknown, MyUser>
+  getLabel={(cursor) => cursor.user?.name ?? "Guest"}
+  getColor={(cursor) => cursor.user?.color ?? "#6b7280"}
+/>;
+```
+
+Remote `user` data is untrusted. Treat it as text, never as HTML. See [Security](/docs/get-started/security).
+
+## Filtering cursors
+
+`filterCursor` hides a cursor when it returns `false`. It runs after the visibility check, so a hidden cursor never reaches `getLabel` or `getColor`:
+
+```tsx
+<CursorLayer filterCursor={(cursor) => cursor.tier !== "viewport"} />
+```
+
+## Extra props on the root
+
+`getCursorProps` adds classes, non-geometry styles, and attributes to each cursor's root element:
+
+```tsx
+<CursorLayer
+  getCursorProps={() => ({
+    className: "my-cursor",
+    "data-testid": "remote-cursor",
+  })}
+/>
+```
+
+`CursorLayer` sets `position`, `left`, `top`, `transform`, and `pointerEvents` after your style, so your value never replaces them. Your `zIndex` value replaces the default of `50`.
+
+## Related
+
+- [Custom cursors](/docs/react/custom-cursors)
+- [Remote cursors](/docs/react/remote-cursors)
+- [Components API](/docs/react/api/components)

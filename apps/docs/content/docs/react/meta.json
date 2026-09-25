@@ -1,7 +1,27 @@
 {
-  "title": "@anchor-presence/react",
+  "title": "React",
   "icon": "atom",
-  "description": "The provider, hooks, and cursor components",
+  "description": "The provider, hooks, and cursor components of @anchor-presence/react",
   "root": true,
-  "pages": ["index", "ssr-and-strict-mode", "reference"]
+  "pages": [
+    "---[Atom]React---",
+    "index",
+    "---[Plug]Setup---",
+    "use-presence-client",
+    "live-cursor-provider",
+    "ssr-and-strict-mode",
+    "---[Layers]Rendering---",
+    "cursor-layer",
+    "custom-cursors",
+    "---[Radio]Hooks---",
+    "remote-cursors",
+    "remote-users",
+    "cursor-presence",
+    "cursor-context",
+    "connection-status",
+    "rerenders",
+    "---[BookOpen]API reference---",
+    "api/components",
+    "api/hooks"
+  ]
 }

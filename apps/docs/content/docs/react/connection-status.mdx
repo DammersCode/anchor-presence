@@ -1,0 +1,29 @@
+---
+title: Connection status
+description: Read the client's connection status with useCursorStatus.
+---
+
+`useCursorStatus` returns the connection status of the client from the nearest [LiveCursorProvider](/docs/react/live-cursor-provider). Use it to show a reconnecting banner or to disable presence-dependent UI while the transport is down.
+
+## Usage
+
+```ts
+function useCursorStatus(): ConnectionStatus;
+```
+
+```tsx
+import { useCursorStatus } from "@anchor-presence/react";
+
+function ConnectionBanner() {
+  const status = useCursorStatus();
+  if (status === "connected") return null;
+  return <div role="status">{status}</div>;
+}
+```
+
+`ConnectionStatus` is one of `"connecting"`, `"connected"`, `"reconnecting"`, or `"disconnected"`. The hook returns `"disconnected"` on the server, and after the hook runs with no provider above it. It rerenders only when the status changes.
+
+## Related
+
+- [Rerenders](/docs/react/rerenders)
+- [Hooks API](/docs/react/api/hooks)

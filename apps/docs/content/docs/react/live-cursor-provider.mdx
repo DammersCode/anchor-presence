@@ -1,0 +1,51 @@
+---
+title: LiveCursorProvider
+description: Share a presence client and its DOM binding with the tree below.
+---
+
+`LiveCursorProvider` shares a `PresenceClient` and a `DomBinding` with every hook and component below it, through React context. Every app that uses `@anchor-presence/react` wraps its cursor-aware tree in one provider.
+
+## Props
+
+```tsx
+import { LiveCursorProvider } from "@anchor-presence/react";
+import type { LiveCursorProviderProps } from "@anchor-presence/react";
+```
+
+| Prop             | Type                     | Default                  |
+| ---------------- | ------------------------ | ------------------------ |
+| `client`         | `PresenceClient \| null` | required                 |
+| `binding`        | `DomBinding`             | the provider creates one |
+| `bindingOptions` | `DomBindingOptions`      | none                     |
+| `children`       | `ReactNode`              | none                     |
+
+Pass a client from [usePresenceClient](/docs/react/use-presence-client) or from `createPresenceClient` in `@anchor-presence/core`:
+
+```tsx
+<LiveCursorProvider client={client}>
+  <Dashboard />
+</LiveCursorProvider>
+```
+
+## The binding the provider creates
+
+When you omit `binding`, the provider creates a `DomBinding` for the client with `createDomBinding(client, bindingOptions)`. It disposes that binding when the client changes or the provider unmounts. Pass your own `binding` only when you created it yourself, for example to share one binding across two providers.
+
+`bindingOptions` configures the binding the provider creates. The provider reads `bindingOptions` only once, at binding creation. A later change to the `bindingOptions` object does not recreate the binding.
+
+<Callout type="warn">
+  To apply a new `bindingOptions` value, change the provider's `key` prop. A `key` change remounts the
+  provider and creates a fresh binding. Cursor state lives on the relay, not in the binding, so the remount
+  does not reset any remote cursor's position.
+</Callout>
+
+## client={null}
+
+Pass `client={null}` while no client exists yet, such as before `usePresenceClient`'s mount effect has run, or during server rendering. The provider renders its children normally. Every hook returns its server-safe value: see [SSR and Strict Mode](/docs/react/ssr-and-strict-mode).
+
+## Related
+
+- [usePresenceClient](/docs/react/use-presence-client)
+- [SSR and Strict Mode](/docs/react/ssr-and-strict-mode)
+- [Components API](/docs/react/api/components)
+- [Binding](/docs/dom/binding)

@@ -14,5 +14,11 @@
       "@anchor-presence/react": ["./packages/react/src/index.ts"]
     }
   },
-  "include": ["packages/*/test", "packages/core/bench", "apps/demo/src/cursors", "scripts/bench.ts"]
+  "include": [
+    "packages/*/test",
+    "packages/core/bench",
+    "apps/demo/src/cursors",
+    "scripts/bench.ts",
+    "scripts/relay-load.ts"
+  ]
 }

@@ -11,8 +11,8 @@ import { RollingStats } from "./stats";
 // ?nostats skips all stats DOM work so a measurement run re-renders nothing
 const STATS_ENABLED = !new URLSearchParams(window.location.search).has("nostats");
 
-const ANCHOR_COUNTS = [10, 100, 1000] as const;
-const CURSOR_COUNTS = [1, 10, 50, 100] as const;
+const ANCHOR_COUNTS = [10, 100, 500, 1000, 2000] as const;
+const CURSOR_COUNTS = [1, 10, 50, 100, 200] as const;
 
 declare global {
   interface Window {

@@ -28,7 +28,7 @@ A managed service (Supabase Realtime, Ably, Pusher, Liveblocks) works through a 
 - `send(data: Uint8Array)` and `subscribe(listener)` are required.
 - `connect`, `disconnect`, `subscribeStatus`, `getStatus`, and `bufferedBytes` are optional. Implement `subscribeStatus` and `getStatus` so the UI can show the connection state.
 
-Call `transport.connect()` in the `usePresenceClient` factory. `client.dispose()` calls `transport.disconnect()`.
+Pass `autoConnect: true` to `createPresenceClient` in the `usePresenceClient` factory, or call `transport.connect()` there yourself. `client.dispose()` calls `transport.disconnect()`.
 
 ## Rooms
 

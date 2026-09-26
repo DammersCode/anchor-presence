@@ -34,7 +34,8 @@ The agent reads your code and picks a transport that fits your stack. It install
 | ------------------------------------------------------ | ------------------------------------------------------------------------ | ---------------------------------- |
 | Which views get live cursors?                          | Any set of routes or components                                          | Asked; the code cannot answer this |
 | Where does a relay run, when the project has none yet? | Bun, Node (Express, Fastify, `http`), Hono, Elysia, or a managed service | Asked; the code cannot answer this |
-| Does the app need a who-is-online list?                | Yes or no                                                                | No — added only when requested     |
+
+Everything else comes from your code. The skill adds a who-is-online list only when you ask for one.
 
 ## How it works
 
@@ -50,7 +51,7 @@ The agent reads your code and picks a transport that fits your stack. It install
 
 **Does it touch my server code?** Only when your project has no real-time channel yet. Then it adds a small relay in the location you choose. With an existing channel, it adds one presence event or route to it.
 
-**Will it read or send my data?** The client never sends screen coordinates. It sends an anchor ID and a normalized offset; your existing channel carries the bytes, and the skill never talks to a third-party service on your behalf.
+**Will it read or send my data?** The skill reads your code and fetches these docs as Markdown. The library sends no screen coordinates: each message holds an anchor ID and a normalized offset, and your own channel carries it.
 
 **What if my project has no React yet?** The skill assumes React 18 or later. For a non-React DOM app, wire `@anchor-presence/dom` directly; see [DOM](/docs/dom).
 
@@ -67,5 +68,5 @@ The agent reads your code and picks a transport that fits your stack. It install
 
 - [Layout audit skill](/docs/skills/layout-audit): run it after this skill wires up anchors, to catch cursor jumps between layouts before you ship.
 - [Quick start](/docs/get-started/quick-start): the same steps, written for a human doing them by hand.
-- [Troubleshooting](/docs/get-started/guides/troubleshooting): the fix list the skill uses for a broken integration.
+- [Troubleshooting](/docs/get-started/guides/troubleshooting): the same fixes the skill applies to a broken integration, for a human.
 - [Designing layouts for presence](/docs/get-started/guides/layout-design): the rules behind anchor placement.

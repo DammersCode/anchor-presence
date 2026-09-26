@@ -58,15 +58,25 @@ The agent scans your code for anchors, routes, breakpoints, and toggles such as 
 
 ## Score bands
 
-The total score is the worse of a weighted sum and the two sub-scores users notice most directly, Jump and Gap, so neither gets diluted by the others.
+Each sub-score runs from 0 to 100. It is 0 at or below the first value, 100 at or above the second, and linear in between:
 
-| Band     | Total  | Jump (35%)                           | Gap (25%)                          | Depth (15%)                    | Aspect (15%)       | Parity (10%)                 |
-| -------- | ------ | ------------------------------------ | ---------------------------------- | ------------------------------ | ------------------ | ---------------------------- |
-| Low      | 0–20   | Under 40 px moved                    | Under 5% uncovered                 | No fallback                    | No shape change    | All IDs present              |
-| Moderate | 21–50  | Rising toward 240 px                 | Rising toward 40%                  | Falls back one level or more   | Shape changes      | Some IDs missing in one view |
-| High     | 51–100 | 240 px or more, or a large gap alone | 40% or more, or a large jump alone | Falls back toward the viewport | Large shape change | Many IDs missing             |
+| Sub-score | Weight | What it measures                                                         | 0 at        | 100 at       |
+| --------- | :----: | ------------------------------------------------------------------------ | ----------- | ------------ |
+| Jump      |  35%   | How far apart two neighboring anchors land in the other view (90th pct.) | 40 px       | 240 px       |
+| Gap       |  25%   | Share of a container where the pointer has no anchored parent            | 5%          | 40%          |
+| Depth     |  15%   | How many levels an anchor falls back in the other view                   | 0           | the viewport |
+| Aspect    |  15%   | How much an anchor's width-to-height ratio changes (90th pct.)           | 1.3 × ratio | 3 × ratio    |
+| Parity    |  10%   | Share of anchor IDs that exist in one view only                          | 0%          | 100%         |
 
-Jump and Gap alone can push a pair into a higher band even when the other three sub-scores are low. See [Scoring a view pair](https://github.com/DammersCode/anchor-presence/blob/main/skills/anchor-presence-audit/scoring.md) in the skill source for the exact formula.
+The total is the weighted sum, but never lower than Jump or Gap. Users see a large jump or a large gap on its own, so the other sub-scores cannot dilute it.
+
+| Total  | Band     |
+| ------ | -------- |
+| 0–20   | Low      |
+| 21–50  | Moderate |
+| 51–100 | High     |
+
+See [Scoring a view pair](https://github.com/DammersCode/anchor-presence/blob/main/skills/anchor-presence-audit/scoring.md) in the skill source for the exact formula.
 
 ## Common questions
 

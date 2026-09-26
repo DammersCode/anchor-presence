@@ -38,7 +38,7 @@ The entry file calls the factory once and logs the URL:
 
 <CodeFromSource repo="examples/hono/relay.ts" lang="ts" />
 
-Start the entry file with Bun:
+The example runs Hono on Bun through `hono/bun`. On Node, use `@hono/node-ws` for the WebSocket upgrade instead. Start the entry file with Bun:
 
 ```sh
 bun relay.ts

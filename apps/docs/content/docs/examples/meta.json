@@ -4,14 +4,18 @@
   "description": "Live demos and backend relays",
   "root": true,
   "pages": [
+    "---Layouts---",
     "basics",
     "responsive-grid",
     "table-and-cards",
+    "---Resolution---",
     "anchors-and-fallbacks",
     "occlusion-and-scroll-containers",
+    "---Presence and rendering---",
     "presence-list",
     "custom-cursor-rendering",
     "interpolation-styles",
+    "---Servers---",
     "backends"
   ]
 }

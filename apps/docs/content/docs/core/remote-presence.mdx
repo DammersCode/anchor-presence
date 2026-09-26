@@ -30,6 +30,11 @@ Idle is a separate stage from stale removal. Use it to dim or gray out a cursor 
 
 The store caps the number of distinct remote clients it tracks at `maxRemoteClients`, `64` by default (`DEFAULT_MAX_REMOTE_CLIENTS`). A message from a new `clientId` beyond the cap is dropped. Existing clients keep updating.
 
+<Callout type="warn">
+  If a room can hold more than 64 tabs, raise `maxRemoteClients`. Otherwise the users above the cap never
+  appear, and nothing reports it unless you pass `onRemoteClientDrop`.
+</Callout>
+
 ```ts
 const client = createPresenceClient({
   transport: myTransport,

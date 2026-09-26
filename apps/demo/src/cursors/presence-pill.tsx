@@ -27,7 +27,7 @@ const STATUS_LABEL: Record<ConnectionStatus, string> = {
 const STATUS_DOT: Record<ConnectionStatus, string> = {
   connecting: "bg-amber-400",
   connected: "bg-emerald-500",
-  reconnecting: "bg-amber-400 animate-pulse",
+  reconnecting: "bg-amber-400 motion-safe:animate-pulse",
   disconnected: "bg-red-500",
 };
 
@@ -86,14 +86,14 @@ export function PresencePill() {
           const page = p.context?.page;
           if (!page) return null;
           return (
-            <span key={p.clientId} data-testid="presence-page" className="text-xs text-gray-400">
+            <span key={p.clientId} data-testid="presence-page" className="text-xs text-gray-500">
               {name} · {page}
             </span>
           );
         })}
       </div>
 
-      <span data-anchor="topbar.presence.count" data-testid="presence-count" className="text-gray-400">
+      <span data-anchor="topbar.presence.count" data-testid="presence-count" className="text-gray-500">
         {presence.length} online
       </span>
     </div>

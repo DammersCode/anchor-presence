@@ -23,7 +23,7 @@ export function CustomersPage() {
               <Avatar name={customer.name} />
               <div className="flex min-w-0 flex-col">
                 <span className="truncate text-sm font-medium text-gray-900">{customer.name}</span>
-                <span className="truncate text-xs text-gray-400">{customer.email}</span>
+                <span className="truncate text-xs text-gray-500">{customer.email}</span>
                 <span className="text-xs text-gray-500">
                   {customer.orders} orders · {customer.spent}
                 </span>

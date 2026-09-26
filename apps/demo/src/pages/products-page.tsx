@@ -6,7 +6,7 @@ function CardBody({ product }: { product: Product }) {
   return (
     <CardContent className="flex flex-col gap-1 p-4">
       <span className="text-sm font-medium text-gray-900">{product.name}</span>
-      <span className="text-xs text-gray-400">{product.category}</span>
+      <span className="text-xs text-gray-500">{product.category}</span>
       <div className="mt-2 flex items-baseline justify-between">
         <span className="text-sm font-semibold text-gray-900">{product.price}</span>
         <span className="text-xs text-gray-500">{product.stock} in stock</span>

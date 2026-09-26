@@ -10,7 +10,7 @@ function initials(name: string): string {
   return name.slice(0, 2).toUpperCase();
 }
 
-export function Avatar({ name, colorClass = "bg-indigo-500", className, ...props }: AvatarProps) {
+export function Avatar({ name, colorClass = "bg-indigo-600", className, ...props }: AvatarProps) {
   return (
     <div
       className={cn(

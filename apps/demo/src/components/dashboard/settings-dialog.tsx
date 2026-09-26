@@ -55,16 +55,20 @@ function ToggleRow({
   description: string;
 }) {
   const [enabled, setEnabled] = useState(true);
+  const labelId = `settings-${anchorId}-label`;
   return (
     <div data-anchor={`settings.dialog.${anchorId}`} className="flex items-center justify-between gap-4">
       <div>
-        <p className="text-sm font-medium text-gray-900">{label}</p>
+        <p id={labelId} className="text-sm font-medium text-gray-900">
+          {label}
+        </p>
         <p className="text-xs text-gray-500">{description}</p>
       </div>
       <button
         data-anchor={`settings.dialog.${anchorId}.switch`}
         role="switch"
         aria-checked={enabled}
+        aria-labelledby={labelId}
         onClick={() => setEnabled((v) => !v)}
         className={cn(
           "relative h-6 w-11 shrink-0 rounded-full transition-colors",
@@ -91,9 +95,15 @@ export function SettingsDialog({
   const [workspaceName, setWorkspaceName] = useState("Acme Storefront");
 
   return (
-    <Dialog data-anchor="settings.dialog" data-testid="anchor-settings.dialog" open={open} onClose={onClose}>
+    <Dialog
+      data-anchor="settings.dialog"
+      data-testid="anchor-settings.dialog"
+      aria-labelledby="settings-dialog-title"
+      open={open}
+      onClose={onClose}
+    >
       <DialogHeader>
-        <DialogTitle>Workspace settings</DialogTitle>
+        <DialogTitle id="settings-dialog-title">Workspace settings</DialogTitle>
       </DialogHeader>
       <DialogBody>
         <div data-anchor="settings.dialog.workspaceName" className="flex flex-col gap-1.5">

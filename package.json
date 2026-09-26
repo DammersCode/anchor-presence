@@ -27,6 +27,7 @@
     "typecheck:examples": "tsc -p examples/socketio && tsc -p examples/signalr && tsc -p examples/bun-native && tsc -p examples/node-ws && tsc -p examples/hono && tsc -p examples/elysia"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "^1.62.1",
     "@types/bun": "^1.4.2",
     "@types/node": "^26.4.1",

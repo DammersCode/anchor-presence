@@ -36,7 +36,7 @@ Each branch keeps its own progress in `plans/handoffs/<branch>.md`. Read that fi
 - `skills/anchor-presence-audit/` ships to library users next to `skills/anchor-presence/`. The scripts are plain Node ESM with one dependency, `playwright`. `measure.mjs` resolves it from the current directory first, then from the skill folder, and accepts `@playwright/test` too (this repo has only `@playwright/test`).
 - `scripts/score.mjs` is pure and unit-tested (`test/audit-skill/score.test.mjs`). `measure.mjs` passes `collectInPage` to `page.evaluate`, so that function must stay self-contained.
 - Dogfood: `plans/research/presence-layout-audit-dogfood.config.json` scores the docs example scenes through `/demo-frame/<scene>/<layout>` on the docs dev server (:3001). Rerun it after a scene changes; the report is `plans/research/presence-layout-audit-dogfood.md`.
-- With full coverage and no missing anchors, a pair tops out at 50 (Jump + Aspect). Every reflow scene sits there on purpose.
+- The total is `max(weighted sum, Jump, Gap)`, so a visible jump or gap is never diluted to moderate. Every reflow scene in the dogfood run scores 100 (jumps over 240 px in 317 px panes); a viewport-relative jump threshold is the follow-up once real apps are audited.
 
 ## Scale benchmark notes (027)
 

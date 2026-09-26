@@ -124,12 +124,21 @@ Final structure: five tabs (`get-started`, `core`, `dom`, `react`, `examples`), 
 - CI (split to save minutes, no check runs twice): `pr.yml` on owner PRs = build, typecheck, format, lint, unit tests; `main.yml` on push to main = .NET hub test, bench (3×), demo build, chromium e2e, docs build, one job; pushes to `dev` run nothing; `release.yml` waits for the tagged commit's green Main checks instead of rerunning them. Runners pinned to `ubuntu-24.04`.
 - `SPECIFICATION.md` §17 lists which e2e specs run in three browsers (`cross-layout.spec.ts`) and which run in Chromium only.
 
+## Release prep notes (2026-09-26)
+
+- `dev` merged into `main` through PR #1 (merge commit `99663e9`). First real runs: `pr.yml` green in 2 min, `main.yml` green in 4 min.
+- Owner decisions: keep the tab switcher as it is (dropdown at the sidebar top); no Next.js dev indicator (`devIndicators: false`); no framework adapters or new backends for now.
+- Example relays meet the whole relay baseline: `RELAY_MAX_TOTAL_SOCKETS` (same name as `apps/server`), `RELAY_IDLE_TIMEOUT_SECONDS` ping/pong, and the Bun relays close slow receivers at `RELAY_SLOW_PEER_HARD_BYTES` via `closeOnBackpressureLimit`.
+- Audit skill: optional `"jumpScale": "viewport"`.
+- Evals 1–3 of the integration skill and eval 1 of the audit skill pass. skill-creator's trigger eval (`run_eval.py`) does not run on Windows (`select` on a pipe); the descriptions were assessed by hand.
+- Accessibility: demo has zero axe violations (`e2e/a11y.spec.ts`). Open, owner's call: the light code theme (`github-light`) has one token color at 3.48:1; `github-light-high-contrast` would fix it.
+- `CHANGELOG.md` has `## 0.1.0 - 2026-09-26`. No tag yet: a `v*` tag runs `release.yml`, which publishes to npm.
+
 ## Next steps
 
-1. Owner review. Merge `dev` into `main` only after the owner says yes.
-2. After the merge: the owner imports the repo in Vercel (Root Directory `apps/docs`).
-3. Future backends: `plans/backends/`.
-4. Future framework adapters (Solid, Vue): `plans/adapters/framework-adapters.md`.
+1. Owner: import the repo in Vercel (Root Directory `apps/docs`).
+2. Owner decides when to publish: `npm version` pushes the commit and a `v*` tag; `release.yml` waits for a green `main.yml` run on that SHA.
+3. Future backends: `plans/backends/`. Future framework adapters (Solid, Vue): `plans/adapters/framework-adapters.md`.
 
 ## How to resume
 

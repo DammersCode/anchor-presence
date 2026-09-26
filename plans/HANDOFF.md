@@ -28,8 +28,16 @@ Owner decisions:
 | [026 Example previews](026-example-previews.md)                                         | `dev`               | main tree                       | done                     |
 | [027 Scale benchmark and diagram](027-scale-benchmark-and-diagram.md) — scale benchmark | `dev`               | main tree                       | done                     |
 | [028 Layout audit skill](028-layout-audit-skill.md)                                     | `dev`               | main tree                       | done                     |
+| Skills docs tab                                                                         | `dev`               | main tree                       | done                     |
 
 Each branch keeps its own progress in `plans/handoffs/<branch>.md`. Read that file before you continue a branch.
+
+## Skills docs tab notes
+
+- New Fumadocs root folder `content/docs/skills/` (icon `bot`, registered in `lib/source.ts`), last in the tab switcher: `index.mdx` (Overview), `integration.mdx`, `layout-audit.mdx`. Each skill page follows a fixed section order (What it does, When to reach for it, Prerequisites, What it asks you, How it works, Common questions, It's working if, Where it fits).
+- `get-started/guides/ai-agents.mdx` is gone: its content moved into `skills/index.mdx` (one fact in one place). Every internal link now points at `/docs/skills` or `/docs/skills/layout-audit`; `layout-design.mdx` and `README.md` were the two source files with a stale link.
+- Home page (`app/(home)/layout.tsx`, `page.tsx`): "Skills" added to the header nav next to Docs and Examples; the hero's "Your AI agent can wire it up too" block gained one line covering both skills, linking to `/docs/skills`. Kept short (`text-xs`, tight top margin) so it does not push hero content further into the fixed PostHog widget's corner on mobile — that widget already overlapped the hero buttons before this change, at 390 px.
+- All gates green (`typecheck`, `lint`, `format:check`, `apps/docs build`); `llms.txt` lists the three new Skills pages; screenshots taken with `agent-browser` at 1440/390 px and light/dark for the home page and all three skills pages.
 
 ## Layout audit notes (028)
 

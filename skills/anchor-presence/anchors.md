@@ -7,15 +7,15 @@ An **anchor** ID names what an element means, never where it sits. IDs survive r
 - Hierarchical, dot-separated, most general to most specific: `orders`, `orders.table`, `orders.row:42`, `orders.row:42.actions.delete`.
 - Use domain identity for list rows (`orders.row:ORD-1042` or a database ID), never a render index, when rows reorder or paginate.
 - One ID maps to one live element. A duplicate registration replaces the previous element and logs a development warning — intended for remounts, wrong for two simultaneous elements.
-- Mark a parent for every specific anchor. The transmitted **chain** carries up to four IDs, most specific first; the receiver resolves the first one it has.
+- Mark a parent for every specific anchor. The transmitted **chain** carries up to `maxAnchors` IDs (default 4, at most 8), most specific first; the receiver resolves the first one it has.
 
 ## How resolution degrades
 
 ```
-exact anchor → registered parent → larger region → viewport position → policy decides
+exact anchor → next anchor in the chain (parent, then larger region) → viewport position → policy decides
 ```
 
-A receiver missing the exact anchor (virtualized row scrolled out, dialog closed, different responsive branch) lands on the nearest parent it does have. With no anchor at all, the normalized viewport position places the cursor approximately. The **policy** sees which **tier** resolved and can hide instead.
+A receiver missing the exact anchor (virtualized row scrolled out, dialog closed, different responsive branch) lands on the nearest parent it does have. With no anchor at all, the normalized viewport position places the cursor approximately. The **policy** sees which **tier** resolved (`anchor`, `viewport`, or `hidden`; a parent is still tier `anchor`) and can hide instead.
 
 ## Where to register
 

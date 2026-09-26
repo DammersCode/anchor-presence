@@ -48,4 +48,10 @@ A relay you write or copy must:
 8. Forward only to the sender's room, never to the sender itself.
 9. Accept room names of limited length and charset `[A-Za-z0-9_-]`.
 
-The example relays implement these through `relay-guard.ts`. Keep it when you copy a relay.
+The Bun, `ws`, Hono, and Elysia examples cover this list, except the per-process cap (they cap rooms only) and ping and pong (item 7). Add those two yourself. The Socket.IO and SignalR examples rely on their library for part of this list; read their docs page.
+
+## Copying an example relay
+
+- The server file imports `../_shared/relay-guard`. Copy the helpers from the "Shared guard helpers" section of `/docs/examples/backends` into `relay-guard.ts` next to the server file, and change the import to `./relay-guard`.
+- The server file exports a factory, for example `createBunRelay(port)`, and does not listen on its own. Add an entry file that calls the factory once and logs the URL. Start that file from a `package.json` script.
+- `createWebSocketTransport` takes either `url` (a full `ws://` or `wss://` URL, for a relay on another host) or `port` and `path` (a relay on the page's own host name). Use the form the chosen docs page shows.

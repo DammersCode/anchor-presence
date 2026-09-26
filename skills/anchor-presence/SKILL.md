@@ -1,6 +1,7 @@
 ---
 name: anchor-presence
-description: Add anchor-presence live cursors to a React app, or fix them. Use when adding live cursors, multiplayer presence, or a who-is-online list; wiring @anchor-presence packages or a relay; choosing anchor IDs; or when remote cursors drift, vanish, or land on the wrong element.
+description: Adds anchor-presence live cursors to a React app, or fixes them. Use when adding live, shared, multiplayer, or Figma-style cursors, real-time presence, or a who-is-online list; wiring @anchor-presence packages or a relay; choosing anchor IDs; or when remote cursors drift, vanish, or land on the wrong element.
+compatibility: Requires React 18+ and a browser app; a relay needs Bun, Node, or an existing real-time server.
 ---
 
 Anchor-presence shows remote cursors in DOM apps. A cursor travels as a semantic **anchor** ID plus a normalized offset inside that element, with a fallback **chain** of parent anchors and a viewport position. The **receiver** is authoritative: it resolves the anchor against its own layout, so the cursor lands on the same element at any window size, sidebar state, or responsive wrap.
@@ -10,7 +11,7 @@ Sources of truth, in order:
 - After install: `node_modules/@anchor-presence/{core,dom,react}/README.md` and the package `.d.ts` files. Trust them over any sample here.
 - Docs as markdown: `https://anchor-presence.vercel.app/docs/<page>.md`, index at `https://anchor-presence.vercel.app/llms.txt`.
 
-To fix a broken integration, go straight to [troubleshooting.md](troubleshooting.md).
+To fix a broken integration, go straight to [troubleshooting.md](troubleshooting.md). To score cursor-jump risk across layouts, use the `anchor-presence-audit` skill.
 
 ## Integration steps
 
@@ -94,21 +95,44 @@ Read [anchors.md](anchors.md), then add `data-anchor` to the elements users poin
 This step applies when one anchor ID can appear in different app states (pages, tabs, open dialogs). Publish the state as **context** and hide cursors from other states with a visibility **policy**:
 
 ```tsx
-const [, setContext] = useCursorContext<{ page: string }>();
-useEffect(() => setContext({ page: currentPage }), [currentPage, setContext]);
+function PresenceScope({
+  client,
+  currentPage,
+  children,
+}: {
+  client: PresenceClient<{ page: string }> | null;
+  currentPage: string;
+  children: React.ReactNode;
+}) {
+  // The provider reads bindingOptions once, so the policy reads the page through a ref.
+  const pageRef = useRef(currentPage);
+  useEffect(() => {
+    pageRef.current = currentPage;
+  }, [currentPage]);
 
-<LiveCursorProvider<{ page: string }>
-  client={client}
-  bindingOptions={{
-    resolution: {
-      visibilityPolicy: ({ presence, resolution }) =>
-        presence.context?.page !== currentPage || resolution.tier === "hidden" ? "hide" : "show",
-    },
-  }}
-/>;
+  return (
+    <LiveCursorProvider<{ page: string }>
+      client={client}
+      bindingOptions={{
+        resolution: {
+          visibilityPolicy: ({ presence, resolution }) =>
+            presence.context?.page !== pageRef.current || resolution.tier === "hidden" ? "hide" : "show",
+        },
+      }}
+    >
+      <PublishPage page={currentPage} />
+      {children}
+    </LiveCursorProvider>
+  );
+}
+
+// useCursorContext works only below the provider.
+function PublishPage({ page }: { page: string }) {
+  const [, setContext] = useCursorContext<{ page: string }>();
+  useEffect(() => setContext({ page }), [page, setContext]);
+  return null;
+}
 ```
-
-The provider reads `bindingOptions` once. Read changing values (such as `currentPage`) through a ref inside the policy.
 
 ### 7. Add a presence list
 

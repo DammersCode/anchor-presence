@@ -4,11 +4,10 @@ Work down this list; each symptom names its usual cause and fix.
 
 ## Cursor invisible
 
-- The transport never connected. The `usePresenceClient` factory must pass `autoConnect: true` to `createPresenceClient`, or call `transport.connect()` itself; nothing else does. `useCursorStatus()` stays `connecting` when this is missing.
+- The transport never connected. The `usePresenceClient` factory must pass `autoConnect: true` to `createPresenceClient`, or call `transport.connect()` itself; nothing else does. `useCursorStatus()` stays `connecting` when this is missing. A custom transport without `subscribeStatus` always reports `connected`, so check its own connection state instead.
 - The two clients use different room keys or different codecs.
 - The sender and receiver publish different `context` values and a **policy** hides the cursor — log the policy inputs first.
 - The resolution **tier** is `hidden`: no anchor in the **chain** exists on the receiver and the message carried no viewport fallback. Register a shared parent anchor.
-- The client never connected: check the transport's `subscribeStatus` output; a transport without `subscribeStatus` reports a constant `connected`.
 
 ## Cursor floats over empty space
 

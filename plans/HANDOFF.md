@@ -39,6 +39,14 @@ Each branch keeps its own progress in `plans/handoffs/<branch>.md`. Read that fi
 - Home page (`app/(home)/layout.tsx`, `page.tsx`): "Skills" added to the header nav next to Docs and Examples; the hero's "Your AI agent can wire it up too" block gained one line covering both skills, linking to `/docs/skills`. Kept short (`text-xs`, tight top margin) so it does not push hero content further into the fixed PostHog widget's corner on mobile — that widget already overlapped the hero buttons before this change, at 390 px.
 - All gates green (`typecheck`, `lint`, `format:check`, `apps/docs build`); `llms.txt` lists the three new Skills pages; screenshots taken with `agent-browser` at 1440/390 px and light/dark for the home page and all three skills pages.
 
+## Skill review and evals notes
+
+- Both shipped skills were reviewed against the Anthropic skill docs, skill-creator, the agentskills.io spec, and superpowers `writing-skills`. Both pass skill-creator `quick_validate.py` and `agentskills validate` (PyPI `skills-ref`). The sources disagree on description style and length; we follow Anthropic (third person, what plus when, under 500 lines).
+- Evals live in `test/skill-evals/*.json` (skill-creator format), outside the skill folders so the installer does not ship them. Run each with and without the skill in a scratch fixture; install the packages from `npm pack` tarballs.
+- First run (2026-09-26): the integration skill and the docs-only baseline both finished eval 1 end to end; the skill run surfaced the relay copy and start gaps now covered in `transports.md`. The audit skill finished eval 1 on `apps/demo` (16/16 views, 56 pairs).
+- `packages/react/test/skill-samples.test.tsx` type-checks the `SKILL.md` tsx samples and fails when they drift.
+- `.agents/skills/simple-english` has `metadata.internal: true`, so `npx skills add DammersCode/anchor-presence` offers only the two library skills.
+
 ## Layout audit notes (028)
 
 - `skills/anchor-presence-audit/` ships to library users next to `skills/anchor-presence/`. The scripts are plain Node ESM with one dependency, `playwright`. `measure.mjs` resolves it from the current directory first, then from the skill folder, and accepts `@playwright/test` too (this repo has only `@playwright/test`).

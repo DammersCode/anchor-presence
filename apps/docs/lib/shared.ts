@@ -15,3 +15,6 @@ export const gitConfig = {
 
 /** The packages every install command adds unless a page names others. */
 export const installPackages = "@anchor-presence/core @anchor-presence/dom @anchor-presence/react";
+
+/** Code themes; the high-contrast light theme keeps every token at WCAG AA (github-light has one at 3.5:1). */
+export const codeThemes = { light: "github-light-high-contrast", dark: "github-dark" } as const;

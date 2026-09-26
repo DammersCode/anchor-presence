@@ -9,7 +9,21 @@ export const THRESHOLDS = {
   parity: { good: 0, poor: 1 },
 };
 
-export const DEFAULTS = { adjacencyPx: 24, maxAnchors: 4 };
+export const DEFAULTS = { adjacencyPx: 24, maxAnchors: 4, jumpScale: "px" };
+
+export const JUMP_SCALES = ["px", "viewport"];
+
+/** The receiver width at which the `viewport` jump thresholds equal the px thresholds. */
+export const REFERENCE_WIDTH = 1280;
+
+/** Jump thresholds in the scale's unit: px, or percent of the receiver's viewport width. */
+export function jumpThresholds(scale) {
+  if (scale === "px") return THRESHOLDS.jump;
+  if (scale !== "viewport")
+    throw new Error(`Unknown jumpScale "${scale}", expected one of: ${JUMP_SCALES.join(", ")}`);
+  const toVw = (px) => (100 * px) / REFERENCE_WIDTH;
+  return { good: toVw(THRESHOLDS.jump.good), poor: toVw(THRESHOLDS.jump.poor) };
+}
 
 /**
  * @typedef {{ left: number, top: number, width: number, height: number }} Rect
@@ -18,7 +32,7 @@ export const DEFAULTS = { adjacencyPx: 24, maxAnchors: 4 };
  * @typedef {{ view: string, parent: string | null, memberCount: number, uncovered: number, example: { selector: string | null } | null }} GapContainer
  * @typedef {{ page: string, name: string, viewport: { width: number, height: number }, anchors: Anchor[], gap?: { uncovered: number, containers: GapContainer[] }, error?: string }} View
  * @typedef {View & { byId: Map<string, IndexedAnchor>, measurable: IndexedAnchor[], reachable: IndexedAnchor[] }} IndexedView
- * @typedef {{ adjacencyPx: number, maxAnchors: number }} Options
+ * @typedef {{ adjacencyPx: number, maxAnchors: number, jumpScale: "px" | "viewport" }} Options
  */
 
 const ASPECT_CLAMP = 10;
@@ -199,7 +213,8 @@ function directionalJumps(sender, receiver, options) {
       receiver,
       options.maxAnchors,
     );
-    return {
+    const jumpPx = Math.hypot(to.x - from.x, to.y - from.y);
+    const jump = {
       sender: sender.name,
       receiver: receiver.name,
       from: a.id,
@@ -207,9 +222,11 @@ function directionalJumps(sender, receiver, options) {
       fromSelector: a.selector,
       toSelector: b.selector,
       senderPx: round1(senderPx),
-      jumpPx: round1(Math.hypot(to.x - from.x, to.y - from.y)),
+      jumpPx: round1(jumpPx),
       via: [from.via, to.via],
     };
+    if (options.jumpScale === "viewport") jump.jumpVw = round2((100 * jumpPx) / receiver.viewport.width);
+    return jump;
   });
 }
 
@@ -280,15 +297,18 @@ export function scorePair(viewA, viewB, options = DEFAULTS) {
   const a = indexView(viewA);
   const b = indexView(viewB);
   const opts = { ...DEFAULTS, ...options };
+  const jumpLimits = jumpThresholds(opts.jumpScale);
+  const jumpOf = opts.jumpScale === "viewport" ? (j) => j.jumpVw : (j) => j.jumpPx;
 
   const jumps = [...directionalJumps(a, b, opts), ...directionalJumps(b, a, opts)];
   const depths = [...directionalDepths(a, b, opts), ...directionalDepths(b, a, opts)];
   const amps = aspectAmps(a, b);
   const parity = missingAnchors(a, b);
   const gaps = [...(a.gap?.containers ?? []), ...(b.gap?.containers ?? [])];
+  const jumpP90 = p90(jumps.map((j) => jumpOf(j)));
 
   const inputs = {
-    jumpP90Px: round1(p90(jumps.map((j) => j.jumpPx))),
+    ...(opts.jumpScale === "viewport" ? { jumpP90Vw: jumpP90 } : { jumpP90Px: jumpP90 }),
     gapUncovered: round2(Math.max(a.gap?.uncovered ?? 0, b.gap?.uncovered ?? 0)),
     depthDelta: Math.max(0, ...depths.map((d) => d.depth)),
     aspectAmp: round2(amps.length === 0 ? 1 : p90(amps.map((x) => x.amp))),
@@ -296,7 +316,7 @@ export function scorePair(viewA, viewB, options = DEFAULTS) {
   };
 
   const sub = {
-    jump: subScore(inputs.jumpP90Px, THRESHOLDS.jump.good, THRESHOLDS.jump.poor),
+    jump: subScore(jumpP90, jumpLimits.good, jumpLimits.poor),
     gap: subScore(inputs.gapUncovered, THRESHOLDS.gap.good, THRESHOLDS.gap.poor),
     depth: subScore(inputs.depthDelta, 0, opts.maxAnchors),
     aspect: subScore(inputs.aspectAmp, THRESHOLDS.aspect.good, THRESHOLDS.aspect.poor),
@@ -316,7 +336,7 @@ export function scorePair(viewA, viewB, options = DEFAULTS) {
     inputs,
     counts: { adjacentPairs: jumps.length, sharedAnchors: amps.length, anchorIds: parity.total },
     offenders: {
-      jumps: sortedDesc(jumps, (j) => j.jumpPx).slice(0, OFFENDER_LIMIT),
+      jumps: sortedDesc(jumps, jumpOf).slice(0, OFFENDER_LIMIT),
       gaps: sortedDesc(
         gaps.filter((g) => g.uncovered > 0),
         (g) => g.uncovered,

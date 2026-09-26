@@ -24,7 +24,7 @@ const INVOICES: Invoice[] = [
 ];
 
 const STATUS_CLASS: Record<Status, string> = {
-  paid: "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300",
+  paid: "bg-emerald-500/12 text-emerald-800 dark:text-emerald-300",
   due: "bg-amber-500/15 text-amber-800 dark:text-amber-300",
   overdue: "bg-rose-500/12 text-rose-700 dark:text-rose-300",
   draft: "bg-fd-secondary text-fd-muted-foreground",

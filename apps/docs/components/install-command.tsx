@@ -32,6 +32,7 @@ export function InstallCommand({ packages = installPackages, run }: { packages?:
           <button
             key={name}
             type="button"
+            aria-pressed={name === tab}
             onClick={() => setTab(name)}
             className={
               name === tab
@@ -53,6 +54,9 @@ export function InstallCommand({ packages = installPackages, run }: { packages?:
         >
           {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
         </button>
+        <span role="status" className="sr-only">
+          {copied ? "Copied" : ""}
+        </span>
       </div>
     </div>
   );

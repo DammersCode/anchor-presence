@@ -50,7 +50,7 @@ function describe(cursor: Cursor, sent: string[]): Verdict {
 }
 
 const TONE_CLASS: Record<Verdict["tone"], string> = {
-  exact: "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300",
+  exact: "bg-emerald-500/12 text-emerald-800 dark:text-emerald-300",
   fallback: "bg-amber-500/15 text-amber-800 dark:text-amber-300",
   warn: "bg-rose-500/12 text-rose-700 dark:text-rose-300",
   muted: "bg-fd-secondary text-fd-muted-foreground",

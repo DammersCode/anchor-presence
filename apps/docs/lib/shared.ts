@@ -2,6 +2,7 @@ export const appName = "anchor-presence";
 export const docsRoute = "/docs";
 export const docsImageRoute = "/og/docs";
 export const docsContentRoute = "/llms.mdx/docs";
+export const mainContentId = "main-content";
 
 // Single source of truth for the deployed docs origin (used in llms.txt, README links, OG).
 export const siteUrl = "https://anchor-presence.vercel.app";

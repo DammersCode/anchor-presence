@@ -15,6 +15,8 @@ The system has three packages. Each package adds one layer, and the dependency d
 
 ```mermaid
 flowchart TB
+    accTitle: Package layers
+    accDescr: @anchor-presence/react depends on @anchor-presence/dom, which depends on @anchor-presence/core.
     react["@anchor-presence/react<br/>provider component, hooks, SSR safety"]
     dom["@anchor-presence/dom<br/>anchor registry, pointer capture, geometry scheduler, resolver"]
     core["@anchor-presence/core<br/>protocol types, validation, presence store, client orchestration"]
@@ -32,6 +34,8 @@ A local pointer move never reaches the receiver as a raw pixel: the sender encod
 
 ```mermaid
 sequenceDiagram
+    accTitle: Sender to receiver flow
+    accDescr: The sender encodes a pointer move as an anchor chain and sends the bytes to the relay. The relay forwards them to the room. The receiver decodes them and resolves the cursor against its own layout.
     participant S as Sender browser
     participant R as Relay
     participant V as Receiver browser

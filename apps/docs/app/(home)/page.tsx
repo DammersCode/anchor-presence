@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { InstallCommand } from "@/components/install-command";
 import { Demo } from "@/components/demo";
+import { mainContentId } from "@/lib/shared";
 
 const GUARANTEES = [
   {
@@ -37,7 +38,7 @@ const GUARANTEES = [
 
 export default function HomePage() {
   return (
-    <main className="mx-auto max-w-6xl px-4 py-12">
+    <div id={mainContentId} className="mx-auto max-w-6xl px-4 py-12">
       <section className="grid items-center gap-10 py-8 md:grid-cols-[5fr_6fr] md:py-14">
         <div>
           <span className="mb-5 inline-flex items-center gap-2 rounded-full border border-fd-border bg-fd-card px-3 py-1.5 text-sm shadow-sm">
@@ -85,7 +86,9 @@ export default function HomePage() {
       </section>
 
       <section id="how" className="border-t border-fd-border py-14">
-        <p className="font-mono text-xs tracking-[0.16em] text-[#4f46e5] uppercase">How it works</p>
+        <p className="font-mono text-xs tracking-[0.16em] text-[#4f46e5] dark:text-fd-accent-foreground uppercase">
+          How it works
+        </p>
         <h2 className="font-display mt-3 mb-3 text-3xl font-extrabold tracking-tight md:text-4xl">
           A cursor is an address, not a coordinate.
         </h2>
@@ -95,21 +98,21 @@ export default function HomePage() {
         </p>
         <div className="grid gap-4 md:grid-cols-3">
           <div className="rounded-2xl border border-fd-border bg-fd-card p-6">
-            <div className="mb-3 font-mono text-xs text-[#4f46e5]">01</div>
+            <div className="mb-3 font-mono text-xs text-[#4f46e5] dark:text-fd-accent-foreground">01</div>
             <h3 className="mb-2 font-semibold">You send what, not where</h3>
             <p className="text-sm text-fd-muted-foreground">
               A pointer move becomes a label plus a position inside it. Never a screen coordinate.
             </p>
           </div>
           <div className="rounded-2xl border border-fd-border bg-fd-card p-6">
-            <div className="mb-3 font-mono text-xs text-[#4f46e5]">02</div>
+            <div className="mb-3 font-mono text-xs text-[#4f46e5] dark:text-fd-accent-foreground">02</div>
             <h3 className="mb-2 font-semibold">Your channel carries it</h3>
             <p className="text-sm text-fd-muted-foreground">
               It works over any real-time channel: WebSocket, Socket.IO, SignalR, BroadcastChannel.
             </p>
           </div>
           <div className="rounded-2xl border border-fd-border bg-fd-card p-6">
-            <div className="mb-3 font-mono text-xs text-[#4f46e5]">03</div>
+            <div className="mb-3 font-mono text-xs text-[#4f46e5] dark:text-fd-accent-foreground">03</div>
             <h3 className="mb-2 font-semibold">Their browser does the rest</h3>
             <p className="text-sm text-fd-muted-foreground">
               The label is measured against their own layout and turned into pixels there.
@@ -119,7 +122,9 @@ export default function HomePage() {
       </section>
 
       <section id="rules" className="border-t border-fd-border py-14">
-        <p className="font-mono text-xs tracking-[0.16em] text-[#4f46e5] uppercase">Guarantees</p>
+        <p className="font-mono text-xs tracking-[0.16em] text-[#4f46e5] dark:text-fd-accent-foreground uppercase">
+          Guarantees
+        </p>
         <h2 className="font-display mt-3 mb-3 text-3xl font-extrabold tracking-tight md:text-4xl">
           Built so it doesn&apos;t break.
         </h2>
@@ -132,7 +137,9 @@ export default function HomePage() {
               key={g.n}
               className="grid grid-cols-[44px_1fr] gap-3.5 border-t border-fd-border/60 py-4 first:border-t-0"
             >
-              <span className="font-mono text-sm font-semibold text-[#4f46e5]">{g.n}</span>
+              <span className="font-mono text-sm font-semibold text-[#4f46e5] dark:text-fd-accent-foreground">
+                {g.n}
+              </span>
               <div>
                 <b className="block text-sm font-semibold">{g.title}</b>
                 <span className="text-[13.5px] text-fd-muted-foreground">{g.body}</span>
@@ -143,7 +150,9 @@ export default function HomePage() {
       </section>
 
       <section className="border-t border-fd-border py-14">
-        <p className="font-mono text-xs tracking-[0.16em] text-[#4f46e5] uppercase">Run it</p>
+        <p className="font-mono text-xs tracking-[0.16em] text-[#4f46e5] dark:text-fd-accent-foreground uppercase">
+          Run it
+        </p>
         <h2 className="font-display mt-3 mb-3 text-3xl font-extrabold tracking-tight md:text-4xl">
           Add live cursors in minutes.
         </h2>
@@ -165,6 +174,6 @@ export default function HomePage() {
           </Link>
         </div>
       </section>
-    </main>
+    </div>
   );
 }

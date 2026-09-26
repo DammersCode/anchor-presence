@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // Measures anchor geometry in a running app with Playwright and scores cursor-jump risk per view pair.
-// Usage: node measure.mjs [--config audit.config.json] [--out anchor-audit.json] [--fail-above <score>] [--check]
+// Usage: node measure.mjs [--config .anchor-audit/audit.config.json] [--out .anchor-audit/anchor-audit.json] [--fail-above <score>] [--check]
 
-import { readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -17,14 +17,30 @@ const INSTALL_HINT =
   "  npm install -D playwright   (pnpm add -D playwright | yarn add -D playwright | bun add -d playwright)\n" +
   "  npx playwright install chromium";
 
-const { values: args } = parseArgs({
-  options: {
-    config: { type: "string", default: "audit.config.json" },
-    out: { type: "string", default: "anchor-audit.json" },
-    "fail-above": { type: "string" },
-    check: { type: "boolean", default: false },
-  },
-});
+const USAGE =
+  "Usage: node measure.mjs [--config .anchor-audit/audit.config.json] [--out .anchor-audit/anchor-audit.json]\n" +
+  "                        [--fail-above <score>] [--check]";
+
+function parseCli() {
+  return parseArgs({
+    options: {
+      config: { type: "string", default: ".anchor-audit/audit.config.json" },
+      out: { type: "string", default: ".anchor-audit/anchor-audit.json" },
+      "fail-above": { type: "string" },
+      check: { type: "boolean", default: false },
+      help: { type: "boolean", short: "h", default: false },
+    },
+  }).values;
+}
+
+async function readJson(file) {
+  const text = await readFile(file, "utf8");
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    throw new Error(`${file}: invalid JSON: ${firstLine(error)}`, { cause: error });
+  }
+}
 
 // Resolve from the app first: the skill folder usually has no node_modules of its own.
 async function loadChromium() {
@@ -289,7 +305,7 @@ function printSummary(result, outPath) {
   for (const pair of result.pairs.slice(0, SUMMARY_ROWS)) {
     const s = pair.sub;
     console.log(
-      `  ${String(pair.total).padStart(3)} ${pair.band.padEnd(8)} ${pair.page}: ${pair.a} <> ${pair.b}` +
+      `  ${String(pair.total).padStart(3)} ${pair.band.padEnd(8)} ${pair.page}: ${pair.a} vs ${pair.b}` +
         `  (jump ${s.jump}, gap ${s.gap}, depth ${s.depth}, aspect ${s.aspect}, parity ${s.parity})`,
     );
   }
@@ -301,6 +317,15 @@ function printSummary(result, outPath) {
 }
 
 async function main() {
+  const args = parseCli();
+  if (args.help) {
+    console.log(USAGE);
+    return 0;
+  }
+  const failAbove = args["fail-above"] === undefined ? null : Number(args["fail-above"]);
+  if (failAbove !== null && !Number.isFinite(failAbove))
+    throw new Error(`--fail-above needs a number from 0 to 100, got "${args["fail-above"]}"`);
+
   const chromium = await loadChromium();
   if (chromium === null) {
     console.error(INSTALL_HINT);
@@ -320,7 +345,7 @@ async function main() {
   }
 
   const configPath = path.resolve(args.config);
-  const raw = JSON.parse(await readFile(configPath, "utf8"));
+  const raw = await readJson(configPath);
   const config = {
     anchorAttribute: "data-anchor",
     adjacencyPx: DEFAULTS.adjacencyPx,
@@ -357,10 +382,15 @@ async function main() {
   };
 
   const outPath = path.resolve(args.out);
+  await mkdir(path.dirname(outPath), { recursive: true });
   await writeFile(outPath, `${JSON.stringify(result, null, 2)}\n`);
   printSummary(result, path.relative(process.cwd(), outPath));
 
-  const failAbove = args["fail-above"] === undefined ? null : Number(args["fail-above"]);
+  const failed = result.views.filter((view) => view.error !== undefined).length;
+  if (failed > 0) {
+    console.log(`FAIL: ${failed} of ${result.views.length} views could not be measured.`);
+    return 1;
+  }
   if (failAbove !== null && result.pairs.some((pair) => pair.total > failAbove)) {
     console.log(`FAIL: at least one pair scores above ${failAbove}.`);
     return 1;

@@ -84,7 +84,7 @@ See [Scoring a view pair](https://github.com/DammersCode/anchor-presence/blob/ma
 
 **What if I have no Playwright installed?** The skill detects this and gives you the exact install command for your package manager; it asks before installing anything.
 
-**Can I run this in CI?** Yes. Run `measure.mjs` with `--fail-above <score>`; the script exits with code 1 when any view pair scores above that value, so a pipeline can fail the build on a regression.
+**Can I run this in CI?** Yes. Run `measure.mjs` with `--fail-above <score>`; the script exits with code 1 when any view pair scores above that value, or when a view cannot be measured. A pipeline then fails the build on a regression or on an app that did not start.
 
 **Does it fix things automatically?** No. It proposes fixes per pair and applies only the ones you pick, one round per run.
 

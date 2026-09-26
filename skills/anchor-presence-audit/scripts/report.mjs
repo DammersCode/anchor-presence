@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 // Renders anchor-audit.json as a chat table, a Markdown report, Mermaid charts, or a before/after comparison.
-// Usage: node report.mjs [--in anchor-audit.json] [--format table|markdown|mermaid|all] [--out anchor-audit.md]
-//        node report.mjs --before anchor-audit.json --in anchor-audit.after.json
+// Usage: node report.mjs [--in .anchor-audit/anchor-audit.json] [--format table|markdown|mermaid|all] [--out .anchor-audit/anchor-audit.md]
+//        node report.mjs --before .anchor-audit/anchor-audit.json --in .anchor-audit/anchor-audit.after.json
 
-import { readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { parseArgs } from "node:util";
+import { THRESHOLDS } from "./score.mjs";
 
 /** @typedef {ReturnType<typeof import("./score.mjs").scorePair>} PairScore */
 
@@ -14,14 +15,23 @@ const CHART_BARS = 20;
 const FLOW_CHAINS = 6;
 const SUB_KEYS = ["jump", "gap", "depth", "aspect", "parity"];
 
-const { values: args } = parseArgs({
-  options: {
-    in: { type: "string", default: "anchor-audit.json" },
-    format: { type: "string", default: "table" },
-    out: { type: "string", default: "anchor-audit.md" },
-    before: { type: "string" },
-  },
-});
+const FORMATS = ["table", "markdown", "mermaid"];
+const USAGE =
+  "Usage: node report.mjs [--in .anchor-audit/anchor-audit.json] [--format table|markdown|mermaid|all]\n" +
+  "                       [--out .anchor-audit/anchor-audit.md]\n" +
+  "       node report.mjs --before <before.json> --in <after.json>   (prints a before/after table only)";
+
+function parseCli() {
+  return parseArgs({
+    options: {
+      in: { type: "string", default: ".anchor-audit/anchor-audit.json" },
+      format: { type: "string", default: "table" },
+      out: { type: "string", default: ".anchor-audit/anchor-audit.md" },
+      before: { type: "string" },
+      help: { type: "boolean", short: "h", default: false },
+    },
+  }).values;
+}
 
 const pairLabel = (pair) => `${pair.page}: ${pair.a} vs ${pair.b}`;
 const pairKey = (pair) => `${pair.page}\u0000${pair.a}\u0000${pair.b}`;
@@ -59,9 +69,9 @@ function pairSection(pair) {
     `| Aspect amp p90 | ${inputs.aspectAmp}x over ${pair.counts.sharedAnchors} shared anchors | ${pair.sub.aspect} |`,
     `| Missing in one view | ${Math.round(inputs.parityMissing * 100)}% of ${pair.counts.anchorIds} IDs | ${pair.sub.parity} |`,
   ];
-  if (offenders.jumps.some((j) => j.jumpPx > 40)) {
+  if (offenders.jumps.some((j) => j.jumpPx > THRESHOLDS.jump.good)) {
     lines.push("", "Largest jumps (sender move -> receiver move):", "");
-    for (const j of offenders.jumps.filter((x) => x.jumpPx > 40).slice(0, 5)) {
+    for (const j of offenders.jumps.filter((x) => x.jumpPx > THRESHOLDS.jump.good).slice(0, 5)) {
       lines.push(
         `- \`${j.from}\` -> \`${j.to}\`: ${j.senderPx} px on ${j.sender} becomes ${j.jumpPx} px on ${j.receiver}` +
           ` (${j.via.map((v) => (v === null ? "viewport" : `\`${v}\``)).join(" -> ")})`,
@@ -79,9 +89,9 @@ function pairSection(pair) {
       );
     }
   }
-  if (offenders.aspect.some((a) => a.amp >= 1.3)) {
+  if (offenders.aspect.some((a) => a.amp >= THRESHOLDS.aspect.good)) {
     lines.push("", "Largest shape changes:", "");
-    for (const a of offenders.aspect.filter((x) => x.amp >= 1.3).slice(0, 5)) {
+    for (const a of offenders.aspect.filter((x) => x.amp >= THRESHOLDS.aspect.good).slice(0, 5)) {
       const sizes = Object.entries(a.sizes)
         .map(([view, size]) => `${size} on ${view}`)
         .join(", ");
@@ -210,6 +220,11 @@ function comparison(before, after) {
       : changed;
     return `| ${cell(pairLabel(p))} | ${prev?.total ?? "-"} | ${p.total} | ${delta} | ${detail} |`;
   });
+  const current = new Set(after.pairs.map(pairKey));
+  for (const p of before.pairs) {
+    if (!current.has(pairKey(p)))
+      rows.push(`| ${cell(pairLabel(p))} | ${p.total} | - | missing | not measured after |`);
+  }
   return [
     "| View pair | Before | After | Delta | Changed sub-scores |",
     "| --- | --: | --: | --: | --- |",
@@ -218,18 +233,36 @@ function comparison(before, after) {
 }
 
 async function readResult(file) {
-  return JSON.parse(await readFile(path.resolve(file), "utf8"));
+  const resolved = path.resolve(file);
+  let text;
+  try {
+    text = await readFile(resolved, "utf8");
+  } catch (error) {
+    throw new Error(`Cannot read ${resolved}. Run measure.mjs first, or pass --in <file>.`, { cause: error });
+  }
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    throw new Error(`${resolved}: invalid JSON: ${error instanceof Error ? error.message : String(error)}`, {
+      cause: error,
+    });
+  }
 }
 
 async function main() {
+  const args = parseCli();
+  if (args.help) {
+    console.log(USAGE);
+    return 0;
+  }
   const result = await readResult(args.in);
   if (args.before !== undefined) {
     console.log(comparison(await readResult(args.before), result));
     return 0;
   }
 
-  const formats = new Set(args.format === "all" ? ["table", "markdown", "mermaid"] : args.format.split(","));
-  const unknown = [...formats].filter((f) => !["table", "markdown", "mermaid"].includes(f));
+  const formats = new Set(args.format === "all" ? FORMATS : args.format.split(",").map((f) => f.trim()));
+  const unknown = [...formats].filter((f) => !FORMATS.includes(f));
   if (unknown.length > 0) throw new Error(`Unknown format: ${unknown.join(", ")}`);
 
   if (formats.has("table")) console.log(chatTable(result));
@@ -240,6 +273,7 @@ async function main() {
   if (sections.length > 0) {
     const text = `# Anchor presence layout audit\n\n${sections.join("\n")}`;
     const outPath = path.resolve(args.out);
+    await mkdir(path.dirname(outPath), { recursive: true });
     await writeFile(outPath, text);
     console.log(
       `Wrote ${path.relative(process.cwd(), outPath)} (about ${Math.round(text.length / 4)} tokens).`,

@@ -1,0 +1,35 @@
+---
+title: Cursor presence
+description: Read the raw remote presence list with useCursorPresence, before geometry resolution.
+---
+
+`useCursorPresence` returns the raw remote presence list, the same data the DOM binding resolves into cursors. Use it only when you need a field that resolution does not carry, such as `pointer.type`. Use [Remote cursors](/docs/react/remote-cursors) for rendering.
+
+## Usage
+
+```ts
+function useCursorPresence<TContext = unknown, TUser = unknown>(): RemotePresence<TContext, TUser>[];
+```
+
+```tsx
+import { useCursorPresence } from "@anchor-presence/react";
+
+function PointerTypeBadge() {
+  const presence = useCursorPresence();
+  const touchCount = presence.filter((p) => p.pointer?.type === "touch").length;
+  return <span>{touchCount} touch users</span>;
+}
+```
+
+Each entry is a `RemotePresence` without its `sequence` field, plus `idle`. The hook rerenders only when a remote client's `cursor`, `context`, `user`, `pointer`, `session`, or membership changes. A message that only advances `sequence` does not rerender it.
+
+<Callout type="warn">
+  `useCursorPresence` returns positions in sender coordinates, not receiver-viewport pixels. Do not use it to
+  place an element on screen. Use `useRemoteCursors` for that.
+</Callout>
+
+## Related
+
+- [Remote cursors](/docs/react/remote-cursors)
+- [Remote users](/docs/react/remote-users)
+- [Hooks API](/docs/react/api/hooks)

@@ -28,7 +28,7 @@ describe("core throughput floor", () => {
       const bytes = jsonCodec.encode(message(`client-${senderIndex}`, sequence));
       const decoded = jsonCodec.decode(bytes);
       const presence = validatePresence(decoded);
-      if (presence !== null) store.ingest(presence);
+      store.ingest(presence!);
     }
     const elapsedMs = performance.now() - start;
 

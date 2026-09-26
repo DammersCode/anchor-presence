@@ -1,4 +1,7 @@
-import { bench, describe } from "vitest";
+// Hot-path benchmark cases, run by `bun run bench` (scripts/bench.ts). Not a vitest suite: vitest 5 dropped `bench`.
+
+import type { Bench } from "tinybench";
+import { binaryCodec } from "../src/binary-codec";
 import { jsonCodec } from "../src/codec";
 import { RemotePresenceStore } from "../src/store";
 import { validatePresence } from "../src/validate";
@@ -26,36 +29,83 @@ function fourAnchorMessage(clientId: string, sequence: number): CursorPresence {
 
 const decodedMessage: unknown = JSON.parse(JSON.stringify(fourAnchorMessage("bench-client", 1)));
 const encodedMessage = jsonCodec.encode(fourAnchorMessage("bench-client", 1));
+const encodedBinaryMessage = binaryCodec.encode(fourAnchorMessage("bench-client", 1));
 
-describe("hot path", () => {
-  bench("validatePresence on a decoded 4-anchor message", () => {
+/** Adds every hot-path case to `bench`, so one run produces one table. */
+export function registerHotPathCases(bench: Bench): void {
+  bench.add("validatePresence on a decoded 4-anchor message", () => {
     validatePresence(decodedMessage);
   });
 
-  bench("jsonCodec.decode + validatePresence on encoded bytes", () => {
+  bench.add("jsonCodec.decode + validatePresence on encoded bytes", () => {
     const decoded = jsonCodec.decode(encodedMessage);
     validatePresence(decoded);
   });
 
-  bench("store.ingest steady-state: 64 clients, sequential sequences", () => {
+  bench.add("binaryCodec.decode + validatePresence on encoded bytes", () => {
+    const decoded = binaryCodec.decode(encodedBinaryMessage);
+    validatePresence(decoded);
+  });
+
+  {
     const store = new RemotePresenceStore({ maxRemoteClients: 64 });
     for (let i = 0; i < 64; i++) store.ingest(fourAnchorMessage(`client-${i}`, 0));
     let sequence = 1;
-    return () => {
+    bench.add("store.ingest steady-state: 64 clients, sequential sequences", () => {
       for (let i = 0; i < 64; i++) store.ingest(fourAnchorMessage(`client-${i}`, sequence));
       sequence += 1;
-    };
-  });
+    });
+  }
 
-  bench("full inbound path: bytes -> snapshot listener fired", () => {
+  {
+    const store = new RemotePresenceStore({ maxRemoteClients: 200 });
+    for (let i = 0; i < 200; i++) store.ingest(fourAnchorMessage(`client-${i}`, 0));
+    let sequence = 1;
+    bench.add("store.ingest steady-state: 200 clients, sequential sequences", () => {
+      for (let i = 0; i < 200; i++) store.ingest(fourAnchorMessage(`client-${i}`, sequence));
+      sequence += 1;
+    });
+  }
+
+  bench.add("binaryCodec full inbound path: bytes -> snapshot listener fired", () => {
     let fired = false;
-    let subscriber: ((data: Uint8Array) => void) | null = null;
+    // a plain `let` here narrows to `never` at the read site under TS's closure flow analysis
+    const subscriberBox: { current: ((data: Uint8Array) => void) | null } = { current: null };
     const transport: LiveCursorTransport = {
       send: () => {},
       subscribe: (fn) => {
-        subscriber = fn;
+        subscriberBox.current = fn;
         return () => {
-          subscriber = null;
+          subscriberBox.current = null;
+        };
+      },
+    };
+
+    const store = new RemotePresenceStore();
+    const unsubscribeTransport = transport.subscribe((data) => {
+      const decoded = binaryCodec.decode(data);
+      const presence = validatePresence(decoded);
+      if (presence === null) return;
+      store.ingest(presence);
+    });
+    store.subscribe(() => {
+      fired = true;
+    });
+
+    subscriberBox.current?.(encodedBinaryMessage);
+    unsubscribeTransport();
+    if (!fired) throw new Error("snapshot listener did not fire");
+  });
+
+  bench.add("full inbound path: bytes -> snapshot listener fired", () => {
+    let fired = false;
+    const subscriberBox: { current: ((data: Uint8Array) => void) | null } = { current: null };
+    const transport: LiveCursorTransport = {
+      send: () => {},
+      subscribe: (fn) => {
+        subscriberBox.current = fn;
+        return () => {
+          subscriberBox.current = null;
         };
       },
     };
@@ -71,15 +121,17 @@ describe("hot path", () => {
       fired = true;
     });
 
-    subscriber?.(encodedMessage);
+    subscriberBox.current?.(encodedMessage);
     unsubscribeTransport();
     if (!fired) throw new Error("snapshot listener did not fire");
   });
 
-  bench("getSnapshot() identity: 10k calls with no changes", () => {
+  {
     const store = new RemotePresenceStore();
     store.ingest(fourAnchorMessage("client-0", 0));
     store.getSnapshot();
-    for (let i = 0; i < 10_000; i++) store.getSnapshot();
-  });
-});
+    bench.add("getSnapshot() identity: 10k calls with no changes", () => {
+      for (let i = 0; i < 10_000; i++) store.getSnapshot();
+    });
+  }
+}

@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { ResolvedCursor } from "@anchor-presence/dom";
 import { LiveCursorProvider } from "../src/provider";
 import { CursorLayer, DefaultCursor } from "../src/cursor";
-import { makeFakeBinding, makeFakeClient } from "./testUtils";
+import { makeFakeBinding, makeFakeClient } from "./test-utils";
 
 function cursor(overrides: Partial<ResolvedCursor> = {}): ResolvedCursor {
   return {
@@ -16,7 +16,15 @@ function cursor(overrides: Partial<ResolvedCursor> = {}): ResolvedCursor {
     pointVisible: true,
     anchorId: "nav.dashboard",
     tier: "anchor",
+    idle: false,
     ...overrides,
+  };
+}
+
+function makeItemSpy(counts: Record<string, number>) {
+  return function ItemSpy(props: { id: string }) {
+    counts[props.id] = (counts[props.id] ?? 0) + 1;
+    return <span>{props.id}</span>;
   };
 }
 
@@ -25,7 +33,7 @@ describe("cursor components", () => {
 
   beforeEach(() => {
     container = document.createElement("div");
-    document.body.appendChild(container);
+    document.body.append(container);
   });
 
   afterEach(() => {
@@ -171,7 +179,7 @@ describe("cursor components", () => {
       root.render(
         <LiveCursorProvider client={client} binding={binding}>
           <CursorLayer
-            getCursorProps={(c) => ({
+            getCursorProps={() => ({
               className: "demo-cursor",
               "data-testid": "remote-cursor",
               "data-cursor-name": "Ada",
@@ -184,10 +192,10 @@ describe("cursor components", () => {
       publish([cursor()]);
     });
 
-    const el = container.querySelector('[data-testid="remote-cursor"]');
+    const el = container.querySelector<HTMLElement>('[data-testid="remote-cursor"]');
     expect(el).not.toBeNull();
     expect(el?.className).toContain("demo-cursor");
-    expect(el?.getAttribute("data-cursor-name")).toBe("Ada");
+    expect(el?.dataset.cursorName).toBe("Ada");
 
     act(() => root.unmount());
   });
@@ -213,6 +221,91 @@ describe("cursor components", () => {
     act(() => root.unmount());
   });
 
+  it("dims an idle cursor and marks it with a data attribute", () => {
+    const { client } = makeFakeClient();
+    const { binding, publish } = makeFakeBinding();
+    const root = createRoot(container);
+
+    act(() => {
+      root.render(
+        <LiveCursorProvider client={client} binding={binding}>
+          <CursorLayer />
+        </LiveCursorProvider>,
+      );
+    });
+    act(() => {
+      publish([cursor({ idle: true })]);
+    });
+
+    const el = container.querySelector<HTMLElement>("[data-anchor-presence-cursor]");
+    expect(el?.style.opacity).toBe("0.4");
+    expect(el?.dataset.anchorPresenceIdle).toBe("true");
+
+    act(() => root.unmount());
+  });
+
+  it("does not mark an active cursor as idle", () => {
+    const { client } = makeFakeClient();
+    const { binding, publish } = makeFakeBinding();
+    const root = createRoot(container);
+
+    act(() => {
+      root.render(
+        <LiveCursorProvider client={client} binding={binding}>
+          <CursorLayer />
+        </LiveCursorProvider>,
+      );
+    });
+    act(() => {
+      publish([cursor({ idle: false })]);
+    });
+
+    const el = container.querySelector<HTMLElement>("[data-anchor-presence-cursor]");
+    expect(el?.style.opacity).toBe("1");
+    expect(el?.dataset.anchorPresenceIdle).toBeUndefined();
+
+    act(() => root.unmount());
+  });
+
+  it("does not transition opacity when the OS prefers reduced motion", () => {
+    const original = window.matchMedia;
+    window.matchMedia = ((query: string) => ({
+      matches: query === "(prefers-reduced-motion: reduce)",
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    })) as typeof window.matchMedia;
+
+    try {
+      const { client } = makeFakeClient();
+      const { binding, publish } = makeFakeBinding();
+      const root = createRoot(container);
+
+      act(() => {
+        root.render(
+          <LiveCursorProvider client={client} binding={binding}>
+            <CursorLayer />
+          </LiveCursorProvider>,
+        );
+      });
+      act(() => {
+        publish([cursor({ idle: true })]);
+      });
+
+      const el = container.querySelector<HTMLElement>("[data-anchor-presence-cursor]");
+      expect(el?.style.transition).toBe("");
+      expect(el?.style.opacity).toBe("0.4");
+
+      act(() => root.unmount());
+    } finally {
+      window.matchMedia = original;
+    }
+  });
+
   it("filterCursor removes selected visible cursors", () => {
     const { client } = makeFakeClient();
     const { binding, publish } = makeFakeBinding();
@@ -229,8 +322,8 @@ describe("cursor components", () => {
       publish([cursor({ clientId: "r1" }), cursor({ clientId: "r2" })]);
     });
 
-    const ids = Array.from(container.querySelectorAll("[data-anchor-presence-client-id]")).map((el) =>
-      el.getAttribute("data-anchor-presence-client-id"),
+    const ids = Array.from(container.querySelectorAll<HTMLElement>("[data-anchor-presence-client-id]")).map(
+      (el) => el.dataset.anchorPresenceClientId,
     );
     expect(ids).toEqual(["r1"]);
 
@@ -275,6 +368,39 @@ describe("cursor components", () => {
     act(() => root.unmount());
   });
 
+  it("a moved cursor does not rerender the static cursor items", () => {
+    const { client } = makeFakeClient();
+    const { binding, publish } = makeFakeBinding();
+    const root = createRoot(container);
+    const counts: Record<string, number> = { r1: 0, r2: 0, r3: 0 };
+    const ItemSpy = makeItemSpy(counts);
+    const renderCursor = (props: { cursor: ResolvedCursor }) => <ItemSpy id={props.cursor.clientId} />;
+
+    act(() => {
+      root.render(
+        <LiveCursorProvider client={client} binding={binding}>
+          <CursorLayer renderCursor={renderCursor} />
+        </LiveCursorProvider>,
+      );
+    });
+
+    const r1 = cursor({ clientId: "r1" });
+    const r2 = cursor({ clientId: "r2" });
+    const r3 = cursor({ clientId: "r3" });
+    act(() => {
+      publish([r1, r2, r3]);
+    });
+    expect([counts.r1, counts.r2, counts.r3]).toEqual([1, 1, 1]);
+
+    // r2 moves; r1 and r3 keep their object identity, as the resolver produces for unchanged cursors
+    act(() => {
+      publish([r1, { ...r2, x: 42, y: 42 }, r3]);
+    });
+    expect([counts.r1, counts.r2, counts.r3]).toEqual([1, 2, 1]);
+
+    act(() => root.unmount());
+  });
+
   it("does not run label and color callbacks for removed cursors", () => {
     const { client } = makeFakeClient();
     const { binding, publish } = makeFakeBinding();
@@ -306,8 +432,15 @@ describe("cursor components", () => {
 
 describe("DefaultCursor", () => {
   it("renders a pointer SVG and honors CSS variable precedence over color", () => {
-    const html = renderToString(<DefaultCursor color="#ff0000" style={{ "--anchor-presence-cursor-color": "#00ff00" }} />);
+    const html = renderToString(
+      <DefaultCursor color="#ff0000" style={{ "--anchor-presence-cursor-color": "#00ff00" }} />,
+    );
     expect(html).toContain("svg");
     expect(html).toContain("--anchor-presence-cursor-color:#00ff00");
+  });
+
+  it("keeps its own colors under forced-colors mode", () => {
+    const html = renderToString(<DefaultCursor />);
+    expect(html).toContain("forced-color-adjust:none");
   });
 });

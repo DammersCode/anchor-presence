@@ -2,7 +2,11 @@ import type { HTMLAttributes } from "react";
 import type React from "react";
 import { cn } from "../../lib/cn";
 
-export function Card({ className, ref, ...props }: HTMLAttributes<HTMLDivElement> & { ref?: React.Ref<HTMLDivElement> }) {
+export function Card({
+  className,
+  ref,
+  ...props
+}: HTMLAttributes<HTMLDivElement> & { ref?: React.Ref<HTMLDivElement> }) {
   return (
     <div
       ref={ref}

@@ -1,8 +1,9 @@
 // Geometry scheduler — spec §11
 
-import type { Rect, ViewportSize } from "./geometry";
-import type { StyleValues } from "./occlusion";
-import { createFrameCache } from "./frameCache";
+import type { Rect, ViewportSize } from "./geometry.js";
+import type { StyleValues } from "./occlusion.js";
+import { createFrameCache } from "./frame-cache.js";
+import { createSignalHub } from "./internal/signals.js";
 
 export type ResizeObserverLike = {
   observe(target: Element): void;
@@ -13,19 +14,23 @@ export type ResizeObserverCtor = new (callback: () => void) => ResizeObserverLik
 
 export type MutationObserverLike = {
   observe(target: Node, options: MutationObserverInit): void;
+  unobserve?(target: Node): void;
   disconnect(): void;
 };
-export type MutationObserverCtor = new (callback: () => void) => MutationObserverLike;
+export type MutationObserverCtor = new (
+  callback: (records?: MutationRecord[]) => void,
+) => MutationObserverLike;
 
 export type RafLike = (callback: (timestampMs: number) => void) => number;
 export type CafLike = (handle: number) => void;
+export type SetTimeoutLike = (callback: () => void, ms: number) => ReturnType<typeof setTimeout>;
+export type ClearTimeoutLike = (handle: ReturnType<typeof setTimeout>) => void;
 
-const TRANSITION_START_EVENTS = ["transitionrun", "animationstart"] as const;
-const TRANSITION_END_EVENTS = ["transitionend", "transitioncancel", "animationend", "animationcancel"] as const;
-
-const SAFETY_TIMEOUT_CAP_MS = 10_000;
-const INFINITE_ANIMATION_WINDOW_MS = 500;
-const CANCEL_SAFETY_MARGIN_MS = 500;
+/**
+ * The attribute that marks a rendered remote cursor element.
+ * The React adapter sets it on each cursor root.
+ */
+export const CURSOR_MARKER_ATTRIBUTE = "data-anchor-presence-cursor";
 
 /** Result of one READ+COMPUTE+NOTIFY pass, handed back to the caller-supplied compute function. */
 export type SchedulerReadState = {
@@ -47,11 +52,16 @@ export type GeometrySchedulerOptions<TSnapshot> = {
   notify(snapshot: TSnapshot): void;
   onRegistryChange(listener: () => void): () => void;
   onRemoteData(listener: () => void): () => void;
+  onMutationRecords?(records?: MutationRecord[]): void;
+  onAttach?(): void;
+  onDetach?(): void;
 
   root?: Document | undefined;
   window?: Window | undefined;
   raf?: RafLike | undefined;
   caf?: CafLike | undefined;
+  setTimeout?: SetTimeoutLike | undefined;
+  clearTimeout?: ClearTimeoutLike | undefined;
   ResizeObserverCtor?: ResizeObserverCtor | undefined;
   MutationObserverCtor?: MutationObserverCtor | undefined;
 };
@@ -62,13 +72,6 @@ export type GeometryScheduler = {
   dispose(): void;
 };
 
-function parseCssTimeList(value: string): number[] {
-  return value
-    .split(",")
-    .map((v) => Number.parseFloat(v))
-    .map((n) => (Number.isFinite(n) ? n * 1000 : 0));
-}
-
 export function createGeometryScheduler<TSnapshot>(
   options: GeometrySchedulerOptions<TSnapshot>,
 ): GeometryScheduler {
@@ -76,27 +79,34 @@ export function createGeometryScheduler<TSnapshot>(
   const win = options.window ?? window;
   const raf: RafLike = options.raf ?? ((cb) => win.requestAnimationFrame(cb));
   const caf: CafLike = options.caf ?? ((handle) => win.cancelAnimationFrame(handle));
+  const setTimer: SetTimeoutLike = options.setTimeout ?? ((callback, ms) => setTimeout(callback, ms));
+  const clearTimer: ClearTimeoutLike = options.clearTimeout ?? ((handle) => clearTimeout(handle));
   const ResizeObserverImpl =
     options.ResizeObserverCtor ?? (win as unknown as { ResizeObserver?: ResizeObserverCtor }).ResizeObserver;
   const MutationObserverImpl =
-    options.MutationObserverCtor ?? (win as unknown as { MutationObserver?: MutationObserverCtor }).MutationObserver;
+    options.MutationObserverCtor ??
+    (win as unknown as { MutationObserver?: MutationObserverCtor }).MutationObserver;
 
   let disposed = false;
   let attached = false;
   let rafHandle: number | null = null;
   let dirty = false;
 
-  let observedAnchors = new Set<Element>();
-  let resizeObserver: ResizeObserverLike | null = null;
-  let mutationObserver: MutationObserverLike | null = null;
-
-  // per-target keying: distinct elements with the same property/animation name must not collide (spec §11)
-  const transitionEntries = new Map<EventTarget, Map<string, { safetyTimer: ReturnType<typeof setTimeout> }>>();
-  let openTransitionCount = 0;
-
   const frameCache = createFrameCache({
     window: win,
     getStyle: (element) => (element.ownerDocument.defaultView ?? win).getComputedStyle(element),
+  });
+
+  const signals = createSignalHub({
+    doc,
+    win,
+    setTimer,
+    clearTimer,
+    markerAttribute: CURSOR_MARKER_ATTRIBUTE,
+    ResizeObserverCtor: ResizeObserverImpl,
+    MutationObserverCtor: MutationObserverImpl,
+    onInvalidate: markDirtyAndSchedule,
+    onMutationRecords: (records) => options.onMutationRecords?.(records),
   });
 
   function scheduleFrame(): void {
@@ -112,178 +122,40 @@ export function createGeometryScheduler<TSnapshot>(
   function runPass(timestampMs: number): void {
     rafHandle = null;
     // an invalidation arrived, or a transition window is open: re-measure (spec §11/§13)
-    const shouldRemeasure = dirty || openTransitionCount > 0;
+    const shouldRemeasure = dirty || signals.hasOpenTransitions();
     dirty = false;
 
     // interpolation-only pass: reuse the last read phase's rects, no re-measure
-    const readState = (shouldRemeasure ? null : frameCache.reuse()) ?? frameCache.measure(observedAnchors);
+    const readState = (shouldRemeasure ? null : frameCache.reuse()) ?? frameCache.measure(signals.anchors());
 
     const result = options.compute(readState, timestampMs);
-    syncObservedAnchors(result.activeAnchors);
+    signals.syncAnchors(result.activeAnchors);
     options.notify(result.snapshot);
 
-    if (result.needsAnotherFrame || dirty || openTransitionCount > 0) {
+    if (result.needsAnotherFrame || dirty || signals.hasOpenTransitions()) {
       scheduleFrame();
     }
-  }
-
-  function syncObservedAnchors(next: Element[]): void {
-    const nextSet = new Set(next);
-    if (resizeObserver !== null) {
-      for (const el of observedAnchors) {
-        if (!nextSet.has(el)) resizeObserver.unobserve(el);
-      }
-      for (const el of nextSet) {
-        if (!observedAnchors.has(el)) resizeObserver.observe(el);
-      }
-    }
-    observedAnchors = nextSet;
-  }
-
-  function onWindowResize(): void {
-    markDirtyAndSchedule();
-  }
-  function onDocumentScroll(): void {
-    markDirtyAndSchedule();
-  }
-  function onResizeObserverEntry(): void {
-    markDirtyAndSchedule();
-  }
-  function onMutation(): void {
-    markDirtyAndSchedule();
-  }
-
-  function closeTransitionEntry(target: EventTarget | null, name: string): void {
-    if (target === null) return;
-    const byName = transitionEntries.get(target);
-    const entry = byName?.get(name);
-    if (byName === undefined || entry === undefined) return;
-    clearTimeout(entry.safetyTimer);
-    byName.delete(name);
-    if (byName.size === 0) transitionEntries.delete(target);
-    openTransitionCount -= 1;
-  }
-
-  function readTimingMs(target: Element, isAnimation: boolean): number {
-    try {
-      const style = win.getComputedStyle(target);
-      const durationProp = isAnimation ? "animation-duration" : "transition-duration";
-      const delayProp = isAnimation ? "animation-delay" : "transition-delay";
-      const duration = Math.max(...parseCssTimeList(style.getPropertyValue(durationProp)), 0);
-      const delay = Math.max(...parseCssTimeList(style.getPropertyValue(delayProp)), 0);
-      return duration + delay;
-    } catch {
-      return 0;
-    }
-  }
-
-  function isInfiniteIterationAnimation(target: Element): boolean {
-    try {
-      const iterationCount = win.getComputedStyle(target).getPropertyValue("animation-iteration-count");
-      return iterationCount.split(",").some((v) => v.trim() === "infinite");
-    } catch {
-      return false;
-    }
-  }
-
-  function onTransitionStart(event: Event): void {
-    const isAnimation = event.type === "animationstart";
-    const name = isAnimation ? (event as AnimationEvent).animationName : (event as TransitionEvent).propertyName;
-    const target = event.target;
-    if (target === null) return;
-    closeTransitionEntry(target, name ?? "");
-
-    let windowMs: number;
-    if (isAnimation && target instanceof Element && isInfiniteIterationAnimation(target)) {
-      // infinite-iteration animations get one short window instead of a tracked entry — spinners cannot pin the rAF loop
-      windowMs = INFINITE_ANIMATION_WINDOW_MS;
-    } else {
-      const timingMs = target instanceof Element ? readTimingMs(target, isAnimation) : 0;
-      windowMs = Math.min(timingMs + CANCEL_SAFETY_MARGIN_MS, SAFETY_TIMEOUT_CAP_MS);
-    }
-
-    const safetyTimer = setTimeout(() => {
-      closeTransitionEntry(target, name ?? "");
-      markDirtyAndSchedule();
-    }, windowMs);
-    let byName = transitionEntries.get(target);
-    if (byName === undefined) {
-      byName = new Map();
-      transitionEntries.set(target, byName);
-    }
-    byName.set(name ?? "", { safetyTimer });
-    openTransitionCount += 1;
-    markDirtyAndSchedule();
-  }
-
-  function onTransitionEnd(event: Event): void {
-    const isAnimation = event.type.startsWith("animation");
-    const name = isAnimation ? (event as AnimationEvent).animationName : (event as TransitionEvent).propertyName;
-    closeTransitionEntry(event.target, name ?? "");
-    markDirtyAndSchedule();
   }
 
   function attach(): void {
     if (attached || disposed) return;
     attached = true;
-
-    win.addEventListener("resize", onWindowResize);
-    doc.addEventListener("scroll", onDocumentScroll, { capture: true, passive: true });
-
-    if (ResizeObserverImpl) {
-      resizeObserver = new ResizeObserverImpl(onResizeObserverEntry);
-      resizeObserver.observe(doc.documentElement);
-    }
-
-    if (MutationObserverImpl) {
-      mutationObserver = new MutationObserverImpl(onMutation);
-      mutationObserver.observe(doc.body, { childList: true, attributes: true, subtree: true });
-    }
-
-    for (const type of TRANSITION_START_EVENTS) {
-      doc.addEventListener(type, onTransitionStart as EventListener, { capture: true });
-    }
-    for (const type of TRANSITION_END_EVENTS) {
-      doc.addEventListener(type, onTransitionEnd as EventListener, { capture: true });
-    }
-
+    signals.attach();
     scheduleFrame();
+    options.onAttach?.();
   }
 
   function detach(): void {
     if (!attached) return;
     attached = false;
-
-    win.removeEventListener("resize", onWindowResize);
-    doc.removeEventListener("scroll", onDocumentScroll, { capture: true });
-
-    if (resizeObserver !== null) {
-      resizeObserver.disconnect();
-      resizeObserver = null;
-    }
-    observedAnchors = new Set();
-
-    if (mutationObserver !== null) {
-      mutationObserver.disconnect();
-      mutationObserver = null;
-    }
-
-    for (const type of TRANSITION_START_EVENTS) {
-      doc.removeEventListener(type, onTransitionStart as EventListener, { capture: true });
-    }
-    for (const type of TRANSITION_END_EVENTS) {
-      doc.removeEventListener(type, onTransitionEnd as EventListener, { capture: true });
-    }
-    for (const [target, byName] of Array.from(transitionEntries)) {
-      for (const name of Array.from(byName.keys())) closeTransitionEntry(target, name);
-    }
-
+    signals.detach();
     if (rafHandle !== null) {
       caf(rafHandle);
       rafHandle = null;
     }
     dirty = false;
     frameCache.clear();
+    options.onDetach?.();
   }
 
   function syncActivation(): void {
@@ -316,6 +188,8 @@ export function createGeometryScheduler<TSnapshot>(
     },
 
     getCachedRect(element) {
+      // while dirty the rect is at most one frame stale; the scheduler's own rAF tick re-measures, so
+      // serving it keeps the pointer path off live getBoundingClientRect (spec §9 tolerance)
       return frameCache.getCachedRect(element);
     },
 

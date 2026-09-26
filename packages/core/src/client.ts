@@ -1,82 +1,59 @@
-import type { CursorCodec } from "./codec";
-import { jsonCodec } from "./codec";
-import { DEFAULT_MAX_MESSAGE_BYTES } from "./protocol";
-import type { ConnectionStatus, CursorPosition, CursorPresence } from "./protocol";
-import { DEFAULT_STALE_TIMEOUT_MS, RemotePresenceStore } from "./store";
-import type { LiveCursorTransport } from "./transport";
-import { validatePresence } from "./validate";
-import type { ValidationLimits } from "./validate";
+import { jsonCodec } from "./codec.js";
+import { createOversizedWarning, isDevMode } from "./internal/dev-warnings.js";
+import { defaultIdFactory } from "./internal/ids.js";
+import { wireInbound } from "./internal/ingest.js";
+import { startLiveness } from "./internal/liveness.js";
+import { createPublishLoop } from "./internal/publish-loop.js";
+import { createStatusMachine } from "./internal/reconnect.js";
+import type {
+  PresenceClient,
+  PresenceClientOptions,
+  PresenceClientState,
+  SchedulerLike,
+} from "./internal/types.js";
+import { DEFAULT_MAX_FIELD_BYTES, DEFAULT_MAX_MESSAGE_BYTES } from "./protocol.js";
+import {
+  DEFAULT_IDLE_AFTER_MS,
+  DEFAULT_MAX_REMOTE_CLIENTS,
+  DEFAULT_STALE_TIMEOUT_MS,
+  RemotePresenceStore,
+} from "./store.js";
 
+/** Default publish interval, in milliseconds. */
 export const DEFAULT_PUBLISH_INTERVAL_MS = 50;
+
+/** Default heartbeat interval, in milliseconds. */
 export const DEFAULT_HEARTBEAT_MS = 10_000;
 
-type TimerHandle = ReturnType<typeof setTimeout>;
+const MIN_TIMER_INTERVAL_MS = 1;
+const MIN_STALE_TIMEOUT_MS = 1000;
 
-export type SchedulerLike = {
-  setTimeout: (callback: () => void, ms: number) => TimerHandle;
-  clearTimeout: (handle: TimerHandle) => void;
-};
-
-export type PresenceClientOptions<TContext = unknown, TUser = unknown> = {
-  transport: LiveCursorTransport;
-  codec?: CursorCodec;
-  clientId?: string;
-  publishIntervalMs?: number;
-  staleTimeoutMs?: number;
-  heartbeatMs?: number;
-  maxRemoteClients?: number;
-  user?: TUser;
-  context?: TContext;
-  idFactory?: () => string;
-  now?: () => number;
-  scheduler?: SchedulerLike;
-  validationLimits?: ValidationLimits;
-};
-
-export interface PresenceClient<TContext = unknown, TUser = unknown> {
-  readonly clientId: string;
-  readonly session: string;
-  updateLocalCursor(cursor: CursorPosition | null): void;
-  setContext(context: TContext | undefined): void;
-  setUser(user: TUser | undefined): void;
-  getStatus(): ConnectionStatus;
-  subscribeStatus(listener: (status: ConnectionStatus) => void) : () => void;
-  getRemoteSnapshot(): CursorPresence<TContext, TUser>[];
-  subscribeRemote(listener: () => void): () => void;
-  registerTeardown(fn: () => void): void;
-  dispose(): void;
-}
+export type {
+  AdaptivePublishOptions,
+  PresenceClient,
+  PresenceClientOptions,
+  SchedulerLike,
+} from "./internal/types.js";
 
 const defaultScheduler: SchedulerLike = {
   setTimeout: (callback, ms) => setTimeout(callback, ms),
   clearTimeout: (handle) => clearTimeout(handle),
 };
 
-type CryptoLike = {
-  randomUUID?: () => string;
-  getRandomValues?: (array: Uint8Array) => Uint8Array;
-};
-
-function defaultIdFactory(): string {
-  // randomUUID is secure-context-only; getRandomValues also works on plain http
-  const cryptoObj = (globalThis as { crypto?: CryptoLike }).crypto;
-  if (typeof cryptoObj?.randomUUID === "function") return cryptoObj.randomUUID();
-  if (typeof cryptoObj?.getRandomValues === "function") {
-    const bytes = cryptoObj.getRandomValues(new Uint8Array(16));
-    return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
-  }
-  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
-}
-
+/**
+ * Creates one presence client.
+ * The client sends and receives messages through the transport you give it.
+ * Pass `autoConnect: true` to have the client call `transport.connect()` for you; the default
+ * leaves that call to you.
+ * @param options The client options. `transport` is required.
+ * @returns The client.
+ */
 export function createPresenceClient<TContext = unknown, TUser = unknown>(
   options: PresenceClientOptions<TContext, TUser>,
 ): PresenceClient<TContext, TUser> {
   const {
     transport,
     codec = jsonCodec,
-    publishIntervalMs = DEFAULT_PUBLISH_INTERVAL_MS,
-    staleTimeoutMs,
-    heartbeatMs = DEFAULT_HEARTBEAT_MS,
     maxRemoteClients,
     idFactory = defaultIdFactory,
     now = () => Date.now(),
@@ -84,169 +61,222 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     validationLimits,
   } = options;
 
+  const publishIntervalMs = Math.max(
+    MIN_TIMER_INTERVAL_MS,
+    options.publishIntervalMs ?? DEFAULT_PUBLISH_INTERVAL_MS,
+  );
+  const adaptiveOptions = options.adaptivePublish;
+  const highWatermarkBytes = Math.max(0, adaptiveOptions?.highWatermarkBytes ?? 64 * 1024);
+  const lowWatermarkBytes = Math.max(
+    0,
+    Math.min(adaptiveOptions?.lowWatermarkBytes ?? highWatermarkBytes / 2, highWatermarkBytes),
+  );
+  const slowPublishIntervalMs = Math.max(
+    MIN_TIMER_INTERVAL_MS,
+    adaptiveOptions?.slowPublishIntervalMs ?? Math.max(publishIntervalMs * 4, 100),
+  );
+  const heartbeatMs = Math.max(MIN_TIMER_INTERVAL_MS, options.heartbeatMs ?? DEFAULT_HEARTBEAT_MS);
+  const staleTimeoutMs =
+    options.staleTimeoutMs === undefined ? undefined : Math.max(MIN_STALE_TIMEOUT_MS, options.staleTimeoutMs);
+  const idleAfterMs = options.idleAfterMs === undefined ? undefined : Math.max(0, options.idleAfterMs);
+
   const clientId = options.clientId ?? idFactory();
   const session = idFactory();
 
-  let context = options.context;
-  let user = options.user;
-  let sequence = 0;
-  let disposed = false;
+  const status = transport.subscribeStatus ? (transport.getStatus?.() ?? "connecting") : "connected";
 
-  let latestCursor: CursorPosition | null = null;
-  let lastSentCursor: CursorPosition | null | undefined; // undefined = nothing sent yet
-  let publishTimer: TimerHandle | null = null;
-  let heartbeatTimer: TimerHandle | null = null;
-  let sweepTimer: TimerHandle | null = null;
-
-  let status: ConnectionStatus = transport.subscribeStatus ? "connecting" : "connected";
-  const statusListeners = new Set<(status: ConnectionStatus) => void>();
-
+  const devMode = isDevMode();
+  let warnedAboutRemoteCap = false;
   const store = new RemotePresenceStore<TContext, TUser>({
     ...(maxRemoteClients !== undefined ? { maxRemoteClients } : {}),
     ...(staleTimeoutMs !== undefined ? { staleTimeoutMs } : {}),
+    ...(idleAfterMs !== undefined ? { idleAfterMs } : {}),
     now,
+    onDropNewClient: () => {
+      if (devMode && !warnedAboutRemoteCap) {
+        warnedAboutRemoteCap = true;
+        console.warn(
+          `[anchor-presence] remote presence store is full (maxRemoteClients=${maxRemoteClients ?? DEFAULT_MAX_REMOTE_CLIENTS}); new clientIds are dropped until an entry expires`,
+        );
+      }
+      try {
+        options.onRemoteClientDrop?.();
+      } catch {
+        // a throwing callback must not break the inbound pipeline
+      }
+    },
   });
 
-  const teardowns: Array<() => void> = [];
+  const state: PresenceClientState<TContext, TUser> = {
+    transport,
+    codec,
+    scheduler,
+    clientId,
+    session,
+    publishIntervalMs,
+    slowPublishIntervalMs,
+    highWatermarkBytes,
+    lowWatermarkBytes,
+    adaptivePublish: adaptiveOptions !== undefined,
+    heartbeatMs,
+    // half the shorter of the two timeouts, so an idle or stale transition shows up within one sweep tick
+    sweepIntervalMs:
+      Math.min(staleTimeoutMs ?? DEFAULT_STALE_TIMEOUT_MS, idleAfterMs ?? DEFAULT_IDLE_AFTER_MS) / 2,
+    maxFieldBytes: validationLimits?.maxFieldBytes ?? DEFAULT_MAX_FIELD_BYTES,
+    maxMessageBytes: validationLimits?.maxMessageBytes ?? DEFAULT_MAX_MESSAGE_BYTES,
+    validationLimits,
+    devMode,
+    store,
+    context: options.context,
+    user: options.user,
+    contextDirty: options.context !== undefined,
+    userDirty: options.user !== undefined,
+    sequence: 0,
+    disposed: false,
+    latestCursor: null,
+    latestPointer: undefined,
+    pendingPublish: false,
+    pendingFullPublish: false,
+    failedSendCount: 0,
+    slowMode: false,
+    publishTimer: null,
+    heartbeatTimer: null,
+    sweepTimer: null,
+    status,
+    contextListeners: new Set(),
+    teardowns: [],
+  };
 
-  function setStatus(next: ConnectionStatus): void {
-    if (status === next) return;
-    const wasSendable = status !== "connecting" && status !== "disconnected";
-    status = next;
-    for (const listener of statusListeners) listener(status);
-    // reconnected: the latest local state was never sent while unsendable, republish now (rate-limited)
-    if (!wasSendable && status === "connected" && latestCursor !== lastSentCursor) {
-      schedulePublish();
-    }
-  }
+  const warnIfOversized = createOversizedWarning(state);
 
-  function buildMessage(cursor: CursorPosition | null): CursorPresence<TContext, TUser> {
-    const message: CursorPresence<TContext, TUser> = {
-      version: 1,
-      clientId,
-      session,
-      sequence: sequence++,
-      cursor,
-    };
-    if (context !== undefined) message.context = context;
-    if (user !== undefined) message.user = user;
-    return message;
-  }
+  const publish = createPublishLoop(state);
+  const statusMachine = createStatusMachine(state, publish);
 
-  function send(cursor: CursorPosition | null): boolean {
-    if (status === "disconnected" || status === "connecting") return false;
+  startLiveness(state, publish);
+
+  wireInbound(state);
+
+  statusMachine.wireTransport();
+
+  publish.wireVisibility();
+
+  if (options.autoConnect === true) {
     try {
-      const bytes = codec.encode(buildMessage(cursor));
-      const result = transport.send(bytes);
-      if (result && typeof result.catch === "function") {
-        result.catch(() => {});
+      const result = transport.connect?.();
+      if (result && typeof result.then === "function") {
+        result.catch(() => {
+          // a rejecting connect must not escape as an unhandled rejection; the transport reports failure via status
+        });
       }
-      return true;
     } catch {
-      // swallow send errors — presence is lossy by design
-      return false;
+      // a throwing connect must not escape creation; the transport reports failure via status
     }
   }
 
-  function schedulePublish(): void {
-    if (disposed || publishTimer !== null) return;
-    publishTimer = scheduler.setTimeout(() => {
-      publishTimer = null;
-      if (latestCursor !== lastSentCursor && send(latestCursor)) {
-        lastSentCursor = latestCursor;
-      }
-    }, publishIntervalMs);
-  }
-
-  function scheduleHeartbeat(): void {
-    if (disposed) return;
-    heartbeatTimer = scheduler.setTimeout(() => {
-      send(lastSentCursor ?? null);
-      scheduleHeartbeat();
-    }, heartbeatMs);
-  }
-  scheduleHeartbeat();
-
-  const sweepIntervalMs = (staleTimeoutMs ?? DEFAULT_STALE_TIMEOUT_MS) / 2;
-  function scheduleSweep(): void {
-    if (disposed) return;
-    sweepTimer = scheduler.setTimeout(() => {
-      store.sweep();
-      scheduleSweep();
-    }, sweepIntervalMs);
-  }
-  scheduleSweep();
-
-  const maxMessageBytes = validationLimits?.maxMessageBytes ?? DEFAULT_MAX_MESSAGE_BYTES;
-  const unsubscribeTransport = transport.subscribe((data) => {
-    if (disposed) return;
-    if (data.byteLength > maxMessageBytes) return; // oversized wire message: drop before parsing (spec §4.2)
-    const decoded = codec.decode(data);
-    const presence = validatePresence<TContext, TUser>(decoded, validationLimits);
-    if (presence === null) return;
-    if (presence.clientId === clientId) return; // ignore echoes of our own messages
-    store.ingest(presence);
-  });
-  teardowns.push(unsubscribeTransport);
-
-  if (transport.subscribeStatus) {
-    const unsubscribeStatus = transport.subscribeStatus((next) => setStatus(next));
-    teardowns.push(unsubscribeStatus);
-  }
+  if (state.context !== undefined || state.user !== undefined) warnIfOversized();
 
   return {
     clientId,
     session,
 
-    updateLocalCursor(cursor) {
-      if (disposed) return;
-      latestCursor = cursor;
-      schedulePublish();
+    updateLocalCursor(cursor, pointer) {
+      if (state.disposed) return;
+      state.latestCursor = cursor;
+      if (pointer !== undefined) state.latestPointer = pointer;
+      publish.markPending();
     },
 
     setContext(next) {
-      context = next;
+      if (state.disposed) return;
+      if (state.context === next) return;
+      state.context = next;
+      state.contextDirty = true;
+      warnIfOversized();
+      publish.markPending();
+      for (const listener of state.contextListeners) {
+        try {
+          listener();
+        } catch {
+          // one throwing listener must not starve the rest
+        }
+      }
     },
 
-    setUser(next) {
-      user = next;
+    getContext() {
+      return state.context;
     },
 
-    getStatus() {
-      return status;
-    },
-
-    subscribeStatus(listener) {
-      statusListeners.add(listener);
+    subscribeContext(listener) {
+      state.contextListeners.add(listener);
       return () => {
-        statusListeners.delete(listener);
+        state.contextListeners.delete(listener);
       };
     },
 
+    setUser(next) {
+      if (state.disposed) return;
+      if (state.user === next) return;
+      state.user = next;
+      state.userDirty = true;
+      warnIfOversized();
+      publish.markPending();
+    },
+
+    getUser() {
+      return state.user;
+    },
+
+    getStatus() {
+      return state.status;
+    },
+
+    subscribeStatus(listener) {
+      return statusMachine.subscribeStatus(listener);
+    },
+
     getRemoteSnapshot() {
-      return store.getSnapshot();
+      return state.store.getSnapshot();
+    },
+
+    getRemotePresence() {
+      return state.store.getStableSnapshot();
     },
 
     subscribeRemote(listener) {
-      return store.subscribe(listener);
+      return state.store.subscribe(listener);
     },
 
     registerTeardown(fn) {
-      teardowns.push(fn);
+      if (state.disposed) {
+        fn();
+        return () => {};
+      }
+      state.teardowns.push(fn);
+      return () => {
+        const index = state.teardowns.indexOf(fn);
+        if (index !== -1) state.teardowns.splice(index, 1);
+      };
     },
 
     dispose() {
-      if (disposed) return;
-      disposed = true;
-      if (publishTimer !== null) scheduler.clearTimeout(publishTimer);
-      if (heartbeatTimer !== null) scheduler.clearTimeout(heartbeatTimer);
-      if (sweepTimer !== null) scheduler.clearTimeout(sweepTimer);
-      publishTimer = null;
-      heartbeatTimer = null;
-      sweepTimer = null;
-      statusListeners.clear();
-      for (const teardown of teardowns.splice(0, teardowns.length)) {
+      if (state.disposed) return;
+      state.disposed = true;
+      publish.send(null); // best-effort leave message so receivers hide the cursor immediately
+      if (state.publishTimer !== null) scheduler.clearTimeout(state.publishTimer);
+      if (state.heartbeatTimer !== null) scheduler.clearTimeout(state.heartbeatTimer);
+      if (state.sweepTimer !== null) scheduler.clearTimeout(state.sweepTimer);
+      state.publishTimer = null;
+      state.heartbeatTimer = null;
+      state.sweepTimer = null;
+      statusMachine.dispose();
+      state.contextListeners.clear();
+      for (const teardown of state.teardowns.splice(0)) {
         teardown();
+      }
+      try {
+        void transport.disconnect?.();
+      } catch {
+        // a throwing disconnect must not break dispose
       }
     },
   };

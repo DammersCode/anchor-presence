@@ -5,3 +5,10 @@ playwright-report/
 test-results/
 .vite/
 .claude/
+.agent/
+oss-refs/
+*.prompt.md
+TODO-*.md
+apps/docs/.next/
+apps/docs/.source/
+apps/docs/next-env.d.ts

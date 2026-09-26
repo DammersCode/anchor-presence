@@ -1,35 +1,22 @@
-export type { Rect, ViewportSize } from "./geometry";
+export { createDomBinding } from "./binding.js";
+export type { DomBinding, DomBindingOptions, EnvironmentOptions, ResolutionOptions } from "./binding.js";
 
-export { computeVisibleRect, isPointInRect } from "./occlusion";
-export type { StyleValues } from "./occlusion";
+export { createWebSocketTransport } from "./transport.js";
+export type {
+  WebSocketCtor,
+  WebSocketLike,
+  WebSocketTransport,
+  WebSocketTransportOptions,
+} from "./transport.js";
 
-export { createAnchorRegistry } from "./registry";
-export type { AnchorRegistry } from "./registry";
-
-export { attachPointerSource, DEFAULT_MAX_ANCHORS } from "./pointer";
-export type { PointerSourceHandle, PointerSourceOptions } from "./pointer";
-
-export { createGeometryScheduler } from "./scheduler";
+export { CURSOR_MARKER_ATTRIBUTE } from "./scheduler.js";
 export type {
   CafLike,
-  ComputeResult,
-  GeometryScheduler,
-  GeometrySchedulerOptions,
   MutationObserverCtor,
   MutationObserverLike,
   RafLike,
   ResizeObserverCtor,
   ResizeObserverLike,
-  SchedulerReadState,
-} from "./scheduler";
+} from "./scheduler.js";
 
-export { defaultVisibilityPolicy, findResolvableAnchor, isMeasurable, RemoteResolver, resolveGeometry } from "./resolver";
-export type {
-  ResolutionTier,
-  ResolvedCursor,
-  ResolverOptions,
-  VisibilityPolicy,
-} from "./resolver";
-
-export { createDomBinding } from "./binding";
-export type { DomBinding, DomBindingOptions, EnvironmentOptions, ResolutionOptions } from "./binding";
+export type { ResolvedCursor, ResolutionTier, VisibilityPolicy } from "./resolver.js";

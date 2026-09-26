@@ -1,0 +1,28 @@
+{
+  "title": "Core",
+  "icon": "box",
+  "description": "@anchor-presence/core: protocol, codecs, client, and transport contract",
+  "root": true,
+  "pages": [
+    "index",
+    "---[Radio]Client---",
+    "presence-client",
+    "remote-presence",
+    "validation",
+    "---[Cable]Transports---",
+    "transports",
+    "in-memory-transport",
+    "custom-transport",
+    "---[Binary]Codecs---",
+    "codecs",
+    "binary-codec",
+    "custom-codec",
+    "---[Waypoints]Adapters---",
+    "interpolation",
+    "build-a-framework-adapter",
+    "---[BookOpen]API reference---",
+    "api/client",
+    "api/protocol",
+    "api/transports-and-codecs"
+  ]
+}

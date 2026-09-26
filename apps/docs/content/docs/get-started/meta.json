@@ -1,0 +1,22 @@
+{
+  "title": "Anchor Presence",
+  "icon": "compass",
+  "description": "Overview, setup, and cross-cutting guides",
+  "root": true,
+  "pages": [
+    "introduction",
+    "installation",
+    "quick-start",
+    "---[Blocks]Concepts---",
+    "concepts/how-it-works",
+    "concepts/anchors",
+    "concepts/fallback-chain",
+    "concepts/ui-context",
+    "concepts/responsive-layouts",
+    "---[BookOpen]Guides---",
+    "guides/security",
+    "guides/performance",
+    "guides/layout-design",
+    "guides/troubleshooting"
+  ]
+}

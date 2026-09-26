@@ -1,0 +1,28 @@
+---
+title: Overview
+description: What @anchor-presence/dom does and how it sits between the core client and a UI adapter.
+---
+
+`@anchor-presence/dom` is the only package that calls browser APIs. It turns a `PresenceClient` from `@anchor-presence/core` into a stream of resolved cursor positions, ready for a renderer to draw. It depends only on `@anchor-presence/core` and has no React dependency.
+
+## What the binding does
+
+`createDomBinding` wires together four jobs:
+
+1. It watches the page for elements marked with an anchor attribute and registers them.
+2. It listens for pointer events and reports the local cursor position relative to the nearest anchors.
+3. It reads remote presence from the client and resolves each one against the page's own layout.
+4. It schedules geometry reads on the frame clock, so a resolve pass never runs more than once per frame.
+
+The React package (`@anchor-presence/react`) calls `createDomBinding` for you and exposes its snapshot through hooks. Call it directly to build an adapter for another UI layer. See [Build a framework adapter](/docs/core/build-a-framework-adapter).
+
+## Where it sits
+
+`@anchor-presence/core` knows the protocol and the store, but not the DOM. `@anchor-presence/dom` reads and writes the DOM, but renders nothing. A UI adapter, such as `@anchor-presence/react`, renders the resolved cursors that the binding produces. See [How it works](/docs/get-started/concepts/how-it-works) for the full picture.
+
+## Related
+
+- [Binding](/docs/dom/binding)
+- [Resolution](/docs/dom/resolution)
+- [WebSocket transport](/docs/dom/websocket-transport)
+- [How it works](/docs/get-started/concepts/how-it-works)

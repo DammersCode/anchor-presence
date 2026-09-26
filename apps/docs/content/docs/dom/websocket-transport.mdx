@@ -1,0 +1,46 @@
+---
+title: WebSocket transport
+description: createWebSocketTransport, the default URL, the auth token, and reconnect with backoff.
+---
+
+`createWebSocketTransport` builds a `LiveCursorTransport` over the native browser `WebSocket`. It is the one transport `@anchor-presence/dom` ships, built for the bundled relay or a compatible one.
+
+## Basic use
+
+```ts
+import { createWebSocketTransport } from "@anchor-presence/dom";
+import { createPresenceClient } from "@anchor-presence/core";
+
+const transport = createWebSocketTransport({ url: "wss://relay.example.com/room-42" });
+const client = createPresenceClient({ transport, autoConnect: true });
+```
+
+`connect()` and `disconnect()` are always present on the returned transport, unlike the optional methods on the base `LiveCursorTransport` contract. See [Transports](/docs/core/transports) for that contract.
+
+## Building the default URL
+
+When you omit `url`, the transport builds one from `host` (default `window.location.hostname`), `port` (default `8787`), and `path` (default `/`). The protocol is `wss:` when the page loads over `https:`, and `ws:` otherwise.
+
+## Room token
+
+Set `token` to add a room token to the connection URL. The transport URL-encodes it and appends `token=<value>`, joined with `&` when the URL already has a query string. The relay reads this token to authorize the connection to a room. See [Security](/docs/get-started/guides/security).
+
+## Reconnect and backoff
+
+`reconnect` defaults to `true`. After a connection drop that was not caused by your own `disconnect()` call, the transport schedules a reconnect with exponential backoff:
+
+- The delay doubles on each attempt, starting from `baseBackoffMs` (default `500`), and caps at `maxBackoffMs` (default `8000`).
+- The transport applies full jitter on top of the capped delay, so many clients reconnecting at once do not retry in lockstep.
+- `random` overrides the jitter source. It defaults to `Math.random` and is useful in a test that needs a deterministic delay.
+
+`connect()` is idempotent while a connection is already connecting or open: a second call does not open a second socket. `connect()` after `disconnect()` is also a no-op: the transport logs a development-mode warning and does nothing. Create a new transport instead.
+
+## Buffered bytes
+
+`transport.bufferedBytes()` returns the underlying socket's `bufferedAmount`, or `0` when no socket is open. Presence is lossy by design: `send()` drops a message silently when the socket is not open, rather than queueing it.
+
+## Related
+
+- [Transports](/docs/core/transports)
+- [WebSocket transport API](/docs/dom/api/websocket-transport)
+- [Security](/docs/get-started/guides/security)

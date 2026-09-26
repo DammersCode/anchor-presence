@@ -4,7 +4,7 @@ import type { AnchorRegistry } from "../src/registry";
 
 function makeElement(): HTMLElement {
   const el = document.createElement("div");
-  document.body.appendChild(el);
+  document.body.append(el);
   return el;
 }
 
@@ -84,8 +84,8 @@ describe("AnchorRegistry (spec §8)", () => {
     const outer = makeElement();
     const middle = document.createElement("div");
     const inner = document.createElement("div");
-    outer.appendChild(middle);
-    middle.appendChild(inner);
+    outer.append(middle);
+    middle.append(inner);
 
     registry.register("outer", outer);
     registry.register("middle", middle);
@@ -99,8 +99,8 @@ describe("AnchorRegistry (spec §8)", () => {
     const outer = makeElement();
     const middleUnregistered = document.createElement("div");
     const inner = document.createElement("div");
-    outer.appendChild(middleUnregistered);
-    middleUnregistered.appendChild(inner);
+    outer.append(middleUnregistered);
+    middleUnregistered.append(inner);
 
     registry.register("outer", outer);
     registry.register("inner", inner);
@@ -113,7 +113,7 @@ describe("AnchorRegistry (spec §8)", () => {
     const outer = makeElement();
     const staleElement = document.createElement("div");
     const freshElement = document.createElement("div");
-    outer.appendChild(staleElement);
+    outer.append(staleElement);
 
     // register "dup" on staleElement, then replace it with freshElement (new element wins).
     // staleElement's reverse-map entry ("dup") is now stale: byId.get("dup") !== staleElement.

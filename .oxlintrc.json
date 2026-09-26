@@ -1,0 +1,62 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "oxc", "import", "unicorn", "vitest", "react", "react-hooks"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error",
+    "perf": "warn",
+    "pedantic": "warn"
+  },
+  "options": { "typeAware": true },
+  "rules": {
+    "typescript/no-explicit-any": "error",
+    "typescript/no-non-null-assertion": "warn",
+    "typescript/consistent-type-imports": "error",
+    "import/no-cycle": "error",
+    "typescript/no-floating-promises": "error",
+    "typescript/switch-exhaustiveness-check": "error",
+    "react/react-in-jsx-scope": "off",
+    "typescript/no-unsafe-type-assertion": "off",
+    "typescript/no-unsafe-assignment": "off",
+    "typescript/no-unsafe-call": "off",
+    "typescript/no-unsafe-member-access": "off",
+    "typescript/no-unsafe-return": "off",
+    "typescript/no-unsafe-argument": "off",
+    "typescript/no-redundant-type-constituents": "off",
+    "typescript/prefer-readonly-parameter-types": "off",
+    "typescript/no-confusing-void-expression": "off",
+    "typescript/strict-void-return": "off",
+    "unicorn/no-negated-condition": "off",
+    "eslint/no-inline-comments": "off",
+    "eslint/no-lonely-if": "off",
+    "eslint/max-lines": "off",
+    "eslint/max-lines-per-function": "off",
+    "typescript/consistent-return": "off",
+    "no-negated-condition": "off",
+    "no-lonely-if": "off",
+    "unicorn/explicit-length-check": "off"
+  },
+  "ignorePatterns": [
+    "**/dist/**",
+    "**/node_modules/**",
+    "examples/**",
+    "apps/**",
+    "e2e/**",
+    "test-results/**",
+    ".claude/**"
+  ],
+  "overrides": [
+    {
+      "files": ["**/*.test.ts", "**/*.test.tsx", "**/test/**", "**/bench/**"],
+      "rules": {
+        "typescript/no-non-null-assertion": "off",
+        "typescript/no-unnecessary-type-arguments": "off",
+        "typescript/no-unnecessary-type-assertion": "off",
+        "typescript/no-deprecated": "off",
+        "vitest/require-mock-type-parameters": "off",
+        "react/globals": "off",
+        "unicorn/consistent-function-scoping": "off"
+      }
+    }
+  ]
+}

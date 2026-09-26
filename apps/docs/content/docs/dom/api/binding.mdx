@@ -1,0 +1,41 @@
+---
+title: Binding API
+description: createDomBinding, DomBinding, DomBindingOptions, ResolutionOptions, and EnvironmentOptions.
+---
+
+Full type reference for `createDomBinding` and the options it accepts. See [Binding](/docs/dom/binding) for the guide.
+
+## createDomBinding
+
+```ts
+import { createDomBinding } from "@anchor-presence/dom";
+
+const binding = createDomBinding(client, options?);
+```
+
+`createDomBinding(client, options?)` creates the DOM side of one client and returns a `DomBinding`.
+
+## DomBinding
+
+<AutoTypeTable path="../../packages/dom/src/binding.ts" name="DomBinding" />
+
+## DomBindingOptions
+
+<AutoTypeTable path="../../packages/dom/src/binding.ts" name="DomBindingOptions" />
+
+## ResolutionOptions
+
+`resolution` on `DomBindingOptions` controls how remote cursors turn into screen positions:
+
+<AutoTypeTable path="../../packages/dom/src/binding.ts" name="ResolutionOptions" />
+
+## EnvironmentOptions
+
+`environment` on `DomBindingOptions` supplies the DOM and timing hosts the binding runs against, each defaulting to the matching browser global:
+
+<AutoTypeTable path="../../packages/dom/src/binding.ts" name="EnvironmentOptions" />
+
+## Related
+
+- [Binding](/docs/dom/binding)
+- [Resolution types](/docs/dom/api/resolution)

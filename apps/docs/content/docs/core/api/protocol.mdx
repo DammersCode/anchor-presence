@@ -1,0 +1,69 @@
+---
+title: Protocol types
+description: CursorPresence, AnchorPoint, RemotePresence, and the protocol constants.
+---
+
+Every name on this page is exported from `packages/core/src/index.ts`. These types describe the wire protocol that `@anchor-presence/core` validates, stores, and sends.
+
+## CursorPresence
+
+The wire format of one presence message.
+
+<AutoTypeTable path="../../packages/core/src/protocol.ts" name="CursorPresence" />
+
+## AnchorPoint
+
+One anchor point in a cursor position. See [Anchors](/docs/get-started/concepts/anchors) for the `u`/`v` fields.
+
+<AutoTypeTable path="../../packages/core/src/protocol.ts" name="AnchorPoint" />
+
+## CursorPosition
+
+The cursor position inside one presence message: an anchor chain plus an optional viewport fallback.
+
+<AutoTypeTable path="../../packages/core/src/protocol.ts" name="CursorPosition" />
+
+## RemotePresence
+
+A remote presence without the `sequence` field, with `idle` added. The stable snapshot behind `client.getRemotePresence()`. See [How it works](/docs/get-started/concepts/how-it-works) for how this differs from the raw snapshot.
+
+<AutoTypeTable path="../../packages/core/src/protocol.ts" name="RemotePresence" />
+
+## PointerInfo and PointerType
+
+Optional pointer info attached to a presence message.
+
+<AutoTypeTable path="../../packages/core/src/protocol.ts" name="PointerInfo" />
+
+`PointerType` is `"mouse" | "pen" | "touch"`.
+
+## ConnectionStatus
+
+```ts
+import type { ConnectionStatus } from "@anchor-presence/core";
+```
+
+`ConnectionStatus` is `"connecting" | "connected" | "reconnecting" | "disconnected"`. See [Transports](/docs/core/transports) for how a transport reports it.
+
+## Protocol constants
+
+```ts
+import {
+  DEFAULT_MAX_CLIENT_ID_LENGTH,
+  DEFAULT_MAX_SESSION_LENGTH,
+  DEFAULT_MAX_SEQUENCE,
+  DEFAULT_MAX_ANCHORS,
+  DEFAULT_MAX_ANCHOR_ID_LENGTH,
+  DEFAULT_MAX_FIELD_BYTES,
+  DEFAULT_MAX_FIELD_DEPTH,
+  DEFAULT_MAX_MESSAGE_BYTES,
+} from "@anchor-presence/core";
+```
+
+These constants are the defaults behind `ValidationLimits`. See [Validation](/docs/core/validation) for the field each one bounds, and [Security](/docs/get-started/guides/security) for the rule each limit enforces.
+
+## Related
+
+- [Validation](/docs/core/validation)
+- [Remote presence](/docs/core/remote-presence)
+- [Client API](/docs/core/api/client)

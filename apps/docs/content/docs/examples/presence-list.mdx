@@ -1,0 +1,37 @@
+---
+title: Presence list
+description: A "who is online" bar from useRemoteUsers, with users who join, go idle, and leave.
+---
+
+An app with live cursors usually also shows who is here, independent of where their cursor is. `useRemoteUsers` gives you that list, and it does not rerender when a cursor moves. In this demo, three users work on a roadmap board. The wide pane shows their names in the bar. The narrow pane shows only their avatars.
+
+<ExamplePreview scene="presence" />
+
+## What's in the demo
+
+- Mira, Theo, and Jun join a few seconds apart. Each user appears in the bar when the first message arrives.
+- Theo stops after two moves. After `idleAfterMs` with no message, the bar dims Theo and shows "away". `CursorLayer` dims the cursor too.
+- Jun leaves the page. The cursor disappears at once. Jun stays in the bar as idle until `staleTimeoutMs` removes the entry.
+- Move your pointer in one pane. You appear in the bar of the other pane as "You".
+
+## Code
+
+The scene of this demo:
+
+<CodeFromSource docs="components/examples/presence.tsx" lang="tsx" />
+
+The demo uses short timeouts, so that you see the idle and leave steps in seconds. Keep `heartbeatMs` below `idleAfterMs`. If the heartbeat is slower, a connected user who does not move goes idle between two heartbeats. The defaults are 10 s, 15 s, and 70 s.
+
+`user` is untrusted network data. Render `user.name` as text, as the scene does, and never as HTML.
+
+## Behavior reference
+
+- [Idle stage](/docs/core/remote-presence#idle-stage): when a remote client is idle.
+- [Stale timeout](/docs/core/remote-presence#stale-timeout): when the store removes a remote client.
+- [useRemoteUsers](/docs/react/remote-users): the hook and its render cost.
+- [Idle cursors](/docs/react/custom-cursors#idle-cursors): how `CursorLayer` shows an idle cursor.
+
+## Related
+
+- [Custom cursor rendering](/docs/examples/custom-cursor-rendering): the same user data in your own cursor.
+- [Security](/docs/get-started/guides/security)

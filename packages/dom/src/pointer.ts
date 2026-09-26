@@ -1,13 +1,11 @@
 // Pointer capture and target resolution — spec §9
 
-import type { CursorPosition, PresenceClient } from "@anchor-presence/core";
-import type { AnchorRegistry } from "./registry";
-import type { Rect } from "./geometry";
-
-export const DEFAULT_MAX_ANCHORS = 4;
+import type { CursorPosition, PointerInfo, PresenceClient } from "@anchor-presence/core";
+import type { AnchorRegistry } from "./registry.js";
+import type { Rect } from "./geometry.js";
 
 export type PointerSourceOptions = {
-  maxAnchors?: number | undefined;
+  maxAnchors: number;
   root?: Document | undefined;
   window?: Window | undefined;
   getCachedRect?: ((element: Element) => Rect | undefined) | undefined;
@@ -16,6 +14,11 @@ export type PointerSourceOptions = {
 export type PointerSourceHandle = {
   detach(): void;
 };
+
+function pointerInfo(event: PointerEvent): PointerInfo | undefined {
+  const type = event.pointerType;
+  return type === "mouse" || type === "pen" || type === "touch" ? { type } : undefined;
+}
 
 function eventTargetElement(event: Event): Element | null {
   const path = typeof event.composedPath === "function" ? event.composedPath() : [];
@@ -54,11 +57,11 @@ function buildCursorPosition(
 
 /** Listens for pointer activity and feeds outbound samples to the presence client — spec §9. */
 export function attachPointerSource(
-  client: PresenceClient<unknown, unknown>,
+  client: PresenceClient,
   registry: AnchorRegistry,
-  options: PointerSourceOptions = {},
+  options: PointerSourceOptions,
 ): PointerSourceHandle {
-  const maxAnchors = options.maxAnchors ?? DEFAULT_MAX_ANCHORS;
+  const maxAnchors = options.maxAnchors;
   const doc = options.root ?? document;
   const win = options.window ?? window;
   const getCachedRect = options.getCachedRect;
@@ -66,8 +69,16 @@ export function attachPointerSource(
   function onPointerEvent(event: PointerEvent): void {
     const target = eventTargetElement(event);
     if (target === null) return;
-    const position = buildCursorPosition(event.clientX, event.clientY, target, registry, maxAnchors, win, getCachedRect);
-    client.updateLocalCursor(position);
+    const position = buildCursorPosition(
+      event.clientX,
+      event.clientY,
+      target,
+      registry,
+      maxAnchors,
+      win,
+      getCachedRect,
+    );
+    client.updateLocalCursor(position, pointerInfo(event));
   }
 
   function onDocumentPointerLeave(): void {
@@ -80,19 +91,23 @@ export function attachPointerSource(
 
   doc.addEventListener("pointermove", onPointerEvent);
   doc.addEventListener("pointerdown", onPointerEvent);
-  doc.addEventListener("pointerenter", onPointerEvent);
+  // pointerenter never fires at the document with an Element target; pointerover bubbles and does
+  doc.addEventListener("pointerover", onPointerEvent);
   doc.addEventListener("pointerleave", onDocumentPointerLeave);
   win.addEventListener("blur", onWindowBlur);
 
+  let unregisterTeardown: (() => void) | undefined;
+
   function detach(): void {
+    unregisterTeardown?.();
     doc.removeEventListener("pointermove", onPointerEvent);
     doc.removeEventListener("pointerdown", onPointerEvent);
-    doc.removeEventListener("pointerenter", onPointerEvent);
+    doc.removeEventListener("pointerover", onPointerEvent);
     doc.removeEventListener("pointerleave", onDocumentPointerLeave);
     win.removeEventListener("blur", onWindowBlur);
   }
 
-  client.registerTeardown(detach);
+  unregisterTeardown = client.registerTeardown(detach);
 
   return { detach };
 }

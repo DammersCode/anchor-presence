@@ -5,7 +5,7 @@ import { createAnchorRegistry } from "../src/registry";
 import type { AnchorRegistry } from "../src/registry";
 import { defaultVisibilityPolicy, RemoteResolver, resolveGeometry } from "../src/resolver";
 import { readClientRect } from "../src/occlusion";
-import type { Rect } from "../src/geometry";
+import type { Rect, ViewportSize } from "../src/geometry";
 import type { SchedulerReadState } from "../src/scheduler";
 
 function presence(overrides: Partial<CursorPresence> = {}): CursorPresence {
@@ -19,13 +19,23 @@ function presence(overrides: Partial<CursorPresence> = {}): CursorPresence {
   };
 }
 
-function readState(rects: Map<Element, Rect>, viewportSize = { width: 1000, height: 800 }): SchedulerReadState {
+function readState(rects: Map<Element, Rect>, viewportSize?: ViewportSize): SchedulerReadState {
   return {
     getRect: (el) => rects.get(el),
     getClientRect: (el) => readClientRect(el, rects.get(el)!),
     getStyle: (el) => getComputedStyle(el),
-    viewportSize,
+    viewportSize: viewportSize ?? { width: 1000, height: 800 },
   };
+}
+
+function restoreElementFromPoint(target: object, descriptor: PropertyDescriptor | undefined): void {
+  if (descriptor === undefined) delete (target as { elementFromPoint?: unknown }).elementFromPoint;
+  else Object.defineProperty(target, "elementFromPoint", descriptor);
+}
+
+function firstThenFactory(first: InterpolatorFactory, rest: InterpolatorFactory): InterpolatorFactory {
+  let calls = 0;
+  return () => (calls++ === 0 ? first() : rest());
 }
 
 describe("resolveGeometry (spec §10)", () => {
@@ -108,9 +118,24 @@ describe("resolveGeometry (spec §10)", () => {
 describe("defaultVisibilityPolicy (spec §10.1)", () => {
   it("shows on anchor and viewport tiers, hides on hidden", () => {
     const p = presence();
-    expect(defaultVisibilityPolicy({ presence: p, resolution: { tier: "anchor", anchorId: "a", pointVisible: false } })).toBe("show");
-    expect(defaultVisibilityPolicy({ presence: p, resolution: { tier: "viewport", anchorId: null, pointVisible: true } })).toBe("show");
-    expect(defaultVisibilityPolicy({ presence: p, resolution: { tier: "hidden", anchorId: null, pointVisible: false } })).toBe("hide");
+    expect(
+      defaultVisibilityPolicy({
+        presence: p,
+        resolution: { tier: "anchor", anchorId: "a", pointVisible: false },
+      }),
+    ).toBe("show");
+    expect(
+      defaultVisibilityPolicy({
+        presence: p,
+        resolution: { tier: "viewport", anchorId: null, pointVisible: true },
+      }),
+    ).toBe("show");
+    expect(
+      defaultVisibilityPolicy({
+        presence: p,
+        resolution: { tier: "hidden", anchorId: null, pointVisible: false },
+      }),
+    ).toBe("hide");
   });
 });
 
@@ -121,13 +146,20 @@ describe("RemoteResolver (spec §10 + §13)", () => {
   beforeEach(() => {
     registry = createAnchorRegistry();
     el = document.createElement("div");
-    document.body.appendChild(el);
+    document.body.append(el);
     registry.register("a", el);
   });
 
-  function spyInterpolator(): { factory: InterpolatorFactory; instance: Interpolator; targetSpy: ReturnType<typeof vi.fn>; shiftSpy: ReturnType<typeof vi.fn> } {
+  function spyInterpolator(): {
+    factory: InterpolatorFactory;
+    instance: Interpolator;
+    targetSpy: ReturnType<typeof vi.fn>;
+    shiftSpy: ReturnType<typeof vi.fn>;
+    resetSpy: ReturnType<typeof vi.fn>;
+  } {
     const targetSpy = vi.fn();
     const shiftSpy = vi.fn();
+    const resetSpy = vi.fn();
     let x = 0;
     let y = 0;
     const instance: Interpolator = {
@@ -142,8 +174,11 @@ describe("RemoteResolver (spec §10 + §13)", () => {
         shiftSpy(dx, dy);
       },
       sample: () => ({ x, y, settled: true }),
+      reset: () => {
+        resetSpy();
+      },
     };
-    return { factory: () => instance, instance, targetSpy, shiftSpy };
+    return { factory: () => instance, instance, targetSpy, shiftSpy, resetSpy };
   }
 
   it("calls target() for a brand-new clientId (first sighting)", () => {
@@ -206,6 +241,62 @@ describe("RemoteResolver (spec §10 + §13)", () => {
     expect(shiftSpy).not.toHaveBeenCalled();
   });
 
+  it("K12: a cursor re-entering after a cursor:null period snaps to the new position, not sliding in from (0,0)", () => {
+    const resolver = new RemoteResolver({ registry }); // default factory: linearInterpolator(80)
+    const rects = new Map<Element, Rect>([[el, { left: 0, top: 0, width: 100, height: 100 }]]);
+    const state = readState(rects);
+
+    resolver.resolveAll([presence()], state, 0); // (50, 50)
+
+    const absent = presence({ cursor: null, sequence: 2 });
+    const gone = resolver.resolveAll([absent], state, 16);
+    expect(gone.cursors[0]?.visible).toBe(false);
+    resolver.resolveAll([absent], state, 200); // long enough for any ease toward (0,0) to settle
+
+    const back = resolver.resolveAll(
+      [presence({ sequence: 3, cursor: { anchors: [{ id: "a", u: 0.9, v: 0.9 }] } })],
+      state,
+      216,
+    );
+    expect(back.cursors[0]?.visible).toBe(true);
+    expect(back.cursors[0]?.x).toBe(90);
+    expect(back.cursors[0]?.y).toBe(90);
+  });
+
+  it("K12: calls reset() instead of target() while the cursor is absent (cursor:null)", () => {
+    const { factory, targetSpy, resetSpy } = spyInterpolator();
+    const resolver = new RemoteResolver({ registry, interpolatorFactory: factory });
+    const rects = new Map<Element, Rect>([[el, { left: 0, top: 0, width: 100, height: 100 }]]);
+    const state = readState(rects);
+
+    resolver.resolveAll([presence()], state, 0);
+    targetSpy.mockClear();
+    resetSpy.mockClear();
+
+    resolver.resolveAll([presence({ cursor: null, sequence: 2 })], state, 16);
+
+    expect(resetSpy).toHaveBeenCalledTimes(1);
+    expect(targetSpy).not.toHaveBeenCalled();
+  });
+
+  it("K12: pushes target (snaps) when a cursor becomes resolvable after being hidden, with unchanged presence", () => {
+    const { factory, targetSpy, shiftSpy } = spyInterpolator();
+    const resolver = new RemoteResolver({ registry, interpolatorFactory: factory });
+    const rects = new Map<Element, Rect>([[el, { left: 0, top: 0, width: 0, height: 0 }]]); // zero-size: not measurable
+    const state = readState(rects);
+    const p = presence();
+
+    resolver.resolveAll([p], state, 0); // hidden tier
+    targetSpy.mockClear();
+    shiftSpy.mockClear();
+
+    rects.set(el, { left: 0, top: 0, width: 100, height: 100 }); // anchor becomes measurable, same presence object
+    resolver.resolveAll([p], state, 16);
+
+    expect(targetSpy).toHaveBeenCalledTimes(1);
+    expect(shiftSpy).not.toHaveBeenCalled();
+  });
+
   it("applies a policy override", () => {
     const rects = new Map<Element, Rect>([[el, { left: 0, top: 0, width: 100, height: 100 }]]);
     const resolver = new RemoteResolver({
@@ -220,8 +311,8 @@ describe("RemoteResolver (spec §10 + §13)", () => {
   it("surfaces clipping visibility to the resolved cursor and policy", () => {
     const clip = document.createElement("div");
     clip.style.overflow = "hidden";
-    clip.appendChild(el);
-    document.body.appendChild(clip);
+    clip.append(el);
+    document.body.append(clip);
     const rects = new Map<Element, Rect>([
       [el, { left: 80, top: 90, width: 40, height: 40 }],
       [clip, { left: 0, top: 0, width: 100, height: 100 }],
@@ -232,13 +323,16 @@ describe("RemoteResolver (spec §10 + §13)", () => {
     const { cursors } = resolver.resolveAll([presence()], readState(rects), 0);
 
     expect(cursors[0]?.pointVisible).toBe(false);
-    expect(policy).toHaveBeenCalledWith(expect.objectContaining({
-      resolution: { tier: "anchor", anchorId: "a", pointVisible: false },
-    }));
+    expect(policy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        resolution: { tier: "anchor", anchorId: "a", pointVisible: false },
+      }),
+    );
   });
 
   it("uses hit testing when enabled", () => {
-    const overlay = document.body.appendChild(document.createElement("div"));
+    const overlay = document.createElement("div");
+    document.body.append(overlay);
     const original = Object.getOwnPropertyDescriptor(document, "elementFromPoint");
     Object.defineProperty(document, "elementFromPoint", { configurable: true, value: () => overlay });
     const rects = new Map<Element, Rect>([[el, { left: 0, top: 0, width: 100, height: 100 }]]);
@@ -246,17 +340,18 @@ describe("RemoteResolver (spec §10 + §13)", () => {
 
     const { cursors } = resolver.resolveAll([presence()], readState(rects), 0);
 
-    if (original === undefined) delete (document as { elementFromPoint?: unknown }).elementFromPoint;
-    else Object.defineProperty(document, "elementFromPoint", original);
+    restoreElementFromPoint(document, original);
     expect(cursors[0]?.pointVisible).toBe(false);
   });
 
   it("descends nested open shadow roots for hit testing", () => {
-    const outerHost = document.body.appendChild(document.createElement("div"));
+    const outerHost = document.createElement("div");
+    document.body.append(outerHost);
     const outerRoot = outerHost.attachShadow({ mode: "open" });
-    const innerHost = outerRoot.appendChild(document.createElement("div"));
+    const innerHost = document.createElement("div");
+    outerRoot.append(innerHost);
     const innerRoot = innerHost.attachShadow({ mode: "open" });
-    innerRoot.appendChild(el);
+    innerRoot.append(el);
     const documentHit = Object.getOwnPropertyDescriptor(document, "elementFromPoint");
     const outerHit = Object.getOwnPropertyDescriptor(outerRoot, "elementFromPoint");
     const innerHit = Object.getOwnPropertyDescriptor(innerRoot, "elementFromPoint");
@@ -268,12 +363,9 @@ describe("RemoteResolver (spec §10 + §13)", () => {
 
     const { cursors } = resolver.resolveAll([presence()], readState(rects), 0);
 
-    if (documentHit === undefined) delete (document as { elementFromPoint?: unknown }).elementFromPoint;
-    else Object.defineProperty(document, "elementFromPoint", documentHit);
-    if (outerHit === undefined) delete (outerRoot as { elementFromPoint?: unknown }).elementFromPoint;
-    else Object.defineProperty(outerRoot, "elementFromPoint", outerHit);
-    if (innerHit === undefined) delete (innerRoot as { elementFromPoint?: unknown }).elementFromPoint;
-    else Object.defineProperty(innerRoot, "elementFromPoint", innerHit);
+    restoreElementFromPoint(document, documentHit);
+    restoreElementFromPoint(outerRoot, outerHit);
+    restoreElementFromPoint(innerRoot, innerHit);
     expect(cursors[0]?.pointVisible).toBe(true);
   });
 
@@ -318,5 +410,107 @@ describe("RemoteResolver (spec §10 + §13)", () => {
     const { cursors } = resolver.resolveAll([p], readState(rects), 0);
     expect(cursors[0]?.context).toEqual({ route: "/settings" });
     expect(cursors[0]?.user).toEqual({ name: "Ada" });
+  });
+
+  it("R-7: unchanged input keeps cursor and list identity across resolveAll calls (spec §14.1)", () => {
+    const { factory } = spyInterpolator();
+    const resolver = new RemoteResolver({ registry, interpolatorFactory: factory });
+    const rects = new Map<Element, Rect>([[el, { left: 0, top: 0, width: 100, height: 100 }]]);
+    const state = readState(rects);
+    const p = presence();
+
+    const first = resolver.resolveAll([p], state, 0);
+    const second = resolver.resolveAll([p], state, 16);
+
+    expect(second.cursors).toBe(first.cursors);
+    expect(second.cursors[0]).toBe(first.cursors[0]);
+  });
+
+  it("R-7: an empty list keeps its identity too", () => {
+    const resolver = new RemoteResolver({ registry });
+    const state = readState(new Map());
+
+    const first = resolver.resolveAll([], state, 0);
+    const second = resolver.resolveAll([], state, 16);
+
+    expect(second.cursors).toBe(first.cursors);
+  });
+
+  it("R-7: a changed value produces a new list and a new instance, while unchanged cursors keep identity", () => {
+    const elB = document.createElement("div");
+    document.body.append(elB);
+    registry.register("b", elB);
+
+    const { factory } = spyInterpolator();
+    const factoryB = spyInterpolator().factory;
+    const perClientFactory = firstThenFactory(factory, factoryB);
+    const resolver = new RemoteResolver({ registry, interpolatorFactory: perClientFactory });
+
+    const rects = new Map<Element, Rect>([
+      [el, { left: 0, top: 0, width: 100, height: 100 }],
+      [elB, { left: 200, top: 0, width: 100, height: 100 }],
+    ]);
+    const state = readState(rects);
+    const p1 = presence();
+    const p2 = presence({ clientId: "remote-2", cursor: { anchors: [{ id: "b", u: 0.5, v: 0.5 }] } });
+
+    const first = resolver.resolveAll([p1, p2], state, 0);
+    rects.set(elB, { left: 300, top: 0, width: 100, height: 100 });
+    const second = resolver.resolveAll([p1, p2], state, 16);
+
+    expect(second.cursors).not.toBe(first.cursors);
+    expect(second.cursors[0]).toBe(first.cursors[0]);
+    expect(second.cursors[1]).not.toBe(first.cursors[1]);
+    expect(second.cursors[1]?.x).toBeCloseTo(350);
+  });
+
+  it("carries the idle flag from the isIdle lookup onto the resolved cursor", () => {
+    const { factory } = spyInterpolator();
+    const resolver = new RemoteResolver({ registry, interpolatorFactory: factory });
+    const rects = new Map<Element, Rect>([[el, { left: 0, top: 0, width: 100, height: 100 }]]);
+    const state = readState(rects);
+    const p = presence();
+
+    const notIdle = resolver.resolveAll([p], state, 0, () => false);
+    expect(notIdle.cursors[0]?.idle).toBe(false);
+
+    const idle = resolver.resolveAll([p], state, 16, () => true);
+    expect(idle.cursors[0]?.idle).toBe(true);
+  });
+
+  it("defaults to not idle when no isIdle lookup is given", () => {
+    const resolver = new RemoteResolver({ registry });
+    const rects = new Map<Element, Rect>([[el, { left: 0, top: 0, width: 100, height: 100 }]]);
+
+    const result = resolver.resolveAll([presence()], readState(rects), 0);
+
+    expect(result.cursors[0]?.idle).toBe(false);
+  });
+
+  it("keeps cursor identity across calls when idle does not change", () => {
+    const { factory } = spyInterpolator();
+    const resolver = new RemoteResolver({ registry, interpolatorFactory: factory });
+    const rects = new Map<Element, Rect>([[el, { left: 0, top: 0, width: 100, height: 100 }]]);
+    const state = readState(rects);
+    const p = presence();
+
+    const first = resolver.resolveAll([p], state, 0, () => true);
+    const second = resolver.resolveAll([p], state, 16, () => true);
+
+    expect(second.cursors[0]).toBe(first.cursors[0]);
+  });
+
+  it("produces a new cursor instance when only idle changes", () => {
+    const { factory } = spyInterpolator();
+    const resolver = new RemoteResolver({ registry, interpolatorFactory: factory });
+    const rects = new Map<Element, Rect>([[el, { left: 0, top: 0, width: 100, height: 100 }]]);
+    const state = readState(rects);
+    const p = presence();
+
+    const first = resolver.resolveAll([p], state, 0, () => false);
+    const second = resolver.resolveAll([p], state, 16, () => true);
+
+    expect(second.cursors[0]).not.toBe(first.cursors[0]);
+    expect(second.cursors[0]?.idle).toBe(true);
   });
 });

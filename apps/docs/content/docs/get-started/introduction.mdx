@@ -1,0 +1,44 @@
+---
+title: Introduction
+description: What Anchor Presence does and why receiver layout is authoritative.
+---
+
+Anchor Presence is a live-cursor layer for web apps. It shows where your teammates are looking and clicking. It keeps every cursor on the correct element, even when their layout, sidebar, or screen size differs from yours.
+
+## The problem
+
+A remote cursor is usually a screen coordinate. Two clients rarely show the same layout: a sidebar can be collapsed on one screen and open on another, and a table can wrap to one column on a narrow screen. A pixel coordinate from one screen can land on the wrong element, or on no element at all, on another screen.
+
+## The fix
+
+Anchor Presence never sends a screen coordinate as the primary signal. It sends a semantic anchor ID plus a normalized position inside that anchor. Each receiver measures its own copy of the anchor and computes a pixel position from that proportion. Read [Anchors](/docs/get-started/concepts/anchors) and [Fallback chain](/docs/get-started/concepts/fallback-chain) for the full model.
+
+## Packages
+
+The library has three packages. Each adds one layer, and the dependency direction is one-way: `@anchor-presence/react` depends on `@anchor-presence/dom`, and `@anchor-presence/dom` depends on `@anchor-presence/core`.
+
+| Package                  | What it does                                                    | Depends on DOM or React |
+| ------------------------ | --------------------------------------------------------------- | ----------------------- |
+| `@anchor-presence/core`  | Protocol, validation, presence store, client orchestration.     | No                      |
+| `@anchor-presence/dom`   | Anchor registry, pointer capture, geometry scheduler, resolver. | DOM only                |
+| `@anchor-presence/react` | Provider component and hooks, built on `useSyncExternalStore`.  | React                   |
+
+## How the docs are organized
+
+The sidebar's section switcher splits the docs into five sections:
+
+- [Get started](/docs/get-started/introduction): setup and cross-cutting guides, such as performance and security.
+- [Core](/docs/core): `@anchor-presence/core`, the protocol, codecs, and client.
+- [DOM](/docs/dom): `@anchor-presence/dom`, the browser binding, anchors, and pointer capture.
+- [React](/docs/react): `@anchor-presence/react`, the provider, hooks, and cursor components.
+- [Examples](/docs/examples/basics): live demos and backend relays.
+
+## Guarantees
+
+The library holds a fixed set of rules on every message: layout independence, predictable degradation, and no engine state outside `@anchor-presence/core`. See [How it works](/docs/get-started/concepts/how-it-works) for the full list of invariants.
+
+## Related
+
+- [Installation](/docs/get-started/installation)
+- [Quick start](/docs/get-started/quick-start)
+- [How it works](/docs/get-started/concepts/how-it-works)

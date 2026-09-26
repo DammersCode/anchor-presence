@@ -1,0 +1,60 @@
+---
+title: Codecs
+description: The CursorCodec interface, jsonCodec, and choosing a codec for a room.
+---
+
+A codec turns a `CursorPresence` message into bytes for the wire, and turns bytes back into a value. `@anchor-presence/core` ships `jsonCodec`, the default, and `binaryCodec`, a compact fixed-layout binary codec.
+
+## CursorCodec
+
+```ts
+import type { CursorCodec } from "@anchor-presence/core";
+
+interface CursorCodec {
+  encode(message: CursorPresence): Uint8Array;
+  decode(data: Uint8Array): unknown; // validated afterwards by core
+}
+```
+
+`decode` returns `unknown`, not `CursorPresence`. A codec must never throw past the decode boundary. Malformed input must produce a value that fails validation, not an exception.
+
+Pass a codec to `createPresenceClient`:
+
+```ts
+const client = createPresenceClient({ transport: myTransport, codec: myCodec });
+```
+
+## jsonCodec
+
+```ts
+import { jsonCodec } from "@anchor-presence/core";
+
+export const jsonCodec: CursorCodec = {
+  encode(message) {
+    return new TextEncoder().encode(JSON.stringify(message));
+  },
+  decode(data) {
+    try {
+      return JSON.parse(new TextDecoder().decode(data));
+    } catch {
+      return null;
+    }
+  },
+};
+```
+
+`decode` catches JSON parse errors and returns `null` instead of throwing. `validatePresence(null)` then returns `null`, and the message is dropped. `jsonCodec` is the default when you omit `codec` from `createPresenceClient`.
+
+## Choosing a codec
+
+For a new deployment, `binaryCodec` is the recommended choice: about half the wire size of `jsonCodec` (144 bytes against 292 bytes for a typical 4-anchor message), and a modestly lower decode cost. `jsonCodec` remains the default so a mixed-version room, where an older client still speaks JSON, keeps working. Run `bun run bench` to measure both codecs on your own hardware. See [Binary codec](/docs/core/binary-codec) for the wire layout and encode limits.
+
+## Same codec per room
+
+All clients in the same room must use the same codec. The relay forwards bytes opaquely and does not mix `jsonCodec` and `binaryCodec` frames. A client that decodes another codec's bytes gets `null` back, and `validatePresence` drops the message.
+
+## Related
+
+- [Binary codec](/docs/core/binary-codec)
+- [Custom codec](/docs/core/custom-codec)
+- [Security](/docs/get-started/guides/security)

@@ -1,0 +1,17 @@
+{
+  "title": "Examples",
+  "icon": "flask-conical",
+  "description": "Live demos and backend relays",
+  "root": true,
+  "pages": [
+    "basics",
+    "responsive-grid",
+    "table-and-cards",
+    "anchors-and-fallbacks",
+    "occlusion-and-scroll-containers",
+    "presence-list",
+    "custom-cursor-rendering",
+    "interpolation-styles",
+    "backends"
+  ]
+}

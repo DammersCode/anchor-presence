@@ -1,0 +1,48 @@
+---
+title: Client API
+description: createPresenceClient, its options, PresenceClient, and its constants.
+---
+
+Every name on this page is exported from `packages/core/src/index.ts`.
+
+## createPresenceClient
+
+```ts
+import { createPresenceClient } from "@anchor-presence/core";
+```
+
+`createPresenceClient(options)` builds a `PresenceClient`. See [Presence client](/docs/core/presence-client) for the lifecycle, the publish rate, and the heartbeat.
+
+<AutoTypeTable path="../../packages/core/src/internal/types.ts" name="PresenceClientOptions" />
+
+## PresenceClient
+
+The value `createPresenceClient` returns.
+
+<AutoTypeTable path="../../packages/core/src/internal/types.ts" name="PresenceClient" />
+
+## AdaptivePublishOptions
+
+The `adaptivePublish` option's shape. See [Presence client](/docs/core/presence-client#publish-rate) for the watermark behavior.
+
+<AutoTypeTable path="../../packages/core/src/internal/types.ts" name="AdaptivePublishOptions" />
+
+## SchedulerLike
+
+The `scheduler` option's shape, for injecting fake timers in a test.
+
+<AutoTypeTable path="../../packages/core/src/internal/types.ts" name="SchedulerLike" />
+
+## Constants
+
+```ts
+import { DEFAULT_PUBLISH_INTERVAL_MS, DEFAULT_HEARTBEAT_MS } from "@anchor-presence/core";
+```
+
+`DEFAULT_PUBLISH_INTERVAL_MS` is `50`, the default publish interval in milliseconds. `DEFAULT_HEARTBEAT_MS` is `10000`, the default heartbeat interval in milliseconds.
+
+## Related
+
+- [Presence client](/docs/core/presence-client)
+- [Remote presence](/docs/core/remote-presence)
+- [Protocol types](/docs/core/api/protocol)

@@ -1,0 +1,51 @@
+---
+title: usePresenceClient
+description: Create a presence client once and reuse it across renders and Strict Mode remounts.
+---
+
+`usePresenceClient` creates a `PresenceClient` and keeps the same instance across renders, remounts, and React Strict Mode's double-invoke. Use it instead of creating a client directly in a component body or at module scope.
+
+## Basic use
+
+Pass a `factory` that builds the transport, then builds the client with `autoConnect: true`:
+
+```tsx
+import { createPresenceClient } from "@anchor-presence/core";
+import { createWebSocketTransport } from "@anchor-presence/dom";
+import { usePresenceClient } from "@anchor-presence/react";
+
+function App() {
+  const client = usePresenceClient({
+    factory: () => {
+      const transport = createWebSocketTransport({ path: "/?room=main" });
+      return createPresenceClient({ transport, autoConnect: true });
+    },
+  });
+  // client is null until the mount effect runs
+}
+```
+
+The factory owns the transport. Create the transport, then create the client. Either pass `autoConnect: true` so `createPresenceClient` connects the transport for you, or call `transport.connect()` yourself before returning the client. No part of the library connects a transport for you unless you opt in with `autoConnect`.
+
+## Behavior
+
+The hook runs `factory` once per `key`, inside a mount effect, and stores the result in a module-level registry keyed by `key`. The hook returns:
+
+- `null`, on the first render and during server rendering, because the factory has not run yet.
+- The same client instance on every later render, for the same `key`.
+
+A `key` option identifies a client for multi-client setups, such as a second presence room. Two calls with the same `key` resolve to the same client. The hook uses a default key when you omit `key`.
+
+The hook never calls `transport.connect()` itself; the factory owns that call, directly or through `autoConnect: true`. The hook never disposes the client on unmount. A client survives route changes and component remounts until you call `client.dispose()`, which also calls `transport.disconnect()` and removes the `key` entry. The next render after `dispose()` creates a new client.
+
+<Callout type="warn">
+  If a factory creates a transport at module scope instead of inside the factory function, the transport
+  connects once for the whole page. A second `usePresenceClient` call with the same `key` then creates no
+  second connection.
+</Callout>
+
+## Related
+
+- [SSR and Strict Mode](/docs/react/ssr-and-strict-mode)
+- [LiveCursorProvider](/docs/react/live-cursor-provider)
+- [Hooks API](/docs/react/api/hooks)

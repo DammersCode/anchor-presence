@@ -1,0 +1,49 @@
+{
+  "skill_name": "anchor-presence",
+  "notes": "Run each prompt twice in a fresh fixture: with the skill and without it (docs only). Install the packages from `npm pack` tarballs of packages/*; point docs URLs at a local docs server until the site is deployed.",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Add live cursors to this app so my teammates see each other's pointers on the dashboard and orders views. Also show who is online.",
+      "files": [
+        "Fixture: Vite + React 19 + TS; collapsible sidebar (3 links), 3 stat cards (3 columns, 1 under 700px), orders table with 5 rows and a View button per row; no server; user name from src/user.ts."
+      ],
+      "expected_output": "A working integration with a relay in server/, verified with two browser contexts at 1440 px and 900 px.",
+      "expectations": [
+        "The project typechecks and builds.",
+        "The client is created inside usePresenceClient with autoConnect: true, or calls transport.connect() in the factory.",
+        "Every nav link, stat card, table row, and row action has a data-anchor, and each has an anchored parent.",
+        "The relay keeps the shared guard helpers (size cap, rate limit, room name check) and has an entry file that listens.",
+        "User names render as text; no dangerouslySetInnerHTML.",
+        "In the narrow client, [data-anchor-presence-anchor=\"<id>\"] appears over the element the wide client points at."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "We already run Socket.IO for chat in our Next.js app. Add live cursors on the /board page.",
+      "files": [
+        "Fixture: Next.js App Router app with a Socket.IO server in server.ts and a /board page with a grid of cards."
+      ],
+      "expected_output": "A presence event added to the existing Socket.IO server and a client component that uses the Socket.IO transport from the example.",
+      "expectations": [
+        "No second WebSocket server is added.",
+        "The provider lives in a client component; the server component tree is unchanged.",
+        "The Socket.IO transport comes from the example page, not from a package.",
+        "The board cards and their grid have anchors."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Remote cursors show up in the wrong place when my colleague has the sidebar collapsed. Fix it.",
+      "files": [
+        "Fixture: an existing integration where nav items have anchors but the sidebar and main area have no anchored parent."
+      ],
+      "expected_output": "The fix from troubleshooting.md: parent anchors for the sidebar and main regions.",
+      "expectations": [
+        "The agent goes to troubleshooting.md first instead of re-running the integration steps.",
+        "Parent anchors are added; existing anchor IDs are unchanged.",
+        "The agent mentions the anchor-presence-audit skill for layout-wide jump risk."
+      ]
+    }
+  ]
+}

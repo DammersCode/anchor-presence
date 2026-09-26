@@ -1,7 +1,6 @@
 # Anchor Presence — Technical Specification
 
-Version: 1.4
-Status: APPROVED by Advisor (round 2), recommendations applied
+Version: 1.5
 
 ## 1. Purpose
 
@@ -52,7 +51,7 @@ Responsibilities: anchor registry, pointer capture, pointer target resolution, n
 
 ### 3.3 react
 
-Responsibilities: provider component, hooks, anchor registration helpers, SSR safety. React subscribes to core/dom stores with `useSyncExternalStore`. React holds no engine state.
+Responsibilities: provider component, hooks, SSR safety. React subscribes to core/dom stores with `useSyncExternalStore`. React holds no engine state. Anchors are declared in the DOM through the binding's anchor attribute; React has no anchor registration hook.
 
 ## 4. Protocol
 
@@ -60,47 +59,49 @@ Responsibilities: provider component, hooks, anchor registration helpers, SSR sa
 
 ```ts
 type AnchorPoint = {
-  id: string;      // registered semantic anchor ID
-  u: number;       // 0..1 across the anchor, clamped by receiver
-  v: number;       // 0..1 down the anchor, clamped by receiver
+  id: string; // registered semantic anchor ID
+  u: number; // 0..1 across the anchor, clamped by receiver
+  v: number; // 0..1 down the anchor, clamped by receiver
 };
 
 type CursorPosition = {
-  anchors: AnchorPoint[];          // ordered, most specific first
-  viewport?: { u: number; v: number };  // normalized viewport fallback
+  anchors: AnchorPoint[]; // ordered, most specific first
+  viewport?: { u: number; v: number }; // normalized viewport fallback
 };
 
 type CursorPresence<TContext = unknown, TUser = unknown> = {
   version: 1;
-  clientId: string;                // identifies a client INSTANCE (tab/connection), not a user
-  session: string;                 // random per client instance, generated at client creation
-  sequence: number;                // monotonic per (clientId, session)
-  cursor: CursorPosition | null;   // null = pointer left / hidden
-  context?: TContext;              // opaque to core
-  user?: TUser;                    // opaque to core
+  clientId: string; // identifies a client INSTANCE (tab/connection), not a user
+  session: string; // random per client instance, generated at client creation
+  sequence: number; // monotonic per (clientId, session)
+  cursor: CursorPosition | null; // null = pointer left / hidden
+  context?: TContext | null; // opaque to core; `null` = cleared, missing = unchanged
+  user?: TUser | null; // opaque to core; `null` = cleared, missing = unchanged
   pointer?: { type?: "mouse" | "pen" | "touch" };
 };
 ```
 
 Leave messages use `cursor: null`. A separate `{ version: 1, clientId, sequence, type: "leave" }` message is not required; `cursor: null` plus expiry covers departure.
 
+`context` and `user` are delta-encoded on the wire. A missing field means "unchanged since the previous same-session message"; an explicit `null` clears the field. Full publishes (reconnect and heartbeat) include the current values, including `null` for empty fields, so a missed clear is repaired on the next full publish. The receiver normalizes a cleared field to `undefined` in its snapshot. All senders and receivers in a room must understand this encoding; a receiver that does not merge missing fields can lose `context`/`user` values.
+
 ### 4.2 Validation limits
 
 All inbound data is untrusted. The decoder output passes through `validatePresence()` before it reaches the store. Limits (constants in core, overridable by config):
 
-| Field | Rule |
-|---|---|
-| version | must equal 1, else drop |
-| clientId | string, 1–128 chars, else drop |
-| session | string, 1–64 chars, else drop |
-| sequence | finite integer ≥ 0, else drop |
-| anchors | array, max 8 entries, else truncate to 8 |
-| anchor id | string, 1–256 chars, else drop that entry |
-| u, v | finite number, clamp to [0, 1] |
-| viewport u, v | finite number, clamp to [0, 1] |
-| context | max 8 KiB when JSON-encoded, else drop the field |
-| user | max 8 KiB when JSON-encoded, else drop the field |
-| whole message | max 32 KiB encoded, else drop |
+| Field         | Rule                                             |
+| ------------- | ------------------------------------------------ |
+| version       | must equal 1, else drop                          |
+| clientId      | string, 1–128 chars, else drop                   |
+| session       | string, 1–64 chars, else drop                    |
+| sequence      | finite integer ≥ 0, else drop                    |
+| anchors       | array, max 8 entries, else truncate to 8         |
+| anchor id     | string, 1–256 chars, else drop that entry        |
+| u, v          | finite number, clamp to [0, 1]                   |
+| viewport u, v | finite number, clamp to [0, 1]                   |
+| context       | max 8 KiB when JSON-encoded, else drop the field |
+| user          | max 8 KiB when JSON-encoded, else drop the field |
+| whole message | max 32 KiB encoded, else drop                    |
 
 Anchor IDs are opaque map keys. They are never used as CSS selectors, query strings, or code.
 
@@ -114,7 +115,7 @@ Each client keeps one local counter. Every outbound message increments it. The r
 
 1. If the inbound `session` differs from the stored session for that `clientId`, accept the message and reset `lastSequence`. A restart or reconnect gets a new random session, so restarts recover on the first message.
 2. If the session matches and `sequence <= lastSequence`, drop the message.
-3. Otherwise accept and store the new sequence.
+3. Otherwise accept and store the new sequence. For an accepted same-session message, missing `context`/`user` fields inherit the stored values; explicit `null` clears them. A session change starts with no inherited fields.
 
 Wall clocks are not used for ordering. Two live tabs that share a `clientId` have different sessions; rule 1 makes them last-write-wins instead of dropping each other. Note: a shared `clientId` is misuse — it causes visible cursor flapping between the two tabs, not an error.
 
@@ -133,21 +134,25 @@ interface LiveCursorTransport {
   send(data: Uint8Array): Promise<void> | void;
   subscribe(listener: (data: Uint8Array) => void): () => void;
   subscribeStatus?(listener: (status: ConnectionStatus) => void): () => void;
+  getStatus?(): ConnectionStatus;
+  bufferedBytes?(): number;
 }
 ```
 
-Core never imports a transport implementation. The demo ships a small `WebSocketTransport` in the demo app (not in core) as example code. `send` failures are swallowed after a status check; presence is lossy by design. When a transport omits `subscribeStatus`, the client reports a constant `"connected"`. The status union is fixed for protocol v1; consumers can switch exhaustively.
+Core never imports a transport implementation. `@anchor-presence/dom` ships `createWebSocketTransport` for the repository relay; it is a convenience transport, not a core dependency. `send` failures are swallowed after a status check; presence is lossy by design. When a transport omits `subscribeStatus`, the client reports a constant `"connected"`. The status union is fixed for protocol v1; consumers can switch exhaustively.
+
+A transport that implements `subscribeStatus` SHOULD replay its current status to every new subscriber. `getStatus` is optional; when present, the client reads it once at creation for its initial status. Without either signal, the client assumes `"connecting"` until the first status callback — an already-connected transport that never replays would leave the client mute. The client sends only while the status is `"connected"`; `"connecting"`, `"reconnecting"`, and `"disconnected"` block sends. `bufferedBytes` is optional and is used only by the opt-in `adaptivePublish` client option.
 
 ## 6. Codec Abstraction
 
 ```ts
 interface CursorCodec {
   encode(message: CursorPresence): Uint8Array;
-  decode(data: Uint8Array): unknown;   // validated afterwards by core
+  decode(data: Uint8Array): unknown; // validated afterwards by core
 }
 ```
 
-Core ships `jsonCodec` (TextEncoder/TextDecoder + JSON). The decoder returns `unknown`; `validatePresence()` produces a typed message or `null`. Malformed input never throws past the decode boundary.
+Core ships `jsonCodec` (TextEncoder/TextDecoder + JSON) and `binaryCodec` (compact fixed binary layout with JSON payloads for `context` and `user`). The decoder returns `unknown`; `validatePresence()` produces a typed message or `null`. Malformed input never throws past the decode boundary. All clients in a room must use the same codec.
 
 ## 7. Client Orchestration (core)
 
@@ -163,17 +168,23 @@ pointer samples (from dom)         inbound bytes (from transport)
   codec.encode → transport.send      remote presence store → subscribers
 ```
 
-Options: `transport`, `codec` (default json), `clientId` (default: random UUID via injected `idFactory`), `publishIntervalMs` (default 50), `staleTimeoutMs`, `heartbeatMs`, `maxRemoteClients`, `user`, `context` setter. The client generates its `session` value at creation from the same `idFactory`. `clientId` identifies a client instance; applications attach user identity via the `user` field, not the `clientId`.
+Options: `transport`, `codec` (default json), `clientId` (default: random UUID via injected `idFactory`), `publishIntervalMs` (default 50), `staleTimeoutMs`, `heartbeatMs`, `maxRemoteClients`, `user`, `context` setter, `adaptivePublish`. The client generates its `session` value at creation from the same `idFactory`. `clientId` identifies a client instance; applications attach user identity via the `user` field, not the `clientId`. The client clamps `publishIntervalMs` and `heartbeatMs` to at least 1 ms and `staleTimeoutMs` to at least 1000 ms. Outside production (`NODE_ENV !== "production"`), the client warns on `console` when the outbound `context` or `user` exceeds `maxFieldBytes` or the encoded message exceeds `maxMessageBytes`; the check runs when `context`/`user` changes, not per message.
+
+`updateLocalCursor(cursor, pointer?)` records the latest local cursor; the optional second argument (`{ type?: "mouse" | "pen" | "touch" }`) is kept until replaced and sent as the `pointer` wire field. `getContext()` and `getUser()` return the current outbound values; `setContext()` and `setUser()` replace them and trigger a publish, as does every transition into `"connected"` (so a reconnect republishes the latest state without waiting for a pointer move). A failed send re-arms the publish timer.
 
 The client ignores inbound messages whose `clientId` equals its own, so broadcast relays that loop messages back are safe. The stale sweep runs on a client-owned timer at `staleTimeoutMs / 2`.
 
-`client.dispose()` is part of the public API. It stops timers, unsubscribes from the transport, and (via the dom layer) removes document listeners, observers, and any pending animation frame. Every layer's setup function returns or registers its teardown with the client.
+`client.dispose()` is part of the public API. It sends a best-effort `cursor: null` leave message while the status allows it, stops timers, unsubscribes from the transport, and (via the dom layer) removes document listeners, observers, and any pending animation frame. Status listeners receive a final `"disconnected"` before they are cleared. Every layer's setup function returns or registers its teardown with the client. `registerTeardown(fn)` returns an unregister function; called on an already-disposed client, it runs `fn` immediately and returns a no-op.
 
 The publisher keeps only the latest local state. It sends at most one message per interval. It never queues stale positions. Timers are injected (`setTimeout`/`clearTimeout`-shaped scheduler interface) so tests run without real time.
 
+`adaptivePublish` is optional and active only when the transport implements `bufferedBytes()`. It steps the publish interval to a slower interval when the reported buffer reaches `highWatermarkBytes` (default 64 KiB) and returns to the normal interval at `lowWatermarkBytes` (default half of the high watermark). Defaults: `slowPublishIntervalMs = max(publishIntervalMs * 4, 100)`. Heartbeats keep their own schedule.
+
 The remote store exposes `getSnapshot()` and `subscribe(listener)`. Snapshots are immutable objects, so `useSyncExternalStore` works without tearing.
 
-## 8. Anchor Registry (dom)
+## 8. Anchor Registry and Auto-Registration (dom)
+
+`createDomBinding` owns an internal `AnchorRegistry` and always watches the DOM for anchor elements.
 
 ```ts
 interface AnchorRegistry {
@@ -184,23 +195,51 @@ interface AnchorRegistry {
 }
 ```
 
-Rules:
+The registry is an internal implementation detail. It is not part of the public `DomBinding` surface.
+
+Public binding configuration:
+
+```ts
+type DomBindingOptions = {
+  anchorAttribute?: string; // default "data-anchor"
+  maxAnchors?: number; // default 4, clamped to 1..8
+  resolution?: ResolutionOptions;
+  environment?: EnvironmentOptions;
+};
+```
+
+Auto-registration rules:
+
+- The binding scans `environment.root` (default `document`) at creation.
+- It observes `childList`, `subtree`, and attribute changes for `anchorAttribute`.
+- An element is registered when its configured attribute has a non-empty value after trimming.
+- The attribute value is the anchor ID.
+- Attribute changes re-register the element under the new ID.
+- Attribute removal or element removal unregisters the element.
+- Empty or whitespace-only values are ignored and warn once in development.
+- No generated IDs are created.
+
+Registry rules:
 
 - `register` returns an unregister function. Unregister removes the entry only if it still points at the same element.
-- Duplicate registration of one ID with a different element: the new element wins, and a `console.warn` fires in development builds. This makes remount-before-unmount (React strict mode, virtualized lists) deterministic.
+- Duplicate registration of one ID with a different element: the new element wins, and one `console.warn` fires per anchor ID per binding in development builds. This makes remount-before-unmount (React strict mode, virtualized lists) deterministic.
 - A stale entry (element no longer connected) reads as absent: `get` returns `null` when `element.isConnected` is false.
 - Lookup is `Map<string, Element>` plus a reverse `WeakMap<Element, string>` for ancestor walks. The reverse map can hold a stale entry after a new-element-wins replacement, so `ancestors()` cross-checks the forward map (`map.get(id) === element`) before it reports an entry.
 
 ## 9. Pointer Capture and Target Resolution (dom)
 
-On `pointermove` (and `pointerdown`, `pointerenter`):
+On `pointermove` (and `pointerdown`, `pointerover`):
 
 1. Read the event target. Inside shadow roots, use `event.composedPath()[0]` when available.
 2. Walk up through ancestors (crossing shadow boundaries via `host`) and collect registered anchors, innermost first.
-3. Build the fallback chain: up to `maxAnchors` (default 4) anchors, most specific first.
+3. Build the fallback chain: up to `maxAnchors` (default 4, clamped to 1 through 8) anchors, most specific first.
 4. For each anchor, compute `u = (clientX - rect.left) / rect.width`, same for `v`. Zero-size rects are skipped.
 5. Compute viewport fallback: `u = clientX / innerWidth`, `v = clientY / innerHeight`.
-6. Hand the sample to the core client.
+6. Hand the sample to the core client, together with the pointer type (`event.pointerType`, when it is `mouse`, `pen`, or `touch`). The client keeps the latest pointer type and sends it as the wire `pointer` field.
+
+The capture uses `pointerover`, not `pointerenter`: enter events do not bubble, so a document listener never receives one with an Element target.
+
+The dom layer uses an internal default of `4` sent anchors. `DomBindingOptions.maxAnchors` clamps consumer values to `1` through `8`. Core's `DEFAULT_MAX_ANCHORS` (8, the inbound validation cap from section 4.2) remains the protocol limit.
 
 On `pointerleave` of the document and on `blur` of the window: publish `cursor: null`.
 
@@ -231,7 +270,7 @@ Resolved output per cursor:
 ```ts
 type ResolvedCursor<TContext, TUser> = {
   clientId: string;
-  x: number;               // receiver viewport px
+  x: number; // receiver viewport px
   y: number;
   visible: boolean;
   pointVisible: boolean;
@@ -272,7 +311,8 @@ Invalidation signals:
 - `window` `resize` → invalidate
 - `scroll` on `window` and on scrollable ancestors: one capture-phase document scroll listener (`{ capture: true, passive: true }`) → invalidate
 - `ResizeObserver` on each active anchor element and on `document.documentElement` → invalidate
-- one `MutationObserver` on `document.body` (`childList`, `attributes`, `subtree`) → invalidate. This catches signal-less moves: sibling insertion or removal, instant class toggles, transform changes. The callback only sets a dirty flag, so DOM churn costs one coalesced rAF pass per frame.
+- one `MutationObserver` on `document.body` (`childList`, `attributes`, `subtree`), or on `document.documentElement` when `body` does not exist yet → invalidate. This catches signal-less moves: sibling insertion or removal, instant class toggles, transform changes. The callback only sets a dirty flag, so DOM churn costs one coalesced rAF pass per frame.
+- open shadow roots of active anchors: document-level scroll and mutation signals stop at shadow boundaries, so the scheduler attaches a capture-phase scroll listener and a `MutationObserver` (same options) to each shadow root in an active anchor's chain → invalidate. Roots are re-collected as the active anchor set changes.
 - anchor register/unregister → invalidate
 - new remote presence data → invalidate
 - CSS transition and animation tracking (below)
@@ -282,7 +322,7 @@ ResizeObserver alone is insufficient: an element can move without resizing. Scro
 
 Transition tracking: document-level capture listeners for `transitionrun`, `transitionend`, `transitioncancel`, `animationstart`, `animationend`, `animationcancel`. Each start event opens a tracked entry keyed by target and name, and starts continuous rAF invalidation. An entry closes on its end or cancel event, or on a safety timeout of computed `duration + delay + 500 ms`, capped at 10 s. An animation with `animation-iteration-count: infinite` gets one short window (500 ms) instead of a tracked entry, so spinners cannot pin the rAF loop. When the last entry closes and every interpolator is settled, the rAF loop stops.
 
-Idle behavior: with no active remote cursors, no rAF loop runs and every scheduler signal disconnects (transition listeners, MutationObserver, scroll and resize listeners, ResizeObservers). The scheduler is event-driven, not polling.
+Idle behavior: with no active remote cursors, no rAF loop runs and every scheduler signal disconnects (transition listeners, MutationObservers, shadow-root observers, scroll and resize listeners, ResizeObservers). The scheduler is event-driven, not polling.
 
 ## 12. UI Context
 
@@ -299,17 +339,19 @@ Interpolation runs after resolution, on receiver-local x/y:
 ```ts
 interface Interpolator {
   target(x: number, y: number, timestampMs: number): void;
-  shift(dx: number, dy: number): void;  // move current AND target by a delta, no easing
+  shift(dx: number, dy: number): void; // move current AND target by a delta, no easing
   sample(timestampMs: number): { x: number; y: number; settled: boolean };
 }
 type InterpolatorFactory = () => Interpolator;
 ```
 
-Ships: `none` and `linear` (fixed-duration ease toward target, default 80 ms). Spring/spline are future factories behind the same interface. While any interpolator is unsettled, the scheduler runs a rAF loop; when all are settled, it stops. Interpolation frames reuse cached bounding and client rects from the last read phase. A re-measure happens only when an invalidation arrived. Raw sender coordinates are never interpolated.
+Ships: `noneInterpolator` and `linearInterpolator` (fixed-duration ease toward target, default 80 ms), both exported from core and passed as `resolution.interpolatorFactory`. Spring/spline are future factories behind the same interface. While any interpolator is unsettled, the scheduler runs a rAF loop; when all are settled, it stops. Interpolation frames reuse cached bounding and client rects from the last read phase. A re-measure happens only when an invalidation arrived. Raw sender coordinates are never interpolated.
 
 When a resolved position changes because of a local-only invalidation (scroll, resize, mutation) with no new network data for that cursor, the scheduler calls `shift(dx, dy)` with the position delta. Current and target move together, so an in-flight ease continues instead of truncating, and the cursor tracks its anchor rigidly during local scrolling.
 
-Interpolation is applied in the dom layer's resolved snapshot, so all adapters get smoothed values for free; `interpolator: none` gives raw resolved values.
+Interpolation is applied in the dom layer's resolved snapshot, so all adapters get smoothed values for free; `resolution.interpolatorFactory: noneInterpolator` gives raw resolved values.
+
+The resolver keeps one interpolator instance per remote `clientId` and prunes it when that client leaves. It also keeps output identity: a resolved cursor whose fields did not change keeps its object across passes, and a pass in which no cursor changed returns the previous array. Consumers can compare snapshots and cursors by reference.
 
 ## 14. React Adapter
 
@@ -319,17 +361,18 @@ Interpolation is applied in the dom layer's resolved snapshot, so all adapters g
 
 Hooks:
 
-| Hook | Returns |
-|---|---|
-| `useCursorAnchor(id)` | ref callback that registers/unregisters the element |
-| `useRemoteCursors()` | `ResolvedCursor[]` snapshot (useSyncExternalStore) |
-| `useRemoteCursorsSelector(select, isEqual?)` | a value derived from the snapshot, recomputed per frame |
-| `useCursorPresence()` | raw remote `CursorPresence[]` |
-| `useCursorStatus()` | `ConnectionStatus` |
-| `useCursorClient()` | the client instance |
-| `useCursorContext()` | `[context, setContext]` |
+| Hook                                         | Returns                                                                                              |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `usePresenceClient({ factory, key? })`       | a stable `PresenceClient` per `key`, or `null` before the mount effect runs (page-lifetime registry) |
+| `useRemoteUsers()`                           | one entry per remote client: `clientId`, `user`, and `session`                                       |
+| `useRemoteCursors()`                         | `ResolvedCursor[]` snapshot (useSyncExternalStore)                                                   |
+| `useRemoteCursorsSelector(select, isEqual?)` | a value derived from the snapshot, recomputed per frame                                              |
+| `useCursorPresence()`                        | raw remote `CursorPresence[]`                                                                        |
+| `useCursorStatus()`                          | `ConnectionStatus`                                                                                   |
+| `useCursorClient()`                          | the client instance                                                                                  |
+| `useCursorContext()`                         | `[context, setContext]`                                                                              |
 
-`useCursorAnchor` returns a stable ref callback; on element change it unregisters the old element and registers the new one. Cursor movement updates flow only to components using `useRemoteCursors`; the provider never rerenders the app tree per cursor frame.
+Anchors are declared in the DOM with the binding's anchor attribute. Cursor movement updates flow only to components using `useRemoteCursors`; the provider never rerenders the app tree per cursor frame.
 
 `useRemoteCursorsSelector` narrows that flow further. It applies `select` to each snapshot and rerenders the component only when `isEqual` reports the selected value changed. `isEqual` defaults to `Object.is`. When the value is equal, the hook returns the previous reference, so a derived array or set keeps its identity. The server snapshot is `select([])`, computed once. The caller must keep `select` and `isEqual` stable across renders, for example with `useCallback` or a module-level function.
 
@@ -339,7 +382,7 @@ SSR: the client is created by the consumer in browser-only code, or the provider
 
 `@anchor-presence/react` exports `CursorLayer` and `DefaultCursor`. Both are optional. A consumer can render remote cursors with `useRemoteCursors` directly instead, per Invariant 9.
 
-`CursorLayer` calls `useRemoteCursorsSelector` once, with a selector that keeps the visible, unfiltered cursors. The selection compares element by element, so an unchanged list keeps its identity. For each selected cursor, `CursorLayer` renders one package-owned root `div`. The root style sets `position: fixed`, `left: 0`, `top: 0`, `pointerEvents: "none"`, and a `transform` from the resolved coordinates. The root carries `aria-hidden="true"` and four stable data attributes: `data-anchor-presence-cursor`, `data-anchor-presence-client-id`, `data-anchor-presence-tier`, and `data-anchor-presence-anchor` (empty string when `anchorId` is `null`).
+`CursorLayer` calls `useRemoteCursorsSelector` once, with a selector that keeps the visible, unfiltered cursors. The resolver already keeps unchanged cursors' identity (section 13), and the selection compares element by element, so a list whose visible cursors did not change keeps its identity. For each selected cursor, `CursorLayer` renders one package-owned root `div`. The root style sets `position: fixed`, `left: 0`, `top: 0`, `pointerEvents: "none"`, and a `transform` from the resolved coordinates. The root carries `aria-hidden="true"` and four stable data attributes: `data-anchor-presence-cursor`, `data-anchor-presence-client-id`, `data-anchor-presence-tier`, and `data-anchor-presence-anchor` (empty string when `anchorId` is `null`).
 
 ```ts
 type CursorLayerProps<TContext = unknown, TUser = unknown> = {
@@ -363,7 +406,7 @@ Visual configuration lives on `CursorLayer` props only. `LiveCursorProvider` nev
 
 ## 15. Demo
 
-- `apps/server`: Bun WebSocket relay. Broadcasts every binary message to all other sockets in the same room. No message inspection. ~50 lines.
+- `apps/server`: Bun WebSocket relay. Broadcasts size- and rate-bounded binary messages to the other sockets in the same room, enforces a per-room socket cap, and performs no message inspection.
 - `apps/demo`: Vite + React + Tailwind + shadcn-style admin dashboard (sidebar, topbar, stat cards, data table, settings dialog). Dozens of registered anchors (`nav.dashboard`, `stats.revenue`, `orders.row:17.actions`, ...). A collapsible sidebar and responsive grid demonstrate cross-layout correctness: open two windows at different sizes and sidebar states. Cursor renderer is demo code (colored SVG cursor + name label) built on the package `CursorLayer`, proving Invariant 9.
 
 ## 16. Performance Budgets
@@ -372,6 +415,9 @@ Visual configuration lives on `CursorLayer` props only. `LiveCursorProvider` nev
 - Each active anchor measured at most once per frame.
 - 100 cursors over 20 distinct anchors: one snapshot object per frame, < 2 ms scripting per pass on a mid-range laptop (benchmark, not test-gated).
 - Publishing rate default 20 Hz, configurable.
+- `context`/`user` are delta-encoded; full reconnect/heartbeat publishes carry the current values, including explicit `null` for empty fields.
+- The optional `adaptivePublish` client option slows the publish rate when `transport.bufferedBytes()` reports a growing send buffer.
+- Relay fan-out remains `senders × receivers` in a room. Relay-side rate limits, message caps, authentication, and horizontal scale are server concerns, not library transport concerns.
 - Benchmark scenarios (scripted page in the demo app): 1/10/50/100 cursors × 10/100/1000 anchors, resize storm, nested scroll.
 
 ## 17. Testing
@@ -379,7 +425,8 @@ Visual configuration lives on `CursorLayer` props only. `LiveCursorProvider` nev
 - Core (vitest, node env): validation table, clamping, sequencing incl. session change, expiry with fake timers, publisher rate limiting, codec round-trip, malformed decode, duplicate clientId, client cap.
 - Dom (vitest, jsdom): registry mount/unmount/remount/duplicates/stale, normalization math, fallback chain order, resolver tiers, zero-size skip, scheduler batching (mock rAF), listener/observer cleanup.
 - React (vitest, jsdom): anchor hook lifecycle incl. strict mode double-mount, useSyncExternalStore snapshots, SSR render without DOM, no-rerender guarantee for non-subscribing components.
-- Cross-layout (Playwright, Chromium + Firefox + WebKit): two pages against one relay with different viewport sizes (1280×720 vs 1920×1080), sidebar expanded vs collapsed, flex wrapping (narrow vs wide), different element sizes (u/v proportionality asserted ±2 px), dialog open vs closed with a context policy, receiver-scroll repositioning without new packets (Invariant 7).
+- E2E (Playwright) runs against `apps/demo` and the reference relay (`apps/server`). One suite runs in all three browsers (Chromium, Firefox, WebKit), no `test.skip` guard: `e2e/cross-layout.spec.ts` — two pages against one relay with different viewport sizes (1280×720 vs 1920×1080), asserting u/v proportionality (±2 px) and the core cross-layout resolution invariant.
+- The rest of the suite runs Chromium-only (each file's `test.skip(({ browserName }) => browserName !== "chromium", ...)` guard): `e2e/cross-layout-chromium.spec.ts` (sidebar expanded vs collapsed, flex wrapping, receiver-scroll repositioning without new packets — Invariant 7, dialog-context policy, reload recovery, a custom spring interpolator, pointer-leave hiding), `e2e/occlusion.spec.ts` (clipped-anchor hiding, cross-layout precision grid), `e2e/perf.spec.ts` and `e2e/reflow-perf.spec.ts` (performance budgets, timing-sensitive), and `e2e/resilience.spec.ts` (in-place relay socket drop and reconnect through the real transport backoff; room isolation) — these rely on Chromium-specific APIs (`page.routeWebSocket`) or would triple CI time for no added coverage.
 
 ## 18. Tooling
 

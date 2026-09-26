@@ -33,7 +33,10 @@ export function TableRow({
 export function TableHead({ className, ...props }: ThHTMLAttributes<HTMLTableCellElement>) {
   return (
     <th
-      className={cn("px-4 py-2 text-left text-xs font-medium uppercase tracking-wide text-gray-500", className)}
+      className={cn(
+        "px-4 py-2 text-left text-xs font-medium uppercase tracking-wide text-gray-500",
+        className,
+      )}
       {...props}
     />
   );

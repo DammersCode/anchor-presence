@@ -1,0 +1,44 @@
+---
+title: Anchor registration
+description: How an element becomes an anchor, the data-anchor attribute, and duplicate IDs.
+---
+
+An anchor is a DOM element the binding can measure and resolve cursors against. The binding registers and unregisters anchors on its own: an application never calls a register function directly.
+
+## The anchor attribute
+
+An element becomes an anchor the moment it has a non-empty value for the configured attribute. The default attribute is `data-anchor`:
+
+```html
+<button data-anchor="nav.dashboard">Dashboard</button>
+```
+
+Set `anchorAttribute` in `DomBindingOptions` to use a different attribute name. The name must be a valid DOM attribute: letters and digits, with an optional hyphen between groups.
+
+## Auto-registration
+
+The binding watches the document with a `MutationObserver`, scoped to the `environment.root` you pass, or the global `document` by default. The observer tracks:
+
+- New elements added anywhere under the root, including nested elements with the anchor attribute.
+- Removed elements, which unregister their anchor.
+- Changes to the anchor attribute's value on an existing element.
+
+No manual registration or cleanup call is needed. A framework that mounts and unmounts elements, such as React, keeps the anchor map in sync through this observer alone.
+
+## Empty values
+
+A blank or whitespace-only attribute value does not register an anchor. The binding logs one development-mode warning per element the first time this happens, then stays silent for that element.
+
+## Duplicate IDs
+
+If two elements register the same anchor ID, the newest registration wins. The registry logs one development-mode warning per duplicate ID. This keeps a remount-before-unmount case deterministic, for example React Strict Mode or a virtualized list that swaps rows.
+
+## Shadow DOM
+
+The anchor ancestor walk crosses open shadow boundaries. An anchor inside a shadow root still resolves as an ancestor of a pointer target in that shadow tree.
+
+## Related
+
+- [Binding](/docs/dom/binding)
+- [Pointer capture](/docs/dom/pointer-capture)
+- [Anchors](/docs/get-started/concepts/anchors)

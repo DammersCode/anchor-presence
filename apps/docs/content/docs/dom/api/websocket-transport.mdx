@@ -1,0 +1,28 @@
+---
+title: WebSocket transport API
+description: createWebSocketTransport, WebSocketTransport, and WebSocketTransportOptions.
+---
+
+Full type reference for `createWebSocketTransport`. See [WebSocket transport](/docs/dom/websocket-transport) for the guide.
+
+```ts
+import { createWebSocketTransport } from "@anchor-presence/dom";
+import type { WebSocketTransport, WebSocketTransportOptions } from "@anchor-presence/dom";
+```
+
+## createWebSocketTransport
+
+`createWebSocketTransport(options?)` returns a `WebSocketTransport`: a `LiveCursorTransport` from `@anchor-presence/core` whose `connect` and `disconnect` methods are always present, not optional.
+
+## WebSocketTransportOptions
+
+<AutoTypeTable path="../../packages/dom/src/transport.ts" name="WebSocketTransportOptions" />
+
+## WebSocketCtor
+
+`WebSocketCtor` overrides the WebSocket constructor the transport uses, and defaults to `globalThis.WebSocket`. It exists so a test can supply a fake `WebSocketLike` implementation without touching the real network stack.
+
+## Related
+
+- [WebSocket transport](/docs/dom/websocket-transport)
+- [Transports](/docs/core/transports)

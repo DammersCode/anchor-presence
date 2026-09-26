@@ -1,0 +1,72 @@
+---
+title: Integration skill
+description: The agent skill that wires anchor-presence live cursors into a React app, or fixes a broken one.
+---
+
+The integration skill teaches a coding agent to add Anchor Presence to your app, or to fix live cursors that already misbehave. Install it and ask your agent to add live cursors, or to fix a cursor problem; the skill takes it from there.
+
+## What it does
+
+The agent reads your code and picks a transport that fits your stack. It installs the three packages and wires up a provider, a cursor layer, and anchors on the elements users point at. It ends by running two clients side by side, to confirm a cursor lands on the same element at two viewport widths. For a broken integration, the agent skips straight to the matching fix in its troubleshooting list.
+
+## When to reach for it
+
+| Situation                                                          |                         Reach for it                         |
+| ------------------------------------------------------------------ | :----------------------------------------------------------: |
+| Adding live cursors, multiplayer presence, or a who-is-online list |                             Yes                              |
+| Choosing anchor IDs for a component                                |                             Yes                              |
+| A remote cursor drifts, vanishes, or lands on the wrong element    |                             Yes                              |
+| Designing a new relay protocol from scratch                        |   No — see [Custom transport](/docs/core/custom-transport)   |
+| Auditing a layout for cursor-jump risk before shipping             | No — use the [layout audit skill](/docs/skills/layout-audit) |
+
+## Prerequisites
+
+| Requirement         | Detail                                                                                                |
+| ------------------- | ----------------------------------------------------------------------------------------------------- |
+| React               | Version 18 or later                                                                                   |
+| Rendering           | Client components for the provider; server components stay untouched                                  |
+| A real-time channel | An existing one (Socket.IO, SignalR, a WebSocket server) or none — the skill picks a relay either way |
+| Package manager     | Whichever the project already uses; the skill matches it                                              |
+
+## What it asks you
+
+| Question                                               | Options                                                                  | Default                            |
+| ------------------------------------------------------ | ------------------------------------------------------------------------ | ---------------------------------- |
+| Which views get live cursors?                          | Any set of routes or components                                          | Asked; the code cannot answer this |
+| Where does a relay run, when the project has none yet? | Bun, Node (Express, Fastify, `http`), Hono, Elysia, or a managed service | Asked; the code cannot answer this |
+
+Everything else comes from your code. The skill adds a who-is-online list only when you ask for one.
+
+## How it works
+
+1. **Survey.** The agent reads the project for its package manager, React version, framework, existing real-time channel, and where the user's display name comes from.
+2. **Pick a transport.** It matches your setup to a transport and relay, for example a Socket.IO server or a plain WebSocket relay on Bun.
+3. **Install.** It runs the install command for your package manager, plus any relay dependency.
+4. **Wire up the client.** It adds `usePresenceClient`, `LiveCursorProvider`, and `CursorLayer` to a client component.
+5. **Mark anchors.** It adds `data-anchor` to navigation items, cards, table rows, dialog controls, and every other element a user would point at, plus a parent anchor for each.
+6. **Scope with context, when needed.** For an app with several pages, tabs, or dialogs, it publishes the current state as context and hides cursors from the wrong state.
+7. **Verify.** It runs the project's typecheck and build, then drives two clients at different viewport widths to confirm a cursor lands on the same element in both.
+
+## Common questions
+
+**Does it touch my server code?** Only when your project has no real-time channel yet. Then it adds a small relay in the location you choose. With an existing channel, it adds one presence event or route to it.
+
+**Will it read or send my data?** The skill reads your code and fetches these docs as Markdown. The library sends no screen coordinates: each message holds an anchor ID and a normalized offset, and your own channel carries it.
+
+**What if my project has no React yet?** The skill assumes React 18 or later. For a non-React DOM app, wire `@anchor-presence/dom` directly; see [DOM](/docs/dom).
+
+**Can it fix a cursor that jumps instead of gliding?** Yes, but check [reduced motion](/docs/dom/motion) first: a jumping cursor there is the intended behavior for a user with that system setting.
+
+## It's working if
+
+- The provider wraps every target view and the project typechecks.
+- Every navigation item, card, table row, row action, dialog, and primary control in the target views has an anchor, and every anchor has a marked parent.
+- A cursor on an anchored element in a wide client shows up on the same element in a narrow client, at a different pixel position.
+- `useCursorStatus()` reports `connected`, not `connecting`, once the transport is live.
+
+## Where it fits
+
+- [Layout audit skill](/docs/skills/layout-audit): run it after this skill wires up anchors, to catch cursor jumps between layouts before you ship.
+- [Quick start](/docs/get-started/quick-start): the same steps, written for a human doing them by hand.
+- [Troubleshooting](/docs/get-started/guides/troubleshooting): the same fixes the skill applies to a broken integration, for a human.
+- [Designing layouts for presence](/docs/get-started/guides/layout-design): the rules behind anchor placement.

@@ -1,0 +1,22 @@
+{
+  "baseUrl": "http://localhost:3000",
+  "anchorAttribute": "data-anchor",
+  "adjacencyPx": 24,
+  "maxAnchors": 4,
+  "routes": ["/", "/orders"],
+  "viewports": [390, 768, 1280, 1440],
+  "states": {
+    "default": [],
+    "sidebar-collapsed": [{ "click": "button[aria-label='Collapse sidebar']" }, { "wait": 300 }]
+  },
+  "views": [
+    {
+      "page": "/orders",
+      "name": "mobile route",
+      "url": "/m/orders",
+      "width": 390,
+      "height": 844,
+      "steps": [{ "wait": "[data-anchor='orders']" }]
+    }
+  ]
+}

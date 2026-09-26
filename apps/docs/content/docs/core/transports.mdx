@@ -1,0 +1,59 @@
+---
+title: Transports
+description: The LiveCursorTransport contract, connect and disconnect ownership, and connection status.
+---
+
+A transport is the byte channel between a presence client and the network. `@anchor-presence/core` imports no transport library. You supply a transport that implements `LiveCursorTransport`.
+
+## The LiveCursorTransport interface
+
+```ts
+import type { LiveCursorTransport, ConnectionStatus } from "@anchor-presence/core";
+
+interface LiveCursorTransport {
+  connect?(): Promise<void> | void;
+  disconnect?(): Promise<void> | void;
+  send(data: Uint8Array): Promise<void> | void;
+  subscribe(listener: (data: Uint8Array) => void): () => void;
+  subscribeStatus?(listener: (status: ConnectionStatus) => void): () => void;
+  getStatus?(): ConnectionStatus;
+  bufferedBytes?(): number;
+}
+
+type ConnectionStatus = "connecting" | "connected" | "reconnecting" | "disconnected";
+```
+
+Pass a transport instance to `createPresenceClient`:
+
+```ts
+import { createPresenceClient } from "@anchor-presence/core";
+
+const client = createPresenceClient({ transport: myTransport });
+```
+
+## Connect and disconnect ownership
+
+`connect` and `disconnect` are optional. By default, the client never calls `connect` for you. Call it yourself after you build the transport, before or after you pass it to `createPresenceClient`. Pass `autoConnect: true` to have the client call `connect()` for you, once, during creation. See [Presence client](/docs/core/presence-client#connecting-the-transport) for both modes.
+
+`client.dispose()` calls `transport.disconnect()` when the transport provides one, in both modes. A throwing `disconnect` does not stop `dispose` from finishing its other cleanup.
+
+`send` receives already-encoded bytes. The client calls `codec.encode()` before it calls `send`. A `send` failure must not throw past the transport boundary in a way that crashes the app: the client catches send errors and treats presence as lossy by design.
+
+`subscribe` receives already-encoded bytes from the wire. The client calls `codec.decode()` and `validatePresence()` after your listener fires.
+
+## Connection status
+
+`subscribeStatus` and `getStatus` are optional. When a transport omits both, the client reports a constant `"connected"` status.
+
+Replay the current status to every new subscriber inside `subscribeStatus`. Without a replay, a client that subscribes after the connection opened never learns that it can send.
+
+The client reads `getStatus()` once at creation for its initial status. Without `getStatus`, the client starts at `"connecting"` until the first status callback arrives.
+
+`bufferedBytes` is optional. It reports the bytes a transport currently has queued. The client uses it only for the opt-in `adaptivePublish` option on [Presence client](/docs/core/presence-client).
+
+## Related
+
+- [In-memory transport](/docs/core/in-memory-transport)
+- [Custom transport](/docs/core/custom-transport)
+- [WebSocket transport](/docs/dom/websocket-transport)
+- [Backends](/docs/examples/backends)

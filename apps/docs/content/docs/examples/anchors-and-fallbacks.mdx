@@ -1,0 +1,35 @@
+---
+title: Anchors and fallbacks
+description: Mark a button, its row, the table, and the page, and watch the cursor fall back when one is missing.
+---
+
+A receiver often shows less than the sender. A filter can remove a row, and a small screen can drop an action column. If you anchor one element per level, the cursor falls back to the nearest ancestor that exists. In this demo, the wide pane shows 8 orders with refund buttons. The narrow pane shows 4 orders and no buttons.
+
+<ExamplePreview scene="fallbacks" />
+
+## What's in the demo
+
+- A refund button sends four anchors, most specific first: `orders.row:1042.refund`, `orders.row:1042`, `orders`, and `shop`.
+- Order 1042 exists in the narrow pane, but its button does not. The cursor falls back one level to the row. The status bar shows "fallback +1", and a dashed outline marks the row.
+- Order 1046 does not exist in the narrow pane. The cursor falls back two levels to the table.
+- Turn off "Show orders" in the narrow pane. The table disappears, and the cursor falls back to the page anchor `shop`.
+
+## Code
+
+The scene of this demo:
+
+<CodeFromSource docs="components/examples/fallbacks.tsx" lang="tsx" />
+
+Give a row a stable ID from its own data, never from its render index. An index-based ID points to a different order when the list has a different sort or filter on each client.
+
+## Behavior reference
+
+- [Fallback chains](/docs/get-started/concepts/fallback-chain#fallback-chains): how the sender builds the chain, and how the receiver walks it.
+- [Viewport fallback](/docs/get-started/concepts/fallback-chain#viewport-fallback): what happens when no anchor in the chain exists.
+- [The three tiers](/docs/dom/resolution#the-three-tiers): `anchor`, `viewport`, and `hidden`.
+- [What is sent](/docs/dom/pointer-capture#what-is-sent): the anchors that the binding puts in one cursor update.
+
+## Related
+
+- [Occlusion and scroll containers](/docs/examples/occlusion-and-scroll-containers): an anchor that exists, but is out of view.
+- [Table and cards](/docs/examples/table-and-cards): all fields exist in both layouts.

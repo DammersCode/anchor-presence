@@ -1,0 +1,48 @@
+---
+title: Validation
+description: validatePresence, ValidationLimits, and the boundary between a codec and the store.
+---
+
+`validatePresence` turns an untrusted decoded value into a `CursorPresence` or `null`. Every codec's `decode` output passes through it before the value reaches the store.
+
+## The validation boundary
+
+```ts
+const decoded = codec.decode(bytes); // unknown
+const presence = validatePresence(decoded); // CursorPresence | null
+if (presence === null) return; // dropped
+```
+
+A codec never needs to write validation logic of its own. Its only job is turning bytes into a value and back, safely. `validatePresence` is the one place that checks a decoded value against the protocol's limits, clamps anchor and viewport coordinates into `0` to `1`, and never throws.
+
+## Using validatePresence directly
+
+`createPresenceClient` calls `validatePresence` for you on every inbound message. Call it directly only when you process presence data outside a `PresenceClient`, such as on a relay that inspects messages.
+
+```ts
+import { validatePresence } from "@anchor-presence/core";
+
+const presence = validatePresence(decoded);
+if (presence !== null) {
+  // presence is a well-formed CursorPresence
+}
+```
+
+## ValidationLimits
+
+`ValidationLimits` overrides one or more of the default limits. Omit a field to keep its default. See [Security](/docs/get-started/guides/security) for the full limits table and the rule each field enforces.
+
+Pass limits directly to `validatePresence`, or through `validationLimits` on `createPresenceClient`:
+
+```ts
+const client = createPresenceClient({
+  transport: myTransport,
+  validationLimits: { maxAnchors: 4 },
+});
+```
+
+## Related
+
+- [Remote presence](/docs/core/remote-presence)
+- [Security](/docs/get-started/guides/security)
+- [Protocol types](/docs/core/api/protocol)

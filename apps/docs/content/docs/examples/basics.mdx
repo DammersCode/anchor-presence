@@ -1,0 +1,38 @@
+---
+title: Basics
+description: The smallest setup that shows a remote cursor on the same button in two layouts.
+---
+
+A live cursor needs three things: a client, a provider, and at least one anchor. In this demo, the same three buttons sit in a row in the wide pane and in a column in the narrow pane. A cursor on a button in one pane lands on the same button in the other pane.
+
+<ExamplePreview scene="basics" />
+
+## What's in the demo
+
+- `data-anchor` on each button: `post.save`, `post.preview`, and `post.publish`.
+- `data-anchor="post"` on the card. A point in the gap between two buttons resolves to the card, not to the viewport.
+- The status bar under each pane shows the tier and the anchor of the remote cursor.
+- Move your pointer over a button in one pane. The other pane shows your cursor on the same button, at a different position.
+
+## Code
+
+Install the packages:
+
+<InstallCommand />
+
+The scene of this demo:
+
+<CodeFromSource docs="components/examples/basics.tsx" lang="tsx" />
+
+The preview gives the scene a `client` on a `BroadcastChannel` transport, so the two panes can talk without a relay. It also passes its status bar as `children`. In your app, create the client with `usePresenceClient` and a real transport. See [Quick start](/docs/get-started/quick-start).
+
+## Behavior reference
+
+- [Anchors](/docs/get-started/concepts/anchors): what an anchor ID is, and how `u` and `v` place the cursor inside it.
+- [The anchor attribute](/docs/dom/anchor-registration#the-anchor-attribute): how the binding finds anchors without a registration call.
+- [CursorLayer](/docs/react/cursor-layer): which cursors the layer renders, and where.
+
+## Related
+
+- [Responsive grid](/docs/examples/responsive-grid): the same idea with cards of different sizes.
+- [Anchors and fallbacks](/docs/examples/anchors-and-fallbacks): what happens when an anchor is missing.

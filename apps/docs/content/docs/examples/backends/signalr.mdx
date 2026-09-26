@@ -1,0 +1,87 @@
+---
+title: SignalR
+description: An ASP.NET Core SignalR hub and a shipped client transport.
+---
+
+`examples/signalr` runs the demo over an ASP.NET Core SignalR hub instead of a WebSocket relay. The hub is a dumb relay, same as the Socket.IO example: it forwards one method call to every other connection and never parses the payload.
+
+Tested with `@microsoft/signalr` 10.0.11 and .NET 10 (`net10.0`).
+
+## Server
+
+<CodeFromSource repo="examples/signalr/server/Hub/PresenceHub.cs" lang="csharp" />
+
+`withAutomaticReconnect()` on the client's `HubConnectionBuilder` is required on the ASP.NET Core side for reconnection to work. Without it, a drop goes straight to the closed state with no retry.
+
+## Client transport
+
+`createSignalRTransport` takes a plain `@microsoft/signalr` `HubConnection` and wraps it as a `LiveCursorTransport`:
+
+<CodeFromSource repo="examples/signalr/transport.ts" lang="ts" />
+
+Use it like any other transport:
+
+```ts
+import { createPresenceClient } from "@anchor-presence/core";
+import { HubConnectionBuilder } from "@microsoft/signalr";
+import { createSignalRTransport } from "./transport";
+
+const connection = new HubConnectionBuilder()
+  .withUrl("https://your-server.example/hubs/presence?room=main")
+  .withAutomaticReconnect()
+  .build();
+
+const transport = createSignalRTransport(connection);
+const client = createPresenceClient({ transport });
+await transport.connect?.();
+```
+
+## Already using use-signalr?
+
+If your app already uses [`use-signalr`](https://www.npmjs.com/package/@dammers/use-signalr-react) for its other hubs, add the presence hub to its contract instead of opening a second connection. Presence then shares the app's single connection, auth, and reconnect policy.
+
+```ts
+// signalr.ts
+import { createSignalRClient, event, method } from "@dammers/use-signalr-react";
+
+export const { SignalRProvider, useSignalR } = createSignalRClient({
+  hubs: {
+    "/hubs/presence": {
+      events: { PresenceReceived: event<[payload: string]>() },
+      methods: { OnPresence: method<[payload: string]>() },
+    },
+    // ...your app's other hubs
+  },
+});
+```
+
+Build the presence transport on the provider's connection with `getConnection`, the escape hatch `useSignalR` exposes to the raw `HubConnection`:
+
+```ts
+import { createPresenceClient } from "@anchor-presence/core";
+import { createSignalRTransport } from "../examples/signalr/transport";
+import { useSignalR } from "./signalr";
+
+function usePresenceClient() {
+  const { getConnection } = useSignalR();
+  const connection = getConnection("/hubs/presence");
+  return connection && createPresenceClient({ transport: createSignalRTransport(connection) });
+}
+```
+
+`getConnection` returns `null` until `use-signalr` opens the hub, so guard for that before building the client.
+
+## Behavior notes
+
+- The hub adds each connection to a SignalR group for its room. `PresenceHub.OnPresence` forwards to `Clients.OthersInGroup(room)`, so a sender never receives its own message and other rooms never receive it.
+- `examples/signalr/signalr-hub.test.ts` starts the real ASP.NET Core hub and runs two clients through it. The test skips when `dotnet` is not on `PATH`.
+- `connection.send` and `connection.on` are fire-and-forget over the hub's method name. There is no acknowledgment, matching the transport interface's `send` contract.
+- `Program.cs` caps an inbound message at 32 KiB through `MaximumReceiveMessageSize`. SignalR closes the connection on an oversized frame.
+- The hub has no rate limit of its own. Add one, for example [ASP.NET Core rate limiting](https://learn.microsoft.com/aspnet/core/performance/rate-limit), before you expose the hub publicly.
+- The hub takes room access control from your existing ASP.NET Core authentication, for example an `[Authorize]` attribute on `PresenceHub`, not from a relay token. See [Security](/docs/get-started/guides/security).
+
+## Related
+
+- [Backends](/docs/examples/backends)
+- [Transports](/docs/core/transports)
+- [Security](/docs/get-started/guides/security)

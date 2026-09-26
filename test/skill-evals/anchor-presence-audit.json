@@ -1,0 +1,40 @@
+{
+  "skill_name": "anchor-presence-audit",
+  "notes": "Run against apps/demo on a free port. Keep audit files in a scratch .anchor-audit/ folder so the repo stays clean.",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Audit the layouts of my app for cursor-jump risk and tell me what to fix.",
+      "files": ["apps/demo, dev server on a free port"],
+      "expected_output": "A confirmed matrix, `Measured N/N views`, a report in the chosen format, and numbered fix proposals with file and line.",
+      "expectations": [
+        "The matrix covers the ?page= routes, the base viewports plus the app's breakpoints, and the sidebar-collapsed state.",
+        "measure.mjs reports every view measured and exits 0.",
+        "The agent asks for the report format and states the token cost of each.",
+        "Every moderate or high pair has a proposal or a reason why no fix applies.",
+        "No fix is applied before the user picks one."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Add a CI check that fails when a layout change makes cursor jumps worse than 50.",
+      "files": ["apps/demo"],
+      "expected_output": "A CI step that starts the app and runs measure.mjs --fail-above 50.",
+      "expectations": [
+        "The step fails when the app does not start (measure.mjs exits 1 on an unmeasured view).",
+        "The step fails when a pair scores above 50.",
+        "The config lives in .anchor-audit/audit.config.json."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Score the jump risk of my app at http://localhost:5999.",
+      "files": ["No server listens on port 5999."],
+      "expected_output": "The agent stops at the prerequisite check and asks for a working URL or offers to start the dev script.",
+      "expectations": [
+        "The agent does not report a score for an app it could not measure.",
+        "The agent does not install Playwright without consent."
+      ]
+    }
+  ]
+}

@@ -2,27 +2,51 @@
 
 import type { CursorPresence, InterpolatorFactory } from "@anchor-presence/core";
 import { linearInterpolator } from "@anchor-presence/core";
-import type { AnchorRegistry } from "./registry";
-import type { Rect, ViewportSize } from "./geometry";
-import { computeVisibleRect, isPointInRect } from "./occlusion";
-import type { SchedulerReadState } from "./scheduler";
+import type { AnchorRegistry } from "./registry.js";
+import { parentAcrossShadow } from "./dom-tree.js";
+import type { Rect, ViewportSize } from "./geometry.js";
+import { computeVisibleRect, isPointInRect } from "./occlusion.js";
+import type { SchedulerReadState } from "./scheduler.js";
 
+/**
+ * The tier that resolved a cursor.
+ * `anchor` means an anchor element won. `viewport` means the sender viewport won. `hidden` means no position exists.
+ */
 export type ResolutionTier = "anchor" | "viewport" | "hidden";
 
+/**
+ * One resolved remote cursor, in receiver coordinates.
+ * `x` and `y` are pixels in the receiver viewport.
+ */
 export type ResolvedCursor<TContext = unknown, TUser = unknown> = {
+  /** The remote client that owns this cursor. */
   clientId: string;
-  x: number; // receiver viewport px
+  /** The X position in receiver viewport pixels. */
+  x: number;
+  /** The Y position in receiver viewport pixels. */
   y: number;
+  /** Whether to render this cursor. The visibility policy decides. */
   visible: boolean;
+  /** Whether the point sits in a visible region of the anchor. */
   pointVisible: boolean;
-  anchorId: string | null; // which anchor won, null = viewport tier
+  /** The anchor that won the resolution. `null` when the viewport tier wins. */
+  anchorId: string | null;
+  /** The tier that resolved this cursor. */
   tier: ResolutionTier;
+  /** The remote context value, when the sender sent one. */
   context?: TContext;
+  /** The remote user value, when the sender sent one. */
   user?: TUser;
+  /** `true` when the client sent no update for a while. */
+  idle: boolean;
 };
 
-export type VisibilityPolicy<TContext = unknown> = (input: {
-  presence: CursorPresence<TContext>;
+/**
+ * Decides whether to show one remote cursor.
+ * The resolver runs this policy for each cursor it resolves.
+ */
+export type VisibilityPolicy<TContext = unknown, TUser = unknown> = (input: {
+  presence: CursorPresence<TContext, TUser>;
   resolution: { tier: ResolutionTier; anchorId: string | null; pointVisible: boolean };
 }) => "show" | "hide";
 
@@ -63,36 +87,52 @@ type RawResolution = {
   activeAnchors: Element[];
 };
 
+type VisibleRectEntry = { rect: Rect | null; clippingAncestors: Element[] };
+
 /** Pure geometry resolution (spec §10, steps 1-5) — no interpolation, no visibility policy. */
 export function resolveGeometry(
   presence: CursorPresence,
   registry: AnchorRegistry,
   readState: SchedulerReadState,
+  visibleRectMemo?: Map<Element, VisibleRectEntry>,
 ): RawResolution {
   const cursor = presence.cursor;
   if (cursor === null) {
-    return { x: 0, y: 0, tier: "hidden", anchorId: null, pointVisible: false, element: null, activeAnchors: [] };
+    return {
+      x: 0,
+      y: 0,
+      tier: "hidden",
+      anchorId: null,
+      pointVisible: false,
+      element: null,
+      activeAnchors: [],
+    };
   }
 
-  const resolved = findResolvableAnchor(presence, registry, readState.getRect);
+  const resolved = findResolvableAnchor(presence, registry, (element) => readState.getRect(element));
   if (resolved !== null) {
     const anchor = cursor.anchors.find((a) => a.id === resolved.id);
     const u = anchor?.u ?? 0;
     const v = anchor?.v ?? 0;
     const x = resolved.rect.left + resolved.rect.width * u;
     const y = resolved.rect.top + resolved.rect.height * v;
-    const clippingAncestors: Element[] = [];
-    const visibleRect = computeVisibleRect(resolved.element, resolved.rect, readState, (ancestor) =>
-      clippingAncestors.push(ancestor),
-    );
+    let entry = visibleRectMemo?.get(resolved.element);
+    if (entry === undefined) {
+      const clippingAncestors: Element[] = [];
+      const rect = computeVisibleRect(resolved.element, resolved.rect, readState, (ancestor) =>
+        clippingAncestors.push(ancestor),
+      );
+      entry = { rect, clippingAncestors };
+      visibleRectMemo?.set(resolved.element, entry);
+    }
     return {
       x,
       y,
       tier: "anchor",
       anchorId: resolved.id,
-      pointVisible: isPointInRect(x, y, visibleRect),
+      pointVisible: isPointInRect(x, y, entry.rect),
       element: resolved.element,
-      activeAnchors: [resolved.element, ...clippingAncestors],
+      activeAnchors: [resolved.element, ...entry.clippingAncestors],
     };
   }
 
@@ -108,12 +148,20 @@ export function resolveGeometry(
     };
   }
 
-  return { x: 0, y: 0, tier: "hidden", anchorId: null, pointVisible: false, element: null, activeAnchors: [] };
+  return {
+    x: 0,
+    y: 0,
+    tier: "hidden",
+    anchorId: null,
+    pointVisible: false,
+    element: null,
+    activeAnchors: [],
+  };
 }
 
-export type ResolverOptions<TContext = unknown> = {
+export type ResolverOptions<TContext = unknown, TUser = unknown> = {
   registry: AnchorRegistry;
-  visibilityPolicy?: VisibilityPolicy<TContext> | undefined;
+  visibilityPolicy?: VisibilityPolicy<TContext, TUser> | undefined;
   interpolatorFactory?: InterpolatorFactory | undefined;
   hitTest?: boolean | undefined;
 };
@@ -123,19 +171,23 @@ type InterpolatorState = {
   lastRawX: number;
   lastRawY: number;
   lastPresence: unknown;
+  lastHidden: boolean;
 };
 
 /** Stateful resolver: tracks one interpolator per clientId, decides target() vs shift() per spec §13. */
 export class RemoteResolver<TContext = unknown, TUser = unknown> {
   private readonly registry: AnchorRegistry;
-  private readonly visibilityPolicy: VisibilityPolicy<TContext>;
+  private readonly visibilityPolicy: VisibilityPolicy<TContext, TUser>;
   private readonly interpolatorFactory: InterpolatorFactory;
   private readonly hitTest: boolean;
   private readonly states = new Map<string, InterpolatorState>();
+  // spec §14.1: unchanged cursors (and an unchanged list) keep their identity across passes
+  private readonly lastResults = new Map<string, ResolvedCursor<TContext, TUser>>();
+  private lastList: ResolvedCursor<TContext, TUser>[] = [];
 
-  constructor(options: ResolverOptions<TContext>) {
+  constructor(options: ResolverOptions<TContext, TUser>) {
     this.registry = options.registry;
-    this.visibilityPolicy = options.visibilityPolicy ?? (defaultVisibilityPolicy as VisibilityPolicy<TContext>);
+    this.visibilityPolicy = options.visibilityPolicy ?? defaultVisibilityPolicy;
     this.interpolatorFactory = options.interpolatorFactory ?? linearInterpolator;
     this.hitTest = options.hitTest ?? false;
   }
@@ -145,21 +197,27 @@ export class RemoteResolver<TContext = unknown, TUser = unknown> {
     for (const clientId of this.states.keys()) {
       if (!activeClientIds.has(clientId)) this.states.delete(clientId);
     }
+    for (const clientId of this.lastResults.keys()) {
+      if (!activeClientIds.has(clientId)) this.lastResults.delete(clientId);
+    }
   }
 
   resolveAll(
     presences: readonly CursorPresence<TContext, TUser>[],
     readState: SchedulerReadState,
     timestampMs: number,
+    isIdle: (clientId: string) => boolean = () => false,
   ): { cursors: ResolvedCursor<TContext, TUser>[]; unsettled: boolean; activeAnchors: Element[] } {
     const activeIds = new Set(presences.map((p) => p.clientId));
     this.prune(activeIds);
 
     const results: ResolvedCursor<TContext, TUser>[] = [];
     const activeAnchors = new Set<Element>();
+    const visibleRectMemo = new Map<Element, VisibleRectEntry>();
     let unsettled = false;
+    let listUnchanged = presences.length === this.lastList.length;
     for (const presence of presences) {
-      const raw = resolveGeometry(presence, this.registry, readState);
+      const raw = resolveGeometry(presence, this.registry, readState, visibleRectMemo);
       for (const element of raw.activeAnchors) activeAnchors.add(element);
       const pointVisible = this.isPointVisible(raw, readState.viewportSize);
       const visibility = this.visibilityPolicy({
@@ -168,41 +226,71 @@ export class RemoteResolver<TContext = unknown, TUser = unknown> {
       });
 
       let state = this.states.get(presence.clientId);
+      const hidden = raw.tier === "hidden";
       if (state === undefined) {
         state = {
           interpolator: this.interpolatorFactory(),
           lastRawX: raw.x,
           lastRawY: raw.y,
           lastPresence: presence,
+          lastHidden: hidden,
         };
-        state.interpolator.target(raw.x, raw.y, timestampMs);
+        if (!hidden) state.interpolator.target(raw.x, raw.y, timestampMs);
         this.states.set(presence.clientId, state);
-      } else if (state.lastPresence !== presence) {
+      } else if (hidden) {
+        // (0,0) is a degenerate position: clear the ease so re-entry snaps instead of sliding in from the corner
+        state.interpolator.reset?.();
+      } else if (state.lastHidden || state.lastPresence !== presence) {
         state.interpolator.target(raw.x, raw.y, timestampMs);
       } else if (raw.x !== state.lastRawX || raw.y !== state.lastRawY) {
         // local-only invalidation moved the resolved position: shift current+target by the delta, no easing
         state.interpolator.shift(raw.x - state.lastRawX, raw.y - state.lastRawY);
       }
+      state.lastHidden = hidden;
       state.lastRawX = raw.x;
       state.lastRawY = raw.y;
       state.lastPresence = presence;
 
       const sample = state.interpolator.sample(timestampMs);
       if (!sample.settled) unsettled = true;
-      const result: ResolvedCursor<TContext, TUser> = {
-        clientId: presence.clientId,
-        x: sample.x,
-        y: sample.y,
-        visible: visibility === "show",
-        pointVisible,
-        anchorId: raw.anchorId,
-        tier: raw.tier,
-      };
-      if (presence.context !== undefined) result.context = presence.context;
-      if (presence.user !== undefined) result.user = presence.user;
+
+      const idle = isIdle(presence.clientId);
+      const prev = this.lastResults.get(presence.clientId);
+      let result: ResolvedCursor<TContext, TUser>;
+      if (
+        prev !== undefined &&
+        prev.x === sample.x &&
+        prev.y === sample.y &&
+        prev.visible === (visibility === "show") &&
+        prev.pointVisible === pointVisible &&
+        prev.anchorId === raw.anchorId &&
+        prev.tier === raw.tier &&
+        prev.context === presence.context &&
+        prev.user === presence.user &&
+        prev.idle === idle
+      ) {
+        result = prev;
+      } else {
+        result = {
+          clientId: presence.clientId,
+          x: sample.x,
+          y: sample.y,
+          visible: visibility === "show",
+          pointVisible,
+          anchorId: raw.anchorId,
+          tier: raw.tier,
+          idle,
+        };
+        if (presence.context !== null && presence.context !== undefined) result.context = presence.context;
+        if (presence.user !== null && presence.user !== undefined) result.user = presence.user;
+        this.lastResults.set(presence.clientId, result);
+      }
+      if (listUnchanged && this.lastList[results.length] !== result) listUnchanged = false;
       results.push(result);
     }
-    return { cursors: results, unsettled, activeAnchors: Array.from(activeAnchors) };
+    const cursors = listUnchanged ? this.lastList : results;
+    this.lastList = cursors;
+    return { cursors, unsettled, activeAnchors: Array.from(activeAnchors) };
   }
 
   private isPointVisible(raw: RawResolution, viewportSize: ViewportSize): boolean {
@@ -227,13 +315,8 @@ export class RemoteResolver<TContext = unknown, TUser = unknown> {
     let current: Element | null = element;
     while (current !== null) {
       if (current === ancestor) return true;
-      const host: unknown = (current.getRootNode() as { host?: unknown }).host;
-      current = current.parentElement ?? (this.isElement(host) ? host : null);
+      current = parentAcrossShadow(current);
     }
     return false;
-  }
-
-  private isElement(value: unknown): value is Element {
-    return typeof value === "object" && value !== null && (value as Node).nodeType === 1;
   }
 }

@@ -1,0 +1,89 @@
+---
+title: Presence client
+description: createPresenceClient, its lifecycle, dispose, publish rate, and heartbeat.
+---
+
+`createPresenceClient` builds a `PresenceClient`. The client validates and stores remote presence, publishes your local cursor on a timer, and sends heartbeats so a receiver's stale-presence timer does not expire an idle sender.
+
+## Creating a client
+
+```ts
+import { createPresenceClient } from "@anchor-presence/core";
+
+const client = createPresenceClient({ transport: myTransport });
+```
+
+`transport` is the only required option. See [Transports](/docs/core/transports) for the transport contract, and [Codecs](/docs/core/codecs) for the `codec` option.
+
+## Connecting the transport
+
+`createPresenceClient` never connects the transport for you by default. Call `transport.connect()` yourself, before or right after you create the client:
+
+```ts
+import { createPresenceClient } from "@anchor-presence/core";
+
+const client = createPresenceClient({ transport: myTransport });
+myTransport.connect();
+```
+
+Pass `autoConnect: true` to have the client call `transport.connect()` for you, once, during creation:
+
+```ts
+const client = createPresenceClient({ transport: myTransport, autoConnect: true });
+```
+
+`autoConnect` defaults to `false`. With `true`, the client calls `connect()` after it subscribes to the transport's messages and status, so it misses no inbound message or status change. A transport with no `connect` method needs no call either way. A `connect()` call that throws or rejects never escapes client creation: the transport reports the failure through its own status instead. `dispose()` calls `transport.disconnect()` in both modes.
+
+## Lifecycle
+
+Call `client.updateLocalCursor(cursor, pointer?)` to set the local cursor position. A `null` cursor clears it for remote peers. The client batches updates and sends the latest value on its next publish tick, not on every call.
+
+Call `client.setContext(value)` and `client.setUser(value)` to set the values the client sends to remote peers. Both accept `undefined` to clear the value. Read the current local values back with `getContext()` and `getUser()`.
+
+Call `client.dispose()` when you no longer need the client. `dispose` sends a best-effort leave message, stops every timer, and calls `transport.disconnect()` when the transport provides one. A client is unusable after `dispose`. Create a new one instead of reusing it.
+
+```ts
+client.dispose();
+```
+
+## Publish rate
+
+The client publishes the local cursor every `publishIntervalMs`, `50` by default (`DEFAULT_PUBLISH_INTERVAL_MS`). A publish only sends when the cursor, context, or user changed since the last send.
+
+Pass `adaptivePublish` to lower the publish rate while the transport holds many buffered bytes:
+
+```ts
+const client = createPresenceClient({
+  transport: myTransport,
+  adaptivePublish: { highWatermarkBytes: 64 * 1024 },
+});
+```
+
+`highWatermarkBytes` turns on the slower rate. Its default is 64 KiB. `lowWatermarkBytes` turns the slower rate off again, and defaults to half of `highWatermarkBytes`. `slowPublishIntervalMs` sets the slower rate, and defaults to `max(publishIntervalMs * 4, 100)`. The client reads buffered bytes through the transport's optional `bufferedBytes()` method. Without it, `adaptivePublish` has no effect.
+
+## Heartbeat
+
+The client sends a full-state heartbeat every `heartbeatMs`, `10000` by default (`DEFAULT_HEARTBEAT_MS`), even when nothing changed. The heartbeat keeps an idle sender from expiring on a receiver's stale timeout. See [Remote presence](/docs/core/remote-presence) for the stale timeout on the receiving side.
+
+## Other options
+
+| Option               | Default                      | Effect                                                                          |
+| -------------------- | ---------------------------- | ------------------------------------------------------------------------------- |
+| `clientId`           | a new random ID              | A stable ID for this client instance.                                           |
+| `staleTimeoutMs`     | `DEFAULT_STALE_TIMEOUT_MS`   | Passed through to the client's own `RemotePresenceStore`. Minimum `1000`.       |
+| `idleAfterMs`        | `DEFAULT_IDLE_AFTER_MS`      | Passed through to the store. See [Remote presence](/docs/core/remote-presence). |
+| `maxRemoteClients`   | `DEFAULT_MAX_REMOTE_CLIENTS` | Passed through to the store.                                                    |
+| `onRemoteClientDrop` | none                         | Runs when the store drops a new `clientId` because the store is full.           |
+| `validationLimits`   | the protocol defaults        | Limits for inbound messages. See [Validation](/docs/core/validation).           |
+| `idFactory`          | a random ID generator        | Returns a new random ID. The client uses it for `clientId` and `session`.       |
+| `now`                | `Date.now`                   | Returns the current time in milliseconds. Useful in tests.                      |
+| `scheduler`          | the global timers            | Timer functions for the client's schedules. Useful in tests.                    |
+
+In development (`NODE_ENV` other than `production`), the client warns once in the console when an outbound `context`, `user`, or whole message exceeds the configured size limit, since a receiver silently drops an oversized field or message.
+
+## Related
+
+- [Remote presence](/docs/core/remote-presence)
+- [Validation](/docs/core/validation)
+- [Transports](/docs/core/transports)
+- [Client API](/docs/core/api/client)

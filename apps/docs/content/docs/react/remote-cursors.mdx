@@ -1,0 +1,65 @@
+---
+title: Remote cursors
+description: Read the resolved remote cursor positions with useRemoteCursors and useRemoteCursorsSelector.
+---
+
+`useRemoteCursors` returns the current list of resolved remote cursors. Use it to build a custom cursor renderer instead of [CursorLayer](/docs/react/cursor-layer), or to read cursor geometry for another purpose, such as a minimap.
+
+## useRemoteCursors
+
+```ts
+function useRemoteCursors<TContext = unknown, TUser = unknown>(): ResolvedCursor<TContext, TUser>[];
+```
+
+```tsx
+import { useRemoteCursors } from "@anchor-presence/react";
+
+function CursorCount() {
+  const cursors = useRemoteCursors();
+  return <span>{cursors.length} cursors visible</span>;
+}
+```
+
+Each entry is `{ clientId, x, y, visible, pointVisible, anchorId, tier, idle, context?, user? }`. `x` and `y` are pixels in the receiver's own viewport. Position an element with these values using `position: fixed`.
+
+The hook rerenders its component on every new resolved-cursor snapshot. While cursors move, that is every animation frame. Use `useRemoteCursorsSelector` when your component needs less than the full list.
+
+## useRemoteCursorsSelector
+
+```ts
+function useRemoteCursorsSelector<TSelected, TContext = unknown, TUser = unknown>(
+  select: (cursors: ResolvedCursor<TContext, TUser>[]) => TSelected,
+  isEqual?: (a: TSelected, b: TSelected) => boolean, // default Object.is
+): TSelected;
+```
+
+`useRemoteCursorsSelector` applies `select` to each snapshot and rerenders only when `isEqual` reports that the selected value changed. Declare `select` and `isEqual` at module level, or wrap them in `useCallback`, so their identity stays stable across renders.
+
+This selector derives the set of clients whose cursor is clipped out of view:
+
+```tsx
+function selectClippedClientIds(cursors: ResolvedCursor[]): ReadonlySet<string> {
+  const clipped = new Set<string>();
+  for (const cursor of cursors) {
+    if (cursor.tier === "anchor" && !cursor.pointVisible) clipped.add(cursor.clientId);
+  }
+  return clipped;
+}
+
+function sameClientIds(a: ReadonlySet<string>, b: ReadonlySet<string>): boolean {
+  return a.size === b.size && [...a].every((id) => b.has(id));
+}
+
+function PresencePill() {
+  const clipped = useRemoteCursorsSelector(selectClippedClientIds, sameClientIds);
+  return <span>{clipped.size} out of view</span>;
+}
+```
+
+`selectClippedClientIds` builds a new `Set` on every call. Without `sameClientIds`, the default `Object.is` comparison rerenders the component on every frame.
+
+## Related
+
+- [CursorLayer](/docs/react/cursor-layer)
+- [Rerenders](/docs/react/rerenders)
+- [Hooks API](/docs/react/api/hooks)

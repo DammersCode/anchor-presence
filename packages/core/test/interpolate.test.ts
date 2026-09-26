@@ -15,6 +15,13 @@ describe("noneInterpolator", () => {
     interp.shift(5, -5);
     expect(interp.sample(0)).toEqual({ x: 15, y: 15, settled: true });
   });
+
+  it("reset() is a no-op: sample still returns the latest target", () => {
+    const interp = noneInterpolator();
+    interp.target(10, 20, 0);
+    interp.reset?.();
+    expect(interp.sample(0)).toEqual({ x: 10, y: 20, settled: true });
+  });
 });
 
 describe("linearInterpolator", () => {
@@ -75,6 +82,17 @@ describe("linearInterpolator", () => {
     const end = interp.sample(80);
     expect(end.x).toBeCloseTo(90); // original target 80 + shift 10
     expect(end.settled).toBe(true);
+  });
+
+  it("reset() makes the next target snap like a first-ever target", () => {
+    const interp = linearInterpolator(80);
+    interp.target(100, 0, 0);
+    expect(interp.sample(0)).toEqual({ x: 100, y: 0, settled: true });
+
+    interp.reset?.();
+    interp.target(0, 200, 1000);
+    // without reset() this would ease from (100, 0) and sample(1000) would be (100, 0)
+    expect(interp.sample(1000)).toEqual({ x: 0, y: 200, settled: true });
   });
 
   it("treats a zero duration as an immediate snap", () => {

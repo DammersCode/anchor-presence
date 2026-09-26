@@ -1,6 +1,6 @@
 # @anchor-presence/core
 
-The protocol and orchestration layer of Anchor Presence.
+`@anchor-presence/core` is the protocol and orchestration layer of Anchor Presence. It holds the wire types, the validation rules, the presence store, and the client that ties them together.
 
 [![MIT](https://img.shields.io/badge/license-MIT-blue.svg)](../../LICENSE)
 
@@ -19,18 +19,26 @@ client.subscribeRemote(() => {
 });
 ```
 
+`getRemoteSnapshot()` returns the raw list, including `sequence`, and changes identity on every accepted message. `getRemotePresence()` returns the render-stable list, which excludes `sequence` and holds identity until an observable field changes.
+
 ## Boundary rule
 
-Core imports no DOM types at runtime, no React, no transport library, and no codec library. Core does not know what a browser is. Every browser API call lives in `@anchor-presence/dom`.
+Core imports no DOM, React, transport, or codec library, so it does not know what a browser is. Every browser API call lives in `@anchor-presence/dom`.
 
 ## Main exports
 
-- `createPresenceClient(options)` — wires transport, codec, publishing, sequencing, expiry, and the remote presence store into one client
-- `CursorPresence`, `AnchorPoint`, `CursorPosition` — wire protocol types
-- `validatePresence(input, limits?)` — validates and clamps an untrusted decoded value
-- `jsonCodec` — the default `CursorCodec` implementation
-- `LiveCursorTransport`, `ConnectionStatus` — the transport interface
-- `RemotePresenceStore` — sequencing and stale-expiry store for remote presences
-- `linearInterpolator`, `noneInterpolator` — interpolation factories
+| Export                                            | What it does                                                                                              |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `createPresenceClient(options)`                   | Wires the transport, codec, publishing, sequencing, expiry, and the remote presence store into one client |
+| `CursorPresence`, `AnchorPoint`, `CursorPosition` | Wire protocol types                                                                                       |
+| `RemotePresence`                                  | A remote presence without `sequence`; the shape of the render-stable snapshot                             |
+| `validatePresence(input, limits?)`                | Validates and clamps an untrusted decoded value                                                           |
+| `jsonCodec`                                       | The default `CursorCodec` implementation                                                                  |
+| `binaryCodec`                                     | A compact `CursorCodec` for binary WebSocket relays                                                       |
+| `LiveCursorTransport`, `ConnectionStatus`         | The transport interface                                                                                   |
+| `AdaptivePublishOptions`                          | Opt-in slow-mode options for the publish rate                                                             |
+| `createInMemoryPair`                              | A 2-peer in-memory transport for tests                                                                    |
+| `RemotePresenceStore`                             | Sequencing, field-delta merge, and stale-expiry store for remote presences                                |
+| `linearInterpolator`, `noneInterpolator`          | Interpolation factories                                                                                   |
 
-See `docs/architecture.md`, `docs/transports.md`, and `docs/codecs.md` in the repository root for full guides.
+See [How it works](https://anchor-presence.vercel.app/docs/get-started/concepts/how-it-works) and [Codecs](https://anchor-presence.vercel.app/docs/core/codecs) for full guides.

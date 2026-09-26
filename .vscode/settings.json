@@ -1,0 +1,16 @@
+{
+  // No editor TypeScript pin: the workspace typescript@7 (native) ships no
+  // tsserver.js, so VS Code uses its bundled compiler (Select TypeScript
+  // Version -> Use Installed Version). CLI checks run on workspace tsc 7.
+  // Keep the Windows file watcher and the search index out of gitignored e2e
+  // build output and the bun cache; they hold hundreds of files.
+  "files.watcherExclude": {
+    "**/test-results/**": true,
+    "**/playwright-report/**": true,
+    "**/.bun/**": true
+  },
+  "search.exclude": {
+    "**/test-results/**": true,
+    "**/playwright-report/**": true
+  }
+}

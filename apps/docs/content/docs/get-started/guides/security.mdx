@@ -1,0 +1,73 @@
+---
+title: Security
+description: Validation limits, why anchor IDs never touch selectors, and the rendering rule for untrusted data.
+---
+
+All inbound presence data is untrusted. This page lists the validation limits, explains why anchor IDs never touch selectors, states the rendering rule for user and context data, and covers `maxRemoteClients`.
+
+## Validation limits
+
+Every decoded message passes through `validatePresence()` before it reaches the store. A message or field that fails a rule is dropped.
+
+| Field                           | Rule                                                                               |
+| ------------------------------- | ---------------------------------------------------------------------------------- |
+| `version`                       | must equal `1`, else the whole message is dropped                                  |
+| `clientId`                      | string, 1 to 128 characters, else dropped                                          |
+| `session`                       | string, 1 to 64 characters, else dropped                                           |
+| `sequence`                      | finite integer, 0 or greater, max `maxSequence` (default 2147483647), else dropped |
+| `anchors`                       | array, max 8 entries, extra entries truncated                                      |
+| anchor `id`                     | string, 1 to 256 characters, else that entry is dropped                            |
+| anchor `u`, `v`                 | finite number, clamped to `[0, 1]`                                                 |
+| `viewport.u`, `viewport.v`      | finite number, clamped to `[0, 1]`                                                 |
+| `context`                       | max 8 KiB when JSON-encoded, else the field is dropped                             |
+| `user`                          | max 8 KiB when JSON-encoded, else the field is dropped                             |
+| `context`, `user` nesting depth | max `maxFieldDepth` (default 8), else the field is dropped                         |
+| whole message                   | max 32 KiB encoded, else the whole message is dropped                              |
+
+These limits are constants in `@anchor-presence/core`. Every one is overridable through `ValidationLimits` passed to `validatePresence`, or through `PresenceClientOptions.validationLimits` on `createPresenceClient`.
+
+A message with an invalid `version`, `clientId`, `session`, `sequence`, or `cursor` shape is dropped in full. A message with an oversized `context` or `user` field keeps the rest of the message and drops only that field.
+
+Wire encoding for `context` and `user`: a missing field means "unchanged since the previous same-session message", and an explicit `null` clears the field. The store normalizes a cleared field to `undefined` in the receiver snapshot.
+
+## Why anchor IDs never touch selectors
+
+An anchor ID is an opaque string. The resolver looks it up as a plain object key in the registry's `Map<string, Element>`. It is never passed to `querySelector`, `eval`, a template engine, or any other code path that interprets a string as a program or a selector.
+
+A malicious or malformed anchor ID from the network cannot address any DOM location outside the set the application registered. This holds no matter what string it contains. The worst outcome from an unrecognized anchor ID is a lookup miss, which the fallback chain already treats as a normal case.
+
+## Render user and context as text
+
+`user` and `context` values are untrusted, even after validation passes. Validation checks size, not content. The field can hold attacker-controlled strings, numbers, or nested objects.
+
+Render both fields as text: text nodes in plain DOM code, or framework text interpolation such as JSX's `{value}`. Never render them as HTML, and never pass them to `innerHTML`, `dangerouslySetInnerHTML`, or an equivalent.
+
+```tsx
+// correct: renders as text, no matter what the string contains
+<span>{cursor.user?.name}</span>
+
+// wrong: never do this with network-sourced data
+<span dangerouslySetInnerHTML={{ __html: cursor.user?.name }} />
+```
+
+## Identity is not authenticated
+
+`clientId` and `session` are plain fields on the wire. Any peer can send any value for either. The store accepts a new session for a known `clientId` without proof that the same person sent the earlier one.
+
+The relay token, when set, gates access to a room. It does not authenticate the identity inside a message. Bind identity on your own server if your app needs to know who a message really came from.
+
+## maxRemoteClients
+
+`maxRemoteClients` bounds every allocation driven by network data: store entries, resolved cursors, and observed anchors. It defaults to 64. See [Remote presence](/docs/core/remote-presence) for the drop rule and how to react to it.
+
+Set `maxRemoteClients` to match your expected concurrent session count. Because the cap drops newcomers once full, a flooder that claims every slot with distinct `clientId` values can keep out real clients until those slots expire after `staleTimeoutMs`.
+
+## Relay token auth
+
+When `RELAY_AUTH_TOKEN` is set, the reference relay requires a matching `token` query parameter on every room upgrade. It closes a missing or wrong token with code 4006. The token is a room credential for reaching the relay, not a presence credential: it does not authenticate who a message claims to be. Every message still passes the same validation and sequencing rules as on an open relay. Use it to keep random visitors out of a room, not to authorize presence data.
+
+## Related
+
+- [UI context](/docs/get-started/concepts/ui-context)
+- [Remote presence](/docs/core/remote-presence)
+- [Codecs](/docs/core/codecs)

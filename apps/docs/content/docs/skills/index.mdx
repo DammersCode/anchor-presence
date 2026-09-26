@@ -1,0 +1,47 @@
+---
+title: Overview
+description: What an agent skill is, the two skills this repository ships, and how the docs serve agents.
+---
+
+An agent skill is a folder of instructions, `SKILL.md` plus reference files, that a coding agent reads before it does a task. It gives the agent the steps, the rules, and the vocabulary a human maintainer would otherwise explain by hand. Anchor Presence ships two.
+
+## The two skills
+
+| Skill                                     | What it does                                                                    | When to use it                                                        |
+| ----------------------------------------- | ------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| [Integration](/docs/skills/integration)   | Wires live cursors into a React app: transport, client, anchors, presence list. | Adding cursors to a new app, or fixing a broken integration.          |
+| [Layout audit](/docs/skills/layout-audit) | Scores a running app for cursor-jump risk between layouts and proposes fixes.   | Before shipping a responsive or collapsible layout with live cursors. |
+
+## Install
+
+Install both skills:
+
+```sh
+npx skills add DammersCode/anchor-presence
+```
+
+Install only the layout audit skill:
+
+```sh
+npx skills add DammersCode/anchor-presence --skill anchor-presence-audit
+```
+
+`skills add` accepts any GitHub repository. `--skill <name>` limits the install to one skill in that repository; leave it out to install every skill the repository ships.
+
+## How the docs serve agents
+
+Every page on this site is also plain Markdown, for an agent that reads URLs directly instead of using a skill:
+
+- [`/llms.txt`](/llms.txt): an index of every doc page, with a link to its Markdown version.
+- [`/llms-full.txt`](/llms-full.txt): every page concatenated into one document, for an agent with a large context window and no crawler.
+- `/docs/<page>.md`: any single page's Markdown, for example [`/docs/get-started/quick-start.md`](/docs/get-started/quick-start.md).
+
+Every doc page also has a **Copy Markdown** button at the top, plus **Open in ChatGPT** and **Open in Claude** actions. A person reading a page in a browser can hand it to a chat model in one click.
+
+Use a skill when the agent already runs inside this repository, or a project that depends on it: it is denser and includes steps the reference docs spread across several pages. Use `llms.txt` when the agent works from a URL with no repository access, or when it needs the full API reference alongside the integration steps.
+
+## Related
+
+- [Quick start](/docs/get-started/quick-start)
+- [Designing layouts for presence](/docs/get-started/guides/layout-design)
+- [Security](/docs/get-started/guides/security)

@@ -1,8 +1,11 @@
 import { test, expect } from "@playwright/test";
 
-// Browser perf gate per spec §16 (plan 009 step 4); dev-machine baseline is 0.25/0.4ms — these bounds
-// are 3x the spec budget plus CI headroom, so they catch order-of-magnitude regressions, not noise.
-test.skip(({ browserName }) => browserName !== "chromium", "chromium-only: perf gate, not cross-browser coverage");
+// Browser perf gate per spec §16 (plan 009 step 4); dev-machine baseline re-based 2026-09-02 at
+// 1.1/2.0 ms for 100 anchors x 50 cursors — these bounds are 3x the spec budget plus CI headroom.
+test.skip(
+  ({ browserName }) => browserName !== "chromium",
+  "chromium-only: perf gate, not cross-browser coverage",
+);
 
 const MEAN_BUDGET_MS = 6;
 const P95_BUDGET_MS = 20;
@@ -42,17 +45,18 @@ test.describe("bench page perf budgets", () => {
 
     await page.getByRole("button", { name: "Pause" }).click();
 
-    // drain in-flight passes: record the counter only once it holds still for 500ms
+    // drain in-flight passes: the stats readout refreshes at 1 Hz, so probe at >1s intervals —
+    // two reads straddling a refresh both show the true window count, and equality means no new sample landed
     let countAfterPause = -1;
     await expect(async () => {
       const now = Number(await page.getByTestId("bench-count").textContent());
-      await page.waitForTimeout(500);
+      await page.waitForTimeout(1200);
       const later = Number(await page.getByTestId("bench-count").textContent());
       expect(later).toBe(now);
       countAfterPause = later;
-    }).toPass({ timeout: 10_000 });
+    }).toPass({ timeout: 15_000 });
 
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(1500);
     const countAfterWait = Number(await page.getByTestId("bench-count").textContent());
 
     expect(countAfterWait).toBe(countAfterPause);

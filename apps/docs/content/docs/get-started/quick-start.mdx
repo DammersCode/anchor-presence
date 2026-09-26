@@ -1,0 +1,83 @@
+---
+title: Quick start
+description: Run live cursors with no backend, then connect a real relay.
+---
+
+This page runs live cursors two ways: first with no backend, using an in-process transport, then with a real relay between two browser tabs.
+
+## Try it with no backend
+
+`createInMemoryPair` gives you two connected transports in one process. Use it to see the library work before you wire up a relay:
+
+```tsx
+import { createInMemoryPair, createPresenceClient } from "@anchor-presence/core";
+import { LiveCursorProvider, CursorLayer } from "@anchor-presence/react";
+
+const { a: transport } = createInMemoryPair();
+const client = createPresenceClient({ transport, user: { name: "Alice" } });
+
+function DashboardButton() {
+  return <button data-anchor="nav.dashboard">Dashboard</button>;
+}
+
+function App() {
+  return (
+    <LiveCursorProvider client={client}>
+      <DashboardButton />
+      <CursorLayer />
+    </LiveCursorProvider>
+  );
+}
+```
+
+This client only talks to itself: `transport.a`'s messages go to `transport.b`'s listeners, and nothing else holds `transport.b`. It is enough to render the tree and check that anchors, the provider, and `CursorLayer` compile and mount. It is also how the docs site tests every sample on this page.
+
+## Connect two real clients
+
+Real live cursors need two clients, one per browser tab, talking over a shared transport. Create the client inside `usePresenceClient`, so React Strict Mode's double-invoke in development does not create two clients or connect the transport twice:
+
+```tsx
+import { createPresenceClient } from "@anchor-presence/core";
+import { createWebSocketTransport } from "@anchor-presence/dom";
+import { CursorLayer, LiveCursorProvider, usePresenceClient } from "@anchor-presence/react";
+
+function App() {
+  const client = usePresenceClient({
+    factory: () => {
+      const transport = createWebSocketTransport({ path: "/?room=main" });
+      return createPresenceClient({ transport, user: { name: "Alice" }, autoConnect: true });
+    },
+  });
+
+  return (
+    <LiveCursorProvider client={client}>
+      <button data-anchor="nav.dashboard">Dashboard</button>
+      <CursorLayer />
+    </LiveCursorProvider>
+  );
+}
+```
+
+`usePresenceClient` runs the factory once, in a mount effect, and returns `null` until it has run. `LiveCursorProvider` accepts `client={null}` and renders normally, so the first render before the effect (and every server render) is safe. See [SSR and Strict Mode](/docs/react/ssr-and-strict-mode) for the full rule.
+
+Copy a relay from [Backends](/docs/examples/backends) to pair with it. [Bun](/docs/examples/backends/bun-native) is the smallest runnable relay.
+
+`room` is a relay-side grouping key, not part of the protocol. Any bidirectional byte channel that implements the transport interface works in place of `createWebSocketTransport`. See [Transports](/docs/core/transports).
+
+## See it move
+
+Open your app in two browser windows. Move the pointer in one window. A live cursor appears in the second window, tracking the same element, even at a different window size:
+
+<Demo />
+
+## Without React
+
+`@anchor-presence/core` and `@anchor-presence/dom` work with no React in the tree. Subscribe to the binding's resolved cursors directly and render them yourself in plain DOM updates or another framework. See [Binding](/docs/dom/binding) for the subscribe method, and [Build a framework adapter](/docs/core/build-a-framework-adapter) if you want to connect the binding to a framework's own reactivity.
+
+## Related
+
+- [Anchors](/docs/get-started/concepts/anchors)
+- [Fallback chain](/docs/get-started/concepts/fallback-chain)
+- [SSR and Strict Mode](/docs/react/ssr-and-strict-mode)
+- [Transports](/docs/core/transports)
+- [Examples](/docs/examples/basics)

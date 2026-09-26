@@ -9,20 +9,26 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@anchor-presence/core": "workspace:*",
-    "@anchor-presence/dom": "workspace:*",
-    "@anchor-presence/react": "workspace:*",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "@anchor-presence/core": "0.1.0",
+    "@anchor-presence/dom": "0.1.0",
+    "@anchor-presence/react": "0.1.0",
+    "@dammers/use-signalr-react": "^0.5.0",
+    "@microsoft/signalr": "^10.0.11",
+    "cn": "^0.4.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "socket.io-client": "^4.8.3"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.1.0",
-    "@types/react": "^19.1.0",
-    "@types/react-dom": "^19.1.0",
-    "@vitejs/plugin-react": "5.2.0",
+    "@babel/core": "^8.0.6",
+    "@rolldown/plugin-babel": "^0.2.4",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "@vitejs/plugin-react": "^6.1.1",
     "babel-plugin-react-compiler": "^1.0.0",
-    "tailwindcss": "^4.1.0",
-    "typescript": "^5.7.0",
-    "vite": "^8"
+    "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2",
+    "vite": "^8.2.2"
   }
 }

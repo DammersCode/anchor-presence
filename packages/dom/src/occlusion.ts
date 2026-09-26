@@ -1,5 +1,6 @@
-import type { Rect } from "./geometry";
-import type { SchedulerReadState } from "./scheduler";
+import type { Rect } from "./geometry.js";
+import { parentAcrossShadow } from "./dom-tree.js";
+import type { SchedulerReadState } from "./scheduler.js";
 
 export type StyleValues = Pick<CSSStyleDeclaration, "overflow" | "overflowX" | "overflowY">;
 
@@ -12,18 +13,10 @@ function intersect(first: Rect, second: Rect): Rect | null {
   return { left, top, width: right - left, height: bottom - top };
 }
 
-function isElement(value: unknown): value is Element {
-  return typeof value === "object" && value !== null && (value as Node).nodeType === 1;
-}
-
-function parent(element: Element): Element | null {
-  if (element.parentElement !== null) return element.parentElement;
-  const host = (element.getRootNode() as { host?: unknown }).host;
-  return isElement(host) ? host : null;
-}
-
 function clips(style: StyleValues): boolean {
-  return ![style.overflow, style.overflowX, style.overflowY].every((value) => value === "" || value === "visible");
+  return ![style.overflow, style.overflowX, style.overflowY].every(
+    (value) => value === "" || value === "visible",
+  );
 }
 
 type ClientBoxElement = Element & {
@@ -51,7 +44,8 @@ export function readClientRect(element: Element, rect: Rect): Rect {
     !isFiniteMetric(offsetWidth) ||
     offsetWidth <= 0 ||
     offsetHeight <= 0
-  ) return rect;
+  )
+    return rect;
   const scaleX = rect.width / offsetWidth;
   const scaleY = rect.height / offsetHeight;
   return {
@@ -69,7 +63,7 @@ export function computeVisibleRect(
   onClippingAncestor?: (element: Element) => void,
 ): Rect | null {
   let visible = rect;
-  let ancestor = parent(element);
+  let ancestor = parentAcrossShadow(element);
   const documentElement = element.ownerDocument.documentElement;
   while (ancestor !== null && ancestor !== documentElement) {
     if (clips(readState.getStyle(ancestor))) {
@@ -81,7 +75,7 @@ export function computeVisibleRect(
         visible = clipped;
       }
     }
-    ancestor = parent(ancestor);
+    ancestor = parentAcrossShadow(ancestor);
   }
   return visible;
 }

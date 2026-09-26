@@ -1,5 +1,7 @@
 // Anchor registry — spec §8
 
+import { parentAcrossShadow } from "./dom-tree.js";
+
 export interface AnchorRegistry {
   register(id: string, element: Element): () => void;
   get(id: string): Element | null;
@@ -11,25 +13,18 @@ export interface AnchorRegistry {
 
 function isDev(): boolean {
   try {
-    return typeof process !== "undefined" && process.env?.NODE_ENV !== "production";
+    const env = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env;
+    return env?.NODE_ENV !== "production";
   } catch {
     return true;
   }
-}
-
-/** Walks up through ancestors, crossing shadow boundaries via `host`. */
-function parentOf(element: Element): Element | null {
-  const parent = element.parentElement;
-  if (parent !== null) return parent;
-  const root = element.getRootNode();
-  if (root instanceof ShadowRoot) return root.host;
-  return null;
 }
 
 export function createAnchorRegistry(): AnchorRegistry {
   const byId = new Map<string, Element>();
   const idByElement = new WeakMap<Element, string>();
   const changeListeners = new Set<() => void>();
+  const warnedDuplicateIds = new Set<string>();
 
   function notifyChange(): void {
     for (const listener of changeListeners) listener();
@@ -38,8 +33,13 @@ export function createAnchorRegistry(): AnchorRegistry {
   return {
     register(id, element) {
       const existing = byId.get(id);
-      if (existing !== undefined && existing !== element && isDev()) {
-        console.warn(`[anchor-presence] anchor id "${id}" re-registered with a different element; new element wins`);
+      if (existing !== undefined && existing !== element && isDev() && !warnedDuplicateIds.has(id)) {
+        warnedDuplicateIds.add(id);
+        console.warn(`[anchor-presence] duplicate anchor id "${id}"; new element wins`, {
+          id,
+          previous: existing,
+          next: element,
+        });
       }
       byId.set(id, element);
       idByElement.set(element, id);
@@ -75,7 +75,7 @@ export function createAnchorRegistry(): AnchorRegistry {
         if (id !== undefined && byId.get(id) === current) {
           result.push({ id, element: current });
         }
-        current = parentOf(current);
+        current = parentAcrossShadow(current);
       }
       return result;
     },

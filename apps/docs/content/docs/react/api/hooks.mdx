@@ -1,0 +1,87 @@
+---
+title: Hooks API
+description: Signature and return type for every hook in @anchor-presence/react.
+---
+
+Every hook `@anchor-presence/react` exports, with its signature and return type. See each hook's own page for prose, render cost, and examples.
+
+## usePresenceClient
+
+```ts
+function usePresenceClient<TContext = unknown, TUser = unknown>(
+  options: PresenceClientFactoryOptions<TContext, TUser>,
+): PresenceClient<TContext, TUser> | null;
+```
+
+<AutoTypeTable
+  path="../../packages/react/src/hooks/use-presence-client.ts"
+  name="PresenceClientFactoryOptions"
+/>
+
+See [usePresenceClient](/docs/react/use-presence-client).
+
+## useRemoteCursors
+
+```ts
+function useRemoteCursors<TContext = unknown, TUser = unknown>(): ResolvedCursor<TContext, TUser>[];
+```
+
+See [Remote cursors](/docs/react/remote-cursors).
+
+## useRemoteCursorsSelector
+
+```ts
+function useRemoteCursorsSelector<TSelected, TContext = unknown, TUser = unknown>(
+  select: (cursors: ResolvedCursor<TContext, TUser>[]) => TSelected,
+  isEqual?: (a: TSelected, b: TSelected) => boolean, // default Object.is
+): TSelected;
+```
+
+See [Remote cursors](/docs/react/remote-cursors).
+
+## useRemoteUsers
+
+```ts
+function useRemoteUsers<TUser = unknown>(): RemoteUser<TUser>[];
+```
+
+<AutoTypeTable path="../../packages/react/src/hooks/use-remote-users.ts" name="RemoteUser" />
+
+See [Remote users](/docs/react/remote-users).
+
+## useCursorPresence
+
+```ts
+function useCursorPresence<TContext = unknown, TUser = unknown>(): RemotePresence<TContext, TUser>[];
+```
+
+See [Cursor presence](/docs/react/cursor-presence).
+
+## useCursorContext
+
+```ts
+function useCursorContext<TContext = unknown>(): [TContext | undefined, (next: TContext | undefined) => void];
+```
+
+See [Cursor context](/docs/react/cursor-context).
+
+## useCursorStatus
+
+```ts
+function useCursorStatus(): ConnectionStatus;
+```
+
+Returns one of `"connecting"`, `"connected"`, `"reconnecting"`, `"disconnected"`. See [Connection status](/docs/react/connection-status).
+
+## useCursorClient
+
+```ts
+function useCursorClient<TContext = unknown, TUser = unknown>(): PresenceClient<TContext, TUser> | null;
+```
+
+Returns the client instance passed to `LiveCursorProvider`, or `null` outside a provider or during server rendering.
+
+## Related
+
+- [Components API](/docs/react/api/components)
+- [Rerenders](/docs/react/rerenders)

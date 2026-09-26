@@ -1,0 +1,7 @@
+{
+  "title": "Skills",
+  "icon": "bot",
+  "description": "Agent skills that install and audit Anchor Presence for you",
+  "root": true,
+  "pages": ["index", "integration", "layout-audit"]
+}

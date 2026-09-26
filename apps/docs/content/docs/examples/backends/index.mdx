@@ -1,0 +1,69 @@
+---
+title: Overview
+description: How transports and relays fit together, the transport interface, and a matrix of options.
+---
+
+Anchor Presence needs a bidirectional byte channel between clients: a relay that forwards each message to the other clients in the same room. Core imports no transport library, so any channel works as long as it implements `LiveCursorTransport`. This page is the map: what a relay's job is, the interface every transport implements, and which backend fits which situation.
+
+## What a relay does
+
+A relay is deliberately simple. It does not understand the presence protocol. It only forwards bytes between the sockets in one room:
+
+```text
+sender.send(bytes) -> relay -> every other socket in the same room -> receiver.subscribe(listener)
+```
+
+The reference relay in `apps/server/index.ts` enforces a per-room socket cap, a per-message byte cap, and a per-socket rate limit, and forwards binary frames opaquely. It never inspects a message's `anchors`, `context`, or `user` fields. See [Performance](/docs/get-started/guides/performance#scaling-limits) for the scaling shape of a room-broadcast relay.
+
+## The transport interface
+
+```ts
+interface LiveCursorTransport {
+  connect?(): Promise<void> | void;
+  disconnect?(): Promise<void> | void;
+  send(data: Uint8Array): Promise<void> | void;
+  subscribe(listener: (data: Uint8Array) => void): () => void;
+  subscribeStatus?(listener: (status: ConnectionStatus) => void): () => void;
+  getStatus?(): ConnectionStatus;
+  bufferedBytes?(): number;
+}
+```
+
+See [Transports](/docs/core/transports) for the full contract and the shipped WebSocket transport.
+
+## Backend matrix
+
+| Backend                                         | Relay                 | Client transport              | Tested by                             |
+| ----------------------------------------------- | --------------------- | ----------------------------- | ------------------------------------- |
+| Native WebSocket                                | your own server       | `createWebSocketTransport`    | Unit tests in `packages/dom`          |
+| [Bun](/docs/examples/backends/bun-native)       | `examples/bun-native` | `createWebSocketTransport`    | Integration test against a real relay |
+| [Node.js (ws)](/docs/examples/backends/node-ws) | `examples/node-ws`    | `createWebSocketTransport`    | Integration test against a real relay |
+| [Hono](/docs/examples/backends/hono)            | `examples/hono`       | `createWebSocketTransport`    | Integration test against a real relay |
+| [Elysia](/docs/examples/backends/elysia)        | `examples/elysia`     | `createWebSocketTransport`    | Integration test against a real relay |
+| [Socket.IO](/docs/examples/backends/socketio)   | `examples/socketio`   | Socket.IO transport (example) | Integration test against a real relay |
+| [SignalR](/docs/examples/backends/signalr)      | `examples/signalr`    | SignalR transport (example)   | Integration test against a real hub   |
+
+A transport that needs a third-party library lives in `examples/`, never in a package. `@anchor-presence/core`, `@anchor-presence/dom`, and `@anchor-presence/react` stay free of framework and vendor dependencies. See [Package boundaries](https://github.com/DammersCode/anchor-presence/blob/main/AGENTS.md) in the repository for the full rule.
+
+### No server
+
+Two options need no relay at all: `createInMemoryPair` from `@anchor-presence/core` wires two transports directly together in one process, used by this site's own code samples. A `BroadcastChannel` transport (not shipped, write your own) connects two tabs or iframes on the same origin, used by the live demos on this site.
+
+## Choosing one
+
+- **Already running a plain WebSocket server, or starting fresh?** Use `createWebSocketTransport` from `@anchor-presence/dom`. It is the only transport that ships in a package, with reconnect and backoff built in.
+- **Already on Bun, Node, Hono, or Elysia?** Use the matching relay example. The client uses `createWebSocketTransport` with no custom transport.
+- **Already running Socket.IO for other real-time features?** Reuse that connection with the [Socket.IO example](/docs/examples/backends/socketio) instead of running a second WebSocket server.
+- **Already on ASP.NET Core?** The [SignalR example](/docs/examples/backends/signalr) wraps a `HubConnection` as a transport.
+- **Prototyping, writing tests, or building this docs site's demos?** Use `createInMemoryPair` for a single process, or a `BroadcastChannel` transport for two tabs or iframes on the same origin with no server at all.
+
+## Shared guard helpers
+
+The Bun, Node.js (ws), Hono, and Elysia relays share one file of guard helpers: room-name validation, a per-connection rate limiter, a message size check, and Origin and token checks. Copy it together with the server you pick:
+
+<CodeFromSource repo="examples/_shared/relay-guard.ts" lang="ts" />
+
+## Related
+
+- [Transports](/docs/core/transports)
+- [Performance](/docs/get-started/guides/performance)

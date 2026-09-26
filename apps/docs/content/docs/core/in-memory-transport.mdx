@@ -1,0 +1,35 @@
+---
+title: In-memory transport
+description: createInMemoryPair, two transports wired to each other for tests and prototypes.
+---
+
+`createInMemoryPair` returns two transports wired directly to each other in one process. Use it for tests and for a quick local check, before a relay exists.
+
+## Usage
+
+```ts
+import { createInMemoryPair, createPresenceClient } from "@anchor-presence/core";
+
+const { a, b } = createInMemoryPair();
+const clientA = createPresenceClient({ transport: a, user: { name: "Alice" } });
+const clientB = createPresenceClient({ transport: b, user: { name: "Bob" } });
+```
+
+A send from `a` reaches only `b`'s listeners. A send from `b` reaches only `a`'s listeners. Call `dispose()` on the pair to stop delivery and clear both sides.
+
+## When to use it
+
+Use `createInMemoryPair` in unit tests, in server-rendered samples, and to check provider or hook wiring before a relay exists. It cannot cross a process, tab, or iframe boundary: both sides must run in the same JavaScript realm.
+
+Pass `{ async: true }` to deliver messages in a microtask instead of at once:
+
+```ts
+const { a, b } = createInMemoryPair({ async: true });
+```
+
+See [Backends](/docs/examples/backends) for transports that do cross a process boundary.
+
+## Related
+
+- [Transports](/docs/core/transports)
+- [Custom transport](/docs/core/custom-transport)

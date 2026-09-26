@@ -1,6 +1,6 @@
 # @anchor-presence/dom
 
-The browser layer of Anchor Presence.
+`@anchor-presence/dom` is the browser layer of Anchor Presence. It registers anchors, samples the pointer, measures elements, and turns remote cursor data into screen positions.
 
 [![MIT](https://img.shields.io/badge/license-MIT-blue.svg)](../../LICENSE)
 
@@ -11,7 +11,7 @@ import { createDomBinding } from "@anchor-presence/dom";
 const client = createPresenceClient({ transport: myTransport });
 const binding = createDomBinding(client);
 
-const unregister = binding.registry.register("nav.dashboard", buttonElement);
+// <button data-anchor="nav.dashboard"></button> is a live anchor.
 
 binding.subscribe(() => {
   for (const cursor of binding.getSnapshot()) {
@@ -22,27 +22,53 @@ binding.subscribe(() => {
 
 ## Boundary rule
 
-Dom is the only package that calls browser APIs: `getBoundingClientRect`, `ResizeObserver`, `MutationObserver`, `requestAnimationFrame`, pointer events. Core stays DOM-free; framework adapters read from dom, never from the browser directly.
+Dom is the only package that calls browser APIs: `getBoundingClientRect`, `ResizeObserver`, `MutationObserver`, `requestAnimationFrame`, and pointer events. Core stays DOM-free. Framework adapters read from dom, never from the browser directly.
 
 ## Main exports
 
-- `createDomBinding(client, options?)` — wires an anchor registry, pointer source, geometry scheduler, and resolver to a `PresenceClient`
-- `DomBindingOptions`, `ResolutionOptions`, `EnvironmentOptions` — binding configuration types
-- `createAnchorRegistry()` — the anchor ID to `Element` registry
-- `attachPointerSource(client, registry, options?)` — outbound pointer sampling
-- `createGeometryScheduler(options)` — the read/compute/notify rAF scheduler
-- `RemoteResolver`, `resolveGeometry`, `findResolvableAnchor`, `defaultVisibilityPolicy` — remote cursor resolution
-- `ResolvedCursor`, `ResolutionTier`, `VisibilityPolicy` — resolution types
+| Export                                                         | What it does                                                                                                                                              |
+| -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `createDomBinding(client, options?)`                           | Wires anchor auto-registration, pointer sampling, geometry scheduling, and remote resolution to a `PresenceClient`; returns a `DomBinding`                |
+| `DomBinding`                                                   | `invalidate(reason?)` marks the layout dirty for the next frame; `getSnapshot()`, `subscribe(listener)`, and `dispose()` read and manage resolved cursors |
+| `createWebSocketTransport(options?)`                           | Native WebSocket transport for the bundled relay or a compatible relay; exposes `bufferedBytes()` and reconnect jitter                                    |
+| `DomBindingOptions`, `ResolutionOptions`, `EnvironmentOptions` | Binding configuration types                                                                                                                               |
+| `WebSocketTransportOptions`                                    | WebSocket transport configuration types                                                                                                                   |
+| `ResolvedCursor`, `ResolutionTier`, `VisibilityPolicy`         | Resolution types                                                                                                                                          |
 
 ## Binding options
 
-`createDomBinding` takes `maxAnchors` plus two groups. `resolution` controls how remote cursors turn into screen positions: `visibilityPolicy`, `interpolatorFactory`, `hitTest`. `environment` supplies the DOM and timing hosts: `root`, `window`, `raf`, `caf`, `ResizeObserverCtor`, `MutationObserverCtor`. Each `environment` field defaults to the ambient browser global, so tests can replace one host without touching the others.
+`createDomBinding` always watches the DOM for anchor elements.
+
+```ts
+type DomBindingOptions = {
+  anchorAttribute?: string;
+  maxAnchors?: number;
+  resolution?: { visibilityPolicy?; interpolatorFactory?; hitTest? };
+  environment?: { root?; window?; raf?; caf?; ResizeObserverCtor?; MutationObserverCtor? };
+};
+```
+
+The `anchorAttribute` field names the attribute whose value is the anchor ID. The default is `"data-anchor"`. The attribute name may be any valid DOM attribute name, including `"id"`.
+
+The `resolution` group controls how remote cursors turn into screen positions. It holds `visibilityPolicy`, `interpolatorFactory`, and `hitTest`.
+
+The `environment` group supplies the DOM and timing hosts. Each field defaults to the ambient browser global. Tests can replace one host without touching the others.
+
+### Anchor attributes
+
+An element is an anchor when it has a non-empty value for the configured attribute.
 
 ```ts
 const binding = createDomBinding(client, {
+  anchorAttribute: "data-presence",
+  maxAnchors: 4,
   resolution: { hitTest: true },
   environment: { raf, caf },
 });
+
+// <div data-presence="nav.dashboard"></div> is a live anchor.
 ```
 
-See `docs/architecture.md`, `docs/concepts.md`, `docs/responsive-layouts.md`, and `docs/performance.md` in the repository root for full guides.
+Empty or whitespace-only values are ignored. Changing the attribute value re-registers the element under the new ID. Removing the attribute or the element unregisters the anchor. Duplicate anchor IDs use the newest registration and warn once in development.
+
+See [How it works](https://anchor-presence.vercel.app/docs/get-started/concepts/how-it-works) and [Responsive layouts](https://anchor-presence.vercel.app/docs/get-started/concepts/responsive-layouts) for full guides.

@@ -1,23 +1,41 @@
 {
   "name": "anchor-presence",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
+  "packageManager": "bun@1.3.14",
   "workspaces": [
     "packages/*",
     "apps/*",
     "examples/*"
   ],
   "scripts": {
-    "build": "bun run --filter '@anchor-presence/*' build",
-    "typecheck": "tsc --build packages/core packages/dom packages/react",
+    "build": "bun run --filter '@anchor-presence/core' --filter '@anchor-presence/dom' --filter '@anchor-presence/react' build",
+    "typecheck": "tsc --build packages/core packages/dom packages/react && tsc -p tsconfig.test.json && tsc -p apps/demo && bun run --cwd apps/docs typecheck && bun run typecheck:examples",
+    "lint": "oxlint --type-aware",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "test": "vitest run",
-    "test:browser": "playwright test"
+    "test:browser": "playwright test",
+    "docs:dev": "bun run --cwd apps/docs dev",
+    "docs:build": "bun run build && bun run --cwd apps/docs build",
+    "bench": "bun run scripts/bench.ts",
+    "preversion": "bun run build && bun run typecheck && bun run lint && bun run test",
+    "version": "node scripts/sync-versions.mjs && bun install && git add package.json packages/*/package.json apps/*/package.json examples/*/package.json bun.lock",
+    "postversion": "git push && git push --tags",
+    "release:check": "node scripts/check-release.mjs",
+    "typecheck:examples": "tsc -p examples/socketio && tsc -p examples/signalr && tsc -p examples/bun-native && tsc -p examples/node-ws && tsc -p examples/hono && tsc -p examples/elysia"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",
-    "@types/node": "^24.0.0",
+    "@types/bun": "^1.4.2",
+    "@types/node": "^26.4.1",
     "jsdom": "^30.0.1",
-    "typescript": "^5.7.0",
-    "vitest": "^4.1.11"
+    "oxlint": "^1.81.0",
+    "oxlint-tsgolint": "^7.0.2001",
+    "prettier": "^3.9.6",
+    "tinybench": "^6.2.0",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.0"
   }
 }

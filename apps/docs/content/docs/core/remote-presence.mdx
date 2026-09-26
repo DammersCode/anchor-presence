@@ -1,0 +1,51 @@
+---
+title: Remote presence
+description: RemotePresenceStore, the stale timeout, the idle stage, and maxRemoteClients.
+---
+
+`RemotePresenceStore` holds every remote presence a client accepts. `createPresenceClient` creates one store per client. Read the store through `client.getRemotePresence()` and `client.subscribeRemote(listener)`.
+
+## Reading remote presence
+
+```ts
+const remotePresences = client.getRemotePresence();
+const unsubscribe = client.subscribeRemote(() => {
+  console.log(client.getRemotePresence());
+});
+```
+
+`getRemotePresence()` returns the stable snapshot: a `RemotePresence[]` without the `sequence` field. The store keeps the array and entry identity while nothing observable changes, so it fits a render loop or a `useSyncExternalStore` subscription. `getRemoteSnapshot()` returns the raw snapshot with `sequence` included, as a new array on every accepted message. Use it to watch sequence numbers, not for rendering.
+
+## Stale timeout
+
+A remote client with no accepted message for `staleTimeoutMs` is removed from the store. The default is `DEFAULT_STALE_TIMEOUT_MS`, `70000` milliseconds. Set `staleTimeoutMs` on `createPresenceClient` to change it. The client enforces a minimum of `1000` milliseconds.
+
+## Idle stage
+
+A remote client with no accepted message for `idleAfterMs` is marked `idle: true` in its `RemotePresence`, before it goes stale. The default is `DEFAULT_IDLE_AFTER_MS`, `15000` milliseconds. `idleAfterMs` always stays below `staleTimeoutMs`. The store clamps it to `staleTimeoutMs - 1` when you pass a larger value.
+
+Idle is a separate stage from stale removal. Use it to dim or gray out a cursor that stopped moving, while `staleTimeoutMs` decides when the cursor disappears.
+
+## maxRemoteClients
+
+The store caps the number of distinct remote clients it tracks at `maxRemoteClients`, `64` by default (`DEFAULT_MAX_REMOTE_CLIENTS`). A message from a new `clientId` beyond the cap is dropped. Existing clients keep updating.
+
+```ts
+const client = createPresenceClient({
+  transport: myTransport,
+  maxRemoteClients: 200,
+  onRemoteClientDrop: () => reportMetric("presence.remote_client_dropped"),
+});
+```
+
+`onRemoteClientDrop` runs each time the store drops a new client because it is full. See [maxRemoteClients](/docs/get-started/guides/security#maxremoteclients) on the Security page for the capacity-planning guidance.
+
+## Message ordering
+
+The store drops a same-session message whose `sequence` is not higher than the stored value, so an out-of-order or duplicate delivery from the transport never moves a cursor backward. A message from a new `session` for a known `clientId` always replaces the stored value. This covers a client that reconnects with a new session ID.
+
+## Related
+
+- [Presence client](/docs/core/presence-client)
+- [Validation](/docs/core/validation)
+- [Security](/docs/get-started/guides/security)

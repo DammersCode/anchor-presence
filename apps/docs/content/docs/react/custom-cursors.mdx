@@ -1,0 +1,70 @@
+---
+title: Custom cursors
+description: Replace the cursor content CursorLayer renders, or style the built-in DefaultCursor.
+---
+
+`CursorLayer` owns the position of every cursor root. `renderCursor` and `DefaultCursor` let you change what the root shows, without taking over that positioning.
+
+## renderCursor
+
+`renderCursor` replaces only the root's contents:
+
+```tsx
+<CursorLayer
+  renderCursor={({ cursor, label, color }) => (
+    <MyCursorGlyph color={color}>
+      <span>{label}</span>
+    </MyCursorGlyph>
+  )}
+/>
+```
+
+`CursorLayer` still owns the root's position, transform, pointer events, `aria-hidden`, and identity data attributes. `renderCursor` receives the resolved `cursor`, the `label` from `getLabel`, and the `color` from `getColor`.
+
+## DefaultCursor
+
+`DefaultCursor` is the shape `CursorLayer` renders when you pass no `renderCursor`. It has no Tailwind dependency and no external stylesheet. Three CSS variables control its look:
+
+```tsx
+<CursorLayer
+  renderCursor={({ cursor, label, color }) => (
+    <DefaultCursor label={label} color={color} style={{ "--anchor-presence-cursor-size": "28px" }} />
+  )}
+/>
+```
+
+An explicit CSS variable on `style` takes precedence over the `color` prop. See [Components API](/docs/react/api/components) for every `DefaultCursorProps` field.
+
+## Positioning contract
+
+A cursor's root always carries these attributes, so you can select and test it without depending on internal class names:
+
+| Attribute                        | Value                                                     |
+| -------------------------------- | --------------------------------------------------------- |
+| `data-anchor-presence-cursor`    | present on every cursor root                              |
+| `data-anchor-presence-client-id` | the remote client's ID                                    |
+| `data-anchor-presence-tier`      | the resolution tier: `"anchor"`, `"viewport"`, `"hidden"` |
+| `data-anchor-presence-anchor`    | the anchor ID that resolved the cursor, or `""`           |
+| `data-anchor-presence-idle`      | present when the cursor's client is idle                  |
+
+## Idle cursors
+
+A remote client counts as idle when it sends no update for a while. `CursorLayer` sets the root's opacity to `0.4` for an idle cursor's default style, and adds the `data-anchor-presence-idle` attribute so you can style it yourself:
+
+```css
+[data-anchor-presence-idle] {
+  filter: grayscale(1);
+}
+```
+
+Read [Remote users](/docs/react/remote-users) to show idle state next to a user's name, not only on the cursor.
+
+## Forced colors and reduced motion
+
+`DefaultCursor` sets `forced-color-adjust: none`, so its arrow and label keep their own colors under Windows forced-colors mode instead of flattening to system colors. `CursorLayer` skips the opacity transition on a cursor's root when the operating system prefers reduced motion.
+
+## Related
+
+- [CursorLayer](/docs/react/cursor-layer)
+- [Remote users](/docs/react/remote-users)
+- [Components API](/docs/react/api/components)

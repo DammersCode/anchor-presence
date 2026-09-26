@@ -1,4 +1,3 @@
-import { useCursorAnchor } from "@anchor-presence/react";
 import { cn } from "../../lib/cn";
 import { Button } from "../ui/button";
 
@@ -24,16 +23,20 @@ export interface SidebarProps {
   onOpenSettings: () => void;
 }
 
-function NavButton({ item, isActive, collapsed, onClick }: {
+function NavButton({
+  item,
+  isActive,
+  collapsed,
+  onClick,
+}: {
   item: NavItem;
   isActive: boolean;
   collapsed: boolean;
   onClick: () => void;
 }) {
-  const anchorRef = useCursorAnchor(`nav.${item.id}`);
   return (
     <button
-      ref={anchorRef}
+      data-anchor={`nav.${item.id}`}
       data-testid={`anchor-nav.${item.id}`}
       onClick={onClick}
       title={collapsed ? item.label : undefined}
@@ -49,14 +52,9 @@ function NavButton({ item, isActive, collapsed, onClick }: {
 }
 
 export function Sidebar({ collapsed, onToggle, activeItem, onSelect, onOpenSettings }: SidebarProps) {
-  const sidebarAnchor = useCursorAnchor("sidebar");
-  const brandAnchor = useCursorAnchor("sidebar.brand");
-  const toggleAnchor = useCursorAnchor("sidebar.toggle");
-  const navAnchor = useCursorAnchor("sidebar.nav");
-
   return (
     <aside
-      ref={sidebarAnchor}
+      data-anchor="sidebar"
       className={cn(
         "flex h-screen flex-col border-r border-gray-200 bg-white transition-[width] duration-300 ease-in-out",
         collapsed ? "w-16" : "w-60",
@@ -64,12 +62,12 @@ export function Sidebar({ collapsed, onToggle, activeItem, onSelect, onOpenSetti
     >
       <div className="flex h-14 items-center justify-between px-3">
         {!collapsed && (
-          <span ref={brandAnchor} className="truncate text-sm font-semibold text-gray-900">
+          <span data-anchor="sidebar.brand" className="truncate text-sm font-semibold text-gray-900">
             Anchor Admin
           </span>
         )}
         <Button
-          ref={toggleAnchor}
+          data-anchor="sidebar.toggle"
           data-testid="anchor-sidebar.toggle"
           variant="ghost"
           size="icon"
@@ -81,7 +79,7 @@ export function Sidebar({ collapsed, onToggle, activeItem, onSelect, onOpenSetti
         </Button>
       </div>
 
-      <nav ref={navAnchor} className="flex flex-1 flex-col gap-1 px-2">
+      <nav data-anchor="sidebar.nav" className="flex flex-1 flex-col gap-1 px-2">
         {NAV_ITEMS.map((item) => {
           const handleClick = item.id === "settings" ? onOpenSettings : () => onSelect(item.id);
           return (

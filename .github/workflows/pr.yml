@@ -14,7 +14,8 @@ permissions:
   contents: read
 
 jobs:
-  quick:
+  checks:
+    name: Build, typecheck, lint, and unit tests
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     # Outside PRs skip at 0 minutes; to check one, run this workflow on its branch from the Actions tab.
@@ -31,10 +32,16 @@ jobs:
           path: ~/.bun/install/cache
           key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
           restore-keys: ${{ runner.os }}-bun-
-      - run: bun install --frozen-lockfile
-      - run: bun run build
-      - run: bun run typecheck
-      - run: bun run format:check
-      - run: bun run lint
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Build packages
+        run: bun run build
+      - name: Typecheck
+        run: bun run typecheck
+      - name: Check formatting
+        run: bun run format:check
+      - name: Lint
+        run: bun run lint
       # No .NET on this runner, so the real SignalR hub test skips itself; main runs it.
-      - run: bun run test
+      - name: Unit tests
+        run: bun run test

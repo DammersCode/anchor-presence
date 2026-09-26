@@ -55,22 +55,32 @@ export function Mermaid({ chart }: { chart: string }) {
   useLayoutEffect(() => {
     let cancelled = false;
 
-    void (async () => {
+    const render = async () => {
       const { default: mermaid } = await import("mermaid");
       mermaid.initialize({
         startOnLoad: false,
         theme: "base",
         fontFamily: "var(--font-sans, ui-sans-serif)",
         themeVariables: readThemeVariables(),
-        flowchart: { useMaxWidth: false, wrappingWidth: 260 },
+        flowchart: { useMaxWidth: true, wrappingWidth: 260 },
         sequence: { useMaxWidth: false, mirrorActors: false },
       });
       const { svg: rendered } = await mermaid.render(`mermaid-${id}`, chart);
       if (!cancelled) setSvg(rendered);
-    })();
+    };
+
+    // A hidden tab measures text wrong, so Mermaid would lay the diagram out at a huge size.
+    const renderWhenVisible = () => {
+      if (document.visibilityState !== "visible") return;
+      document.removeEventListener("visibilitychange", renderWhenVisible);
+      void render();
+    };
+    document.addEventListener("visibilitychange", renderWhenVisible);
+    renderWhenVisible();
 
     return () => {
       cancelled = true;
+      document.removeEventListener("visibilitychange", renderWhenVisible);
     };
   }, [chart, id, resolvedTheme]);
 

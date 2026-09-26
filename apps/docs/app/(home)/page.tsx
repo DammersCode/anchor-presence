@@ -54,6 +54,15 @@ export default function HomePage() {
             screen size differs from yours.
           </p>
           <InstallCommand />
+          <p className="mt-2 max-w-[46ch] text-xs text-fd-muted-foreground">
+            For a React app. Other setups need fewer packages.{" "}
+            <Link
+              href="/docs/get-started/installation"
+              className="font-medium text-fd-foreground underline underline-offset-2"
+            >
+              See Installation
+            </Link>
+          </p>
           <p className="mt-4 mb-1.5 font-mono text-xs text-fd-muted-foreground">
             Your AI agent can wire it up too
           </p>

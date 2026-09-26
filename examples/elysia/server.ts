@@ -42,16 +42,24 @@ export function createElysiaRelay(port: number, options: ElysiaRelayOptions = {}
   const rateRefillPerSecond =
     options.rateRefillPerSecond ?? limitFromEnv(process.env.RATE_REFILL_PER_SECOND, 20);
   const maxRoomSockets = options.maxRoomSockets ?? limitFromEnv(process.env.RELAY_MAX_ROOM_SOCKETS, 128);
-  const maxSockets = options.maxSockets ?? limitFromEnv(process.env.RELAY_MAX_SOCKETS, 10_000);
+  const maxSockets = options.maxSockets ?? limitFromEnv(process.env.RELAY_MAX_TOTAL_SOCKETS, 10_000);
   const idleTimeoutSeconds =
     options.idleTimeoutSeconds ?? limitFromEnv(process.env.RELAY_IDLE_TIMEOUT_SECONDS, 60);
+  const slowPeerHardBytes = limitFromEnv(process.env.RELAY_SLOW_PEER_HARD_BYTES, 8 * 1024 * 1024);
   const allowedOrigins = options.allowedOrigins ?? allowedOriginsFromEnv(process.env.RELAY_ALLOWED_ORIGINS);
   const authCheck = options.authCheck ?? tokenAuthCheck(process.env.RELAY_AUTH_TOKEN ?? "");
 
   const limits = new ConnectionLimits(maxSockets, maxRoomSockets);
   const connectionState = new WeakMap<object, ConnectionState>();
 
-  const app = new Elysia({ websocket: { idleTimeout: idleTimeoutSeconds, sendPings: true } }).ws("/", {
+  const app = new Elysia({
+    websocket: {
+      idleTimeout: idleTimeoutSeconds,
+      sendPings: true,
+      backpressureLimit: slowPeerHardBytes,
+      closeOnBackpressureLimit: true,
+    },
+  }).ws("/", {
     open(ws) {
       const query = ws.data.query as Record<string, string | undefined>;
       const room = sanitizeRoomName(query.room);

@@ -30,17 +30,17 @@ It starts a real relay on an ephemeral port, connects two `createPresenceClient`
 
 ## Production notes (security baseline)
 
-| Control                                 | Status                                                                                                                                                           |
-| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Room name validation (length + charset) | Yes — `sanitizeRoomName` caps at 256 chars and restricts to `[A-Za-z0-9_-]`, falling back to `"main"`.                                                           |
-| Max payload size                        | Yes — `MAX_MESSAGE_BYTES` (default 32 KiB). Oversized messages are dropped, not closed.                                                                          |
-| Per-connection rate limit               | Yes — token bucket, `RATE_CAPACITY` / `RATE_REFILL_PER_SECOND`.                                                                                                  |
-| Origin allowlist                        | Yes — `RELAY_ALLOWED_ORIGINS`, comma-separated. Empty (default) allows every origin, for local dev.                                                              |
-| Auth hook placeholder                   | Yes — `authCheck` option, or `RELAY_AUTH_TOKEN` env var for a plain shared-token check. Wire it to `verify(token)` for real auth.                                |
-| Room cleanup on close                   | Yes — `onClose` removes the socket's room entry and deletes the room once empty.                                                                                 |
-| Per-room / total connection caps        | Yes — `RELAY_MAX_ROOM_SOCKETS` (default 128) caps one room, `RELAY_MAX_SOCKETS` (default 10,000) caps the process. Rejected sockets close with `4001` or `4002`. |
-| Dead-connection detection               | Yes — Bun's `idleTimeout` (`RELAY_IDLE_TIMEOUT_SECONDS`, default 60) with `sendPings`. Bun pings a silent socket and closes it when no pong arrives.             |
-| Backpressure on slow consumers          | Yes — `WSContext.raw` exposes the underlying Bun socket's `getBufferedAmount()`. The relay skips sends above a soft watermark and closes above a hard one.       |
+| Control                                 | Status                                                                                                                                                                 |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Room name validation (length + charset) | Yes — `sanitizeRoomName` caps at 256 chars and restricts to `[A-Za-z0-9_-]`, falling back to `"main"`.                                                                 |
+| Max payload size                        | Yes — `MAX_MESSAGE_BYTES` (default 32 KiB). Oversized messages are dropped, not closed.                                                                                |
+| Per-connection rate limit               | Yes — token bucket, `RATE_CAPACITY` / `RATE_REFILL_PER_SECOND`.                                                                                                        |
+| Origin allowlist                        | Yes — `RELAY_ALLOWED_ORIGINS`, comma-separated. Empty (default) allows every origin, for local dev.                                                                    |
+| Auth hook placeholder                   | Yes — `authCheck` option, or `RELAY_AUTH_TOKEN` env var for a plain shared-token check. Wire it to `verify(token)` for real auth.                                      |
+| Room cleanup on close                   | Yes — `onClose` removes the socket's room entry and deletes the room once empty.                                                                                       |
+| Per-room / total connection caps        | Yes — `RELAY_MAX_ROOM_SOCKETS` (default 128) caps one room, `RELAY_MAX_TOTAL_SOCKETS` (default 10,000) caps the process. Rejected sockets close with `4001` or `4002`. |
+| Dead-connection detection               | Yes — Bun's `idleTimeout` (`RELAY_IDLE_TIMEOUT_SECONDS`, default 60) with `sendPings`. Bun pings a silent socket and closes it when no pong arrives.                   |
+| Backpressure on slow consumers          | Yes — `WSContext.raw` exposes the underlying Bun socket's `getBufferedAmount()`. The relay skips sends above a soft watermark and closes above a hard one.             |
 
 Set `RELAY_ALLOWED_ORIGINS` and `RELAY_AUTH_TOKEN` before exposing this beyond local development, and put it behind a TLS-terminating proxy.
 

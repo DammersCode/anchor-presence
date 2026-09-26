@@ -109,7 +109,7 @@ describe("Bun-native relay limits", () => {
   const sockets: WebSocket[] = [];
 
   beforeAll(async () => {
-    limited = await spawnBunRelay("bun-native", { RELAY_MAX_SOCKETS: "1" });
+    limited = await spawnBunRelay("bun-native", { RELAY_MAX_TOTAL_SOCKETS: "1" });
   }, 15_000);
 
   afterAll(async () => {

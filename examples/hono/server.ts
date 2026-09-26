@@ -51,7 +51,7 @@ export function createHonoRelay(port: number, options: HonoRelayOptions = {}) {
   const rateRefillPerSecond =
     options.rateRefillPerSecond ?? limitFromEnv(process.env.RATE_REFILL_PER_SECOND, 20);
   const maxRoomSockets = options.maxRoomSockets ?? limitFromEnv(process.env.RELAY_MAX_ROOM_SOCKETS, 128);
-  const maxSockets = options.maxSockets ?? limitFromEnv(process.env.RELAY_MAX_SOCKETS, 10_000);
+  const maxSockets = options.maxSockets ?? limitFromEnv(process.env.RELAY_MAX_TOTAL_SOCKETS, 10_000);
   const idleTimeoutSeconds =
     options.idleTimeoutSeconds ?? limitFromEnv(process.env.RELAY_IDLE_TIMEOUT_SECONDS, 60);
   const slowPeerSoftBytes =

@@ -67,7 +67,7 @@ const client = createPresenceClient({
 | Origin allowlist                        | Yes — `RELAY_ALLOWED_ORIGINS`, comma-separated. Empty (default) allows every origin (Socket.IO's CORS `"*"`), for local dev.                                      |
 | Auth hook placeholder                   | Yes — `authCheck` option, or `RELAY_AUTH_TOKEN` env var for a plain shared-token check, enforced in an `io.use` middleware before the connection completes.       |
 | Room cleanup on close                   | Yes — `disconnect` releases the socket's slot in `ConnectionLimits`. Socket.IO leaves the room automatically.                                                     |
-| Per-room / total connection caps        | Yes — `RELAY_MAX_ROOM_SOCKETS` (default 128) caps one room, `RELAY_MAX_SOCKETS` (default 10,000) caps the process. A rejected socket is disconnected.             |
+| Per-room / total connection caps        | Yes — `RELAY_MAX_ROOM_SOCKETS` (default 128) caps one room, `RELAY_MAX_TOTAL_SOCKETS` (default 10,000) caps the process. A rejected socket is disconnected.       |
 | Dead-connection detection               | Yes — Socket.IO's own heartbeat (`pingInterval`, `pingTimeout`).                                                                                                  |
 | Backpressure on slow consumers          | **No.** Socket.IO does not expose a per-socket buffered-amount the way raw `ws` or Bun's `ServerWebSocket` do, so this example applies no slow-peer backpressure. |
 

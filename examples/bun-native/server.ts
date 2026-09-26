@@ -47,9 +47,10 @@ export function createBunRelay(port: number, options: BunRelayOptions = {}) {
   const rateRefillPerSecond =
     options.rateRefillPerSecond ?? limitFromEnv(process.env.RATE_REFILL_PER_SECOND, 20);
   const maxRoomSockets = options.maxRoomSockets ?? limitFromEnv(process.env.RELAY_MAX_ROOM_SOCKETS, 128);
-  const maxSockets = options.maxSockets ?? limitFromEnv(process.env.RELAY_MAX_SOCKETS, 10_000);
+  const maxSockets = options.maxSockets ?? limitFromEnv(process.env.RELAY_MAX_TOTAL_SOCKETS, 10_000);
   const idleTimeoutSeconds =
     options.idleTimeoutSeconds ?? limitFromEnv(process.env.RELAY_IDLE_TIMEOUT_SECONDS, 60);
+  const slowPeerHardBytes = limitFromEnv(process.env.RELAY_SLOW_PEER_HARD_BYTES, 8 * 1024 * 1024);
   const allowedOrigins = options.allowedOrigins ?? allowedOriginsFromEnv(process.env.RELAY_ALLOWED_ORIGINS);
   const authCheck = options.authCheck ?? tokenAuthCheck(process.env.RELAY_AUTH_TOKEN ?? "");
 
@@ -79,6 +80,8 @@ export function createBunRelay(port: number, options: BunRelayOptions = {}) {
     websocket: {
       idleTimeout: idleTimeoutSeconds,
       sendPings: true,
+      backpressureLimit: slowPeerHardBytes,
+      closeOnBackpressureLimit: true,
       open(ws) {
         if (!originAllowed(allowedOrigins, ws.data.origin)) {
           ws.close(ORIGIN_REJECTED_CODE, "origin not allowed");

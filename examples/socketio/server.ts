@@ -28,7 +28,7 @@ export function createSocketIoRelay(port: number, options: SocketIoRelayOptions 
   const rateRefillPerSecond =
     options.rateRefillPerSecond ?? limitFromEnv(process.env.RATE_REFILL_PER_SECOND, 20);
   const maxRoomSockets = options.maxRoomSockets ?? limitFromEnv(process.env.RELAY_MAX_ROOM_SOCKETS, 128);
-  const maxSockets = options.maxSockets ?? limitFromEnv(process.env.RELAY_MAX_SOCKETS, 10_000);
+  const maxSockets = options.maxSockets ?? limitFromEnv(process.env.RELAY_MAX_TOTAL_SOCKETS, 10_000);
   const allowedOrigins = options.allowedOrigins ?? [
     ...allowedOriginsFromEnv(process.env.RELAY_ALLOWED_ORIGINS),
   ];

@@ -2,7 +2,7 @@ import { docs } from "collections/server";
 import { loader } from "fumadocs-core/source";
 import type { GeneratedDoc } from "fumadocs-typescript";
 import { createElement } from "react";
-import { Atom, Box, Compass, FlaskConical, MousePointer } from "lucide-react";
+import { Atom, Bot, Box, Compass, FlaskConical, MousePointer } from "lucide-react";
 import { readDocsSource, readExampleSource } from "./read-example-source";
 import { docsContentRoute, docsImageRoute, docsRoute, installPackages } from "./shared";
 import { getTypeGenerator } from "./type-generator";
@@ -13,6 +13,7 @@ const icons = {
   "mouse-pointer": MousePointer,
   atom: Atom,
   "flask-conical": FlaskConical,
+  bot: Bot,
 };
 
 export const source = loader({

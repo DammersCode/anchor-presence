@@ -1,0 +1,94 @@
+---
+title: Layout audit skill
+description: The agent skill that scores a running app for cursor-jump risk between layouts and proposes fixes.
+---
+
+The layout audit skill measures how far a remote cursor can jump when your app's layout changes: a sidebar that collapses, a table that becomes cards, a breakpoint that reflows a grid. Install it and ask your agent to audit your layouts; it drives a real browser against your running app and hands back a score, per view pair, with concrete fixes.
+
+## What it does
+
+The agent scans your code for anchors, routes, breakpoints, and toggles such as a collapsible sidebar or a dialog. It builds a list of views, routes crossed with viewport widths and UI states, and measures every pair of views of the same page in a real browser. Each pair gets a score from 0 (low risk) to 100 (high risk), broken into five sub-scores. For any pair that scores moderate or high, the agent proposes fixes, file and line, and applies the ones you pick.
+
+## When to reach for it
+
+| Situation                                                            |                             Reach for it                             |
+| -------------------------------------------------------------------- | :------------------------------------------------------------------: |
+| Before shipping a responsive or collapsible layout with live cursors |                                 Yes                                  |
+| Remote cursors jump between two layouts                              |                                 Yes                                  |
+| Reviewing a layout for live presence risk                            |                                 Yes                                  |
+| Setting up live cursors for the first time                           |   No — use the [integration skill](/docs/skills/integration) first   |
+| A single cursor never appears at all                                 | No — see [Troubleshooting](/docs/get-started/guides/troubleshooting) |
+
+## Prerequisites
+
+| Requirement            | Detail                                                                                          |
+| ---------------------- | ----------------------------------------------------------------------------------------------- |
+| Running app            | A URL that answers HTTP 200, local or deployed                                                  |
+| Playwright             | The skill checks for it and gives the install command for your package manager if missing       |
+| Node                   | Version 20 or later                                                                             |
+| Anchors already placed | The audit measures anchors your app already has; run the integration skill first if it has none |
+
+## What it asks you
+
+| Question               | Options                                                                      | Default                             |
+| ---------------------- | ---------------------------------------------------------------------------- | ----------------------------------- |
+| URL of the running app | Any HTTP URL, or let the agent start the dev script                          | Asked; the code cannot answer this  |
+| Views to measure       | Confirm, remove, or add rows in the proposed route × viewport × state matrix | The proposed matrix, once confirmed |
+| Report format          | `table`, `markdown`, `mermaid`, or a comma-separated combination             | `table`                             |
+| Which fixes to apply   | Pick by number from the proposals, per view pair                             | None applied until you pick         |
+
+## How it works
+
+1. **Scan.** The agent finds every `data-anchor` in your code, the routes that render them, your breakpoints, and toggles that change which anchors show or where they sit.
+2. **Propose a matrix.** It builds views from routes, viewport widths (a base set plus your breakpoints), and states (default plus one per toggle), and shows you the pair count before measuring.
+3. **Check prerequisites.** It confirms the app URL answers and that Playwright is installed.
+4. **Measure.** It opens each view in a real browser, records anchor boxes, and scores every pair.
+5. **Report.** It asks your preferred format and shows or writes the results.
+6. **Propose fixes.** For each pair scoring moderate or high, it matches the worst sub-scores to a fix and cites the file and line.
+7. **Apply and re-measure.** It applies only the fixes you pick, then measures again and shows a before/after table.
+
+## Output formats
+
+| Format      | Content                                                                                   | Rough chat cost                                               |
+| ----------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| `table`     | One row per view pair (top 15): total, band, five sub-scores                              | About 40 tokens per row, 600 for 15 rows                      |
+| `markdown`  | A file: the score table, then per pair the inputs, largest jumps, gaps, shapes, fallbacks | About 30 tokens for the path; the script prints the file size |
+| `mermaid`   | A file: bar charts of total and jump distance per pair, plus fallback-chain flowcharts    | About 30 tokens for the path                                  |
+| Combination | `table,markdown`, `markdown,mermaid`, or `all`                                            | The sum of the parts; the files merge into one                |
+
+## Score bands
+
+The total score is the worse of a weighted sum and the two sub-scores users notice most directly, Jump and Gap, so neither gets diluted by the others.
+
+| Band     | Total  | Jump (35%)                           | Gap (25%)                          | Depth (15%)                    | Aspect (15%)       | Parity (10%)                 |
+| -------- | ------ | ------------------------------------ | ---------------------------------- | ------------------------------ | ------------------ | ---------------------------- |
+| Low      | 0–20   | Under 40 px moved                    | Under 5% uncovered                 | No fallback                    | No shape change    | All IDs present              |
+| Moderate | 21–50  | Rising toward 240 px                 | Rising toward 40%                  | Falls back one level or more   | Shape changes      | Some IDs missing in one view |
+| High     | 51–100 | 240 px or more, or a large gap alone | 40% or more, or a large jump alone | Falls back toward the viewport | Large shape change | Many IDs missing             |
+
+Jump and Gap alone can push a pair into a higher band even when the other three sub-scores are low. See [Scoring a view pair](https://github.com/DammersCode/anchor-presence/blob/main/skills/anchor-presence-audit/scoring.md) in the skill source for the exact formula.
+
+## Common questions
+
+**Does it need my app in production?** No. Point it at any running instance, including `localhost`. Nothing it measures leaves your machine.
+
+**What if I have no Playwright installed?** The skill detects this and gives you the exact install command for your package manager; it asks before installing anything.
+
+**Can I run this in CI?** Yes. Run `measure.mjs` with `--fail-above <score>`; the script exits with code 1 when any view pair scores above that value, so a pipeline can fail the build on a regression.
+
+**Does it fix things automatically?** No. It proposes fixes per pair and applies only the ones you pick, one round per run.
+
+**What counts as one view?** One route, at one viewport width, in one UI state — for example, the orders page at 768 px with the sidebar collapsed.
+
+## It's working if
+
+- The measurement summary reports every view measured (`Measured N/N views`).
+- Every pair scoring moderate or high has a proposal, or a stated reason why no fix applies.
+- After applying fixes, the before/after table shows the picked pairs' totals dropping, with no pair getting worse without a note.
+- A CI run with `--fail-above` exits 0 once every pair is at or below your chosen threshold.
+
+## Where it fits
+
+- [Integration skill](/docs/skills/integration): run it first to place anchors; the audit skill measures what it left behind.
+- [Designing layouts for presence](/docs/get-started/guides/layout-design): the layout rules behind every sub-score, with the fix that applies to each.
+- [Responsive layouts](/docs/get-started/concepts/responsive-layouts): how the resolver behaves across breakpoints.

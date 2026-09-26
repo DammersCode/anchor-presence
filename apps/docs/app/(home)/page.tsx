@@ -57,6 +57,12 @@ export default function HomePage() {
             Your AI agent can wire it up too
           </p>
           <InstallCommand run="skills add DammersCode/anchor-presence" />
+          <p className="mt-2 max-w-[46ch] text-xs text-fd-muted-foreground">
+            One skill wires up cursors, another audits layouts.{" "}
+            <Link href="/docs/skills" className="font-medium text-fd-foreground underline underline-offset-2">
+              See Skills
+            </Link>
+          </p>
           <div className="mt-5 flex flex-wrap items-center gap-4">
             <Link
               href="/docs"

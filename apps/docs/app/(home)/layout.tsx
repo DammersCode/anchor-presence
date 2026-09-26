@@ -10,6 +10,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       links={[
         { text: "Docs", url: docsRoute },
         { text: "Examples", url: `${docsRoute}/examples` },
+        { text: "Skills", url: `${docsRoute}/skills` },
       ]}
     >
       {children}

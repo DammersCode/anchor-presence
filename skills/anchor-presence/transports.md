@@ -48,7 +48,7 @@ A relay you write or copy must:
 8. Forward only to the sender's room, never to the sender itself.
 9. Accept room names of limited length and charset `[A-Za-z0-9_-]`.
 
-The Bun, `ws`, Hono, and Elysia examples cover this list, except the per-process cap (they cap rooms only) and ping and pong (item 7). Add those two yourself. The Socket.IO and SignalR examples rely on their library for part of this list; read their docs page.
+The Bun, `ws`, Hono, and Elysia examples cover this list. Their caps come from `RELAY_MAX_ROOM_SOCKETS` and `RELAY_MAX_SOCKETS`, and `RELAY_IDLE_TIMEOUT_SECONDS` sets when a dead connection closes. The Socket.IO and SignalR examples rely on their library for part of this list; read their docs page.
 
 ## Copying an example relay
 

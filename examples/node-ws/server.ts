@@ -1,4 +1,4 @@
-// Node `ws` on node:http. Same security baseline as apps/server and examples/bun-native.
+// Node `ws` on node:http. Same security baseline as the Bun relay example.
 import { createServer, type Server } from "node:http";
 import { WebSocketServer, type WebSocket } from "ws";
 import {
@@ -17,6 +17,9 @@ export type NodeWsRelayOptions = {
   rateCapacity?: number;
   rateRefillPerSecond?: number;
   maxRoomSockets?: number;
+  maxSockets?: number;
+  /** Seconds a socket may leave a ping unanswered. The relay pings every half of it and terminates silent sockets. */
+  idleTimeoutSeconds?: number;
   slowPeerSoftBytes?: number;
   slowPeerHardBytes?: number;
   slowPeerResumeBytes?: number;
@@ -29,6 +32,7 @@ type SocketState = {
   room: string;
   rateLimiter: RateLimiter;
   skipped: boolean;
+  alive: boolean;
 };
 
 const SLOW_PEER_CODE = 4003;
@@ -40,6 +44,9 @@ export function createNodeWsRelay(port: number, options: NodeWsRelayOptions = {}
   const rateRefillPerSecond =
     options.rateRefillPerSecond ?? limitFromEnv(process.env.RATE_REFILL_PER_SECOND, 20);
   const maxRoomSockets = options.maxRoomSockets ?? limitFromEnv(process.env.RELAY_MAX_ROOM_SOCKETS, 128);
+  const maxSockets = options.maxSockets ?? limitFromEnv(process.env.RELAY_MAX_SOCKETS, 10_000);
+  const idleTimeoutSeconds =
+    options.idleTimeoutSeconds ?? limitFromEnv(process.env.RELAY_IDLE_TIMEOUT_SECONDS, 60);
   const slowPeerSoftBytes =
     options.slowPeerSoftBytes ?? limitFromEnv(process.env.RELAY_SLOW_PEER_SOFT_BYTES, 1024 * 1024);
   const slowPeerHardBytes =
@@ -70,6 +77,10 @@ export function createNodeWsRelay(port: number, options: NodeWsRelayOptions = {}
       socket.destroy();
       return;
     }
+    if (wss.clients.size >= maxSockets) {
+      socket.destroy();
+      return;
+    }
     const room = sanitizeRoomName(url.searchParams.get("room"));
     const sockets = rooms.get(room);
     if (sockets && sockets.size >= maxRoomSockets) {
@@ -82,7 +93,13 @@ export function createNodeWsRelay(port: number, options: NodeWsRelayOptions = {}
   });
 
   wss.on("connection", (ws: WebSocket, room: string) => {
-    state.set(ws, { room, rateLimiter: new RateLimiter(rateCapacity, rateRefillPerSecond), skipped: false });
+    const socketState: SocketState = {
+      room,
+      rateLimiter: new RateLimiter(rateCapacity, rateRefillPerSecond),
+      skipped: false,
+      alive: true,
+    };
+    state.set(ws, socketState);
     const sockets = rooms.get(room) ?? new Set<WebSocket>();
     sockets.add(ws);
     rooms.set(room, sockets);
@@ -92,9 +109,11 @@ export function createNodeWsRelay(port: number, options: NodeWsRelayOptions = {}
       ws.terminate();
     });
 
+    ws.on("pong", () => {
+      socketState.alive = true;
+    });
+
     ws.on("message", (data, isBinary) => {
-      const socketState = state.get(ws);
-      if (!socketState) return;
       if (!socketState.rateLimiter.tryConsume()) return;
       const message = isBinary ? (data as Buffer) : data.toString();
       if (messageByteLength(message, maxMessageBytes) > maxMessageBytes) return;
@@ -129,6 +148,22 @@ export function createNodeWsRelay(port: number, options: NodeWsRelayOptions = {}
       state.delete(ws);
     });
   });
+
+  const heartbeat = setInterval(
+    () => {
+      for (const client of wss.clients) {
+        const clientState = state.get(client);
+        if (!clientState?.alive) {
+          client.terminate();
+          continue;
+        }
+        clientState.alive = false;
+        client.ping();
+      }
+    },
+    (idleTimeoutSeconds * 1000) / 2,
+  );
+  wss.on("close", () => clearInterval(heartbeat));
 
   return new Promise<{ url: string; close: () => Promise<void> }>((resolve) => {
     httpServer.listen(port, () => {

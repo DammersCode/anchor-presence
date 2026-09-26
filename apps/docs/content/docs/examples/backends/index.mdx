@@ -59,7 +59,7 @@ Two options need no relay at all: `createInMemoryPair` from `@anchor-presence/co
 
 ## Shared guard helpers
 
-The Bun, Node.js (ws), Hono, and Elysia relays share one file of guard helpers: room-name validation, a per-connection rate limiter, a message size check, and Origin and token checks. Copy it together with the server you pick:
+The Bun, Node.js (ws), Hono, Elysia, and Socket.IO relays share one file of guard helpers: room-name validation, a per-connection rate limiter, a message size check, Origin and token checks, and connection caps per room and per process. Copy it together with the server you pick:
 
 <CodeFromSource repo="examples/_shared/relay-guard.ts" lang="ts" />
 

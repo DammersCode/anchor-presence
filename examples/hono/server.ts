@@ -1,11 +1,10 @@
-// Hono on Bun, using hono/bun's built-in upgradeWebSocket (no extra WS dependency needed on Bun).
-// Chosen over @hono/node-ws because this repo already runs everything on Bun; @hono/node-ws only
-// matters if you deploy Hono on plain Node instead.
+// Hono on Bun with hono/bun's upgradeWebSocket. On plain Node, use @hono/node-ws instead.
 import { Hono } from "hono";
 import { upgradeWebSocket, websocket } from "hono/bun";
 import type { WSContext } from "hono/ws";
 import {
   allowedOriginsFromEnv,
+  ConnectionLimits,
   limitFromEnv,
   messageByteLength,
   originAllowed,
@@ -20,6 +19,9 @@ export type HonoRelayOptions = {
   rateCapacity?: number;
   rateRefillPerSecond?: number;
   maxRoomSockets?: number;
+  maxSockets?: number;
+  /** Seconds without a message or a pong before Bun closes the socket. Bun sends a ping before it closes. */
+  idleTimeoutSeconds?: number;
   slowPeerSoftBytes?: number;
   slowPeerHardBytes?: number;
   slowPeerResumeBytes?: number;
@@ -33,6 +35,7 @@ type RawSocket = { readyState: number; getBufferedAmount(): number };
 const AUTH_REJECTED_CODE = 4006;
 const ORIGIN_REJECTED_CODE = 4004;
 const ROOM_FULL_CODE = 4001;
+const SERVER_FULL_CODE = 4002;
 const SLOW_PEER_CODE = 4003;
 const OPEN = 1;
 
@@ -48,6 +51,9 @@ export function createHonoRelay(port: number, options: HonoRelayOptions = {}) {
   const rateRefillPerSecond =
     options.rateRefillPerSecond ?? limitFromEnv(process.env.RATE_REFILL_PER_SECOND, 20);
   const maxRoomSockets = options.maxRoomSockets ?? limitFromEnv(process.env.RELAY_MAX_ROOM_SOCKETS, 128);
+  const maxSockets = options.maxSockets ?? limitFromEnv(process.env.RELAY_MAX_SOCKETS, 10_000);
+  const idleTimeoutSeconds =
+    options.idleTimeoutSeconds ?? limitFromEnv(process.env.RELAY_IDLE_TIMEOUT_SECONDS, 60);
   const slowPeerSoftBytes =
     options.slowPeerSoftBytes ?? limitFromEnv(process.env.RELAY_SLOW_PEER_SOFT_BYTES, 1024 * 1024);
   const slowPeerHardBytes =
@@ -58,6 +64,7 @@ export function createHonoRelay(port: number, options: HonoRelayOptions = {}) {
   const authCheck = options.authCheck ?? tokenAuthCheck(process.env.RELAY_AUTH_TOKEN ?? "");
 
   const rooms = new Map<string, Set<RoomEntry>>();
+  const limits = new ConnectionLimits(maxSockets, maxRoomSockets);
   const skipped = new WeakMap<RawSocket, boolean>();
 
   const app = new Hono();
@@ -81,14 +88,14 @@ export function createHonoRelay(port: number, options: HonoRelayOptions = {}) {
             ws.close(AUTH_REJECTED_CODE, "invalid token");
             return;
           }
-          const sockets = rooms.get(room);
-          if (sockets && sockets.size >= maxRoomSockets) {
-            ws.close(ROOM_FULL_CODE, "room full");
+          const admission = limits.admit(room);
+          if (admission !== "ok") {
+            ws.close(admission === "server full" ? SERVER_FULL_CODE : ROOM_FULL_CODE, admission);
             return;
           }
-          const set = sockets ?? new Set<RoomEntry>();
-          set.add({ ws, raw });
-          rooms.set(room, set);
+          const sockets = rooms.get(room) ?? new Set<RoomEntry>();
+          sockets.add({ ws, raw });
+          rooms.set(room, sockets);
         },
         onMessage(evt, ws) {
           const sockets = rooms.get(room);
@@ -127,6 +134,7 @@ export function createHonoRelay(port: number, options: HonoRelayOptions = {}) {
             if (peer.raw === raw) {
               sockets.delete(peer);
               skipped.delete(peer.raw);
+              limits.release(room);
               break;
             }
           }
@@ -136,7 +144,11 @@ export function createHonoRelay(port: number, options: HonoRelayOptions = {}) {
     }),
   );
 
-  const server = Bun.serve({ port, fetch: app.fetch, websocket });
+  const server = Bun.serve({
+    port,
+    fetch: app.fetch,
+    websocket: { ...websocket, idleTimeout: idleTimeoutSeconds, sendPings: true },
+  });
 
   return {
     url: `http://localhost:${server.port}`,

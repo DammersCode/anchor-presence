@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import { RootProvider } from "fumadocs-ui/provider/next";
 import localFont from "next/font/local";
+import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./global.css";
 import { appName, siteUrl } from "@/lib/shared";
@@ -23,6 +24,7 @@ export default function Layout({ children }: { children: ReactNode }) {
     <html lang="en" className={`${inter.className} ${sora.variable}`} suppressHydrationWarning>
       <body className="flex min-h-screen flex-col">
         <RootProvider>{children}</RootProvider>
+        <Analytics />
         <SpeedInsights />
       </body>
     </html>

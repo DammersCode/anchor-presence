@@ -25,9 +25,16 @@ export function BasicsScene({ client, layout, children }: Props) {
           data-anchor="post"
           className="w-full max-w-sm rounded-xl border border-fd-border bg-fd-background p-4 shadow-sm"
         >
-          <p className="font-mono text-[10px] tracking-wider text-fd-muted-foreground uppercase">Draft</p>
-          <h3 className="font-display mt-1 text-base font-semibold">Release notes 2.4</h3>
-          <p className="mt-1 text-xs leading-relaxed text-fd-muted-foreground">
+          <p
+            data-anchor="post.tag"
+            className="font-mono text-[10px] tracking-wider text-fd-muted-foreground uppercase"
+          >
+            Draft
+          </p>
+          <h3 data-anchor="post.title" className="font-display mt-1 text-base font-semibold">
+            Release notes 2.4
+          </h3>
+          <p data-anchor="post.summary" className="mt-1 text-xs leading-relaxed text-fd-muted-foreground">
             Anchored cursors, faster sync, and a presence list.
           </p>
           <div className={`mt-4 flex gap-2 ${wide ? "justify-end" : "flex-col"}`}>

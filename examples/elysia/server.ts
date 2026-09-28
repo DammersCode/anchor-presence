@@ -1,5 +1,5 @@
 // Elysia `.ws()` route on Bun, using Elysia's own topic pub-sub (same model as the Bun relay example).
-import { Elysia } from "elysia";
+import { Elysia, t } from "elysia";
 import {
   allowedOriginsFromEnv,
   ConnectionLimits,
@@ -60,18 +60,19 @@ export function createElysiaRelay(port: number, options: ElysiaRelayOptions = {}
       closeOnBackpressureLimit: true,
     },
   }).ws("/", {
+    query: t.Object({ room: t.Optional(t.String()), token: t.Optional(t.String()) }),
     open(ws) {
-      const query = ws.data.query as Record<string, string | undefined>;
-      const room = sanitizeRoomName(query.room);
+      const { room: rawRoom, token } = ws.data.query;
       const origin = (ws.data.headers as Record<string, string | undefined>).origin ?? "";
       if (!originAllowed(allowedOrigins, origin)) {
         ws.close(ORIGIN_REJECTED_CODE, "origin not allowed");
         return;
       }
-      if (!authCheck(query.token ?? "")) {
+      if (!authCheck(token ?? "")) {
         ws.close(AUTH_REJECTED_CODE, "invalid token");
         return;
       }
+      const room = sanitizeRoomName(rawRoom);
       const admission = limits.admit(room);
       if (admission !== "ok") {
         ws.close(admission === "server full" ? SERVER_FULL_CODE : ROOM_FULL_CODE, admission);
@@ -88,13 +89,10 @@ export function createElysiaRelay(port: number, options: ElysiaRelayOptions = {}
       const payload = typeof message === "string" ? message : (message as ArrayBuffer);
       if (messageByteLength(payload, maxMessageBytes) > maxMessageBytes) return;
 
-      const query = ws.data.query as Record<string, string | undefined>;
-      const room = sanitizeRoomName(query.room);
-      ws.publish(room, payload);
+      ws.publish(sanitizeRoomName(ws.data.query.room), payload);
     },
     close(ws) {
-      const query = ws.data.query as Record<string, string | undefined>;
-      const room = sanitizeRoomName(query.room);
+      const room = sanitizeRoomName(ws.data.query.room);
       if (connectionState.delete(ws.raw)) limits.release(room);
     },
   });
@@ -103,6 +101,10 @@ export function createElysiaRelay(port: number, options: ElysiaRelayOptions = {}
 
   return {
     url: `http://localhost:${port}`,
+    app,
     close: () => app.stop(),
   };
 }
+
+// The client types its Eden treaty against this, so a wrong query parameter is a compile error.
+export type ElysiaRelayApp = ReturnType<typeof createElysiaRelay>["app"];

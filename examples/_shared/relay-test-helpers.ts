@@ -95,12 +95,18 @@ export function openUnresponsivePeer(port: number, room: string): UnresponsivePe
 
 /** Resolves with the close code, or 1006 when the server drops the socket before the handshake. */
 export function closeCode(socket: WebSocket): Promise<number> {
-  return new Promise((resolve) => socket.addEventListener("close", (event) => resolve(event.code)));
+  return new Promise((resolve, reject) => {
+    socket.addEventListener("close", (event) => resolve(event.code));
+    // Bun emits error without close when a handshake is aborted; settle on either so tests fail fast.
+    socket.addEventListener("error", () => reject(new Error("socket error before close")));
+  });
 }
 
 export function opened(socket: WebSocket): Promise<void> {
   return new Promise((resolve, reject) => {
     socket.addEventListener("open", () => resolve());
+    // Bun emits error without close when a handshake is aborted; settle on either so tests fail fast.
+    socket.addEventListener("error", () => reject(new Error("closed before open")));
     socket.addEventListener("close", () => reject(new Error("closed before open")));
   });
 }

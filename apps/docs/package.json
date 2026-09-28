@@ -14,6 +14,7 @@
     "@anchor-presence/core": "workspace:*",
     "@anchor-presence/dom": "workspace:*",
     "@anchor-presence/react": "workspace:*",
+    "@vercel/speed-insights": "^2.0.0",
     "fumadocs-core": "^16.15.11",
     "fumadocs-mdx": "^15.4.1",
     "fumadocs-typescript": "^5.4.1",

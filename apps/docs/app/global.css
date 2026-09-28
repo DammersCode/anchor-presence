@@ -74,12 +74,6 @@ html {
   letter-spacing: -0.025em;
 }
 
-.text-gradient {
-  background-image: var(--ap-grad);
-  background-clip: text;
-  color: transparent;
-}
-
 .bg-gradient-brand {
   background-image: var(--ap-grad);
 }

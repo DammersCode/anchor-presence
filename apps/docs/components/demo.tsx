@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 const DemoPanes = dynamic(() => import("./demo/demo-panes").then((mod) => mod.DemoPanes), {
   ssr: false,
   loading: () => (
-    <div className="my-6 h-72 animate-pulse rounded-lg border border-fd-border bg-fd-secondary/40" />
+    <div className="my-6 h-[420px] animate-pulse rounded-lg border border-fd-border bg-fd-secondary/40" />
   ),
 });
 

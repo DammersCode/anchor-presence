@@ -21,13 +21,13 @@ export function DemoPanes() {
       <iframe
         title="Wide layout pane"
         src={wideSrc}
-        className="h-72 w-full rounded-lg border border-fd-border"
+        className="h-[420px] w-full rounded-lg border border-fd-border"
         loading="lazy"
       />
       <iframe
         title="Narrow layout pane"
         src={narrowSrc}
-        className="h-72 w-full rounded-lg border border-fd-border"
+        className="h-[420px] w-full rounded-lg border border-fd-border"
         loading="lazy"
       />
     </div>

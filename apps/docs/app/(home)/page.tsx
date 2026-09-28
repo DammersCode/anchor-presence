@@ -39,8 +39,8 @@ const GUARANTEES = [
 export default function HomePage() {
   return (
     <div id={mainContentId} className="mx-auto max-w-6xl px-4 py-12">
-      <section className="grid items-center gap-10 py-8 md:grid-cols-[5fr_6fr] md:py-14">
-        <div>
+      <section className="py-8 md:py-14">
+        <div className="mb-4">
           <span className="mb-5 inline-flex items-center gap-2 rounded-full border border-fd-border bg-fd-card px-3 py-1.5 text-sm shadow-sm">
             <span className="live-dot size-1.5 rounded-full bg-[#22d3ee]" />
             Real-time presence for the web

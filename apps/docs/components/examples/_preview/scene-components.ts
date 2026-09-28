@@ -4,6 +4,7 @@ import { BasicsScene } from "../basics";
 import { CustomCursorsScene } from "../custom-cursors";
 import { FallbacksScene } from "../fallbacks";
 import { InterpolationScene } from "../interpolation";
+import { KanbanScene } from "../kanban";
 import { PresenceScene, presenceTimeouts } from "../presence";
 import { ResponsiveGridScene } from "../responsive-grid";
 import { ScrollScene } from "../scroll";
@@ -26,6 +27,7 @@ export const SCENE_COMPONENTS: Record<SceneName, SceneEntry> = {
   basics: { Scene: BasicsScene },
   "responsive-grid": { Scene: ResponsiveGridScene },
   "table-and-cards": { Scene: TableAndCardsScene },
+  kanban: { Scene: KanbanScene },
   fallbacks: { Scene: FallbacksScene },
   scroll: { Scene: ScrollScene },
   presence: { Scene: PresenceScene, clientOptions: presenceTimeouts },

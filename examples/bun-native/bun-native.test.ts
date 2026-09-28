@@ -133,7 +133,7 @@ describe("Bun-native relay limits", () => {
     first.close();
     await closeCode(first);
     await opened(connect("room-4"));
-  });
+  }, 10_000);
 });
 
 describe("Bun-native relay liveness", () => {

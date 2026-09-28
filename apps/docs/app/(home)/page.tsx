@@ -39,59 +39,43 @@ const GUARANTEES = [
 export default function HomePage() {
   return (
     <div id={mainContentId} className="mx-auto max-w-6xl px-4 py-12">
-      <section className="grid items-center gap-10 py-8 md:grid-cols-[5fr_6fr] md:py-14">
-        <div>
-          <span className="mb-5 inline-flex items-center gap-2 rounded-full border border-fd-border bg-fd-card px-3 py-1.5 text-sm shadow-sm">
-            <span className="live-dot size-1.5 rounded-full bg-[#22d3ee]" />
-            Real-time presence for the web
-          </span>
-          <h1 className="font-display mb-5 text-4xl leading-[1.05] font-extrabold tracking-tight md:text-6xl">
-            Live cursors that stay on the <span className="text-gradient">right element</span>.
-          </h1>
-          <p className="mb-7 max-w-[46ch] text-lg text-fd-muted-foreground">
-            Anchor Presence is a live-cursor layer for web apps. It shows where your teammates are looking and
-            clicking, and it keeps every cursor on the correct element, even when their layout, sidebar, or
-            screen size differs from yours.
-          </p>
-          <InstallCommand />
-          <p className="mt-2 max-w-[46ch] text-xs text-fd-muted-foreground">
-            For a React app. Other setups need fewer packages.{" "}
-            <Link
-              href="/docs/get-started/installation"
-              className="font-medium text-fd-foreground underline underline-offset-2"
-            >
-              See Installation
-            </Link>
-          </p>
-          <p className="mt-4 mb-1.5 font-mono text-xs text-fd-muted-foreground">
-            Your AI agent can wire it up too
-          </p>
-          <InstallCommand run="skills add DammersCode/anchor-presence" />
-          <p className="mt-2 max-w-[46ch] text-xs text-fd-muted-foreground">
-            One skill wires up cursors, another audits layouts.{" "}
-            <Link href="/docs/skills" className="font-medium text-fd-foreground underline underline-offset-2">
-              See Skills
-            </Link>
-          </p>
-          <div className="mt-5 flex flex-wrap items-center gap-4">
-            <Link
-              href="/docs"
-              className="rounded-full bg-fd-primary px-5 py-2.5 text-sm font-semibold text-fd-primary-foreground"
-            >
-              Read the docs
-            </Link>
-            <Link
-              href="/docs/examples"
-              className="rounded-full border border-fd-border px-5 py-2.5 text-sm font-semibold"
-            >
-              Examples
-            </Link>
-            <Link href="#how" className="border-b border-fd-border pb-px text-sm font-semibold">
-              How it works &rarr;
-            </Link>
-          </div>
+      <section className="pt-4 pb-10 md:pt-8 md:pb-14">
+        <span className="mb-6 inline-flex items-center gap-2 rounded-full border border-fd-border bg-fd-card px-3 py-1.5 text-sm shadow-sm">
+          <span className="live-dot size-1.5 rounded-full bg-[#22d3ee]" />
+          Real-time presence for the web
+        </span>
+        <h1 className="font-display text-balance text-4xl leading-[1.05] font-extrabold tracking-tight md:text-6xl">
+          Live cursors that stay on the{" "}
+          <span className="text-[#4f46e5] dark:text-fd-accent-foreground">right element</span>.
+        </h1>
+        <p className="mt-6 max-w-[52ch] text-lg text-fd-muted-foreground">
+          Anchor Presence sends a label, not pixels. Each browser resolves it against its own layout. Your
+          teammate&apos;s cursor stays on the element, even when their screen differs from yours.
+        </p>
+        <div className="mt-8 flex flex-wrap items-center gap-4">
+          <Link
+            href="/docs"
+            className="rounded-full bg-fd-primary px-5 py-2.5 text-sm font-semibold text-fd-primary-foreground"
+          >
+            Read the docs
+          </Link>
+          <Link
+            href="/docs/examples"
+            className="rounded-full border border-fd-border px-5 py-2.5 text-sm font-semibold"
+          >
+            See the examples
+          </Link>
+          <Link href="#how" className="border-b border-fd-border pb-px text-sm font-semibold">
+            How it works &rarr;
+          </Link>
         </div>
-        <Demo />
+        <div className="mt-10 md:mt-14">
+          <Demo />
+          <p className="text-xs text-fd-muted-foreground">
+            The same board in two layouts. Move your pointer in one pane — the cursor lands on the same card
+            in the other.
+          </p>
+        </div>
       </section>
 
       <section id="how" className="border-t border-fd-border py-14">
@@ -102,8 +86,7 @@ export default function HomePage() {
           A cursor is an address, not a coordinate.
         </h2>
         <p className="mb-8 max-w-[60ch] text-fd-muted-foreground">
-          No screen position ever crosses the wire. You send a label plus an offset; each person&apos;s
-          browser turns it into pixels for their own layout.
+          No screen position ever crosses the wire. What travels is an address — the rest happens locally.
         </p>
         <div className="grid gap-4 md:grid-cols-3">
           <div className="rounded-2xl border border-fd-border bg-fd-card p-6">
@@ -165,23 +148,33 @@ export default function HomePage() {
         <h2 className="font-display mt-3 mb-3 text-3xl font-extrabold tracking-tight md:text-4xl">
           Add live cursors in minutes.
         </h2>
-        <p className="mb-8 max-w-[60ch] text-fd-muted-foreground">
+        <p className="max-w-[60ch] text-fd-muted-foreground">
           One provider, one hook, one layer. Your transport, your rendering.
         </p>
-        <div className="flex flex-wrap gap-4">
+        <InstallCommand />
+        <p className="max-w-[60ch] text-xs text-fd-muted-foreground">
+          For a React app. Other setups need fewer packages.{" "}
           <Link
-            href="/docs/get-started/quick-start"
-            className="rounded-full bg-fd-primary px-5 py-2.5 text-sm font-semibold text-fd-primary-foreground"
+            href="/docs/get-started/installation"
+            className="font-medium text-fd-foreground underline underline-offset-2"
           >
-            Quick start
+            See Installation
           </Link>
-          <Link
-            href="/docs/examples/basics"
-            className="rounded-full border border-fd-border px-5 py-2.5 text-sm font-semibold"
-          >
-            See the examples
+        </p>
+        <p className="mt-8 font-mono text-xs text-fd-muted-foreground">Or let your AI agent wire it up</p>
+        <InstallCommand run="skills add DammersCode/anchor-presence" />
+        <p className="max-w-[60ch] text-xs text-fd-muted-foreground">
+          One skill wires up cursors, another audits layouts.{" "}
+          <Link href="/docs/skills" className="font-medium text-fd-foreground underline underline-offset-2">
+            See Skills
           </Link>
-        </div>
+        </p>
+        <Link
+          href="/docs/get-started/quick-start"
+          className="mt-8 inline-block rounded-full bg-fd-primary px-5 py-2.5 text-sm font-semibold text-fd-primary-foreground"
+        >
+          Quick start
+        </Link>
       </section>
     </div>
   );

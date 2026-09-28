@@ -88,6 +88,8 @@
       "url": "/demo-frame/interpolation/narrow",
       "width": 317,
       "height": 338
-    }
+    },
+    { "page": "kanban", "name": "wide", "url": "/demo-frame/kanban/wide", "width": 477, "height": 338 },
+    { "page": "kanban", "name": "narrow", "url": "/demo-frame/kanban/narrow", "width": 317, "height": 338 }
   ]
 }

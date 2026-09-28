@@ -36,17 +36,18 @@ These plans are done. The code, tests, and docs already show the result, so ther
 
 ## In progress
 
-| Plan                                                                  | Status      | Summary                                                                                               |
-| --------------------------------------------------------------------- | ----------- | ----------------------------------------------------------------------------------------------------- |
-| Fumadocs docs site on Vercel                                          | in progress | Replaces the GitHub Pages site in `site/` with a Fumadocs site deployed on Vercel.                    |
-| Backend examples cleanup                                              | in progress | Adds Bun-native, Node `ws`, Hono, and Elysia backend examples, and removes duplicate example clients. |
-| [026 Example previews](026-example-previews.md)                       | done        | One distinct live preview per example page, with guided tour and receiver insight.                    |
-| [027 Scale benchmark and diagram](027-scale-benchmark-and-diagram.md) | in progress | 200-client benchmarks and a how-it-works diagram.                                                     |
-| [028 Layout audit skill](028-layout-audit-skill.md)                   | done        | Shipped skill that scores cursor-jump risk across layouts, plus a layout design guide.                |
-| [HANDOFF](HANDOFF.md)                                                 | in progress | Start here: program state, workstreams, next steps.                                                   |
-| [023 Fumadocs docs site](023-fumadocs-docs-site.md)                   | done        | Spec for the docs site.                                                                               |
-| [024 Backend examples](024-backend-examples.md)                       | done        | Spec and security baseline for the backend examples.                                                  |
-| [022 Gap closure](022-gap-closure-2026-09-25.md)                      | done        | Closes the gaps from the 2026-09-25 advisor audit.                                                    |
+| Plan                                                                  | Status      | Summary                                                                                                                         |
+| --------------------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Fumadocs docs site on Vercel                                          | in progress | Replaces the GitHub Pages site in `site/` with a Fumadocs site deployed on Vercel.                                              |
+| Backend examples cleanup                                              | in progress | Adds Bun-native, Node `ws`, Hono, and Elysia backend examples, and removes duplicate example clients.                           |
+| [026 Example previews](026-example-previews.md)                       | done        | One distinct live preview per example page, with guided tour and receiver insight.                                              |
+| [027 Scale benchmark and diagram](027-scale-benchmark-and-diagram.md) | in progress | 200-client benchmarks and a how-it-works diagram.                                                                               |
+| [028 Layout audit skill](028-layout-audit-skill.md)                   | done        | Shipped skill that scores cursor-jump risk across layouts, plus a layout design guide.                                          |
+| [029 Kanban example](029-kanban-example.md)                           | done        | A fixed-size, scrollable board example that shows the recommended layout pattern, with worst-case notes on the reflow examples. |
+| [HANDOFF](HANDOFF.md)                                                 | in progress | Start here: program state, workstreams, next steps.                                                                             |
+| [023 Fumadocs docs site](023-fumadocs-docs-site.md)                   | done        | Spec for the docs site.                                                                                                         |
+| [024 Backend examples](024-backend-examples.md)                       | done        | Spec and security baseline for the backend examples.                                                                            |
+| [022 Gap closure](022-gap-closure-2026-09-25.md)                      | done        | Closes the gaps from the 2026-09-25 advisor audit.                                                                              |
 
 ## Future backends (planning only, not scheduled)
 

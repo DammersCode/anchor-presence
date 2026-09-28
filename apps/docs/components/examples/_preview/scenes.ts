@@ -8,6 +8,7 @@ export type SceneName =
   | "basics"
   | "responsive-grid"
   | "table-and-cards"
+  | "kanban"
   | "fallbacks"
   | "scroll"
   | "presence"
@@ -76,6 +77,31 @@ export const SCENES: Record<SceneName, SceneMeta> = {
           { kind: "point", anchor: "invoices.row:INV-2041.amount", u: 0.7, v: 0.5 },
           { kind: "point", anchor: "invoices.row:INV-2044.action", u: 0.5, v: 0.5 },
           { kind: "point", anchor: "invoices.row:INV-2042.customer", u: 0.3, v: 0.5 },
+        ],
+      },
+    ],
+  },
+  kanban: {
+    panes: {
+      wide: { label: "Wide", detail: "3 columns fit the pane" },
+      narrow: { label: "Narrow", detail: "columns keep their size, the board scrolls" },
+    },
+    tour: [
+      {
+        user: MIRA,
+        steps: [
+          { kind: "point", anchor: "board.card:design", u: 0.45, v: 0.4 },
+          { kind: "point", anchor: "board.card:api", u: 0.5, v: 0.5 },
+          { kind: "point", anchor: "board.card:sso", u: 0.4, v: 0.5, dwellMs: 2600 },
+        ],
+      },
+      {
+        user: THEO,
+        delayMs: 700,
+        steps: [
+          { kind: "point", anchor: "board.card:search", u: 0.6, v: 0.45 },
+          { kind: "point", anchor: "board.card:cache", u: 0.35, v: 0.6 },
+          { kind: "quiet", ms: 6000 },
         ],
       },
     ],

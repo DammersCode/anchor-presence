@@ -2,10 +2,11 @@
 
 Demo only. Read the security notes below before you run this beyond local development.
 
-This example is a room-broadcast relay built on [Elysia](https://elysiajs.com)'s `.ws()` route, running on Bun. It uses Elysia/Bun's topic pub-sub (`ws.subscribe`, `ws.publish`) the same way `examples/bun-native` does. The client side needs no custom transport: it uses `createWebSocketTransport` from `@anchor-presence/dom`, the same as `apps/server`.
+This example is a room-broadcast relay built on [Elysia](https://elysiajs.com)'s `.ws()` route, running on Bun. It uses Elysia/Bun's topic pub-sub (`ws.subscribe`, `ws.publish`) the same way `examples/bun-native` does. The relay types its query with a schema, and the client connects through an Eden treaty, so a wrong query parameter is a compile error on the client.
 
-- `server.ts`: exports `createElysiaRelay(port)`, returning `{ url, close }`.
+- `server.ts`: exports `createElysiaRelay(port)`, returning `{ url, app, close }`, and the `ElysiaRelayApp` type the client's Eden treaty uses.
 - `relay.ts`: a runnable entry point (`bun run dev:relay`).
+- `client.ts`: the typed client. Eden builds the socket, and `createWebSocketTransport` from `@anchor-presence/dom` owns its lifecycle through the `WebSocketCtor` option.
 
 ## Run it
 
@@ -46,11 +47,18 @@ The relay reads the room name from the `room` query parameter (`?room=main`). An
 
 ## Use the transport in your app
 
-```ts
-import { createPresenceClient } from "@anchor-presence/core";
-import { createWebSocketTransport } from "@anchor-presence/dom";
+See `client.ts`. Eden builds the socket with a typed `room` query parameter, and the transport takes it through the `WebSocketCtor` option:
 
-const transport = createWebSocketTransport({ port: 8791, path: "/?room=main" });
+```ts
+const relay = treaty<ElysiaRelayApp>("http://localhost:8791");
+
+function edenSocket() {
+  return relay.subscribe({ query: { room: "main" } });
+}
+
+const transport = createWebSocketTransport({
+  WebSocketCtor: edenSocket as unknown as WebSocketCtor,
+});
 const client = createPresenceClient({ transport });
 transport.connect();
 ```

@@ -3,12 +3,12 @@ title: Elysia
 description: A room-broadcast relay built on Elysia's .ws() route for Bun.
 ---
 
-You want a relay built on [Elysia](https://elysiajs.com)'s route-based API instead of raw `Bun.serve`. This example uses Elysia's `.ws()` route on Bun, backed by Elysia/Bun's own topic pub-sub, the same model `examples/bun-native` uses.
+You want a relay built on [Elysia](https://elysiajs.com)'s route-based API instead of raw `Bun.serve`. This example uses Elysia's `.ws()` route on Bun, backed by Elysia/Bun's own topic pub-sub, the same model `examples/bun-native` uses. The relay types its query with a schema, and the client connects through an Eden treaty. Eden gives the connection end-to-end type safety: a wrong query parameter is a compile error on the client.
 
 ## Install
 
 ```sh
-bun add @anchor-presence/core @anchor-presence/dom elysia
+bun add @anchor-presence/core @anchor-presence/dom elysia @elysia/eden
 ```
 
 ## Server
@@ -19,16 +19,11 @@ The server imports the shared guard helpers. See [Shared guard helpers](/docs/ex
 
 ## Client
 
-The client needs no custom transport. It connects with the native `createWebSocketTransport`:
+The client builds its socket with Eden, Elysia's end-to-end type safety layer. Eden checks the query parameters against the relay's `ElysiaRelayApp` type. The presence transport takes the Eden socket through its `WebSocketCtor` option and keeps owning the reconnects:
 
-```tsx
-import { createPresenceClient } from "@anchor-presence/core";
-import { createWebSocketTransport } from "@anchor-presence/dom";
+<CodeFromSource repo="examples/elysia/client.ts" lang="ts" />
 
-const transport = createWebSocketTransport({ port: 8791, path: "/?room=main" });
-const client = createPresenceClient({ transport });
-transport.connect();
-```
+The `edenSocket` function hands the transport a fresh Eden socket for each connection. The transport ignores the url it builds, because Eden builds the url from the treaty base and the typed query.
 
 ## Run it
 
@@ -46,6 +41,7 @@ The relay listens on `http://localhost:8791`. To use a different port, give the 
 
 ## Production notes
 
+- **Query validation.** The relay validates the `room` and `token` query parameters against its schema before the upgrade. A parameter with the wrong type fails the upgrade with a 422 validation error.
 - **Room name validation.** `sanitizeRoomName` caps room names at 256 characters and restricts them to `[A-Za-z0-9_-]`. An invalid or missing name falls back to `"main"`.
 - **Max payload size.** `MAX_MESSAGE_BYTES` (default 32 KiB) drops an oversized message instead of closing the connection.
 - **Per-connection rate limit.** A token bucket limits inbound messages per socket (`RATE_CAPACITY`, `RATE_REFILL_PER_SECOND`).

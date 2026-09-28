@@ -1,6 +1,6 @@
 # Research: layout audit dogfood on the docs example scenes
 
-Status: research note. Run on 2026-09-25 against the docs dev server (`http://localhost:3001`) with the `anchor-presence-audit` skill scripts. Spec: [plan 028](../028-layout-audit-skill.md). Metric definitions: `skills/anchor-presence-audit/scoring.md`.
+Status: research note. First run 2026-09-25, rerun 2026-09-28 with the kanban scene, against the docs dev server (`http://localhost:3001`) with the `anchor-presence-audit` skill scripts. Spec: [plan 028](../028-layout-audit-skill.md). Metric definitions: `skills/anchor-presence-audit/scoring.md`.
 
 ## Setup
 
@@ -12,7 +12,7 @@ node skills/anchor-presence-audit/scripts/measure.mjs --config plans/research/pr
 node skills/anchor-presence-audit/scripts/report.mjs --in anchor-audit.json --format markdown,mermaid --out report.md
 ```
 
-- 17 views, 10 view pairs, 23 s against the dev server. The generated report follows at the end, unchanged except for the heading levels.
+- 19 views, 11 view pairs against the dev server. The generated report follows at the end, unchanged except for the heading levels.
 - Every Mermaid block was rendered with Mermaid 12.0.0 in Chromium (`xychart-beta` and `flowchart`) without errors.
 
 ## Results against each scene's intent
@@ -27,6 +27,7 @@ node skills/anchor-presence-audit/scripts/report.mjs --in anchor-audit.json --fo
 | fallbacks       | 16–22 | low to moderate | depth 50–75, parity 67–94 | Yes. Depth and parity carry the score. Jumps stay small because every missing anchor falls back to a close parent (`orders.row:<id>`, `orders`, `shop`).                                |
 | scroll          |     2 | low             | none                      | Yes, after the clipping correction below. The threads keep their order and height.                                                                                                      |
 | interpolation   |     2 | low             | none                      | Yes. The four targets are identical 44 px circles in both panes and sit too far apart to count as neighbors.                                                                            |
+| kanban          |     0 | low             | none                      | Yes, the intended result. Columns and cards keep size and position in both panes; the board scrolls. This is the recommended pattern the new Kanban example teaches.                    |
 
 The shape of the scale: the total never falls below the Jump or Gap sub-score (second correction to the formula, 2026-09-25). The first run used a plain weighted sum, which capped a pair with full coverage and no missing anchors at 50, so a 248 px jump read as moderate. With the floor, all five reflow scenes score high, which matches what a user sees in a 317 px pane. No scene has an uncovered gap: each one anchors its outer container.
 
@@ -77,7 +78,7 @@ Both fixes lower the sub-scores that `fixes.md` names for them. The scene stays 
 
 ### Scores
 
-Measured 17 views against http://localhost:3001 on 2026-09-25.
+Measured 19 views against http://localhost:3001 on 2026-09-28.
 Higher is worse: 0-20 low, 21-50 moderate, 51-100 high.
 
 | View pair                                 | Total | Band     | Jump | Gap | Depth | Aspect | Parity |
@@ -92,6 +93,7 @@ Higher is worse: 0-20 low, 21-50 moderate, 51-100 high.
 | fallbacks: narrow vs narrow orders-hidden |    16 | low      |    0 |   0 |    50 |      0 |     83 |
 | scroll: wide vs narrow                    |     2 | low      |    0 |   0 |     0 |     14 |      0 |
 | interpolation: wide vs narrow             |     2 | low      |    0 |   0 |     0 |     14 |      0 |
+| kanban: wide vs narrow                    |     0 | low      |    0 |   0 |     0 |      0 |      0 |
 
 ### Findings per view pair
 
@@ -331,6 +333,20 @@ Largest shape changes:
 
 - `field`: 1.54x (457x250 on wide, 297x250 on narrow) at `div:nth-of-type(3) > div > div:nth-of-type(1) > div:nth-of-type(2)`
 
+#### kanban: wide vs narrow — 0 (low)
+
+| Input               |                          Value | Sub-score |
+| ------------------- | -----------------------------: | --------: |
+| Jump p90            | 25.1 px over 77 adjacent moves |         0 |
+| Gap uncovered       |                             0% |         0 |
+| Depth delta (worst) |                              0 |         0 |
+| Aspect amp p90      |   1.08x over 23 shared anchors |         0 |
+| Missing in one view |                   0% of 23 IDs |         0 |
+
+Largest shape changes:
+
+- `board`: 1.5x (477x306 on wide, 317x306 on narrow) at `div:nth-of-type(3) > div > div:nth-of-type(1)`
+
 ### Charts
 
 #### Total risk per view pair
@@ -338,9 +354,9 @@ Largest shape changes:
 ```mermaid
 xychart-beta
   title "Total risk"
-  x-axis ["basics: wide vs narrow", "responsive-grid: wide vs narrow", "table-and-cards: wide vs narrow", "presence: wide vs narrow", "custom-cursors: wide vs narrow", "fallbacks: wide vs narrow orders-hidden", "fallbacks: wide vs narrow", "fallbacks: narrow vs narrow orders-hidden", "scroll: wide vs narrow", "interpolation: wide vs narrow"]
+  x-axis ["basics: wide vs narrow", "responsive-grid: wide vs narrow", "table-and-cards: wide vs narrow", "presence: wide vs narrow", "custom-cursors: wide vs narrow", "fallbacks: wide vs narrow orders-hidden", "fallbacks: wide vs narrow", "fallbacks: narrow vs narrow orders-hidden", "scroll: wide vs narrow", "interpolation: wide vs narrow", "kanban: wide vs narrow"]
   y-axis "Total risk" 0 --> 100
-  bar [100, 100, 100, 100, 100, 22, 18, 16, 2, 2]
+  bar [100, 100, 100, 100, 100, 22, 18, 16, 2, 2, 0]
 ```
 
 | View pair                                 | Total | Band     | Jump | Gap | Depth | Aspect | Parity |
@@ -355,15 +371,16 @@ xychart-beta
 | fallbacks: narrow vs narrow orders-hidden |    16 | low      |    0 |   0 |    50 |      0 |     83 |
 | scroll: wide vs narrow                    |     2 | low      |    0 |   0 |     0 |     14 |      0 |
 | interpolation: wide vs narrow             |     2 | low      |    0 |   0 |     0 |     14 |      0 |
+| kanban: wide vs narrow                    |     0 | low      |    0 |   0 |     0 |      0 |      0 |
 
 #### Jump p90 per view pair (px)
 
 ```mermaid
 xychart-beta
-  title "Jump p90 px"
-  x-axis ["basics: wide vs narrow", "responsive-grid: wide vs narrow", "table-and-cards: wide vs narrow", "presence: wide vs narrow", "custom-cursors: wide vs narrow", "fallbacks: wide vs narrow orders-hidden", "fallbacks: wide vs narrow", "fallbacks: narrow vs narrow orders-hidden", "scroll: wide vs narrow", "interpolation: wide vs narrow"]
-  y-axis "Jump p90 px" 0 --> 343
-  bar [247.7, 296.8, 256.4, 297.8, 342.1, 10.7, 47.7, 2, 2, 0]
+  title "Jump p90 (px)"
+  x-axis ["basics: wide vs narrow", "responsive-grid: wide vs narrow", "table-and-cards: wide vs narrow", "presence: wide vs narrow", "custom-cursors: wide vs narrow", "fallbacks: wide vs narrow orders-hidden", "fallbacks: wide vs narrow", "fallbacks: narrow vs narrow orders-hidden", "scroll: wide vs narrow", "interpolation: wide vs narrow", "kanban: wide vs narrow"]
+  y-axis "Jump p90 (px)" 0 --> 343
+  bar [247.7, 296.8, 256.4, 297.8, 342.1, 10.7, 47.7, 2, 2, 0, 25.1]
 ```
 
 | View pair                                 | Jump p90 (px) | Jump sub-score |
@@ -378,6 +395,7 @@ xychart-beta
 | fallbacks: narrow vs narrow orders-hidden |             2 |              0 |
 | scroll: wide vs narrow                    |             2 |              0 |
 | interpolation: wide vs narrow             |             0 |              0 |
+| kanban: wide vs narrow                    |          25.1 |              0 |
 
 #### Fallback chains
 

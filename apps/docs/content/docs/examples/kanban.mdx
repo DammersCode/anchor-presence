@@ -1,0 +1,35 @@
+---
+title: Kanban board
+description: A board of fixed-size cards that scrolls when the pane shrinks, so cursors stay on their cards.
+---
+
+When the pane shrinks, this layout keeps every card and column at the same size and position. The board scrolls instead of squishing the columns. In this demo, both panes show the same board. The wide pane fits all three columns. The narrow pane shows two columns. The board scrolls to the third.
+
+<ExamplePreview scene="kanban" />
+
+## What's in the demo
+
+- The columns keep a fixed width in both panes. The board row is a horizontal scroll container.
+- Select the `+` button in a column header to add a card. Select the `X` button on a card to delete it. A cursor on a deleted card falls back to the column.
+- The tour points at a card in the third column. The narrow pane hides that card. A colored button at the board edge shows where the cursor is. Select it to scroll the card into view.
+- Columns and cards have the same size and position in both panes. A cursor on a visible card moves the same distance in both panes.
+
+## Code
+
+The scene of this demo:
+
+<CodeFromSource docs="components/examples/kanban.tsx" lang="tsx" />
+
+Both panes render the same markup. Each column is `w-36` and `flex-none`, so a column never squishes. The board row is `overflow-x-auto`. Card add and delete are per-pane local state, like the fallbacks scene.
+
+## Behavior reference
+
+- [Keep item sizes and shapes alike](/docs/get-started/guides/layout-design#keep-item-sizes-and-shapes-alike): the rule this demo follows.
+- [Writing a custom policy](/docs/dom/visibility-policy#writing-a-custom-policy): the policy that hides a cursor over a scrolled-out card.
+- [Using pointVisible](/docs/dom/occlusion-and-scroll#using-pointvisible): the field the edge button reads.
+
+## Related
+
+- [Responsive grid](/docs/examples/responsive-grid): cards that move and change size.
+- [Table and cards](/docs/examples/table-and-cards): a table that becomes cards.
+- [Designing layouts for presence](/docs/get-started/guides/layout-design): the rules this demo follows.

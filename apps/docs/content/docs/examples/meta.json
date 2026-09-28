@@ -8,6 +8,7 @@
     "basics",
     "responsive-grid",
     "table-and-cards",
+    "kanban",
     "---Resolution---",
     "anchors-and-fallbacks",
     "occlusion-and-scroll-containers",

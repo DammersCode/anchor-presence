@@ -7,6 +7,13 @@ A live cursor needs three things: a client, a provider, and at least one anchor.
 
 <ExamplePreview scene="basics" />
 
+<Callout type="warn">
+  As the pane shrinks, the elements in this layout move or change size. That is on purpose in this example. It
+  shows the worst case, so the cursor movement is easy to see. In an app, a short pointer move on one screen
+  becomes a long jump on the other. Keep element sizes fixed and let the page scroll. See the [Kanban
+  example](/docs/examples/kanban).
+</Callout>
+
 ## What's in the demo
 
 - `data-anchor` on each button: `post.save`, `post.preview`, and `post.publish`.

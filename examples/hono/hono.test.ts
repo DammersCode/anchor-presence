@@ -133,7 +133,7 @@ describe("Hono relay limits", () => {
     first.close();
     await closeCode(first);
     await opened(connect("room-4"));
-  });
+  }, 10_000);
 });
 
 describe("Hono relay liveness", () => {

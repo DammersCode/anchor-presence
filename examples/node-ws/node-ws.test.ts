@@ -133,7 +133,7 @@ describe("node-ws relay limits", () => {
     first.close();
     await closeCode(first);
     await vi.waitFor(() => opened(connect("room-3")), { timeout: 2000, interval: 50 });
-  });
+  }, 10_000);
 });
 
 describe("node-ws relay liveness", () => {

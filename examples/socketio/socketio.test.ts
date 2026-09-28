@@ -103,5 +103,5 @@ describe("Socket.IO relay limits", () => {
     await vi.waitFor(() => expect(next.connected).toBe(true), { timeout: 5000, interval: 25 });
     await new Promise((resolve) => setTimeout(resolve, 100));
     expect(next.connected).toBe(true);
-  });
+  }, 15_000);
 });

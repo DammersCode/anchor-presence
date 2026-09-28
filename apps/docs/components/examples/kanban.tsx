@@ -4,7 +4,7 @@ import type { PresenceClient } from "@anchor-presence/core";
 import type { VisibilityPolicy } from "@anchor-presence/dom";
 import { CursorLayer, LiveCursorProvider, useRemoteCursors } from "@anchor-presence/react";
 import { Plus, X } from "lucide-react";
-import { useRef, useState, type ReactNode, type RefObject } from "react";
+import { useRef, type ReactNode, type RefObject } from "react";
 
 type User = { name: string; color: string };
 
@@ -14,9 +14,7 @@ type Props = {
   children?: ReactNode;
 };
 
-type Card = { id: string; title: string };
-
-const COLUMNS: { id: string; title: string; cards: Card[] }[] = [
+const COLUMNS = [
   {
     id: "todo",
     title: "To do",
@@ -35,12 +33,25 @@ const COLUMNS: { id: string; title: string; cards: Card[] }[] = [
     ],
   },
   {
+    id: "blocked",
+    title: "Blocked",
+    cards: [{ id: "webhook", title: "Webhook retries" }],
+  },
+  {
     id: "done",
     title: "Done",
     cards: [
       { id: "sso", title: "SSO login" },
       { id: "export", title: "CSV export" },
       { id: "onboard", title: "Onboarding tour" },
+    ],
+  },
+  {
+    id: "backlog",
+    title: "Backlog",
+    cards: [
+      { id: "mobile", title: "Mobile app" },
+      { id: "themes", title: "Dark theme" },
     ],
   },
 ];
@@ -81,22 +92,6 @@ function OutOfViewHint({ boardRef }: { boardRef: RefObject<HTMLDivElement | null
 
 export function KanbanScene({ client, layout, children }: Props) {
   const boardRef = useRef<HTMLDivElement>(null);
-  const nextCard = useRef(1);
-  const [columns, setColumns] = useState(COLUMNS);
-
-  const addCard = (columnId: string) => {
-    const card: Card = { id: `new-${nextCard.current++}`, title: "New task" };
-    setColumns((cols) =>
-      cols.map((col) => (col.id === columnId ? { ...col, cards: [...col.cards, card] } : col)),
-    );
-  };
-
-  const deleteCard = (columnId: string, cardId: string) =>
-    setColumns((cols) =>
-      cols.map((col) =>
-        col.id === columnId ? { ...col, cards: col.cards.filter((c) => c.id !== cardId) } : col,
-      ),
-    );
 
   return (
     <LiveCursorProvider client={client} bindingOptions={bindingOptions}>
@@ -104,7 +99,7 @@ export function KanbanScene({ client, layout, children }: Props) {
         <h3 className="font-display px-1 pb-1.5 text-sm font-semibold">Board</h3>
         <div className="relative min-h-0 flex-1">
           <div ref={boardRef} className="flex h-full gap-2 overflow-x-auto">
-            {columns.map((column) => (
+            {COLUMNS.map((column) => (
               <section
                 key={column.id}
                 data-anchor={`board.column:${column.id}`}
@@ -117,7 +112,6 @@ export function KanbanScene({ client, layout, children }: Props) {
                   <button
                     type="button"
                     data-anchor={`board.column:${column.id}.add`}
-                    onClick={() => addCard(column.id)}
                     aria-label={`Add a card to ${column.title}`}
                     className="grid size-4 place-items-center rounded text-fd-muted-foreground hover:bg-fd-background hover:text-fd-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-fd-ring"
                   >
@@ -135,7 +129,6 @@ export function KanbanScene({ client, layout, children }: Props) {
                       <button
                         type="button"
                         data-anchor={`board.card:${card.id}.delete`}
-                        onClick={() => deleteCard(column.id, card.id)}
                         aria-label={`Delete ${card.title}`}
                         className="grid size-4 flex-none place-items-center rounded text-fd-muted-foreground hover:bg-fd-secondary hover:text-fd-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-fd-ring"
                       >

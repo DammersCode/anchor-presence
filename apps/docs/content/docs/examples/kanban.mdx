@@ -3,14 +3,14 @@ title: Kanban board
 description: A board of fixed-size cards that scrolls when the pane shrinks, so cursors stay on their cards.
 ---
 
-When the pane shrinks, this layout keeps every card and column at the same size and position. The board scrolls instead of squishing the columns. In this demo, both panes show the same board. The wide pane fits all three columns. The narrow pane shows two columns. The board scrolls to the third.
+When the pane shrinks, this layout keeps every card and column at the same size and position. The board scrolls instead of squishing the columns. In this demo, both panes show the same five-column board. The wide pane fits three columns. The narrow pane shows two. The board scrolls to the rest.
 
 <ExamplePreview scene="kanban" />
 
 ## What's in the demo
 
 - The columns keep a fixed width in both panes. The board row is a horizontal scroll container.
-- Select the `+` button in a column header to add a card. Select the `X` button on a card to delete it. A cursor on a deleted card falls back to the column.
+- The `+` button in a column header and the `X` button on a card are symbolic. They show where the actions would sit. They do nothing in this demo.
 - The tour points at a card in the third column. The narrow pane hides that card. A colored button at the board edge shows where the cursor is. Select it to scroll the card into view.
 - Columns and cards have the same size and position in both panes. A cursor on a visible card moves the same distance in both panes.
 
@@ -20,7 +20,7 @@ The scene of this demo:
 
 <CodeFromSource docs="components/examples/kanban.tsx" lang="tsx" />
 
-Both panes render the same markup. Each column is `w-36` and `flex-none`, so a column never squishes. The board row is `overflow-x-auto`. Card add and delete are per-pane local state, like the fallbacks scene.
+Both panes render the same markup. Each column is `w-36` and `flex-none`, so a column never squishes. The board row is `overflow-x-auto`. The add and delete buttons carry anchors, but they are decorative in this demo.
 
 ## Behavior reference
 

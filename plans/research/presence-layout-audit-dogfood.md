@@ -99,18 +99,19 @@ Higher is worse: 0-20 low, 21-50 moderate, 51-100 high.
 
 #### basics: wide vs narrow — 100 (high)
 
-| Input               |                          Value | Sub-score |
-| ------------------- | -----------------------------: | --------: |
-| Jump p90            | 247.7 px over 4 adjacent moves |       100 |
-| Gap uncovered       |                             0% |         0 |
-| Depth delta (worst) |                              0 |         0 |
-| Aspect amp p90      |     3.8x over 4 shared anchors |       100 |
-| Missing in one view |                    0% of 4 IDs |         0 |
+| Input               |                         Value | Sub-score |
+| ------------------- | ----------------------------: | --------: |
+| Jump p90            | 247 px over 12 adjacent moves |       100 |
+| Gap uncovered       |                            0% |         0 |
+| Depth delta (worst) |                             0 |         0 |
+| Aspect amp p90      |    3.8x over 7 shared anchors |       100 |
+| Missing in one view |                   0% of 7 IDs |         0 |
 
 Largest jumps (sender move -> receiver move):
 
 - `post.save` -> `post.preview`: 8 px on wide becomes 247.7 px on narrow (`post.save` -> `post.preview`)
 - `post.preview` -> `post.publish`: 8 px on wide becomes 247 px on narrow (`post.preview` -> `post.publish`)
+- `post.summary` -> `post.publish`: 16 px on wide becomes 141.5 px on narrow (`post.summary` -> `post.publish`)
 - `post.save` -> `post.preview`: 8 px on narrow becomes 90.1 px on wide (`post.save` -> `post.preview`)
 - `post.preview` -> `post.publish`: 8 px on narrow becomes 82.5 px on wide (`post.preview` -> `post.publish`)
 
@@ -119,6 +120,7 @@ Largest shape changes:
 - `post.publish`: 3.8x (66x32 on wide, 251x32 on narrow) at `div > div:nth-of-type(1) > section > div > button:nth-of-type(3)`
 - `post.preview`: 3.5x (72x32 on wide, 251x32 on narrow) at `div > div:nth-of-type(1) > section > div > button:nth-of-type(2)`
 - `post.save`: 3.05x (82x32 on wide, 251x32 on narrow) at `div > div:nth-of-type(1) > section > div > button:nth-of-type(1)`
+- `post.summary`: 2.79x (350x20 on wide, 251x39 on narrow) at `div:nth-of-type(3) > div > div:nth-of-type(1) > section > p:nth-of-type(2)`
 - `post`: 2.25x (384x149 on wide, 285x248 on narrow) at `div:nth-of-type(3) > div > div:nth-of-type(1) > section`
 
 #### responsive-grid: wide vs narrow — 100 (high)
@@ -337,11 +339,11 @@ Largest shape changes:
 
 | Input               |                          Value | Sub-score |
 | ------------------- | -----------------------------: | --------: |
-| Jump p90            | 25.1 px over 77 adjacent moves |         0 |
+| Jump p90            | 25.1 px over 70 adjacent moves |         0 |
 | Gap uncovered       |                             0% |         0 |
 | Depth delta (worst) |                              0 |         0 |
-| Aspect amp p90      |   1.08x over 23 shared anchors |         0 |
-| Missing in one view |                   0% of 23 IDs |         0 |
+| Aspect amp p90      |   1.08x over 33 shared anchors |         0 |
+| Missing in one view |                   0% of 33 IDs |         0 |
 
 Largest shape changes:
 
@@ -380,12 +382,12 @@ xychart-beta
   title "Jump p90 (px)"
   x-axis ["basics: wide vs narrow", "responsive-grid: wide vs narrow", "table-and-cards: wide vs narrow", "presence: wide vs narrow", "custom-cursors: wide vs narrow", "fallbacks: wide vs narrow orders-hidden", "fallbacks: wide vs narrow", "fallbacks: narrow vs narrow orders-hidden", "scroll: wide vs narrow", "interpolation: wide vs narrow", "kanban: wide vs narrow"]
   y-axis "Jump p90 (px)" 0 --> 343
-  bar [247.7, 296.8, 256.4, 297.8, 342.1, 10.7, 47.7, 2, 2, 0, 25.1]
+  bar [247, 296.8, 256.4, 297.8, 342.1, 10.7, 47.7, 2, 2, 0, 25.1]
 ```
 
 | View pair                                 | Jump p90 (px) | Jump sub-score |
 | ----------------------------------------- | ------------: | -------------: |
-| basics: wide vs narrow                    |         247.7 |            100 |
+| basics: wide vs narrow                    |           247 |            100 |
 | responsive-grid: wide vs narrow           |         296.8 |            100 |
 | table-and-cards: wide vs narrow           |         256.4 |            100 |
 | presence: wide vs narrow                  |         297.8 |            100 |

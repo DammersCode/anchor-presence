@@ -68,6 +68,8 @@ Each sub-score runs from 0 to 100. It is 0 at or below the first value, 100 at o
 | Aspect    |  15%   | How much an anchor's width-to-height ratio changes (90th pct.)           | 1.3 × ratio | 3 × ratio    |
 | Parity    |  10%   | Share of anchor IDs that exist in one view only                          | 0%          | 100%         |
 
+Jump measures in CSS pixels by default. With `"jumpScale": "viewport"` in the audit config, Jump measures each jump as a percent of the receiver's viewport width, from 3.125% to 18.75%. These values equal 40 px and 240 px on a 1280 px screen, so the same jump scores higher on a phone than on a desktop.
+
 The total is the weighted sum, but never lower than Jump or Gap. Users see a large jump or a large gap on its own, so the other sub-scores cannot dilute it.
 
 | Total  | Band     |

@@ -62,3 +62,46 @@ describe("Socket.IO transport integration", () => {
     );
   });
 });
+
+describe("Socket.IO relay limits", () => {
+  let close: () => Promise<void>;
+  let url: string;
+  const sockets: Socket[] = [];
+
+  beforeEach(async () => {
+    const relay = await createSocketIoRelay(0, { maxSockets: 1 });
+    url = relay.url;
+    close = relay.close;
+  });
+
+  afterEach(async () => {
+    for (const socket of sockets) socket.disconnect();
+    sockets.length = 0;
+    await close();
+  });
+
+  function connect(room: string): Socket {
+    const socket = io(url, { query: { room }, transports: ["websocket"], reconnection: false });
+    sockets.push(socket);
+    return socket;
+  }
+
+  function disconnectReason(socket: Socket): Promise<string> {
+    return new Promise((resolve) => socket.once("disconnect", (reason) => resolve(reason)));
+  }
+
+  it("disconnects a socket above the per-process cap until a slot frees", async () => {
+    const first = connect("room-1");
+    await vi.waitFor(() => expect(first.connected).toBe(true), { timeout: 5000, interval: 25 });
+
+    expect(await disconnectReason(connect("room-2"))).toBe("io server disconnect");
+    expect(await disconnectReason(connect("room-3"))).toBe("io server disconnect");
+
+    first.disconnect();
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    const next = connect("room-4");
+    await vi.waitFor(() => expect(next.connected).toBe(true), { timeout: 5000, interval: 25 });
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(next.connected).toBe(true);
+  });
+});

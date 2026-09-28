@@ -40,12 +40,16 @@ function NavButton({
       data-testid={`anchor-nav.${item.id}`}
       onClick={onClick}
       title={collapsed ? item.label : undefined}
+      aria-label={collapsed ? item.label : undefined}
+      aria-current={isActive ? "page" : undefined}
       className={cn(
         "flex h-9 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors",
         isActive ? "bg-indigo-50 text-indigo-700" : "text-gray-600 hover:bg-gray-100",
       )}
     >
-      <span className="w-4 shrink-0 text-center">{item.icon}</span>
+      <span aria-hidden="true" className="w-4 shrink-0 text-center">
+        {item.icon}
+      </span>
       {!collapsed && <span className="truncate">{item.label}</span>}
     </button>
   );
@@ -56,7 +60,7 @@ export function Sidebar({ collapsed, onToggle, activeItem, onSelect, onOpenSetti
     <aside
       data-anchor="sidebar"
       className={cn(
-        "flex h-screen flex-col border-r border-gray-200 bg-white transition-[width] duration-300 ease-in-out",
+        "flex h-screen flex-col border-r border-gray-200 bg-white transition-[width] duration-300 ease-in-out motion-reduce:transition-none",
         collapsed ? "w-16" : "w-60",
       )}
     >
@@ -72,10 +76,11 @@ export function Sidebar({ collapsed, onToggle, activeItem, onSelect, onOpenSetti
           variant="ghost"
           size="icon"
           aria-label="Toggle sidebar"
+          aria-expanded={!collapsed}
           onClick={onToggle}
           className="ml-auto shrink-0"
         >
-          {collapsed ? "»" : "«"}
+          <span aria-hidden="true">{collapsed ? "»" : "«"}</span>
         </Button>
       </div>
 

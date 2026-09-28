@@ -1,68 +1,26 @@
 import { createPresenceClient, type PresenceClient } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
-import { spawn, type ChildProcess } from "node:child_process";
-import net from "node:net";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import {
+  closeCode,
+  opened,
+  openUnresponsivePeer,
+  spawnBunRelay,
+  type SpawnedRelay,
+  type UnresponsivePeer,
+} from "../_shared/relay-test-helpers";
 
-// Bun.serve needs the Bun runtime: vitest's worker runs under Node, so the relay
-// is spawned as a real `bun run` child process, same pattern as apps/server/test.
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
-
-function freePort(): Promise<number> {
-  return new Promise((resolve, reject) => {
-    const server = net.createServer();
-    server.listen(0, "127.0.0.1", () => {
-      const address = server.address();
-      if (address === null || typeof address === "string") {
-        server.close(() => reject(new Error("expected a numeric port")));
-        return;
-      }
-      server.close(() => resolve(address.port));
-    });
-    server.on("error", reject);
-  });
-}
-
-function waitForPort(port: number): Promise<void> {
-  return new Promise((resolve, reject) => {
-    let attempts = 0;
-    const tryConnect = () => {
-      const socket = net.connect(port, "127.0.0.1");
-      socket.once("connect", () => {
-        socket.end();
-        resolve();
-      });
-      socket.once("error", () => {
-        socket.destroy();
-        attempts += 1;
-        if (attempts >= 50) reject(new Error(`port ${port} did not open`));
-        else setTimeout(tryConnect, 100);
-      });
-    };
-    tryConnect();
-  });
-}
-
-let relay: ChildProcess;
+let relay: SpawnedRelay;
 let port = 0;
 const clients: PresenceClient[] = [];
 
 beforeAll(async () => {
-  port = await freePort();
-  relay = spawn("bun", ["run", "--cwd", "examples/bun-native", "relay.ts", String(port)], {
-    cwd: repoRoot,
-    env: { ...process.env, MAX_MESSAGE_BYTES: "1024" },
-    stdio: "ignore",
-    windowsHide: true,
-  });
-  await waitForPort(port);
+  relay = await spawnBunRelay("bun-native", { MAX_MESSAGE_BYTES: "1024" });
+  port = relay.port;
 }, 15_000);
 
 afterAll(async () => {
-  relay.kill();
-  await new Promise((resolve) => setTimeout(resolve, 50));
+  await relay.stop();
 });
 
 afterEach(() => {
@@ -144,4 +102,63 @@ describe("Bun-native relay integration", () => {
     expect(receiver.getRemoteSnapshot()).toHaveLength(0);
     expect(sender.getStatus()).toBe("connected");
   });
+});
+
+describe("Bun-native relay limits", () => {
+  let limited: SpawnedRelay;
+  const sockets: WebSocket[] = [];
+
+  beforeAll(async () => {
+    limited = await spawnBunRelay("bun-native", { RELAY_MAX_TOTAL_SOCKETS: "1" });
+  }, 15_000);
+
+  afterAll(async () => {
+    for (const socket of sockets) socket.close();
+    await limited.stop();
+  });
+
+  function connect(room: string): WebSocket {
+    const socket = new WebSocket(`ws://127.0.0.1:${limited.port}/?room=${room}`);
+    sockets.push(socket);
+    return socket;
+  }
+
+  it("rejects connections above the per-process cap with close code 4002 until a slot frees", async () => {
+    const first = connect("room-1");
+    await opened(first);
+
+    expect(await closeCode(connect("room-2"))).toBe(4002);
+    expect(await closeCode(connect("room-3"))).toBe(4002);
+
+    first.close();
+    await closeCode(first);
+    await opened(connect("room-4"));
+  });
+});
+
+describe("Bun-native relay liveness", () => {
+  let lively: SpawnedRelay;
+  let silent: UnresponsivePeer | undefined;
+  const sockets: WebSocket[] = [];
+
+  beforeAll(async () => {
+    lively = await spawnBunRelay("bun-native", { RELAY_IDLE_TIMEOUT_SECONDS: "1" });
+  }, 15_000);
+
+  afterAll(async () => {
+    silent?.destroy();
+    for (const socket of sockets) socket.close();
+    await lively.stop();
+  });
+
+  it("closes a connection that never answers a ping and keeps a responsive one", async () => {
+    const responsive = new WebSocket(`ws://127.0.0.1:${lively.port}/?room=room-1`);
+    sockets.push(responsive);
+    await opened(responsive);
+    silent = openUnresponsivePeer(lively.port, "room-1");
+    await silent.upgraded;
+
+    await silent.closed;
+    expect(responsive.readyState).toBe(WebSocket.OPEN);
+  }, 20_000);
 });

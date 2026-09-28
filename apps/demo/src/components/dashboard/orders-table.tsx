@@ -35,7 +35,7 @@ function OrderRow({
       <TableCell data-anchor={`orders.row:${index}.customer`}>
         <div className="flex flex-col">
           <span className="text-gray-900">{order.customer}</span>
-          <span className="text-xs text-gray-400">{order.email}</span>
+          <span className="text-xs text-gray-500">{order.email}</span>
         </div>
       </TableCell>
       <TableCell data-anchor={`orders.row:${index}.date`}>{order.date}</TableCell>

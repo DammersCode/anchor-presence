@@ -57,7 +57,9 @@ function MetricCard({ metric, compact }: { metric: Metric; compact: boolean }) {
           {metric.value}
         </span>
         {compact ? null : (
-          <span className={`text-[10px] font-medium ${metric.up ? "text-emerald-600" : "text-rose-600"}`}>
+          <span
+            className={`text-[10px] font-medium ${metric.up ? "text-emerald-700 dark:text-emerald-400" : "text-rose-700 dark:text-rose-400"}`}
+          >
             {metric.delta}
           </span>
         )}

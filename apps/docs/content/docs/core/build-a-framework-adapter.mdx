@@ -64,7 +64,7 @@ Every name above is exported from `packages/core/src/index.ts` or `packages/dom/
 
 ## Naming and package boundaries
 
-A future adapter follows the same rule as `@anchor-presence/react`: no third-party framework code lives inside `@anchor-presence/core` or `@anchor-presence/dom`. A `@anchor-presence/solid` or `@anchor-presence/vue` package depends on `@anchor-presence/core` and `@anchor-presence/dom` only. It ships its own `test/public-api.test.ts` pinning its exports, and never reaches into the other adapter's internals. See [Package boundaries](https://github.com/DammersCode/anchor-presence/blob/main/AGENTS.md) for the full rule, and `plans/adapters/framework-adapters.md` in the repository for the concrete plan.
+An adapter follows the same rule as `@anchor-presence/react`: no third-party framework code lives inside `@anchor-presence/core` or `@anchor-presence/dom`. A `@anchor-presence/solid` or `@anchor-presence/vue` package depends on `@anchor-presence/core` and `@anchor-presence/dom` only. It ships its own `test/public-api.test.ts` pinning its exports, and never reaches into the other adapter's internals. The [package table](/docs/get-started/introduction#packages) shows what each package may depend on.
 
 ## Related
 

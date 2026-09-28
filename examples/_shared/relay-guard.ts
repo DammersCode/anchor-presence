@@ -1,5 +1,5 @@
 // Framework-agnostic security baseline shared by the WebSocket relay examples.
-// Every function is pure or holds only per-connection state; each server wires it to its own socket API.
+// No helper touches a socket; each server wires them to its own socket API.
 import { timingSafeEqual } from "node:crypto";
 
 const encoder = new TextEncoder();
@@ -70,6 +70,37 @@ export class RateLimiter {
     if (this.tokens < 1) return false;
     this.tokens -= 1;
     return true;
+  }
+}
+
+export type AdmitResult = "ok" | "server full" | "room full";
+
+/** Counts open sockets per process and per room; admits a new socket only while both are below their cap. */
+export class ConnectionLimits {
+  private total = 0;
+  private readonly roomSizes = new Map<string, number>();
+
+  constructor(
+    private readonly maxSockets: number,
+    private readonly maxRoomSockets: number,
+  ) {}
+
+  /** Takes a slot in `room` on "ok". Call `release(room)` once when that socket closes. */
+  admit(room: string): AdmitResult {
+    if (this.total >= this.maxSockets) return "server full";
+    const size = this.roomSizes.get(room) ?? 0;
+    if (size >= this.maxRoomSockets) return "room full";
+    this.total += 1;
+    this.roomSizes.set(room, size + 1);
+    return "ok";
+  }
+
+  release(room: string): void {
+    const size = this.roomSizes.get(room) ?? 0;
+    if (size === 0) return;
+    this.total -= 1;
+    if (size === 1) this.roomSizes.delete(room);
+    else this.roomSizes.set(room, size - 1);
   }
 }
 

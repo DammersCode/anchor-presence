@@ -5,6 +5,7 @@ import { DocsBody, DocsDescription, DocsPage, DocsTitle } from "fumadocs-ui/layo
 import { getPageImage, getPageMarkdownUrl, source } from "@/lib/source";
 import { getMDXComponents } from "@/components/mdx";
 import { PageActions } from "@/components/page-actions";
+import { mainContentId } from "@/lib/shared";
 
 export default async function Page(props: PageProps<"/docs/[[...slug]]">) {
   const params = await props.params;
@@ -16,7 +17,7 @@ export default async function Page(props: PageProps<"/docs/[[...slug]]">) {
 
   return (
     <DocsPage toc={page.data.toc} full={page.data.full}>
-      <DocsTitle>{page.data.title}</DocsTitle>
+      <DocsTitle id={mainContentId}>{page.data.title}</DocsTitle>
       <DocsDescription className="mb-0">{page.data.description}</DocsDescription>
       <PageActions markdownUrl={markdownUrl} />
       <DocsBody>

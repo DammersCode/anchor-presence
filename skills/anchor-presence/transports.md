@@ -48,7 +48,11 @@ A relay you write or copy must:
 8. Forward only to the sender's room, never to the sender itself.
 9. Accept room names of limited length and charset `[A-Za-z0-9_-]`.
 
-The Bun, `ws`, Hono, and Elysia examples cover this list, except the per-process cap (they cap rooms only) and ping and pong (item 7). Add those two yourself. The Socket.IO and SignalR examples rely on their library for part of this list; read their docs page.
+The Bun, `ws`, Hono, and Elysia examples cover this list. Their caps come from `RELAY_MAX_ROOM_SOCKETS` and `RELAY_MAX_TOTAL_SOCKETS`, and `RELAY_IDLE_TIMEOUT_SECONDS` sets when a dead connection closes. The Socket.IO and SignalR examples rely on their library for part of this list; read their docs page.
+
+## Adding presence to an existing server
+
+When the project already runs Socket.IO, SignalR, or a WebSocket server, add one presence event, hub method, or route to it; do not start a second server. Apply the baseline inside that handler: the size cap, the rate limit, and the room name check come from the shared guard helpers; the origin and auth checks usually exist on the server already. Copy only the helpers the handler uses.
 
 ## Copying an example relay
 

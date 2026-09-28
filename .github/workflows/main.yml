@@ -16,7 +16,8 @@ permissions:
 
 jobs:
   # One job: GitHub bills each job rounded up to a full minute.
-  slow:
+  suites:
+    name: SignalR hub, bench, e2e, and docs build
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -29,11 +30,13 @@ jobs:
           path: ~/.bun/install/cache
           key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
           restore-keys: ${{ runner.os }}-bun-
-      - run: bun install --frozen-lockfile
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
       - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: "10.0.x"
-      - run: bun run build
+      - name: Build packages
+        run: bun run build
       - name: SignalR hub integration (real .NET server)
         run: bunx vitest run examples/signalr/signalr-hub.test.ts
       - name: Bench (3x baseline guard)

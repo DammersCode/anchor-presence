@@ -2,6 +2,7 @@ import { createServer } from "node:http";
 import { Server, type Socket } from "socket.io";
 import {
   allowedOriginsFromEnv,
+  ConnectionLimits,
   limitFromEnv,
   messageByteLength,
   RateLimiter,
@@ -14,6 +15,7 @@ export type SocketIoRelayOptions = {
   rateCapacity?: number;
   rateRefillPerSecond?: number;
   maxRoomSockets?: number;
+  maxSockets?: number;
   allowedOrigins?: string[];
   /** Auth hook placeholder: verify a token query param. Default accepts every token. */
   authCheck?: (token: string) => boolean;
@@ -26,6 +28,7 @@ export function createSocketIoRelay(port: number, options: SocketIoRelayOptions 
   const rateRefillPerSecond =
     options.rateRefillPerSecond ?? limitFromEnv(process.env.RATE_REFILL_PER_SECOND, 20);
   const maxRoomSockets = options.maxRoomSockets ?? limitFromEnv(process.env.RELAY_MAX_ROOM_SOCKETS, 128);
+  const maxSockets = options.maxSockets ?? limitFromEnv(process.env.RELAY_MAX_TOTAL_SOCKETS, 10_000);
   const allowedOrigins = options.allowedOrigins ?? [
     ...allowedOriginsFromEnv(process.env.RELAY_ALLOWED_ORIGINS),
   ];
@@ -38,7 +41,7 @@ export function createSocketIoRelay(port: number, options: SocketIoRelayOptions 
     maxHttpBufferSize: maxMessageBytes,
   });
 
-  const roomSizes = new Map<string, number>();
+  const limits = new ConnectionLimits(maxSockets, maxRoomSockets);
 
   io.use((socket, next) => {
     if (!authCheck(String(socket.handshake.query.token ?? ""))) {
@@ -50,12 +53,10 @@ export function createSocketIoRelay(port: number, options: SocketIoRelayOptions 
 
   io.on("connection", (socket: Socket) => {
     const room = sanitizeRoomName(String(socket.handshake.query.room ?? ""));
-    const roomSize = roomSizes.get(room) ?? 0;
-    if (roomSize >= maxRoomSockets) {
+    if (limits.admit(room) !== "ok") {
       socket.disconnect(true);
       return;
     }
-    roomSizes.set(room, roomSize + 1);
     socket.join(room);
 
     const rateLimiter = new RateLimiter(rateCapacity, rateRefillPerSecond);
@@ -66,9 +67,7 @@ export function createSocketIoRelay(port: number, options: SocketIoRelayOptions 
     });
 
     socket.on("disconnect", () => {
-      const size = roomSizes.get(room) ?? 1;
-      if (size <= 1) roomSizes.delete(room);
-      else roomSizes.set(room, size - 1);
+      limits.release(room);
     });
   });
 

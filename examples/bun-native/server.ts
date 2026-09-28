@@ -1,6 +1,7 @@
-// Bun.serve WebSocket relay with topics/pub-sub. Same security baseline as apps/server.
+// Bun.serve WebSocket relay with topics/pub-sub.
 import {
   allowedOriginsFromEnv,
+  ConnectionLimits,
   limitFromEnv,
   messageByteLength,
   originAllowed,
@@ -14,6 +15,9 @@ export type BunRelayOptions = {
   rateCapacity?: number;
   rateRefillPerSecond?: number;
   maxRoomSockets?: number;
+  maxSockets?: number;
+  /** Seconds without a message or a pong before Bun closes the socket. Bun sends a ping before it closes. */
+  idleTimeoutSeconds?: number;
   allowedOrigins?: Set<string>;
   /** Auth hook placeholder: verify a token query param. Default accepts every token. */
   authCheck?: (token: string) => boolean;
@@ -23,12 +27,14 @@ type SocketData = {
   room: string;
   origin: string;
   authOk: boolean;
+  admitted: boolean;
   rateLimiter: RateLimiter;
 };
 
 const AUTH_REJECTED_CODE = 4006;
 const ORIGIN_REJECTED_CODE = 4004;
 const ROOM_FULL_CODE = 4001;
+const SERVER_FULL_CODE = 4002;
 
 /**
  * Creates a Bun-native relay. Rooms are Bun pub-sub topics: `ws.publish` fans out to every other
@@ -41,10 +47,14 @@ export function createBunRelay(port: number, options: BunRelayOptions = {}) {
   const rateRefillPerSecond =
     options.rateRefillPerSecond ?? limitFromEnv(process.env.RATE_REFILL_PER_SECOND, 20);
   const maxRoomSockets = options.maxRoomSockets ?? limitFromEnv(process.env.RELAY_MAX_ROOM_SOCKETS, 128);
+  const maxSockets = options.maxSockets ?? limitFromEnv(process.env.RELAY_MAX_TOTAL_SOCKETS, 10_000);
+  const idleTimeoutSeconds =
+    options.idleTimeoutSeconds ?? limitFromEnv(process.env.RELAY_IDLE_TIMEOUT_SECONDS, 60);
+  const slowPeerHardBytes = limitFromEnv(process.env.RELAY_SLOW_PEER_HARD_BYTES, 8 * 1024 * 1024);
   const allowedOrigins = options.allowedOrigins ?? allowedOriginsFromEnv(process.env.RELAY_ALLOWED_ORIGINS);
   const authCheck = options.authCheck ?? tokenAuthCheck(process.env.RELAY_AUTH_TOKEN ?? "");
 
-  const roomSizes = new Map<string, number>();
+  const limits = new ConnectionLimits(maxSockets, maxRoomSockets);
 
   const server = Bun.serve<SocketData>({
     port,
@@ -55,13 +65,23 @@ export function createBunRelay(port: number, options: BunRelayOptions = {}) {
       const authOk = authCheck(url.searchParams.get("token") ?? "");
       if (
         srv.upgrade(req, {
-          data: { room, origin, authOk, rateLimiter: new RateLimiter(rateCapacity, rateRefillPerSecond) },
+          data: {
+            room,
+            origin,
+            authOk,
+            admitted: false,
+            rateLimiter: new RateLimiter(rateCapacity, rateRefillPerSecond),
+          },
         })
       )
         return;
       return new Response("WebSocket relay: upgrade required", { status: 426 });
     },
     websocket: {
+      idleTimeout: idleTimeoutSeconds,
+      sendPings: true,
+      backpressureLimit: slowPeerHardBytes,
+      closeOnBackpressureLimit: true,
       open(ws) {
         if (!originAllowed(allowedOrigins, ws.data.origin)) {
           ws.close(ORIGIN_REJECTED_CODE, "origin not allowed");
@@ -71,12 +91,12 @@ export function createBunRelay(port: number, options: BunRelayOptions = {}) {
           ws.close(AUTH_REJECTED_CODE, "invalid token");
           return;
         }
-        const size = roomSizes.get(ws.data.room) ?? 0;
-        if (size >= maxRoomSockets) {
-          ws.close(ROOM_FULL_CODE, "room full");
+        const admission = limits.admit(ws.data.room);
+        if (admission !== "ok") {
+          ws.close(admission === "server full" ? SERVER_FULL_CODE : ROOM_FULL_CODE, admission);
           return;
         }
-        roomSizes.set(ws.data.room, size + 1);
+        ws.data.admitted = true;
         ws.subscribe(ws.data.room);
       },
       message(ws, message) {
@@ -86,9 +106,7 @@ export function createBunRelay(port: number, options: BunRelayOptions = {}) {
         ws.publish(ws.data.room, message);
       },
       close(ws) {
-        const size = roomSizes.get(ws.data.room) ?? 1;
-        if (size <= 1) roomSizes.delete(ws.data.room);
-        else roomSizes.set(ws.data.room, size - 1);
+        if (ws.data.admitted) limits.release(ws.data.room);
       },
     },
   });

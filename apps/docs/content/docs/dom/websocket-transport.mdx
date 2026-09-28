@@ -33,7 +33,12 @@ Set `token` to add a room token to the connection URL. The transport URL-encodes
 - The transport applies full jitter on top of the capped delay, so many clients reconnecting at once do not retry in lockstep.
 - `random` overrides the jitter source. It defaults to `Math.random` and is useful in a test that needs a deterministic delay.
 
-`connect()` is idempotent while a connection is already connecting or open: a second call does not open a second socket. `connect()` after `disconnect()` is also a no-op: the transport logs a development-mode warning and does nothing. Create a new transport instead.
+`connect()` is idempotent while a connection is already connecting or open: a second call does not open a second socket.
+
+<Callout type="warn">
+  If you call `connect()` after `disconnect()`, the transport logs a development-mode warning and does
+  nothing. To reconnect, for example with a new auth token, create a new transport and a new client.
+</Callout>
 
 ## Buffered bytes
 

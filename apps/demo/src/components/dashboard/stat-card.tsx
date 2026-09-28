@@ -21,7 +21,7 @@ export function StatCard({ anchorId, label, value, delta, trend }: StatCardProps
         </span>
         <span
           data-anchor={`stats.${anchorId}.delta`}
-          className={cn("text-sm font-medium", trend === "up" ? "text-emerald-600" : "text-red-600")}
+          className={cn("text-sm font-medium", trend === "up" ? "text-emerald-700" : "text-red-700")}
         >
           {trend === "up" ? "▲" : "▼"} {delta}
         </span>

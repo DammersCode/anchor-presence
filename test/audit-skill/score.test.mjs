@@ -3,6 +3,7 @@ import {
   adjacentPairs,
   band,
   indexView,
+  jumpThresholds,
   mapPoint,
   percentile,
   scorePair,
@@ -118,9 +119,66 @@ describe("scorePair", () => {
     expect(pair.offenders.fallbacks[0]).toMatchObject({ id: "bar.b", resolved: "bar" });
   });
 
+  it("rejects an unknown jump scale", () => {
+    expect(() => scorePair(rowLayout, stackLayout, { jumpScale: "em" })).toThrow(/jumpScale/u);
+  });
+
   it("ignores anchors clipped out of view on the sender side", () => {
     const [bar, barA, barB] = rowLayout.anchors;
     const clipped = view("clipped", [bar, barA, { ...barB, visible: box(108, 0, 0, 0) }]);
     expect(adjacentPairs(indexView(clipped), 24)).toEqual([]);
+  });
+});
+
+describe("jump scale", () => {
+  // Neighbors 8 px apart on the sender sit 100 px apart on the receiver: a 102 px jump at any receiver width.
+  const spreadAt = (width) =>
+    view(
+      `spread-${width}`,
+      [
+        anchor("bar", box(0, 0, 300, 40)),
+        anchor("bar.a", box(0, 0, 100, 40), ["bar"]),
+        anchor("bar.b", box(200, 0, 100, 40), ["bar"]),
+      ],
+      width,
+    );
+
+  it("scores px jumps the same on every receiver width, by default", () => {
+    const narrow = scorePair(rowLayout, spreadAt(390));
+    const wide = scorePair(rowLayout, spreadAt(1440));
+    expect(narrow.inputs).toMatchObject({ jumpP90Px: 102 });
+    expect(narrow.inputs).not.toHaveProperty("jumpP90Vw");
+    expect(narrow.offenders.jumps[0]).not.toHaveProperty("jumpVw");
+    expect(narrow.sub.jump).toBe(31);
+    expect(wide.sub.jump).toBe(narrow.sub.jump);
+    expect(scorePair(rowLayout, spreadAt(390), { jumpScale: "px" })).toEqual(narrow);
+  });
+
+  it("scores the same jump worse on a narrow receiver than on a wide one", () => {
+    const narrow = scorePair(rowLayout, spreadAt(390), { jumpScale: "viewport" });
+    const wide = scorePair(rowLayout, spreadAt(1440), { jumpScale: "viewport" });
+    expect(narrow.inputs.jumpP90Vw).toBe(26.15);
+    expect(wide.inputs.jumpP90Vw).toBe(7.08);
+    expect(narrow.inputs).not.toHaveProperty("jumpP90Px");
+    expect(narrow.offenders.jumps[0]).toMatchObject({ jumpPx: 102, jumpVw: 26.15 });
+    expect(narrow.sub.jump).toBe(100);
+    expect(wide.sub.jump).toBe(25);
+  });
+
+  it("matches the px score at the 1280 px reference width", () => {
+    const px = scorePair(rowLayout, spreadAt(1280));
+    const viewport = scorePair(rowLayout, spreadAt(1280), { jumpScale: "viewport" });
+    expect(viewport.sub.jump).toBe(px.sub.jump);
+    expect(jumpThresholds("viewport")).toEqual({ good: 3.125, poor: 18.75 });
+  });
+
+  it("normalizes each direction by its own receiver", () => {
+    const wideStack = { ...stackLayout, viewport: { width: 800, height: 300 } };
+    const pair = scorePair(rowLayout, wideStack, { jumpScale: "viewport" });
+    const widths = { row: 400, stack: 800 };
+    expect(new Set(pair.offenders.jumps.map((j) => j.receiver))).toEqual(new Set(["row", "stack"]));
+    for (const jump of pair.offenders.jumps) {
+      expect(jump.jumpVw).toBeCloseTo((100 * jump.jumpPx) / widths[jump.receiver], 1);
+    }
   });
 });

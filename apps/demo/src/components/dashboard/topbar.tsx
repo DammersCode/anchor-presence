@@ -4,7 +4,7 @@ import { Button } from "../ui/button";
 import { PresencePill } from "../../cursors/presence-pill";
 
 const PEERS = ["Sage", "Rowan", "Quinn"];
-const PEER_COLORS = ["bg-emerald-500", "bg-amber-500", "bg-sky-500"];
+const PEER_COLORS = ["bg-emerald-700", "bg-amber-700", "bg-sky-700"];
 
 export interface TopbarProps {
   userName: string;
@@ -26,7 +26,7 @@ export function Topbar({ userName, room, onOpenSettings }: TopbarProps) {
         <PresencePill />
 
         <div data-anchor="topbar.room" className="flex items-center gap-2 text-sm text-gray-500">
-          <span className="text-gray-400">Room</span>
+          <span className="text-gray-500">Room</span>
           <span className="rounded-md bg-gray-100 px-2 py-0.5 font-medium text-gray-700">{room}</span>
         </div>
 

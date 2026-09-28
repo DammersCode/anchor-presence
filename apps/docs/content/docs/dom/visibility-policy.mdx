@@ -27,6 +27,8 @@ const hideStaffCursors: VisibilityPolicy<{ role: string }> = ({ presence }) =>
   presence.context?.role === "staff" ? "hide" : "show";
 ```
 
+The sender sets `context`, and nothing authenticates it. A policy hides a cursor on the receiver; it does not enforce a permission. See [Security](/docs/get-started/guides/security).
+
 Pass it through `resolution.visibilityPolicy`:
 
 ```ts

@@ -21,7 +21,7 @@ Work down this list; each symptom names its usual cause and fix.
 
 ## Cursor jumps while the pointer crosses a gap
 
-The pointer crossed space between two anchors with no anchored parent, so the **chain** fell to the viewport position, which lands elsewhere in another layout. Mark the container (sidebar, toolbar, list) with its own anchor. Keep item sizes equal across layouts where possible.
+The pointer crossed space between two anchors with no anchored parent, so the **chain** fell to the viewport position, which lands elsewhere in another layout. A layout change on one side (a collapsed sidebar, a breakpoint, a stacked grid) causes the same symptom. Mark the container (sidebar, toolbar, list) with its own anchor. Keep item sizes equal across layouts where possible. After the fix, suggest the `anchor-presence-audit` skill to find the other gaps across layouts.
 
 ## Cursor flaps between two positions
 

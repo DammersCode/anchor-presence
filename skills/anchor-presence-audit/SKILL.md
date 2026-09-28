@@ -95,18 +95,19 @@ Present the proposals grouped by view pair and numbered, so the user can pick by
 
 ## Config reference
 
-| Field             | Meaning                                                                                                   |
-| ----------------- | --------------------------------------------------------------------------------------------------------- |
-| `baseUrl`         | Required. The running app, for example `http://localhost:3000`.                                           |
-| `routes`          | Paths, crossed with `viewports` and `states`. The route is the page name for pairing.                     |
-| `viewports`       | Widths (height 900), or `{ "name", "width", "height" }` objects.                                          |
-| `states`          | Map of state name to a step list. `default` with no steps is the plain page.                              |
-| `views`           | Explicit views: `{ "page", "name", "url", "width", "height", "steps" }`. Views with the same `page` pair. |
-| `anchorAttribute` | Default `data-anchor`. Use the app's custom attribute when it sets one.                                   |
-| `adjacencyPx`     | Default 24. Two anchors this close count as neighbors.                                                    |
-| `maxAnchors`      | Default 4. The chain length the app's binding sends.                                                      |
-| `settleMs`        | Default 500. Wait after load and after the steps.                                                         |
-| `waitUntil`       | Default `load`. Playwright's navigation wait.                                                             |
-| `timeoutMs`       | Default 15000. How long to wait for the first anchor on a page.                                           |
+| Field             | Meaning                                                                                                                                                                                |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `baseUrl`         | Required. The running app, for example `http://localhost:3000`.                                                                                                                        |
+| `routes`          | Paths, crossed with `viewports` and `states`. The route is the page name for pairing.                                                                                                  |
+| `viewports`       | Widths (height 900), or `{ "name", "width", "height" }` objects.                                                                                                                       |
+| `states`          | Map of state name to a step list. `default` with no steps is the plain page.                                                                                                           |
+| `views`           | Explicit views: `{ "page", "name", "url", "width", "height", "steps" }`. Views with the same `page` pair.                                                                              |
+| `anchorAttribute` | Default `data-anchor`. Use the app's custom attribute when it sets one.                                                                                                                |
+| `adjacencyPx`     | Default 24. Two anchors this close count as neighbors.                                                                                                                                 |
+| `maxAnchors`      | Default 4. The chain length the app's binding sends.                                                                                                                                   |
+| `jumpScale`       | Default `px`. `viewport` scores each jump as a percent of the receiver's viewport width. Use it when the views span phone and desktop widths. See [scoring.md](scoring.md#jump-scale). |
+| `settleMs`        | Default 500. Wait after load and after the steps.                                                                                                                                      |
+| `waitUntil`       | Default `load`. Playwright's navigation wait.                                                                                                                                          |
+| `timeoutMs`       | Default 15000. How long to wait for the first anchor on a page.                                                                                                                        |
 
 Step kinds, run in order: `{ "click": "<selector>" }`, `{ "press": "Escape", "selector": "<optional>" }`, `{ "setAttribute": { "selector", "name", "value" } }`, `{ "wait": 300 }` (milliseconds) or `{ "wait": "<selector>" }`.

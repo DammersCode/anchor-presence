@@ -124,6 +124,13 @@ PERF_SCALE=1 bunx playwright test --project=chromium e2e/perf-scale.spec.ts
 
 The script measures delivery against the rate clients sent, not the nominal 20 Hz. On a busy machine, timers can run under the nominal rate, so this comparison is fair. The script also measures latency percentiles and the relay process's CPU and memory.
 
+<Callout type="warn">
+  Read the 100 and 200 rows as the limit of this test setup, not as a proven relay limit. All clients run in
+  one load-generator process on the same machine, and at 100 clients that process uses a full CPU core too
+  (the script prints its CPU next to the relay's). The relay's slow-peer and rate-limit protections did not
+  trigger: every socket stayed open, and messages queued instead.
+</Callout>
+
 | Clients | Sent (msg/s) | Delivered (msg/s) | Delivery ratio | Latency p50 | Latency p99 | Relay CPU | Relay RSS |
 | ------- | ------------ | ----------------- | -------------- | ----------- | ----------- | --------- | --------- |
 | 50      | 813          | 39,813            | 100%           | 16 ms       | 32 ms       | 50%       | 66 MB     |
@@ -135,13 +142,6 @@ Reproduce with:
 ```sh
 bun run scripts/relay-load.ts --clients 50,100,200 --seconds 10
 ```
-
-<Callout type="warn">
-  Read the 100 and 200 rows as the limit of this test setup, not as a proven relay limit. All clients run in
-  one load-generator process on the same machine, and at 100 clients that process uses a full CPU core too
-  (the script prints its CPU next to the relay's). The relay's slow-peer and rate-limit protections did not
-  trigger: every socket stayed open, and messages queued instead.
-</Callout>
 
 The test raised the room and socket caps through `RELAY_MAX_ROOM_SOCKETS` and `RELAY_MAX_TOTAL_SOCKETS`. This kept the relay from rejecting the client count under test. The rate limit stayed at the shipped default: a 40-message burst, with a refill of 20 messages/s per socket.
 

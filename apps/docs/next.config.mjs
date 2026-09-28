@@ -5,6 +5,7 @@ const withMDX = createMDX();
 /** @type {import('next').NextConfig} */
 const config = {
   reactStrictMode: true,
+  devIndicators: false,
   // fumadocs LLMs integration: /docs/<page>.md serves the page as raw markdown for AI agents.
   async redirects() {
     return [

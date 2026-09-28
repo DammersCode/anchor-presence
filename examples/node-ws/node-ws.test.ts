@@ -1,6 +1,12 @@
 import { createPresenceClient, type PresenceClient } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  closeCode,
+  opened,
+  openUnresponsivePeer,
+  type UnresponsivePeer,
+} from "../_shared/relay-test-helpers";
 import { createNodeWsRelay } from "./server";
 
 describe("node-ws relay integration", () => {
@@ -92,5 +98,72 @@ describe("node-ws relay integration", () => {
 
     expect(receiver.getRemoteSnapshot()).toHaveLength(0);
     expect(sender.getStatus()).toBe("connected");
+  });
+});
+
+describe("node-ws relay limits", () => {
+  let close: () => Promise<void>;
+  let wsUrl: string;
+  const sockets: WebSocket[] = [];
+
+  beforeEach(async () => {
+    const relay = await createNodeWsRelay(0, { maxSockets: 1 });
+    wsUrl = relay.url.replace("http", "ws");
+    close = relay.close;
+  });
+
+  afterEach(async () => {
+    for (const socket of sockets) socket.close();
+    sockets.length = 0;
+    await close();
+  });
+
+  function connect(room: string): WebSocket {
+    const socket = new WebSocket(`${wsUrl}/?room=${room}`);
+    sockets.push(socket);
+    return socket;
+  }
+
+  it("rejects the upgrade above the per-process cap until a slot frees", async () => {
+    const first = connect("room-1");
+    await opened(first);
+
+    await expect(opened(connect("room-2"))).rejects.toThrow("closed before open");
+
+    first.close();
+    await closeCode(first);
+    await vi.waitFor(() => opened(connect("room-3")), { timeout: 2000, interval: 50 });
+  });
+});
+
+describe("node-ws relay liveness", () => {
+  let close: () => Promise<void>;
+  let port: number;
+  let silent: UnresponsivePeer | undefined;
+  const sockets: WebSocket[] = [];
+
+  beforeEach(async () => {
+    const relay = await createNodeWsRelay(0, { idleTimeoutSeconds: 0.2 });
+    port = Number(new URL(relay.url).port);
+    close = relay.close;
+  });
+
+  afterEach(async () => {
+    silent?.destroy();
+    for (const socket of sockets) socket.close();
+    sockets.length = 0;
+    await close();
+  });
+
+  it("terminates a connection that never answers a ping and keeps a responsive one", async () => {
+    const responsive = new WebSocket(`ws://127.0.0.1:${port}/?room=room-1`);
+    sockets.push(responsive);
+    await opened(responsive);
+    silent = openUnresponsivePeer(port, "room-1");
+    await silent.upgraded;
+
+    await silent.closed;
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    expect(responsive.readyState).toBe(WebSocket.OPEN);
   });
 });

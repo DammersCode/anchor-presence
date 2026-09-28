@@ -6,7 +6,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { parseArgs } from "node:util";
-import { THRESHOLDS } from "./score.mjs";
+import { THRESHOLDS, jumpThresholds } from "./score.mjs";
 
 /** @typedef {ReturnType<typeof import("./score.mjs").scorePair>} PairScore */
 
@@ -37,6 +37,30 @@ const pairLabel = (pair) => `${pair.page}: ${pair.a} vs ${pair.b}`;
 const pairKey = (pair) => `${pair.page}\u0000${pair.a}\u0000${pair.b}`;
 const cell = (text) => String(text).replaceAll("|", "\\|");
 
+/** Reads and labels the jump input in the scale the audit used; a result without a scale is px. */
+function jumpUnit(result) {
+  const scale = result.config.jumpScale ?? "px";
+  const thresholds = jumpThresholds(scale);
+  if (scale === "px") {
+    return {
+      scale,
+      thresholds,
+      unit: "px",
+      text: (value) => `${value} px`,
+      p90: (p) => p.inputs.jumpP90Px,
+      of: (j) => j.jumpPx,
+    };
+  }
+  return {
+    scale,
+    thresholds,
+    unit: "% of viewport width",
+    text: (value) => `${value}% of viewport width`,
+    p90: (p) => p.inputs.jumpP90Vw,
+    of: (j) => j.jumpVw,
+  };
+}
+
 function scoreTable(pairs) {
   const rows = pairs.map(
     (p) =>
@@ -55,25 +79,27 @@ function chatTable(result) {
   return `${scoreTable(shown)}${more > 0 ? `\n\n${more} more pairs in the JSON.` : ""}`;
 }
 
-/** @param {PairScore} pair */
-function pairSection(pair) {
+/** @param {PairScore} pair @param {ReturnType<typeof jumpUnit>} jump */
+function pairSection(pair, jump) {
   const { inputs, offenders } = pair;
   const lines = [
     `### ${pairLabel(pair)} — ${pair.total} (${pair.band})`,
     "",
     `| Input | Value | Sub-score |`,
     `| --- | --: | --: |`,
-    `| Jump p90 | ${inputs.jumpP90Px} px over ${pair.counts.adjacentPairs} adjacent moves | ${pair.sub.jump} |`,
+    `| Jump p90 | ${jump.text(jump.p90(pair))} over ${pair.counts.adjacentPairs} adjacent moves | ${pair.sub.jump} |`,
     `| Gap uncovered | ${Math.round(inputs.gapUncovered * 100)}% | ${pair.sub.gap} |`,
     `| Depth delta (worst) | ${inputs.depthDelta} | ${pair.sub.depth} |`,
     `| Aspect amp p90 | ${inputs.aspectAmp}x over ${pair.counts.sharedAnchors} shared anchors | ${pair.sub.aspect} |`,
     `| Missing in one view | ${Math.round(inputs.parityMissing * 100)}% of ${pair.counts.anchorIds} IDs | ${pair.sub.parity} |`,
   ];
-  if (offenders.jumps.some((j) => j.jumpPx > THRESHOLDS.jump.good)) {
+  const largeJumps = offenders.jumps.filter((j) => jump.of(j) > jump.thresholds.good);
+  if (largeJumps.length > 0) {
     lines.push("", "Largest jumps (sender move -> receiver move):", "");
-    for (const j of offenders.jumps.filter((x) => x.jumpPx > THRESHOLDS.jump.good).slice(0, 5)) {
+    for (const j of largeJumps.slice(0, 5)) {
+      const share = jump.scale === "px" ? "" : ` (${jump.text(j.jumpVw)})`;
       lines.push(
-        `- \`${j.from}\` -> \`${j.to}\`: ${j.senderPx} px on ${j.sender} becomes ${j.jumpPx} px on ${j.receiver}` +
+        `- \`${j.from}\` -> \`${j.to}\`: ${j.senderPx} px on ${j.sender} becomes ${j.jumpPx} px${share} on ${j.receiver}` +
           ` (${j.via.map((v) => (v === null ? "viewport" : `\`${v}\``)).join(" -> ")})`,
       );
     }
@@ -124,7 +150,7 @@ function markdownReport(result) {
     "",
     "## Findings per view pair",
     "",
-    ...result.pairs.map((pair) => `${pairSection(pair)}\n`),
+    ...result.pairs.map((pair) => `${pairSection(pair, jumpUnit(result))}\n`),
   ].join("\n");
 }
 
@@ -174,8 +200,9 @@ function chainFlowchart(pair) {
 
 function mermaidReport(result) {
   const pairs = result.pairs.slice(0, CHART_BARS);
-  const maxJump = Math.max(240, ...pairs.map((p) => Math.ceil(p.inputs.jumpP90Px)));
-  const jumpRows = pairs.map((p) => `| ${cell(pairLabel(p))} | ${p.inputs.jumpP90Px} | ${p.sub.jump} |`);
+  const jump = jumpUnit(result);
+  const maxJump = Math.ceil(Math.max(jump.thresholds.poor, ...pairs.map((p) => jump.p90(p))));
+  const jumpRows = pairs.map((p) => `| ${cell(pairLabel(p))} | ${jump.p90(p)} | ${p.sub.jump} |`);
   const flows = result.pairs
     .filter((p) => p.offenders.fallbacks.length > 0)
     .map((pair) => chainFlowchart(pair));
@@ -188,11 +215,11 @@ function mermaidReport(result) {
     "",
     scoreTable(pairs),
     "",
-    "### Jump p90 per view pair (px)",
+    `### Jump p90 per view pair (${jump.unit})`,
     "",
-    barChart("Jump p90 px", pairs, (p) => p.inputs.jumpP90Px, maxJump),
+    barChart(`Jump p90 (${jump.unit})`, pairs, (p) => jump.p90(p), maxJump),
     "",
-    "| View pair | Jump p90 (px) | Jump sub-score |",
+    `| View pair | Jump p90 (${jump.unit}) | Jump sub-score |`,
     "| --- | --: | --: |",
     ...jumpRows,
     ...(flows.length === 0
@@ -225,7 +252,16 @@ function comparison(before, after) {
     if (!current.has(pairKey(p)))
       rows.push(`| ${cell(pairLabel(p))} | ${p.total} | - | missing | not measured after |`);
   }
+  const [scaleBefore, scaleAfter] = [before, after].map((r) => r.config.jumpScale ?? "px");
+  const note =
+    scaleBefore === scaleAfter
+      ? []
+      : [
+          `Jump scales differ (${scaleBefore} before, ${scaleAfter} after): jump deltas are not comparable.`,
+          "",
+        ];
   return [
+    ...note,
     "| View pair | Before | After | Delta | Changed sub-scores |",
     "| --- | --: | --: | --: | --- |",
     ...rows,

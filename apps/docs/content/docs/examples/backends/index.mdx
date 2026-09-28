@@ -43,7 +43,7 @@ See [Transports](/docs/core/transports) for the full contract and the shipped We
 | [Socket.IO](/docs/examples/backends/socketio)   | `examples/socketio`   | Socket.IO transport (example) | Integration test against a real relay |
 | [SignalR](/docs/examples/backends/signalr)      | `examples/signalr`    | SignalR transport (example)   | Integration test against a real hub   |
 
-A transport that needs a third-party library lives in `examples/`, never in a package. `@anchor-presence/core`, `@anchor-presence/dom`, and `@anchor-presence/react` stay free of framework and vendor dependencies. See [Package boundaries](https://github.com/DammersCode/anchor-presence/blob/main/AGENTS.md) in the repository for the full rule.
+A transport that needs a third-party library lives in `examples/`, never in a package. `@anchor-presence/core`, `@anchor-presence/dom`, and `@anchor-presence/react` stay free of framework and vendor dependencies. The [package table](/docs/get-started/introduction#packages) shows what each package may depend on.
 
 ### No server
 
@@ -59,7 +59,7 @@ Two options need no relay at all: `createInMemoryPair` from `@anchor-presence/co
 
 ## Shared guard helpers
 
-The Bun, Node.js (ws), Hono, and Elysia relays share one file of guard helpers: room-name validation, a per-connection rate limiter, a message size check, and Origin and token checks. Copy it together with the server you pick:
+The Bun, Node.js (ws), Hono, Elysia, and Socket.IO relays share one file of guard helpers: room-name validation, a per-connection rate limiter, a message size check, Origin and token checks, and connection caps per room and per process. Copy it together with the server you pick:
 
 <CodeFromSource repo="examples/_shared/relay-guard.ts" lang="ts" />
 

@@ -7,7 +7,7 @@ import { createRequire } from "node:module";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
-import { DEFAULTS, THRESHOLDS, WEIGHTS, scoreViews } from "./score.mjs";
+import { DEFAULTS, THRESHOLDS, WEIGHTS, jumpThresholds, scoreViews } from "./score.mjs";
 
 const DEFAULT_HEIGHT = 900;
 const GAP_SAMPLES = 400;
@@ -350,9 +350,11 @@ async function main() {
     anchorAttribute: "data-anchor",
     adjacencyPx: DEFAULTS.adjacencyPx,
     maxAnchors: DEFAULTS.maxAnchors,
+    jumpScale: DEFAULTS.jumpScale,
     ...raw,
   };
   if (typeof config.baseUrl !== "string") throw new Error(`${configPath}: "baseUrl" is required`);
+  const jump = jumpThresholds(config.jumpScale);
 
   const views = expandViews(config);
   if (views.length === 0)
@@ -367,12 +369,19 @@ async function main() {
     await browser.close();
   }
 
-  const options = { adjacencyPx: config.adjacencyPx, maxAnchors: config.maxAnchors };
+  const options = {
+    adjacencyPx: config.adjacencyPx,
+    maxAnchors: config.maxAnchors,
+    jumpScale: config.jumpScale,
+  };
   const result = {
     version: 1,
     generatedAt: new Date().toISOString(),
     config: { baseUrl: config.baseUrl, anchorAttribute: config.anchorAttribute, ...options },
-    scoring: { weights: WEIGHTS, thresholds: { ...THRESHOLDS, depth: { good: 0, poor: config.maxAnchors } } },
+    scoring: {
+      weights: WEIGHTS,
+      thresholds: { ...THRESHOLDS, jump, depth: { good: 0, poor: config.maxAnchors } },
+    },
     views: measured.map(({ anchors, ...view }) => ({
       ...view,
       anchorCount: anchors?.length ?? 0,

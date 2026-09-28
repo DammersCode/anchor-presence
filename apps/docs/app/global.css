@@ -103,3 +103,9 @@ html {
     animation: none;
   }
 }
+
+/* fumadocs sets focus-visible:outline-none on the mobile table-of-contents trigger with no replacement ring. */
+[data-toc-popover-trigger]:focus-visible {
+  outline: 2px solid var(--color-fd-ring);
+  outline-offset: -2px;
+}

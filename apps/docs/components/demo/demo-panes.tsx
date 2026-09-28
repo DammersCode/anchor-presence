@@ -10,9 +10,9 @@ import { useId, useMemo, useState } from "react";
 export function DemoPanes() {
   const reactId = useId();
   const [channel] = useState(() => `anchor-presence-demo-${reactId}-${Math.random().toString(36).slice(2)}`);
-  const wideSrc = useMemo(() => `/demo-frame/home/wide?channel=${encodeURIComponent(channel)}`, [channel]);
+  const wideSrc = useMemo(() => `/demo-frame/kanban/wide?channel=${encodeURIComponent(channel)}`, [channel]);
   const narrowSrc = useMemo(
-    () => `/demo-frame/home/narrow?channel=${encodeURIComponent(channel)}`,
+    () => `/demo-frame/kanban/narrow?channel=${encodeURIComponent(channel)}`,
     [channel],
   );
 

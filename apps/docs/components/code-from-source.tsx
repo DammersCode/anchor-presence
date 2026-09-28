@@ -5,7 +5,7 @@ import { codeThemes } from "@/lib/shared";
 type Props = {
   /** Path relative to the repo root (e.g. "examples/socketio/transport.ts"). */
   repo?: string;
-  /** Path relative to apps/docs (e.g. "components/demo/demo-scene.tsx"). */
+  /** Path relative to apps/docs (e.g. "components/examples/basics.tsx"). */
   docs?: string;
   lang: string;
 };

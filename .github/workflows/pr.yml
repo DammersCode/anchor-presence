@@ -18,13 +18,11 @@ jobs:
     name: Build, typecheck, lint, and unit tests
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    # Only listed maintainers burn Actions minutes; add a login to let another user's PRs run checks.
+    if: >-
+      github.event_name != 'pull_request' ||
+      contains('["DammersCode"]', github.event.pull_request.user.login)
     steps:
-      - name: Debug PR author permissions
-        if: github.event_name == 'pull_request'
-        run: |
-          echo "login: ${{ github.event.pull_request.user.login }}"
-          echo "permissions: ${{ toJSON(github.event.pull_request.user.permissions) }}"
-          echo "gate: ${{ github.event.pull_request.user.permissions.admin || github.event.pull_request.user.permissions.maintain || github.event.pull_request.user.permissions.push }}"
       - uses: actions/checkout@v7
       - uses: oven-sh/setup-bun@v2
         with:

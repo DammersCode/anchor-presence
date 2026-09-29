@@ -4,18 +4,23 @@ import { CURSOR_MARKER_ATTRIBUTE, type ResolvedCursor } from "@anchor-presence/d
 import { useRemoteCursorsSelector } from "./hooks/index.js";
 
 const DEFAULT_COLOR = "#6b7280";
-const DEFAULT_Z_INDEX = 50;
+const DEFAULT_Z_INDEX = 9999;
 const IDLE_OPACITY = 0.4;
 
 // JSX cannot name an attribute dynamically. The marker wins over consumer props.
 const CURSOR_MARKER_PROPS: Record<string, string> = { [CURSOR_MARKER_ATTRIBUTE]: "" };
 
-// called during render, never at import time, so this stays SSR-safe
+// One MediaQueryList per matchMedia implementation; .matches stays live, so no listener is needed.
+let cachedMatchMedia: typeof window.matchMedia | null | undefined;
+let cachedReducedMotionQuery: MediaQueryList | null = null;
 function prefersReducedMotion(): boolean {
-  return (
-    typeof window !== "undefined" &&
-    (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false)
-  );
+  const matchMedia = typeof window !== "undefined" ? window.matchMedia : undefined;
+  if (matchMedia !== cachedMatchMedia) {
+    cachedMatchMedia = matchMedia;
+    cachedReducedMotionQuery =
+      typeof matchMedia === "function" ? matchMedia("(prefers-reduced-motion: reduce)") : null;
+  }
+  return cachedReducedMotionQuery?.matches ?? false;
 }
 
 function sameCursors(a: readonly unknown[], b: readonly unknown[]): boolean {
@@ -50,6 +55,8 @@ export type CursorLayerProps<TContext = unknown, TUser = unknown> = {
   ) => Omit<ComponentPropsWithoutRef<"div">, "children">;
   /** Renders one cursor. Default: the `DefaultCursor` component. */
   renderCursor?: (props: CursorRenderProps<TContext, TUser>) => ReactNode;
+  /** The z-index for the cursor elements. Default `9999`. */
+  zIndex?: number;
 };
 
 /**
@@ -124,17 +131,18 @@ type CursorItemProps<TContext = unknown, TUser = unknown> = {
     | ((cursor: ResolvedCursor<TContext, TUser>) => Omit<ComponentPropsWithoutRef<"div">, "children">)
     | undefined;
   renderCursor?: ((props: CursorRenderProps<TContext, TUser>) => ReactNode) | undefined;
+  zIndex?: number | undefined;
 };
 
 function CursorItem<TContext = unknown, TUser = unknown>(props: CursorItemProps<TContext, TUser>): ReactNode {
-  const { cursor, getLabel, getColor, getCursorProps, renderCursor } = props;
+  const { cursor, getLabel, getColor, getCursorProps, renderCursor, zIndex } = props;
   const label = getLabel ? getLabel(cursor) : null;
   const color = getColor ? getColor(cursor) : DEFAULT_COLOR;
   const consumerProps = getCursorProps ? getCursorProps(cursor) : undefined;
   const { style: consumerStyle, ...consumerRest } = consumerProps ?? {};
 
   const style: CSSProperties = {
-    zIndex: DEFAULT_Z_INDEX,
+    zIndex: zIndex ?? DEFAULT_Z_INDEX,
     ...consumerStyle,
     position: "fixed",
     left: 0,
@@ -171,7 +179,7 @@ const MemoizedCursorItem = memo(CursorItem) as typeof CursorItem;
 export function CursorLayer<TContext = unknown, TUser = unknown>(
   props: CursorLayerProps<TContext, TUser>,
 ): ReactNode {
-  const { getLabel, getColor, filterCursor, getCursorProps, renderCursor } = props;
+  const { getLabel, getColor, filterCursor, getCursorProps, renderCursor, zIndex } = props;
 
   const select = useCallback(
     (cursors: ResolvedCursor<TContext, TUser>[]) =>
@@ -190,6 +198,7 @@ export function CursorLayer<TContext = unknown, TUser = unknown>(
           getColor={getColor}
           getCursorProps={getCursorProps}
           renderCursor={renderCursor}
+          zIndex={zIndex}
         />
       ))}
     </>

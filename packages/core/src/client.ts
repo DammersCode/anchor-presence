@@ -241,6 +241,10 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
       return state.store.getStableSnapshot();
     },
 
+    hasActiveCursors() {
+      return state.store.hasActiveCursors();
+    },
+
     subscribeRemote(listener) {
       return state.store.subscribe(listener);
     },

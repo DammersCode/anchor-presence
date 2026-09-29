@@ -140,6 +140,11 @@ export interface PresenceClient<TContext = unknown, TUser = unknown> {
    */
   getRemotePresence(): RemotePresence<TContext, TUser>[];
   /**
+   * Returns whether at least one remote client currently has a cursor position.
+   * O(1) on the client returned by `createPresenceClient`; optional so custom clients may omit it.
+   */
+  hasActiveCursors?(): boolean;
+  /**
    * Adds a listener for remote presence changes.
    * The client calls the listener when it accepts a message.
    * @returns A function that removes the listener.

@@ -149,7 +149,8 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
   }
 
   const scheduler = createGeometryScheduler<ResolvedCursor<TContext, TUser>[]>({
-    hasActiveCursors: () => client.getRemoteSnapshot().some((presence) => presence.cursor !== null),
+    hasActiveCursors: () =>
+      client.hasActiveCursors?.() ?? client.getRemoteSnapshot().some((presence) => presence.cursor !== null),
 
     compute(readState, timestampMs) {
       const idleClientIds = new Set<string>();

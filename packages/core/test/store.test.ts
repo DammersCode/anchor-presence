@@ -373,3 +373,32 @@ describe("RemotePresenceStore stable snapshot", () => {
     unsubscribe();
   });
 });
+
+describe("RemotePresenceStore hasActiveCursors", () => {
+  it("counts a cursor on first ingest and drops it on a null cursor", () => {
+    const store = new RemotePresenceStore();
+    expect(store.hasActiveCursors()).toBe(false);
+    store.ingest(presence({ sequence: 0, cursor: { anchors: [{ id: "a", u: 0.5, v: 0.5 }] } }));
+    expect(store.hasActiveCursors()).toBe(true);
+    store.ingest(presence({ sequence: 1, cursor: null }));
+    expect(store.hasActiveCursors()).toBe(false);
+  });
+
+  it("recounts when a client with a cursor becomes stale and is swept", () => {
+    const clock = makeClock();
+    const store = new RemotePresenceStore({ staleTimeoutMs: 1000, idleAfterMs: 500, now: clock.now });
+    store.ingest(presence({ sequence: 0, cursor: { anchors: [{ id: "a", u: 0.5, v: 0.5 }] } }));
+    expect(store.hasActiveCursors()).toBe(true);
+    clock.advance(1100);
+    store.sweep();
+    expect(store.hasActiveCursors()).toBe(false);
+  });
+
+  it("drops the count on remove and ignores removing an unknown client", () => {
+    const store = new RemotePresenceStore();
+    store.ingest(presence({ sequence: 0, cursor: { anchors: [{ id: "a", u: 0.5, v: 0.5 }] } }));
+    store.remove("client-1");
+    expect(store.hasActiveCursors()).toBe(false);
+    expect(() => store.remove("unknown")).not.toThrow();
+  });
+});

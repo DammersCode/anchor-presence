@@ -1,11 +1,14 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { createPresenceClient } from "@anchor-presence/core";
 import "./index.css";
 import { LiveCursorProvider } from "@anchor-presence/react";
 import App from "./app";
 import { BenchPage } from "./bench/bench-page";
 import { ReflowBenchPage } from "./reflow/reflow-bench-page";
-import { getPresenceClient } from "./cursors/setup";
+import { createBackendTransport } from "./cursors/backends";
+import { backendId, colorForName, localRoom, localUserName } from "./cursors/setup";
+import type { DemoContext, DemoUser } from "./cursors/setup";
 import { createVisibilityPolicy } from "./cursors/visibility-policy";
 import type { LocalViewState } from "./cursors/visibility-policy";
 import { interpolatorRegistry } from "./cursors/interpolators";
@@ -19,18 +22,27 @@ const isReflowBenchRoute = new URLSearchParams(window.location.search).get("page
 const localViewState: LocalViewState = { page: null, settingsOpen: false };
 const visibilityPolicy = createVisibilityPolicy(() => localViewState);
 
+function createDemoClient() {
+  const { transport, codec } = createBackendTransport(backendId, localRoom);
+  return createPresenceClient<DemoContext, DemoUser>({
+    transport,
+    codec,
+    user: { name: localUserName, color: colorForName(localUserName) },
+  });
+}
+
 function Root() {
   const [interpolatorStyle, selectInterpolatorStyle] = useInterpolatorStyle();
   if (isBenchRoute) return <BenchPage />;
   if (isReflowBenchRoute) return <ReflowBenchPage />;
 
-  const client = getPresenceClient();
   return (
     // key={interpolatorStyle} forces a remount: bindingOptions is read once per binding (see provider.tsx), so a style
     // change must recreate the whole provider subtree rather than mutate the existing binding in place.
-    <LiveCursorProvider
+    // The remount also disposes and recreates the provider's client.
+    <LiveCursorProvider<DemoContext, DemoUser>
       key={interpolatorStyle}
-      client={client}
+      factory={createDemoClient}
       bindingOptions={{
         resolution: {
           visibilityPolicy,

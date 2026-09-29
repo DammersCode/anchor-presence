@@ -356,21 +356,24 @@ The resolver keeps one interpolator instance per remote `clientId` and prunes it
 ## 14. React Adapter
 
 ```tsx
-<LiveCursorProvider client={client}>...</LiveCursorProvider>
+<LiveCursorProvider factory={createClient} client={client}>
+  ...
+</LiveCursorProvider>
 ```
+
+The provider runs `factory` once per mount, in an effect, and disposes the client it created on unmount. A `client` prop is bring-your-own and wins over `factory`; it is never disposed by the provider. Before the effect runs (and on the server) the tree sees a `null` client.
 
 Hooks:
 
-| Hook                                         | Returns                                                                                              |
-| -------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `usePresenceClient({ factory, key? })`       | a stable `PresenceClient` per `key`, or `null` before the mount effect runs (page-lifetime registry) |
-| `useRemoteUsers()`                           | one entry per remote client: `clientId`, `user`, and `session`                                       |
-| `useRemoteCursors()`                         | `ResolvedCursor[]` snapshot (useSyncExternalStore)                                                   |
-| `useRemoteCursorsSelector(select, isEqual?)` | a value derived from the snapshot, recomputed per frame                                              |
-| `useCursorPresence()`                        | raw remote `CursorPresence[]`                                                                        |
-| `useCursorStatus()`                          | `ConnectionStatus`                                                                                   |
-| `useCursorClient()`                          | the client instance                                                                                  |
-| `useCursorContext()`                         | `[context, setContext]`                                                                              |
+| Hook                                         | Returns                                                        |
+| -------------------------------------------- | -------------------------------------------------------------- |
+| `useRemoteUsers()`                           | one entry per remote client: `clientId`, `user`, and `session` |
+| `useRemoteCursors()`                         | `ResolvedCursor[]` snapshot (useSyncExternalStore)             |
+| `useRemoteCursorsSelector(select, isEqual?)` | a value derived from the snapshot, recomputed per frame        |
+| `useCursorPresence()`                        | raw remote `CursorPresence[]`                                  |
+| `useCursorStatus()`                          | `ConnectionStatus`                                             |
+| `useCursorClient()`                          | the client instance                                            |
+| `useCursorContext()`                         | `[context, setContext]`                                        |
 
 Anchors are declared in the DOM with the binding's anchor attribute. Cursor movement updates flow only to components using `useRemoteCursors`; the provider never rerenders the app tree per cursor frame.
 

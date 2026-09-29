@@ -9,12 +9,12 @@ A dialog covers the layout behind it, but a remote cursor can belong to either l
 
 ## What's in the demo
 
-- The wide pane runs a team board with an invite dialog that loops open and closed. The narrow pane renders the board without the dialog.
-- Mira opens the dialog: she publishes the context `{ dialog: "invite" }` and points at an anchor inside it. Theo stays on a card behind the dialog.
+- The wide pane runs a team board with an invite dialog. The narrow pane renders the board without the dialog.
+- Mira opens the dialog with the context `{ dialog: "invite" }` and points at an anchor inside it. She closes it with the context `{ dialog: null }`. Theo stays on a card behind the dialog.
 - While the wide dialog is open, the wide pane hides Theo's cursor: his anchor sits outside the dialog. The narrow pane hides Mira's cursor: her context names a dialog this pane has not opened.
 - Your cursor follows the same rule: while the dialog is open, it only shows where a dialog exists. The open pane hides your cursor on the board behind the dialog. The other pane hides your cursor, because your context names a dialog it has not opened.
 - A cursor inside the dialog paints above the dialog, because the cursor's z-index beats the dialog's.
-- The Invite button opens the dialog and its close button closes it. Once you drive the dialog, the loop stops and it stays where you leave it.
+- The Invite button opens the dialog and its close button closes it. It stays open while Mira or you have it open.
 
 ## Code
 

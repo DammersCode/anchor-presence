@@ -5,6 +5,7 @@ import type { VisibilityPolicy } from "@anchor-presence/dom";
 import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
 import { UserPlus, X } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { MIRA } from "./_preview/scenes";
 
 type User = { name: string; color: string };
 type DialogContext = { dialog: "invite" | null };
@@ -22,27 +23,34 @@ const MEMBERS = [
   { id: "margaret", name: "Margaret", role: "QA" },
 ];
 
-// The invite dialog loops so the tour can point inside it while it is open.
-const FIRST_OPEN_MS = 2500;
-const OPEN_MS = 10000;
-const GAP_MS = 5000;
-
 export function DialogsScene({ client, layout, children }: Props) {
   const wide = layout === "wide";
-  const [dialogOpen, setDialogOpen] = useState(false);
-  // Once the reader drives the dialog, the loop stops so it does not close it out from under them.
-  const [manual, setManual] = useState(false);
+  // The tour opens and closes the dialog with Mira's context step; the buttons add the reader's own state.
+  const [readerOpen, setReaderOpen] = useState(false);
+  const [tourOpen, setTourOpen] = useState(false);
+
+  // The preview frame builds the client with an unknown context; the tour publishes DialogContext.
+  const typedClient = client as PresenceClient<DialogContext, User> | null;
+
+  const dialogOpen = wide && (readerOpen || tourOpen);
   const dialogOpenRef = useRef(dialogOpen);
   dialogOpenRef.current = dialogOpen;
+
+  // Mira's context step is the dialog opening and closing in this pane.
+  useEffect(() => {
+    if (!wide || typedClient === null) return;
+    const read = () => {
+      const mira = typedClient.getRemotePresence().find((remote) => remote.user?.name === MIRA.name);
+      setTourOpen(mira?.context?.dialog === "invite");
+    };
+    read();
+    return typedClient.subscribeRemote(read);
+  }, [wide, typedClient]);
 
   // While this pane's dialog is open, this pane's reader belongs to the dialog layer:
   // publish the dialog context so the other pane hides their cursor.
   const readerDialog = wide && dialogOpen;
   const readerDialogRef = useRef<DialogContext["dialog"] | null>(null);
-
-  // The preview frame builds the client with an unknown context; the tour publishes DialogContext.
-  const typedClient = client as PresenceClient<DialogContext, User> | null;
-
   useEffect(() => {
     const value: DialogContext["dialog"] | null = readerDialog ? "invite" : null;
     if (readerDialogRef.current === value) return;
@@ -59,29 +67,7 @@ export function DialogsScene({ client, layout, children }: Props) {
     return "show";
   };
 
-  useEffect(() => {
-    if (!wide || manual) return;
-    let openTimer: ReturnType<typeof setTimeout>;
-    let closeTimer: ReturnType<typeof setTimeout>;
-    const open = () => {
-      setDialogOpen(true);
-      closeTimer = setTimeout(close, OPEN_MS);
-    };
-    const close = () => {
-      setDialogOpen(false);
-      openTimer = setTimeout(open, GAP_MS);
-    };
-    openTimer = setTimeout(open, FIRST_OPEN_MS);
-    return () => {
-      clearTimeout(openTimer);
-      clearTimeout(closeTimer);
-    };
-  }, [wide, manual]);
-
-  const takeControl = (open: boolean) => {
-    setManual(true);
-    setDialogOpen(open);
-  };
+  const takeControl = (open: boolean) => setReaderOpen(open);
 
   return (
     <LiveCursorProvider<DialogContext, User>

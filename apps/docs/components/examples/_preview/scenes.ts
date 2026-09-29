@@ -26,7 +26,7 @@ export type SceneMeta = {
 
 // All colors reach WCAG AA against a white label.
 export const READER: TourUser = { name: "You", color: "#0f766e" };
-const MIRA: TourUser = { name: "Mira", color: "#4f46e5" };
+export const MIRA: TourUser = { name: "Mira", color: "#4f46e5" };
 const THEO: TourUser = { name: "Theo", color: "#be185d" };
 const JUN: TourUser = { name: "Jun", color: "#0369a1" };
 
@@ -109,7 +109,7 @@ export const SCENES: Record<SceneName, SceneMeta> = {
   },
   dialogs: {
     panes: {
-      wide: { label: "Wide", detail: "team board, the invite dialog loops" },
+      wide: { label: "Wide", detail: "team board, Mira drives the invite dialog" },
       narrow: { label: "Narrow", detail: "board only, no dialog in this layout" },
     },
     tour: [

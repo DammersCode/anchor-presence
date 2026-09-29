@@ -43,8 +43,7 @@ const defaultScheduler: SchedulerLike = {
 /**
  * Creates one presence client.
  * The client sends and receives messages through the transport you give it.
- * Pass `autoConnect: true` to have the client call `transport.connect()` for you; the default
- * leaves that call to you.
+ * The client calls `transport.connect()` itself unless you pass `autoConnect: false`.
  * @param options The client options. `transport` is required.
  * @returns The client.
  */
@@ -160,7 +159,7 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
 
   publish.wireVisibility();
 
-  if (options.autoConnect === true) {
+  if (options.autoConnect !== false) {
     try {
       const result = transport.connect?.();
       if (result && typeof result.then === "function") {

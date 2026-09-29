@@ -99,7 +99,6 @@ export function startTour(options: {
 
   function join(user: TourUser): PresenceClient {
     const transport = createBroadcastChannelTransport(channel);
-    transport.connect();
     // A huge heartbeat keeps a quiet step quiet, so receivers can mark the user idle.
     const client = createPresenceClient({
       transport,

@@ -963,12 +963,12 @@ describe("createPresenceClient autoConnect", () => {
     client.dispose();
   });
 
-  it("never calls transport.connect() when autoConnect is omitted or false", () => {
+  it("calls transport.connect() when omitted, and never when autoConnect is false", () => {
     const { transport: transportDefault } = makeTransport();
     const connectDefault = vi.fn();
     transportDefault.connect = connectDefault;
     const clientDefault = createPresenceClient({ transport: transportDefault, idFactory });
-    expect(connectDefault).not.toHaveBeenCalled();
+    expect(connectDefault).toHaveBeenCalledTimes(1);
     clientDefault.dispose();
 
     const { transport: transportFalse } = makeTransport();

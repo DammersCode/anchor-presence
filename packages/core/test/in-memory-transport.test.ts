@@ -79,7 +79,8 @@ describe("createInMemoryPair", () => {
 
   it("subscribeStatus replays the current status and getStatus tracks the lifecycle", () => {
     const { a } = createInMemoryPair();
-    const client = createPresenceClient({ transport: a, clientId: "A" });
+    // autoConnect: false keeps the client from connecting the side under test
+    const client = createPresenceClient({ transport: a, clientId: "A", autoConnect: false });
     const seen: string[] = [];
     const unsub = a.subscribeStatus((s) => seen.push(s));
 

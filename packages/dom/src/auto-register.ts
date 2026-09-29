@@ -1,3 +1,4 @@
+import { isDevMode } from "@anchor-presence/core";
 import type { AnchorRegistry } from "./registry.js";
 import type { MutationObserverCtor } from "./scheduler.js";
 
@@ -13,15 +14,6 @@ export type AutoRegisterHandle = {
   handleRecords(records?: MutationRecord[]): void;
   dispose(): void;
 };
-
-function isDev(): boolean {
-  try {
-    const env = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env;
-    return env?.NODE_ENV !== "production";
-  } catch {
-    return true;
-  }
-}
 
 function defaultMutationObserverCtor(): MutationObserverCtor | undefined {
   return typeof MutationObserver !== "undefined" ? MutationObserver : undefined;
@@ -79,7 +71,7 @@ export function startAutoRegister(options: AutoRegisterOptions): AutoRegisterHan
   }
 
   function warnEmpty(element: Element): void {
-    if (!isDev() || warnedEmpty.has(element)) return;
+    if (!isDevMode() || warnedEmpty.has(element)) return;
     warnedEmpty.add(element);
     console.warn(`[anchor-presence] empty ${attribute} value ignored`, { attribute, element });
   }

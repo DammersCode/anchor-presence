@@ -22,6 +22,7 @@ describe("@anchor-presence/core public runtime API", () => {
       "binaryCodec",
       "createInMemoryPair",
       "createPresenceClient",
+      "isDevMode",
       "jsonCodec",
       "linearInterpolator",
       "noneInterpolator",

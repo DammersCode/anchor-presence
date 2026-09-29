@@ -1,5 +1,6 @@
 // Anchor registry — spec §8
 
+import { isDevMode } from "@anchor-presence/core";
 import { parentAcrossShadow } from "./dom-tree.js";
 
 export interface AnchorRegistry {
@@ -9,15 +10,6 @@ export interface AnchorRegistry {
   ancestors(element: Element): { id: string; element: Element }[]; // innermost first
   /** Notified whenever register/unregister changes the map (for scheduler invalidation). Not part of spec §8's interface. */
   onChange(listener: () => void): () => void;
-}
-
-function isDev(): boolean {
-  try {
-    const env = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env;
-    return env?.NODE_ENV !== "production";
-  } catch {
-    return true;
-  }
 }
 
 export function createAnchorRegistry(): AnchorRegistry {
@@ -33,7 +25,7 @@ export function createAnchorRegistry(): AnchorRegistry {
   return {
     register(id, element) {
       const existing = byId.get(id);
-      if (existing !== undefined && existing !== element && isDev() && !warnedDuplicateIds.has(id)) {
+      if (existing !== undefined && existing !== element && isDevMode() && !warnedDuplicateIds.has(id)) {
         warnedDuplicateIds.add(id);
         console.warn(`[anchor-presence] duplicate anchor id "${id}"; new element wins`, {
           id,

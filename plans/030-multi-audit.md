@@ -1,6 +1,6 @@
 # 030 Multi-perspective audit and competitor research
 
-Status: in progress · Branch: `audit-improvements`
+Status: done (PR open to `main`) · Branch: `audit-improvements`
 
 Owner request (2026-09-28): run an audit with multiple auditors from different perspectives (performance, DX, UX, API design, customization, usability/accessibility) over the whole repo, plus a research fleet that surveys the competition (Liveblocks, PartyKit, Yjs awareness, tldraw, Ably, npm alternatives) and alternatives to our element-addressing approach. Breaking changes are allowed. Goal: the best possible API, performance, and customization, with no usability pain for users. Deliverable: a reviewable list — findings, applied changes, and a competitor comparison (what they do that we do not, what we do that they do not).
 

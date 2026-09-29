@@ -1,6 +1,6 @@
 # Multi-perspective audit and competitor research
 
-Status: consolidated (all findings checked against the code at main 71ddb79) · 2026-09-29 · branch `audit-improvements`
+Status: applied (steps 031-040 committed on `audit-improvements`; findings checked against the code at main 71ddb79) · 2026-09-29
 
 ## Fleet
 
@@ -11,6 +11,21 @@ Six read-only audit agents, one perspective each: performance, developer experie
 Ship now (steps 031-041): the P0 hot-path performance findings, the dev-mode bug, the API unification (breaking), the z-index/modal fix, the a11y gaps (keyboard focus, touch clear), the presence-only mode, and the demo polish that makes all of it visible.
 
 Deferred to backlog (last section): protocol-level features (remote click events, follow mode, off-viewport hints, locks) and doc-only gaps.
+
+## Applied
+
+| Step | Commit subject                                                                               |
+| ---- | -------------------------------------------------------------------------------------------- |
+| 031  | fix dev-mode detection in the browser and share it across packages                           |
+| 032  | default autoConnect to true                                                                  |
+| 033  | make the provider own client creation and drop usePresenceClient                             |
+| 034  | count active remote cursors in the store                                                     |
+| 035  | cache the anchor chain per target, clear touch cursors on pointer end, and add focus capture |
+| 036  | hoist the resolver's per-frame containers and add allocation-free interpolator sampling      |
+| 037  | raise the default cursor z-index and stop per-move render allocations                        |
+| 038  | overlay the demo settings dialog and default the demo to spring motion                       |
+| 039  | cover modal stacking, keyboard focus, and touch clear in e2e                                 |
+| 040  | document the provider factory and the audit changes                                          |
 
 ## Findings by perspective
 

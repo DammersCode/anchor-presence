@@ -44,6 +44,7 @@ function Root() {
       key={interpolatorStyle}
       factory={createDemoClient}
       bindingOptions={{
+        captureFocus: true,
         resolution: {
           visibilityPolicy,
           interpolatorFactory: interpolatorRegistry[interpolatorStyle],

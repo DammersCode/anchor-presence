@@ -127,10 +127,12 @@ export function startTour(options: {
         if (disposed) return;
         switch (step.kind) {
           case "point": {
-            const target = findAnchor(step.anchor);
-            if (target === null) {
+            let target = findAnchor(step.anchor);
+            while (target === null) {
               await sleep(MISSING_ANCHOR_RETRY_MS);
-              break;
+              await gate();
+              if (disposed) return;
+              target = findAnchor(step.anchor);
             }
             client ??= join(track.user);
             const rect = target.getBoundingClientRect();

@@ -35,8 +35,20 @@ export function DialogsScene({ client, layout, children }: Props) {
   const dialogOpenRef = useRef(dialogOpen);
   dialogOpenRef.current = dialogOpen;
 
+  // While this pane's dialog is open, this pane's reader belongs to the dialog layer:
+  // publish the dialog context so the other pane hides their cursor.
+  const readerDialog = wide && dialogOpen;
+  const readerDialogRef = useRef<DialogContext["dialog"] | null>(null);
+
   // The preview frame builds the client with an unknown context; the tour publishes DialogContext.
   const typedClient = client as PresenceClient<DialogContext, User> | null;
+
+  useEffect(() => {
+    const value: DialogContext["dialog"] | null = readerDialog ? "invite" : null;
+    if (readerDialogRef.current === value) return;
+    readerDialogRef.current = value;
+    typedClient?.setContext(value ? { dialog: value } : undefined);
+  }, [readerDialog, typedClient]);
 
   const policy: VisibilityPolicy<DialogContext> = ({ presence, resolution }) => {
     if (resolution.tier === "hidden") return "hide";

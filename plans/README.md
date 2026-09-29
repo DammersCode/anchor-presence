@@ -36,30 +36,31 @@ These plans are done. The code, tests, and docs already show the result, so ther
 
 ## In progress
 
-| Plan                                                                  | Status      | Summary                                                                                                                          |
-| --------------------------------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| Fumadocs docs site on Vercel                                          | in progress | Replaces the GitHub Pages site in `site/` with a Fumadocs site deployed on Vercel.                                               |
-| Backend examples cleanup                                              | in progress | Adds Bun-native, Node `ws`, Hono, and Elysia backend examples, and removes duplicate example clients.                            |
-| [026 Example previews](026-example-previews.md)                       | done        | One distinct live preview per example page, with guided tour and receiver insight.                                               |
-| [027 Scale benchmark and diagram](027-scale-benchmark-and-diagram.md) | in progress | 200-client benchmarks and a how-it-works diagram.                                                                                |
-| [028 Layout audit skill](028-layout-audit-skill.md)                   | done        | Shipped skill that scores cursor-jump risk across layouts, plus a layout design guide.                                           |
-| [029 Kanban example](029-kanban-example.md)                           | done        | A fixed-size, scrollable board example that shows the recommended layout pattern, with worst-case notes on the reflow examples.  |
-| [030 Multi-perspective audit](030-multi-audit.md)                     | in progress | Six-perspective audit fleet plus competitor research, with applied improvements and a reviewable comparison list. Steps 031-041. |
-| [031 Dev-mode detection](031-dev-mode-detection.md)                   | open        | One correct `isDevMode()` in core, reused in dom.                                                                                |
-| [032 Default autoConnect to true](032-autoconnect-default.md)         | open        | A client connects by default.                                                                                                    |
-| [033 Provider owns client creation](033-provider-owns-client.md)      | open        | Provider `factory` prop; `usePresenceClient` removed (breaking).                                                                 |
-| [034 O(1) active-cursor count](034-store-active-cursor-count.md)      | open        | `RemotePresenceStore` counts active cursors instead of rebuilding snapshots per message.                                         |
-| [035 Pointer hot path](035-pointer-hot-path.md)                       | open        | Chain cache per target, shared pointer info, touch clear, opt-in focus capture, presence-only mode.                              |
-| [036 Resolver frame hot path](036-resolver-frame-hot-path.md)         | open        | Hoisted frame containers and scratch objects; `Interpolator.sampleInto`.                                                         |
-| [037 React render cost and z-index](037-react-render-cost.md)         | open        | Cached `prefersReducedMotion`, allocation-free `useRemoteUsers`, default z-index 9999, `zIndex` prop.                            |
-| [038 Demo polish](038-demo-polish.md)                                 | open        | Settings dialog as an overlay, spring default, focus capture on.                                                                 |
-| [039 E2E coverage](039-e2e-a11y.md)                                   | open        | Modal stacking, keyboard focus, and touch clear in Playwright.                                                                   |
-| [040 Docs, skills, changelog](040-docs-changelog.md)                  | open        | All docs and samples match the new API; changelog entries.                                                                       |
-| [041 Final list and PR](041-final-list-and-pr.md)                     | open        | Update the reviewable list, mark plans done, open the PR to `main`.                                                              |
-| [HANDOFF](HANDOFF.md)                                                 | in progress | Start here: program state, workstreams, next steps.                                                                              |
-| [023 Fumadocs docs site](023-fumadocs-docs-site.md)                   | done        | Spec for the docs site.                                                                                                          |
-| [024 Backend examples](024-backend-examples.md)                       | done        | Spec and security baseline for the backend examples.                                                                             |
-| [022 Gap closure](022-gap-closure-2026-09-25.md)                      | done        | Closes the gaps from the 2026-09-25 advisor audit.                                                                               |
+| Plan                                                                       | Status      | Summary                                                                                                                          |
+| -------------------------------------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Fumadocs docs site on Vercel                                               | in progress | Replaces the GitHub Pages site in `site/` with a Fumadocs site deployed on Vercel.                                               |
+| Backend examples cleanup                                                   | in progress | Adds Bun-native, Node `ws`, Hono, and Elysia backend examples, and removes duplicate example clients.                            |
+| [026 Example previews](026-example-previews.md)                            | done        | One distinct live preview per example page, with guided tour and receiver insight.                                               |
+| [027 Scale benchmark and diagram](027-scale-benchmark-and-diagram.md)      | in progress | 200-client benchmarks and a how-it-works diagram.                                                                                |
+| [028 Layout audit skill](028-layout-audit-skill.md)                        | done        | Shipped skill that scores cursor-jump risk across layouts, plus a layout design guide.                                           |
+| [029 Kanban example](029-kanban-example.md)                                | done        | A fixed-size, scrollable board example that shows the recommended layout pattern, with worst-case notes on the reflow examples.  |
+| [030 Multi-perspective audit](030-multi-audit.md)                          | in progress | Six-perspective audit fleet plus competitor research, with applied improvements and a reviewable comparison list. Steps 031-041. |
+| [031 Dev-mode detection](031-dev-mode-detection.md)                        | open        | One correct `isDevMode()` in core, reused in dom.                                                                                |
+| [032 Default autoConnect to true](032-autoconnect-default.md)              | open        | A client connects by default.                                                                                                    |
+| [033 Provider owns client creation](033-provider-owns-client.md)           | open        | Provider `factory` prop; `usePresenceClient` removed (breaking).                                                                 |
+| [034 O(1) active-cursor count](034-store-active-cursor-count.md)           | open        | `RemotePresenceStore` counts active cursors instead of rebuilding snapshots per message.                                         |
+| [035 Pointer hot path](035-pointer-hot-path.md)                            | open        | Chain cache per target, shared pointer info, touch clear, opt-in focus capture, presence-only mode.                              |
+| [036 Resolver frame hot path](036-resolver-frame-hot-path.md)              | open        | Hoisted frame containers and scratch objects; `Interpolator.sampleInto`.                                                         |
+| [037 React render cost and z-index](037-react-render-cost.md)              | open        | Cached `prefersReducedMotion`, allocation-free `useRemoteUsers`, default z-index 9999, `zIndex` prop.                            |
+| [038 Demo polish](038-demo-polish.md)                                      | open        | Settings dialog as an overlay, spring default, focus capture on.                                                                 |
+| [039 E2E coverage](039-e2e-a11y.md)                                        | open        | Modal stacking, keyboard focus, and touch clear in Playwright.                                                                   |
+| [040 Docs, skills, changelog](040-docs-changelog.md)                       | open        | All docs and samples match the new API; changelog entries.                                                                       |
+| [041 Final list and PR](041-final-list-and-pr.md)                          | open        | Update the reviewable list, mark plans done, open the PR to `main`.                                                              |
+| [042 Dialog example and option docs](042-dialog-example-and-usage-docs.md) | in progress | A live dialogs-and-layers example, the demo's reverse dialog policy rule, and docs for `captureFocus` and `localCursorCapture`.  |
+| [HANDOFF](HANDOFF.md)                                                      | in progress | Start here: program state, workstreams, next steps.                                                                              |
+| [023 Fumadocs docs site](023-fumadocs-docs-site.md)                        | done        | Spec for the docs site.                                                                                                          |
+| [024 Backend examples](024-backend-examples.md)                            | done        | Spec and security baseline for the backend examples.                                                                             |
+| [022 Gap closure](022-gap-closure-2026-09-25.md)                           | done        | Closes the gaps from the 2026-09-25 advisor audit.                                                                               |
 
 ## Future backends (planning only, not scheduled)
 

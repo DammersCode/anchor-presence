@@ -6,6 +6,7 @@ export type TourUser = { name: string; color: string };
 
 export type TourStep =
   | { kind: "point"; anchor: string; u?: number; v?: number; dwellMs?: number }
+  | { kind: "context"; value: unknown; dwellMs?: number }
   | { kind: "quiet"; ms: number }
   | { kind: "leave"; ms: number };
 
@@ -154,6 +155,12 @@ export function startTour(options: {
             client.updateLocalCursor(positionFrom(target, end), MOUSE);
             at = end;
             await sleep(step.dwellMs ?? DEFAULT_DWELL_MS);
+            break;
+          }
+          case "context": {
+            client ??= join(track.user);
+            client.setContext(step.value);
+            await sleep(step.dwellMs ?? 500);
             break;
           }
           case "quiet":

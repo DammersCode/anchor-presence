@@ -13,7 +13,7 @@ A dialog covers the layout behind it, but a remote cursor can belong to either l
 - Mira opens the dialog: she publishes the context `{ dialog: "invite" }` and points at an anchor inside it. Theo stays on a card behind the dialog.
 - While the wide dialog is open, the wide pane hides Theo's cursor: his anchor sits outside the dialog. The narrow pane hides Mira's cursor: her context names a dialog this pane has not opened.
 - A cursor inside the dialog paints above the dialog, because the cursor's z-index beats the dialog's.
-- You can close the wide dialog with its close button. The loop reopens it with the tour.
+- The Invite button opens the dialog and its close button closes it. Once you drive the dialog, the loop stops and it stays where you leave it.
 
 ## Code
 

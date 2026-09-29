@@ -118,7 +118,9 @@ export function ResolutionInsight() {
   const cursors = useRemoteCursors<unknown, TourUser>();
   const client = useCursorClient<unknown, TourUser>();
   const trackerRef = useRef<Tracker>({ tick: 0, seen: new Map() });
-  const focus = useMemo(() => pickFocus(cursors, trackerRef.current), [cursors]);
+  // The insight mirrors what the pane renders; a policy-hidden cursor must not outline its element.
+  const shown = useMemo(() => cursors.filter((cursor) => cursor.visible), [cursors]);
+  const focus = useMemo(() => pickFocus(shown, trackerRef.current), [shown]);
 
   const sent =
     focus === null

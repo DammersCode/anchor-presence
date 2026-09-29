@@ -30,6 +30,8 @@ const GAP_MS = 5000;
 export function DialogsScene({ client, layout, children }: Props) {
   const wide = layout === "wide";
   const [dialogOpen, setDialogOpen] = useState(false);
+  // Once the reader drives the dialog, the loop stops so it does not close it out from under them.
+  const [manual, setManual] = useState(false);
   const dialogOpenRef = useRef(dialogOpen);
   dialogOpenRef.current = dialogOpen;
 
@@ -46,7 +48,7 @@ export function DialogsScene({ client, layout, children }: Props) {
   };
 
   useEffect(() => {
-    if (!wide) return;
+    if (!wide || manual) return;
     let openTimer: ReturnType<typeof setTimeout>;
     let closeTimer: ReturnType<typeof setTimeout>;
     const open = () => {
@@ -62,7 +64,12 @@ export function DialogsScene({ client, layout, children }: Props) {
       clearTimeout(openTimer);
       clearTimeout(closeTimer);
     };
-  }, [wide]);
+  }, [wide, manual]);
+
+  const takeControl = (open: boolean) => {
+    setManual(true);
+    setDialogOpen(open);
+  };
 
   return (
     <LiveCursorProvider<DialogContext, User>
@@ -76,6 +83,7 @@ export function DialogsScene({ client, layout, children }: Props) {
             <button
               type="button"
               data-anchor="team.action.invite"
+              onClick={() => takeControl(true)}
               className="inline-flex items-center gap-1 rounded-md border border-fd-border bg-fd-background px-2 py-1 text-[11px] font-medium hover:bg-fd-secondary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fd-ring"
             >
               <UserPlus className="size-3" aria-hidden="true" /> Invite
@@ -113,7 +121,7 @@ export function DialogsScene({ client, layout, children }: Props) {
                 <button
                   type="button"
                   aria-label="Close the invite dialog"
-                  onClick={() => setDialogOpen(false)}
+                  onClick={() => takeControl(false)}
                   className="grid size-5 place-items-center rounded text-fd-muted-foreground hover:bg-fd-secondary hover:text-fd-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-fd-ring"
                 >
                   <X className="size-3" aria-hidden="true" />

@@ -49,7 +49,29 @@ describe("createVisibilityPolicy", () => {
   it("shows that cursor once the local dialog opens", () => {
     const policy = policyFor({ page: "dashboard", settingsOpen: true });
     const remote = presence({ page: "dashboard", dialog: "settings" });
-    expect(policy({ presence: remote, resolution: resolution("anchor") })).toBe("show");
+    const dialogCursor = { tier: "anchor", anchorId: "settings.dialog.invite", pointVisible: true } as const;
+    expect(policy({ presence: remote, resolution: dialogCursor })).toBe("show");
+  });
+
+  it("hides a background cursor while the local settings dialog is open", () => {
+    const policy = policyFor({ page: "dashboard", settingsOpen: true });
+    const boardCursor = { tier: "anchor", anchorId: "stats.orders", pointVisible: true } as const;
+    expect(policy({ presence: presence({ page: "dashboard" }), resolution: boardCursor })).toBe("hide");
+  });
+
+  it("hides a viewport-tier cursor while the local settings dialog is open", () => {
+    const policy = policyFor({ page: "dashboard", settingsOpen: true });
+    expect(policy({ presence: presence({ page: "dashboard" }), resolution: resolution("viewport") })).toBe(
+      "hide",
+    );
+  });
+
+  it("shows a settings-dialog cursor while the local settings dialog is open", () => {
+    const policy = policyFor({ page: "dashboard", settingsOpen: true });
+    const dialogCursor = { tier: "anchor", anchorId: "settings.dialog.invite", pointVisible: true } as const;
+    expect(
+      policy({ presence: presence({ page: "dashboard", dialog: "settings" }), resolution: dialogCursor }),
+    ).toBe("show");
   });
 
   it("hides a cursor on a different page", () => {

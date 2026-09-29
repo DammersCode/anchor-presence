@@ -36,19 +36,18 @@ function App() {
 
 ## Main exports
 
-| Hook or component                            | What it does                                                                                            |
-| -------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `LiveCursorProvider`                         | Provides a `PresenceClient` and its `DomBinding` to the component tree                                  |
-| `usePresenceClient({ factory, key? })`       | One `PresenceClient` per `key` (or `null` before the mount effect runs), memoized for the page lifetime |
-| `useRemoteUsers()`                           | One entry per remote client: `clientId`, `user`, and `session`                                          |
-| `useRemoteCursors()`                         | Resolved cursor snapshot for rendering                                                                  |
-| `useRemoteCursorsSelector(select, isEqual?)` | A derived value that rerenders only when it changes                                                     |
-| `useCursorPresence()`                        | Raw remote presence list, stable per client (without `sequence`)                                        |
-| `useCursorStatus()`                          | Connection status                                                                                       |
-| `useCursorClient()`                          | The underlying `PresenceClient`                                                                         |
-| `useCursorContext()`                         | `[context, setContext]`                                                                                 |
-| `CursorLayer`                                | Optional component that renders every visible remote cursor                                             |
-| `DefaultCursor`                              | Optional neutral cursor visual, used by `CursorLayer` by default                                        |
+| Hook or component                            | What it does                                                                                                                      |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `LiveCursorProvider`                         | Creates the client through `factory` or accepts one through `client`, and provides it with its `DomBinding` to the component tree |
+| `useRemoteUsers()`                           | One entry per remote client: `clientId`, `user`, and `session`                                                                    |
+| `useRemoteCursors()`                         | Resolved cursor snapshot for rendering                                                                                            |
+| `useRemoteCursorsSelector(select, isEqual?)` | A derived value that rerenders only when it changes                                                                               |
+| `useCursorPresence()`                        | Raw remote presence list, stable per client (without `sequence`)                                                                  |
+| `useCursorStatus()`                          | Connection status                                                                                                                 |
+| `useCursorClient()`                          | The underlying `PresenceClient`                                                                                                   |
+| `useCursorContext()`                         | `[context, setContext]`                                                                                                           |
+| `CursorLayer`                                | Optional component that renders every visible remote cursor                                                                       |
+| `DefaultCursor`                              | Optional neutral cursor visual, used by `CursorLayer` by default                                                                  |
 
 ## Hooks and render cost
 
@@ -72,33 +71,30 @@ Two rules of thumb:
 
 ## Client lifecycle
 
-Create the client with `usePresenceClient`. The hook runs the factory once, in a mount effect, and memoizes the client for the page lifetime. It returns `null` until the effect has run, then the same instance across renders and StrictMode remounts. Server renders return `null` and never run the factory.
+Pass `LiveCursorProvider` a `factory`. The provider runs it once per mount, in an effect, and disposes the client it created on unmount. It runs the factory only in the browser, so server renders and React Strict Mode's double-invoke in development never create two clients. Until the effect has run, the provider renders its children with a `null` client, and every hook returns its server-safe value.
 
 ```tsx
 import { createPresenceClient } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
-import { CursorLayer, LiveCursorProvider, usePresenceClient } from "@anchor-presence/react";
+import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
 
 function App() {
-  const client = usePresenceClient({
-    factory: () => {
-      const transport = createWebSocketTransport({ path: "/?room=main" });
-      return createPresenceClient({ transport, autoConnect: true });
-    },
-  });
   return (
-    <LiveCursorProvider client={client}>
+    <LiveCursorProvider
+      factory={() => {
+        const transport = createWebSocketTransport({ path: "/?room=main" });
+        return createPresenceClient({ transport });
+      }}
+    >
       <CursorLayer />
     </LiveCursorProvider>
   );
 }
 ```
 
-`PresenceClient` is a one-way latch. `dispose()` is final. The hook never disposes the client on unmount. Call `dispose()` on an explicit user action, for example on logout. The call clears the `key` entry. A later render creates a new client through the factory.
+The client connects the transport by default. Pass `autoConnect: false` to `createPresenceClient` and call `transport.connect()` yourself when you need that control.
 
-The registry lives at module scope. Clients survive route changes and component remounts until the page unloads. Pass a different `key` for a second client, for example an admin overlay.
-
-The hook does not call `transport.connect()` itself. Either pass `autoConnect: true` to `createPresenceClient` so it connects the transport for you, or call `transport.connect()` inside the factory before render.
+To bring your own client, pass the `client` prop instead. The provider then never disposes it. Call `dispose()` yourself, on an explicit user action such as logout. `PresenceClient` is a one-way latch: `dispose()` is final, and you create a new client instead of reusing it.
 
 ## Who's online
 

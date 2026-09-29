@@ -42,7 +42,7 @@ Everything else comes from your code. The skill adds a who-is-online list only w
 1. **Survey.** The agent reads the project for its package manager, React version, framework, existing real-time channel, and where the user's display name comes from.
 2. **Pick a transport.** It matches your setup to a transport and relay, for example a Socket.IO server or a plain WebSocket relay on Bun.
 3. **Install.** It runs the install command for your package manager, plus any relay dependency.
-4. **Wire up the client.** It adds `usePresenceClient`, `LiveCursorProvider`, and `CursorLayer` to a client component.
+4. **Wire up the client.** It adds `LiveCursorProvider` with a `factory` prop and `CursorLayer` to a client component.
 5. **Mark anchors.** It adds `data-anchor` to navigation items, cards, table rows, dialog controls, and every other element a user would point at, plus a parent anchor for each.
 6. **Scope with context, when needed.** For an app with several pages, tabs, or dialogs, it publishes the current state as context and hides cursors from the wrong state.
 7. **Verify.** It runs the project's typecheck and build, then drives two clients at different viewport widths to confirm a cursor lands on the same element in both.

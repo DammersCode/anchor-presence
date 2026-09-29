@@ -34,23 +34,21 @@ This client only talks to itself: `transport.a`'s messages go to `transport.b`'s
 
 ## Connect two real clients
 
-Real live cursors need two clients, one per browser tab, talking over a shared transport. Create the client inside `usePresenceClient`, so React Strict Mode's double-invoke in development does not create two clients or connect the transport twice:
+Real live cursors need two clients, one per browser tab, talking over a shared transport. Pass the provider a `factory`. It runs the factory once, in a mount effect. Then React Strict Mode's double-invoke in development creates only one client:
 
 ```tsx
 import { createPresenceClient } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
-import { CursorLayer, LiveCursorProvider, usePresenceClient } from "@anchor-presence/react";
+import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
 
 function App() {
-  const client = usePresenceClient({
-    factory: () => {
-      const transport = createWebSocketTransport({ path: "/?room=main" });
-      return createPresenceClient({ transport, user: { name: "Alice" }, autoConnect: true });
-    },
-  });
-
   return (
-    <LiveCursorProvider client={client}>
+    <LiveCursorProvider
+      factory={() => {
+        const transport = createWebSocketTransport({ path: "/?room=main" });
+        return createPresenceClient({ transport, user: { name: "Alice" } });
+      }}
+    >
       <button data-anchor="nav.dashboard">Dashboard</button>
       <CursorLayer />
     </LiveCursorProvider>
@@ -58,7 +56,7 @@ function App() {
 }
 ```
 
-`usePresenceClient` runs the factory once, in a mount effect, and returns `null` until it has run. `LiveCursorProvider` accepts `client={null}` and renders normally, so the first render before the effect (and every server render) is safe. See [SSR and Strict Mode](/docs/react/ssr-and-strict-mode) for the full rule.
+The client connects the transport by default. Until the mount effect has run, the provider renders its children with a `null` client, and every hook returns its server-safe value. See [SSR and Strict Mode](/docs/react/ssr-and-strict-mode) for the full rule.
 
 Copy a relay from [Backends](/docs/examples/backends) to pair with it. [Bun](/docs/examples/backends/bun-native) is the smallest runnable relay.
 

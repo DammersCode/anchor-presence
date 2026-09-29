@@ -1,0 +1,60 @@
+---
+title: Creating the client
+description: Create a presence client with the provider factory, the client prop, or createPresenceClient.
+---
+
+Three paths create the client for a React app. Pick one path and use it everywhere.
+
+## The provider factory (standard)
+
+Pass `LiveCursorProvider` a `factory`. The provider runs it once per mount, in an effect, and disposes the client it created on unmount. It runs the factory only in the browser, so server renders and React Strict Mode's double-invoke never create two clients.
+
+```tsx
+import { createPresenceClient } from "@anchor-presence/core";
+import { createWebSocketTransport } from "@anchor-presence/dom";
+import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
+
+function App() {
+  return (
+    <LiveCursorProvider
+      factory={() => {
+        const transport = createWebSocketTransport({ path: "/?room=main" });
+        return createPresenceClient({ transport });
+      }}
+    >
+      <CursorLayer />
+    </LiveCursorProvider>
+  );
+}
+```
+
+The factory owns the transport: create it, then create the client. The client connects the transport by default.
+
+<Callout type="warn">
+  If you create the transport at module scope, it connects once for the whole page. Create the transport
+  inside the factory function.
+</Callout>
+
+## Bring your own client
+
+Pass the `client` prop. The provider never disposes a client you pass. You own its lifecycle. This path fits an app that creates the client in its own setup code and shares it through props or a context.
+
+```tsx
+const client = createPresenceClient({ transport: myTransport });
+
+<LiveCursorProvider client={client}>
+  <Dashboard />
+</LiveCursorProvider>;
+```
+
+When both `factory` and `client` are set, `client` wins and the factory never runs. Pass `client={null}` to provide no client, for example during server rendering.
+
+## Manual control
+
+Create the client anywhere with `createPresenceClient` from `@anchor-presence/core`. The client connects the transport by default. Pass `autoConnect: false` and call `transport.connect()` yourself when you need that control. Call `client.dispose()` when you no longer need it. `dispose` is final: create a new client instead of reusing it.
+
+## Related
+
+- [LiveCursorProvider](/docs/react/live-cursor-provider)
+- [SSR and Strict Mode](/docs/react/ssr-and-strict-mode)
+- [Quick start](/docs/get-started/quick-start)

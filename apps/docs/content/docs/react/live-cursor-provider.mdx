@@ -8,24 +8,38 @@ description: Share a presence client and its DOM binding with the tree below.
 ## Props
 
 ```tsx
+import { createPresenceClient } from "@anchor-presence/core";
+import { createWebSocketTransport } from "@anchor-presence/dom";
 import { LiveCursorProvider } from "@anchor-presence/react";
 import type { LiveCursorProviderProps } from "@anchor-presence/react";
 ```
 
-| Prop             | Type                     | Default                  |
-| ---------------- | ------------------------ | ------------------------ |
-| `client`         | `PresenceClient \| null` | required                 |
-| `binding`        | `DomBinding`             | the provider creates one |
-| `bindingOptions` | `DomBindingOptions`      | none                     |
-| `children`       | `ReactNode`              | none                     |
+| Prop             | Type                                      | Default                   |
+| ---------------- | ----------------------------------------- | ------------------------- |
+| `factory`        | `() => PresenceClient<TContext, TUser>`   | none                      |
+| `client`         | `PresenceClient<TContext, TUser> \| null` | none; wins over `factory` |
+| `binding`        | `DomBinding`                              | the provider creates one  |
+| `bindingOptions` | `DomBindingOptions`                       | none                      |
+| `children`       | `ReactNode`                               | none                      |
 
-Pass a client from [usePresenceClient](/docs/react/use-presence-client) or from `createPresenceClient` in `@anchor-presence/core`:
+Create the client through `factory`, or pass a client you own:
 
 ```tsx
-<LiveCursorProvider client={client}>
+<LiveCursorProvider
+  factory={() => {
+    const transport = createWebSocketTransport({ path: "/?room=main" });
+    return createPresenceClient({ transport });
+  }}
+>
   <Dashboard />
 </LiveCursorProvider>
 ```
+
+## Client ownership
+
+The provider runs `factory` once per mount, in an effect, and only in the browser. It disposes the client it created on unmount. A `client` you pass stays yours: the provider never disposes it. When both `factory` and `client` are set, `client` wins and the factory never runs. Pass `client={null}` to provide no client. The factory does not run.
+
+For the full rules, read [Creating the client](/docs/react/client-creation).
 
 ## The binding the provider creates
 
@@ -41,11 +55,11 @@ When you omit `binding`, the provider creates a `DomBinding` for the client with
 
 ## client={null}
 
-Pass `client={null}` while no client exists yet, such as before `usePresenceClient`'s mount effect has run, or during server rendering. The provider renders its children normally. Every hook returns its server-safe value: see [SSR and Strict Mode](/docs/react/ssr-and-strict-mode).
+Pass `client={null}` for server rendering or the gap before hydration. The provider renders its children normally and the factory does not run. Every hook returns its server-safe value: see [SSR and Strict Mode](/docs/react/ssr-and-strict-mode).
 
 ## Related
 
-- [usePresenceClient](/docs/react/use-presence-client)
+- [Creating the client](/docs/react/client-creation)
 - [SSR and Strict Mode](/docs/react/ssr-and-strict-mode)
 - [Components API](/docs/react/api/components)
 - [Binding](/docs/dom/binding)

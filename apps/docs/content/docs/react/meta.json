@@ -6,7 +6,7 @@
   "pages": [
     "index",
     "---[Plug]Setup---",
-    "use-presence-client",
+    "client-creation",
     "live-cursor-provider",
     "ssr-and-strict-mode",
     "---[Layers]Rendering---",

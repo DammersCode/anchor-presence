@@ -19,7 +19,7 @@ An adapter depends on `@anchor-presence/dom` and `@anchor-presence/core`, never 
 
 `LiveCursorProvider` (`packages/react/src/provider.tsx`) is the adapter's one stateful piece:
 
-- It accepts a `PresenceClient` from `@anchor-presence/core` as a prop. It never creates a client itself.
+- It creates the client from a `factory` prop, once per mount, in a mount effect, and disposes it on unmount. It also accepts a `client` prop for a client the app owns, which it never disposes.
 - When no `binding` prop is passed, it creates one `DomBinding` with `createDomBinding(client, bindingOptions)` in a mount effect. That effect's cleanup calls `binding.dispose()`.
 - It creates the binding once per `client` identity. A later `bindingOptions` change does not recreate the binding. The effect reads the latest options through a ref, so a new options object never triggers a stray rebuild.
 - It skips binding creation outside the browser (`typeof window === "undefined"`), so server rendering never touches `@anchor-presence/dom`.
@@ -29,7 +29,6 @@ Every hook in `packages/react/src/hooks/` reads that context and subscribes with
 
 - `useRemoteCursors` subscribes to `binding.subscribe` and reads `binding.getSnapshot()`. It returns an empty array with no binding, including during SSR.
 - `useCursorClient`, `useCursorStatus`, `useCursorPresence`, `useCursorContext` all read from `client`, never from component state.
-- `usePresenceClient` (`packages/react/src/hooks/use-presence-client.ts`) is the one hook that creates something. It runs a factory once per `key`, in a mount effect, and keeps the result in a module-level registry. The same client then survives remounts and Strict Mode's double invoke.
 
 No hook stores cursor data in framework state. Every render reads the latest snapshot from `@anchor-presence/core` or `@anchor-presence/dom` at render time.
 

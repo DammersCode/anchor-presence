@@ -27,6 +27,16 @@ describe("AnchorRegistry (spec §8)", () => {
     expect(registry.get("a")).toBeNull();
   });
 
+  it("bumps the generation on register and unregister so cached walks detect staleness", () => {
+    const el = makeElement();
+    const start = registry.getGeneration();
+    const unregister = registry.register("a", el);
+    expect(registry.getGeneration()).toBe(start + 1);
+
+    unregister();
+    expect(registry.getGeneration()).toBe(start + 2);
+  });
+
   it("supports remount: unregister then register a new element under the same id", () => {
     const first = makeElement();
     const unregisterFirst = registry.register("a", first);

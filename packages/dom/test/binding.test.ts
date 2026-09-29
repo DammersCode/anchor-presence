@@ -546,6 +546,22 @@ describe("createDomBinding", () => {
     narrowBinding.dispose();
   });
 
+  it("localCursorCapture false attaches no pointer source: context and user flow, no cursor", () => {
+    const deepest = buildNestedAnchors(4);
+    const { raf, caf } = makeRafStub();
+    const samples: (CursorPosition | null)[] = [];
+    const client = makeCapturingClient(samples);
+    const binding = createDomBinding(client, {
+      localCursorCapture: false,
+      environment: { raf, caf },
+    });
+
+    firePointerMove(deepest);
+    expect(samples).toHaveLength(0);
+
+    binding.dispose();
+  });
+
   describe("prefers-reduced-motion", () => {
     function stubMatchMedia(matches: boolean): () => void {
       const original = window.matchMedia;

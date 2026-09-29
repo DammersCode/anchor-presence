@@ -25,6 +25,8 @@ export type OpenPairOptions = {
   senderName?: string;
   receiverName?: string;
   receiverExtraQuery?: string;
+  /** Opens the sender context with touch enabled (for CDP touch dispatch). */
+  senderHasTouch?: boolean;
   /** Runs right after the sender's page is created, before it navigates (e.g. to install a WS route). */
   beforeSenderGoto?: (sender: Page) => Promise<void>;
 };
@@ -35,7 +37,10 @@ export async function openPair(browser: Browser, options: OpenPairOptions): Prom
   const receiverName = options.receiverName ?? "Receiver";
   const receiverExtraQuery = options.receiverExtraQuery ? `&${options.receiverExtraQuery}` : "";
 
-  const senderContext = await browser.newContext({ viewport: options.senderViewport });
+  const senderContext = await browser.newContext({
+    viewport: options.senderViewport,
+    hasTouch: options.senderHasTouch ?? false,
+  });
   const receiverContext = await browser.newContext({ viewport: options.receiverViewport });
 
   const sender = await senderContext.newPage();

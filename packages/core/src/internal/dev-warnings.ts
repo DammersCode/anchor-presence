@@ -1,10 +1,18 @@
 import type { CursorPresence } from "../protocol.js";
 import type { PresenceClientState } from "./types.js";
 
-/** Returns `true` when `NODE_ENV` is not `production`. */
+/**
+ * Returns `true` outside production builds.
+ * Bundler-provided `import.meta.env` decides first; `NODE_ENV` is the fallback.
+ */
 export function isDevMode(): boolean {
-  const env = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env;
-  return env?.NODE_ENV !== "production";
+  try {
+    if (import.meta.env?.DEV === false) return false;
+    const env = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env;
+    return env?.NODE_ENV !== "production";
+  } catch {
+    return true;
+  }
 }
 
 // Returns the JSON byte length of `value`, or `Number.POSITIVE_INFINITY` when it cannot serialize.

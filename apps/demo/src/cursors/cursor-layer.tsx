@@ -20,7 +20,7 @@ function getCursorProps(cursor: DemoResolvedCursor) {
     "data-cursor-name": getLabel(cursor),
     "data-cursor-anchor": cursor.anchorId ?? "",
     "data-cursor-tier": cursor.tier,
-    className: "pointer-events-none fixed left-0 top-0 z-50",
+    className: "pointer-events-none fixed left-0 top-0",
   };
 }
 

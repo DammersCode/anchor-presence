@@ -10,8 +10,17 @@ import type { LiveCursorContextValue } from "./context.js";
  * Props for `LiveCursorProvider`.
  */
 export type LiveCursorProviderProps<TContext = unknown, TUser = unknown> = {
-  /** The client to provide. `null` provides no client. */
-  client: PresenceClient<TContext, TUser> | null;
+  /**
+   * Creates the client the provider owns.
+   * The provider runs it once per mount, in an effect, and disposes the client on unmount.
+   * Omit it when you pass `client`.
+   */
+  factory?: () => PresenceClient<TContext, TUser>;
+  /**
+   * A client you own; the provider never disposes it.
+   * `null` provides no client. Wins over `factory` when both are set.
+   */
+  client?: PresenceClient<TContext, TUser> | null;
   /** A binding you created. Omit to let the provider create one. */
   binding?: DomBinding<TContext, TUser>;
   /** Options for the binding the provider creates. */
@@ -26,13 +35,41 @@ function isBrowser(): boolean {
 
 /**
  * Provides the presence client and the binding to the tree below.
+ * The provider creates and disposes the client from `factory`; a `client` prop stays yours to dispose.
  * The provider creates a DOM binding when you do not pass one.
  * The provider reads `bindingOptions` once, when it creates the binding.
  */
 export function LiveCursorProvider<TContext = unknown, TUser = unknown>(
   props: LiveCursorProviderProps<TContext, TUser>,
 ): ReactNode {
-  const { client, binding: providedBinding, bindingOptions, children } = props;
+  const { factory, client: providedClient, binding: providedBinding, bindingOptions, children } = props;
+
+  const [ownClient, setOwnClient] = useState<PresenceClient<TContext, TUser> | null>(null);
+  // factory and client changes are ignored after the client is created. The factory runs once per mount.
+  const factoryRef = useRef(factory);
+  const providedClientRef = useRef(providedClient);
+  useEffect(() => {
+    factoryRef.current = factory;
+    providedClientRef.current = providedClient;
+  });
+
+  useEffect(() => {
+    // oxlint-disable-next-line react/refs -- one-shot creation: skip when the mount render had a client prop
+    if (providedClientRef.current !== undefined) return;
+    // oxlint-disable-next-line react/refs -- one-shot creation path
+    const create = factoryRef.current;
+    if (create === undefined) return;
+    if (!isBrowser()) return;
+
+    const created = create();
+    setOwnClient(created);
+    return () => {
+      created.dispose();
+      setOwnClient(null);
+    };
+  }, []);
+
+  const client = providedClient ?? ownClient;
 
   const [ownBinding, setOwnBinding] = useState<DomBinding<TContext, TUser> | null>(null);
   // bindingOptions changes are ignored after the binding is created. The binding is created once per client.

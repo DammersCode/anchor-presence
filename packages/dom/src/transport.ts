@@ -1,5 +1,6 @@
 // oxlint-disable unicorn/prefer-add-event-listener -- WebSocketLike only exposes on* handlers
 
+import { isDevMode } from "@anchor-presence/core";
 import type { ConnectionStatus, LiveCursorTransport } from "@anchor-presence/core";
 
 export type WebSocketLike = {
@@ -53,15 +54,6 @@ export type WebSocketTransportOptions = {
 
 const WS_CONNECTING = 0;
 const WS_OPEN = 1;
-
-function isDev(): boolean {
-  try {
-    const env = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env;
-    return env?.NODE_ENV !== "production";
-  } catch {
-    return true;
-  }
-}
 
 function resolveUrl(options: WebSocketTransportOptions): string {
   if (options.url !== undefined) return options.url;
@@ -171,7 +163,7 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
   return {
     connect() {
       if (disposedByUser) {
-        if (isDev()) {
+        if (isDevMode()) {
           console.warn(
             "[anchor-presence] WebSocket transport: connect() after disconnect() is a no-op; create a new transport",
           );

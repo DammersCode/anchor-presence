@@ -74,6 +74,17 @@ export type DomBindingOptions<TContext = unknown, TUser = unknown> = {
   resolution?: ResolutionOptions<TContext, TUser>;
   /** The DOM and timing hosts the binding runs against. Omit for the browser globals. */
   environment?: EnvironmentOptions;
+  /**
+   * Whether the local pointer publishes a cursor.
+   * When `false` the client stays presence-only: context and user still flow, no local cursor.
+   * Default `true`.
+   */
+  localCursorCapture?: boolean;
+  /**
+   * Publish a cursor at the focused element's center on focus changes.
+   * Ignored when `localCursorCapture` is `false`. Default `false`.
+   */
+  captureFocus?: boolean;
 };
 
 /**
@@ -149,7 +160,8 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
   }
 
   const scheduler = createGeometryScheduler<ResolvedCursor<TContext, TUser>[]>({
-    hasActiveCursors: () => client.getRemoteSnapshot().some((presence) => presence.cursor !== null),
+    hasActiveCursors: () =>
+      client.hasActiveCursors?.() ?? client.getRemoteSnapshot().some((presence) => presence.cursor !== null),
 
     compute(readState, timestampMs) {
       const idleClientIds = new Set<string>();
@@ -184,12 +196,16 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
     ...environment,
   });
 
-  const pointerHandle = attachPointerSource(client, registry, {
-    maxAnchors,
-    root: environment.root,
-    window: environment.window,
-    getCachedRect: (element) => scheduler.getCachedRect(element),
-  });
+  const pointerHandle =
+    options.localCursorCapture !== false
+      ? attachPointerSource(client, registry, {
+          maxAnchors,
+          root: environment.root,
+          window: environment.window,
+          getCachedRect: (element) => scheduler.getCachedRect(element),
+          captureFocus: options.captureFocus ?? false,
+        })
+      : { detach() {} };
 
   let disposed = false;
   let unregisterTeardown: (() => void) | undefined;

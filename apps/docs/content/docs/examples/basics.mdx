@@ -32,7 +32,7 @@ The scene of this demo:
 
 <CodeFromSource docs="components/examples/basics.tsx" lang="tsx" />
 
-The preview gives the scene a `client` on a `BroadcastChannel` transport, so the two panes can talk without a relay. It also passes its status bar as `children`. In your app, create the client with `usePresenceClient` and a real transport. See [Quick start](/docs/get-started/quick-start).
+The preview gives the scene a `client` on a `BroadcastChannel` transport, so the two panes can talk without a relay. It also passes its status bar as `children`. In your app, create the client through the provider's `factory` with a real transport. See [Quick start](/docs/get-started/quick-start).
 
 ## Behavior reference
 

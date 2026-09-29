@@ -29,6 +29,10 @@ The binding starts its geometry scheduler only while at least one remote client 
 
 `maxAnchors` caps the fallback chain that the pointer source sends: default `4`, clamped to `1` through `8`. `anchorAttribute` sets the attribute that marks an anchor element: default `data-anchor`. See [Anchor registration](/docs/dom/anchor-registration).
 
+`localCursorCapture` turns the local pointer source on or off: default `true`. Set it to `false` for a presence-only client that shows remote cursors but publishes no local cursor, for example a mobile viewer. `context` and `user` still flow.
+
+`captureFocus` (default `false`) publishes a cursor at the focused element's center for keyboard users. It is ignored when `localCursorCapture` is `false`. See [Pointer capture](/docs/dom/pointer-capture#keyboard-focus).
+
 `resolution` configures how remote cursors turn into screen positions. See [Resolution](/docs/dom/resolution) and [Motion](/docs/dom/motion).
 
 `environment` replaces the DOM and timing hosts the binding runs against: `root`, `window`, `raf`, `caf`, `ResizeObserverCtor`, `MutationObserverCtor`. Every field defaults to the matching browser global. Tests use this to swap in a fake without touching the others.

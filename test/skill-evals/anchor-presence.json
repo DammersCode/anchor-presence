@@ -11,7 +11,7 @@
       "expected_output": "A working integration with a relay in server/, verified with two browser contexts at 1440 px and 900 px.",
       "expectations": [
         "The project typechecks and builds.",
-        "The client is created inside usePresenceClient with autoConnect: true, or calls transport.connect() in the factory.",
+        "The client is created in the provider's factory prop, or the factory calls transport.connect() when autoConnect is false.",
         "Every nav link, stat card, table row, and row action has a data-anchor, and each has an anchored parent.",
         "The relay keeps the shared guard helpers (size cap, rate limit, room name check) and has an entry file that listens.",
         "User names render as text; no dangerouslySetInnerHTML.",

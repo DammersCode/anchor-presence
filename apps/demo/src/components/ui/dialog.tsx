@@ -3,11 +3,11 @@ import type { HTMLAttributes, ReactNode } from "react";
 import type React from "react";
 import { cn } from "../../lib/cn";
 
-export interface DialogProps extends Omit<HTMLAttributes<HTMLDialogElement>, "onClick"> {
+export interface DialogProps extends Omit<HTMLAttributes<HTMLDivElement>, "onClick"> {
   open: boolean;
   onClose: () => void;
   children: ReactNode;
-  ref?: React.Ref<HTMLDialogElement>;
+  ref?: React.Ref<HTMLDivElement>;
 }
 
 function mergeRefs<T>(...refs: Array<React.Ref<T> | undefined>): React.RefCallback<T> {
@@ -19,33 +19,43 @@ function mergeRefs<T>(...refs: Array<React.Ref<T> | undefined>): React.RefCallba
   };
 }
 
+// A fixed overlay, not <dialog>: the top layer would beat the cursors' z-index.
 export function Dialog({ open, onClose, children, className, ref: externalRef, ...props }: DialogProps) {
-  const ref = useRef<HTMLDialogElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const dialog = ref.current;
-    if (!dialog) return;
-    if (open && !dialog.open) dialog.showModal();
-    if (!open && dialog.open) dialog.close();
+    if (!open) return;
+    panelRef.current?.focus();
   }, [open]);
 
+  useEffect(() => {
+    if (!open) return;
+    function onKeyDown(event: KeyboardEvent): void {
+      if (event.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open, onClose]);
+
+  if (!open) return null;
+
   return (
-    <dialog
-      ref={mergeRefs(ref, externalRef)}
-      onClose={onClose}
-      onCancel={onClose}
-      onClick={(e) => {
-        if (e.target === ref.current) onClose();
-      }}
-      className={cn(
-        "m-auto rounded-lg border border-gray-200 bg-white p-0 shadow-lg backdrop:bg-gray-900/40",
-        "w-full max-w-md",
-        className,
-      )}
-      {...props}
-    >
-      <div onClick={(e) => e.stopPropagation()}>{children}</div>
-    </dialog>
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-gray-900/40" onClick={onClose} aria-hidden="true" />
+      <div
+        ref={mergeRefs(panelRef, externalRef)}
+        role="dialog"
+        aria-modal="true"
+        tabIndex={-1}
+        className={cn(
+          "relative m-auto w-full max-w-md rounded-lg border border-gray-200 bg-white p-0 shadow-lg outline-none",
+          className,
+        )}
+        {...props}
+      >
+        {children}
+      </div>
+    </div>
   );
 }
 

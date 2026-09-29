@@ -2,7 +2,7 @@ import { useCallback, useState } from "react";
 import type { InterpolatorStyle } from "./cursors/interpolators";
 import { INTERPOLATOR_STYLES } from "./cursors/interpolators";
 
-const DEFAULT_STYLE: InterpolatorStyle = "linear";
+const DEFAULT_STYLE: InterpolatorStyle = "spring";
 const PARAM = "interp";
 
 function isInterpolatorStyle(value: string | null): value is InterpolatorStyle {

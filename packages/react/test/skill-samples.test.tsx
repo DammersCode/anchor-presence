@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { describe, expect, it } from "vitest";
 import { createPresenceClient, type PresenceClient } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
-import { CursorLayer, LiveCursorProvider, useCursorContext, usePresenceClient } from "../src/index";
+import { CursorLayer, LiveCursorProvider, useCursorContext } from "../src/index";
 
 // Verbatim copies of the tsx samples in skills/anchor-presence/SKILL.md; the test below keeps them in sync.
 
@@ -17,17 +17,15 @@ export function PresenceRoot({
   userName: string;
   children: React.ReactNode;
 }) {
-  const client = usePresenceClient({
-    factory: () => {
-      const transport = createWebSocketTransport({
-        url: `wss://relay.example.com/?room=${encodeURIComponent(room)}`,
-      });
-      return createPresenceClient({ transport, user: { name: userName }, autoConnect: true });
-    },
-  });
-
   return (
-    <LiveCursorProvider client={client}>
+    <LiveCursorProvider<unknown, { name: string }>
+      factory={() => {
+        const transport = createWebSocketTransport({
+          url: `wss://relay.example.com/?room=${encodeURIComponent(room)}`,
+        });
+        return createPresenceClient({ transport, user: { name: userName } });
+      }}
+    >
       {children}
       <CursorLayer<unknown, { name: string }> getLabel={(cursor) => cursor.user?.name ?? null} />
     </LiveCursorProvider>

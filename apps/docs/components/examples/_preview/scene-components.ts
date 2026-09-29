@@ -2,6 +2,7 @@ import type { PresenceClient, PresenceClientOptions } from "@anchor-presence/cor
 import type { ComponentType, ReactNode } from "react";
 import { BasicsScene } from "../basics";
 import { CustomCursorsScene } from "../custom-cursors";
+import { DialogsScene } from "../dialogs";
 import { FallbacksScene } from "../fallbacks";
 import { InterpolationScene } from "../interpolation";
 import { KanbanScene } from "../kanban";
@@ -28,6 +29,7 @@ export const SCENE_COMPONENTS: Record<SceneName, SceneEntry> = {
   "responsive-grid": { Scene: ResponsiveGridScene },
   "table-and-cards": { Scene: TableAndCardsScene },
   kanban: { Scene: KanbanScene },
+  dialogs: { Scene: DialogsScene },
   fallbacks: { Scene: FallbacksScene },
   scroll: { Scene: ScrollScene },
   presence: { Scene: PresenceScene, clientOptions: presenceTimeouts },

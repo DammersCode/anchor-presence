@@ -21,6 +21,8 @@ client.subscribeRemote(() => {
 
 `getRemoteSnapshot()` returns the raw list, including `sequence`, and changes identity on every accepted message. `getRemotePresence()` returns the render-stable list, which excludes `sequence` and holds identity until an observable field changes.
 
+The client calls `transport.connect()` for you by default. Pass `autoConnect: false` and call `transport.connect()` yourself when you need that control.
+
 ## Boundary rule
 
 Core imports no DOM, React, transport, or codec library, so it does not know what a browser is. Every browser API call lives in `@anchor-presence/dom`.

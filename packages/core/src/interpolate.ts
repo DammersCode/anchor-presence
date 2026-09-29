@@ -17,6 +17,11 @@ export interface Interpolator {
    * `settled` is `true` when the position reaches the target.
    */
   sample(timestampMs: number): { x: number; y: number; settled: boolean };
+  /**
+   * Samples the eased position into `out` without allocating.
+   * The resolver uses it when present; `sample` remains the allocating default.
+   */
+  sampleInto?(out: { x: number; y: number; settled: boolean }, timestampMs: number): void;
   /** Clears the ease state. The next `target` snaps to the new position. */
   reset?(): void;
 }
@@ -44,6 +49,11 @@ export const noneInterpolator: InterpolatorFactory = () => {
     sample() {
       return { x, y, settled: true };
     },
+    sampleInto(out) {
+      out.x = x;
+      out.y = y;
+      out.settled = true;
+    },
     // no ease state to clear
     reset() {},
   };
@@ -65,6 +75,24 @@ export const linearInterpolator = (durationMs = 80): Interpolator => {
   let startTimestampMs = 0;
   let hasTarget = false;
   let settled = true;
+
+  // moves currentX/currentY/settled forward to `timestampMs`; sample and sampleInto share it
+  function advance(timestampMs: number): void {
+    if (settled || durationMs <= 0) {
+      currentX = targetX;
+      currentY = targetY;
+      settled = true;
+      return;
+    }
+
+    const elapsed = timestampMs - startTimestampMs;
+    const t = elapsed >= durationMs ? 1 : elapsed <= 0 ? 0 : elapsed / durationMs;
+
+    currentX = startX + (targetX - startX) * t;
+    currentY = startY + (targetY - startY) * t;
+
+    if (t >= 1) settled = true;
+  }
 
   return {
     target(x, y, timestampMs) {
@@ -94,21 +122,14 @@ export const linearInterpolator = (durationMs = 80): Interpolator => {
       startY += dy;
     },
     sample(timestampMs) {
-      if (settled || durationMs <= 0) {
-        currentX = targetX;
-        currentY = targetY;
-        settled = true;
-        return { x: currentX, y: currentY, settled: true };
-      }
-
-      const elapsed = timestampMs - startTimestampMs;
-      const t = elapsed >= durationMs ? 1 : elapsed <= 0 ? 0 : elapsed / durationMs;
-
-      currentX = startX + (targetX - startX) * t;
-      currentY = startY + (targetY - startY) * t;
-
-      if (t >= 1) settled = true;
+      advance(timestampMs);
       return { x: currentX, y: currentY, settled };
+    },
+    sampleInto(out, timestampMs) {
+      advance(timestampMs);
+      out.x = currentX;
+      out.y = currentY;
+      out.settled = settled;
     },
     // the next target() must snap like a first-ever target instead of easing from a stale position
     reset() {

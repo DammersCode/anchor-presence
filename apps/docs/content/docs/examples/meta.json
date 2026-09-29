@@ -12,6 +12,8 @@
     "---Resolution---",
     "anchors-and-fallbacks",
     "occlusion-and-scroll-containers",
+    "---Dialogs and layers---",
+    "dialogs-and-layers",
     "---Presence and rendering---",
     "presence-list",
     "custom-cursor-rendering",

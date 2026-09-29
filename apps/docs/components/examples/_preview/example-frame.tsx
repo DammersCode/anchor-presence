@@ -1,7 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { createPresenceClient } from "@anchor-presence/core";
-import { usePresenceClient } from "@anchor-presence/react";
+import type { PresenceClient, PresenceClientOptions } from "@anchor-presence/core";
 import { useSearchParams } from "next/navigation";
 import { createBroadcastChannelTransport } from "@/components/demo/broadcast-transport";
 import { ResolutionInsight } from "./resolution-insight";
@@ -15,19 +16,37 @@ const NO_TRACKS = [] as const;
 // The Next dev overlay badge would sit on top of the scene in every pane.
 const FRAME_CSS = "html, body { overflow: hidden; } nextjs-portal { display: none; }";
 
+// One client per preview pane: the broadcast channel is the preview's transport.
+function usePreviewClient(
+  channel: string,
+  clientOptions: Pick<PresenceClientOptions, "heartbeatMs" | "idleAfterMs" | "staleTimeoutMs"> | undefined,
+): PresenceClient<unknown, TourUser> | null {
+  const [client, setClient] = useState<PresenceClient<unknown, TourUser> | null>(null);
+
+  useEffect(() => {
+    const transport = createBroadcastChannelTransport(channel);
+    transport.connect();
+    const created = createPresenceClient<unknown, TourUser>({
+      transport,
+      user: READER,
+      ...clientOptions,
+    });
+    setClient(created);
+    return () => {
+      created.dispose();
+      setClient(null);
+    };
+  }, [channel, clientOptions]);
+
+  return client;
+}
+
 /** One preview pane: a scene with its own presence client, plus the status bar and outline. */
 export function ExampleFrame({ scene, layout }: { scene: SceneName; layout: Layout }) {
   const channel = useSearchParams().get("channel") ?? `anchor-presence-preview-${scene}`;
   const { Scene, clientOptions } = SCENE_COMPONENTS[scene];
 
-  const client = usePresenceClient<unknown, TourUser>({
-    key: `${channel}:${layout}`,
-    factory: () => {
-      const transport = createBroadcastChannelTransport(channel);
-      transport.connect();
-      return createPresenceClient({ transport, user: READER, ...clientOptions });
-    },
-  });
+  const client = usePreviewClient(channel, clientOptions);
 
   useTourControl(channel, layout === "wide" ? SCENES[scene].tour : NO_TRACKS);
 

@@ -9,6 +9,7 @@ export type SceneName =
   | "responsive-grid"
   | "table-and-cards"
   | "kanban"
+  | "dialogs"
   | "fallbacks"
   | "scroll"
   | "presence"
@@ -102,6 +103,32 @@ export const SCENES: Record<SceneName, SceneMeta> = {
           { kind: "point", anchor: "board.card:search", u: 0.6, v: 0.45 },
           { kind: "point", anchor: "board.card:cache", u: 0.35, v: 0.6 },
           { kind: "quiet", ms: 6000 },
+        ],
+      },
+    ],
+  },
+  dialogs: {
+    panes: {
+      wide: { label: "Wide", detail: "team board, the invite dialog loops" },
+      narrow: { label: "Narrow", detail: "board only, no dialog in this layout" },
+    },
+    tour: [
+      {
+        user: MIRA,
+        steps: [
+          { kind: "point", anchor: "team.card:ada", u: 0.5, v: 0.5 },
+          { kind: "context", value: { dialog: "invite" }, dwellMs: 600 },
+          { kind: "point", anchor: "team.dialog.invite.email", u: 0.5, v: 0.5, dwellMs: 3200 },
+          { kind: "context", value: { dialog: null }, dwellMs: 600 },
+          { kind: "point", anchor: "team.card:grace", u: 0.4, v: 0.5 },
+        ],
+      },
+      {
+        user: THEO,
+        delayMs: 700,
+        steps: [
+          { kind: "point", anchor: "team.card:linus", u: 0.6, v: 0.5, dwellMs: 4500 },
+          { kind: "quiet", ms: 5000 },
         ],
       },
     ],

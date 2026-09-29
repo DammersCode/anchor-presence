@@ -26,7 +26,7 @@ function mockRect(el: Element, rect: { left: number; top: number; width: number;
 function firePointerEvent(
   type: string,
   target: Element,
-  init: { clientX: number; clientY: number; pointerType?: string },
+  init: { clientX: number; clientY: number; pointerType?: string; pointerId?: number },
 ): void {
   const event = new Event(type, { bubbles: true, cancelable: true, composed: true }) as PointerEvent & {
     clientX: number;
@@ -36,6 +36,7 @@ function firePointerEvent(
   Object.defineProperty(event, "clientY", { value: init.clientY });
   if (init.pointerType !== undefined)
     Object.defineProperty(event, "pointerType", { value: init.pointerType });
+  if (init.pointerId !== undefined) Object.defineProperty(event, "pointerId", { value: init.pointerId });
   target.dispatchEvent(event);
 }
 
@@ -403,5 +404,156 @@ describe("pointer path with the scheduler's rect cache (spec §9/§11, K3)", () 
 
     handle.detach();
     scheduler.dispose();
+  });
+
+  it("clears the local cursor when the last active touch pointer ends", () => {
+    const registry = createAnchorRegistry();
+    const el = document.createElement("div");
+    mockRect(el, { left: 0, top: 0, width: 100, height: 100 });
+    document.body.append(el);
+    registry.register("a", el);
+
+    const { client, samples } = makeClient();
+    const handle = attachPointerSource(client, registry, { maxAnchors: 4 });
+
+    firePointerEvent("pointerdown", el, {
+      clientX: 10,
+      clientY: 10,
+      pointerType: "touch",
+      pointerId: 1,
+    });
+    expect(samples.at(-1)).not.toBeNull();
+
+    firePointerEvent("pointerup", el, {
+      clientX: 10,
+      clientY: 10,
+      pointerType: "touch",
+      pointerId: 1,
+    });
+    expect(samples.at(-1)).toBeNull();
+
+    handle.detach();
+  });
+
+  it("keeps the touch cursor while another touch pointer is still active", () => {
+    const registry = createAnchorRegistry();
+    const el = document.createElement("div");
+    mockRect(el, { left: 0, top: 0, width: 100, height: 100 });
+    document.body.append(el);
+    registry.register("a", el);
+
+    const { client, samples } = makeClient();
+    const handle = attachPointerSource(client, registry, { maxAnchors: 4 });
+
+    firePointerEvent("pointerdown", el, {
+      clientX: 10,
+      clientY: 10,
+      pointerType: "touch",
+      pointerId: 1,
+    });
+    firePointerEvent("pointerdown", el, {
+      clientX: 40,
+      clientY: 40,
+      pointerType: "touch",
+      pointerId: 2,
+    });
+    firePointerEvent("pointerup", el, {
+      clientX: 10,
+      clientY: 10,
+      pointerType: "touch",
+      pointerId: 1,
+    });
+    expect(samples.at(-1)).not.toBeNull();
+
+    firePointerEvent("pointercancel", el, {
+      clientX: 40,
+      clientY: 40,
+      pointerType: "touch",
+      pointerId: 2,
+    });
+    expect(samples.at(-1)).toBeNull();
+
+    handle.detach();
+  });
+
+  it("publishes a cursor at the focused element's center when captureFocus is set", () => {
+    const registry = createAnchorRegistry();
+    const el = document.createElement("div");
+    mockRect(el, { left: 0, top: 0, width: 100, height: 100 });
+    document.body.append(el);
+    registry.register("a", el);
+
+    const { client, samples, pointers } = makeClient();
+    const handle = attachPointerSource(client, registry, { maxAnchors: 4, captureFocus: true });
+
+    el.dispatchEvent(new Event("focusin", { bubbles: true }));
+
+    const cursor = samples.at(-1);
+    expect(cursor?.anchors.map((a) => a.id)).toEqual(["a"]);
+    expect(cursor?.anchors[0]?.u).toBeCloseTo(0.5);
+    expect(cursor?.anchors[0]?.v).toBeCloseTo(0.5);
+    expect(pointers.at(-1)).toBeUndefined();
+
+    handle.detach();
+  });
+
+  it("clears the focus cursor when focus leaves the document", () => {
+    const registry = createAnchorRegistry();
+    const el = document.createElement("div");
+    mockRect(el, { left: 0, top: 0, width: 100, height: 100 });
+    document.body.append(el);
+    registry.register("a", el);
+
+    const { client, samples } = makeClient();
+    const handle = attachPointerSource(client, registry, { maxAnchors: 4, captureFocus: true });
+
+    el.dispatchEvent(new Event("focusin", { bubbles: true }));
+    expect(samples.at(-1)).not.toBeNull();
+
+    el.focus();
+    el.blur();
+    document.body.dispatchEvent(new Event("focusout", { bubbles: true }));
+    expect(samples.at(-1)).toBeNull();
+
+    handle.detach();
+  });
+
+  it("ignores focus changes when captureFocus is not set", () => {
+    const registry = createAnchorRegistry();
+    const el = document.createElement("div");
+    mockRect(el, { left: 0, top: 0, width: 100, height: 100 });
+    document.body.append(el);
+    registry.register("a", el);
+
+    const { client, samples } = makeClient();
+    const handle = attachPointerSource(client, registry, { maxAnchors: 4 });
+
+    el.dispatchEvent(new Event("focusin", { bubbles: true }));
+    expect(samples).toHaveLength(0);
+
+    handle.detach();
+  });
+
+  it("reuses the cached chain for the same target and recomputes when the registry changes", () => {
+    const registry = createAnchorRegistry();
+    const el = document.createElement("div");
+    mockRect(el, { left: 0, top: 0, width: 100, height: 100 });
+    document.body.append(el);
+    registry.register("a", el);
+
+    const ancestorsSpy = vi.spyOn(registry, "ancestors");
+    const { client, samples } = makeClient();
+    const handle = attachPointerSource(client, registry, { maxAnchors: 4 });
+
+    firePointerEvent("pointermove", el, { clientX: 50, clientY: 50 });
+    firePointerEvent("pointermove", el, { clientX: 51, clientY: 51 });
+    expect(ancestorsSpy).toHaveBeenCalledTimes(1);
+    expect(samples).toHaveLength(2);
+
+    registry.register("b", el);
+    firePointerEvent("pointermove", el, { clientX: 52, clientY: 52 });
+    expect(ancestorsSpy).toHaveBeenCalledTimes(2);
+
+    handle.detach();
   });
 });

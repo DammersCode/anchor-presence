@@ -3,16 +3,15 @@ title: Overview
 description: What @anchor-presence/react provides and how to add it to a React app.
 ---
 
-`@anchor-presence/react` adapts a presence client to React. It provides one hook to create the client, one provider to share it, and two optional components to render cursors. It holds no state of its own. Every hook subscribes to the `@anchor-presence/core` client and the `@anchor-presence/dom` binding with `useSyncExternalStore`.
+`@anchor-presence/react` adapts a presence client to React. It provides one provider that creates and shares the client, and two optional components to render cursors. It holds no state of its own. Every hook subscribes to the `@anchor-presence/core` client and the `@anchor-presence/dom` binding with `useSyncExternalStore`.
 
 ## What you get
 
-| Export                                                   | Purpose                                         |
-| -------------------------------------------------------- | ----------------------------------------------- |
-| [`usePresenceClient`](/docs/react/use-presence-client)   | creates the client once, safe under Strict Mode |
-| [`LiveCursorProvider`](/docs/react/live-cursor-provider) | shares the client and its DOM binding           |
-| [`CursorLayer`](/docs/react/cursor-layer)                | renders every visible remote cursor             |
-| Hooks under [Hooks](/docs/react/remote-cursors)          | read cursors, users, context, and status        |
+| Export                                                   | Purpose                                                                 |
+| -------------------------------------------------------- | ----------------------------------------------------------------------- |
+| [`LiveCursorProvider`](/docs/react/live-cursor-provider) | creates the client through `factory` and shares it with its DOM binding |
+| [`CursorLayer`](/docs/react/cursor-layer)                | renders every visible remote cursor                                     |
+| Hooks under [Hooks](/docs/react/remote-cursors)          | read cursors, users, context, and status                                |
 
 ## Minimal setup
 
@@ -21,18 +20,16 @@ This example connects to a WebSocket relay and renders remote cursors:
 ```tsx
 import { createPresenceClient } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
-import { CursorLayer, LiveCursorProvider, usePresenceClient } from "@anchor-presence/react";
+import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
 
 function App() {
-  const client = usePresenceClient({
-    factory: () => {
-      const transport = createWebSocketTransport({ path: "/?room=main" });
-      return createPresenceClient({ transport, autoConnect: true });
-    },
-  });
-
   return (
-    <LiveCursorProvider client={client}>
+    <LiveCursorProvider
+      factory={() => {
+        const transport = createWebSocketTransport({ path: "/?room=main" });
+        return createPresenceClient({ transport });
+      }}
+    >
       <Dashboard />
       <CursorLayer />
     </LiveCursorProvider>
@@ -40,11 +37,11 @@ function App() {
 }
 ```
 
-`usePresenceClient` returns `null` until the client exists. `LiveCursorProvider` accepts `client={null}` and renders its children with no cursors, so the tree stays safe during that gap and during server rendering. See [Quick start](/docs/get-started/quick-start) for the full walkthrough, including the anchor markup.
+The provider runs `factory` once, in a mount effect. Until it has run, the provider renders its children with no cursors, so the tree stays safe during that gap and during server rendering. See [Quick start](/docs/get-started/quick-start) for the full walkthrough, including the anchor markup.
 
 ## Related
 
-- [usePresenceClient](/docs/react/use-presence-client)
 - [LiveCursorProvider](/docs/react/live-cursor-provider)
+- [Creating the client](/docs/react/client-creation)
 - [SSR and Strict Mode](/docs/react/ssr-and-strict-mode)
 - [Quick start](/docs/get-started/quick-start)

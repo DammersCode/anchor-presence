@@ -58,7 +58,7 @@ Remote `user` data is untrusted. Treat it as text, never as HTML. See [Security]
 />
 ```
 
-`CursorLayer` sets `position`, `left`, `top`, `transform`, and `pointerEvents` after your style, so your value never replaces them. Your `zIndex` value replaces the default of `50`.
+`CursorLayer` sets `position`, `left`, `top`, `transform`, and `pointerEvents` after your style, so your value never replaces them. The `zIndex` prop replaces the default of `9999`, which keeps cursors above most app UI, including dialogs.
 
 ## Accessibility
 

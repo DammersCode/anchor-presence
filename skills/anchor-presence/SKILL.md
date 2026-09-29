@@ -43,13 +43,13 @@ Use the project's package manager. Install the relay dependencies from the chose
 
 ### 4. Create the client and render the cursor layer
 
-Create the client inside `usePresenceClient`, in a client component. The factory creates the transport and returns the client with `autoConnect: true`:
+Create the client in the provider's `factory`, in a client component. The factory creates the transport and returns the client; the client connects by default:
 
 ```tsx
 "use client";
 import { createPresenceClient } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
-import { CursorLayer, LiveCursorProvider, usePresenceClient } from "@anchor-presence/react";
+import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
 
 export function PresenceRoot({
   room,
@@ -60,17 +60,15 @@ export function PresenceRoot({
   userName: string;
   children: React.ReactNode;
 }) {
-  const client = usePresenceClient({
-    factory: () => {
-      const transport = createWebSocketTransport({
-        url: `wss://relay.example.com/?room=${encodeURIComponent(room)}`,
-      });
-      return createPresenceClient({ transport, user: { name: userName }, autoConnect: true });
-    },
-  });
-
   return (
-    <LiveCursorProvider client={client}>
+    <LiveCursorProvider<unknown, { name: string }>
+      factory={() => {
+        const transport = createWebSocketTransport({
+          url: `wss://relay.example.com/?room=${encodeURIComponent(room)}`,
+        });
+        return createPresenceClient({ transport, user: { name: userName } });
+      }}
+    >
       {children}
       <CursorLayer<unknown, { name: string }> getLabel={(cursor) => cursor.user?.name ?? null} />
     </LiveCursorProvider>
@@ -78,7 +76,7 @@ export function PresenceRoot({
 }
 ```
 
-- `usePresenceClient` returns `null` on the server and on the first client render; the provider accepts `null`. This keeps SSR and React Strict Mode safe.
+- The `factory` never runs on the server or before the mount effect; until then the provider renders its children with a `null` client. This keeps SSR and React Strict Mode safe. The provider disposes the client it created on unmount.
 - A client identifies one browser tab. User identity goes in `user`.
 - `CursorLayer` owns positioning. Customize it with `getLabel`, `getColor`, `filterCursor`, `getCursorProps`, or `renderCursor`.
 
@@ -147,6 +145,6 @@ Run the project's typecheck and build. Then run two clients in the same room wit
 ## Hard rules
 
 - Render `user` and `context` values as text nodes: they arrive from the network untrusted. Map colors through a fixed palette.
-- Create clients and transports only in browser code, through `usePresenceClient`.
+- Create clients and transports only in browser code, through the provider's `factory`.
 - Treat anchor IDs as opaque keys: the receiver looks them up in a map and never runs them as selectors.
 - Every client in a room uses the same codec. The default is `jsonCodec`.

@@ -17,22 +17,22 @@ const client = createPresenceClient({ transport: myTransport });
 
 ## Connecting the transport
 
-`createPresenceClient` never connects the transport for you by default. Call `transport.connect()` yourself, before or right after you create the client:
+By default, the client calls `transport.connect()` for you. It calls `connect()` once, during creation, after it subscribes to the transport's messages and status, so it misses no inbound message or status change:
 
 ```ts
 import { createPresenceClient } from "@anchor-presence/core";
 
 const client = createPresenceClient({ transport: myTransport });
+```
+
+Pass `autoConnect: false` to make the call yourself, before or right after you create the client:
+
+```ts
+const client = createPresenceClient({ transport: myTransport, autoConnect: false });
 myTransport.connect();
 ```
 
-Pass `autoConnect: true` to have the client call `transport.connect()` for you, once, during creation:
-
-```ts
-const client = createPresenceClient({ transport: myTransport, autoConnect: true });
-```
-
-`autoConnect` defaults to `false`. With `true`, the client calls `connect()` after it subscribes to the transport's messages and status, so it misses no inbound message or status change. A transport with no `connect` method needs no call either way. A `connect()` call that throws or rejects never escapes client creation: the transport reports the failure through its own status instead. `dispose()` calls `transport.disconnect()` in both modes.
+A transport with no `connect` method needs no call either way. A `connect()` call that throws or rejects never escapes client creation: the transport reports the failure through its own status instead. `dispose()` calls `transport.disconnect()` in both modes.
 
 ## Lifecycle
 

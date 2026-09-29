@@ -1,5 +1,6 @@
 // Anchor registry — spec §8
 
+import { isDevMode } from "@anchor-presence/core";
 import { parentAcrossShadow } from "./dom-tree.js";
 
 export interface AnchorRegistry {
@@ -7,17 +8,10 @@ export interface AnchorRegistry {
   get(id: string): Element | null;
   has(id: string): boolean;
   ancestors(element: Element): { id: string; element: Element }[]; // innermost first
+  /** Changes on every register/unregister; callers use it to detect a stale cached walk. */
+  getGeneration(): number;
   /** Notified whenever register/unregister changes the map (for scheduler invalidation). Not part of spec §8's interface. */
   onChange(listener: () => void): () => void;
-}
-
-function isDev(): boolean {
-  try {
-    const env = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env;
-    return env?.NODE_ENV !== "production";
-  } catch {
-    return true;
-  }
 }
 
 export function createAnchorRegistry(): AnchorRegistry {
@@ -25,15 +19,17 @@ export function createAnchorRegistry(): AnchorRegistry {
   const idByElement = new WeakMap<Element, string>();
   const changeListeners = new Set<() => void>();
   const warnedDuplicateIds = new Set<string>();
+  let generation = 0;
 
   function notifyChange(): void {
+    generation += 1;
     for (const listener of changeListeners) listener();
   }
 
   return {
     register(id, element) {
       const existing = byId.get(id);
-      if (existing !== undefined && existing !== element && isDev() && !warnedDuplicateIds.has(id)) {
+      if (existing !== undefined && existing !== element && isDevMode() && !warnedDuplicateIds.has(id)) {
         warnedDuplicateIds.add(id);
         console.warn(`[anchor-presence] duplicate anchor id "${id}"; new element wins`, {
           id,
@@ -78,6 +74,10 @@ export function createAnchorRegistry(): AnchorRegistry {
         current = parentAcrossShadow(current);
       }
       return result;
+    },
+
+    getGeneration() {
+      return generation;
     },
 
     onChange(listener) {

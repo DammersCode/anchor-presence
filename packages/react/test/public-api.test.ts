@@ -13,7 +13,6 @@ describe("@anchor-presence/react public runtime API", () => {
       "useCursorContext",
       "useCursorPresence",
       "useCursorStatus",
-      "usePresenceClient",
       "useRemoteCursors",
       "useRemoteCursorsSelector",
       "useRemoteUsers",

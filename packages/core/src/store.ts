@@ -54,6 +54,9 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
   private stableSnapshot: RemotePresence<TContext, TUser>[] = [];
   private stableSnapshotDirty = false;
 
+  // O(1) "does any client have a cursor?" without scanning the entries on every inbound message
+  private activeCursorCount = 0;
+
   /** Creates a store with the given options. */
   constructor(options: RemotePresenceStoreOptions = {}) {
     this.maxRemoteClients = options.maxRemoteClients ?? DEFAULT_MAX_REMOTE_CLIENTS;
@@ -85,6 +88,7 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
         idle: false,
         projected: projectPresence(normalized, false),
       });
+      if (normalized.cursor !== null) this.activeCursorCount += 1;
       this.stableSnapshotDirty = true;
       this.markDirty();
       return true;
@@ -99,6 +103,9 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
     const nextPresence = sameSession
       ? this.mergeFields(previous, presence)
       : this.normalizePresence(presence);
+    const hadCursor = previous.cursor !== null;
+    const hasCursor = nextPresence.cursor !== null;
+    if (hadCursor !== hasCursor) this.activeCursorCount += hasCursor ? 1 : -1;
     existing.presence = nextPresence;
     existing.lastSeenAt = this.now();
     // any accepted message ends idle, even one that changes no observable field
@@ -143,6 +150,7 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
     let changedAny = false;
     for (const [clientId, entry] of this.entries) {
       if (entry.lastSeenAt < staleCutoff) {
+        if (entry.presence.cursor !== null) this.activeCursorCount -= 1;
         this.entries.delete(clientId);
         changedAny = true;
         continue;
@@ -166,10 +174,21 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
    * @param clientId The client to remove.
    */
   remove(clientId: string): void {
-    if (this.entries.delete(clientId)) {
+    const entry = this.entries.get(clientId);
+    if (entry !== undefined) {
+      if (entry.presence.cursor !== null) this.activeCursorCount -= 1;
+      this.entries.delete(clientId);
       this.stableSnapshotDirty = true;
       this.markDirty();
     }
+  }
+
+  /**
+   * Returns whether at least one stored client has a cursor position.
+   * The store keeps a count, so this is O(1).
+   */
+  hasActiveCursors(): boolean {
+    return this.activeCursorCount > 0;
   }
 
   /**

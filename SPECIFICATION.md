@@ -356,21 +356,24 @@ The resolver keeps one interpolator instance per remote `clientId` and prunes it
 ## 14. React Adapter
 
 ```tsx
-<LiveCursorProvider client={client}>...</LiveCursorProvider>
+<LiveCursorProvider factory={createClient} client={client}>
+  ...
+</LiveCursorProvider>
 ```
+
+The provider runs `factory` once per mount, in an effect, and disposes the client it created on unmount. A `client` prop is bring-your-own and wins over `factory`; it is never disposed by the provider. Before the effect runs (and on the server) the tree sees a `null` client.
 
 Hooks:
 
-| Hook                                         | Returns                                                                                              |
-| -------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `usePresenceClient({ factory, key? })`       | a stable `PresenceClient` per `key`, or `null` before the mount effect runs (page-lifetime registry) |
-| `useRemoteUsers()`                           | one entry per remote client: `clientId`, `user`, and `session`                                       |
-| `useRemoteCursors()`                         | `ResolvedCursor[]` snapshot (useSyncExternalStore)                                                   |
-| `useRemoteCursorsSelector(select, isEqual?)` | a value derived from the snapshot, recomputed per frame                                              |
-| `useCursorPresence()`                        | raw remote `CursorPresence[]`                                                                        |
-| `useCursorStatus()`                          | `ConnectionStatus`                                                                                   |
-| `useCursorClient()`                          | the client instance                                                                                  |
-| `useCursorContext()`                         | `[context, setContext]`                                                                              |
+| Hook                                         | Returns                                                        |
+| -------------------------------------------- | -------------------------------------------------------------- |
+| `useRemoteUsers()`                           | one entry per remote client: `clientId`, `user`, and `session` |
+| `useRemoteCursors()`                         | `ResolvedCursor[]` snapshot (useSyncExternalStore)             |
+| `useRemoteCursorsSelector(select, isEqual?)` | a value derived from the snapshot, recomputed per frame        |
+| `useCursorPresence()`                        | raw remote `CursorPresence[]`                                  |
+| `useCursorStatus()`                          | `ConnectionStatus`                                             |
+| `useCursorClient()`                          | the client instance                                            |
+| `useCursorContext()`                         | `[context, setContext]`                                        |
 
 Anchors are declared in the DOM with the binding's anchor attribute. Cursor movement updates flow only to components using `useRemoteCursors`; the provider never rerenders the app tree per cursor frame.
 
@@ -382,7 +385,7 @@ SSR: the client is created by the consumer in browser-only code, or the provider
 
 `@anchor-presence/react` exports `CursorLayer` and `DefaultCursor`. Both are optional. A consumer can render remote cursors with `useRemoteCursors` directly instead, per Invariant 9.
 
-`CursorLayer` calls `useRemoteCursorsSelector` once, with a selector that keeps the visible, unfiltered cursors. The resolver already keeps unchanged cursors' identity (section 13), and the selection compares element by element, so a list whose visible cursors did not change keeps its identity. For each selected cursor, `CursorLayer` renders one package-owned root `div`. The root style sets `position: fixed`, `left: 0`, `top: 0`, `pointerEvents: "none"`, and a `transform` from the resolved coordinates. The root carries `aria-hidden="true"` and four stable data attributes: `data-anchor-presence-cursor`, `data-anchor-presence-client-id`, `data-anchor-presence-tier`, and `data-anchor-presence-anchor` (empty string when `anchorId` is `null`).
+`CursorLayer` calls `useRemoteCursorsSelector` once, with a selector that keeps the visible, unfiltered cursors. The resolver already keeps unchanged cursors' identity (section 13), and the selection compares element by element, so a list whose visible cursors did not change keeps its identity. For each selected cursor, `CursorLayer` renders one package-owned root `div`. The root style sets `position: fixed`, `left: 0`, `top: 0`, `pointerEvents: "none"`, `zIndex: 9999` (or the `zIndex` prop), and a `transform` from the resolved coordinates. The root carries `aria-hidden="true"` and four stable data attributes: `data-anchor-presence-cursor`, `data-anchor-presence-client-id`, `data-anchor-presence-tier`, and `data-anchor-presence-anchor` (empty string when `anchorId` is `null`).
 
 ```ts
 type CursorLayerProps<TContext = unknown, TUser = unknown> = {
@@ -393,10 +396,11 @@ type CursorLayerProps<TContext = unknown, TUser = unknown> = {
     cursor: ResolvedCursor<TContext, TUser>,
   ) => Omit<ComponentPropsWithoutRef<"div">, "children">;
   renderCursor?: (props: CursorRenderProps<TContext, TUser>) => ReactNode;
+  zIndex?: number;
 };
 ```
 
-`getCursorProps` can add classes, styles, and HTML attributes to the root. The package always applies its geometry values (`position`, `left`, `top`, `transform`, `pointerEvents`) after the consumer style, so a consumer style can never replace them. A consumer style can replace non-geometry values, such as `zIndex` (package default `50`). Package identity and accessibility attributes take the same precedence over consumer attributes.
+`getCursorProps` can add classes, styles, and HTML attributes to the root. The package always applies its geometry values (`position`, `left`, `top`, `transform`, `pointerEvents`) after the consumer style, so a consumer style can never replace them. A consumer style can replace non-geometry values, such as `zIndex` (package default `9999`, overridable with the `zIndex` prop). Package identity and accessibility attributes take the same precedence over consumer attributes.
 
 If `renderCursor` is absent, the root renders `DefaultCursor`. If `renderCursor` is present, its return value replaces only the root's contents; the root itself stays package-owned. `CursorLayer` never reads fields from `cursor.user`. It does not catch errors from a consumer callback; those errors reach the nearest React error boundary.
 

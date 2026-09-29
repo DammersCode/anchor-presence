@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+### Breaking
+
+- `@anchor-presence/react`: `usePresenceClient` is removed. Pass `LiveCursorProvider` a `factory` prop instead. The provider runs it once per mount, in a browser-only effect, and disposes the client it created on unmount. The `client` prop stays as bring-your-own: the provider never disposes a client you pass, and it wins over `factory` when both are set.
+- `@anchor-presence/core`: `createPresenceClient` now defaults `autoConnect` to `true`. The client calls `transport.connect()` itself, once, during creation, after it subscribes to the transport's messages and status. Pass `autoConnect: false` to connect the transport yourself.
+
+### Added
+
+- `@anchor-presence/react`: `LiveCursorProvider` takes a `factory` prop that creates the client it owns.
+- `@anchor-presence/react`: `CursorLayer` takes a `zIndex` prop; cursors now default to `z-index: 9999` so they stay above most app UI, including dialogs.
+- `@anchor-presence/dom`: `createDomBinding` takes `localCursorCapture` (default `true`). Set it to `false` for a read-only presence client that publishes no pointer input.
+- `@anchor-presence/dom`: `createDomBinding` takes `captureFocus` (default `false`). When `true`, the client publishes a cursor at the center of the focused element on `focusin` and clears it on `focusout`.
+- `@anchor-presence/core`: `isDevMode()` reports whether the client runs in a development environment.
+- `@anchor-presence/core`: `RemotePresenceStore.hasActiveCursors()` and `PresenceClient.hasActiveCursors()` report whether any remote cursor has a non-`null` position.
+- `@anchor-presence/core`: `Interpolator` takes an optional `sampleInto(out, timestampMs)` method that fills a caller-provided box instead of allocating.
+
+### Changed
+
+- `@anchor-presence/dom`: pointer capture caches the anchor chain per target and reuses it while the target and the registry generation stay the same.
+- `@anchor-presence/dom`: the resolver reuses its per-frame containers and samples interpolators into scratch boxes, so a frame with no new work allocates nothing.
+
 ## 0.1.0 - 2026-09-26
 
 First release.

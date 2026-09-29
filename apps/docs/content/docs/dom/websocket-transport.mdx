@@ -12,7 +12,7 @@ import { createWebSocketTransport } from "@anchor-presence/dom";
 import { createPresenceClient } from "@anchor-presence/core";
 
 const transport = createWebSocketTransport({ url: "wss://relay.example.com/room-42" });
-const client = createPresenceClient({ transport, autoConnect: true });
+const client = createPresenceClient({ transport });
 ```
 
 `connect()` and `disconnect()` are always present on the returned transport, unlike the optional methods on the base `LiveCursorTransport` contract. See [Transports](/docs/core/transports) for that contract.

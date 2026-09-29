@@ -18,10 +18,15 @@ The binding also reports the pointer type, one of `mouse`, `pen`, or `touch`, ta
 
 ## When the cursor clears
 
-The binding sends a `null` cursor position, which hides the local cursor on every receiver, on two events:
+The binding sends a `null` cursor position, which hides the local cursor on every receiver, on three events:
 
 - `pointerleave` on the document, when the pointer leaves the browser window.
 - `blur` on the window, when the tab or window loses focus.
+- The last active touch pointer lifting (`pointerup` or `pointercancel`), so a touch cursor does not stick after the finger leaves. The binding tracks every active touch pointer and clears only when the last one lifts.
+
+## Keyboard focus
+
+By default, the binding ignores keyboard focus. Pass `captureFocus: true` in the binding options to publish a cursor for keyboard users. On `focusin`, the binding publishes a cursor at the center of the focused element. On `focusout`, it clears the cursor when focus leaves the document. The cursor carries no pointer type, because a focus event has none. An element with no non-zero rectangle publishes no cursor.
 
 ## Event choice
 

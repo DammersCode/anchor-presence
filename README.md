@@ -14,22 +14,21 @@ Install the three packages.
 bun add @anchor-presence/react @anchor-presence/dom @anchor-presence/core
 ```
 
-Create a client with a transport, inside `usePresenceClient`. Mark one element with `data-anchor`. Then render the provider and the cursor layer.
+Pass the provider a `factory` that builds the transport and the client. The client connects the transport by default. Mark one element with `data-anchor`. Then render the provider and the cursor layer.
 
 ```tsx
 import { createPresenceClient } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
-import { CursorLayer, LiveCursorProvider, usePresenceClient } from "@anchor-presence/react";
+import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
 
 function App() {
-  const client = usePresenceClient({
-    factory: () => {
-      const transport = createWebSocketTransport({ path: "/?room=main" });
-      return createPresenceClient({ transport, autoConnect: true });
-    },
-  });
   return (
-    <LiveCursorProvider client={client}>
+    <LiveCursorProvider
+      factory={() => {
+        const transport = createWebSocketTransport({ path: "/?room=main" });
+        return createPresenceClient({ transport });
+      }}
+    >
       <button data-anchor="nav.dashboard">Dashboard</button>
       <CursorLayer />
     </LiveCursorProvider>

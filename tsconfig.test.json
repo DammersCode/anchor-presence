@@ -17,6 +17,7 @@
   "include": [
     "packages/*/test",
     "packages/core/bench",
+    "packages/core/src/import-meta-env.d.ts",
     "apps/demo/src/cursors",
     "scripts/bench.ts",
     "scripts/relay-load.ts"

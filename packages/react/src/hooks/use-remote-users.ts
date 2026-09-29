@@ -18,36 +18,62 @@ export type RemoteUser<TUser = unknown> = {
 
 const EMPTY_USERS: RemoteUser[] = [];
 
-function sameUser<TUser>(a: RemoteUser<TUser>, b: RemoteUser<TUser>): boolean {
-  return (
-    a.clientId === b.clientId && a.session === b.session && a.idle === b.idle && Object.is(a.user, b.user)
-  );
-}
-
-function sameList<TUser>(a: RemoteUser<TUser>[], b: RemoteUser<TUser>[]): boolean {
-  return a.length === b.length && a.every((item, index) => item === b[index]);
-}
-
-// keeps each RemoteUser's identity across presence snapshots that change only cursor position,
-// so a consumer rendering a user list does not re-render on every remote pointer move
+// Keeps each RemoteUser's identity across presence snapshots that change only cursor position,
+// so a consumer rendering a user list does not re-render on every remote pointer move.
+// The per-client map is updated in place; the users array is rebuilt only when membership,
+// order, or a user-relevant field changes. Cursor-only probes allocate nothing.
 function projectRemoteUsers<TUser>(
   snapshot: RemotePresence<unknown, TUser>[],
-  previousByClientId: Map<string, RemoteUser<TUser>>,
-): { users: RemoteUser<TUser>[]; byClientId: Map<string, RemoteUser<TUser>> } {
-  const byClientId = new Map<string, RemoteUser<TUser>>();
-  const users = snapshot.map((p) => {
-    const next: RemoteUser<TUser> = {
-      clientId: p.clientId,
-      user: p.user === null ? undefined : p.user,
-      session: p.session,
-      idle: p.idle,
-    };
-    const previous = previousByClientId.get(p.clientId);
-    const user = previous !== undefined && sameUser(previous, next) ? previous : next;
-    byClientId.set(p.clientId, user);
-    return user;
-  });
-  return { users, byClientId };
+  previousUsers: RemoteUser<TUser>[],
+  byClientId: Map<string, RemoteUser<TUser>>,
+): RemoteUser<TUser>[] {
+  let structureChanged = snapshot.length !== previousUsers.length;
+  if (!structureChanged) {
+    for (let i = 0; i < snapshot.length; i++) {
+      const next = snapshot[i];
+      const previous = previousUsers[i];
+      if (next === undefined || previous === undefined || next.clientId !== previous.clientId) {
+        structureChanged = true;
+        break;
+      }
+    }
+  }
+
+  let fieldChanged = false;
+  for (const presence of snapshot) {
+    const user = presence.user === null ? undefined : presence.user;
+    const previous = byClientId.get(presence.clientId);
+    if (
+      previous === undefined ||
+      previous.user !== user ||
+      previous.idle !== presence.idle ||
+      previous.session !== presence.session
+    ) {
+      byClientId.set(presence.clientId, {
+        clientId: presence.clientId,
+        user,
+        session: presence.session,
+        idle: presence.idle,
+      });
+      fieldChanged = true;
+    }
+  }
+
+  // prune clients that left the snapshot; O(n*m) but runs only when a client is gone
+  if (byClientId.size > snapshot.length) {
+    for (const clientId of Array.from(byClientId.keys())) {
+      if (!snapshot.some((p) => p.clientId === clientId)) byClientId.delete(clientId);
+    }
+  }
+
+  if (!structureChanged && !fieldChanged) return previousUsers;
+  // every snapshot client has an entry: the update loop ran over the same snapshot right before
+  const users: RemoteUser<TUser>[] = [];
+  for (const presence of snapshot) {
+    const user = byClientId.get(presence.clientId);
+    if (user !== undefined) users.push(user);
+  }
+  return users;
 }
 
 /**
@@ -67,9 +93,7 @@ export function useRemoteUsers<TUser = unknown>(): RemoteUser<TUser>[] {
   const getSnapshot = useCallback((): RemoteUser<TUser>[] => {
     const presence =
       client !== null ? client.getRemotePresence() : (EMPTY_PRESENCE as RemotePresence<unknown, TUser>[]);
-    const { users, byClientId } = projectRemoteUsers(presence, byClientIdRef.current);
-    const nextUsers = sameList(previousUsersRef.current, users) ? previousUsersRef.current : users;
-    byClientIdRef.current = byClientId;
+    const nextUsers = projectRemoteUsers(presence, previousUsersRef.current, byClientIdRef.current);
     previousUsersRef.current = nextUsers;
     return nextUsers;
   }, [client]);

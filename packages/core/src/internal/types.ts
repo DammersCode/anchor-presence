@@ -62,6 +62,10 @@ export type PresenceClientOptions<TContext = unknown, TUser = unknown> = {
   onRemoteClientDrop?: () => void;
   /** The user value the client sends to remote peers. */
   user?: TUser;
+  /** Checks the `user` of each remote message. Return `undefined` or throw to drop the field. Default: accept as is. */
+  parseUser?: (value: unknown) => TUser | undefined;
+  /** Checks the `context` of each remote message. Return `undefined` or throw to drop the field. Default: accept as is. */
+  parseContext?: (value: unknown) => TContext | undefined;
   /** The context value the client sends to remote peers. */
   context?: TContext;
   /** Returns a new random ID. The client uses it for `clientId` and `session`. */
@@ -187,6 +191,8 @@ export type PresenceClientState<TContext, TUser> = {
   store: RemotePresenceStore<TContext, TUser>;
   context: TContext | undefined;
   user: TUser | undefined;
+  parseUser: ((value: unknown) => TUser | undefined) | undefined;
+  parseContext: ((value: unknown) => TContext | undefined) | undefined;
   contextDirty: boolean;
   userDirty: boolean;
   sequence: number;

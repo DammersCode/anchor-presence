@@ -208,6 +208,8 @@ export function validatePresence<TContext = unknown, TUser = unknown>(
       cursor,
     };
 
+    if (input.leave === true && cursor === null) message.leave = true;
+
     if (
       "context" in input &&
       input.context !== undefined &&

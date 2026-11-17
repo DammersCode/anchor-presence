@@ -147,7 +147,7 @@ describe("RemotePresenceStore idle", () => {
     expect(store.getStableSnapshot()[0]?.idle).toBe(true);
   });
 
-  it("clears idle on the next accepted message, even one with unchanged content", () => {
+  it("stays idle through heartbeats that change nothing", () => {
     const clock = makeClock();
     const store = new RemotePresenceStore({ idleAfterMs: 500, staleTimeoutMs: 10_000, now: clock.now });
     store.ingest(presence({ clientId: "a", sequence: 0 }));
@@ -156,7 +156,49 @@ describe("RemotePresenceStore idle", () => {
     expect(store.getStableSnapshot()[0]?.idle).toBe(true);
 
     store.ingest(presence({ clientId: "a", sequence: 1 }));
+    clock.advance(600);
+    store.sweep();
+    expect(store.getStableSnapshot()[0]?.idle).toBe(true);
+  });
+
+  it("clears idle when the presence changes", () => {
+    const clock = makeClock();
+    const store = new RemotePresenceStore({ idleAfterMs: 500, staleTimeoutMs: 10_000, now: clock.now });
+    store.ingest(presence({ clientId: "a", sequence: 0 }));
+    clock.advance(600);
+    store.sweep();
+
+    store.ingest(
+      presence({ clientId: "a", sequence: 1, cursor: { anchors: [{ id: "x", u: 0.5, v: 0.5 }] } }),
+    );
     expect(store.getStableSnapshot()[0]?.idle).toBe(false);
+  });
+
+  it("keeps entry and user identity when a heartbeat repeats an equal user", () => {
+    const store = new RemotePresenceStore();
+    store.ingest(presence({ clientId: "a", sequence: 0, user: { name: "Ada", tags: ["x"] } }));
+    const before = store.getStableSnapshot();
+    store.ingest(presence({ clientId: "a", sequence: 1, user: { name: "Ada", tags: ["x"] } }));
+    expect(store.getStableSnapshot()).toBe(before);
+    expect(store.getStableSnapshot()[0]?.user).toBe(before[0]?.user);
+  });
+
+  it("removes a client on a leave message of the same session", () => {
+    const store = new RemotePresenceStore();
+    store.ingest(presence({ clientId: "a", sequence: 0 }));
+    expect(store.ingest(presence({ clientId: "a", sequence: 1, cursor: null, leave: true }))).toBe(true);
+    expect(store.getStableSnapshot()).toHaveLength(0);
+    expect(store.hasActiveCursors()).toBe(false);
+  });
+
+  it("ignores a leave from an older session or an unknown client", () => {
+    const store = new RemotePresenceStore();
+    store.ingest(presence({ clientId: "a", session: "new", sequence: 0 }));
+    expect(
+      store.ingest(presence({ clientId: "a", session: "old", sequence: 9, cursor: null, leave: true })),
+    ).toBe(false);
+    expect(store.ingest(presence({ clientId: "b", sequence: 1, cursor: null, leave: true }))).toBe(false);
+    expect(store.getStableSnapshot()).toHaveLength(1);
   });
 
   it("keeps stable snapshot and entry identity while idle does not change", () => {

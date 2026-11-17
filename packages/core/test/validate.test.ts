@@ -253,4 +253,10 @@ describe("validatePresence", () => {
     const withBadType = validatePresence(baseMessage({ pointer: { type: "stylus" } }));
     expect(withBadType?.pointer).toBeUndefined();
   });
+
+  it("keeps leave only on a null cursor", () => {
+    const base = { version: 1, clientId: "c", session: "s", sequence: 1 };
+    expect(validatePresence({ ...base, cursor: null, leave: true })?.leave).toBe(true);
+    expect(validatePresence({ ...base, cursor: { anchors: [] }, leave: true })?.leave).toBeUndefined();
+  });
 });

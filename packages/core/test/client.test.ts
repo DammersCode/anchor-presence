@@ -77,6 +77,34 @@ afterEach(() => {
 });
 
 describe("createPresenceClient publishing", () => {
+  it("dispose sends a leave message", () => {
+    const { transport, sent } = makeTransport();
+    const client = createPresenceClient({ transport, idFactory });
+    client.dispose();
+    expect(decodeSent(sent.at(-1)!)).toMatchObject({ cursor: null, leave: true });
+  });
+
+  it("drops a remote user that parseUser rejects and keeps one it accepts", () => {
+    const { transport, emit } = makeTransport();
+    const client = createPresenceClient<unknown, { name: string }>({
+      transport,
+      idFactory,
+      parseUser: (value) =>
+        typeof (value as { name?: unknown }).name === "string" ? (value as { name: string }) : undefined,
+    });
+    const send = (clientId: string, user: unknown) =>
+      emit(
+        new TextEncoder().encode(
+          JSON.stringify({ version: 1, clientId, session: "s", sequence: 0, cursor: null, user }),
+        ),
+      );
+    send("bad", { name: {} });
+    send("good", { name: "Ada" });
+    const users = Object.fromEntries(client.getRemotePresence().map((p) => [p.clientId, p.user]));
+    expect(users).toEqual({ bad: undefined, good: { name: "Ada" } });
+    client.dispose();
+  });
+
   it("rate-limits publishing: many updates within one interval produce one send with the latest state", () => {
     const { transport, sent } = makeTransport();
     const client = createPresenceClient({ transport, idFactory, publishIntervalMs: 50 });

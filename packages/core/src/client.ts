@@ -128,6 +128,8 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     store,
     context: options.context,
     user: options.user,
+    parseUser: options.parseUser,
+    parseContext: options.parseContext,
     contextDirty: options.context !== undefined,
     userDirty: options.user !== undefined,
     sequence: 0,
@@ -264,7 +266,7 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     dispose() {
       if (state.disposed) return;
       state.disposed = true;
-      publish.send(null); // best-effort leave message so receivers hide the cursor immediately
+      publish.send(null, false, true); // best-effort: receivers drop this client at once
       if (state.publishTimer !== null) scheduler.clearTimeout(state.publishTimer);
       if (state.heartbeatTimer !== null) scheduler.clearTimeout(state.heartbeatTimer);
       if (state.sweepTimer !== null) scheduler.clearTimeout(state.sweepTimer);

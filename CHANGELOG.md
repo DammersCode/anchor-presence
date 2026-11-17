@@ -11,6 +11,7 @@
 
 ### Added
 
+- `@anchor-presence/react`: `createPresenceHooks<TContext, TUser>()` returns the provider and every hook with the generics fixed, so `useRemoteUsers<Wrong>()` no longer compiles.
 - `@anchor-presence/core`: `dispose()` sends an explicit leave message (`leave: true`, binary cursor tag 2). Receivers remove the client at once instead of after `staleTimeoutMs`.
 - `@anchor-presence/core`: `createPresenceClient` takes `parseUser` and `parseContext` to check remote values. A rejected field is dropped, so a malformed peer cannot crash a render.
 - `@anchor-presence/dom`: `createWebSocketTransport` takes `stableAfterMs` (default `5000`) and `shouldReconnect`. The backoff resets only after a connection stays open that long, so a relay that accepts and then rejects no longer causes a reconnect loop. A close with code 1008 stops reconnecting by default.

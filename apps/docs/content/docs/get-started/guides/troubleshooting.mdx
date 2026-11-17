@@ -51,7 +51,7 @@ A jump can also occur with no gap: two neighbors in one layout can sit far apart
 
 ## HTTP vs HTTPS
 
-`createPresenceClient` generates a `clientId` and a `session` value using an injected `idFactory`. The default factory prefers `crypto.randomUUID()`, available only in a secure context (HTTPS, or `localhost`). On a plain HTTP origin, `crypto.randomUUID` is absent, and the default factory falls back to `crypto.getRandomValues()`, then to a `Date.now()`/`Math.random()` combination if neither is available.
+`createPresenceClient` generates a `clientId` and a `session` value with an `idFactory`. The default factory builds a 12-character ID from 72 random bits of `crypto.getRandomValues()`, which works on plain HTTP too. It falls back to a `Date.now()` and `Math.random()` mix when `crypto` is missing.
 
 This fallback chain means client creation never throws on plain HTTP. If you need a specific ID format or an externally issued ID, pass your own `idFactory` or a fixed `clientId` through `PresenceClientOptions`.
 

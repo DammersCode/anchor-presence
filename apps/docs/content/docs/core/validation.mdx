@@ -1,6 +1,6 @@
 ---
 title: Validation
-description: validatePresence, ValidationLimits, and the boundary between a codec and the store.
+description: validatePresence, ValidationLimits, the shape check for remote user and context, and the boundary between a codec and the store.
 ---
 
 `validatePresence` turns an untrusted decoded value into a `CursorPresence` or `null`. Every codec's `decode` output passes through it before the value reaches the store.
@@ -40,6 +40,56 @@ const client = createPresenceClient({
   validationLimits: { maxAnchors: 4 },
 });
 ```
+
+## Remote user and context
+
+`validatePresence` checks the size and depth of `user` and `context`, not their shape. The client adds a shape check for each remote value.
+
+Without a parser, a remote value must have the shape of the local value. Only the keys of the local value stay. A client with this local `user` accepts a remote `user` whose `name` and `color` are strings:
+
+```ts
+const client = createPresenceClient({
+  transport: myTransport,
+  user: { name: "Ada", color: "#e11d48" },
+});
+```
+
+The shape check uses these rules:
+
+- An object keeps only the keys of the local object. A remote object can omit a key.
+- A kept key with a value of another shape drops the whole field.
+- An array must be an array. Each item must have the shape of the first local item. An empty local array accepts any array.
+- A string, a number, or a boolean must have the type of the local value.
+- A local `null` accepts any value.
+
+The client reads the local value for each message, so `setUser` and `setContext` change the shape.
+
+Pass `parseUser` or `parseContext` to replace the shape check. The parser receives the remote value and returns the value to store. Return `undefined` or throw to drop the field:
+
+```ts
+const viewer = createPresenceClient<{ page: string }>({
+  transport: myTransport,
+  parseContext: (value) => {
+    const { page } = value as { page?: unknown };
+    return typeof page === "string" ? { page } : undefined;
+  },
+});
+```
+
+A dropped field does not clear the stored value. The receiver keeps the previous value of the same session. A `null` value clears the field, and no check runs on it.
+
+<Callout type="warn">
+  If a client has no local `user` or `context`, pass `parseUser` or `parseContext`. Without a local value or a
+  parser, the client accepts the remote value as it is, and a malformed value reaches your render.
+</Callout>
+
+In development, the client warns once in the console when a remote `user` or `context` arrives and no check applies. See [Security](/docs/get-started/guides/security#check-the-shape-of-remote-values) for the render risk.
+
+## Events and leave messages
+
+An event message has a `null` cursor and an `event` field. `validatePresence` drops the whole message when the event `type` is not a string of 1 to `MAX_EVENT_TYPE_LENGTH` characters. It also drops the message when the event `data` is above `maxFieldBytes` or `maxFieldDepth`. A dropped event never reaches the store as a message that clears the cursor.
+
+`validatePresence` keeps `leave: true` only on a message with a `null` cursor.
 
 ## Related
 

@@ -20,6 +20,7 @@
 
 ### Added
 
+- `@anchor-presence/core`: `createPresenceClient` takes `parseEvent`. It checks, rewrites or drops each remote event, so event data gets the same protection as `user` and `context`.
 - `@anchor-presence/dom`: `binding.dispose({ keepLocalCursor: true })` keeps the local cursor on peers. `LiveCursorProvider` uses it when only `bindingKey` changes.
 - Example Elysia client: `createElysiaClient(baseUrl, room, token?)` sends the room token.
 - `@anchor-presence/core`: `subscribePeers` also reports an `update` when a remote `user` or `context` changes. A sender that floods events is limited to a burst of 20 and 10 per second.

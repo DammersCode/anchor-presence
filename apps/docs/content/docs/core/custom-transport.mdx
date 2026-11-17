@@ -59,6 +59,30 @@ A managed service, such as a hosted pub/sub or a serverless WebSocket gateway, u
   still receives a `Uint8Array` from `send` and gives one to the SDK.
 </Callout>
 
+## Close reasons
+
+A transport can report why a connection closed through the optional `subscribeClose` method. Keep a set of listeners, and call each one from the close handler of your socket:
+
+```ts
+import type { TransportClose } from "@anchor-presence/core";
+
+const closeListeners = new Set<(close: TransportClose) => void>();
+
+function subscribeClose(listener: (close: TransportClose) => void) {
+  closeListeners.add(listener);
+  return () => {
+    closeListeners.delete(listener);
+  };
+}
+
+function onSocketClose(event: CloseEvent, willReconnect: boolean) {
+  const close: TransportClose = { code: event.code, reason: event.reason, willReconnect };
+  for (const listener of closeListeners) listener(close);
+}
+```
+
+Return `subscribeClose` on the transport object. Set `willReconnect` to `true` only when the transport schedules another attempt. `client.subscribeClose` then receives each close. See [Close reasons](/docs/core/transports#close-reasons).
+
 ## Testing a custom transport
 
 Run your transport through the same message shapes `createInMemoryPair` produces: a connect, a send while connected, a send while disconnected, and a status change with no active subscriber. See [In-memory transport](/docs/core/in-memory-transport) for a transport that already satisfies the full contract, as a reference implementation.

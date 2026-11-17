@@ -1,6 +1,6 @@
 ---
 title: Presence client
-description: createPresenceClient, its lifecycle, dispose, publish rate, and heartbeat.
+description: createPresenceClient, its lifecycle, events, leave, close reasons, publish rate, heartbeat, and IDs.
 ---
 
 `createPresenceClient` builds a `PresenceClient`. The client validates and stores remote presence, publishes your local cursor on a timer, and sends heartbeats so a receiver's stale-presence timer does not expire an idle sender.
@@ -46,6 +46,74 @@ Call `client.dispose()` when you no longer need the client. `dispose` sends a be
 client.dispose();
 ```
 
+## Events
+
+An event is a one-shot message to every remote peer, for example a reaction or a ping. Call `client.sendEvent(type, data?)` to send one. Call `client.subscribeEvents(listener)` to receive the events of remote peers:
+
+```ts
+const unsubscribe = client.subscribeEvents((event) => {
+  if (event.type === "wave") showWave(event.clientId);
+});
+
+client.sendEvent("wave");
+client.sendEvent("reaction", { emoji: "tada" });
+```
+
+The listener receives a `RemoteEvent`: the `type`, the optional `data`, and the `clientId` of the sender. A client never receives its own events.
+
+The client never stores an event and never sends it again. A peer that is not connected when you send the event never receives it. A peer that joins later never receives it either. An event does not add the sender to the remote presence, and it does not end the idle stage.
+
+`type` is a string of 1 to `MAX_EVENT_TYPE_LENGTH` (`64`) characters. `data` is optional JSON. It must stay within the `maxFieldBytes` and `maxFieldDepth` limits of `validationLimits`.
+
+`sendEvent` returns `false` in these cases:
+
+- The client is not connected.
+- The client is disposed.
+- `type` is empty or longer than 64 characters.
+- `data` is above the field limits.
+
+Otherwise, `sendEvent` gives the message to the transport and returns `true`. `true` does not mean that a peer received the event.
+
+Each receiver limits each sender to a burst of 20 events. The limit refills at 10 events per second. The receiver drops the events above this limit, and the sender still gets `true` for them.
+
+<Callout type="warn">
+  If you render `event.data`, check its shape first. `parseUser` and `parseContext` do not apply to events, so
+  a peer can send any JSON within the field limits. Pass `parseEvent` to check or rewrite each event.
+</Callout>
+
+To check events, pass `parseEvent`. It receives each remote event and returns the event to deliver, or `undefined` to drop it. A parser that throws drops the event:
+
+```ts
+const client = createPresenceClient({
+  transport,
+  parseEvent: (event) => {
+    if (event.type !== "reaction") return undefined;
+    const emoji = (event.data as { emoji?: unknown } | undefined)?.emoji;
+    return typeof emoji === "string" ? { ...event, data: { emoji: emoji.slice(0, 2) } } : undefined;
+  },
+});
+```
+
+## Leaving
+
+Call `client.leave()` to tell remote peers that this client left. Receivers remove the client at once and report a `leave` [peer change](/docs/core/remote-presence#peer-changes). The client stays usable. Its next publish or heartbeat sends the full state, and peers add the client again.
+
+If the client is not connected, `leave()` sends nothing. `dispose()` sends the same leave message before it stops the client. The DOM binding calls `leave()` on the `pagehide` event, so a closed tab disappears from peers at once. See [Page hide](/docs/dom/binding#page-hide).
+
+## Close reasons
+
+Call `client.subscribeClose(listener)` to learn why a connection closed:
+
+```ts
+client.subscribeClose((close) => {
+  if (!close.willReconnect) showOffline(close.code, close.reason);
+});
+```
+
+The listener receives a `TransportClose` with the close `code`, the close `reason`, and `willReconnect`. `willReconnect` is `true` when the transport schedules another connection attempt. `subscribeClose` returns a function that removes the listener.
+
+The client gives the listener to the optional `subscribeClose` method of the transport. If the transport has no `subscribeClose`, the listener never runs. `createWebSocketTransport` reports each close. See [Transports](/docs/core/transports#close-reasons) for the transport side.
+
 ## Publish rate
 
 The client publishes the local cursor every `publishIntervalMs`, `50` by default (`DEFAULT_PUBLISH_INTERVAL_MS`). A publish only sends when the cursor, context, or user changed since the last send.
@@ -65,19 +133,42 @@ const client = createPresenceClient({
 
 The client sends a full-state heartbeat every `heartbeatMs`, `10000` by default (`DEFAULT_HEARTBEAT_MS`), even when nothing changed. The heartbeat keeps an idle sender from expiring on a receiver's stale timeout. See [Remote presence](/docs/core/remote-presence) for the stale timeout on the receiving side.
 
+## IDs
+
+Every client has a `clientId` and a `session`. Pass `clientId` to keep one ID for a client instance. The client creates a `session` for each client and never reuses it.
+
+Both IDs come from `idFactory`. The default `idFactory` returns 12 URL-safe characters with 72 random bits from `crypto.getRandomValues`. If `crypto.getRandomValues` is missing, it builds the ID from the time and `Math.random`.
+
+Pass `idFactory` to use other IDs:
+
+```ts
+const client = createPresenceClient({
+  transport: myTransport,
+  idFactory: () => crypto.randomUUID(),
+});
+```
+
+<Callout type="warn">
+  If `idFactory` returns IDs longer than 64 characters, receivers drop every message of the client. The
+  default limits allow 128 characters for `clientId` and 64 for `session`.
+</Callout>
+
 ## Other options
 
-| Option               | Default                      | Effect                                                                          |
-| -------------------- | ---------------------------- | ------------------------------------------------------------------------------- |
-| `clientId`           | a new random ID              | A stable ID for this client instance.                                           |
-| `staleTimeoutMs`     | `DEFAULT_STALE_TIMEOUT_MS`   | Passed through to the client's own `RemotePresenceStore`. Minimum `1000`.       |
-| `idleAfterMs`        | `DEFAULT_IDLE_AFTER_MS`      | Passed through to the store. See [Remote presence](/docs/core/remote-presence). |
-| `maxRemoteClients`   | `DEFAULT_MAX_REMOTE_CLIENTS` | Passed through to the store.                                                    |
-| `onRemoteClientDrop` | none                         | Runs when the store drops a new `clientId` because the store is full.           |
-| `validationLimits`   | the protocol defaults        | Limits for inbound messages. See [Validation](/docs/core/validation).           |
-| `idFactory`          | a random ID generator        | Returns a new random ID. The client uses it for `clientId` and `session`.       |
-| `now`                | `Date.now`                   | Returns the current time in milliseconds. Useful in tests.                      |
-| `scheduler`          | the global timers            | Timer functions for the client's schedules. Useful in tests.                    |
+| Option               | Default                       | Effect                                                                                                        |
+| -------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `clientId`           | an ID from `idFactory`        | A stable ID for this client instance.                                                                         |
+| `staleTimeoutMs`     | `DEFAULT_STALE_TIMEOUT_MS`    | Passed through to the client's own `RemotePresenceStore`. Minimum `1000`.                                     |
+| `idleAfterMs`        | `DEFAULT_IDLE_AFTER_MS`       | Passed through to the store. See [Remote presence](/docs/core/remote-presence).                               |
+| `maxRemoteClients`   | `DEFAULT_MAX_REMOTE_CLIENTS`  | Passed through to the store.                                                                                  |
+| `onRemoteClientDrop` | none                          | Runs when the store drops a new `clientId` because the store is full.                                         |
+| `validationLimits`   | the protocol defaults         | Limits for inbound messages. See [Validation](/docs/core/validation).                                         |
+| `idFactory`          | 12 random URL-safe characters | Returns a random ID. The client uses it for `clientId` and `session`.                                         |
+| `parseUser`          | the shape check               | Checks the `user` of each remote message. See [Validation](/docs/core/validation#remote-user-and-context).    |
+| `parseContext`       | the shape check               | Checks the `context` of each remote message. See [Validation](/docs/core/validation#remote-user-and-context). |
+| `parseEvent`         | deliver as is                 | Checks, rewrites or drops each remote event.                                                                  |
+| `now`                | `Date.now`                    | Returns the current time in milliseconds. Useful in tests.                                                    |
+| `scheduler`          | the global timers             | Timer functions for the client's schedules. Useful in tests.                                                  |
 
 In development (`NODE_ENV` other than `production`), the client warns once in the console when an outbound `context`, `user`, or whole message exceeds the configured size limit, since a receiver silently drops an oversized field or message.
 

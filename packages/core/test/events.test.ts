@@ -107,6 +107,35 @@ describe("client events", () => {
     receiver.dispose();
   });
 
+  it("lets parseEvent drop or rewrite an event, and drops it when the parser throws", () => {
+    const { a, b } = createInMemoryPair();
+    const sender = createPresenceClient({ transport: a, clientId: "A", codec: binaryCodec });
+    const receiver = createPresenceClient({
+      transport: b,
+      clientId: "B",
+      codec: binaryCodec,
+      parseEvent: (event) => {
+        if (event.type === "boom") throw new Error("parser bug");
+        if (event.type !== "reaction") return undefined;
+        const emoji = (event.data as { emoji?: unknown } | undefined)?.emoji;
+        return typeof emoji === "string" ? { ...event, data: { emoji: emoji.slice(0, 2) } } : undefined;
+      },
+    });
+    void a.connect?.();
+    void b.connect?.();
+    const received: RemoteEvent[] = [];
+    receiver.subscribeEvents((event) => received.push(event));
+
+    sender.sendEvent("reaction", { emoji: "👍👍👍" });
+    sender.sendEvent("reaction", { emoji: { evil: true } });
+    sender.sendEvent("other");
+    sender.sendEvent("boom");
+
+    expect(received).toEqual([{ clientId: "A", type: "reaction", data: { emoji: "👍" } }]);
+    sender.dispose();
+    receiver.dispose();
+  });
+
   it("returns false for an invalid type or a disposed client and stops after unsubscribe", () => {
     const { sender, receiver } = pair();
     const received: RemoteEvent[] = [];

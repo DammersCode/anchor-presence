@@ -1,6 +1,6 @@
 ---
 title: Remote presence
-description: RemotePresenceStore, the stale timeout, the idle stage, and maxRemoteClients.
+description: RemotePresenceStore, the stale timeout, the idle stage, peer changes, leave messages, late join, reconnect expiry, and maxRemoteClients.
 ---
 
 `RemotePresenceStore` holds every remote presence a client accepts. `createPresenceClient` creates one store per client. Read the store through `client.getRemotePresence()` and `client.subscribeRemote(listener)`.
@@ -22,11 +22,52 @@ A remote client with no accepted message for `staleTimeoutMs` is removed from th
 
 ## Idle stage
 
-A remote client whose presence has not changed for `idleAfterMs` is marked `idle: true` in its `RemotePresence`, before it goes stale. The default is `DEFAULT_IDLE_AFTER_MS`, `15000` milliseconds. `idleAfterMs` always stays below `staleTimeoutMs`. The store clamps it to `staleTimeoutMs - 1` when you pass a larger value.
+A remote client whose presence has not changed for `idleAfterMs` is marked `idle: true` in its `RemotePresence`, before it goes stale. The store measures this time from the last change, not from the last message. The default is `DEFAULT_IDLE_AFTER_MS`, `15000` milliseconds. `idleAfterMs` always stays below `staleTimeoutMs`. The store clamps it to `staleTimeoutMs - 1` when you pass a larger value.
 
-Heartbeats do not end idle, because they repeat the same state. Any change in cursor, user, context or pointer ends it. Use idle to dim or gray out a cursor that stopped moving, while `staleTimeoutMs` decides when the cursor disappears.
+Heartbeats do not end idle, because they repeat the same state. A still peer goes idle while its heartbeats keep arriving. Any change in cursor, user, context or pointer ends it. Use idle to dim or gray out a cursor that stopped moving, while `staleTimeoutMs` decides when the cursor disappears.
 
-A client that calls `dispose()` sends a leave message, and receivers remove it at once.
+## Peer changes
+
+Call `client.subscribePeers(listener)` to learn when remote clients join, leave, or change their profile:
+
+```ts
+const unsubscribe = client.subscribePeers((change) => {
+  if (change.type === "join") showToast(`${change.clientId} joined`);
+});
+```
+
+The listener receives a `PeerChange` with a `type` and the `clientId` of the remote client:
+
+| `type`   | When the store reports it                                                                  |
+| -------- | ------------------------------------------------------------------------------------------ |
+| `join`   | The store accepts the first message of an unknown `clientId`.                              |
+| `update` | The `user` or `context` of a known client changes.                                         |
+| `leave`  | The store removes the client: a leave message, the stale timeout, or the reconnect expiry. |
+
+Cursor moves, pointer changes, and events never produce a change. A heartbeat that repeats an equal `user` or `context` produces no `update`. A message from a known `clientId` with another `session` produces no `join`. It produces an `update` when its `user` differs by value from the stored one. A message that the store drops because it is full produces no `join`.
+
+## Leave messages
+
+A client sends a leave message when you call `client.leave()` or `client.dispose()`. See [Leaving](/docs/core/presence-client#leaving). Receivers remove the client at once, without a wait for `staleTimeoutMs`.
+
+A receiver accepts a leave message only from the stored `session`, and only with a higher `sequence`. A leave message for an unknown `clientId` changes nothing.
+
+## Late join
+
+When the client accepts the first message of an unknown `clientId`, it answers with one full publish after a random delay of up to 500 ms. A known `clientId` with another `session` gets the same answer. The full publish carries the cursor, `user`, and `context`, so the peer that joined sees this client before the next heartbeat.
+
+One delay covers every peer that joins in this time. The random delay spreads the answers of the clients in a full room. A leave message or an event gets no answer.
+
+## After a reconnect
+
+When the status changes to `connected` from `reconnecting` or `disconnected`, the client marks every remote client unconfirmed. A peer can leave during the outage, and its leave message never reaches this client.
+
+An unconfirmed client that sends no message within `2 * heartbeatMs + 5 s` is removed, and the store reports a `leave`. With the default `heartbeatMs`, this time is 25 seconds. Any accepted message confirms the client. The store removes the client on its next sweep after this time. If the stale timeout comes first, the stale timeout applies.
+
+<Callout type="warn">
+  If peers use a longer `heartbeatMs` than this client, they disappear after a reconnect until their next
+  message. The client uses its own `heartbeatMs` for this time.
+</Callout>
 
 ## maxRemoteClients
 

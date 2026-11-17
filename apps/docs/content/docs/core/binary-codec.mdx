@@ -19,8 +19,9 @@ The layout is little-endian:
 - `clientId`: `u16` byte length, then UTF-8 bytes
 - `session`: `u16` byte length, then UTF-8 bytes
 - `sequence`: `u32`
-- cursor tag: `0` for `null`, `1` for a cursor
-- anchor count: `u8`
+- cursor tag: `0` for `null`, `1` for a cursor, `2` for a leave message, `3` for an event
+- for tag `3`, an event frame: `u16` type length, then the UTF-8 event type. The pointer and `context` tags are absent, and the event data travels in the `user` slot
+- anchor count: `u8`, only for tag `1`
 - each anchor: `u16` id length, then UTF-8 id, `f32` `u`, `f32` `v`
 - viewport tag: `0` absent, `1` present, then `f32` `u`, `f32` `v`
 - pointer tag: absent, present without type, `mouse`, `pen`, or `touch`

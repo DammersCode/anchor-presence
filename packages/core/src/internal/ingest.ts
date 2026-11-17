@@ -10,6 +10,7 @@ function isPlainRecord(value: unknown): value is Record<string, unknown> {
  * Returns `value` cut to the shape of `sample`, or `undefined` when it does not fit.
  * Objects keep only the keys of the sample, and each kept value must have the sample's type.
  * A `null` sample or an empty array says nothing about the type, so it accepts a string, number, boolean or `null` and never an object or array.
+ * An empty object keeps no keys.
  */
 function isScalar(value: unknown): boolean {
   return (
@@ -80,6 +81,23 @@ function createEventAllowance(
   };
 }
 
+// parseEvent can drop or rewrite an event; a throwing parser drops it
+function deliverEvent<TContext, TUser>(
+  state: PresenceClientState<TContext, TUser>,
+  event: RemoteEvent,
+): void {
+  if (state.parseEvent === undefined) {
+    emitEvent(state, event);
+    return;
+  }
+  try {
+    const parsed = state.parseEvent(event);
+    if (parsed !== undefined) emitEvent(state, parsed);
+  } catch {
+    // a throwing parser drops the event
+  }
+}
+
 function emitEvent<TContext, TUser>(state: PresenceClientState<TContext, TUser>, event: RemoteEvent): void {
   for (const listener of state.eventListeners) {
     try {
@@ -124,7 +142,7 @@ export function wireInbound<TContext, TUser>(state: PresenceClientState<TContext
       if (presence.clientId === state.clientId) return; // ignore echoes of our own messages
       if (presence.event !== undefined) {
         if (eventAllowance.tryConsume(presence.clientId)) {
-          emitEvent(state, { ...presence.event, clientId: presence.clientId });
+          deliverEvent(state, { ...presence.event, clientId: presence.clientId });
         }
         return;
       }

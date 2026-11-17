@@ -129,6 +129,7 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     context: options.context,
     user: options.user,
     onNewPeer: () => publish.requestFullPublish(),
+    parseEvent: options.parseEvent,
     parseUser: options.parseUser,
     parseContext: options.parseContext,
     contextDirty: options.context !== undefined,

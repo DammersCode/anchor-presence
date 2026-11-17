@@ -64,10 +64,12 @@ export type PresenceClientOptions<TContext = unknown, TUser = unknown> = {
   onRemoteClientDrop?: () => void;
   /** The user value the client sends to remote peers. */
   user?: TUser;
-  /** Checks the `user` of each remote message. Return `undefined` or throw to drop the field. Default: accept as is. */
+  /** Checks the `user` of each remote message. Return `undefined` or throw to drop the field. Default: the value must have the shape of the local `user`. */
   parseUser?: (value: unknown) => TUser | undefined;
-  /** Checks the `context` of each remote message. Return `undefined` or throw to drop the field. Default: accept as is. */
+  /** Checks the `context` of each remote message. Return `undefined` or throw to drop the field. Default: the value must have the shape of the local `context`. */
   parseContext?: (value: unknown) => TContext | undefined;
+  /** Checks each remote event. Return the event to deliver it, or `undefined` or throw to drop it. Default: deliver as is. */
+  parseEvent?: (event: RemoteEvent) => RemoteEvent | undefined;
   /** The context value the client sends to remote peers. */
   context?: TContext;
   /** Returns a new random ID. The client uses it for `clientId` and `session`. */
@@ -129,7 +131,7 @@ export interface PresenceClient<TContext = unknown, TUser = unknown> {
    */
   subscribeEvents(listener: (event: RemoteEvent) => void): () => void;
   /**
-   * Adds a listener for remote clients that join or leave.
+   * Adds a listener for remote clients that join or leave, or change their `user` or `context`.
    * @returns A function that removes the listener.
    */
   subscribePeers(listener: (change: PeerChange) => void): () => void;
@@ -221,6 +223,7 @@ export type PresenceClientState<TContext, TUser> = {
   context: TContext | undefined;
   user: TUser | undefined;
   onNewPeer: () => void;
+  parseEvent: ((event: RemoteEvent) => RemoteEvent | undefined) | undefined;
   parseUser: ((value: unknown) => TUser | undefined) | undefined;
   parseContext: ((value: unknown) => TContext | undefined) | undefined;
   contextDirty: boolean;

@@ -62,6 +62,7 @@ function makeClient(): {
     setUser: () => {},
     getUser: () => {},
     leave: () => {},
+    subscribeClose: () => () => {},
     sendEvent: () => false,
     subscribeEvents: () => () => {},
     subscribePeers: () => () => {},

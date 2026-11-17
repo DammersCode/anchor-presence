@@ -191,6 +191,10 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
       publish.markPending();
     },
 
+    subscribeClose(listener) {
+      return transport.subscribeClose?.(listener) ?? (() => {});
+    },
+
     leave() {
       if (state.disposed || state.left) return;
       if (publish.send(null, false, true)) state.left = true;

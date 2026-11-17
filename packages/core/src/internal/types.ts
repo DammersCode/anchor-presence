@@ -9,7 +9,7 @@ import type {
   RemotePresence,
 } from "../protocol.js";
 import type { RemotePresenceStore } from "../store.js";
-import type { LiveCursorTransport } from "../transport.js";
+import type { LiveCursorTransport, TransportClose } from "../transport.js";
 import type { ValidationLimits } from "../validate.js";
 
 /** Handle for one scheduled timer. */
@@ -106,6 +106,12 @@ export interface PresenceClient<TContext = unknown, TUser = unknown> {
    * @param pointer Optional pointer info to send with the cursor.
    */
   updateLocalCursor(cursor: CursorPosition | null, pointer?: PointerInfo): void;
+  /**
+   * Adds a listener for connection closes, with the close code and reason.
+   * A transport without `subscribeClose` never calls it.
+   * @returns A function that removes the listener.
+   */
+  subscribeClose(listener: (close: TransportClose) => void): () => void;
   /**
    * Tells remote peers that this client left, so they remove it at once.
    * The next publish or heartbeat announces the client again.

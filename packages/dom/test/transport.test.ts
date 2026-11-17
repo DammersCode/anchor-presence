@@ -523,6 +523,22 @@ describe("createWebSocketTransport", () => {
     expect(transport.getStatus?.()).toBe("disconnected");
   });
 
+  it("reports the close code, reason and whether it reconnects", () => {
+    vi.useFakeTimers();
+    const transport = make();
+    const closes: unknown[] = [];
+    transport.subscribeClose?.((close) => closes.push(close));
+    void transport.connect();
+    FakeWebSocket.fire(lastSocket(), "close", { code: 1006 });
+    vi.advanceTimersByTime(60_000);
+    FakeWebSocket.fire(lastSocket(), "close", { code: 4006, reason: "invalid token" });
+
+    expect(closes).toEqual([
+      { code: 1006, willReconnect: true },
+      { code: 4006, reason: "invalid token", willReconnect: false },
+    ]);
+  });
+
   it("accepts the platform WebSocket constructor without a cast", () => {
     const ctor: WebSocketCtor = WebSocket;
     expect(ctor).toBe(WebSocket);

@@ -1343,6 +1343,28 @@ describe("createPresenceClient visibilitychange publish flush", () => {
   });
 });
 
+describe("close reasons", () => {
+  it("forwards the transport close reason and tolerates a transport without it", () => {
+    const { transport } = makeTransport();
+    const received: unknown[] = [];
+    let emit: (close: { code?: number; willReconnect: boolean }) => void = () => {};
+    transport.subscribeClose = (listener) => {
+      emit = listener;
+      return () => {};
+    };
+    const client = createPresenceClient({ transport, idFactory });
+    client.subscribeClose((close) => received.push(close));
+    emit({ code: 4004, willReconnect: false });
+    expect(received).toEqual([{ code: 4004, willReconnect: false }]);
+    client.dispose();
+
+    const plain = makeTransport().transport;
+    const other = createPresenceClient({ transport: plain, idFactory });
+    expect(() => other.subscribeClose(() => {})()).not.toThrow();
+    other.dispose();
+  });
+});
+
 describe("leave", () => {
   it("sends a leave message once, and the next publish carries the full state again", () => {
     vi.useFakeTimers();

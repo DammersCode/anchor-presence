@@ -1,14 +1,14 @@
 // oxlint-disable unicorn/prefer-add-event-listener -- WebSocketLike only exposes on* handlers
 
 import { isDevMode } from "@anchor-presence/core";
-import type { ConnectionStatus, LiveCursorTransport } from "@anchor-presence/core";
+import type { ConnectionStatus, LiveCursorTransport, TransportClose } from "@anchor-presence/core";
 
 type Handler<Event> = { bivarianceHack(event: Event): void }["bivarianceHack"];
 
 export type WebSocketLike = {
   readonly readyState: number; // 1 = OPEN
   onopen: null | Handler<unknown>;
-  onclose: null | Handler<{ code?: number }>;
+  onclose: null | Handler<{ code?: number; reason?: string }>;
   onerror: null | Handler<unknown>;
   onmessage: null | Handler<{ data: unknown }>;
   binaryType: string;
@@ -54,7 +54,7 @@ export type WebSocketTransportOptions = {
   /** How long a connection must stay open before the backoff resets, in milliseconds. Default `5000`. */
   stableAfterMs?: number;
   /** Return `false` to stop reconnecting after a close. Default: reconnect unless the close code is 1008, 4004 (origin) or 4006 (auth). */
-  shouldReconnect?: (close: { code?: number }) => boolean;
+  shouldReconnect?: (close: { code?: number; reason?: string }) => boolean;
   /** A WebSocket constructor to use. Default: `globalThis.WebSocket`. */
   WebSocketCtor?: WebSocketCtor;
 };
@@ -108,6 +108,7 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
 
   const dataListeners = new Set<(data: Uint8Array) => void>();
   const statusListeners = new Set<(status: ConnectionStatus) => void>();
+  const closeListeners = new Set<(close: TransportClose) => void>();
 
   function setStatus(next: ConnectionStatus): void {
     if (status === next) return;
@@ -209,7 +210,12 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
         clearStableTimer();
         if (socket === ws) socket = null;
         if (disposedByUser) return;
-        if (reconnect && shouldReconnect(event)) scheduleReconnect();
+        const willReconnect = reconnect && shouldReconnect(event);
+        const closeInfo: TransportClose = { willReconnect };
+        if (event.code !== undefined) closeInfo.code = event.code;
+        if (event.reason) closeInfo.reason = event.reason;
+        for (const listener of closeListeners) listener(closeInfo);
+        if (willReconnect) scheduleReconnect();
         else setStatus("disconnected");
       };
 
@@ -269,6 +275,13 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
       listener(status);
       return () => {
         statusListeners.delete(listener);
+      };
+    },
+
+    subscribeClose(listener) {
+      closeListeners.add(listener);
+      return () => {
+        closeListeners.delete(listener);
       };
     },
 

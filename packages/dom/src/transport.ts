@@ -214,7 +214,13 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
         const closeInfo: TransportClose = { willReconnect };
         if (event.code !== undefined) closeInfo.code = event.code;
         if (event.reason) closeInfo.reason = event.reason;
-        for (const listener of closeListeners) listener(closeInfo);
+        for (const listener of closeListeners) {
+          try {
+            listener(closeInfo);
+          } catch {
+            // a throwing listener must not stop the reconnect
+          }
+        }
         if (willReconnect) scheduleReconnect();
         else setStatus("disconnected");
       };

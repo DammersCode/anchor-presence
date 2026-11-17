@@ -78,6 +78,25 @@ describe("Socket.IO transport integration", () => {
     expect(received[0]).toBeInstanceOf(Uint8Array);
   });
 
+  it("refuses instead of crashing when the auth hook throws", async () => {
+    const failing = await createSocketIoRelay(0, {
+      authCheck: () => {
+        throw new Error("jwt malformed");
+      },
+    });
+    try {
+      const socket = io(failing.url, { transports: ["websocket"], reconnection: false });
+      sockets.push(socket);
+      const outcome = await new Promise<string>((resolve) => {
+        socket.on("connect", () => resolve("connected"));
+        socket.on("connect_error", () => resolve("refused"));
+      });
+      expect(outcome).toBe("refused");
+    } finally {
+      await failing.close();
+    }
+  });
+
   it("ends disconnected when the relay refuses the token", async () => {
     const strict = await createSocketIoRelay(0, { authCheck: () => false });
     try {

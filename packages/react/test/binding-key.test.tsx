@@ -48,3 +48,41 @@ describe("LiveCursorProvider bindingKey", () => {
     act(() => root.unmount());
   });
 });
+
+describe("LiveCursorProvider clientKey", () => {
+  it("disposes the old client and runs the factory again when the key changes", () => {
+    const made: ReturnType<typeof makeFakeClient>[] = [];
+    const disposed: boolean[] = [];
+    const factory = () => {
+      const fake = makeFakeClient();
+      const dispose = fake.client.dispose;
+      fake.client.dispose = () => {
+        disposed[made.indexOf(fake)] = true;
+        dispose();
+      };
+      made.push(fake);
+      return fake.client;
+    };
+    const container = document.createElement("div");
+    document.body.append(container);
+    const root = createRoot(container);
+    const render = (key: string) =>
+      act(() =>
+        root.render(
+          <LiveCursorProvider factory={factory} clientKey={key}>
+            {null}
+          </LiveCursorProvider>,
+        ),
+      );
+
+    render("room-a");
+    render("room-a");
+    expect(made).toHaveLength(1);
+
+    render("room-b");
+    expect(made).toHaveLength(2);
+    expect(disposed[0]).toBe(true);
+    act(() => root.unmount());
+    container.remove();
+  });
+});

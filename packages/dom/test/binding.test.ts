@@ -255,6 +255,18 @@ describe("createDomBinding", () => {
     binding.dispose();
   });
 
+  it("clears the local cursor on dispose, so a consumer-owned client leaves no ghost", () => {
+    const { raf, caf } = makeRafStub();
+    const { client } = makeFakeClient();
+    const update = vi.fn();
+    client.updateLocalCursor = update;
+    const binding = createDomBinding(client, { environment: { raf, caf } });
+
+    binding.dispose();
+
+    expect(update).toHaveBeenLastCalledWith(null);
+  });
+
   it("tells peers the client left on pagehide, and stops after dispose", () => {
     const { raf, caf } = makeRafStub();
     const { client } = makeFakeClient();

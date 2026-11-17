@@ -8,6 +8,7 @@ import {
   originAllowed,
   RateLimiter,
   sanitizeRoomName,
+  safeAuthCheck,
   tokenAuthCheck,
   type AuthCheck,
 } from "../_shared/relay-guard";
@@ -48,7 +49,7 @@ export function createElysiaRelay(port: number, options: ElysiaRelayOptions = {}
     options.idleTimeoutSeconds ?? limitFromEnv(process.env.RELAY_IDLE_TIMEOUT_SECONDS, 60);
   const slowPeerHardBytes = limitFromEnv(process.env.RELAY_SLOW_PEER_HARD_BYTES, 8 * 1024 * 1024);
   const allowedOrigins = options.allowedOrigins ?? allowedOriginsFromEnv(process.env.RELAY_ALLOWED_ORIGINS);
-  const authCheck = options.authCheck ?? tokenAuthCheck(process.env.RELAY_AUTH_TOKEN ?? "");
+  const authCheck = safeAuthCheck(options.authCheck ?? tokenAuthCheck(process.env.RELAY_AUTH_TOKEN ?? ""));
 
   const limits = new ConnectionLimits(maxSockets, maxRoomSockets);
   const connectionState = new WeakMap<object, ConnectionState>();
@@ -71,7 +72,10 @@ export function createElysiaRelay(port: number, options: ElysiaRelayOptions = {}
         return;
       }
       const room = sanitizeRoomName(rawRoom);
-      if (!(await authCheck({ token: token ?? "", room, origin, headers }))) {
+      const authOk = await authCheck({ token: token ?? "", room, origin, headers });
+      // the socket can close while the hook runs; admitting it would leak a limit slot
+      if (ws.raw.readyState !== 1) return;
+      if (!authOk) {
         ws.close(AUTH_REJECTED_CODE, "invalid token");
         return;
       }

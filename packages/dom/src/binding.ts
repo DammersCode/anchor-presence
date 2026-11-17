@@ -232,6 +232,7 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
   function dispose(): void {
     if (disposed) return;
     disposed = true;
+    client.updateLocalCursor(null); // a consumer-owned client stays alive: do not leave the last cursor on peers
     pageWindow?.removeEventListener("pagehide", leaveOnPageHide);
     unregisterTeardown?.();
     autoHandle?.dispose();

@@ -25,6 +25,8 @@ export type LiveCursorProviderProps<TContext = unknown, TUser = unknown> = {
   binding?: DomBinding<TContext, TUser>;
   /** Options for the binding the provider creates. */
   bindingOptions?: DomBindingOptions<TContext, TUser>;
+  /** Change this value to dispose the client `factory` made and create a new one, for example to join another room. */
+  clientKey?: unknown;
   /** Change this value to rebuild the binding with the current `bindingOptions`. The client stays connected. */
   bindingKey?: unknown;
   /** The tree below the provider. */
@@ -50,11 +52,12 @@ export function LiveCursorProvider<TContext = unknown, TUser = unknown>(
     binding: providedBinding,
     bindingOptions,
     bindingKey,
+    clientKey,
     children,
   } = props;
 
   const [ownClient, setOwnClient] = useState<PresenceClient<TContext, TUser> | null>(null);
-  // factory and client changes are ignored after the client is created. The factory runs once per mount.
+  // The factory runs once per mount and once more each time clientKey changes. Other factory and client changes are ignored.
   const factoryRef = useRef(factory);
   const providedClientRef = useRef(providedClient);
   useEffect(() => {
@@ -76,7 +79,8 @@ export function LiveCursorProvider<TContext = unknown, TUser = unknown>(
       created.dispose();
       setOwnClient(null);
     };
-  }, []);
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- clientKey is the deliberate re-create trigger
+  }, [clientKey]);
 
   const client = providedClient ?? ownClient;
 

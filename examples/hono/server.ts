@@ -11,6 +11,7 @@ import {
   RateLimiter,
   sanitizeRoomName,
   slowPeerAction,
+  safeAuthCheck,
   tokenAuthCheck,
   type AuthCheck,
 } from "../_shared/relay-guard";
@@ -62,7 +63,7 @@ export function createHonoRelay(port: number, options: HonoRelayOptions = {}) {
   const slowPeerResumeBytes =
     options.slowPeerResumeBytes ?? limitFromEnv(process.env.RELAY_SLOW_PEER_RESUME_BYTES, 512 * 1024);
   const allowedOrigins = options.allowedOrigins ?? allowedOriginsFromEnv(process.env.RELAY_ALLOWED_ORIGINS);
-  const authCheck = options.authCheck ?? tokenAuthCheck(process.env.RELAY_AUTH_TOKEN ?? "");
+  const authCheck = safeAuthCheck(options.authCheck ?? tokenAuthCheck(process.env.RELAY_AUTH_TOKEN ?? ""));
 
   const rooms = new Map<string, Set<RoomEntry>>();
   const limits = new ConnectionLimits(maxSockets, maxRoomSockets);

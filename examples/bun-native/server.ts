@@ -7,6 +7,7 @@ import {
   originAllowed,
   RateLimiter,
   sanitizeRoomName,
+  safeAuthCheck,
   tokenAuthCheck,
   type AuthCheck,
 } from "../_shared/relay-guard";
@@ -53,7 +54,7 @@ export function createBunRelay(port: number, options: BunRelayOptions = {}) {
     options.idleTimeoutSeconds ?? limitFromEnv(process.env.RELAY_IDLE_TIMEOUT_SECONDS, 60);
   const slowPeerHardBytes = limitFromEnv(process.env.RELAY_SLOW_PEER_HARD_BYTES, 8 * 1024 * 1024);
   const allowedOrigins = options.allowedOrigins ?? allowedOriginsFromEnv(process.env.RELAY_ALLOWED_ORIGINS);
-  const authCheck = options.authCheck ?? tokenAuthCheck(process.env.RELAY_AUTH_TOKEN ?? "");
+  const authCheck = safeAuthCheck(options.authCheck ?? tokenAuthCheck(process.env.RELAY_AUTH_TOKEN ?? ""));
 
   const limits = new ConnectionLimits(maxSockets, maxRoomSockets);
 

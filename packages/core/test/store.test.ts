@@ -183,6 +183,22 @@ describe("RemotePresenceStore idle", () => {
     expect(store.getStableSnapshot()[0]?.user).toBe(before[0]?.user);
   });
 
+  it("expires unconfirmed clients after a reconnect unless a message refreshes them", () => {
+    const clock = makeClock();
+    const store = new RemotePresenceStore({ staleTimeoutMs: 10_000, now: clock.now });
+    store.ingest(presence({ clientId: "gone" }));
+    store.ingest(presence({ clientId: "alive" }));
+    clock.advance(1000);
+
+    store.expireUnlessRefreshed(2000);
+    clock.advance(1000);
+    store.ingest(presence({ clientId: "alive", sequence: 1 }));
+    clock.advance(1500);
+    store.sweep();
+
+    expect(store.getStableSnapshot().map((entry) => entry.clientId)).toEqual(["alive"]);
+  });
+
   it("removes a client on a leave message of the same session", () => {
     const store = new RemotePresenceStore();
     store.ingest(presence({ clientId: "a", sequence: 0 }));

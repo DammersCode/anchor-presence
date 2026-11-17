@@ -136,6 +136,27 @@ describe("node-ws relay limits", () => {
   }, 10_000);
 });
 
+describe("node-ws relay with a failing auth hook", () => {
+  it("refuses with 4006 when the hook throws or rejects, and keeps serving", async () => {
+    for (const authCheck of [
+      () => {
+        throw new Error("jwt malformed");
+      },
+      () => Promise.reject(new Error("jwks down")),
+    ]) {
+      const relay = await createNodeWsRelay(0, { authCheck });
+      try {
+        const socket = new WebSocket(`${relay.url.replace(/^http/u, "ws")}/?room=r&token=bad`);
+        expect(await closeCode(socket)).toBe(4006);
+        const again = new WebSocket(`${relay.url.replace(/^http/u, "ws")}/?room=r&token=bad`);
+        expect(await closeCode(again)).toBe(4006);
+      } finally {
+        await relay.close();
+      }
+    }
+  });
+});
+
 describe("node-ws relay liveness", () => {
   let close: () => Promise<void>;
   let port: number;

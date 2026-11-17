@@ -8,6 +8,7 @@ import {
   messageByteLength,
   RateLimiter,
   sanitizeRoomName,
+  safeAuthCheck,
   tokenAuthCheck,
   type AuthCheck,
 } from "../_shared/relay-guard";
@@ -34,7 +35,7 @@ export function createSocketIoRelay(port: number, options: SocketIoRelayOptions 
   const allowedOrigins = options.allowedOrigins ?? [
     ...allowedOriginsFromEnv(process.env.RELAY_ALLOWED_ORIGINS),
   ];
-  const authCheck = options.authCheck ?? tokenAuthCheck(process.env.RELAY_AUTH_TOKEN ?? "");
+  const authCheck = safeAuthCheck(options.authCheck ?? tokenAuthCheck(process.env.RELAY_AUTH_TOKEN ?? ""));
 
   const httpServer = createServer();
   const io = new Server(httpServer, {

@@ -133,6 +133,17 @@ export type AuthRequest = {
  */
 export type AuthCheck = (request: AuthRequest) => boolean | Promise<boolean>;
 
+/** Wraps an auth hook so a throw or a rejection counts as a refusal, never as a crash or a hang. */
+export function safeAuthCheck(check: AuthCheck): (request: AuthRequest) => Promise<boolean> {
+  return async (request) => {
+    try {
+      return (await check(request)) === true;
+    } catch {
+      return false;
+    }
+  };
+}
+
 export function tokenAuthCheck(expectedToken: string): AuthCheck {
   if (expectedToken === "") return () => true;
   return (request) => timingSafeEqualString(request.token, expectedToken);

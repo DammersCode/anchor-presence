@@ -539,6 +539,20 @@ describe("createWebSocketTransport", () => {
     ]);
   });
 
+  it("keeps reconnecting when a close listener throws", () => {
+    vi.useFakeTimers();
+    const transport = make({ baseBackoffMs: 100, random: () => 1 });
+    transport.subscribeClose?.(() => {
+      throw new Error("listener bug");
+    });
+    void transport.connect();
+    FakeWebSocket.fire(lastSocket(), "close", { code: 1006 });
+
+    expect(transport.getStatus?.()).toBe("reconnecting");
+    vi.advanceTimersByTime(100);
+    expect(FakeWebSocket.instances).toHaveLength(2);
+  });
+
   it("accepts the platform WebSocket constructor without a cast", () => {
     const ctor: WebSocketCtor = WebSocket;
     expect(ctor).toBe(WebSocket);

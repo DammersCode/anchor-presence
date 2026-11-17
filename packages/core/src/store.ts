@@ -202,6 +202,17 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
   }
 
   /**
+   * Marks every stored client unconfirmed: the sweep removes it unless a message arrives within `graceMs`.
+   * The client calls this after a reconnect, because a peer may have left while the connection was down.
+   */
+  expireUnlessRefreshed(graceMs: number): void {
+    const deadline = this.now() - this.staleTimeoutMs + graceMs;
+    for (const entry of this.entries.values()) {
+      if (entry.lastSeenAt > deadline) entry.lastSeenAt = deadline;
+    }
+  }
+
+  /**
    * Adds a listener for clients that join or leave the store.
    * A client joins on its first accepted message, and leaves on a leave message, a removal, or the stale timeout.
    * @returns A function that removes the listener.

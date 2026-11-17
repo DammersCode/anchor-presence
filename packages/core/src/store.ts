@@ -29,6 +29,7 @@ export type RemotePresenceStoreOptions = {
 type Entry<TContext, TUser> = {
   presence: CursorPresence<TContext, TUser>;
   lastSeenAt: number;
+  changedAt: number;
   idle: boolean;
   projected: RemotePresence<TContext, TUser>;
 };
@@ -77,6 +78,7 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
     const existing = this.entries.get(presence.clientId);
 
     if (existing === undefined) {
+      if (presence.leave === true) return false;
       if (this.entries.size >= this.maxRemoteClients) {
         this.onDropNewClient?.();
         return false;
@@ -85,6 +87,7 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
       this.entries.set(presence.clientId, {
         presence: normalized,
         lastSeenAt: this.now(),
+        changedAt: this.now(),
         idle: false,
         projected: projectPresence(normalized, false),
       });
@@ -95,6 +98,11 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
     }
 
     const sameSession = existing.presence.session === presence.session;
+    if (presence.leave === true) {
+      if (!sameSession || presence.sequence <= existing.presence.sequence) return false;
+      this.remove(presence.clientId);
+      return true;
+    }
     if (sameSession && presence.sequence <= existing.presence.sequence) {
       return false;
     }
@@ -108,10 +116,10 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
     if (hadCursor !== hasCursor) this.activeCursorCount += hasCursor ? 1 : -1;
     existing.presence = nextPresence;
     existing.lastSeenAt = this.now();
-    // any accepted message ends idle, even one that changes no observable field
-    const wasIdle = existing.idle;
-    existing.idle = false;
-    if (wasIdle || !sameObservedPresence(previous, nextPresence)) {
+    // a heartbeat that changes nothing observable must not end idle
+    if (!sameObservedPresence(previous, nextPresence)) {
+      existing.changedAt = existing.lastSeenAt;
+      existing.idle = false;
       existing.projected = projectPresence(nextPresence, false);
       this.stableSnapshotDirty = true;
     }
@@ -124,8 +132,8 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
     previous: CursorPresence<TContext, TUser>,
     next: CursorPresence<TContext, TUser>,
   ): CursorPresence<TContext, TUser> {
-    const context = resolveFieldDelta(next.context, previous.context);
-    const user = resolveFieldDelta(next.user, previous.user);
+    const context = keepIdentity(resolveFieldDelta(next.context, previous.context), previous.context);
+    const user = keepIdentity(resolveFieldDelta(next.user, previous.user), previous.user);
     const hasOwnContext = "context" in next && next.context === undefined;
     const hasOwnUser = "user" in next && next.user === undefined;
     if (context === next.context && user === next.user && !hasOwnContext && !hasOwnUser) return next;
@@ -155,7 +163,7 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
         changedAny = true;
         continue;
       }
-      const shouldBeIdle = entry.lastSeenAt < idleCutoff;
+      const shouldBeIdle = entry.changedAt < idleCutoff;
       if (shouldBeIdle !== entry.idle) {
         entry.idle = shouldBeIdle;
         entry.projected = projectPresence(entry.presence, shouldBeIdle);
@@ -238,6 +246,22 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
       }
     }
   }
+}
+
+// A heartbeat decodes to new but equal objects; reuse the previous one so identity checks hold.
+function keepIdentity<T>(next: T | undefined, previous: T | null | undefined): T | undefined {
+  return next !== undefined && previous != null && jsonEqual(next, previous) ? previous : next;
+}
+
+function jsonEqual(a: unknown, b: unknown): boolean {
+  if (Object.is(a, b)) return true;
+  if (typeof a !== "object" || typeof b !== "object" || a === null || b === null) return false;
+  if (Array.isArray(a) !== Array.isArray(b)) return false;
+  const keysA = Object.keys(a);
+  if (keysA.length !== Object.keys(b).length) return false;
+  return keysA.every(
+    (key) => key in b && jsonEqual((a as Record<string, unknown>)[key], (b as Record<string, unknown>)[key]),
+  );
 }
 
 // Wire encoding: `null` clears the field, `undefined` inherits the previous same-session value.

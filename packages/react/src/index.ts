@@ -10,6 +10,7 @@ export { useCursorPresence } from "./hooks/use-cursor-presence.js";
 export { useCursorStatus } from "./hooks/use-cursor-status.js";
 export { useRemoteCursors, useRemoteCursorsSelector } from "./hooks/use-remote-cursors.js";
 export { useRemoteUsers } from "./hooks/use-remote-users.js";
+export { createPresenceHooks } from "./typed-hooks.js";
 
 export type { RemoteUser } from "./hooks/use-remote-users.js";
 

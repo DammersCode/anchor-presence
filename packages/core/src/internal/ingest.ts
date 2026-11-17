@@ -1,6 +1,23 @@
 import { validatePresence } from "../validate.js";
 import type { PresenceClientState } from "./types.js";
 
+// A field the parser rejects is dropped, so the receiver keeps the previous value.
+function parseField(
+  presence: { user?: unknown; context?: unknown },
+  key: "user" | "context",
+  parse: (value: unknown) => unknown,
+): void {
+  const value = presence[key];
+  if (value === undefined || value === null) return;
+  try {
+    const parsed = parse(value);
+    if (parsed === undefined) delete presence[key];
+    else presence[key] = parsed;
+  } catch {
+    delete presence[key];
+  }
+}
+
 /**
  * Wires the transport inbound stream into the remote store.
  * Oversized, invalid, and self-echoed messages are dropped.
@@ -14,6 +31,8 @@ export function wireInbound<TContext, TUser>(state: PresenceClientState<TContext
       const presence = validatePresence<TContext, TUser>(decoded, state.validationLimits);
       if (presence === null) return;
       if (presence.clientId === state.clientId) return; // ignore echoes of our own messages
+      if (state.parseUser !== undefined) parseField(presence, "user", state.parseUser);
+      if (state.parseContext !== undefined) parseField(presence, "context", state.parseContext);
       state.store.ingest(presence);
     } catch {
       // a throwing codec or subscriber must not break the transport dispatch loop

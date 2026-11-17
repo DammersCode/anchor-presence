@@ -1,9 +1,11 @@
-import { useRemoteUsers } from "@anchor-presence/react";
+import { createPresenceHooks } from "@anchor-presence/react";
 import { DEFAULT_CURSOR_COLOR, isKnownCursorColor } from "../cursors/setup";
-import type { DemoUser } from "../cursors/setup";
+import type { DemoContext, DemoUser } from "../cursors/setup";
+
+const { useRemoteUsers } = createPresenceHooks<DemoContext, DemoUser>();
 
 export function WhoIsOnline() {
-  const users = useRemoteUsers<DemoUser>();
+  const users = useRemoteUsers();
   return (
     <aside
       aria-label="Who is online"

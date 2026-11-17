@@ -51,6 +51,19 @@ describe("binaryCodec", () => {
     expect(decoded.user).toEqual({ name: "Ada", color: "#6366f1" });
   });
 
+  it("round-trips a leave message", () => {
+    const message: CursorPresence = {
+      version: 1,
+      clientId: "c",
+      session: "s",
+      sequence: 3,
+      cursor: null,
+      leave: true,
+    };
+    expect(binaryCodec.decode(binaryCodec.encode(message))).toEqual(message);
+    expect(jsonCodec.decode(jsonCodec.encode(message))).toEqual(message);
+  });
+
   it("round-trips explicit null cursor, context, and user", () => {
     const message: CursorPresence = {
       version: 1,

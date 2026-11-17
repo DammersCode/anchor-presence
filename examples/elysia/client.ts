@@ -5,19 +5,23 @@ import { createWebSocketTransport, type WebSocketCtor } from "@anchor-presence/d
 import { treaty } from "@elysia/eden";
 import type { ElysiaRelayApp } from "./server.js";
 
-const relay = treaty<ElysiaRelayApp>("http://localhost:8791");
-
-// A fresh Eden socket per connection. The transport ignores the url argument, because Eden builds
-// the url from the treaty base and the typed query.
-function edenSocket() {
-  return relay.subscribe({ query: { room: "main" } });
+/**
+ * Creates a presence client for one room of an Elysia relay.
+ * @param baseUrl The relay origin, for example `http://localhost:8791`.
+ * @param room The room name, checked against the relay's query schema.
+ */
+export function createElysiaClient(baseUrl: string, room: string) {
+  const relay = treaty<ElysiaRelayApp>(baseUrl);
+  // Eden builds the real url from the treaty; the transport only needs a url outside the browser.
+  // `EdenWS.ws` is the platform WebSocket; the Eden wrapper alone has no onopen or onmessage.
+  const edenSocket = function () {
+    return relay.subscribe({ query: { room } }).ws;
+  } as unknown as WebSocketCtor;
+  const transport = createWebSocketTransport({
+    url: baseUrl.replace(/^http/u, "ws"),
+    WebSocketCtor: edenSocket,
+  });
+  const client = createPresenceClient({ transport });
+  transport.connect();
+  return { client, transport };
 }
-
-const transport = createWebSocketTransport({
-  WebSocketCtor: edenSocket as unknown as WebSocketCtor,
-});
-
-const client = createPresenceClient({ transport });
-transport.connect();
-
-export { client, transport };

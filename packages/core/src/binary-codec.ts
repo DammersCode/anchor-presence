@@ -12,6 +12,7 @@ const PROTOCOL_VERSION = 1;
 
 const CURSOR_NULL = 0;
 const CURSOR_PRESENT = 1;
+const CURSOR_LEFT = 2;
 const VIEWPORT_ABSENT = 0;
 const VIEWPORT_PRESENT = 1;
 
@@ -163,7 +164,7 @@ function encodeMessage(message: CursorPresence): Uint8Array {
   offset += 4;
 
   if (cursor === null) {
-    bytes[offset++] = CURSOR_NULL;
+    bytes[offset++] = message.leave === true ? CURSOR_LEFT : CURSOR_NULL;
   } else {
     bytes[offset++] = CURSOR_PRESENT;
     bytes[offset++] = anchorParts.length;
@@ -248,7 +249,7 @@ function decodeMessage(data: Uint8Array): unknown {
 
   const cursorTag = dv.getUint8(offset++);
   let cursor: CursorPosition | null;
-  if (cursorTag === CURSOR_NULL) {
+  if (cursorTag === CURSOR_NULL || cursorTag === CURSOR_LEFT) {
     cursor = null;
   } else if (cursorTag === CURSOR_PRESENT) {
     const anchorCount = dv.getUint8(offset++);
@@ -288,6 +289,7 @@ function decodeMessage(data: Uint8Array): unknown {
 
   const message: Record<string, unknown> = { version: PROTOCOL_VERSION, clientId, session, sequence, cursor };
   if (pointer !== undefined) message.pointer = pointer;
+  if (cursorTag === CURSOR_LEFT) message.leave = true;
   if (context.present) message.context = context.value;
   if (user.present) message.user = user.value;
   return message;

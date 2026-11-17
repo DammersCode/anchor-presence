@@ -9,6 +9,7 @@ describe("@anchor-presence/react public runtime API", () => {
       "DefaultCursor",
       "LiveCursorContext",
       "LiveCursorProvider",
+      "createPresenceHooks",
       "useCursorClient",
       "useCursorContext",
       "useCursorPresence",

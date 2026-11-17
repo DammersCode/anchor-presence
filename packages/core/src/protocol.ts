@@ -38,6 +38,8 @@ export type CursorPresence<TContext = unknown, TUser = unknown> = {
   context?: TContext | null | undefined;
   user?: TUser | null | undefined;
   pointer?: PointerInfo;
+  /** `true` when the client leaves. `cursor` is `null`, and receivers remove the client at once. */
+  leave?: true | undefined;
 };
 
 /**
@@ -49,7 +51,7 @@ export type RemotePresence<TContext = unknown, TUser = unknown> = Omit<
   CursorPresence<TContext, TUser>,
   "sequence"
 > & {
-  /** `true` when no message arrived from this client for `idleAfterMs`. */
+  /** `true` when this client's presence has not changed for `idleAfterMs`, even while heartbeats arrive. */
   idle: boolean;
 };
 

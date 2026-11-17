@@ -22,9 +22,11 @@ A remote client with no accepted message for `staleTimeoutMs` is removed from th
 
 ## Idle stage
 
-A remote client with no accepted message for `idleAfterMs` is marked `idle: true` in its `RemotePresence`, before it goes stale. The default is `DEFAULT_IDLE_AFTER_MS`, `15000` milliseconds. `idleAfterMs` always stays below `staleTimeoutMs`. The store clamps it to `staleTimeoutMs - 1` when you pass a larger value.
+A remote client whose presence has not changed for `idleAfterMs` is marked `idle: true` in its `RemotePresence`, before it goes stale. The default is `DEFAULT_IDLE_AFTER_MS`, `15000` milliseconds. `idleAfterMs` always stays below `staleTimeoutMs`. The store clamps it to `staleTimeoutMs - 1` when you pass a larger value.
 
-Idle is a separate stage from stale removal. Use it to dim or gray out a cursor that stopped moving, while `staleTimeoutMs` decides when the cursor disappears.
+Heartbeats do not end idle, because they repeat the same state. Any change in cursor, user, context or pointer ends it. Use idle to dim or gray out a cursor that stopped moving, while `staleTimeoutMs` decides when the cursor disappears.
+
+A client that calls `dispose()` sends a leave message, and receivers remove it at once.
 
 ## maxRemoteClients
 

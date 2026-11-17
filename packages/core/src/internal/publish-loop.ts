@@ -18,7 +18,7 @@ type DocumentLike = {
  */
 export type PublishLoop = {
   /** Sends one message now. Returns `false` when the message cannot be sent. */
-  send: (cursor: CursorPosition | null, includeFull?: boolean) => boolean;
+  send: (cursor: CursorPosition | null, includeFull?: boolean, leave?: boolean) => boolean;
   /** Marks a publish pending and schedules one when none is scheduled. */
   markPending: () => void;
   /** Marks a full publish pending after a reconnect and schedules one. */
@@ -44,6 +44,7 @@ export function createPublishLoop<TContext, TUser>(state: PresenceClientState<TC
   function buildMessage(
     cursor: CursorPosition | null,
     includeFull: boolean,
+    leave: boolean,
   ): CursorPresence<TContext, TUser> {
     const message: CursorPresence<TContext, TUser> = {
       version: 1,
@@ -52,16 +53,20 @@ export function createPublishLoop<TContext, TUser>(state: PresenceClientState<TC
       sequence: state.sequence++,
       cursor,
     };
+    if (leave) {
+      message.leave = true;
+      return message;
+    }
     if (state.contextDirty || includeFull) message.context = state.context ?? null;
     if (state.userDirty || includeFull) message.user = state.user ?? null;
     if (state.latestPointer !== undefined) message.pointer = state.latestPointer;
     return message;
   }
 
-  function send(cursor: CursorPosition | null, includeFull = false): boolean {
+  function send(cursor: CursorPosition | null, includeFull = false, leave = false): boolean {
     if (state.status !== "connected") return false;
     try {
-      const message = buildMessage(cursor, includeFull);
+      const message = buildMessage(cursor, includeFull, leave);
       const bytes = state.codec.encode(message);
       const result = state.transport.send(bytes);
       if (result && typeof result.catch === "function") {

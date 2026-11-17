@@ -9,9 +9,12 @@ function toUint8Array(data: ArrayBuffer | Uint8Array | Buffer): Uint8Array {
 
 export function createSocketIoTransport(socket: Socket): LiveCursorTransport {
   const statusListeners = new Set<(status: ConnectionStatus) => void>();
+  let status: ConnectionStatus = socket.connected ? "connected" : "connecting";
 
   const setStatus = (next: ConnectionStatus) => {
-    for (const listener of statusListeners) listener(next);
+    if (next === status) return;
+    status = next;
+    for (const listener of statusListeners) listener(status);
   };
 
   socket.on("connect", () => setStatus("connected"));
@@ -33,8 +36,10 @@ export function createSocketIoTransport(socket: Socket): LiveCursorTransport {
       socket.on("presence", handler);
       return () => socket.off("presence", handler);
     },
+    getStatus: () => status,
     subscribeStatus: (listener) => {
       statusListeners.add(listener);
+      listener(status);
       return () => statusListeners.delete(listener);
     },
   };

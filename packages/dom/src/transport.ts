@@ -3,15 +3,17 @@
 import { isDevMode } from "@anchor-presence/core";
 import type { ConnectionStatus, LiveCursorTransport } from "@anchor-presence/core";
 
+type Handler<Event> = { bivarianceHack(event: Event): void }["bivarianceHack"];
+
 export type WebSocketLike = {
   readonly readyState: number; // 1 = OPEN
-  onopen: null | (() => void);
-  onclose: null | (() => void);
-  onerror: null | (() => void);
-  onmessage: null | ((event: { data: unknown }) => void);
+  onopen: null | Handler<unknown>;
+  onclose: null | Handler<{ code?: number }>;
+  onerror: null | Handler<unknown>;
+  onmessage: null | Handler<{ data: unknown }>;
   binaryType: string;
   bufferedAmount?: number;
-  send(data: ArrayBufferView): void;
+  send(data: ArrayBufferView<ArrayBuffer>): void;
   close(): void;
 };
 
@@ -38,8 +40,9 @@ export type WebSocketTransportOptions = {
   /**
    * Room token for the relay auth check.
    * The transport URL-encodes the token and adds it to the URL as `token=...`.
+   * A function runs before every connection attempt, so an expiring token stays fresh. It may return a promise.
    */
-  token?: string;
+  token?: string | (() => string | Promise<string>);
   /** Enables automatic reconnect with exponential backoff. Default `true`. */
   reconnect?: boolean;
   /** Base backoff, in milliseconds, before the first reconnect attempt. Default `500`. */
@@ -48,15 +51,23 @@ export type WebSocketTransportOptions = {
   maxBackoffMs?: number;
   /** Returns a value in `[0, 1)` for backoff jitter. Default: `Math.random`. */
   random?: () => number;
+  /** How long a connection must stay open before the backoff resets, in milliseconds. Default `5000`. */
+  stableAfterMs?: number;
+  /** Return `false` to stop reconnecting after a close. Default: reconnect unless the close code is 1008, 4004 (origin) or 4006 (auth). */
+  shouldReconnect?: (close: { code?: number }) => boolean;
   /** A WebSocket constructor to use. Default: `globalThis.WebSocket`. */
   WebSocketCtor?: WebSocketCtor;
 };
 
+const NO_RETRY_CODES = new Set([1008, 4004, 4006]);
 const WS_CONNECTING = 0;
 const WS_OPEN = 1;
 
 function resolveUrl(options: WebSocketTransportOptions): string {
   if (options.url !== undefined) return options.url;
+  if (typeof window === "undefined") {
+    throw new TypeError("createWebSocketTransport: pass `url` when `window` is not available");
+  }
   const location = window.location;
   const protocol = location.protocol === "https:" ? "wss:" : "ws:";
   const host = options.host ?? location.hostname;
@@ -77,20 +88,22 @@ function withToken(url: string, token: string): string {
  * @returns A transport for the client.
  */
 export function createWebSocketTransport(options: WebSocketTransportOptions = {}): WebSocketTransport {
-  const url =
-    options.token !== undefined ? withToken(resolveUrl(options), options.token) : resolveUrl(options);
+  const baseUrl = resolveUrl(options);
+  const tokenSource = options.token;
   const reconnect = options.reconnect ?? true;
   const baseBackoffMs = options.baseBackoffMs ?? 500;
   const maxBackoffMs = options.maxBackoffMs ?? 8_000;
   const random = options.random ?? Math.random;
-  // the real WebSocket does not structurally satisfy WebSocketLike (handler signature variance); cast like the scheduler's ctor injections
-  const WebSocketImpl =
-    options.WebSocketCtor ?? (globalThis as unknown as { WebSocket?: WebSocketCtor }).WebSocket;
+  const stableAfterMs = options.stableAfterMs ?? 5_000;
+  const shouldReconnect =
+    options.shouldReconnect ?? ((close) => close.code === undefined || !NO_RETRY_CODES.has(close.code));
+  const WebSocketImpl = options.WebSocketCtor ?? (globalThis as { WebSocket?: WebSocketCtor }).WebSocket;
 
   let socket: WebSocketLike | null = null;
   let disposedByUser = false;
   let reconnectAttempt = 0;
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  let stableTimer: ReturnType<typeof setTimeout> | null = null;
   let status: ConnectionStatus = "connecting";
 
   const dataListeners = new Set<(data: Uint8Array) => void>();
@@ -100,6 +113,11 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
     if (status === next) return;
     status = next;
     for (const listener of statusListeners) listener(status);
+  }
+
+  function clearStableTimer(): void {
+    if (stableTimer !== null) clearTimeout(stableTimer);
+    stableTimer = null;
   }
 
   function scheduleReconnect(): void {
@@ -115,6 +133,22 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
     }, delay);
   }
 
+  function nextUrl(): string | Promise<string> {
+    if (tokenSource === undefined) return baseUrl;
+    if (typeof tokenSource === "string") return withToken(baseUrl, tokenSource);
+    const token = tokenSource();
+    return typeof token === "string"
+      ? withToken(baseUrl, token)
+      : token.then((value) => withToken(baseUrl, value));
+  }
+
+  function failConnect(): void {
+    if (reconnect) scheduleReconnect();
+    else setStatus("disconnected");
+  }
+
+  let openAttempt = 0;
+
   function open(): void {
     if (disposedByUser || WebSocketImpl === undefined) return;
     // a reconnect or a double connect() must not orphan a live socket: sever and close the previous one
@@ -126,13 +160,41 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
       previous.onclose = null;
       previous.close();
     }
+    let target: string | Promise<string>;
+    try {
+      target = nextUrl();
+    } catch {
+      failConnect();
+      return;
+    }
+    const attempt = ++openAttempt;
+    if (typeof target === "string") {
+      connectTo(target);
+    } else {
+      target.then(
+        (resolved) => {
+          if (attempt === openAttempt && !disposedByUser) connectTo(resolved);
+        },
+        () => {
+          if (attempt === openAttempt && !disposedByUser) failConnect();
+        },
+      );
+    }
+  }
+
+  function connectTo(url: string): void {
+    if (WebSocketImpl === undefined) return;
     try {
       const ws = new WebSocketImpl(url);
       ws.binaryType = "arraybuffer";
       socket = ws;
 
       ws.onopen = () => {
-        reconnectAttempt = 0;
+        clearStableTimer();
+        // a relay that accepts then rejects must not reset the backoff on every open
+        stableTimer = setTimeout(() => {
+          reconnectAttempt = 0;
+        }, stableAfterMs);
         setStatus("connected");
       };
 
@@ -143,10 +205,11 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
         for (const listener of dataListeners) listener(bytes);
       };
 
-      ws.onclose = () => {
+      ws.onclose = (event) => {
+        clearStableTimer();
         if (socket === ws) socket = null;
         if (disposedByUser) return;
-        if (reconnect) scheduleReconnect();
+        if (reconnect && shouldReconnect(event)) scheduleReconnect();
         else setStatus("disconnected");
       };
 
@@ -155,8 +218,7 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
       };
     } catch {
       // a throwing constructor (bad URL, blocked host) must not kill the reconnect loop
-      if (reconnect) scheduleReconnect();
-      else setStatus("disconnected");
+      failConnect();
     }
   }
 
@@ -180,6 +242,7 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
       disposedByUser = true;
       if (reconnectTimer !== null) clearTimeout(reconnectTimer);
       reconnectTimer = null;
+      clearStableTimer();
       socket?.close();
       socket = null;
       setStatus("disconnected");
@@ -188,7 +251,7 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
     send(data) {
       if (socket?.readyState !== WS_OPEN) return; // lossy by design — spec §5
       try {
-        socket.send(data);
+        socket.send(data as Uint8Array<ArrayBuffer>); // the codec never hands out shared buffers
       } catch {
         // swallow send errors — presence is lossy by design
       }

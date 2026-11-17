@@ -8,6 +8,8 @@ Frozen before round 1. A fresh scorer sees code, docs and this file only. Gap ta
 - B: backend and transport contract (custom transports, relay, examples).
 - C: docs (`apps/docs/content/docs/**`, READMEs, llms files).
 
+Areas A and B are scored on the seven code dimensions: ergonomics, configurability, type safety, gap coverage, demo evidence, performance, robustness and a11y. The three docs dimensions belong to area C only.
+
 Done when every dimension of every area scores 9 or more. A 10 needs zero known gaps.
 
 ## Anchors (7 / 9 / 10)
@@ -29,8 +31,12 @@ Done when every dimension of every area scores 9 or more. A 10 needs zero known 
 
 Each score cites file:line, a test name, a bench number or a demo path. A score without evidence counts as 5. The scorer lists open gaps with ID, taxonomy letter, priority and size.
 
+## Gap ledger
+
+[gap-ledger.md](gap-ledger.md) lists every gap with a stable ID. A scorer receives it without earlier scores, marks each row closed, open or partial with evidence, and adds new rows. Gap coverage is scored from the ledger: 9 needs no open P1 or P2 row, 7 needs no open P1 row.
+
 ## Stop rules
 
-- Success: all dimensions 9 or more, and a round finds no new must-fix.
-- Stall: two rounds in a row raise the area total by less than 0.3, or the same error fails twice with the same approach.
+- Success: all dimensions 9 or more, and a round adds no new P1 or P2 row.
+- Stall: the open P1 plus P2 count does not fall for two rounds, or the same error fails twice with the same approach. Score noise between scorers is larger than a fix, so means alone never stop the loop.
 - Limit: a model or plan limit stops the loop until the reset.

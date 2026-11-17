@@ -1,6 +1,6 @@
 # 043 Production-ready API and docs
 
-Status: in progress. Rubric: [research/api-scoring-rubric.md](research/api-scoring-rubric.md).
+Status: in progress. Steps 1 and 2 done. Step 3 runs in rounds; see the gap ledger. Rubric: [research/api-scoring-rubric.md](research/api-scoring-rubric.md).
 
 Steps, each with its completion criterion:
 

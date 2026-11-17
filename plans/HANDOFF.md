@@ -30,6 +30,10 @@ Owner decisions:
 | [028 Layout audit skill](028-layout-audit-skill.md)                                     | `dev`               | main tree                       | done                     |
 | Skills docs tab                                                                         | `dev`               | main tree                       | done                     |
 
+| [043 Production-ready API and docs](043-production-ready-api.md) | `crew/round-N` | main tree | in progress: rounds 1 merged, round 2 open. Docs menu and Vercel filter done. Gaps tracked in [research/gap-ledger.md](research/gap-ledger.md). |
+
+Owner decisions for 043 (2026-11-17): unlimited budget, stop on a stall, breaking changes welcome, the repo is private so pushes and merges to `main` are allowed, one push and one merge per round. CREW runs the loop (`.crew/pattern.md`, mode 3).
+
 Each branch keeps its own progress in `plans/handoffs/<branch>.md`. Read that file before you continue a branch.
 
 ## Skills docs tab notes

@@ -18,11 +18,16 @@ The binding also reports the pointer type, one of `mouse`, `pen`, or `touch`, ta
 
 ## When the cursor clears
 
-The binding sends a `null` cursor position, which hides the local cursor on every receiver, on three events:
+The binding sends a `null` cursor position, which hides the local cursor on every receiver, in four cases:
 
 - `pointerleave` on the document, when the pointer leaves the browser window.
 - `blur` on the window, when the tab or window loses focus.
 - The last active touch pointer lifting (`pointerup` or `pointercancel`), so a touch cursor does not stick after the finger leaves. The binding tracks every active touch pointer and clears only when the last one lifts.
+- `binding.dispose()`, unless you pass `keepLocalCursor: true`. See [Dispose](/docs/dom/binding#dispose).
+
+## When the page hides
+
+On `pagehide`, the binding calls `client.leave()` instead of sending a `null` cursor. Peers remove the whole client at once, not only its cursor. See [Page hide](/docs/dom/binding#page-hide).
 
 ## Keyboard focus
 

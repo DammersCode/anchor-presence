@@ -23,7 +23,7 @@ binding.subscribe(() => {
 });
 ```
 
-The binding starts its geometry scheduler only while at least one remote client has a non-null cursor. It stays idle otherwise, so an empty room costs no frame work.
+The binding runs its geometry scheduler only while the client is live and at least one remote client has a non-null cursor. It stays idle otherwise, so an empty room costs no frame work.
 
 ## Options
 
@@ -53,9 +53,30 @@ document.fonts.ready.then(() => {
 
 `reason` is for your own logging. The binding does not read it.
 
+## Connection status
+
+While the client status is `reconnecting` or `disconnected`, the binding hides every remote cursor. The snapshot is empty during that time. The remote presences stay in the client store. When the status returns to `connected`, the binding resolves the cursors again and shows them. The `connecting` status does not hide cursors.
+
+## Page hide
+
+On the `pagehide` event of the window, the binding calls `client.leave()`. Peers then remove this client at once, so a closed tab does not leave a cursor behind. If the page stays open, the next publish or heartbeat announces the client again.
+
+## Errors in a policy or interpolator
+
+If a `visibilityPolicy` or an interpolator throws, the binding keeps the last snapshot and does not stop. In development mode, it logs the error with `console.error`. The binding tries again on the next remote, anchor, or layout change.
+
 ## Dispose
 
 `binding.dispose()` stops the scheduler, detaches every listener, and clears the subscriber list. It sends one final empty snapshot first, so subscribers can render every cursor gone before the binding goes quiet. Call `dispose` once, when the surface that owns the binding unmounts.
+
+`dispose` also clears the local cursor on the client. A client that stays connected after the binding stops then leaves no cursor on its peers.
+
+If you replace the binding and keep the client, pass `keepLocalCursor: true`. Peers then keep the local cursor while the new binding starts:
+
+```ts
+binding.dispose({ keepLocalCursor: true });
+const nextBinding = createDomBinding(client, { resolution: { hitTest: true } });
+```
 
 ## Related
 

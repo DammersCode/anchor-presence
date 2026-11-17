@@ -1,6 +1,6 @@
 ---
 title: WebSocket transport
-description: createWebSocketTransport, the default URL, the auth token, and reconnect with backoff.
+description: createWebSocketTransport, the default URL, the auth token, reconnect with backoff, and close reasons.
 ---
 
 `createWebSocketTransport` builds a `LiveCursorTransport` over the native browser `WebSocket`. It is the one transport `@anchor-presence/dom` ships, built for the bundled relay or a compatible one.
@@ -21,11 +21,13 @@ const client = createPresenceClient({ transport });
 
 When you omit `url`, the transport builds one from `host` (default `window.location.hostname`), `port` (default `8787`), and `path` (default `/`). The protocol is `wss:` when the page loads over `https:`, and `ws:` otherwise.
 
+The default URL needs `window`. If you omit `url` and `window` does not exist, for example on a server, `createWebSocketTransport` throws a `TypeError`. Outside the browser, pass `url`.
+
 ## Room token
 
 Set `token` to add a room token to the connection URL. The transport URL-encodes it and appends `token=<value>`, joined with `&` when the URL already has a query string. The relay reads this token to authorize the connection to a room. See [Security](/docs/get-started/guides/security).
 
-If the token expires, pass a function. The transport calls it before every connection attempt, including each reconnect, and waits for a returned promise. When the function throws or rejects, the transport schedules the next attempt:
+If the token expires, pass a function. The transport calls it before every connection attempt, including each reconnect. The function can be async. The transport waits for a returned promise:
 
 ```ts
 const transport = createWebSocketTransport({
@@ -34,6 +36,8 @@ const transport = createWebSocketTransport({
 });
 ```
 
+If the function throws or rejects, the transport reports a close with no code and the reason `connection attempt failed`. Then, if `reconnect` is on, it schedules the next attempt.
+
 ## Reconnect and backoff
 
 `reconnect` defaults to `true`. After a connection drop that was not caused by your own `disconnect()` call, the transport schedules a reconnect with exponential backoff:
@@ -41,8 +45,28 @@ const transport = createWebSocketTransport({
 - The delay doubles on each attempt, starting from `baseBackoffMs` (default `500`), and caps at `maxBackoffMs` (default `8000`).
 - The transport applies full jitter on top of the capped delay, so many clients reconnecting at once do not retry in lockstep.
 - The backoff resets only after a connection stays open for `stableAfterMs` (default `5000`). A relay that accepts a connection and then closes it therefore sees growing delays, not a retry loop.
-- A close with code `1008`, `4004` (origin) or `4006` (auth) stops the reconnect, and the status becomes `disconnected`. Pass `shouldReconnect` to decide for any close code.
-- `random` overrides the jitter source. It defaults to `Math.random` and is useful in a test that needs a deterministic delay.
+- A close with code `1008` (policy), `4004` (origin) or `4006` (auth) stops the reconnect, and the status becomes `disconnected`.
+- `random` overrides the jitter source. It defaults to `Math.random`. A test can pass a fixed function to get a fixed delay.
+
+## Stop reconnecting
+
+`shouldReconnect` decides after each close whether the transport tries again. It receives the close `code` and `reason`, and returns `false` to stop. This rule also stops on `4007`, the code that the example relays send for a room name that is not valid:
+
+```ts
+const NO_RETRY_CODES = [1008, 4004, 4006, 4007];
+
+const transport = createWebSocketTransport({
+  url: "wss://relay.example.com/?room=main",
+  shouldReconnect: (close) => close.code === undefined || !NO_RETRY_CODES.includes(close.code),
+});
+```
+
+<Callout type="warn">
+  If you pass `shouldReconnect`, it replaces the default rule. Include `1008`, `4004` and `4006` in your rule,
+  or the transport retries a connection that the relay rejects.
+</Callout>
+
+When `reconnect` is `false`, the transport never calls `shouldReconnect`.
 
 `connect()` is idempotent while a connection is already connecting or open: a second call does not open a second socket.
 
@@ -50,6 +74,20 @@ const transport = createWebSocketTransport({
   If you call `connect()` after `disconnect()`, the transport logs a development-mode warning and does
   nothing. To reconnect, for example with a new auth token, create a new transport and a new client.
 </Callout>
+
+## Close reasons
+
+`transport.subscribeClose(listener)` runs the listener each time a connection closes. The listener receives a `TransportClose` object with the close `code`, the `reason`, and `willReconnect`. This listener shows the close when the transport stops:
+
+```ts
+transport.subscribeClose?.((close) => {
+  if (!close.willReconnect) {
+    console.warn(`Relay closed the connection: ${close.code ?? "no code"} ${close.reason ?? ""}`);
+  }
+});
+```
+
+The transport does not replay a past close to a new listener. A close after your own `disconnect()` call does not run the listener. The client has the same method: `client.subscribeClose`.
 
 ## Buffered bytes
 

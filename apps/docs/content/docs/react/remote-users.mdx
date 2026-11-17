@@ -32,12 +32,16 @@ function PresenceList() {
 
 Each `RemoteUser` entry has:
 
-| Field      | Type                 | Meaning                                           |
-| ---------- | -------------------- | ------------------------------------------------- |
-| `clientId` | `string`             | the remote client that sent the user value        |
-| `user`     | `TUser \| undefined` | the user value, or `undefined` when none was sent |
-| `session`  | `string`             | the session ID of the client                      |
-| `idle`     | `boolean`            | `true` when the client sent no update for a while |
+| Field      | Type                 | Meaning                                                                                         |
+| ---------- | -------------------- | ----------------------------------------------------------------------------------------------- |
+| `clientId` | `string`             | the remote client that sent the user value                                                      |
+| `user`     | `TUser \| undefined` | the user value, or `undefined` when none was sent                                               |
+| `session`  | `string`             | the session ID of the client                                                                    |
+| `idle`     | `boolean`            | `true` when the presence of the client did not change for a while, even while heartbeats arrive |
+
+## User shape
+
+The client checks each remote `user` against the local `user` value that you pass to `createPresenceClient`. A remote value keeps only the keys of the local value. If a remote value does not fit that shape, the client drops it, and the entry keeps the previous `user` value. A client with no local `user` has no shape to compare with. In that case, pass `parseUser` to `createPresenceClient`. See [Check the shape of remote values](/docs/get-started/guides/security#check-the-shape-of-remote-values).
 
 ## Render cost
 

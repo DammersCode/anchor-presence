@@ -64,7 +64,36 @@ Returns one of `"connecting"`, `"connected"`, `"reconnecting"`, `"disconnected"`
 function useCursorClient<TContext = unknown, TUser = unknown>(): PresenceClient<TContext, TUser> | null;
 ```
 
-Returns the client instance passed to `LiveCursorProvider`, or `null` outside a provider or during server rendering.
+Returns the client of the nearest `LiveCursorProvider`, or `null` outside a provider or during server rendering.
+
+## useCursorEvents
+
+```ts
+function useCursorEvents(listener: (event: RemoteEvent) => void): void;
+```
+
+Calls `listener` for each event that a remote peer sends with `client.sendEvent`. `RemoteEvent` has a `type`, an optional `data`, and the `clientId` of the sender. See [Cursor events](/docs/react/cursor-events).
+
+## createPresenceHooks
+
+```ts
+function createPresenceHooks<TContext = unknown, TUser = unknown>(): {
+  LiveCursorProvider: (props: LiveCursorProviderProps<TContext, TUser>) => ReactNode;
+  useCursorClient: () => PresenceClient<TContext, TUser> | null;
+  useCursorContext: () => [TContext | undefined, (next: TContext | undefined) => void];
+  useCursorEvents: (listener: (event: RemoteEvent) => void) => void;
+  useCursorPresence: () => RemotePresence<TContext, TUser>[];
+  useCursorStatus: () => ConnectionStatus;
+  useRemoteCursors: () => ResolvedCursor<TContext, TUser>[];
+  useRemoteCursorsSelector: <TSelected>(
+    select: (cursors: ResolvedCursor<TContext, TUser>[]) => TSelected,
+    isEqual?: (a: TSelected, b: TSelected) => boolean,
+  ) => TSelected;
+  useRemoteUsers: () => RemoteUser<TUser>[];
+};
+```
+
+See [Typed hooks](/docs/react/typed-hooks).
 
 ## Related
 

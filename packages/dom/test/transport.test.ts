@@ -477,6 +477,15 @@ describe("createWebSocketTransport", () => {
     expect(transport.getStatus?.()).toBe("disconnected");
   });
 
+  it("asks for an explicit url when window is not available", () => {
+    vi.stubGlobal("window", undefined);
+    try {
+      expect(() => createWebSocketTransport({ WebSocketCtor: FakeWebSocket })).toThrow(/pass .url./u);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("accepts the platform WebSocket constructor without a cast", () => {
     const ctor: WebSocketCtor = WebSocket;
     expect(ctor).toBe(WebSocket);

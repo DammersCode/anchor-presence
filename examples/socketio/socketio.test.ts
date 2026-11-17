@@ -32,6 +32,15 @@ describe("Socket.IO transport integration", () => {
     return client;
   }
 
+  it("reports connected for a client created on an already connected socket", async () => {
+    const socket = io(url, { query: { room: "late" }, transports: ["websocket"] });
+    sockets.push(socket);
+    await vi.waitFor(() => expect(socket.connected).toBe(true), { timeout: 5000, interval: 25 });
+    const client = createPresenceClient({ transport: createSocketIoTransport(socket) });
+    clients.push(client);
+    expect(client.getStatus()).toBe("connected");
+  });
+
   it("relays a presence update from one client to another in the same room", async () => {
     const clientA = connectClient("room-1");
     const clientB = connectClient("room-1");

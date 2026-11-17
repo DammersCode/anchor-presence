@@ -15,6 +15,7 @@
 - `@anchor-presence/core`: `createPresenceClient` takes `parseUser` and `parseContext` to check remote values. A rejected field is dropped, so a malformed peer cannot crash a render.
 - `@anchor-presence/dom`: `createWebSocketTransport` takes `stableAfterMs` (default `5000`) and `shouldReconnect`. The backoff resets only after a connection stays open that long, so a relay that accepts and then rejects no longer causes a reconnect loop. A close with code 1008 stops reconnecting by default.
 - `@anchor-presence/core`: the store keeps the identity of `user` and `context` when a heartbeat repeats an equal value, so memoized renders stay stable.
+- `@anchor-presence/dom`: `createWebSocketTransport` throws a clear error when no `url` is given and `window` is missing.
 - `@anchor-presence/dom`: `WebSocketLike` accepts the platform `WebSocket` constructor without a cast.
 - `@anchor-presence/react`: `LiveCursorProvider` takes a `factory` prop that creates the client it owns.
 - `@anchor-presence/react`: `CursorLayer` takes a `zIndex` prop; cursors now default to `z-index: 9999` so they stay above most app UI, including dialogs.

@@ -47,18 +47,8 @@ The relay reads the room name from the `room` query parameter (`?room=main`). An
 
 ## Use the transport in your app
 
-See `client.ts`. Eden builds the socket with a typed `room` query parameter, and the transport takes it through the `WebSocketCtor` option:
+See `client.ts`. `createElysiaClient(baseUrl, room)` builds the socket with Eden, so the `room` query parameter is typed. The transport takes the socket through the `WebSocketCtor` option, and `EdenWS.ws` is the platform `WebSocket` the transport needs:
 
 ```ts
-const relay = treaty<ElysiaRelayApp>("http://localhost:8791");
-
-function edenSocket() {
-  return relay.subscribe({ query: { room: "main" } });
-}
-
-const transport = createWebSocketTransport({
-  WebSocketCtor: edenSocket as unknown as WebSocketCtor,
-});
-const client = createPresenceClient({ transport });
-transport.connect();
+const { client, transport } = createElysiaClient("http://localhost:8791", "main");
 ```

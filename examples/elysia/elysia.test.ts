@@ -1,5 +1,6 @@
 import { createPresenceClient, type PresenceClient } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
+import { createElysiaClient } from "./client";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import {
   closeCode,
@@ -39,6 +40,19 @@ function connectClient(room: string): PresenceClient {
 }
 
 describe("Elysia relay integration", () => {
+  it("connects and relays through the typed Eden client", async () => {
+    const a = createElysiaClient(`http://127.0.0.1:${port}`, "eden-room");
+    const b = createElysiaClient(`http://127.0.0.1:${port}`, "eden-room");
+    clients.push(a.client, b.client);
+    await vi.waitFor(() => expect(a.client.getStatus()).toBe("connected"), { timeout: 5000, interval: 25 });
+    await vi.waitFor(() => expect(b.client.getStatus()).toBe("connected"), { timeout: 5000, interval: 25 });
+    a.client.updateLocalCursor({ anchors: [{ id: "a", u: 0.25, v: 0.5 }] });
+    await vi.waitFor(() => expect(b.client.getRemoteSnapshot()[0]?.cursor?.anchors[0]?.u).toBe(0.25), {
+      timeout: 5000,
+      interval: 25,
+    });
+  });
+
   it("relays a presence update from one client to another in the same room", async () => {
     const clientA = connectClient("room-1");
     const clientB = connectClient("room-1");

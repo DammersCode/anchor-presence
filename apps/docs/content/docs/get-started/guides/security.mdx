@@ -50,11 +50,32 @@ Render both fields as text: text nodes in plain DOM code, or framework text inte
 <span dangerouslySetInnerHTML={{ __html: cursor.user?.name }} />
 ```
 
+## Check the shape of remote values
+
+Validation checks the size and depth of `user` and `context`, not their shape. A peer can send `{ name: {} }` where you expect a string, and rendering that object as a React child throws.
+
+The client therefore checks each remote value against your own local value. If you pass `user: { name: "Ada" }` to `createPresenceClient`, a remote `user` must be an object whose `name` is a string. The client keeps only the keys of your local value and drops a field that does not fit, so the receiver keeps the previous value.
+
+A client with no local `user` or `context` has no shape to compare with. Pass `parseUser` or `parseContext` to check the value yourself. Return `undefined` to drop it:
+
+```ts
+const client = createPresenceClient<unknown, { name: string; avatar?: string }>({
+  transport,
+  parseUser: (value) => {
+    const { name, avatar } = value as { name?: unknown; avatar?: unknown };
+    if (typeof name !== "string") return undefined;
+    return typeof avatar === "string" ? { name, avatar } : { name };
+  },
+});
+```
+
+In development, the client warns once when a remote value arrives and no check applies.
+
 ## Identity is not authenticated
 
 `clientId` and `session` are plain fields on the wire. Any peer can send any value for either. The store accepts a new session for a known `clientId` without proof that the same person sent the earlier one.
 
-The relay token, when set, gates access to a room. It does not authenticate the identity inside a message. Bind identity on your own server if your app needs to know who a message really came from.
+The relay token, when set, gates access to a room. It does not authenticate the identity inside a message. Bind identity on your own server if your app needs to know who a message really came from. The [relay contract](/docs/examples/backends/relay-contract) shows how a relay rewrites `clientId` and `user` to a verified identity.
 
 ## maxRemoteClients
 

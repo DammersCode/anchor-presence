@@ -2,13 +2,50 @@ import { validatePresence } from "../validate.js";
 import type { RemoteEvent } from "../protocol.js";
 import type { PresenceClientState } from "./types.js";
 
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Returns `value` cut to the shape of `sample`, or `undefined` when it does not fit.
+ * Objects keep only the keys of the sample, and each kept value must have the sample's type.
+ * A `null` or empty sample says nothing about the shape, so it accepts any JSON.
+ */
+export function fitShape(sample: unknown, value: unknown): unknown {
+  if (sample === null || sample === undefined) return value;
+  if (Array.isArray(sample)) {
+    if (!Array.isArray(value)) return undefined;
+    if (sample.length === 0) return value;
+    const fitted = value.map((item) => fitShape(sample[0], item));
+    return fitted.includes(undefined) ? undefined : fitted;
+  }
+  if (isPlainRecord(sample)) {
+    if (!isPlainRecord(value)) return undefined;
+    const fitted: Record<string, unknown> = {};
+    for (const key of Object.keys(sample)) {
+      if (!(key in value)) continue;
+      const part = fitShape(sample[key], value[key]);
+      if (part === undefined) return undefined;
+      fitted[key] = part;
+    }
+    return fitted;
+  }
+  return typeof value === typeof sample ? value : undefined;
+}
+
+// Without a parser, a remote value must look like the local one. A client with no local value has no shape to check against.
+function parserFor(explicit: ((value: unknown) => unknown) | undefined, sample: unknown) {
+  if (explicit !== undefined) return explicit;
+  return sample === undefined ? undefined : (value: unknown) => fitShape(sample, value);
+}
+
 function hasUnparsedField<TContext, TUser>(
   state: PresenceClientState<TContext, TUser>,
   presence: { user?: unknown; context?: unknown },
 ): boolean {
   return (
-    (state.parseUser === undefined && presence.user != null) ||
-    (state.parseContext === undefined && presence.context != null)
+    (parserFor(state.parseUser, state.user) === undefined && presence.user != null) ||
+    (parserFor(state.parseContext, state.context) === undefined && presence.context != null)
   );
 }
 
@@ -91,8 +128,10 @@ export function wireInbound<TContext, TUser>(state: PresenceClientState<TContext
           "[anchor-presence] a remote user or context arrived without parseUser or parseContext; a malformed peer value reaches your render. See the security guide.",
         );
       }
-      if (state.parseUser !== undefined) parseField(presence, "user", state.parseUser);
-      if (state.parseContext !== undefined) parseField(presence, "context", state.parseContext);
+      const parseUser = parserFor(state.parseUser, state.user);
+      const parseContext = parserFor(state.parseContext, state.context);
+      if (parseUser !== undefined) parseField(presence, "user", parseUser);
+      if (parseContext !== undefined) parseField(presence, "context", parseContext);
       const known = state.store.has(presence.clientId, presence.session);
       if (state.store.ingest(presence) && !known && presence.leave !== true) state.onNewPeer();
     } catch {

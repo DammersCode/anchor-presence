@@ -4,6 +4,7 @@
 
 ### Breaking
 
+- `@anchor-presence/core`: a remote `user` or `context` must have the shape of the local value, or the client drops it. Only the keys of the local value stay. Pass `parseUser` or `parseContext` to replace the check, for example when the client has no local value.
 - Relays (reference and examples): a room name that is not valid now closes the socket with code `4007` instead of falling back to `main`, because two rooms would share one stream. The SignalR hub aborts the connection.
 - Example relays: identity binding rewrites `clientId` to `<identity>~<connection>`, so two tabs of one user stay two clients. It works on node-ws, Bun, Hono, Elysia and Socket.IO.
 - `@anchor-presence/core`: an event that fails validation is dropped. `sendEvent` returns `false` for an event above the field limits. A failing teardown no longer stops `dispose()`.

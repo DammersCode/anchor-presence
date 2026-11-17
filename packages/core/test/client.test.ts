@@ -1465,3 +1465,48 @@ describe("remote field validation warning", () => {
     warn.mockRestore();
   });
 });
+
+describe("default shape check for remote fields", () => {
+  const remote = (emit: (data: Uint8Array) => void, clientId: string, user: unknown) =>
+    emit(
+      new TextEncoder().encode(
+        JSON.stringify({ version: 1, clientId, session: "s", sequence: 0, cursor: null, user }),
+      ),
+    );
+
+  it("drops a remote user that does not have the shape of the local user, and strips extra keys", () => {
+    const { transport, emit } = makeTransport();
+    const client = createPresenceClient<unknown, { name: string; tags: string[] }>({
+      transport,
+      idFactory,
+      user: { name: "Ada", tags: ["x"] },
+    });
+
+    remote(emit, "bad-type", { name: {}, tags: ["a"] });
+    remote(emit, "bad-array", { name: "B", tags: "nope" });
+    remote(emit, "bad-item", { name: "B", tags: [1] });
+    remote(emit, "good", { name: "Bob", tags: ["a", "b"], extra: "ignored" });
+
+    const users = Object.fromEntries(client.getRemotePresence().map((p) => [p.clientId, p.user]));
+    expect(users).toEqual({
+      "bad-type": undefined,
+      "bad-array": undefined,
+      "bad-item": undefined,
+      good: { name: "Bob", tags: ["a", "b"] },
+    });
+    client.dispose();
+  });
+
+  it("lets an explicit parseUser replace the default check", () => {
+    const { transport, emit } = makeTransport();
+    const client = createPresenceClient<unknown, { name: string }>({
+      transport,
+      idFactory,
+      user: { name: "Ada" },
+      parseUser: (value) => ({ name: String((value as { label?: unknown }).label ?? "?") }),
+    });
+    remote(emit, "p", { label: "Zed" });
+    expect(client.getRemotePresence()[0]?.user).toEqual({ name: "Zed" });
+    client.dispose();
+  });
+});

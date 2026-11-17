@@ -11,6 +11,7 @@ import {
   sanitizeRoomName,
   slowPeerAction,
   tokenAuthCheck,
+  type AuthCheck,
 } from "../_shared/relay-guard";
 
 export type NodeWsRelayOptions = {
@@ -26,7 +27,7 @@ export type NodeWsRelayOptions = {
   slowPeerResumeBytes?: number;
   allowedOrigins?: Set<string>;
   /** Auth hook placeholder: verify a token query param. Default accepts every token. */
-  authCheck?: (token: string) => boolean;
+  authCheck?: AuthCheck;
 };
 
 type SocketState = {
@@ -72,14 +73,21 @@ export function createNodeWsRelay(port: number, options: NodeWsRelayOptions = {}
     wss.handleUpgrade(req, socket, head, (ws) => ws.close(code, reason));
   };
 
-  httpServer.on("upgrade", (req, socket, head) => {
+  httpServer.on("upgrade", async (req, socket, head) => {
     const url = new URL(req.url ?? "/", "http://localhost");
     const origin = req.headers.origin ?? "";
     if (!originAllowed(allowedOrigins, origin)) {
       refuse(req, socket, head, 4004, "origin not allowed");
       return;
     }
-    if (!authCheck(url.searchParams.get("token") ?? "")) {
+    const authRoom = sanitizeRoomName(url.searchParams.get("room"));
+    const headers = Object.fromEntries(
+      Object.entries(req.headers).map(([name, value]) => [
+        name,
+        Array.isArray(value) ? value.join(", ") : value,
+      ]),
+    );
+    if (!(await authCheck({ token: url.searchParams.get("token") ?? "", room: authRoom, origin, headers }))) {
       refuse(req, socket, head, 4006, "invalid token");
       return;
     }

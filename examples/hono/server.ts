@@ -12,6 +12,7 @@ import {
   sanitizeRoomName,
   slowPeerAction,
   tokenAuthCheck,
+  type AuthCheck,
 } from "../_shared/relay-guard";
 
 export type HonoRelayOptions = {
@@ -27,7 +28,7 @@ export type HonoRelayOptions = {
   slowPeerResumeBytes?: number;
   allowedOrigins?: Set<string>;
   /** Auth hook placeholder: verify a token query param. Default accepts every token. */
-  authCheck?: (token: string) => boolean;
+  authCheck?: AuthCheck;
 };
 
 type RawSocket = { readyState: number; getBufferedAmount(): number };
@@ -71,10 +72,15 @@ export function createHonoRelay(port: number, options: HonoRelayOptions = {}) {
 
   app.get(
     "/",
-    upgradeWebSocket((c) => {
+    upgradeWebSocket(async (c) => {
       const room = sanitizeRoomName(c.req.query("room"));
       const origin = c.req.header("origin") ?? "";
-      const authOk = authCheck(c.req.query("token") ?? "");
+      const authOk = await authCheck({
+        token: c.req.query("token") ?? "",
+        room,
+        origin,
+        headers: c.req.header(),
+      });
       const rateLimiter = new RateLimiter(rateCapacity, rateRefillPerSecond);
 
       return {

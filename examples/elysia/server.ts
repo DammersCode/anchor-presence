@@ -9,6 +9,7 @@ import {
   RateLimiter,
   sanitizeRoomName,
   tokenAuthCheck,
+  type AuthCheck,
 } from "../_shared/relay-guard";
 
 export type ElysiaRelayOptions = {
@@ -21,7 +22,7 @@ export type ElysiaRelayOptions = {
   idleTimeoutSeconds?: number;
   allowedOrigins?: Set<string>;
   /** Auth hook placeholder: verify a token query param. Default accepts every token. */
-  authCheck?: (token: string) => boolean;
+  authCheck?: AuthCheck;
 };
 
 const AUTH_REJECTED_CODE = 4006;
@@ -61,18 +62,19 @@ export function createElysiaRelay(port: number, options: ElysiaRelayOptions = {}
     },
   }).ws("/", {
     query: t.Object({ room: t.Optional(t.String()), token: t.Optional(t.String()) }),
-    open(ws) {
+    async open(ws) {
       const { room: rawRoom, token } = ws.data.query;
-      const origin = (ws.data.headers as Record<string, string | undefined>).origin ?? "";
+      const headers = ws.data.headers as Record<string, string | undefined>;
+      const origin = headers.origin ?? "";
       if (!originAllowed(allowedOrigins, origin)) {
         ws.close(ORIGIN_REJECTED_CODE, "origin not allowed");
         return;
       }
-      if (!authCheck(token ?? "")) {
+      const room = sanitizeRoomName(rawRoom);
+      if (!(await authCheck({ token: token ?? "", room, origin, headers }))) {
         ws.close(AUTH_REJECTED_CODE, "invalid token");
         return;
       }
-      const room = sanitizeRoomName(rawRoom);
       const admission = limits.admit(room);
       if (admission !== "ok") {
         ws.close(admission === "server full" ? SERVER_FULL_CODE : ROOM_FULL_CODE, admission);

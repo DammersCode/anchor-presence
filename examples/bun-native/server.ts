@@ -8,6 +8,7 @@ import {
   RateLimiter,
   sanitizeRoomName,
   tokenAuthCheck,
+  type AuthCheck,
 } from "../_shared/relay-guard";
 
 export type BunRelayOptions = {
@@ -20,7 +21,7 @@ export type BunRelayOptions = {
   idleTimeoutSeconds?: number;
   allowedOrigins?: Set<string>;
   /** Auth hook placeholder: verify a token query param. Default accepts every token. */
-  authCheck?: (token: string) => boolean;
+  authCheck?: AuthCheck;
 };
 
 type SocketData = {
@@ -58,11 +59,16 @@ export function createBunRelay(port: number, options: BunRelayOptions = {}) {
 
   const server = Bun.serve<SocketData>({
     port,
-    fetch(req, srv) {
+    async fetch(req, srv) {
       const url = new URL(req.url);
       const room = sanitizeRoomName(url.searchParams.get("room"));
       const origin = req.headers.get("origin") ?? "";
-      const authOk = authCheck(url.searchParams.get("token") ?? "");
+      const authOk = await authCheck({
+        token: url.searchParams.get("token") ?? "",
+        room,
+        origin,
+        headers: Object.fromEntries(req.headers),
+      });
       if (
         srv.upgrade(req, {
           data: {

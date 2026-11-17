@@ -119,15 +119,23 @@ export function originAllowed(allowlist: Set<string>, origin: string): boolean {
   return allowlist.size === 0 || allowlist.has(origin);
 }
 
+/** What an auth hook sees: the token, the room, the origin and the request headers. */
+export type AuthRequest = {
+  token: string;
+  room: string;
+  origin: string;
+  headers: Record<string, string | undefined>;
+};
+
 /**
- * Auth hook placeholder: verifies a token query param via a user-supplied function.
+ * Auth hook: decides whether a connection may join. It may be async, for example to verify a JWT or look up a session.
  * The default accepts everything, matching the reference relay's opt-in auth.
  */
-export type AuthCheck = (token: string) => boolean;
+export type AuthCheck = (request: AuthRequest) => boolean | Promise<boolean>;
 
 export function tokenAuthCheck(expectedToken: string): AuthCheck {
   if (expectedToken === "") return () => true;
-  return (token) => timingSafeEqualString(token, expectedToken);
+  return (request) => timingSafeEqualString(request.token, expectedToken);
 }
 
 export function limitFromEnv(value: string | undefined, fallback: number): number {

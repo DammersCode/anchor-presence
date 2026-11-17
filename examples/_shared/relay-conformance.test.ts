@@ -1,27 +1,23 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { opened, spawnBunRelay } from "./relay-test-helpers";
+import { closeCode, opened, spawnBunRelay } from "./relay-test-helpers";
 
 const MAX_MESSAGE_BYTES = 1024;
 
 type Relay = { baseUrl: string; stop: () => Promise<void> };
 
-const relays: Record<string, () => Promise<Relay>> = {
-  "bun-native": () => spawnedRelay("bun-native"),
-  hono: () => spawnedRelay("hono"),
-  elysia: () => spawnedRelay("elysia"),
-  "node-ws": () => spawnedRelay("node-ws"),
-};
+const examples = ["bun-native", "hono", "elysia", "node-ws"];
 
-async function spawnedRelay(example: string): Promise<Relay> {
-  const relay = await spawnBunRelay(example, { MAX_MESSAGE_BYTES: String(MAX_MESSAGE_BYTES) });
+async function spawnedRelay(example: string, env: Record<string, string> = {}): Promise<Relay> {
+  const relay = await spawnBunRelay(example, { MAX_MESSAGE_BYTES: String(MAX_MESSAGE_BYTES), ...env });
   return { baseUrl: `ws://127.0.0.1:${relay.port}`, stop: relay.stop };
 }
 
 async function connect(
   baseUrl: string,
   room: string,
+  query = "",
 ): Promise<{ socket: WebSocket; received: Uint8Array[] }> {
-  const socket = new WebSocket(`${baseUrl.replace(/\/$/u, "")}/?room=${room}`);
+  const socket = new WebSocket(`${baseUrl.replace(/\/$/u, "")}/?room=${room}${query}`);
   socket.binaryType = "arraybuffer";
   const received: Uint8Array[] = [];
   socket.addEventListener("message", (event) => received.push(new Uint8Array(event.data as ArrayBuffer)));
@@ -36,10 +32,10 @@ const oversizedFrames: Array<[string, () => Uint8Array<ArrayBuffer> | string]> =
   ["text", () => JSON.stringify({ pad: "x".repeat(MAX_MESSAGE_BYTES * 2) })],
 ];
 
-describe.each(Object.entries(relays))("relay conformance: %s", (_name, start) => {
+describe.each(examples)("relay conformance: %s", (example) => {
   let relay: Relay;
   beforeAll(async () => {
-    relay = await start();
+    relay = await spawnedRelay(example);
   }, 20_000);
   afterAll(async () => {
     await relay.stop();
@@ -79,4 +75,26 @@ describe.each(Object.entries(relays))("relay conformance: %s", (_name, start) =>
       peer.socket.close();
     },
   );
+});
+
+describe.each(examples)("relay auth conformance: %s", (example) => {
+  let relay: Relay;
+  beforeAll(async () => {
+    relay = await spawnedRelay(example, { RELAY_AUTH_TOKEN: "secret" });
+  }, 20_000);
+  afterAll(async () => {
+    await relay.stop();
+  });
+
+  it("closes a connection without the token with code 4006 and admits one with it", async () => {
+    const refused = new WebSocket(`${relay.baseUrl}/?room=auth`);
+    expect(await closeCode(refused)).toBe(4006);
+
+    const wrong = new WebSocket(`${relay.baseUrl}/?room=auth&token=nope`);
+    expect(await closeCode(wrong)).toBe(4006);
+
+    const admitted = await connect(relay.baseUrl, "auth", "&token=secret");
+    expect(admitted.socket.readyState).toBe(WebSocket.OPEN);
+    admitted.socket.close();
+  });
 });

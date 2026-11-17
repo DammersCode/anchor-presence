@@ -9,6 +9,7 @@ import {
   RateLimiter,
   sanitizeRoomName,
   tokenAuthCheck,
+  type AuthCheck,
 } from "../_shared/relay-guard";
 
 export type SocketIoRelayOptions = {
@@ -19,7 +20,7 @@ export type SocketIoRelayOptions = {
   maxSockets?: number;
   allowedOrigins?: string[];
   /** Auth hook placeholder: verify a token query param. Default accepts every token. */
-  authCheck?: (token: string) => boolean;
+  authCheck?: AuthCheck;
 };
 
 /** Minimal room-broadcast relay: no message inspection beyond size, no persistence. */
@@ -49,8 +50,20 @@ export function createSocketIoRelay(port: number, options: SocketIoRelayOptions 
 
   const limits = new ConnectionLimits(maxSockets, maxRoomSockets);
 
-  io.use((socket, next) => {
-    if (!authCheck(String(socket.handshake.query.token ?? ""))) {
+  io.use(async (socket, next) => {
+    const { query, headers } = socket.handshake;
+    const ok = await authCheck({
+      token: String(query.token ?? ""),
+      room: sanitizeRoomName(String(query.room ?? "")),
+      origin: headers.origin ?? "",
+      headers: Object.fromEntries(
+        Object.entries(headers).map(([name, value]) => [
+          name,
+          Array.isArray(value) ? value.join(", ") : value,
+        ]),
+      ),
+    });
+    if (!ok) {
       next(new Error("invalid token"));
       return;
     }

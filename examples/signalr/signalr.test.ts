@@ -130,6 +130,17 @@ describe("createSignalRTransport", () => {
     });
   });
 
+  it("ends disconnected and rejects when the first start fails", async () => {
+    const fake = createFakeConnection(HubConnectionState.Disconnected);
+    (fake.connection as unknown as { start: () => Promise<void> }).start = async () => {
+      throw new Error("refused");
+    };
+    const transport = createSignalRTransport(fake.connection);
+
+    await expect(transport.connect?.()).rejects.toThrow("refused");
+    expect(transport.getStatus?.()).toBe("disconnected");
+  });
+
   it("round-trips bytes that are not valid UTF-8", async () => {
     const fake = createFakeConnection(HubConnectionState.Connected);
     const transport = createSignalRTransport(fake.connection);

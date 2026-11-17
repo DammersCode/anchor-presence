@@ -124,11 +124,11 @@ describe("node-ws relay limits", () => {
     return socket;
   }
 
-  it("rejects the upgrade above the per-process cap until a slot frees", async () => {
+  it("rejects connections above the per-process cap with close code 4002 until a slot frees", async () => {
     const first = connect("room-1");
     await opened(first);
 
-    await expect(opened(connect("room-2"))).rejects.toThrow("closed before open");
+    expect(await closeCode(connect("room-2"))).toBe(4002);
 
     first.close();
     await closeCode(first);

@@ -1,5 +1,6 @@
 // Node `ws` on node:http. Same security baseline as the Bun relay example.
-import { createServer, type Server } from "node:http";
+import { createServer, type IncomingMessage, type Server } from "node:http";
+import type { Duplex } from "node:stream";
 import { WebSocketServer, type WebSocket } from "ws";
 import {
   allowedOriginsFromEnv,
@@ -66,25 +67,30 @@ export function createNodeWsRelay(port: number, options: NodeWsRelayOptions = {}
   // keep going" mid-frame), so the real drop-don't-crash size check runs in the message handler below.
   const wss = new WebSocketServer({ noServer: true, maxPayload: Math.max(maxMessageBytes * 4, 1024 * 1024) });
 
+  // accept the upgrade, then close with a code, like the reference relay: a destroyed socket reads as 1006
+  const refuse = (req: IncomingMessage, socket: Duplex, head: Buffer, code: number, reason: string) => {
+    wss.handleUpgrade(req, socket, head, (ws) => ws.close(code, reason));
+  };
+
   httpServer.on("upgrade", (req, socket, head) => {
     const url = new URL(req.url ?? "/", "http://localhost");
     const origin = req.headers.origin ?? "";
     if (!originAllowed(allowedOrigins, origin)) {
-      socket.destroy();
+      refuse(req, socket, head, 4004, "origin not allowed");
       return;
     }
     if (!authCheck(url.searchParams.get("token") ?? "")) {
-      socket.destroy();
+      refuse(req, socket, head, 4006, "invalid token");
       return;
     }
     if (wss.clients.size >= maxSockets) {
-      socket.destroy();
+      refuse(req, socket, head, 4002, "server full");
       return;
     }
     const room = sanitizeRoomName(url.searchParams.get("room"));
     const sockets = rooms.get(room);
     if (sockets && sockets.size >= maxRoomSockets) {
-      socket.destroy();
+      refuse(req, socket, head, 4001, "room full");
       return;
     }
     wss.handleUpgrade(req, socket, head, (ws) => {

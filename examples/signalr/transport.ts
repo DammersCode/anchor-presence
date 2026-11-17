@@ -80,7 +80,13 @@ export function createSignalRTransport(connection: HubConnection): LiveCursorTra
       // Idempotent: a fresh connection reports Disconnected; starting or connected, skip.
       if (connection.state !== HubConnectionState.Disconnected) return;
       setStatus("connecting");
-      await connection.start();
+      try {
+        await connection.start();
+      } catch (error) {
+        // a failed first start is not retried by withAutomaticReconnect: report it instead of hanging at "connecting"
+        setStatus("disconnected");
+        throw error;
+      }
       setStatus("connected");
     },
     disconnect: () => connection.stop(),

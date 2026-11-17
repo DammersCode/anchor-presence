@@ -1,0 +1,53 @@
+---
+title: Relay contract
+description: What every relay must do, the close codes, and the conformance suite that checks it.
+---
+
+A relay forwards bytes between the clients of one room. This page lists what a relay must do so that `createWebSocketTransport` works with it.
+
+## Rules
+
+- Accept binary WebSocket frames. The transport sets `binaryType` to `arraybuffer` and ignores text frames from the relay.
+- Forward each frame, unchanged, to every other socket in the same room. Never send a frame back to its sender.
+- Read the room from the `room` query parameter, for example `/?room=room-42`. Use `main` when the parameter is missing.
+- Limit a room name to letters, digits, `_` and `-`, up to 256 characters. The example relays map any other name to `main`.
+- Read the room token from the `token` query parameter when you need auth.
+- Drop a frame above `MAX_MESSAGE_BYTES` and keep the socket open. This holds for binary and for text frames.
+- Do not decode the presence message. The relay stays blind to its content.
+
+<Callout type="warn">
+  If you serve rooms from the URL path, such as `/room-42`, only the reference relay in `apps/server`
+  understands it. The other relays treat the path as `main`, so two rooms share one stream.
+</Callout>
+
+## Close codes
+
+The reference relay closes a socket with one of these codes:
+
+| Code   | Meaning                                    | The transport reconnects |
+| ------ | ------------------------------------------ | ------------------------ |
+| `4001` | The room is full.                          | Yes                      |
+| `4002` | The server is full.                        | Yes                      |
+| `4003` | The peer is too slow.                      | Yes                      |
+| `4004` | The origin is not allowed.                 | No                       |
+| `4005` | The peer did not answer the liveness ping. | Yes                      |
+| `4006` | The token is missing or wrong.             | No                       |
+
+Pass `shouldReconnect` to `createWebSocketTransport` to change which codes stop the reconnect.
+
+## Check your relay
+
+The suite in `examples/_shared/relay-conformance.test.ts` runs against the Bun, Node, Hono and Elysia relays. It checks that:
+
+1. A binary message reaches the peers of its room byte for byte.
+2. A peer in another room receives nothing.
+3. The sender does not receive its own message.
+4. A binary frame and a text frame above the size cap are dropped, and the relay keeps relaying.
+
+To test a relay of your own, add an entry that starts it and returns its base URL.
+
+## Related
+
+- [Overview](/docs/examples/backends)
+- [WebSocket transport](/docs/dom/websocket-transport)
+- [Security](/docs/get-started/guides/security)

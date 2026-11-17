@@ -25,6 +25,8 @@ export type LiveCursorProviderProps<TContext = unknown, TUser = unknown> = {
   binding?: DomBinding<TContext, TUser>;
   /** Options for the binding the provider creates. */
   bindingOptions?: DomBindingOptions<TContext, TUser>;
+  /** Change this value to rebuild the binding with the current `bindingOptions`. The client stays connected. */
+  bindingKey?: unknown;
   /** The tree below the provider. */
   children?: ReactNode;
 };
@@ -37,12 +39,19 @@ function isBrowser(): boolean {
  * Provides the presence client and the binding to the tree below.
  * The provider creates and disposes the client from `factory`; a `client` prop stays yours to dispose.
  * The provider creates a DOM binding when you do not pass one.
- * The provider reads `bindingOptions` once, when it creates the binding.
+ * The provider reads `bindingOptions` when it creates the binding. Change `bindingKey` to create a new binding with the latest options, without touching the client.
  */
 export function LiveCursorProvider<TContext = unknown, TUser = unknown>(
   props: LiveCursorProviderProps<TContext, TUser>,
 ): ReactNode {
-  const { factory, client: providedClient, binding: providedBinding, bindingOptions, children } = props;
+  const {
+    factory,
+    client: providedClient,
+    binding: providedBinding,
+    bindingOptions,
+    bindingKey,
+    children,
+  } = props;
 
   const [ownClient, setOwnClient] = useState<PresenceClient<TContext, TUser> | null>(null);
   // factory and client changes are ignored after the client is created. The factory runs once per mount.
@@ -72,7 +81,7 @@ export function LiveCursorProvider<TContext = unknown, TUser = unknown>(
   const client = providedClient ?? ownClient;
 
   const [ownBinding, setOwnBinding] = useState<DomBinding<TContext, TUser> | null>(null);
-  // bindingOptions changes are ignored after the binding is created. The binding is created once per client.
+  // bindingOptions changes are ignored until bindingKey changes. The binding is created once per client and key.
   const bindingOptionsRef = useRef(bindingOptions);
   useEffect(() => {
     bindingOptionsRef.current = bindingOptions;
@@ -89,7 +98,7 @@ export function LiveCursorProvider<TContext = unknown, TUser = unknown>(
       created.dispose();
       setOwnBinding(null);
     };
-  }, [client, providedBinding]);
+  }, [client, providedBinding, bindingKey]);
 
   const activeBinding = providedBinding ?? ownBinding;
 

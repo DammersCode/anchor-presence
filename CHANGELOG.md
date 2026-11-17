@@ -13,6 +13,7 @@
 
 ### Added
 
+- `@anchor-presence/react`: `LiveCursorProvider` takes `bindingKey`. Change it to rebuild the binding with the current `bindingOptions` while the client stays connected. The demo uses it for the interpolator switch.
 - `@anchor-presence/core`: `LiveCursorTransport.subscribeClose` and `client.subscribeClose` report why a connection closed (close code, reason and whether the transport reconnects). `createWebSocketTransport` implements it.
 - `@anchor-presence/core`: `client.leave()` tells peers the client left; the next publish or heartbeat announces it again. `createDomBinding` calls it on `pagehide`, so a closed tab disappears at once.
 - `@anchor-presence/core`: `client.sendEvent(type, data?)` and `client.subscribeEvents(listener)` carry one-shot events such as reactions or pings. Events are never stored or resent. Both codecs support them (binary cursor tag 3). `CursorPresence` gains an optional `event` field.

@@ -41,11 +41,8 @@ function Root() {
   if (isReflowBenchRoute) return <ReflowBenchPage />;
 
   return (
-    // key={interpolatorStyle} forces a remount: bindingOptions is read once per binding (see provider.tsx), so a style
-    // change must recreate the whole provider subtree rather than mutate the existing binding in place.
-    // The remount also disposes and recreates the provider's client.
     <LiveCursorProvider
-      key={interpolatorStyle}
+      bindingKey={interpolatorStyle}
       factory={createDemoClient}
       bindingOptions={{
         captureFocus: true,

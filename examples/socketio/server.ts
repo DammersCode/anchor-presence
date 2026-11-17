@@ -2,6 +2,7 @@ import { createServer } from "node:http";
 import { Server, type Socket } from "socket.io";
 import {
   allowedOriginsFromEnv,
+  originAllowed,
   ConnectionLimits,
   limitFromEnv,
   messageByteLength,
@@ -39,6 +40,11 @@ export function createSocketIoRelay(port: number, options: SocketIoRelayOptions 
     // Empty allowlist (dev default) falls back to "*"; socket.io's cors option has no "allow everyone" sentinel.
     cors: { origin: allowedOrigins.length > 0 ? allowedOrigins : "*" },
     maxHttpBufferSize: maxMessageBytes,
+    // cors only guards polling responses; a WebSocket upgrade needs its own origin check
+    allowRequest: (req, callback) => {
+      const allowlist = new Set(allowedOrigins);
+      callback(null, originAllowed(allowlist, req.headers.origin ?? ""));
+    },
   });
 
   const limits = new ConnectionLimits(maxSockets, maxRoomSockets);

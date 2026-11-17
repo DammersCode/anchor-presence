@@ -191,6 +191,7 @@ export type PresenceClientState<TContext, TUser> = {
   store: RemotePresenceStore<TContext, TUser>;
   context: TContext | undefined;
   user: TUser | undefined;
+  onNewPeer: () => void;
   parseUser: ((value: unknown) => TUser | undefined) | undefined;
   parseContext: ((value: unknown) => TContext | undefined) | undefined;
   contextDirty: boolean;
@@ -206,6 +207,7 @@ export type PresenceClientState<TContext, TUser> = {
   publishTimer: TimerHandle | null;
   heartbeatTimer: TimerHandle | null;
   sweepTimer: TimerHandle | null;
+  newPeerTimer: TimerHandle | null;
   status: ConnectionStatus;
   contextListeners: Set<() => void>;
   teardowns: Array<() => void>;

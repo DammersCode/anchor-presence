@@ -12,8 +12,21 @@ export const METHOD_SEND = "OnPresence";
 // share one encoding.
 export { jsonCodec };
 
-const encoder = new TextEncoder();
-const decoder = new TextDecoder();
+// The hub relays strings, so bytes travel as base64 and any codec survives the trip.
+function toBase64(bytes: Uint8Array): string {
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCodePoint(byte);
+  return btoa(binary);
+}
+
+function fromBase64(text: string): Uint8Array | null {
+  try {
+    const binary = atob(text);
+    return Uint8Array.from(binary, (char) => char.codePointAt(0) ?? 0);
+  } catch {
+    return null;
+  }
+}
 
 /** Maps a `HubConnection`'s state onto core's `ConnectionStatus`. */
 export function mapStatus(state: HubConnectionState): ConnectionStatus {
@@ -57,7 +70,8 @@ export function createSignalRTransport(connection: HubConnection): LiveCursorTra
   connection.onclose(() => setStatus("disconnected"));
 
   connection.on(EVENT_RECEIVED, (payload: string) => {
-    const bytes = encoder.encode(payload);
+    const bytes = fromBase64(payload);
+    if (bytes === null) return;
     for (const listener of dataListeners) listener(bytes);
   });
 
@@ -72,7 +86,7 @@ export function createSignalRTransport(connection: HubConnection): LiveCursorTra
     disconnect: () => connection.stop(),
     send: async (data) => {
       if (status !== "connected") return;
-      await connection.send(METHOD_SEND, decoder.decode(data));
+      await connection.send(METHOD_SEND, toBase64(data));
     },
     subscribe: (listener) => {
       dataListeners.add(listener);

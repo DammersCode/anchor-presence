@@ -1342,3 +1342,59 @@ describe("createPresenceClient visibilitychange publish flush", () => {
     expect(sent).toHaveLength(1); // only the leave message
   });
 });
+
+describe("late join", () => {
+  it("answers a first message from an unknown peer with one full publish", () => {
+    vi.useFakeTimers();
+    const { transport, sent, emit } = makeTransport();
+    const client = createPresenceClient({ transport, idFactory, user: { name: "Ada" }, heartbeatMs: 60_000 });
+    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.1, v: 0.1 }] });
+    vi.advanceTimersByTime(100);
+    const before = sent.length;
+
+    emit(
+      new TextEncoder().encode(
+        JSON.stringify({ version: 1, clientId: "peer", session: "s", sequence: 0, cursor: null }),
+      ),
+    );
+    vi.advanceTimersByTime(600);
+
+    expect(sent.length).toBe(before + 1);
+    expect(decodeSent(sent.at(-1)!)).toMatchObject({ user: { name: "Ada" } });
+
+    emit(
+      new TextEncoder().encode(
+        JSON.stringify({ version: 1, clientId: "peer", session: "s", sequence: 1, cursor: null }),
+      ),
+    );
+    vi.advanceTimersByTime(600);
+    expect(sent.length).toBe(before + 1);
+    client.dispose();
+    vi.useRealTimers();
+  });
+});
+
+describe("remote field validation warning", () => {
+  it("warns once in dev mode when a remote user arrives without parseUser", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { transport, emit } = makeTransport();
+    const client = createPresenceClient({ transport, idFactory });
+    for (const sequence of [0, 1]) {
+      emit(
+        new TextEncoder().encode(
+          JSON.stringify({
+            version: 1,
+            clientId: "p",
+            session: "s",
+            sequence,
+            cursor: null,
+            user: { name: "x" },
+          }),
+        ),
+      );
+    }
+    expect(warn.mock.calls.filter((call) => String(call[0]).includes("parseUser"))).toHaveLength(1);
+    client.dispose();
+    warn.mockRestore();
+  });
+});

@@ -67,7 +67,7 @@ public partial class PresenceHub : Hub
 ```
 
 - A client connects with a `room` query parameter on the hub URL (`/hubs/presence?room=main`). `OnConnectedAsync` adds the connection to that room's group.
-- A client sends an update by invoking the `OnPresence` hub method, passing the JSON presence message as a string.
+- A client sends an update by invoking the `OnPresence` hub method, passing the presence message as a base64 string, so any codec works.
 - The hub sends the same string as a `PresenceReceived` event to every other connection in the same room.
 - An invalid or missing room name falls back to `"main"` (see `RoomFor` in `Hub/PresenceHub.cs`).
 

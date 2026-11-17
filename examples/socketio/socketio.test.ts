@@ -41,6 +41,41 @@ describe("Socket.IO transport integration", () => {
     expect(client.getStatus()).toBe("connected");
   });
 
+  it("refuses a WebSocket upgrade from an origin outside the allowlist", async () => {
+    const guarded = await createSocketIoRelay(0, { allowedOrigins: ["https://good.example"] });
+    try {
+      const evil = io(guarded.url, {
+        transports: ["websocket"],
+        extraHeaders: { Origin: "https://evil.example" },
+        reconnection: false,
+      });
+      sockets.push(evil);
+      const outcome = await new Promise<string>((resolve) => {
+        evil.on("connect", () => resolve("connected"));
+        evil.on("connect_error", () => resolve("refused"));
+      });
+      expect(outcome).toBe("refused");
+    } finally {
+      await guarded.close();
+    }
+  });
+
+  it("ends disconnected when the relay refuses the token", async () => {
+    const strict = await createSocketIoRelay(0, { authCheck: () => false });
+    try {
+      const socket = io(strict.url, { transports: ["websocket"], query: { token: "wrong" } });
+      sockets.push(socket);
+      const client = createPresenceClient({ transport: createSocketIoTransport(socket) });
+      clients.push(client);
+      await vi.waitFor(() => expect(client.getStatus()).toBe("disconnected"), {
+        timeout: 5000,
+        interval: 25,
+      });
+    } finally {
+      await strict.close();
+    }
+  });
+
   it("relays a presence update from one client to another in the same room", async () => {
     const clientA = connectClient("room-1");
     const clientB = connectClient("room-1");

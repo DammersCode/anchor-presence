@@ -3,6 +3,7 @@ import type { PresenceClientState } from "./types.js";
 
 const PUBLISH_RETRY_INITIAL_MS = 50;
 const PUBLISH_RETRY_MAX_MS = 2000;
+const NEW_PEER_JITTER_MS = 500;
 
 // Minimal DOM surface; core builds without the DOM lib so this stays a structural type.
 type DocumentLike = {
@@ -23,6 +24,8 @@ export type PublishLoop = {
   markPending: () => void;
   /** Marks a full publish pending after a reconnect and schedules one. */
   markReconnected: () => void;
+  /** Schedules one full publish after a short random delay, so a new peer learns this client at once. */
+  requestFullPublish: () => void;
   /** Sends the full state on the heartbeat and clears the pending flag on success. */
   sendHeartbeat: () => void;
   /** Flushes a pending publish as soon as the page becomes visible again. */
@@ -113,6 +116,17 @@ export function createPublishLoop<TContext, TUser>(state: PresenceClientState<TC
     schedulePublish();
   }
 
+  // own timer: sharing the publish timer would delay ordinary publishes by the jitter
+  function requestFullPublish(): void {
+    if (state.newPeerTimer !== null) return;
+    state.newPeerTimer = state.scheduler.setTimeout(() => {
+      state.newPeerTimer = null;
+      if (state.disposed) return;
+      state.pendingFullPublish = true;
+      markPending();
+    }, Math.random() * NEW_PEER_JITTER_MS);
+  }
+
   function sendHeartbeat(): void {
     if (send(state.latestCursor, true)) state.pendingPublish = false;
   }
@@ -133,5 +147,5 @@ export function createPublishLoop<TContext, TUser>(state: PresenceClientState<TC
     state.teardowns.push(() => browserDocument.removeEventListener("visibilitychange", onVisibilityChange));
   }
 
-  return { send, markPending, markReconnected, sendHeartbeat, wireVisibility };
+  return { send, markPending, markReconnected, requestFullPublish, sendHeartbeat, wireVisibility };
 }

@@ -1,4 +1,4 @@
-import { act, useCallback } from "react";
+import { act, useCallback, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ResolvedCursor } from "@anchor-presence/dom";
@@ -193,5 +193,36 @@ describe("useRemoteCursorsSelector", () => {
     act(() => {
       root.unmount();
     });
+  });
+
+  it("recomputes when select changes without a new snapshot", () => {
+    const { client } = makeFakeClient();
+    const fake = makeFakeBinding();
+    fake.publish([cursor("a"), cursor("b")]);
+    const seen: string[][] = [];
+    let setOnlyA: (value: boolean) => void = () => {};
+
+    function Probe() {
+      const [onlyA, setState] = useState(false);
+      setOnlyA = setState;
+      const select = useCallback(
+        (cursors: ResolvedCursor[]) =>
+          cursors.filter((c) => !onlyA || c.clientId === "a").map((c) => c.clientId),
+        [onlyA],
+      );
+      seen.push(useRemoteCursorsSelector(select, sameIds));
+      return null;
+    }
+
+    act(() => {
+      createRoot(container).render(
+        <LiveCursorProvider client={client} binding={fake.binding}>
+          <Probe />
+        </LiveCursorProvider>,
+      );
+    });
+    act(() => setOnlyA(true));
+
+    expect(seen.at(-1)).toEqual(["a"]);
   });
 });

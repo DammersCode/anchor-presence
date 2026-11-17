@@ -34,8 +34,13 @@ export function useRemoteCursorsSelector<TSelected, TContext = unknown, TUser = 
 ): TSelected {
   const { binding } = useLiveCursorContext<TContext, TUser>();
   const selectedRef = useRef<{ value: TSelected } | null>(null);
-  // caches select's output by input-array identity, so a repeat snapshot probe skips select() entirely
-  const lastInputRef = useRef<{ cursors: ResolvedCursor<TContext, TUser>[]; value: TSelected } | null>(null);
+  // caches select's output by input array and callbacks, so a repeat snapshot probe skips select() entirely
+  const lastInputRef = useRef<{
+    cursors: ResolvedCursor<TContext, TUser>[];
+    select: typeof select;
+    isEqual: typeof isEqual;
+    value: TSelected;
+  } | null>(null);
 
   const subscribe = useCallback(
     (listener: () => void) => (binding !== null ? binding.subscribe(listener) : () => {}),
@@ -46,14 +51,21 @@ export function useRemoteCursorsSelector<TSelected, TContext = unknown, TUser = 
     const cursors =
       binding !== null ? binding.getSnapshot() : (EMPTY_CURSORS as ResolvedCursor<TContext, TUser>[]);
     const lastInput = lastInputRef.current;
-    if (lastInput !== null && lastInput.cursors === cursors) return lastInput.value;
+    if (
+      lastInput !== null &&
+      lastInput.cursors === cursors &&
+      lastInput.select === select &&
+      lastInput.isEqual === isEqual
+    ) {
+      return lastInput.value;
+    }
 
     const next = select(cursors);
     const previous = selectedRef.current;
     // useSyncExternalStore compares by identity, so an equal selection must return the previous reference
     const value = previous !== null && isEqual(previous.value, next) ? previous.value : next;
     selectedRef.current = { value };
-    lastInputRef.current = { cursors, value };
+    lastInputRef.current = { cursors, select, isEqual, value };
     return value;
   }, [binding, select, isEqual]);
 

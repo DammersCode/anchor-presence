@@ -128,6 +128,7 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     store,
     context: options.context,
     user: options.user,
+    onNewPeer: () => publish.requestFullPublish(),
     parseUser: options.parseUser,
     parseContext: options.parseContext,
     contextDirty: options.context !== undefined,
@@ -143,6 +144,7 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     publishTimer: null,
     heartbeatTimer: null,
     sweepTimer: null,
+    newPeerTimer: null,
     status,
     contextListeners: new Set(),
     teardowns: [],
@@ -270,9 +272,11 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
       if (state.publishTimer !== null) scheduler.clearTimeout(state.publishTimer);
       if (state.heartbeatTimer !== null) scheduler.clearTimeout(state.heartbeatTimer);
       if (state.sweepTimer !== null) scheduler.clearTimeout(state.sweepTimer);
+      if (state.newPeerTimer !== null) scheduler.clearTimeout(state.newPeerTimer);
       state.publishTimer = null;
       state.heartbeatTimer = null;
       state.sweepTimer = null;
+      state.newPeerTimer = null;
       statusMachine.dispose();
       state.contextListeners.clear();
       for (const teardown of state.teardowns.splice(0)) {

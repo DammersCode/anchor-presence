@@ -9,6 +9,8 @@
 
 ### Added
 
+- `@anchor-presence/dom`: `createWebSocketTransport` takes `stableAfterMs` (default `5000`) and `shouldReconnect`. The backoff resets only after a connection stays open that long, so a relay that accepts and then rejects no longer causes a reconnect loop. A close with code 1008 stops reconnecting by default.
+- `@anchor-presence/dom`: `WebSocketLike` accepts the platform `WebSocket` constructor without a cast.
 - `@anchor-presence/react`: `LiveCursorProvider` takes a `factory` prop that creates the client it owns.
 - `@anchor-presence/react`: `CursorLayer` takes a `zIndex` prop; cursors now default to `z-index: 9999` so they stay above most app UI, including dialogs.
 - `@anchor-presence/dom`: `createDomBinding` takes `localCursorCapture` (default `true`). Set it to `false` for a read-only presence client that publishes no pointer input.

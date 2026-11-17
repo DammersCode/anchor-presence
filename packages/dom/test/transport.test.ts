@@ -19,7 +19,7 @@ class FakeWebSocket implements WebSocketLike {
       instance.onopen?.();
     } else if (kind === "close") {
       instance.readyState = FakeWebSocket.CLOSED;
-      instance.onclose?.();
+      instance.onclose?.((payload as { code?: number } | undefined) ?? {});
     } else if (kind === "error") {
       instance.onerror?.();
     } else {
@@ -30,7 +30,7 @@ class FakeWebSocket implements WebSocketLike {
   readonly url: string;
   readyState = FakeWebSocket.CONNECTING;
   onopen: null | (() => void) = null;
-  onclose: null | (() => void) = null;
+  onclose: null | ((event: { code?: number }) => void) = null;
   onerror: null | (() => void) = null;
   onmessage: null | ((event: { data: unknown }) => void) = null;
   binaryType = "";
@@ -42,7 +42,7 @@ class FakeWebSocket implements WebSocketLike {
     FakeWebSocket.instances.push(this);
   }
 
-  send(data: ArrayBufferView): void {
+  send(data: ArrayBufferView<ArrayBuffer>): void {
     this.sent.push(data as Uint8Array);
   }
 
@@ -58,6 +58,8 @@ type MakeOverrides = {
   baseBackoffMs?: number;
   maxBackoffMs?: number;
   random?: () => number;
+  stableAfterMs?: number;
+  shouldReconnect?: (close: { code?: number }) => boolean;
 };
 
 function make(overrides: MakeOverrides = {}) {
@@ -420,5 +422,63 @@ describe("createWebSocketTransport", () => {
     void transport.connect?.();
 
     expect(lastSocket().url).toBe("ws://relay.test/?token=t");
+  });
+
+  it("keeps growing the backoff when a relay accepts and then rejects every connection", () => {
+    vi.useFakeTimers();
+    const transport = make({ baseBackoffMs: 100, maxBackoffMs: 10_000, random: () => 1 });
+    void transport.connect();
+    const gaps: number[] = [];
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      FakeWebSocket.fire(lastSocket(), "open");
+      FakeWebSocket.fire(lastSocket(), "close");
+      const before = FakeWebSocket.instances.length;
+      let waited = 0;
+      while (FakeWebSocket.instances.length === before) {
+        vi.advanceTimersByTime(10);
+        waited += 10;
+      }
+      gaps.push(waited);
+    }
+    expect(gaps).toEqual([100, 200, 400, 800]);
+  });
+
+  it("resets the backoff after a connection stays open for stableAfterMs", () => {
+    vi.useFakeTimers();
+    const transport = make({ baseBackoffMs: 100, random: () => 1, stableAfterMs: 1000 });
+    void transport.connect();
+    FakeWebSocket.fire(lastSocket(), "open");
+    FakeWebSocket.fire(lastSocket(), "close");
+    vi.advanceTimersByTime(100);
+    FakeWebSocket.fire(lastSocket(), "open");
+    vi.advanceTimersByTime(1000);
+    FakeWebSocket.fire(lastSocket(), "close");
+    const before = FakeWebSocket.instances.length;
+    vi.advanceTimersByTime(100);
+    expect(FakeWebSocket.instances).toHaveLength(before + 1);
+  });
+
+  it("does not reconnect after a policy-violation close (1008) and ends disconnected", () => {
+    vi.useFakeTimers();
+    const transport = make();
+    void transport.connect();
+    FakeWebSocket.fire(lastSocket(), "open");
+    FakeWebSocket.fire(lastSocket(), "close", { code: 1008 });
+    expect(transport.getStatus?.()).toBe("disconnected");
+    vi.advanceTimersByTime(60_000);
+    expect(FakeWebSocket.instances).toHaveLength(1);
+  });
+
+  it("lets shouldReconnect veto a reconnect for custom close codes", () => {
+    vi.useFakeTimers();
+    const transport = make({ shouldReconnect: (close) => close.code !== 4401 });
+    void transport.connect();
+    FakeWebSocket.fire(lastSocket(), "close", { code: 4401 });
+    expect(transport.getStatus?.()).toBe("disconnected");
+  });
+
+  it("accepts the platform WebSocket constructor without a cast", () => {
+    const ctor: WebSocketCtor = WebSocket;
+    expect(ctor).toBe(WebSocket);
   });
 });

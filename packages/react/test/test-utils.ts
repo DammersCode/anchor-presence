@@ -31,6 +31,7 @@ export function makeFakeClient<TContext = unknown, TUser = unknown>(): {
       user = next;
     },
     getUser: () => user,
+    leave: () => {},
     sendEvent: () => false,
     subscribeEvents: () => () => {},
     subscribePeers: () => () => {},

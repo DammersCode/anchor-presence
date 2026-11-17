@@ -61,6 +61,7 @@ function makeClient(): {
     subscribeContext: () => () => {},
     setUser: () => {},
     getUser: () => {},
+    leave: () => {},
     sendEvent: () => false,
     subscribeEvents: () => () => {},
     subscribePeers: () => () => {},

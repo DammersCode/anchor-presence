@@ -1343,6 +1343,29 @@ describe("createPresenceClient visibilitychange publish flush", () => {
   });
 });
 
+describe("leave", () => {
+  it("sends a leave message once, and the next publish carries the full state again", () => {
+    vi.useFakeTimers();
+    const { transport, sent } = makeTransport();
+    const client = createPresenceClient({ transport, idFactory, user: { name: "Ada" }, heartbeatMs: 60_000 });
+    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.1, v: 0.1 }] });
+    vi.advanceTimersByTime(100);
+
+    client.leave();
+    client.leave();
+    expect(sent.map((bytes) => decodeSent(bytes).leave)).toEqual([undefined, true]);
+
+    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.2, v: 0.2 }] });
+    vi.advanceTimersByTime(100);
+    expect(decodeSent(sent.at(-1)!)).toMatchObject({
+      user: { name: "Ada" },
+      cursor: { anchors: [{ u: 0.2 }] },
+    });
+    client.dispose();
+    vi.useRealTimers();
+  });
+});
+
 describe("late join", () => {
   it("answers a first message from an unknown peer with one full publish", () => {
     vi.useFakeTimers();

@@ -207,11 +207,17 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
         })
       : { detach() {} };
 
+  // a closed tab never disposes the client: tell peers on pagehide, and the next publish rejoins
+  const pageWindow = environment.window ?? (typeof window === "undefined" ? undefined : window);
+  const leaveOnPageHide = () => client.leave();
+  pageWindow?.addEventListener("pagehide", leaveOnPageHide);
+
   let disposed = false;
   let unregisterTeardown: (() => void) | undefined;
   function dispose(): void {
     if (disposed) return;
     disposed = true;
+    pageWindow?.removeEventListener("pagehide", leaveOnPageHide);
     unregisterTeardown?.();
     autoHandle?.dispose();
     scheduler.dispose();

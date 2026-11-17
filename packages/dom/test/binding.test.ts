@@ -39,6 +39,7 @@ function makeFakeClient() {
     subscribeContext: () => () => {},
     setUser: () => {},
     getUser: () => {},
+    leave: () => {},
     sendEvent: () => false,
     subscribeEvents: () => () => {},
     subscribePeers: () => () => {},
@@ -87,6 +88,7 @@ function makeCapturingClient(samples: (CursorPosition | null)[]): PresenceClient
     subscribeContext: () => () => {},
     setUser: () => {},
     getUser: () => {},
+    leave: () => {},
     sendEvent: () => false,
     subscribeEvents: () => () => {},
     subscribePeers: () => () => {},
@@ -197,6 +199,20 @@ describe("createDomBinding", () => {
     expect(snapshot[0]?.y).toBeCloseTo(50);
 
     binding.dispose();
+  });
+
+  it("tells peers the client left on pagehide, and stops after dispose", () => {
+    const { raf, caf } = makeRafStub();
+    const { client } = makeFakeClient();
+    client.leave = vi.fn();
+    const binding = createDomBinding(client, { environment: { raf, caf } });
+
+    window.dispatchEvent(new Event("pagehide"));
+    expect(client.leave).toHaveBeenCalledTimes(1);
+
+    binding.dispose();
+    window.dispatchEvent(new Event("pagehide"));
+    expect(client.leave).toHaveBeenCalledTimes(1);
   });
 
   it("carries idle from client.getRemotePresence() onto the resolved cursor", () => {

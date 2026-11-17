@@ -107,6 +107,11 @@ export interface PresenceClient<TContext = unknown, TUser = unknown> {
    */
   updateLocalCursor(cursor: CursorPosition | null, pointer?: PointerInfo): void;
   /**
+   * Tells remote peers that this client left, so they remove it at once.
+   * The next publish or heartbeat announces the client again.
+   */
+  leave(): void;
+  /**
    * Sends a one-shot event to every remote peer, for example a reaction or a ping.
    * The client never stores the event, and never resends it.
    * @returns `false` when the client is not connected or the event is invalid.
@@ -216,6 +221,7 @@ export type PresenceClientState<TContext, TUser> = {
   userDirty: boolean;
   sequence: number;
   disposed: boolean;
+  left: boolean;
   latestCursor: CursorPosition | null;
   latestPointer: PointerInfo | undefined;
   pendingPublish: boolean;

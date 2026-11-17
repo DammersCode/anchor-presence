@@ -11,6 +11,7 @@
 
 ### Added
 
+- `@anchor-presence/core`: `client.leave()` tells peers the client left; the next publish or heartbeat announces it again. `createDomBinding` calls it on `pagehide`, so a closed tab disappears at once.
 - `@anchor-presence/core`: `client.sendEvent(type, data?)` and `client.subscribeEvents(listener)` carry one-shot events such as reactions or pings. Events are never stored or resent. Both codecs support them (binary cursor tag 3). `CursorPresence` gains an optional `event` field.
 - `@anchor-presence/core`: `client.subscribePeers(listener)` reports remote clients that join or leave.
 - `@anchor-presence/react`: `useCursorEvents(listener)` subscribes to remote events.

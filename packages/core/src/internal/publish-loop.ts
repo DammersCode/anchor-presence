@@ -70,6 +70,11 @@ export function createPublishLoop<TContext, TUser>(state: PresenceClientState<TC
 
   function send(cursor: CursorPosition | null, includeFull = false, leave = false): boolean {
     if (state.status !== "connected") return false;
+    // peers dropped us on leave, so the next message must carry the full state
+    if (!leave && state.left) {
+      includeFull = true;
+      state.left = false;
+    }
     try {
       const message = buildMessage(cursor, includeFull, leave);
       const bytes = state.codec.encode(message);

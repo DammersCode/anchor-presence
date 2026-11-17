@@ -135,6 +135,7 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     userDirty: options.user !== undefined,
     sequence: 0,
     disposed: false,
+    left: false,
     latestCursor: null,
     latestPointer: undefined,
     pendingPublish: false,
@@ -188,6 +189,11 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
       state.latestCursor = cursor;
       if (pointer !== undefined) state.latestPointer = pointer;
       publish.markPending();
+    },
+
+    leave() {
+      if (state.disposed || state.left) return;
+      if (publish.send(null, false, true)) state.left = true;
     },
 
     sendEvent(type, data) {

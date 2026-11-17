@@ -258,15 +258,16 @@ describe("createDomBinding", () => {
   it("tells peers the client left on pagehide, and stops after dispose", () => {
     const { raf, caf } = makeRafStub();
     const { client } = makeFakeClient();
-    client.leave = vi.fn();
+    const leave = vi.fn();
+    client.leave = leave;
     const binding = createDomBinding(client, { environment: { raf, caf } });
 
     window.dispatchEvent(new Event("pagehide"));
-    expect(client.leave).toHaveBeenCalledTimes(1);
+    expect(leave).toHaveBeenCalledTimes(1);
 
     binding.dispose();
     window.dispatchEvent(new Event("pagehide"));
-    expect(client.leave).toHaveBeenCalledTimes(1);
+    expect(leave).toHaveBeenCalledTimes(1);
   });
 
   it("carries idle from client.getRemotePresence() onto the resolved cursor", () => {

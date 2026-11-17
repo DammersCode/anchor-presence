@@ -110,3 +110,22 @@ export function opened(socket: WebSocket): Promise<void> {
     socket.addEventListener("close", () => reject(new Error("closed before open")));
   });
 }
+
+/** Runs the reference relay (`apps/server`) as a Bun child process on a free port. */
+export async function spawnReferenceRelay(env: Record<string, string> = {}): Promise<SpawnedRelay> {
+  const port = await freePort();
+  const child = spawn("bun", ["run", "--cwd", "apps/server", "index.ts"], {
+    cwd: repoRoot,
+    env: { ...process.env, PORT: String(port), ...env },
+    stdio: "ignore",
+    windowsHide: true,
+  });
+  await waitForPort(port);
+  return {
+    port,
+    stop: async () => {
+      child.kill();
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    },
+  };
+}

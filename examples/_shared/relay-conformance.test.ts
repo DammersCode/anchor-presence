@@ -1,14 +1,16 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { closeCode, opened, spawnBunRelay } from "./relay-test-helpers";
+import { closeCode, opened, spawnBunRelay, spawnReferenceRelay } from "./relay-test-helpers";
 
 const MAX_MESSAGE_BYTES = 1024;
 
 type Relay = { baseUrl: string; stop: () => Promise<void> };
 
-const examples = ["bun-native", "hono", "elysia", "node-ws"];
+const examples = ["reference", "bun-native", "hono", "elysia", "node-ws"];
 
 async function spawnedRelay(example: string, env: Record<string, string> = {}): Promise<Relay> {
-  const relay = await spawnBunRelay(example, { MAX_MESSAGE_BYTES: String(MAX_MESSAGE_BYTES), ...env });
+  const settings = { MAX_MESSAGE_BYTES: String(MAX_MESSAGE_BYTES), ...env };
+  const relay =
+    example === "reference" ? await spawnReferenceRelay(settings) : await spawnBunRelay(example, settings);
   return { baseUrl: `ws://127.0.0.1:${relay.port}`, stop: relay.stop };
 }
 
@@ -96,5 +98,29 @@ describe.each(examples)("relay auth conformance: %s", (example) => {
     const admitted = await connect(relay.baseUrl, "auth", "&token=secret");
     expect(admitted.socket.readyState).toBe(WebSocket.OPEN);
     admitted.socket.close();
+  });
+});
+
+describe.each(examples)("relay rate limit conformance: %s", (example) => {
+  let relay: Relay;
+  beforeAll(async () => {
+    relay = await spawnedRelay(example, { RATE_CAPACITY: "5", RATE_REFILL_PER_SECOND: "1" });
+  }, 20_000);
+  afterAll(async () => {
+    await relay.stop();
+  });
+
+  it("drops frames above the per-socket rate and keeps the socket open", async () => {
+    const sender = await connect(relay.baseUrl, "rate");
+    const peer = await connect(relay.baseUrl, "rate");
+
+    for (let index = 0; index < 40; index += 1) sender.socket.send(new Uint8Array([index]));
+    await settle();
+
+    expect(peer.received.length).toBeGreaterThan(0);
+    expect(peer.received.length).toBeLessThan(15);
+    expect(sender.socket.readyState).toBe(WebSocket.OPEN);
+    sender.socket.close();
+    peer.socket.close();
   });
 });

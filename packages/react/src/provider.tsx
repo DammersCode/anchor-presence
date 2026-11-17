@@ -98,6 +98,7 @@ export function LiveCursorProvider<TContext = unknown, TUser = unknown>(
       created.dispose();
       setOwnBinding(null);
     };
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- bindingKey is the deliberate rebuild trigger
   }, [client, providedBinding, bindingKey]);
 
   const activeBinding = providedBinding ?? ownBinding;

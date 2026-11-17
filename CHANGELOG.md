@@ -4,6 +4,7 @@
 
 ### Breaking
 
+- `@anchor-presence/dom`: a throwing `visibilityPolicy` or interpolator no longer stops the frame loop. The binding keeps the last snapshot and retries on the next change.
 - `@anchor-presence/core`: the default `clientId` and `session` are 12 URL-safe characters (72 random bits) instead of UUIDs. Every message gets about 48 bytes smaller: a steady cursor is 106 bytes in the binary codec and 261 bytes in JSON.
 - `@anchor-presence/dom`: `binding.dispose()` clears the local cursor on the client, so a consumer-owned client leaves no ghost cursor on peers.
 - Example relays: the `authCheck` option now takes a request (`{ token, room, origin, headers }`) and may be async, so it can verify a JWT or authorize per room. It replaces the token-only signature.
@@ -15,6 +16,8 @@
 
 ### Added
 
+- `@anchor-presence/core`: `subscribePeers` also reports an `update` when a remote `user` or `context` changes. A sender that floods events is limited to a burst of 20 and 10 per second.
+- Example relays: an `authCheck` can return `{ clientId, user }`. The node-ws relay then rewrites those fields in every JSON frame, so a peer cannot claim another identity or send a leave for another client. `defineRelayConformance` in `examples/_shared` tests any relay.
 - `bun run perf:score` measures bundle size, wire size, core hot paths, heap per message and, with `--relay`, relay latency, and scores each against a budget.
 - `@anchor-presence/react`: `LiveCursorProvider` takes `clientKey`. Change it to dispose the client the factory made and create a new one, for example to switch rooms without remounting the subtree.
 - `@anchor-presence/core`: after a reconnect the client marks every remote client unconfirmed. An entry that no heartbeat refreshes within `2 * heartbeatMs + 5 s` is removed, so peers that left during the outage do not linger.

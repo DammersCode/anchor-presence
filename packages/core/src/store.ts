@@ -119,6 +119,8 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
     existing.presence = nextPresence;
     existing.lastSeenAt = this.now();
     // a heartbeat that changes nothing observable must not end idle
+    const profileChanged =
+      !Object.is(previous.user, nextPresence.user) || !Object.is(previous.context, nextPresence.context);
     if (!sameObservedPresence(previous, nextPresence)) {
       existing.changedAt = existing.lastSeenAt;
       existing.idle = false;
@@ -126,6 +128,7 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
       this.stableSnapshotDirty = true;
     }
     this.markDirty();
+    if (profileChanged && sameSession) this.notifyPeer({ type: "update", clientId: presence.clientId });
     return true;
   }
 
@@ -215,6 +218,7 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
   /**
    * Adds a listener for clients that join or leave the store.
    * A client joins on its first accepted message, and leaves on a leave message, a removal, or the stale timeout.
+   * It updates when its `user` or `context` changes.
    * @returns A function that removes the listener.
    */
   subscribePeers(listener: (change: PeerChange) => void): () => void {

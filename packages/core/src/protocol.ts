@@ -30,8 +30,11 @@ export type PointerInfo = { type?: PointerType };
  */
 export type PresenceEvent = { type: string; data?: unknown };
 
-/** A remote client that joined or left the store. */
-export type PeerChange = { type: "join" | "leave"; clientId: string };
+/**
+ * A remote client that joined or left the store, or changed its `user` or `context`.
+ * Cursor moves never produce a change.
+ */
+export type PeerChange = { type: "join" | "leave" | "update"; clientId: string };
 
 /** A `PresenceEvent` received from a remote client. */
 export type RemoteEvent = PresenceEvent & { clientId: string };

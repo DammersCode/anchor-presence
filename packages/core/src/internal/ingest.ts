@@ -12,6 +12,31 @@ function hasUnparsedField<TContext, TUser>(
   );
 }
 
+// A peer that floods events gets dropped, per sender, so one client cannot starve the others.
+function createEventAllowance(
+  burst = 20,
+  refillPerSecond = 10,
+  maxSenders = 512,
+): { tryConsume(clientId: string): boolean } {
+  const buckets = new Map<string, { tokens: number; at: number }>();
+  return {
+    tryConsume(clientId) {
+      const now = Date.now();
+      let bucket = buckets.get(clientId);
+      if (bucket === undefined) {
+        if (buckets.size >= maxSenders) buckets.clear();
+        bucket = { tokens: burst, at: now };
+        buckets.set(clientId, bucket);
+      }
+      bucket.tokens = Math.min(burst, bucket.tokens + ((now - bucket.at) / 1000) * refillPerSecond);
+      bucket.at = now;
+      if (bucket.tokens < 1) return false;
+      bucket.tokens -= 1;
+      return true;
+    },
+  };
+}
+
 function emitEvent<TContext, TUser>(state: PresenceClientState<TContext, TUser>, event: RemoteEvent): void {
   for (const listener of state.eventListeners) {
     try {
@@ -45,6 +70,7 @@ function parseField(
  */
 export function wireInbound<TContext, TUser>(state: PresenceClientState<TContext, TUser>): void {
   let warnedUnparsed = false;
+  const eventAllowance = createEventAllowance();
   const unsubscribeTransport = state.transport.subscribe((data) => {
     if (state.disposed) return;
     try {
@@ -54,7 +80,9 @@ export function wireInbound<TContext, TUser>(state: PresenceClientState<TContext
       if (presence === null) return;
       if (presence.clientId === state.clientId) return; // ignore echoes of our own messages
       if (presence.event !== undefined) {
-        emitEvent(state, { ...presence.event, clientId: presence.clientId });
+        if (eventAllowance.tryConsume(presence.clientId)) {
+          emitEvent(state, { ...presence.event, clientId: presence.clientId });
+        }
         return;
       }
       if (state.devMode && !warnedUnparsed && hasUnparsedField(state, presence)) {

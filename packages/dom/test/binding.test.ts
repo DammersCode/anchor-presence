@@ -255,6 +255,42 @@ describe("createDomBinding", () => {
     binding.dispose();
   });
 
+  it("survives a throwing visibility policy and recovers on the next change", () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { raf, caf, flush } = makeRafStub();
+    const { client, pushRemote } = makeFakeClient();
+    let broken = true;
+    const binding = createDomBinding(client, {
+      environment: { raf, caf },
+      resolution: {
+        visibilityPolicy: () => {
+          if (broken) throw new Error("policy bug");
+          return "show";
+        },
+      },
+    });
+    const remote = (sequence: number) => [
+      {
+        version: 1 as const,
+        clientId: "r",
+        session: "s",
+        sequence,
+        cursor: { anchors: [], viewport: { u: 0.5, v: 0.5 } },
+      },
+    ];
+
+    pushRemote(remote(1));
+    expect(() => flush()).not.toThrow();
+    expect(binding.getSnapshot()).toHaveLength(0);
+
+    broken = false;
+    pushRemote(remote(2));
+    flush();
+    expect(binding.getSnapshot()).toHaveLength(1);
+    binding.dispose();
+    error.mockRestore();
+  });
+
   it("clears the local cursor on dispose, so a consumer-owned client leaves no ghost", () => {
     const { raf, caf } = makeRafStub();
     const { client } = makeFakeClient();

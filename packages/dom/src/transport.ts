@@ -143,7 +143,19 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
       : token.then((value) => withToken(baseUrl, value));
   }
 
+  function emitClose(info: TransportClose): void {
+    for (const listener of closeListeners) {
+      try {
+        listener(info);
+      } catch {
+        // a throwing listener must not stop the reconnect
+      }
+    }
+  }
+
   function failConnect(): void {
+    // no socket opened: a token function or the constructor failed, so the app still learns why
+    emitClose({ reason: "connection attempt failed", willReconnect: reconnect });
     if (reconnect) scheduleReconnect();
     else setStatus("disconnected");
   }
@@ -214,13 +226,7 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
         const closeInfo: TransportClose = { willReconnect };
         if (event.code !== undefined) closeInfo.code = event.code;
         if (event.reason) closeInfo.reason = event.reason;
-        for (const listener of closeListeners) {
-          try {
-            listener(closeInfo);
-          } catch {
-            // a throwing listener must not stop the reconnect
-          }
-        }
+        emitClose(closeInfo);
         if (willReconnect) scheduleReconnect();
         else setStatus("disconnected");
       };

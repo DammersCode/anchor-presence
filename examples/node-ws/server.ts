@@ -11,6 +11,8 @@ import {
   sanitizeRoomName,
   slowPeerAction,
   safeAuthCheck,
+  bindIdentity,
+  type AuthIdentity,
   tokenAuthCheck,
   type AuthCheck,
 } from "../_shared/relay-guard";
@@ -33,6 +35,7 @@ export type NodeWsRelayOptions = {
 
 type SocketState = {
   room: string;
+  identity: AuthIdentity | undefined;
   rateLimiter: RateLimiter;
   skipped: boolean;
   alive: boolean;
@@ -88,7 +91,13 @@ export function createNodeWsRelay(port: number, options: NodeWsRelayOptions = {}
         Array.isArray(value) ? value.join(", ") : value,
       ]),
     );
-    if (!(await authCheck({ token: url.searchParams.get("token") ?? "", room: authRoom, origin, headers }))) {
+    const auth = await authCheck({
+      token: url.searchParams.get("token") ?? "",
+      room: authRoom,
+      origin,
+      headers,
+    });
+    if (auth === false) {
       refuse(req, socket, head, 4006, "invalid token");
       return;
     }
@@ -103,13 +112,14 @@ export function createNodeWsRelay(port: number, options: NodeWsRelayOptions = {}
       return;
     }
     wss.handleUpgrade(req, socket, head, (ws) => {
-      wss.emit("connection", ws, room);
+      wss.emit("connection", ws, room, auth === true ? undefined : auth);
     });
   });
 
-  wss.on("connection", (ws: WebSocket, room: string) => {
+  wss.on("connection", (ws: WebSocket, room: string, identity: AuthIdentity | undefined) => {
     const socketState: SocketState = {
       room,
+      identity,
       rateLimiter: new RateLimiter(rateCapacity, rateRefillPerSecond),
       skipped: false,
       alive: true,
@@ -133,6 +143,16 @@ export function createNodeWsRelay(port: number, options: NodeWsRelayOptions = {}
       const message = isBinary ? (data as Buffer) : data.toString();
       if (messageByteLength(message, maxMessageBytes) > maxMessageBytes) return;
 
+      // a verified identity replaces whatever clientId and user the peer claims
+      let outgoing: Buffer | string | Uint8Array = data as Buffer;
+      let outgoingBinary = isBinary;
+      if (socketState.identity !== undefined) {
+        const bound = bindIdentity(message, socketState.identity);
+        if (bound === null) return;
+        outgoing = bound;
+        outgoingBinary = true;
+      }
+
       const peers = rooms.get(room);
       if (!peers) return;
       for (const peer of peers) {
@@ -152,7 +172,7 @@ export function createNodeWsRelay(port: number, options: NodeWsRelayOptions = {}
         }
         peerState.skipped = action === "skip";
         if (action === "skip") continue;
-        peer.send(data, { binary: isBinary });
+        peer.send(outgoing, { binary: outgoingBinary });
       }
     });
 

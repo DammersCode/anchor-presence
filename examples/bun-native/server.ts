@@ -75,7 +75,7 @@ export function createBunRelay(port: number, options: BunRelayOptions = {}) {
           data: {
             room,
             origin,
-            authOk,
+            authOk: authOk !== false,
             admitted: false,
             rateLimiter: new RateLimiter(rateCapacity, rateRefillPerSecond),
           },

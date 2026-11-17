@@ -188,3 +188,40 @@ describe("node-ws relay liveness", () => {
     expect(responsive.readyState).toBe(WebSocket.OPEN);
   });
 });
+
+describe("node-ws relay identity binding", () => {
+  it("rewrites clientId and user of a frame to the identity the auth hook returned", async () => {
+    const relay = await createNodeWsRelay(0, {
+      authCheck: ({ token }) => ({ clientId: `user-${token}`, user: { name: `Name ${token}` } }),
+    });
+    try {
+      const base = relay.url.replace(/^http/u, "ws");
+      const sender = new WebSocket(`${base}/?room=bind&token=ada`);
+      const peer = new WebSocket(`${base}/?room=bind&token=bob`);
+      peer.binaryType = "arraybuffer";
+      const received: unknown[] = [];
+      peer.addEventListener("message", (event) =>
+        received.push(JSON.parse(new TextDecoder().decode(event.data as ArrayBuffer))),
+      );
+      await Promise.all([opened(sender), opened(peer)]);
+
+      const forged = {
+        version: 1,
+        clientId: "someone-else",
+        session: "s",
+        sequence: 1,
+        cursor: null,
+        leave: true,
+      };
+      sender.send(new TextEncoder().encode(JSON.stringify(forged)));
+      sender.send(new Uint8Array([0x41, 0x02, 0xff]));
+
+      await vi.waitFor(() => expect(received).toHaveLength(1), { timeout: 3000, interval: 25 });
+      expect(received[0]).toMatchObject({ clientId: "user-ada", user: { name: "Name ada" } });
+      sender.close();
+      peer.close();
+    } finally {
+      await relay.close();
+    }
+  });
+});

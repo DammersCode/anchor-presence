@@ -131,17 +131,55 @@ export type AuthRequest = {
  * Auth hook: decides whether a connection may join. It may be async, for example to verify a JWT or look up a session.
  * The default accepts everything, matching the reference relay's opt-in auth.
  */
-export type AuthCheck = (request: AuthRequest) => boolean | Promise<boolean>;
+export type AuthCheck = (request: AuthRequest) => AuthResult | Promise<AuthResult>;
+
+/** Who the relay says a connection is. A relay that supports it rewrites `clientId` and `user` of every JSON frame to these values. */
+export type AuthIdentity = { clientId: string; user?: unknown };
+
+/** `true` admits, `false` refuses, an identity admits and binds the connection to that identity. */
+export type AuthResult = boolean | AuthIdentity;
 
 /** Wraps an auth hook so a throw or a rejection counts as a refusal, never as a crash or a hang. */
-export function safeAuthCheck(check: AuthCheck): (request: AuthRequest) => Promise<boolean> {
+export function safeAuthCheck(check: AuthCheck): (request: AuthRequest) => Promise<AuthResult> {
   return async (request) => {
     try {
-      return (await check(request)) === true;
+      const result = await check(request);
+      if (result === true) return true;
+      if (
+        typeof result === "object" &&
+        result !== null &&
+        typeof result.clientId === "string" &&
+        result.clientId !== ""
+      ) {
+        return result;
+      }
+      return false;
     } catch {
       return false;
     }
   };
+}
+
+const identityEncoder = new TextEncoder();
+const identityDecoder = new TextDecoder();
+
+/**
+ * Rewrites a JSON presence frame so it carries the identity the relay verified.
+ * Returns `null` for a frame that is not a JSON object, for example a binaryCodec frame: drop it.
+ */
+export function bindIdentity(frame: Uint8Array | string, identity: AuthIdentity): Uint8Array | null {
+  try {
+    const parsed: unknown = JSON.parse(typeof frame === "string" ? frame : identityDecoder.decode(frame));
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return null;
+    const message: Record<string, unknown> = {
+      ...(parsed as Record<string, unknown>),
+      clientId: identity.clientId,
+    };
+    if (identity.user !== undefined) message.user = identity.user;
+    return identityEncoder.encode(JSON.stringify(message));
+  } catch {
+    return null;
+  }
 }
 
 export function tokenAuthCheck(expectedToken: string): AuthCheck {

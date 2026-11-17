@@ -539,6 +539,17 @@ describe("createWebSocketTransport", () => {
     ]);
   });
 
+  it("reports a failed token function as a close with a reason", async () => {
+    vi.useFakeTimers();
+    const transport = make({ token: () => Promise.reject(new Error("expired")), baseBackoffMs: 100 });
+    const closes: unknown[] = [];
+    transport.subscribeClose?.((close) => closes.push(close));
+    void transport.connect();
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(closes).toEqual([{ reason: "connection attempt failed", willReconnect: true }]);
+  });
+
   it("keeps reconnecting when a close listener throws", () => {
     vi.useFakeTimers();
     const transport = make({ baseBackoffMs: 100, random: () => 1 });

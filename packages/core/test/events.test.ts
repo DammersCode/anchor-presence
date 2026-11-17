@@ -76,6 +76,19 @@ describe("client events", () => {
     receiver.dispose();
   });
 
+  it("drops events from a sender above the burst limit", () => {
+    const { sender, receiver } = pair();
+    const received: RemoteEvent[] = [];
+    receiver.subscribeEvents((event) => received.push(event));
+
+    for (let index = 0; index < 100; index += 1) sender.sendEvent("spam", index);
+
+    expect(received.length).toBeGreaterThan(0);
+    expect(received.length).toBeLessThan(40);
+    sender.dispose();
+    receiver.dispose();
+  });
+
   it("returns false for an invalid type or a disposed client and stops after unsubscribe", () => {
     const { sender, receiver } = pair();
     const received: RemoteEvent[] = [];
@@ -114,13 +127,16 @@ describe("peer changes", () => {
     store.ingest(message("a", 0));
     store.ingest(message("a", 1));
     store.ingest(message("b", 0));
-    store.ingest(message("a", 2, { leave: true }));
+    store.ingest(message("a", 2, { user: { name: "Ada" } }));
+    store.ingest(message("a", 3, { user: { name: "Ada" } }));
+    store.ingest(message("a", 4, { leave: true }));
     now = 2000;
     store.sweep();
 
     expect(changes).toEqual([
       { type: "join", clientId: "a" },
       { type: "join", clientId: "b" },
+      { type: "update", clientId: "a" },
       { type: "leave", clientId: "a" },
       { type: "leave", clientId: "b" },
     ]);

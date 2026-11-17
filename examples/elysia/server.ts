@@ -86,7 +86,11 @@ export function createElysiaRelay(port: number, options: ElysiaRelayOptions = {}
       if (!state) return;
       if (!state.rateLimiter.tryConsume()) return;
 
-      const payload = typeof message === "string" ? message : (message as ArrayBuffer);
+      // Elysia parses a JSON text frame into an object, which has no byteLength; measure its text form
+      const payload =
+        message instanceof ArrayBuffer || ArrayBuffer.isView(message) || typeof message === "string"
+          ? message
+          : JSON.stringify(message);
       if (messageByteLength(payload, maxMessageBytes) > maxMessageBytes) return;
 
       ws.publish(sanitizeRoomName(ws.data.query.room), payload);

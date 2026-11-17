@@ -1,4 +1,4 @@
 {
   "title": "Backends",
-  "pages": ["index", "bun-native", "node-ws", "hono", "elysia", "socketio", "signalr"]
+  "pages": ["index", "relay-contract", "bun-native", "node-ws", "hono", "elysia", "socketio", "signalr"]
 }

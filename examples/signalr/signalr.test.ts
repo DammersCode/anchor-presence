@@ -74,7 +74,7 @@ describe("createSignalRTransport", () => {
     const seen: Uint8Array[] = [];
     const off = transport.subscribe((data) => seen.push(data));
 
-    fake.deliver(JSON_MESSAGE);
+    fake.deliver(btoa(JSON_MESSAGE));
 
     expect(seen).toHaveLength(1);
     expect(new TextDecoder().decode(seen[0]!)).toBe(JSON_MESSAGE);
@@ -89,7 +89,7 @@ describe("createSignalRTransport", () => {
     const off = transport.subscribe((data) => seen.push(data));
     off();
 
-    fake.deliver(JSON_MESSAGE);
+    fake.deliver(btoa(JSON_MESSAGE));
 
     expect(seen).toHaveLength(0);
   });
@@ -103,7 +103,7 @@ describe("createSignalRTransport", () => {
     transport.subscribe((data) => first.push(data));
     transport.subscribe((data) => second.push(data));
 
-    fake.deliver(JSON_MESSAGE);
+    fake.deliver(btoa(JSON_MESSAGE));
 
     expect(first).toHaveLength(1);
     expect(second).toHaveLength(1);
@@ -117,17 +117,30 @@ describe("createSignalRTransport", () => {
     expect(fake.received).toHaveLength(0);
   });
 
-  it("sends the JSON payload once connected", async () => {
+  it("sends the payload as base64 once connected", async () => {
     const fake = createFakeConnection(HubConnectionState.Connected);
     const transport = createSignalRTransport(fake.connection);
 
     await expect(transport.send(new TextEncoder().encode(JSON_MESSAGE))).resolves.toBeUndefined();
     expect(fake.received).toHaveLength(1);
-    expect(JSON.parse(fake.received[0]!)).toMatchObject({
+    expect(JSON.parse(atob(fake.received[0]!))).toMatchObject({
       clientId: "client-b",
       sequence: 3,
       cursor: { anchors: [{ id: "overview-card", u: 0.25, v: 0.5 }] },
     });
+  });
+
+  it("round-trips bytes that are not valid UTF-8", async () => {
+    const fake = createFakeConnection(HubConnectionState.Connected);
+    const transport = createSignalRTransport(fake.connection);
+    const seen: Uint8Array[] = [];
+    transport.subscribe((data) => seen.push(data));
+    const bytes = new Uint8Array([0x41, 0xff, 0x00, 0xc3, 0x28]);
+
+    await transport.send(bytes);
+    fake.deliver(fake.received[0]!);
+
+    expect(Array.from(seen[0]!)).toEqual(Array.from(bytes));
   });
 
   it("reports the current status on subscribe and tracks hub status changes", () => {

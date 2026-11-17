@@ -89,6 +89,13 @@ export default defineConfig({
           include: ["examples/elysia/**/*.test.ts"],
         },
       },
+      {
+        test: {
+          name: "relay-conformance",
+          environment: "node",
+          include: ["examples/_shared/**/*.test.ts"],
+        },
+      },
     ],
   },
 });

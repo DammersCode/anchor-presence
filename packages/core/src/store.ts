@@ -176,6 +176,11 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
     }
   }
 
+  /** Returns whether the store holds an entry for `clientId`. */
+  has(clientId: string): boolean {
+    return this.entries.has(clientId);
+  }
+
   /**
    * Removes one client from the store.
    * Removing a client that is not present changes nothing.

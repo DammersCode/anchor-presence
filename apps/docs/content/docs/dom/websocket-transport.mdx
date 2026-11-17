@@ -11,7 +11,7 @@ description: createWebSocketTransport, the default URL, the auth token, and reco
 import { createWebSocketTransport } from "@anchor-presence/dom";
 import { createPresenceClient } from "@anchor-presence/core";
 
-const transport = createWebSocketTransport({ url: "wss://relay.example.com/room-42" });
+const transport = createWebSocketTransport({ url: "wss://relay.example.com/?room=room-42" });
 const client = createPresenceClient({ transport });
 ```
 

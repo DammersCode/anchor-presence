@@ -20,6 +20,8 @@ export function createSocketIoTransport(socket: Socket): LiveCursorTransport {
   socket.on("connect", () => setStatus("connected"));
   socket.on("disconnect", () => setStatus("disconnected"));
   socket.io.on("reconnect_attempt", () => setStatus("reconnecting"));
+  // an auth or origin refusal stops the client from retrying: report it instead of staying at "connecting"
+  socket.on("connect_error", () => setStatus(socket.active ? "reconnecting" : "disconnected"));
 
   return {
     connect: () => {

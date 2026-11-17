@@ -1497,6 +1497,27 @@ describe("default shape check for remote fields", () => {
     client.dispose();
   });
 
+  it("accepts only plain values where the local value is null or an empty array", () => {
+    const { transport, emit } = makeTransport();
+    const client = createPresenceClient<unknown, { name: string; avatar: string | null; tags: string[] }>({
+      transport,
+      idFactory,
+      user: { name: "Ada", avatar: null, tags: [] },
+    });
+
+    remote(emit, "object-avatar", { name: "B", avatar: { evil: true }, tags: [] });
+    remote(emit, "object-tag", { name: "B", avatar: null, tags: [{ evil: true }] });
+    remote(emit, "fine", { name: "B", avatar: "a.png", tags: ["x"] });
+
+    const users = Object.fromEntries(client.getRemotePresence().map((p) => [p.clientId, p.user]));
+    expect(users).toEqual({
+      "object-avatar": undefined,
+      "object-tag": undefined,
+      fine: { name: "B", avatar: "a.png", tags: ["x"] },
+    });
+    client.dispose();
+  });
+
   it("lets an explicit parseUser replace the default check", () => {
     const { transport, emit } = makeTransport();
     const client = createPresenceClient<unknown, { name: string }>({

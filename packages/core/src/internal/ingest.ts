@@ -9,13 +9,19 @@ function isPlainRecord(value: unknown): value is Record<string, unknown> {
 /**
  * Returns `value` cut to the shape of `sample`, or `undefined` when it does not fit.
  * Objects keep only the keys of the sample, and each kept value must have the sample's type.
- * A `null` or empty sample says nothing about the shape, so it accepts any JSON.
+ * A `null` sample or an empty array says nothing about the type, so it accepts a string, number, boolean or `null` and never an object or array.
  */
+function isScalar(value: unknown): boolean {
+  return (
+    value === null || typeof value === "string" || typeof value === "number" || typeof value === "boolean"
+  );
+}
+
 export function fitShape(sample: unknown, value: unknown): unknown {
-  if (sample === null || sample === undefined) return value;
+  if (sample === null || sample === undefined) return isScalar(value) ? value : undefined;
   if (Array.isArray(sample)) {
     if (!Array.isArray(value)) return undefined;
-    if (sample.length === 0) return value;
+    if (sample.length === 0) return value.every(isScalar) ? value : undefined;
     const fitted = value.map((item) => fitShape(sample[0], item));
     return fitted.includes(undefined) ? undefined : fitted;
   }

@@ -1,4 +1,3 @@
-import { binaryCodec } from "@anchor-presence/core";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { opened, spawnBunRelay } from "./relay-test-helpers";
 
@@ -46,18 +45,12 @@ describe.each(Object.entries(relays))("relay conformance: %s", (_name, start) =>
     await relay.stop();
   });
 
-  it("relays a binaryCodec message byte for byte to peers in the same room only, never back to the sender", async () => {
+  it("relays a binary frame byte for byte to peers in the same room only, never back to the sender", async () => {
     const sender = await connect(relay.baseUrl, "conf-a");
     const peer = await connect(relay.baseUrl, "conf-a");
     const stranger = await connect(relay.baseUrl, "conf-b");
-    const bytes = binaryCodec.encode({
-      version: 1,
-      clientId: "c",
-      session: "s",
-      sequence: 1,
-      cursor: { anchors: [{ id: "a", u: 0.5, v: 0.5 }] },
-      user: { name: "Ada" },
-    });
+    // not valid UTF-8, like a binary codec frame: a relay that decodes text would corrupt it
+    const bytes = new Uint8Array([0x41, 0x02, 0xff, 0x00, 0xc3, 0x28, 0x80, 0x7f]);
 
     sender.socket.send(new Uint8Array(bytes));
     await settle();

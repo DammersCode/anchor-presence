@@ -119,8 +119,10 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
     existing.presence = nextPresence;
     existing.lastSeenAt = this.now();
     // a heartbeat that changes nothing observable must not end idle
-    const profileChanged =
-      !Object.is(previous.user, nextPresence.user) || !Object.is(previous.context, nextPresence.context);
+    // a returning clientId with a new session counts as changed when its user differs by value
+    const profileChanged = sameSession
+      ? !Object.is(previous.user, nextPresence.user) || !Object.is(previous.context, nextPresence.context)
+      : !jsonEqual(previous.user, nextPresence.user);
     if (!sameObservedPresence(previous, nextPresence)) {
       existing.changedAt = existing.lastSeenAt;
       existing.idle = false;
@@ -128,7 +130,7 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
       this.stableSnapshotDirty = true;
     }
     this.markDirty();
-    if (profileChanged && sameSession) this.notifyPeer({ type: "update", clientId: presence.clientId });
+    if (profileChanged) this.notifyPeer({ type: "update", clientId: presence.clientId });
     return true;
   }
 

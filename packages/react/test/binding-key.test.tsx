@@ -49,6 +49,35 @@ describe("LiveCursorProvider bindingKey", () => {
   });
 });
 
+describe("LiveCursorProvider local cursor on teardown", () => {
+  it("keeps the local cursor when the binding is rebuilt and clears it on unmount", () => {
+    const { client } = makeFakeClient();
+    const updates: unknown[] = [];
+    client.updateLocalCursor = (cursor) => {
+      updates.push(cursor);
+    };
+    const container = document.createElement("div");
+    document.body.append(container);
+    const root = createRoot(container);
+    const render = (key: string) =>
+      act(() =>
+        root.render(
+          <LiveCursorProvider client={client} bindingKey={key}>
+            {null}
+          </LiveCursorProvider>,
+        ),
+      );
+
+    render("a");
+    render("b");
+    expect(updates).toEqual([]);
+
+    act(() => root.unmount());
+    expect(updates).toEqual([null]);
+    container.remove();
+  });
+});
+
 describe("LiveCursorProvider clientKey", () => {
   it("disposes the old client and runs the factory again when the key changes", () => {
     const made: ReturnType<typeof makeFakeClient>[] = [];

@@ -44,6 +44,11 @@ describe("event messages", () => {
     ).toBeUndefined();
   });
 
+  it("validate drops an invalid event instead of passing it on as a plain presence", () => {
+    const dropped = validatePresence({ ...eventMessage, event: { type: "big", data: "x".repeat(9000) } });
+    expect(dropped).toBeNull();
+  });
+
   it("validate ignores an event on a message that carries a cursor", () => {
     const message = { ...eventMessage, cursor: { anchors: [] } };
     expect(validatePresence(message)?.event).toBeUndefined();
@@ -89,6 +94,19 @@ describe("client events", () => {
     receiver.dispose();
   });
 
+  it("returns false for an event above the field limits and leaves the cursor alone", () => {
+    const { sender, receiver } = pair();
+    sender.updateLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
+    vi.advanceTimersByTime(100);
+
+    expect(sender.sendEvent("big", "x".repeat(9000))).toBe(false);
+    vi.advanceTimersByTime(100);
+
+    expect(receiver.getRemoteSnapshot()[0]?.cursor).not.toBeNull();
+    sender.dispose();
+    receiver.dispose();
+  });
+
   it("returns false for an invalid type or a disposed client and stops after unsubscribe", () => {
     const { sender, receiver } = pair();
     const received: RemoteEvent[] = [];
@@ -127,6 +145,7 @@ describe("peer changes", () => {
     store.ingest(message("a", 0));
     store.ingest(message("a", 1));
     store.ingest(message("b", 0));
+    store.ingest({ ...message("b", 0, { user: { name: "New" } }), session: "s2" });
     store.ingest(message("a", 2, { user: { name: "Ada" } }));
     store.ingest(message("a", 3, { user: { name: "Ada" } }));
     store.ingest(message("a", 4, { leave: true }));
@@ -136,6 +155,7 @@ describe("peer changes", () => {
     expect(changes).toEqual([
       { type: "join", clientId: "a" },
       { type: "join", clientId: "b" },
+      { type: "update", clientId: "b" },
       { type: "update", clientId: "a" },
       { type: "leave", clientId: "a" },
       { type: "leave", clientId: "b" },

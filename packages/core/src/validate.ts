@@ -221,8 +221,10 @@ export function validatePresence<TContext = unknown, TUser = unknown>(
 
     if (input.leave === true && cursor === null) message.leave = true;
 
-    const event = cursor === null ? validateEvent(input.event, resolved) : undefined;
-    if (event !== undefined) {
+    if (cursor === null && input.event !== undefined) {
+      // an event that fails validation is dropped; it must never fall through as a presence that clears the cursor
+      const event = validateEvent(input.event, resolved);
+      if (event === undefined) return null;
       message.event = event;
       return message;
     }

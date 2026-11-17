@@ -308,7 +308,11 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
       state.contextListeners.clear();
       state.eventListeners.clear();
       for (const teardown of state.teardowns.splice(0)) {
-        teardown();
+        try {
+          teardown();
+        } catch {
+          // one throwing teardown must not skip the rest, or leave the transport connected
+        }
       }
       try {
         void transport.disconnect?.();

@@ -84,6 +84,15 @@ export function LiveCursorProvider<TContext = unknown, TUser = unknown>(
 
   const client = providedClient ?? ownClient;
 
+  // set on unmount only, so a bindingKey rebuild keeps the local cursor and an unmount clears it
+  const unmountingRef = useRef(false);
+  useEffect(() => {
+    unmountingRef.current = false;
+    return () => {
+      unmountingRef.current = true;
+    };
+  }, []);
+
   const [ownBinding, setOwnBinding] = useState<DomBinding<TContext, TUser> | null>(null);
   // bindingOptions changes are ignored until bindingKey changes. The binding is created once per client and key.
   const bindingOptionsRef = useRef(bindingOptions);
@@ -99,7 +108,8 @@ export function LiveCursorProvider<TContext = unknown, TUser = unknown>(
     const created = createDomBinding(client, bindingOptionsRef.current);
     setOwnBinding(created);
     return () => {
-      created.dispose();
+      // oxlint-disable-next-line react/refs -- read at cleanup time on purpose
+      created.dispose({ keepLocalCursor: !unmountingRef.current });
       setOwnBinding(null);
     };
     // oxlint-disable-next-line react/exhaustive-effect-dependencies -- bindingKey is the deliberate rebuild trigger

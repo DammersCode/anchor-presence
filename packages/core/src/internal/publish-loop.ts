@@ -1,4 +1,5 @@
 import type { CursorPosition, CursorPresence } from "../protocol.js";
+import { validatePresence } from "../validate.js";
 import type { PresenceClientState } from "./types.js";
 
 const PUBLISH_RETRY_INITIAL_MS = 50;
@@ -103,6 +104,8 @@ export function createPublishLoop<TContext, TUser>(state: PresenceClientState<TC
         cursor: null,
         event: data === undefined ? { type } : { type, data },
       };
+      // the receiver drops an event above its limits, so refuse it here instead of reporting success
+      if (validatePresence(message, state.validationLimits)?.event === undefined) return false;
       const result = state.transport.send(state.codec.encode(message));
       if (result && typeof result.catch === "function") result.catch(() => {});
       return true;

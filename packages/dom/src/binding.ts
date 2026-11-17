@@ -107,8 +107,9 @@ export type DomBinding<TContext = unknown, TUser = unknown> = {
   /**
    * Stops the binding and clears its listeners.
    * The binding sends one final empty snapshot before it stops.
+   * It also clears the local cursor on the client, unless you pass `keepLocalCursor`, for example when you rebuild the binding.
    */
-  dispose(): void;
+  dispose(options?: { keepLocalCursor?: boolean }): void;
 };
 
 const EMPTY_SNAPSHOT: ResolvedCursor[] = [];
@@ -229,10 +230,11 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
 
   let disposed = false;
   let unregisterTeardown: (() => void) | undefined;
-  function dispose(): void {
+  function dispose(disposeOptions?: { keepLocalCursor?: boolean }): void {
     if (disposed) return;
     disposed = true;
-    client.updateLocalCursor(null); // a consumer-owned client stays alive: do not leave the last cursor on peers
+    // a consumer-owned client stays alive: do not leave the last cursor on peers
+    if (disposeOptions?.keepLocalCursor !== true) client.updateLocalCursor(null);
     pageWindow?.removeEventListener("pagehide", leaveOnPageHide);
     unregisterTeardown?.();
     autoHandle?.dispose();

@@ -66,7 +66,7 @@ const WS_OPEN = 1;
 function resolveUrl(options: WebSocketTransportOptions): string {
   if (options.url !== undefined) return options.url;
   if (typeof window === "undefined") {
-    throw new Error("createWebSocketTransport: pass `url` when `window` is not available");
+    throw new TypeError("createWebSocketTransport: pass `url` when `window` is not available");
   }
   const location = window.location;
   const protocol = location.protocol === "https:" ? "wss:" : "ws:";

@@ -6,6 +6,13 @@ export type PageId = "dashboard" | "orders" | "customers" | "products";
 export type DemoContext = { page?: PageId; dialog?: "settings" };
 export type DemoUser = { name: string; color: string };
 
+export function parseDemoUser(value: unknown): DemoUser | undefined {
+  if (typeof value !== "object" || value === null) return undefined;
+  const { name, color } = value as Record<string, unknown>;
+  if (typeof name !== "string" || typeof color !== "string") return undefined;
+  return { name: name.slice(0, 40), color };
+}
+
 export { CURSOR_PALETTE, DEFAULT_CURSOR_COLOR, isKnownCursorColor, colorForName } from "./palette";
 
 const params = new URLSearchParams(window.location.search);

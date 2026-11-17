@@ -250,7 +250,7 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
 
 // A heartbeat decodes to new but equal objects; reuse the previous one so identity checks hold.
 function keepIdentity<T>(next: T | undefined, previous: T | null | undefined): T | undefined {
-  return next !== undefined && previous != null && jsonEqual(next, previous) ? (previous as T) : next;
+  return next !== undefined && previous != null && jsonEqual(next, previous) ? previous : next;
 }
 
 function jsonEqual(a: unknown, b: unknown): boolean {

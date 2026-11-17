@@ -2,8 +2,8 @@ import { validatePresence } from "../validate.js";
 import type { PresenceClientState } from "./types.js";
 
 // A field the parser rejects is dropped, so the receiver keeps the previous value.
-function parseField<T extends { user?: unknown; context?: unknown }>(
-  presence: T,
+function parseField(
+  presence: { user?: unknown; context?: unknown },
   key: "user" | "context",
   parse: (value: unknown) => unknown,
 ): void {
@@ -12,7 +12,7 @@ function parseField<T extends { user?: unknown; context?: unknown }>(
   try {
     const parsed = parse(value);
     if (parsed === undefined) delete presence[key];
-    else presence[key] = parsed as T[typeof key];
+    else presence[key] = parsed;
   } catch {
     delete presence[key];
   }

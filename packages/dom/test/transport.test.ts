@@ -54,6 +54,7 @@ class FakeWebSocket implements WebSocketLike {
 const TEST_URL = "ws://relay.test/?room=main";
 
 type MakeOverrides = {
+  token?: string | (() => string | Promise<string>);
   reconnect?: boolean;
   baseBackoffMs?: number;
   maxBackoffMs?: number;
@@ -484,6 +485,42 @@ describe("createWebSocketTransport", () => {
     } finally {
       vi.unstubAllGlobals();
     }
+  });
+
+  it("asks a token function for a fresh token on every connection attempt", () => {
+    vi.useFakeTimers();
+    let count = 0;
+    const transport = make({ token: () => `t${++count}`, baseBackoffMs: 100, random: () => 1 });
+    void transport.connect();
+    expect(lastSocket().url).toBe(`${TEST_URL}&token=t1`);
+    FakeWebSocket.fire(lastSocket(), "open");
+    FakeWebSocket.fire(lastSocket(), "close");
+    vi.advanceTimersByTime(100);
+    expect(lastSocket().url).toBe(`${TEST_URL}&token=t2`);
+  });
+
+  it("waits for an async token and reconnects when the token call rejects", async () => {
+    vi.useFakeTimers();
+    let calls = 0;
+    const transport = make({
+      token: () => (++calls === 1 ? Promise.reject(new Error("expired")) : Promise.resolve("ok")),
+      baseBackoffMs: 100,
+      random: () => 1,
+    });
+    void transport.connect();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(FakeWebSocket.instances).toHaveLength(0);
+    expect(transport.getStatus?.()).toBe("reconnecting");
+    await vi.advanceTimersByTimeAsync(100);
+    expect(lastSocket().url).toBe(`${TEST_URL}&token=ok`);
+  });
+
+  it("does not reconnect after an auth (4006) or origin (4004) close", () => {
+    vi.useFakeTimers();
+    const transport = make();
+    void transport.connect();
+    FakeWebSocket.fire(lastSocket(), "close", { code: 4006 });
+    expect(transport.getStatus?.()).toBe("disconnected");
   });
 
   it("accepts the platform WebSocket constructor without a cast", () => {

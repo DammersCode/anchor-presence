@@ -25,12 +25,23 @@ When you omit `url`, the transport builds one from `host` (default `window.locat
 
 Set `token` to add a room token to the connection URL. The transport URL-encodes it and appends `token=<value>`, joined with `&` when the URL already has a query string. The relay reads this token to authorize the connection to a room. See [Security](/docs/get-started/guides/security).
 
+If the token expires, pass a function. The transport calls it before every connection attempt, including each reconnect, and waits for a returned promise. When the function throws or rejects, the transport schedules the next attempt:
+
+```ts
+const transport = createWebSocketTransport({
+  url: "wss://relay.example.com/?room=main",
+  token: async () => (await fetch("/api/room-token")).text(),
+});
+```
+
 ## Reconnect and backoff
 
 `reconnect` defaults to `true`. After a connection drop that was not caused by your own `disconnect()` call, the transport schedules a reconnect with exponential backoff:
 
 - The delay doubles on each attempt, starting from `baseBackoffMs` (default `500`), and caps at `maxBackoffMs` (default `8000`).
 - The transport applies full jitter on top of the capped delay, so many clients reconnecting at once do not retry in lockstep.
+- The backoff resets only after a connection stays open for `stableAfterMs` (default `5000`). A relay that accepts a connection and then closes it therefore sees growing delays, not a retry loop.
+- A close with code `1008`, `4004` (origin) or `4006` (auth) stops the reconnect, and the status becomes `disconnected`. Pass `shouldReconnect` to decide for any close code.
 - `random` overrides the jitter source. It defaults to `Math.random` and is useful in a test that needs a deterministic delay.
 
 `connect()` is idempotent while a connection is already connecting or open: a second call does not open a second socket.

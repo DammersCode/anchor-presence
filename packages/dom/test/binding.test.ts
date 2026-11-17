@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { PresenceClient, CursorPresence, CursorPosition } from "@anchor-presence/core";
+import type { ConnectionStatus, PresenceClient, CursorPresence, CursorPosition } from "@anchor-presence/core";
 import { linearInterpolator } from "@anchor-presence/core";
 import { createDomBinding } from "../src/binding";
 
@@ -198,6 +198,58 @@ describe("createDomBinding", () => {
     expect(snapshot[0]?.x).toBeCloseTo(50);
     expect(snapshot[0]?.y).toBeCloseTo(50);
 
+    binding.dispose();
+  });
+
+  it("hides remote cursors while the connection is down and shows them again after", () => {
+    const el = document.createElement("div");
+    el.dataset.anchor = "a";
+    document.body.append(el);
+    vi.spyOn(el, "getBoundingClientRect").mockReturnValue({
+      left: 0,
+      top: 0,
+      width: 100,
+      height: 100,
+      right: 100,
+      bottom: 100,
+      x: 0,
+      y: 0,
+      toJSON() {
+        return this;
+      },
+    });
+    const { raf, caf, flush } = makeRafStub();
+    const { client, pushRemote } = makeFakeClient();
+    let status: ConnectionStatus = "connected";
+    const statusListeners = new Set<(next: ConnectionStatus) => void>();
+    client.getStatus = () => status;
+    client.subscribeStatus = (listener) => {
+      statusListeners.add(listener);
+      return () => statusListeners.delete(listener);
+    };
+    const setStatus = (next: ConnectionStatus) => {
+      status = next;
+      for (const listener of statusListeners) listener(next);
+      flush();
+    };
+    const binding = createDomBinding(client, { environment: { raf, caf } });
+    pushRemote([
+      {
+        version: 1,
+        clientId: "r",
+        session: "s",
+        sequence: 1,
+        cursor: { anchors: [{ id: "a", u: 0.5, v: 0.5 }] },
+      },
+    ]);
+    flush();
+    expect(binding.getSnapshot()).toHaveLength(1);
+
+    setStatus("reconnecting");
+    expect(binding.getSnapshot()).toHaveLength(0);
+
+    setStatus("connected");
+    expect(binding.getSnapshot()).toHaveLength(1);
     binding.dispose();
   });
 

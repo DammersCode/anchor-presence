@@ -159,9 +159,17 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
     for (const listener of snapshotListeners) listener();
   }
 
+  // while our own connection is down, remote cursors are ghosts: hide them until it is back
+  const isLive = () => {
+    const status = client.getStatus();
+    return status !== "reconnecting" && status !== "disconnected";
+  };
+
   const scheduler = createGeometryScheduler<ResolvedCursor<TContext, TUser>[]>({
     hasActiveCursors: () =>
-      client.hasActiveCursors?.() ?? client.getRemoteSnapshot().some((presence) => presence.cursor !== null),
+      isLive() &&
+      (client.hasActiveCursors?.() ??
+        client.getRemoteSnapshot().some((presence) => presence.cursor !== null)),
 
     compute(readState, timestampMs) {
       const idleClientIds = new Set<string>();
@@ -170,7 +178,7 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
       }
 
       const { cursors, unsettled, activeAnchors } = resolver.resolveAll(
-        client.getRemoteSnapshot(),
+        isLive() ? client.getRemoteSnapshot() : [],
         readState,
         timestampMs,
         (clientId) => idleClientIds.has(clientId),
@@ -188,7 +196,14 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
     },
 
     onRegistryChange: (listener) => registry.onChange(listener),
-    onRemoteData: (listener) => client.subscribeRemote(listener),
+    onRemoteData: (listener) => {
+      const stopRemote = client.subscribeRemote(listener);
+      const stopStatus = client.subscribeStatus(() => listener());
+      return () => {
+        stopRemote();
+        stopStatus();
+      };
+    },
     onMutationRecords: (records) => autoHandle.handleRecords(records),
     onAttach: () => autoHandle.setEnabled(false),
     onDetach: () => autoHandle.setEnabled(true),

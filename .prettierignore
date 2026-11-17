@@ -7,3 +7,4 @@ examples/signalr/server
 .agents/skills
 apps/docs/.next
 apps/docs/.source
+.crew/

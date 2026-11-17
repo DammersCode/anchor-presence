@@ -7,5 +7,5 @@ async function startExample(example: string, env: Record<string, string>): Promi
 }
 
 for (const example of ["reference", "bun-native", "hono", "elysia", "node-ws"]) {
-  defineRelayConformance(example, (env) => startExample(example, env));
+  defineRelayConformance(example, (env) => startExample(example, env), { identity: example !== "reference" });
 }

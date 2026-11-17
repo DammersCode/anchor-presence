@@ -7,15 +7,22 @@ public partial class PresenceHub : Hub
     [GeneratedRegex("^[A-Za-z0-9_-]{1,256}$")]
     private static partial Regex RoomNamePattern();
 
-    private static string RoomFor(HttpContext? context)
+    // A missing room is "main". A name with other characters is null: refuse the connection, never merge it into "main".
+    private static string? RoomFor(HttpContext? context)
     {
         var candidate = context?.Request.Query["room"].ToString();
-        return string.IsNullOrEmpty(candidate) || !RoomNamePattern().IsMatch(candidate) ? "main" : candidate;
+        if (string.IsNullOrEmpty(candidate)) return "main";
+        return RoomNamePattern().IsMatch(candidate) ? candidate : null;
     }
 
     public override async Task OnConnectedAsync()
     {
         var room = RoomFor(Context.GetHttpContext());
+        if (room is null)
+        {
+            Context.Abort();
+            return;
+        }
         await Groups.AddToGroupAsync(Context.ConnectionId, room);
         await base.OnConnectedAsync();
     }
@@ -23,6 +30,6 @@ public partial class PresenceHub : Hub
     public Task OnPresence(string payload)
     {
         var room = RoomFor(Context.GetHttpContext());
-        return Clients.OthersInGroup(room).SendAsync("PresenceReceived", payload);
+        return room is null ? Task.CompletedTask : Clients.OthersInGroup(room).SendAsync("PresenceReceived", payload);
     }
 }

@@ -9,7 +9,10 @@ import {
   messageByteLength,
   originAllowed,
   RateLimiter,
-  sanitizeRoomName,
+  INVALID_ROOM_CODE,
+  bindIdentity,
+  newConnectionId,
+  parseRoom,
   slowPeerAction,
   safeAuthCheck,
   tokenAuthCheck,
@@ -74,7 +77,9 @@ export function createHonoRelay(port: number, options: HonoRelayOptions = {}) {
   app.get(
     "/",
     upgradeWebSocket(async (c) => {
-      const room = sanitizeRoomName(c.req.query("room"));
+      const parsedRoom = parseRoom(c.req.query("room"));
+      const room = parsedRoom ?? "main";
+      const connectionId = newConnectionId();
       const origin = c.req.header("origin") ?? "";
       const authOk = await authCheck({
         token: c.req.query("token") ?? "",
@@ -95,6 +100,10 @@ export function createHonoRelay(port: number, options: HonoRelayOptions = {}) {
             ws.close(AUTH_REJECTED_CODE, "invalid token");
             return;
           }
+          if (parsedRoom === null) {
+            ws.close(INVALID_ROOM_CODE, "invalid room");
+            return;
+          }
           const admission = limits.admit(room);
           if (admission !== "ok") {
             ws.close(admission === "server full" ? SERVER_FULL_CODE : ROOM_FULL_CODE, admission);
@@ -113,6 +122,17 @@ export function createHonoRelay(port: number, options: HonoRelayOptions = {}) {
           const message = typeof data === "string" ? data : (data as ArrayBuffer);
           if (messageByteLength(message, maxMessageBytes) > maxMessageBytes) return;
 
+          let outgoing: string | ArrayBuffer | Uint8Array<ArrayBuffer> = message;
+          if (typeof authOk === "object") {
+            const bound = bindIdentity(
+              typeof message === "string" ? message : new Uint8Array(message),
+              authOk,
+              connectionId,
+            );
+            if (bound === null) return;
+            outgoing = bound;
+          }
+
           const senderRaw = ws.raw as RawSocket;
           for (const peer of sockets) {
             if (peer.raw === senderRaw || peer.raw.readyState !== OPEN) continue;
@@ -130,7 +150,7 @@ export function createHonoRelay(port: number, options: HonoRelayOptions = {}) {
             }
             skipped.set(peer.raw, action === "skip");
             if (action === "skip") continue;
-            peer.ws.send(message);
+            peer.ws.send(outgoing);
           }
         },
         onClose(_evt, ws) {

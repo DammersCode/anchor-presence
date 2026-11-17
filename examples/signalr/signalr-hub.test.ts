@@ -107,6 +107,17 @@ async function connectClient(room: string): Promise<PresenceClient> {
 }
 
 describeIfDotnet("SignalR hub integration (real .NET server)", () => {
+  it("aborts a connection that names an invalid room instead of merging it into main", async () => {
+    const connection = new HubConnectionBuilder()
+      .withUrl(`http://localhost:${port}/hubs/presence?room=${encodeURIComponent("team/a")}`)
+      .build();
+    connections.push(connection);
+    const closed = new Promise<void>((resolve) => connection.onclose(() => resolve()));
+    await connection.start().catch(() => undefined);
+    await Promise.race([closed, new Promise((resolve) => setTimeout(resolve, 3000))]);
+    expect(connection.state).toBe("Disconnected");
+  });
+
   it("refuses a request from an origin outside the allowlist", async () => {
     const negotiate = (origin: string) =>
       fetch(`http://localhost:${port}/hubs/presence/negotiate?negotiateVersion=1`, {

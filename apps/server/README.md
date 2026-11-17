@@ -27,6 +27,10 @@ The relay listens on port `8787` by default and upgrades WebSocket connections a
 | `RELAY_SLOW_PEER_HARD_BYTES`   | `8388608`        | Buffered-bytes threshold above which the relay closes a slow peer with code `4003`.                                     |
 | `RELAY_SLOW_PEER_RESUME_BYTES` | `524288`         | Buffered-bytes threshold below which the relay resumes sending to a previously skipped peer.                            |
 
+## Room names
+
+The relay reads the room from the `room` query parameter or the first path segment. A missing name is `main`. A name with other characters than letters, digits, `_` and `-`, or above 256 characters, closes the socket with code `4007`.
+
 ## Defaults are open
 
 Out of the box, with no environment variables set, the relay accepts connections from any origin and requires no token. It does not terminate TLS itself, and it tracks no per-IP connection cap — only the per-room and total-socket caps above. Set `RELAY_ALLOWED_ORIGINS` and `RELAY_AUTH_TOKEN` before exposing the relay beyond local development, and put it behind a TLS-terminating proxy.

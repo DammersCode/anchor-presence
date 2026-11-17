@@ -6,7 +6,11 @@ import {
   messageByteLength,
   originAllowed,
   RateLimiter,
-  sanitizeRoomName,
+  INVALID_ROOM_CODE,
+  bindIdentity,
+  newConnectionId,
+  parseRoom,
+  type AuthIdentity,
   safeAuthCheck,
   tokenAuthCheck,
   type AuthCheck,
@@ -29,6 +33,9 @@ type SocketData = {
   room: string;
   origin: string;
   authOk: boolean;
+  roomInvalid: boolean;
+  identity: AuthIdentity | undefined;
+  connectionId: string;
   admitted: boolean;
   rateLimiter: RateLimiter;
 };
@@ -62,7 +69,8 @@ export function createBunRelay(port: number, options: BunRelayOptions = {}) {
     port,
     async fetch(req, srv) {
       const url = new URL(req.url);
-      const room = sanitizeRoomName(url.searchParams.get("room"));
+      const parsedRoom = parseRoom(url.searchParams.get("room"));
+      const room = parsedRoom ?? "main";
       const origin = req.headers.get("origin") ?? "";
       const authOk = await authCheck({
         token: url.searchParams.get("token") ?? "",
@@ -76,6 +84,9 @@ export function createBunRelay(port: number, options: BunRelayOptions = {}) {
             room,
             origin,
             authOk: authOk !== false,
+            roomInvalid: parsedRoom === null,
+            identity: typeof authOk === "object" ? authOk : undefined,
+            connectionId: newConnectionId(),
             admitted: false,
             rateLimiter: new RateLimiter(rateCapacity, rateRefillPerSecond),
           },
@@ -98,6 +109,10 @@ export function createBunRelay(port: number, options: BunRelayOptions = {}) {
           ws.close(AUTH_REJECTED_CODE, "invalid token");
           return;
         }
+        if (ws.data.roomInvalid) {
+          ws.close(INVALID_ROOM_CODE, "invalid room");
+          return;
+        }
         const admission = limits.admit(ws.data.room);
         if (admission !== "ok") {
           ws.close(admission === "server full" ? SERVER_FULL_CODE : ROOM_FULL_CODE, admission);
@@ -109,8 +124,14 @@ export function createBunRelay(port: number, options: BunRelayOptions = {}) {
       message(ws, message) {
         if (!ws.data.rateLimiter.tryConsume()) return;
         if (messageByteLength(message, maxMessageBytes) > maxMessageBytes) return;
+        let outgoing: string | Uint8Array | Buffer = message;
+        if (ws.data.identity !== undefined) {
+          const bound = bindIdentity(message, ws.data.identity, ws.data.connectionId);
+          if (bound === null) return;
+          outgoing = bound;
+        }
         // ws.publish (not server.publish) excludes the sender from the topic fan-out.
-        ws.publish(ws.data.room, message);
+        ws.publish(ws.data.room, outgoing);
       },
       close(ws) {
         if (ws.data.admitted) limits.release(ws.data.room);

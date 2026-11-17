@@ -48,7 +48,7 @@ The relay listens on `http://localhost:8788`. To use a different port, give the 
 
 ## Production notes
 
-- **Room name validation.** `sanitizeRoomName` caps room names at 256 characters and restricts them to `[A-Za-z0-9_-]`. An invalid or missing name falls back to `"main"`.
+- **Room name validation.** `parseRoom` caps room names at 256 characters and restricts them to `[A-Za-z0-9_-]`. A missing name is `main`. An invalid name closes the socket with code `4007`.
 - **Max payload size.** `MAX_MESSAGE_BYTES` (default 32 KiB) drops an oversized message instead of closing the connection.
 - **Per-connection rate limit.** A token bucket limits inbound messages per socket (`RATE_CAPACITY`, `RATE_REFILL_PER_SECOND`).
 - **Origin allowlist.** `RELAY_ALLOWED_ORIGINS` is a comma-separated list of allowed origins. Leave it empty for local development. Every origin is accepted then.

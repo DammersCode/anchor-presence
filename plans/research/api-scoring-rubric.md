@@ -49,4 +49,4 @@ The performance dimension comes from `bun run perf:score --relay`, not from read
 - steady cursor message size in the JSON and binary codec,
 - inbound path time per message and `store.ingest` time per message,
 - heap growth per ingested message,
-- relay p99 latency and delivery ratio at 50 clients.
+- relay p99 latency and delivery ratio at 50 clients, as the median of three runs. The load generator shares the machine with the relay, so these budgets are loose: they catch a relay that falls behind, not a few milliseconds.

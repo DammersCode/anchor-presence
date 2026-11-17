@@ -4,6 +4,9 @@
 
 ### Breaking
 
+- Relays (reference and examples): a room name that is not valid now closes the socket with code `4007` instead of falling back to `main`, because two rooms would share one stream. The SignalR hub aborts the connection.
+- Example relays: identity binding rewrites `clientId` to `<identity>~<connection>`, so two tabs of one user stay two clients. It works on node-ws, Bun, Hono, Elysia and Socket.IO.
+- `@anchor-presence/core`: an event that fails validation is dropped. `sendEvent` returns `false` for an event above the field limits. A failing teardown no longer stops `dispose()`.
 - `@anchor-presence/dom`: a throwing `visibilityPolicy` or interpolator no longer stops the frame loop. The binding keeps the last snapshot and retries on the next change.
 - `@anchor-presence/core`: the default `clientId` and `session` are 12 URL-safe characters (72 random bits) instead of UUIDs. Every message gets about 48 bytes smaller: a steady cursor is 106 bytes in the binary codec and 261 bytes in JSON.
 - `@anchor-presence/dom`: `binding.dispose()` clears the local cursor on the client, so a consumer-owned client leaves no ghost cursor on peers.
@@ -16,6 +19,8 @@
 
 ### Added
 
+- `@anchor-presence/dom`: `binding.dispose({ keepLocalCursor: true })` keeps the local cursor on peers. `LiveCursorProvider` uses it when only `bindingKey` changes.
+- Example Elysia client: `createElysiaClient(baseUrl, room, token?)` sends the room token.
 - `@anchor-presence/core`: `subscribePeers` also reports an `update` when a remote `user` or `context` changes. A sender that floods events is limited to a burst of 20 and 10 per second.
 - Example relays: an `authCheck` can return `{ clientId, user }`. The node-ws relay then rewrites those fields in every JSON frame, so a peer cannot claim another identity or send a leave for another client. `defineRelayConformance` in `examples/_shared` tests any relay.
 - `bun run perf:score` measures bundle size, wire size, core hot paths, heap per message and, with `--relay`, relay latency, and scores each against a budget.

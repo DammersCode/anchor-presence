@@ -44,7 +44,11 @@ function useRelay(start: StartRelay, env: Record<string, string>): () => Conform
   };
 }
 
-export function defineRelayConformance(name: string, start: StartRelay): void {
+export function defineRelayConformance(
+  name: string,
+  start: StartRelay,
+  options: { identity?: boolean } = {},
+): void {
   describe(`relay conformance: ${name}`, () => {
     const relay = useRelay(start, {});
 
@@ -86,6 +90,16 @@ export function defineRelayConformance(name: string, start: StartRelay): void {
     );
   });
 
+  describe(`relay room conformance: ${name}`, () => {
+    const relay = useRelay(start, {});
+
+    it("closes a connection that names an invalid room with code 4007, never merging it into main", async () => {
+      const { baseUrl } = relay();
+      expect(await closeCode(new WebSocket(`${baseUrl}/?room=team%2Fa`))).toBe(4007);
+      expect(await closeCode(new WebSocket(`${baseUrl}/?room=${"x".repeat(300)}`))).toBe(4007);
+    });
+  });
+
   describe(`relay auth conformance: ${name}`, () => {
     const relay = useRelay(start, { RELAY_AUTH_TOKEN: "secret" });
 
@@ -118,4 +132,41 @@ export function defineRelayConformance(name: string, start: StartRelay): void {
       peer.socket.close();
     });
   });
+
+  if (options.identity === true) {
+    describe(`relay identity conformance: ${name}`, () => {
+      const relay = useRelay(start, { RELAY_DEMO_IDENTITY: "1" });
+
+      it("rewrites clientId and user to the verified identity, with one clientId per connection", async () => {
+        const { baseUrl } = relay();
+        const peer = await connect(baseUrl, "ident", "&token=bob");
+        const tabOne = await connect(baseUrl, "ident", "&token=ada");
+        const tabTwo = await connect(baseUrl, "ident", "&token=ada");
+        const forged = {
+          version: 1,
+          clientId: "someone-else",
+          session: "s",
+          sequence: 1,
+          cursor: null,
+          user: { name: "evil" },
+        };
+
+        tabOne.socket.send(new TextEncoder().encode(JSON.stringify(forged)));
+        tabTwo.socket.send(new TextEncoder().encode(JSON.stringify(forged)));
+        tabTwo.socket.send(new Uint8Array([0x41, 0x02, 0xff]));
+        await settle();
+
+        const seen = peer.received.map(
+          (bytes) => JSON.parse(new TextDecoder().decode(bytes)) as { clientId: string; user: unknown },
+        );
+        expect(seen).toHaveLength(2);
+        for (const message of seen) {
+          expect(message.clientId).toMatch(/^user-ada~/u);
+          expect(message.user).toEqual({ name: "ada" });
+        }
+        expect(new Set(seen.map((message) => message.clientId)).size).toBe(2);
+        for (const { socket } of [peer, tabOne, tabTwo]) socket.close();
+      });
+    });
+  }
 }

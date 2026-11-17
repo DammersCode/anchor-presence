@@ -150,6 +150,28 @@ describe("Elysia relay limits", () => {
   }, 10_000);
 });
 
+describe("Elysia typed client with a room token", () => {
+  it("sends the token, and is refused without it", async () => {
+    const guarded = await spawnBunRelay("elysia", { RELAY_AUTH_TOKEN: "secret" });
+    const base = `http://127.0.0.1:${guarded.port}`;
+    const withToken = createElysiaClient(base, "tok-room", "secret");
+    const withoutToken = createElysiaClient(base, "tok-room");
+    clients.push(withToken.client, withoutToken.client);
+    try {
+      await vi.waitFor(() => expect(withToken.client.getStatus()).toBe("connected"), {
+        timeout: 5000,
+        interval: 25,
+      });
+      await vi.waitFor(() => expect(withoutToken.client.getStatus()).toBe("disconnected"), {
+        timeout: 5000,
+        interval: 25,
+      });
+    } finally {
+      await guarded.stop();
+    }
+  });
+});
+
 describe("Elysia relay liveness", () => {
   let lively: SpawnedRelay;
   let silent: UnresponsivePeer | undefined;

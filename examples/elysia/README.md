@@ -43,7 +43,7 @@ Set `RELAY_ALLOWED_ORIGINS` and `RELAY_AUTH_TOKEN` before exposing this beyond l
 
 ## Room routing
 
-The relay reads the room name from the `room` query parameter (`?room=main`). An invalid or missing name falls back to `"main"`.
+The relay reads the room name from the `room` query parameter (`?room=main`). A missing name is `"main"`. An invalid name closes the socket with code `4007`.
 
 ## Use the transport in your app
 

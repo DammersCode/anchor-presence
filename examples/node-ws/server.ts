@@ -8,7 +8,9 @@ import {
   messageByteLength,
   originAllowed,
   RateLimiter,
-  sanitizeRoomName,
+  INVALID_ROOM_CODE,
+  newConnectionId,
+  parseRoom,
   slowPeerAction,
   safeAuthCheck,
   bindIdentity,
@@ -36,6 +38,7 @@ export type NodeWsRelayOptions = {
 type SocketState = {
   room: string;
   identity: AuthIdentity | undefined;
+  connectionId: string;
   rateLimiter: RateLimiter;
   skipped: boolean;
   alive: boolean;
@@ -84,7 +87,8 @@ export function createNodeWsRelay(port: number, options: NodeWsRelayOptions = {}
       refuse(req, socket, head, 4004, "origin not allowed");
       return;
     }
-    const authRoom = sanitizeRoomName(url.searchParams.get("room"));
+    const parsedRoom = parseRoom(url.searchParams.get("room"));
+    const authRoom = parsedRoom ?? "main";
     const headers = Object.fromEntries(
       Object.entries(req.headers).map(([name, value]) => [
         name,
@@ -105,7 +109,11 @@ export function createNodeWsRelay(port: number, options: NodeWsRelayOptions = {}
       refuse(req, socket, head, 4002, "server full");
       return;
     }
-    const room = sanitizeRoomName(url.searchParams.get("room"));
+    if (parsedRoom === null) {
+      refuse(req, socket, head, INVALID_ROOM_CODE, "invalid room");
+      return;
+    }
+    const room = parsedRoom;
     const sockets = rooms.get(room);
     if (sockets && sockets.size >= maxRoomSockets) {
       refuse(req, socket, head, 4001, "room full");
@@ -120,6 +128,7 @@ export function createNodeWsRelay(port: number, options: NodeWsRelayOptions = {}
     const socketState: SocketState = {
       room,
       identity,
+      connectionId: newConnectionId(),
       rateLimiter: new RateLimiter(rateCapacity, rateRefillPerSecond),
       skipped: false,
       alive: true,
@@ -147,7 +156,7 @@ export function createNodeWsRelay(port: number, options: NodeWsRelayOptions = {}
       let outgoing: Buffer | string | Uint8Array = data as Buffer;
       let outgoingBinary = isBinary;
       if (socketState.identity !== undefined) {
-        const bound = bindIdentity(message, socketState.identity);
+        const bound = bindIdentity(message, socketState.identity, socketState.connectionId);
         if (bound === null) return;
         outgoing = bound;
         outgoingBinary = true;

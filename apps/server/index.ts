@@ -22,6 +22,7 @@ const AUTH_TOKEN = process.env.RELAY_AUTH_TOKEN ?? "";
 const ROOM_FULL_CODE = 4001;
 const SERVER_FULL_CODE = 4002;
 const SLOW_PEER_CODE = 4003;
+const INVALID_ROOM_CODE = 4007;
 const ORIGIN_REJECTED_CODE = 4004;
 const LIVENESS_CODE = 4005;
 const AUTH_REJECTED_CODE = 4006;
@@ -36,6 +37,7 @@ type SocketData = {
   lastPong: number;
   skipped: boolean;
   authOk: boolean;
+  roomInvalid: boolean;
 };
 
 type RoomSocket = Bun.ServerWebSocket<SocketData>;
@@ -51,12 +53,13 @@ let totalSockets = 0;
 
 const ROOM_CHARSET = /^[A-Za-z0-9_-]+$/;
 
-function roomFor(req: Request): string {
+// null means the name is not a valid room name: the relay refuses the connection instead of merging it into `main`
+function roomFor(req: Request): string | null {
   const url = new URL(req.url);
   const fromQuery = url.searchParams.get("room");
   const fromPath = url.pathname.replace(/^\/+|\/+$/g, "");
-  const candidate = (fromQuery || fromPath || "main").slice(0, 256);
-  return ROOM_CHARSET.test(candidate) ? candidate : "main";
+  const candidate = fromQuery || fromPath || "main";
+  return candidate.length <= 256 && ROOM_CHARSET.test(candidate) ? candidate : null;
 }
 
 // Opt-in room auth: when AUTH_TOKEN is set, the upgrade must carry a matching `token` query param.
@@ -103,7 +106,8 @@ if (typeof Bun !== "undefined" && import.meta.main) {
   Bun.serve({
     port: PORT,
     fetch(req, server) {
-      const room = roomFor(req);
+      const parsedRoom = roomFor(req);
+      const room = parsedRoom ?? "main";
       const origin = req.headers.get("origin") ?? "";
       const authOk = authOkFor(req);
       if (
@@ -116,6 +120,7 @@ if (typeof Bun !== "undefined" && import.meta.main) {
             lastPong: Date.now(),
             skipped: false,
             authOk,
+            roomInvalid: parsedRoom === null,
           },
         })
       )
@@ -130,6 +135,10 @@ if (typeof Bun !== "undefined" && import.meta.main) {
         }
         if (!ws.data.authOk) {
           ws.close(AUTH_REJECTED_CODE, "invalid token");
+          return;
+        }
+        if (ws.data.roomInvalid) {
+          ws.close(INVALID_ROOM_CODE, "invalid room");
           return;
         }
         if (totalSockets >= MAX_TOTAL_SOCKETS) {

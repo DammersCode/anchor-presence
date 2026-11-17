@@ -10,7 +10,7 @@ A relay forwards bytes between the clients of one room. This page lists what a r
 - Accept binary WebSocket frames. The transport sets `binaryType` to `arraybuffer` and ignores text frames from the relay.
 - Forward each frame, unchanged, to every other socket in the same room. Never send a frame back to its sender.
 - Read the room from the `room` query parameter, for example `/?room=room-42`. Use `main` when the parameter is missing.
-- Limit a room name to letters, digits, `_` and `-`, up to 256 characters. The example relays map any other name to `main`.
+- Use `main` when the room parameter is missing. Accept a room name of letters, digits, `_` and `-` up to 256 characters. Close a connection with any other name using code `4007`. Never map an invalid name to `main`, because two tenants would share one stream.
 - Read the room token from the `token` query parameter when you need auth.
 - Drop a frame above `MAX_MESSAGE_BYTES` and keep the socket open. This holds for binary and for text frames.
 - Do not decode the presence message. The relay stays blind to its content.
@@ -19,6 +19,10 @@ A relay forwards bytes between the clients of one room. This page lists what a r
   If you serve rooms from the URL path, such as `/room-42`, only the reference relay in `apps/server`
   understands it. The other relays treat the path as `main`, so two rooms share one stream.
 </Callout>
+
+## Identity
+
+A relay that does not look inside messages cannot tell who sent one. Any room member can claim another `clientId`, or send a `leave` for another client. To prevent that, let the auth hook return `{ clientId, user }` instead of `true`. The relay then rewrites both fields of every JSON frame to the verified values, and adds a per-connection suffix to `clientId`, so two tabs of one user stay two clients. It drops a frame that is not a JSON object, so identity binding needs `jsonCodec`.
 
 ## Close codes
 
@@ -32,6 +36,7 @@ The reference relay closes a socket with one of these codes:
 | `4004` | The origin is not allowed.                 | No                       |
 | `4005` | The peer did not answer the liveness ping. | Yes                      |
 | `4006` | The token is missing or wrong.             | No                       |
+| `4007` | The room name is not valid.                | Yes                      |
 
 Pass `shouldReconnect` to `createWebSocketTransport` to change which codes stop the reconnect.
 

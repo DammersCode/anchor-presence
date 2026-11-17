@@ -6,6 +6,23 @@ const encoder = new TextEncoder();
 const ROOM_CHARSET = /^[A-Za-z0-9_-]+$/;
 const MAX_ROOM_LENGTH = 256;
 
+/** Close code a relay uses when a connection names a room that is not a valid room name. */
+export const INVALID_ROOM_CODE = 4007;
+
+/**
+ * Reads a room name. A missing or empty value is the default room `main`.
+ * A name with other characters, or above 256 characters, returns `null`: refuse the connection, never merge it into `main`.
+ */
+export function parseRoom(candidate: string | null | undefined): string | null {
+  if (candidate === null || candidate === undefined || candidate === "") return "main";
+  return candidate.length <= MAX_ROOM_LENGTH && ROOM_CHARSET.test(candidate) ? candidate : null;
+}
+
+/** A short random ID that tells the connections of one identity apart. */
+export function newConnectionId(): string {
+  return Math.random().toString(36).slice(2, 10);
+}
+
 /** Validates a room name: length-capped, restricted charset. Falls back to "main" otherwise. */
 export function sanitizeRoomName(candidate: string | null | undefined): string {
   const value = (candidate ?? "").slice(0, MAX_ROOM_LENGTH);
@@ -165,15 +182,20 @@ const identityDecoder = new TextDecoder();
 
 /**
  * Rewrites a JSON presence frame so it carries the identity the relay verified.
+ * The `clientId` gets the connection ID as a suffix, so two tabs of one user stay two clients.
  * Returns `null` for a frame that is not a JSON object, for example a binaryCodec frame: drop it.
  */
-export function bindIdentity(frame: Uint8Array | string, identity: AuthIdentity): Uint8Array | null {
+export function bindIdentity(
+  frame: Uint8Array | string,
+  identity: AuthIdentity,
+  connectionId: string,
+): Uint8Array<ArrayBuffer> | null {
   try {
     const parsed: unknown = JSON.parse(typeof frame === "string" ? frame : identityDecoder.decode(frame));
     if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return null;
     const message: Record<string, unknown> = {
       ...(parsed as Record<string, unknown>),
-      clientId: identity.clientId,
+      clientId: `${identity.clientId}~${connectionId}`,
     };
     if (identity.user !== undefined) message.user = identity.user;
     return identityEncoder.encode(JSON.stringify(message));
@@ -190,4 +212,19 @@ export function tokenAuthCheck(expectedToken: string): AuthCheck {
 export function limitFromEnv(value: string | undefined, fallback: number): number {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback;
+}
+
+/**
+ * Demo identity for the relay entry files: with RELAY_DEMO_IDENTITY=1 the token names the user.
+ * A real relay verifies the token, for example as a JWT, and returns the verified user.
+ */
+export function demoIdentityFromEnv(): AuthCheck | undefined {
+  if (process.env.RELAY_DEMO_IDENTITY !== "1") return undefined;
+  return ({ token }) => (token === "" ? false : { clientId: `user-${token}`, user: { name: token } });
+}
+
+/** Options for a relay entry file: the demo identity when RELAY_DEMO_IDENTITY=1, no auth hook otherwise. */
+export function demoIdentityOptions(): { authCheck?: AuthCheck } {
+  const check = demoIdentityFromEnv();
+  return check === undefined ? {} : { authCheck: check };
 }

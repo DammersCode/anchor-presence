@@ -97,6 +97,53 @@ describe("Socket.IO transport integration", () => {
     }
   });
 
+  it("disconnects a socket that names an invalid room instead of merging it into main", async () => {
+    const socket = io(url, { query: { room: "team/a" }, transports: ["websocket"], reconnection: false });
+    sockets.push(socket);
+    const reason = await new Promise<string>((resolve) => socket.on("disconnect", (why) => resolve(why)));
+    expect(reason).toBe("io server disconnect");
+  });
+
+  it("rewrites clientId and user to the identity the auth hook returned, one clientId per connection", async () => {
+    const bound = await createSocketIoRelay(0, {
+      authCheck: ({ token }) => ({ clientId: `user-${token}`, user: { name: token } }),
+    });
+    try {
+      const connect = (token: string) => {
+        const socket = io(bound.url, { query: { room: "bind", token }, transports: ["websocket"] });
+        sockets.push(socket);
+        return socket;
+      };
+      const peer = connect("bob");
+      const tabs = [connect("ada"), connect("ada")];
+      const seen: { clientId: string; user: unknown }[] = [];
+      peer.on("presence", (data: Uint8Array) => seen.push(JSON.parse(new TextDecoder().decode(data))));
+      await vi.waitFor(() => expect([peer, ...tabs].every((socket) => socket.connected)).toBe(true), {
+        timeout: 5000,
+        interval: 25,
+      });
+
+      const forged = {
+        version: 1,
+        clientId: "someone-else",
+        session: "s",
+        sequence: 1,
+        cursor: null,
+        user: { name: "evil" },
+      };
+      for (const tab of tabs) tab.emit("presence", new TextEncoder().encode(JSON.stringify(forged)));
+
+      await vi.waitFor(() => expect(seen).toHaveLength(2), { timeout: 5000, interval: 25 });
+      for (const message of seen) {
+        expect(message.clientId).toMatch(/^user-ada~/u);
+        expect(message.user).toEqual({ name: "ada" });
+      }
+      expect(new Set(seen.map((message) => message.clientId)).size).toBe(2);
+    } finally {
+      await bound.close();
+    }
+  });
+
   it("ends disconnected when the relay refuses the token", async () => {
     const strict = await createSocketIoRelay(0, { authCheck: () => false });
     try {

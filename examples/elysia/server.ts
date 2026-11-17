@@ -7,7 +7,11 @@ import {
   messageByteLength,
   originAllowed,
   RateLimiter,
-  sanitizeRoomName,
+  INVALID_ROOM_CODE,
+  bindIdentity,
+  newConnectionId,
+  parseRoom,
+  type AuthIdentity,
   safeAuthCheck,
   tokenAuthCheck,
   type AuthCheck,
@@ -31,7 +35,11 @@ const ORIGIN_REJECTED_CODE = 4004;
 const ROOM_FULL_CODE = 4001;
 const SERVER_FULL_CODE = 4002;
 
-type ConnectionState = { rateLimiter: RateLimiter };
+type ConnectionState = {
+  rateLimiter: RateLimiter;
+  identity: AuthIdentity | undefined;
+  connectionId: string;
+};
 
 /**
  * Creates an Elysia relay on Bun. Rooms are Elysia/Bun pub-sub topics, `ws.publish` excludes the
@@ -71,7 +79,8 @@ export function createElysiaRelay(port: number, options: ElysiaRelayOptions = {}
         ws.close(ORIGIN_REJECTED_CODE, "origin not allowed");
         return;
       }
-      const room = sanitizeRoomName(rawRoom);
+      const parsedRoom = parseRoom(rawRoom);
+      const room = parsedRoom ?? "main";
       const authOk = await authCheck({ token: token ?? "", room, origin, headers });
       // the socket can close while the hook runs; admitting it would leak a limit slot
       if (ws.raw.readyState !== 1) return;
@@ -79,12 +88,20 @@ export function createElysiaRelay(port: number, options: ElysiaRelayOptions = {}
         ws.close(AUTH_REJECTED_CODE, "invalid token");
         return;
       }
+      if (parsedRoom === null) {
+        ws.close(INVALID_ROOM_CODE, "invalid room");
+        return;
+      }
       const admission = limits.admit(room);
       if (admission !== "ok") {
         ws.close(admission === "server full" ? SERVER_FULL_CODE : ROOM_FULL_CODE, admission);
         return;
       }
-      connectionState.set(ws.raw, { rateLimiter: new RateLimiter(rateCapacity, rateRefillPerSecond) });
+      connectionState.set(ws.raw, {
+        rateLimiter: new RateLimiter(rateCapacity, rateRefillPerSecond),
+        identity: typeof authOk === "object" ? authOk : undefined,
+        connectionId: newConnectionId(),
+      });
       ws.subscribe(room);
     },
     message(ws, message) {
@@ -99,10 +116,21 @@ export function createElysiaRelay(port: number, options: ElysiaRelayOptions = {}
           : JSON.stringify(message);
       if (messageByteLength(payload, maxMessageBytes) > maxMessageBytes) return;
 
-      ws.publish(sanitizeRoomName(ws.data.query.room), payload);
+      let outgoing: string | ArrayBuffer | ArrayBufferView = payload;
+      if (state.identity !== undefined) {
+        const bound = bindIdentity(
+          typeof payload === "string" ? payload : new Uint8Array(payload as ArrayBuffer),
+          state.identity,
+          state.connectionId,
+        );
+        if (bound === null) return;
+        // Elysia serializes a plain Uint8Array as JSON text; a Buffer stays a binary frame
+        outgoing = Buffer.from(bound);
+      }
+      ws.publish(parseRoom(ws.data.query.room) ?? "main", outgoing);
     },
     close(ws) {
-      const room = sanitizeRoomName(ws.data.query.room);
+      const room = parseRoom(ws.data.query.room) ?? "main";
       if (connectionState.delete(ws.raw)) limits.release(room);
     },
   });

@@ -7,7 +7,10 @@ import {
   limitFromEnv,
   messageByteLength,
   RateLimiter,
-  sanitizeRoomName,
+  bindIdentity,
+  newConnectionId,
+  parseRoom,
+  type AuthIdentity,
   safeAuthCheck,
   tokenAuthCheck,
   type AuthCheck,
@@ -55,7 +58,7 @@ export function createSocketIoRelay(port: number, options: SocketIoRelayOptions 
     const { query, headers } = socket.handshake;
     const ok = await authCheck({
       token: String(query.token ?? ""),
-      room: sanitizeRoomName(String(query.room ?? "")),
+      room: parseRoom(String(query.room ?? "")) ?? "main",
       origin: headers.origin ?? "",
       headers: Object.fromEntries(
         Object.entries(headers).map(([name, value]) => [
@@ -68,11 +71,19 @@ export function createSocketIoRelay(port: number, options: SocketIoRelayOptions 
       next(new Error("invalid token"));
       return;
     }
+    if (typeof ok === "object") socket.data.identity = ok;
     next();
   });
 
   io.on("connection", (socket: Socket) => {
-    const room = sanitizeRoomName(String(socket.handshake.query.room ?? ""));
+    const parsedRoom = parseRoom(String(socket.handshake.query.room ?? ""));
+    if (parsedRoom === null) {
+      socket.disconnect(true);
+      return;
+    }
+    const room = parsedRoom;
+    const identity = socket.data.identity as AuthIdentity | undefined;
+    const connectionId = newConnectionId();
     if (limits.admit(room) !== "ok") {
       socket.disconnect(true);
       return;
@@ -83,7 +94,14 @@ export function createSocketIoRelay(port: number, options: SocketIoRelayOptions 
     socket.on("presence", (data: unknown) => {
       if (!rateLimiter.tryConsume()) return;
       if (messageByteLength(data, maxMessageBytes) > maxMessageBytes) return;
-      socket.to(room).emit("presence", data);
+      let outgoing = data;
+      if (identity !== undefined) {
+        const bytes = data instanceof ArrayBuffer ? new Uint8Array(data) : (data as Uint8Array);
+        const bound = bindIdentity(bytes, identity, connectionId);
+        if (bound === null) return;
+        outgoing = bound;
+      }
+      socket.to(room).emit("presence", outgoing);
     });
 
     socket.on("disconnect", () => {

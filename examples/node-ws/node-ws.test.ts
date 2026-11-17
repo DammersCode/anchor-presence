@@ -217,7 +217,8 @@ describe("node-ws relay identity binding", () => {
       sender.send(new Uint8Array([0x41, 0x02, 0xff]));
 
       await vi.waitFor(() => expect(received).toHaveLength(1), { timeout: 3000, interval: 25 });
-      expect(received[0]).toMatchObject({ clientId: "user-ada", user: { name: "Name ada" } });
+      expect(received[0]).toMatchObject({ user: { name: "Name ada" } });
+      expect((received[0] as { clientId: string }).clientId).toMatch(/^user-ada~/u);
       sender.close();
       peer.close();
     } finally {

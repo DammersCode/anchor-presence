@@ -50,7 +50,7 @@ Every hono WebSocket event (`onOpen`, `onMessage`, `onClose`) receives a **new**
 
 ## Room routing
 
-The relay reads the room name from the `room` query parameter (`?room=main`). An invalid or missing name falls back to `"main"`.
+The relay reads the room name from the `room` query parameter (`?room=main`). A missing name is `"main"`. An invalid name closes the socket with code `4007`.
 
 ## Use the transport in your app
 

@@ -96,6 +96,73 @@ Recompute both numbers for your own anchor count, codec, and room size before yo
 
 The library ships a benchmark for per-message cost (`bun run bench`), gated against a committed baseline.
 
+## Measure it
+
+`bun run perf:score` measures the library and gives each metric a score against a budget. The script reads the built packages, so build them first:
+
+```sh
+bun run build
+bun run perf:score
+```
+
+To measure the relay too, add `--relay`:
+
+```sh
+bun run perf:score --relay
+```
+
+### What the script measures
+
+- **Bundle size.** The script bundles the `dist/index.js` file of each package for the browser, minifies it and compresses it with gzip. `react`, `react-dom` and the other `@anchor-presence` packages stay outside the bundle.
+- **Wire size.** The script encodes one steady cursor message with `jsonCodec` and with `binaryCodec`. The message has three anchors, a mouse pointer, and a `clientId` and `session` of 12 characters each.
+- **Hot paths.** The script runs the cases of `packages/core/bench/hotpath.bench.ts`. It reports the inbound path for each codec and `store.ingest` with 200 clients.
+- **Heap per message.** The script ingests 500 rounds of messages from 200 clients and divides the heap growth by the message count.
+- **Relay.** With `--relay`, the script runs `scripts/relay-load.ts` with 50 clients for 5 seconds. It does this three times and reports the median p99 latency and the median delivery ratio.
+
+The wire sizes come from a three-anchor message. The four-anchor figures in [Capacity planning](#capacity-planning) come from another fixture, so the two sets of numbers differ.
+
+### Budgets
+
+The budgets are in `scripts/perf-score.ts`. A metric gets a score of 10 at or below the first limit, 9 at or below the second limit and 7 at or below the third limit. A metric above all three limits gets 5.
+
+| Metric                                     | 10           | 9          | 7          |
+| ------------------------------------------ | ------------ | ---------- | ---------- |
+| bundle core gzip (KB)                      | 7            | 9          | 13         |
+| bundle dom gzip (KB)                       | 10           | 13         | 19         |
+| bundle react gzip (KB)                     | 4            | 5          | 8          |
+| wire json steady cursor (bytes)            | 220          | 300        | 420        |
+| wire binary steady cursor (bytes)          | 80           | 110        | 160        |
+| inbound binary path (us)                   | 3            | 6          | 12         |
+| inbound json path (us)                     | 4            | 8          | 16         |
+| store.ingest, 200 clients (us per message) | 0.5          | 1          | 3          |
+| heap per ingested message (bytes)          | 64           | 256        | 1024       |
+| relay p99 latency at 50 clients (ms)       | 15           | 50         | 120        |
+| relay delivery ratio at 50 clients (%)     | 99.5 or more | 98 or more | 95 or more |
+
+For the delivery ratio, a higher value is better, so the comparison is reversed.
+
+### Read the table
+
+The script prints one row per metric with its value and its score. Without `--relay`, the two relay rows show `(not run)` and `-`, and they do not count. The last line gives the lowest score and the mean score over the metrics that ran.
+
+One local run of `bun run perf:score --relay` gave these values:
+
+| Metric                                     | Value | Score |
+| ------------------------------------------ | ----- | ----- |
+| bundle core gzip (KB)                      | 8.02  | 9     |
+| bundle dom gzip (KB)                       | 7.63  | 10    |
+| bundle react gzip (KB)                     | 2.58  | 10    |
+| wire json steady cursor (bytes)            | 261   | 9     |
+| wire binary steady cursor (bytes)          | 106   | 9     |
+| inbound binary path (us)                   | 1.40  | 10    |
+| inbound json path (us)                     | 1.20  | 10    |
+| store.ingest, 200 clients (us per message) | 0.28  | 10    |
+| heap per ingested message (bytes)          | 1.13  | 10    |
+| relay p99 latency at 50 clients (ms)       | 34    | 9     |
+| relay delivery ratio at 50 clients (%)     | 100   | 10    |
+
+The summary line was `performance score: lowest metric 9, mean 9.64 over 11 metrics`. The bundle and wire sizes depend only on the code and the Bun version. The time, heap and relay values change with the machine and its load, so measure them on your own hardware.
+
 ## Measured at scale
 
 These numbers come from two local benchmarks: a Chromium receiver test and a relay load script. Both are opt-in — neither runs in CI — so you can reproduce them on your own hardware.

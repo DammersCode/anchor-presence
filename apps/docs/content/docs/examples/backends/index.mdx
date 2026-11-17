@@ -63,6 +63,30 @@ The Bun, Node.js (ws), Hono, Elysia, and Socket.IO relays share one file of guar
 
 <CodeFromSource repo="examples/_shared/relay-guard.ts" lang="ts" />
 
+## Identity binding
+
+A relay that does not decode messages cannot tell who sent a message. Identity binding fixes the identity on the relay. The `authCheck` hook returns `{ clientId, user }` instead of `true`. The relay then writes these values into every JSON frame of the connection. It adds a suffix per connection to `clientId`, in the form `<identity>~<connection>`, so two tabs of one user stay two clients. The Node.js (ws), Bun, Hono, Elysia and Socket.IO relays support identity binding.
+
+Identity binding needs `jsonCodec`. The relay drops a frame that is not a JSON object.
+
+The entry files of the Bun, Node.js (ws), Hono and Elysia relays have a demo identity mode. To turn it on, set `RELAY_DEMO_IDENTITY=1` before you start the relay:
+
+```sh
+RELAY_DEMO_IDENTITY=1 bun relay.ts
+```
+
+In this mode, the token names the user. A client with the token `ada` gets the `clientId` `user-ada~<connection>` and the user `{ name: "ada" }`. The relay refuses a connection without a token.
+
+<Callout type="warn">
+  If you use the demo identity mode in production, any client can claim any name. The relay trusts the token
+  as the user name. Verify the token in your own `authCheck`, for example as a JWT, and return the verified
+  user.
+</Callout>
+
+## Conformance suite
+
+`examples/_shared/relay-conformance-suite.ts` exports `defineRelayConformance(name, start, options)`. The suite runs in vitest against any relay. `start(env)` starts your relay with the given environment variables and returns its `ws://` base URL and a stop function. The suite checks the forwarding, the room isolation, the size cap, the room name check, the token check and the rate limit. With `{ identity: true }`, it also starts the relay with `RELAY_DEMO_IDENTITY=1` and checks the identity rewrite. The Bun, Node.js (ws), Hono and Elysia relays pass the full suite. See [Relay contract](/docs/examples/backends/relay-contract#check-your-relay) for the rules that the suite checks.
+
 ## Related
 
 - [Transports](/docs/core/transports)

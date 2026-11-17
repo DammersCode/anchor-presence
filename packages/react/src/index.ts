@@ -6,6 +6,7 @@ export type { LiveCursorContextValue } from "./context.js";
 
 export { useCursorClient } from "./hooks/use-cursor-client.js";
 export { useCursorContext } from "./hooks/use-cursor-context.js";
+export { useCursorEvents } from "./hooks/use-cursor-events.js";
 export { useCursorPresence } from "./hooks/use-cursor-presence.js";
 export { useCursorStatus } from "./hooks/use-cursor-status.js";
 export { useRemoteCursors, useRemoteCursorsSelector } from "./hooks/use-remote-cursors.js";
@@ -25,7 +26,10 @@ export type {
   CursorPresence,
   Interpolator,
   InterpolatorFactory,
+  PeerChange,
   PresenceClient,
+  PresenceEvent,
+  RemoteEvent,
   RemotePresence,
 } from "@anchor-presence/core";
 export type { DomBinding, DomBindingOptions, ResolutionTier, ResolvedCursor } from "@anchor-presence/dom";

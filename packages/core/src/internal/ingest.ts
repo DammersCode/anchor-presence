@@ -1,4 +1,5 @@
 import { validatePresence } from "../validate.js";
+import type { RemoteEvent } from "../protocol.js";
 import type { PresenceClientState } from "./types.js";
 
 function hasUnparsedField<TContext, TUser>(
@@ -9,6 +10,16 @@ function hasUnparsedField<TContext, TUser>(
     (state.parseUser === undefined && presence.user != null) ||
     (state.parseContext === undefined && presence.context != null)
   );
+}
+
+function emitEvent<TContext, TUser>(state: PresenceClientState<TContext, TUser>, event: RemoteEvent): void {
+  for (const listener of state.eventListeners) {
+    try {
+      listener(event);
+    } catch {
+      // one throwing listener must not starve the rest
+    }
+  }
 }
 
 // A field the parser rejects is dropped, so the receiver keeps the previous value.
@@ -42,6 +53,10 @@ export function wireInbound<TContext, TUser>(state: PresenceClientState<TContext
       const presence = validatePresence<TContext, TUser>(decoded, state.validationLimits);
       if (presence === null) return;
       if (presence.clientId === state.clientId) return; // ignore echoes of our own messages
+      if (presence.event !== undefined) {
+        emitEvent(state, { ...presence.event, clientId: presence.clientId });
+        return;
+      }
       if (state.devMode && !warnedUnparsed && hasUnparsedField(state, presence)) {
         warnedUnparsed = true;
         console.warn(

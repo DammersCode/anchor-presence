@@ -3,8 +3,11 @@ export type {
   ConnectionStatus,
   CursorPosition,
   CursorPresence,
+  PeerChange,
   PointerInfo,
   PointerType,
+  PresenceEvent,
+  RemoteEvent,
   RemotePresence,
 } from "./protocol.js";
 export {
@@ -16,6 +19,7 @@ export {
   DEFAULT_MAX_MESSAGE_BYTES,
   DEFAULT_MAX_SEQUENCE,
   DEFAULT_MAX_SESSION_LENGTH,
+  MAX_EVENT_TYPE_LENGTH,
 } from "./protocol.js";
 
 export { validatePresence } from "./validate.js";

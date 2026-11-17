@@ -11,6 +11,10 @@
 
 ### Added
 
+- `@anchor-presence/core`: `client.sendEvent(type, data?)` and `client.subscribeEvents(listener)` carry one-shot events such as reactions or pings. Events are never stored or resent. Both codecs support them (binary cursor tag 3). `CursorPresence` gains an optional `event` field.
+- `@anchor-presence/core`: `client.subscribePeers(listener)` reports remote clients that join or leave.
+- `@anchor-presence/react`: `useCursorEvents(listener)` subscribes to remote events.
+- `@anchor-presence/core`: a client answers a first message from an unknown peer, or a known `clientId` with a new session, with one full publish after up to 500 ms.
 - `@anchor-presence/dom`: `createWebSocketTransport` takes a `token` function that runs before every connection attempt and may return a promise.
 - `@anchor-presence/react`: `createPresenceHooks<TContext, TUser>()` returns the provider and every hook with the generics fixed, so `useRemoteUsers<Wrong>()` no longer compiles.
 - `@anchor-presence/core`: `dispose()` sends an explicit leave message (`leave: true`, binary cursor tag 2). Receivers remove the client at once instead of after `staleTimeoutMs`.

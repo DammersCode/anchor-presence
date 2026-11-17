@@ -3,7 +3,9 @@ import type {
   ConnectionStatus,
   CursorPosition,
   CursorPresence,
+  PeerChange,
   PointerInfo,
+  RemoteEvent,
   RemotePresence,
 } from "../protocol.js";
 import type { RemotePresenceStore } from "../store.js";
@@ -104,6 +106,22 @@ export interface PresenceClient<TContext = unknown, TUser = unknown> {
    * @param pointer Optional pointer info to send with the cursor.
    */
   updateLocalCursor(cursor: CursorPosition | null, pointer?: PointerInfo): void;
+  /**
+   * Sends a one-shot event to every remote peer, for example a reaction or a ping.
+   * The client never stores the event, and never resends it.
+   * @returns `false` when the client is not connected or the event is invalid.
+   */
+  sendEvent(type: string, data?: unknown): boolean;
+  /**
+   * Adds a listener for events from remote peers.
+   * @returns A function that removes the listener.
+   */
+  subscribeEvents(listener: (event: RemoteEvent) => void): () => void;
+  /**
+   * Adds a listener for remote clients that join or leave.
+   * @returns A function that removes the listener.
+   */
+  subscribePeers(listener: (change: PeerChange) => void): () => void;
   /**
    * Sets the context value the client sends to remote peers.
    * `undefined` clears the value.
@@ -210,5 +228,6 @@ export type PresenceClientState<TContext, TUser> = {
   newPeerTimer: TimerHandle | null;
   status: ConnectionStatus;
   contextListeners: Set<() => void>;
+  eventListeners: Set<(event: RemoteEvent) => void>;
   teardowns: Array<() => void>;
 };

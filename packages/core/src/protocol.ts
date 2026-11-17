@@ -25,6 +25,18 @@ export type PointerType = "mouse" | "pen" | "touch";
 export type PointerInfo = { type?: PointerType };
 
 /**
+ * A one-shot event, such as a reaction or a ping.
+ * `type` names the event, and `data` carries optional JSON.
+ */
+export type PresenceEvent = { type: string; data?: unknown };
+
+/** A remote client that joined or left the store. */
+export type PeerChange = { type: "join" | "leave"; clientId: string };
+
+/** A `PresenceEvent` received from a remote client. */
+export type RemoteEvent = PresenceEvent & { clientId: string };
+
+/**
  * One presence message in the wire format.
  * `clientId` names the client instance (tab or connection), not the user.
  * For `context` and `user`, `null` clears the field, and a missing field keeps the previous same-session value.
@@ -40,6 +52,8 @@ export type CursorPresence<TContext = unknown, TUser = unknown> = {
   pointer?: PointerInfo;
   /** `true` when the client leaves. `cursor` is `null`, and receivers remove the client at once. */
   leave?: true | undefined;
+  /** A one-shot event. `cursor` is `null`. Receivers hand it to event listeners and never store it. */
+  event?: PresenceEvent | undefined;
 };
 
 /**
@@ -54,6 +68,9 @@ export type RemotePresence<TContext = unknown, TUser = unknown> = Omit<
   /** `true` when this client's presence has not changed for `idleAfterMs`, even while heartbeats arrive. */
   idle: boolean;
 };
+
+/** Maximum length of an event `type`. `validatePresence` drops an event with a longer type. */
+export const MAX_EVENT_TYPE_LENGTH = 64;
 
 /** Default maximum length of `clientId`. `validatePresence` drops a message with a longer `clientId`. */
 export const DEFAULT_MAX_CLIENT_ID_LENGTH = 128;

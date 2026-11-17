@@ -13,6 +13,7 @@ const PROTOCOL_VERSION = 1;
 const CURSOR_NULL = 0;
 const CURSOR_PRESENT = 1;
 const CURSOR_LEFT = 2;
+const CURSOR_EVENT = 3;
 const VIEWPORT_ABSENT = 0;
 const VIEWPORT_PRESENT = 1;
 
@@ -95,13 +96,16 @@ function encodeMessage(message: CursorPresence): Uint8Array {
   }
 
   const cursor = message.cursor;
+  const event = message.event;
+  const eventType = event === undefined ? EMPTY : encoder.encode(event.type);
+  if (eventType.byteLength > 0xff) throw new Error("binaryCodec: event type too large");
   let cursorSize = 1;
   const anchorParts: { id: Uint8Array; u: number; v: number }[] = [];
   let hasViewport = false;
   let viewport = { u: 0, v: 0 };
 
   if (cursor === null) {
-    // No cursor payload beyond the tag byte.
+    if (event !== undefined) cursorSize += 2 + eventType.byteLength;
   } else {
     if (!Array.isArray(cursor.anchors)) throw new Error("binaryCodec: invalid cursor");
     if (cursor.anchors.length > 0xff) throw new Error("binaryCodec: too many anchors");
@@ -125,9 +129,10 @@ function encodeMessage(message: CursorPresence): Uint8Array {
     cursorSize += 1 + (hasViewport ? 8 : 0);
   }
 
-  const pointerTag = pointerTagFor(message.pointer);
-  const context = encodeJsonField(message.context);
-  const user = encodeJsonField(message.user);
+  // an event frame carries its data in the user slot and no pointer or context
+  const pointerTag = event === undefined ? pointerTagFor(message.pointer) : POINTER_ABSENT;
+  const context = encodeJsonField(event === undefined ? message.context : undefined);
+  const user = encodeJsonField(event === undefined ? message.user : event.data);
 
   const total =
     3 +
@@ -164,7 +169,15 @@ function encodeMessage(message: CursorPresence): Uint8Array {
   offset += 4;
 
   if (cursor === null) {
-    bytes[offset++] = message.leave === true ? CURSOR_LEFT : CURSOR_NULL;
+    if (event !== undefined) {
+      bytes[offset++] = CURSOR_EVENT;
+      dv.setUint16(offset, eventType.byteLength, true);
+      offset += 2;
+      bytes.set(eventType, offset);
+      offset += eventType.byteLength;
+    } else {
+      bytes[offset++] = message.leave === true ? CURSOR_LEFT : CURSOR_NULL;
+    }
   } else {
     bytes[offset++] = CURSOR_PRESENT;
     bytes[offset++] = anchorParts.length;
@@ -249,8 +262,12 @@ function decodeMessage(data: Uint8Array): unknown {
 
   const cursorTag = dv.getUint8(offset++);
   let cursor: CursorPosition | null;
+  let eventType: string | undefined;
   if (cursorTag === CURSOR_NULL || cursorTag === CURSOR_LEFT) {
     cursor = null;
+  } else if (cursorTag === CURSOR_EVENT) {
+    cursor = null;
+    eventType = readString();
   } else if (cursorTag === CURSOR_PRESENT) {
     const anchorCount = dv.getUint8(offset++);
     const anchors: CursorPosition["anchors"] = [];
@@ -290,6 +307,10 @@ function decodeMessage(data: Uint8Array): unknown {
   const message: Record<string, unknown> = { version: PROTOCOL_VERSION, clientId, session, sequence, cursor };
   if (pointer !== undefined) message.pointer = pointer;
   if (cursorTag === CURSOR_LEFT) message.leave = true;
+  if (eventType !== undefined) {
+    message.event = user.present ? { type: eventType, data: user.value } : { type: eventType };
+    return message;
+  }
   if (context.present) message.context = context.value;
   if (user.present) message.user = user.value;
   return message;

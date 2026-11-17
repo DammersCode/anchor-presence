@@ -18,6 +18,7 @@ describe("@anchor-presence/core public runtime API", () => {
       "DEFAULT_MAX_SESSION_LENGTH",
       "DEFAULT_PUBLISH_INTERVAL_MS",
       "DEFAULT_STALE_TIMEOUT_MS",
+      "MAX_EVENT_TYPE_LENGTH",
       "RemotePresenceStore",
       "binaryCodec",
       "createInMemoryPair",

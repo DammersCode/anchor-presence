@@ -4,6 +4,7 @@ import { LiveCursorProvider } from "./provider.js";
 import type { LiveCursorProviderProps } from "./provider.js";
 import { useCursorClient } from "./hooks/use-cursor-client.js";
 import { useCursorContext } from "./hooks/use-cursor-context.js";
+import { useCursorEvents } from "./hooks/use-cursor-events.js";
 import { useCursorPresence } from "./hooks/use-cursor-presence.js";
 import { useCursorStatus } from "./hooks/use-cursor-status.js";
 import { useRemoteCursors, useRemoteCursorsSelector } from "./hooks/use-remote-cursors.js";
@@ -18,6 +19,7 @@ export function createPresenceHooks<TContext = unknown, TUser = unknown>() {
     LiveCursorProvider: LiveCursorProvider as (props: LiveCursorProviderProps<TContext, TUser>) => ReactNode,
     useCursorClient: () => useCursorClient<TContext, TUser>(),
     useCursorContext: () => useCursorContext<TContext>(),
+    useCursorEvents,
     useCursorPresence: () => useCursorPresence<TContext, TUser>(),
     useCursorStatus,
     useRemoteCursors: () => useRemoteCursors<TContext, TUser>(),

@@ -1,4 +1,4 @@
-import type { CursorPosition, CursorPresence, RemotePresence } from "./protocol.js";
+import type { CursorPosition, CursorPresence, PeerChange, RemotePresence } from "./protocol.js";
 
 /** Default maximum number of remote clients in one `RemotePresenceStore`. */
 export const DEFAULT_MAX_REMOTE_CLIENTS = 64;
@@ -48,6 +48,7 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
 
   private readonly entries = new Map<string, Entry<TContext, TUser>>();
   private readonly listeners = new Set<() => void>();
+  private readonly peerListeners = new Set<(change: PeerChange) => void>();
 
   private snapshot: CursorPresence<TContext, TUser>[] = [];
   private snapshotDirty = false;
@@ -94,6 +95,7 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
       if (normalized.cursor !== null) this.activeCursorCount += 1;
       this.stableSnapshotDirty = true;
       this.markDirty();
+      this.notifyPeer({ type: "join", clientId: presence.clientId });
       return true;
     }
 
@@ -161,6 +163,7 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
         if (entry.presence.cursor !== null) this.activeCursorCount -= 1;
         this.entries.delete(clientId);
         changedAny = true;
+        this.notifyPeer({ type: "leave", clientId });
         continue;
       }
       const shouldBeIdle = entry.changedAt < idleCutoff;
@@ -194,7 +197,20 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
       this.entries.delete(clientId);
       this.stableSnapshotDirty = true;
       this.markDirty();
+      this.notifyPeer({ type: "leave", clientId });
     }
+  }
+
+  /**
+   * Adds a listener for clients that join or leave the store.
+   * A client joins on its first accepted message, and leaves on a leave message, a removal, or the stale timeout.
+   * @returns A function that removes the listener.
+   */
+  subscribePeers(listener: (change: PeerChange) => void): () => void {
+    this.peerListeners.add(listener);
+    return () => {
+      this.peerListeners.delete(listener);
+    };
   }
 
   /**
@@ -240,6 +256,16 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
     return () => {
       this.listeners.delete(listener);
     };
+  }
+
+  private notifyPeer(change: PeerChange): void {
+    for (const listener of this.peerListeners) {
+      try {
+        listener(change);
+      } catch {
+        // one throwing subscriber must not starve the rest
+      }
+    }
   }
 
   private markDirty(): void {

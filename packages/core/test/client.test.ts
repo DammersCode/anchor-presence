@@ -1372,6 +1372,28 @@ describe("late join", () => {
     client.dispose();
     vi.useRealTimers();
   });
+
+  it("answers a known clientId that returns with a new session", () => {
+    vi.useFakeTimers();
+    const { transport, sent, emit } = makeTransport();
+    const client = createPresenceClient({ transport, idFactory, user: { name: "Ada" }, heartbeatMs: 60_000 });
+    const send = (session: string, sequence: number) =>
+      emit(
+        new TextEncoder().encode(
+          JSON.stringify({ version: 1, clientId: "peer", session, sequence, cursor: null }),
+        ),
+      );
+    send("s1", 0);
+    vi.advanceTimersByTime(600);
+    const before = sent.length;
+
+    send("s2", 0);
+    vi.advanceTimersByTime(600);
+
+    expect(sent.length).toBe(before + 1);
+    client.dispose();
+    vi.useRealTimers();
+  });
 });
 
 describe("remote field validation warning", () => {

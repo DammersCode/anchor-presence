@@ -66,7 +66,7 @@ export function createSocketIoRelay(port: number, options: SocketIoRelayOptions 
     socket.join(room);
 
     const rateLimiter = new RateLimiter(rateCapacity, rateRefillPerSecond);
-    socket.on("presence", (data: Uint8Array) => {
+    socket.on("presence", (data: unknown) => {
       if (!rateLimiter.tryConsume()) return;
       if (messageByteLength(data, maxMessageBytes) > maxMessageBytes) return;
       socket.to(room).emit("presence", data);

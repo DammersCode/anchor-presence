@@ -60,6 +60,24 @@ describe("Socket.IO transport integration", () => {
     }
   });
 
+  it("drops a presence payload that is not binary", async () => {
+    const sender = io(url, { query: { room: "typed" }, transports: ["websocket"] });
+    const receiver = io(url, { query: { room: "typed" }, transports: ["websocket"] });
+    sockets.push(sender, receiver);
+    const received: unknown[] = [];
+    receiver.on("presence", (data) => received.push(data));
+    await vi.waitFor(() => expect(sender.connected && receiver.connected).toBe(true), {
+      timeout: 5000,
+      interval: 25,
+    });
+
+    sender.emit("presence", { length: 4_000_000_000 });
+    sender.emit("presence", new Uint8Array([1, 2, 3]));
+
+    await vi.waitFor(() => expect(received).toHaveLength(1), { timeout: 5000, interval: 25 });
+    expect(received[0]).toBeInstanceOf(Uint8Array);
+  });
+
   it("ends disconnected when the relay refuses the token", async () => {
     const strict = await createSocketIoRelay(0, { authCheck: () => false });
     try {

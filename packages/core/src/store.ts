@@ -176,9 +176,10 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
     }
   }
 
-  /** Returns whether the store holds an entry for `clientId`. */
-  has(clientId: string): boolean {
-    return this.entries.has(clientId);
+  /** Returns whether the store holds an entry for `clientId`, and for `session` when you pass one. */
+  has(clientId: string, session?: string): boolean {
+    const entry = this.entries.get(clientId);
+    return entry !== undefined && (session === undefined || entry.presence.session === session);
   }
 
   /**

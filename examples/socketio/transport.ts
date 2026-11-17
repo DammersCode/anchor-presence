@@ -2,9 +2,10 @@ import type { ConnectionStatus, LiveCursorTransport } from "@anchor-presence/cor
 import type { Socket } from "socket.io-client";
 
 /** Normalizes Socket.IO's binary payload shape across Node and browser clients. */
-function toUint8Array(data: ArrayBuffer | Uint8Array | Buffer): Uint8Array {
+function toUint8Array(data: unknown): Uint8Array | null {
   if (data instanceof Uint8Array) return data;
-  return new Uint8Array(data);
+  if (data instanceof ArrayBuffer) return new Uint8Array(data);
+  return null;
 }
 
 export function createSocketIoTransport(socket: Socket): LiveCursorTransport {
@@ -34,7 +35,10 @@ export function createSocketIoTransport(socket: Socket): LiveCursorTransport {
       socket.emit("presence", data);
     },
     subscribe: (listener) => {
-      const handler = (data: ArrayBuffer | Uint8Array | Buffer) => listener(toUint8Array(data));
+      const handler = (data: unknown) => {
+        const bytes = toUint8Array(data);
+        if (bytes !== null) listener(bytes);
+      };
       socket.on("presence", handler);
       return () => socket.off("presence", handler);
     },

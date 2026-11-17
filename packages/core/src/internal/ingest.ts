@@ -50,7 +50,7 @@ export function wireInbound<TContext, TUser>(state: PresenceClientState<TContext
       }
       if (state.parseUser !== undefined) parseField(presence, "user", state.parseUser);
       if (state.parseContext !== undefined) parseField(presence, "context", state.parseContext);
-      const known = state.store.has(presence.clientId);
+      const known = state.store.has(presence.clientId, presence.session);
       if (state.store.ingest(presence) && !known && presence.leave !== true) state.onNewPeer();
     } catch {
       // a throwing codec or subscriber must not break the transport dispatch loop

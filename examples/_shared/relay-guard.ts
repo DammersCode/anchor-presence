@@ -25,8 +25,9 @@ export function timingSafeEqualString(a: string, b: string): boolean {
 }
 
 /** Byte length of a text or binary message, without a full UTF-8 encode when the length already proves it is over budget. */
-export function messageByteLength(message: string | ArrayBufferView | ArrayBuffer, maxBytes: number): number {
-  if (typeof message !== "string") return message.byteLength;
+export function messageByteLength(message: unknown, maxBytes: number): number {
+  if (message instanceof ArrayBuffer || ArrayBuffer.isView(message)) return message.byteLength;
+  if (typeof message !== "string") return Number.POSITIVE_INFINITY; // an object has no byte length: over budget
   if (message.length > maxBytes) return message.length;
   if (message.length * 3 <= maxBytes) return message.length;
   return encoder.encode(message).byteLength;

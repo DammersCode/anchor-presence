@@ -55,11 +55,9 @@ describe("LiveCursorProvider clientKey", () => {
     const disposed: boolean[] = [];
     const factory = () => {
       const fake = makeFakeClient();
-      const dispose = fake.client.dispose;
-      fake.client.dispose = () => {
+      fake.client.registerTeardown(() => {
         disposed[made.indexOf(fake)] = true;
-        dispose();
-      };
+      });
       made.push(fake);
       return fake.client;
     };

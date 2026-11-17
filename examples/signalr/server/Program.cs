@@ -16,6 +16,19 @@ builder.Services.AddSignalR(options =>
 });
 
 var app = builder.Build();
+
+// CORS only guards browser reads. A WebSocket upgrade skips it, so refuse a foreign Origin on every request.
+app.Use(async (context, next) =>
+{
+    var origin = context.Request.Headers.Origin.ToString();
+    if (origin.Length > 0 && !allowedOrigins.Contains(origin, StringComparer.Ordinal))
+    {
+        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+        return;
+    }
+    await next();
+});
+
 app.UseCors("client");
 app.MapHub<PresenceHub>("/hubs/presence");
 

@@ -107,15 +107,15 @@ No other CI change is needed: the test only activates when `dotnet --version` su
 
 ## Production notes (security baseline)
 
-| Control                                 | Status                                                                                                                                                  |
-| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Room name validation (length + charset) | Yes — `RoomFor` in `Hub/PresenceHub.cs` matches `^[A-Za-z0-9_-]{1,256}$`, falling back to `"main"`.                                                     |
-| Max payload size                        | Yes — `MaximumReceiveMessageSize = 32 * 1024` in `Program.cs`. SignalR closes the connection on an oversized frame rather than crashing the process.    |
-| Per-connection rate limit               | **No.** ASP.NET Core has no built-in per-hub-method rate limiter. Add `Microsoft.AspNetCore.RateLimiting` if you need one.                              |
-| Origin allowlist                        | Yes — `RELAY_ALLOWED_ORIGINS`, comma-separated, read in `Program.cs`. Defaults to `http://localhost:5173` for local dev.                                |
-| Auth hook placeholder                   | **No.** Wire ASP.NET Core's standard `[Authorize]` attribute and an auth scheme on `PresenceHub` for real auth. This example has none.                  |
-| Room cleanup on close                   | Yes — SignalR removes a closed connection from its groups automatically.                                                                                |
-| Per-room / total connection caps        | **No.** Add `Microsoft.AspNetCore.RateLimiting` or a custom `IHubFilter` if you need a cap.                                                             |
-| Backpressure on slow consumers          | Partial — SignalR buffers per connection and applies its own backpressure internally, but this example does not configure or expose a custom watermark. |
+| Control                                 | Status                                                                                                                                                                                                            |
+| --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Room name validation (length + charset) | Yes — `RoomFor` in `Hub/PresenceHub.cs` matches `^[A-Za-z0-9_-]{1,256}$`, falling back to `"main"`.                                                                                                               |
+| Max payload size                        | Yes — `MaximumReceiveMessageSize = 32 * 1024` in `Program.cs`. SignalR closes the connection on an oversized frame rather than crashing the process.                                                              |
+| Per-connection rate limit               | **No.** ASP.NET Core has no built-in per-hub-method rate limiter. Add `Microsoft.AspNetCore.RateLimiting` if you need one.                                                                                        |
+| Origin allowlist                        | Yes — `RELAY_ALLOWED_ORIGINS`, comma-separated, read in `Program.cs`. A middleware refuses a request with a foreign `Origin` header, also a WebSocket upgrade. Defaults to `http://localhost:5173` for local dev. |
+| Auth hook placeholder                   | **No.** Wire ASP.NET Core's standard `[Authorize]` attribute and an auth scheme on `PresenceHub` for real auth. This example has none.                                                                            |
+| Room cleanup on close                   | Yes — SignalR removes a closed connection from its groups automatically.                                                                                                                                          |
+| Per-room / total connection caps        | **No.** Add `Microsoft.AspNetCore.RateLimiting` or a custom `IHubFilter` if you need a cap.                                                                                                                       |
+| Backpressure on slow consumers          | Partial — SignalR buffers per connection and applies its own backpressure internally, but this example does not configure or expose a custom watermark.                                                           |
 
 Set `RELAY_ALLOWED_ORIGINS` before exposing this beyond local development, and put it behind a TLS-terminating proxy.

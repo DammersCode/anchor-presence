@@ -107,6 +107,16 @@ async function connectClient(room: string): Promise<PresenceClient> {
 }
 
 describeIfDotnet("SignalR hub integration (real .NET server)", () => {
+  it("refuses a request from an origin outside the allowlist", async () => {
+    const negotiate = (origin: string) =>
+      fetch(`http://localhost:${port}/hubs/presence/negotiate?negotiateVersion=1`, {
+        method: "POST",
+        headers: { Origin: origin },
+      });
+    expect((await negotiate("http://evil.example")).status).toBe(403);
+    expect((await negotiate("http://localhost:5173")).status).toBe(200);
+  });
+
   it("relays a presence update from one client to another in the same room", async () => {
     const clientA = await connectClient("room-1");
     const clientB = await connectClient("room-1");

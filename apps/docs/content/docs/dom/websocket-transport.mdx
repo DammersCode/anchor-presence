@@ -42,12 +42,10 @@ The transport moves through these statuses:
   reconnecting --> connected: socket opens
   connected --> disconnected: close, no retry
   reconnecting --> disconnected: close, no retry
-  connecting --> disconnected: close, no retry
-  connecting --> disconnected: no WebSocket
-  connected --> disconnected: disconnect()
-  connecting --> disconnected: disconnect()
-  reconnecting --> disconnected: disconnect()`}
+  connecting --> disconnected: close, no retry`}
 />
+
+A `disconnect()` call changes any status to `disconnected`. With no `WebSocket`, the status changes from `connecting` to `disconnected`, as the warning above describes.
 
 ## The default URL
 
@@ -77,10 +75,10 @@ If the function throws or rejects, the transport reports a close with no code an
 `reconnect` defaults to `true`. When a connection drops and your own `disconnect()` call did not cause it, the transport schedules a reconnect with exponential backoff:
 
 - The first delay is `baseBackoffMs` (default `500`). The delay doubles on each attempt, up to `maxBackoffMs` (default `8000`).
-- The transport waits a random time between 50% and 100% of that delay. As a result, many clients that lose the connection at the same time do not all retry at the same moment.
+- The transport waits a random time between 50% and 100% of that delay. This is the random wait. As a result, many clients that lose the connection at the same time do not all retry at the same moment.
 - The backoff resets only after a connection stays open for `stableAfterMs` (default `5000`). A relay that accepts a connection and then closes it therefore sees growing delays, not a retry loop.
 - A close with code `1008` (policy), `4004` (origin), `4006` (room token), or `4007` (room name) stops the reconnect, and the status becomes `disconnected`.
-- `random` replaces the jitter source. It defaults to `Math.random`. A test can pass a fixed function to get a fixed delay.
+- `random` replaces the source of the random wait. It defaults to `Math.random`. A test can pass a fixed function to get a fixed delay.
 
 While a connection is connecting or open, a second `connect()` call has no effect. It does not open a second socket.
 

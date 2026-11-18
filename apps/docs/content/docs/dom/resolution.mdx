@@ -20,22 +20,11 @@ for (const cursor of binding.getSnapshot()) {
 
 Every resolved cursor carries a `tier`. The resolver tries the tiers in this order:
 
-<Mermaid
-  chart={`flowchart TD
-  start["remote presence"] --> hasCursor{"cursor is null?"}
-  hasCursor -- yes --> hidden["tier: hidden"]
-  hasCursor -- no --> anchor{"anchor of the chain resolves?"}
-  anchor -- yes --> anchorTier["tier: anchor, anchorId set"]
-  anchor -- no --> viewport{"viewport position present?"}
-  viewport -- yes --> viewportTier["tier: viewport"]
-  viewport -- no --> hidden`}
-/>
-
-| Tier       | Meaning                                                             |
-| ---------- | ------------------------------------------------------------------- |
-| `anchor`   | An anchor in the fallback chain resolved. `anchorId` names it.      |
-| `viewport` | No anchor resolved. The cursor uses the viewport fallback position. |
-| `hidden`   | Nothing resolved. The cursor has no valid position.                 |
+| Tier       | Meaning                                                                       |
+| ---------- | ----------------------------------------------------------------------------- |
+| `anchor`   | An anchor in the fallback chain resolved. `anchorId` names it.                |
+| `viewport` | No anchor resolved. The cursor uses the viewport fallback position.           |
+| `hidden`   | The cursor is `null`, or no anchor resolved and the cursor has no `viewport`. |
 
 The resolver walks the fallback chain of the sender in order. It uses the first anchor that is connected to the DOM and has a width and height greater than zero on the receiver. See [Fallback chain](/docs/get-started/concepts/fallback-chain) for how the sender builds the chain.
 

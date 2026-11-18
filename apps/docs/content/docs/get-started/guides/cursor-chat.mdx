@@ -10,9 +10,16 @@ Users on one page want to say a few words without a separate chat panel. Cursor 
 
 Each peer receives the event through `useCursorEvents` and shows the text as the label of the remote cursor of the sender. After 5 seconds, the bubble disappears on both sides.
 
-The demo has no chat input. It shows the remote cursor and its name label in two layouts. In the recipe, the chat text takes the place of this label for 5 seconds. Watch the label next to the cursor:
+The repository has a demo app with live reactions and a one-line chat. Both use one-shot events, and the app shows each message in a small box for 3 seconds. The [demo README](https://github.com/DammersCode/anchor-presence/tree/main/apps/demo) lists all steps. To run the demo, clone the repository and run these commands from its root:
 
-<ExamplePreview scene="basics" />
+```sh
+bun install
+bunx tsc --build packages/react
+bun run --cwd apps/server dev
+bun run --cwd apps/demo dev
+```
+
+The last two commands keep running, so run each one in its own terminal. Open `http://localhost:5173/?name=Ari&room=demo` and `http://localhost:5173/?name=Bo&room=demo` in two windows. Press `/` in one window, type a message, and press Enter.
 
 ## Read and cap the text
 

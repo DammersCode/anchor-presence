@@ -29,11 +29,11 @@ A peer joins on its first accepted message. It goes idle when its presence stops
 
 <Mermaid
   chart={`stateDiagram-v2
-  [*] --> active: first message (join)
-  active --> idle: no change for idleAfterMs
-  idle --> active: cursor, user, context, or pointer changes
-  active --> [*]: leave message or timeout (leave)
-  idle --> [*]: leave message or timeout (leave)`}
+  [*] --> active: first message
+  active --> idle: idleAfterMs, no change
+  idle --> active: presence changes
+  active --> [*]: leave or timeout
+  idle --> [*]: leave or timeout`}
 />
 
 ## Stale timeout

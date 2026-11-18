@@ -62,7 +62,7 @@ export function Mermaid({ chart }: { chart: string }) {
         theme: "base",
         fontFamily: "var(--font-sans, ui-sans-serif)",
         themeVariables: readThemeVariables(),
-        flowchart: { useMaxWidth: true, wrappingWidth: 260 },
+        flowchart: { useMaxWidth: false, wrappingWidth: 260 },
         sequence: { useMaxWidth: false, mirrorActors: false },
       });
       const { svg: rendered } = await mermaid.render(`mermaid-${id}`, chart);
@@ -87,7 +87,7 @@ export function Mermaid({ chart }: { chart: string }) {
   return (
     <div className="my-6 min-h-32 overflow-x-auto rounded-lg border border-fd-border bg-fd-card p-4">
       {svg ? (
-        <div className="[&_svg]:mx-auto" dangerouslySetInnerHTML={{ __html: svg }} />
+        <div className="[&_svg]:mx-auto [&_svg]:max-w-none" dangerouslySetInnerHTML={{ __html: svg }} />
       ) : (
         <div className="h-32 animate-pulse rounded-md bg-fd-secondary/40" aria-hidden />
       )}

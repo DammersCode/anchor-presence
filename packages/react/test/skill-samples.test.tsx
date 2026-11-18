@@ -21,6 +21,7 @@ export function PresenceRoot({
 }) {
   return (
     <LiveCursorProvider<unknown, { name: string }>
+      clientKey={room}
       factory={() => {
         const transport = createWebSocketTransport({
           url: `wss://relay.example.com/?room=${encodeURIComponent(room)}`,
@@ -50,6 +51,7 @@ function ScopedPresenceRoot({
 
   return (
     <LiveCursorProvider<{ page: string }, { name: string }>
+      clientKey={room}
       factory={() => {
         const transport = createWebSocketTransport({
           url: `wss://relay.example.com/?room=${encodeURIComponent(room)}`,

@@ -68,7 +68,7 @@ const debugCodec: CursorCodec = {
   </Tab>
 </Tabs>
 
-To read one captured frame, call `binaryCodec.decode(new Uint8Array([/* bytes */]))` in the browser console.
+The browser console has no `binaryCodec` global. To read one captured frame in the console, expose the codec in development, for example `globalThis.binaryCodec = binaryCodec`. Then call `binaryCodec.decode(new Uint8Array([/* bytes */]))`.
 
 ## Related
 

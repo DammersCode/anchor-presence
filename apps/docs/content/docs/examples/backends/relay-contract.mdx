@@ -6,7 +6,7 @@ icon: file-check
 
 import { Cable, Server, ShieldCheck } from "lucide-react";
 
-A relay forwards bytes between the clients of one room. A peer is another client in the same room. A relay must obey these rules so that `createWebSocketTransport` works with it.
+A relay forwards bytes between the clients of one room. A relay must obey these rules so that `createWebSocketTransport` works with it.
 
 ## Rules
 
@@ -14,8 +14,9 @@ A relay forwards bytes between the clients of one room. A peer is another client
 - Forward each frame, unchanged, to every peer of the sender. Never send a frame back to its sender.
 - Read the room from the `room` query parameter, for example `/?room=room-42`. If the parameter is missing, use the room `main`.
 - Accept a room name of letters, digits, `_` and `-`, up to 256 characters. Close a connection with any other name with code `4007`.
+- Treat a repeated `room` parameter as an invalid room name: close the connection with code `4007`.
 - Never map an invalid room name to `main`. Otherwise, two different rooms share one stream.
-- If the relay checks a [room token](/docs/dom/websocket-transport#room-token), read it from the `token` query parameter.
+- If the relay checks a [room token](/docs/dom/websocket-transport#room-token), read it from the `token` query parameter. A repeated `token` parameter fails the check: close the connection with code `4006`.
 - Drop a frame above the size cap and keep the socket open. The default cap is 32 KiB (`MAX_MESSAGE_BYTES`). This rule applies to binary and to text frames.
 - Without identity binding, do not decode the presence message. Forward the bytes as they arrive.
 - Keep serving other connections after a malformed request line, a reset during the handshake, or an oversized header.

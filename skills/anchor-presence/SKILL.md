@@ -41,7 +41,7 @@ npm install @anchor-presence/core @anchor-presence/dom @anchor-presence/react
 
 Use the project's package manager. Install the relay dependencies from the chosen row too.
 
-If the install returns a 404, the packages are not on npm. Build a clone with `bun install && bun run build`. In the project's `package.json`, add an `overrides` block that maps `@anchor-presence/core` and `@anchor-presence/dom` to `file:<clone>/packages/core` and `file:<clone>/packages/dom`. Then run `bun add file:<clone>/packages/core file:<clone>/packages/dom file:<clone>/packages/react`.
+If the install returns a 404, the packages are not on npm. Build a clone with `bun install && bun run build`. In the project's `package.json`, add an override block that maps `@anchor-presence/core` and `@anchor-presence/dom` to `file:<clone>/packages/core` and `file:<clone>/packages/dom`. The block is named `overrides` for bun and npm, `pnpm.overrides` for pnpm, and `resolutions` for yarn. Then run `bun add file:<clone>/packages/core file:<clone>/packages/dom file:<clone>/packages/react`.
 
 ### 4. Create the client and render the cursor layer
 
@@ -173,7 +173,7 @@ Run the project's typecheck and build. Then run two clients in the same room wit
 ## Hard rules
 
 - Render `user` and `context` values as text nodes: they arrive from the network untrusted. Map colors through a fixed palette.
-- Create clients and transports only in browser code, through the provider's `factory`.
+- Create clients and transports only in browser code: in the provider's `factory`, or in an effect.
 - A custom cursor element gets `position: fixed`, `pointer-events: none`, and `aria-hidden="true"`. Render it at the app root, outside any ancestor with `transform`, `filter`, or `contain`.
 - Treat anchor IDs as opaque keys: the receiver looks them up in a map and never runs them as selectors.
 - Every client in a room uses the same codec. The default is `jsonCodec`.

@@ -79,14 +79,7 @@ Each setting is an environment variable. The factory options `maxMessageBytes`, 
 
 The rate limit is a token bucket: a socket can send a burst of 80 messages, then 40 messages per second.
 
-| Limit               | Setting (default)                                                  | Above the limit                           |
-| ------------------- | ------------------------------------------------------------------ | ----------------------------------------- |
-| Message size        | `MAX_MESSAGE_BYTES` (32 KiB)                                       | Drops the message. The socket stays open. |
-| Hard frame size     | Bun's `maxPayloadLength`: 4 × `MAX_MESSAGE_BYTES`, at least 1 MiB  | Bun closes the connection.                |
-| Message rate        | `RATE_CAPACITY` (80) and `RATE_REFILL_PER_SECOND` (40)             | Drops the message. The socket stays open. |
-| Sockets in one room | `RELAY_MAX_ROOM_SOCKETS` (64)                                      | Closes the new socket with code `4001`.   |
-| Sockets in total    | `RELAY_MAX_TOTAL_SOCKETS` (10,000)                                 | Closes the new socket with code `4002`.   |
-| Slow receiver       | `RELAY_SLOW_PEER_HARD_BYTES` (8 MiB), as Bun's `backpressureLimit` | Bun closes the receiver.                  |
+The relay reads the limits, the defaults, and the codes on [Deploy a relay](/docs/get-started/guides/deploy-relay#set-the-environment-variables). The hard frame size is enforced through Bun's `maxPayloadLength`: four times `MAX_MESSAGE_BYTES`, at least 1 MiB.
 
 Bun does not expose the send buffer of each subscriber. For this reason, the relay cannot skip sends to a slow receiver, as the [Node.js (ws)](/docs/examples/backends/node-ws) relay does.
 

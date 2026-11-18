@@ -6,7 +6,7 @@ icon: users
 
 import { Gauge, LayoutList, UserPen, Braces } from "lucide-react";
 
-`useRemoteUsers` returns one entry for each peer (another client in the same room). An entry holds the `user` value of the peer, its session, and its idle state. Use it for a presence list or an avatar stack. These lists need one row per person, and they do not rerender while cursors move.
+`useRemoteUsers` returns one entry for each peer. An entry holds the `user` value of the peer, its session, and its idle state. Use it for a presence list or an avatar stack. These lists need one row per person, and they do not rerender when cursors move.
 
 ## Usage
 
@@ -74,7 +74,7 @@ function JoinNotice() {
 - The listener receives a `PeerChange`: a `type` of `"join"`, `"update"`, or `"leave"`, the `clientId`, and the `user` and `context` of the peer when they are set. On `"leave"`, `user` and `context` hold the last known values.
 - A cursor move never calls the listener. For the rules of each `type`, see [Peer changes](/docs/core/remote-presence#peer-changes).
 - The hook subscribes one time per client. An inline listener does not subscribe again on each render, and the hook always calls the listener of the last render.
-- The hook never rerenders its component. Without a client, it calls nothing.
+- The hook returns nothing, so it adds no rerender of its own. Without a client, it calls nothing.
 
 ## Related
 

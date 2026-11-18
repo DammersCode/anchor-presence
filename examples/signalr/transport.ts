@@ -120,7 +120,11 @@ export function createSignalRTransport(connection: HubConnection): LiveCursorTra
       }
       setStatus("connected");
     },
-    disconnect: () => connection.stop(),
+    disconnect: () => {
+      connection.off(EVENT_REFUSED);
+      connection.off(EVENT_RECEIVED);
+      return connection.stop();
+    },
     send: async (data) => {
       if (status !== "connected") return;
       await connection.send(METHOD_SEND, toBase64(data));

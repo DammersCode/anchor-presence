@@ -61,7 +61,7 @@ The `context` and `user` values stay JSON inside the binary frame. Only the curs
 
 A viewport coordinate that is not a finite 32-bit float throws a `TypeError`.
 
-The protocol limits on the [Validation](/docs/core/validation#validationlimits) page are tighter than these frame limits. For example, the protocol allows 8 anchors and the frame allows 255. A message inside the protocol limits never reaches a frame limit. If an encode error comes from `user` or `context`, the client encodes the message again. It encodes without `context`, then without `user`, then without both, and sends the first message that encodes. In all other cases, the client loses the message and continues.
+The protocol limits on the [Validation](/docs/core/validation#validationlimits) page are tighter than these frame limits. For example, the protocol allows 8 anchors and the frame allows 255. A message inside the protocol limits never reaches a frame limit. If an encode error comes from `user` or `context`, the client encodes the message again without them. See [Development mode](/docs/core/presence-client#development-mode). In all other cases, the client loses the message and continues.
 
 `binaryCodec.decode` never throws. It returns `null` for malformed, truncated, or non-binary input.
 

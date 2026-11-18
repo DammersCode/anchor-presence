@@ -1704,3 +1704,29 @@ describe("inbound drop warnings", () => {
     receiver.dispose();
   });
 });
+
+describe("createPresenceClient id validation", () => {
+  it("applies validationLimits.maxClientIdLength to the clientId", () => {
+    const { transport } = makeTransport();
+    expect(() =>
+      createPresenceClient({ transport, clientId: "abcd", validationLimits: { maxClientIdLength: 3 } }),
+    ).toThrow(/1 to 3 characters/u);
+    createPresenceClient({
+      transport,
+      clientId: "abc",
+      validationLimits: { maxClientIdLength: 3 },
+    }).dispose();
+  });
+
+  it("throws a TypeError when the idFactory session is empty or longer than 64 characters", () => {
+    const { transport } = makeTransport();
+    const ids = (second: string) => {
+      let calls = 0;
+      return () => (calls++ === 0 ? "me" : second);
+    };
+    expect(() => createPresenceClient({ transport, idFactory: ids("") })).toThrow(TypeError);
+    expect(() => createPresenceClient({ transport, idFactory: ids("s".repeat(65)) })).toThrow(
+      /session must be 1 to 64/u,
+    );
+  });
+});

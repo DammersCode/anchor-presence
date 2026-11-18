@@ -6,7 +6,7 @@ icon: braces
 
 import { Code, Crosshair, Eye } from "lucide-react";
 
-This page lists the types of the resolution result. Use it to look up a field. The [Resolution](/docs/dom/resolution) and [Visibility policy](/docs/dom/visibility-policy) guides explain the behavior.
+This page lists the types of the resolution result. Use it to look up a field. The [Resolution](/docs/dom/resolution) and [Visibility policy](/docs/dom/visibility-policy) guides explain the behavior. Import them from the package:
 
 ```ts
 import type { ResolvedCursor, ResolutionTier, VisibilityPolicy } from "@anchor-presence/dom";
@@ -24,9 +24,14 @@ A `ResolvedCursor` is one resolved remote cursor, in the viewport pixels of the 
 
 ## VisibilityPolicy
 
-A `VisibilityPolicy` is a function that decides whether one resolved cursor renders:
+A `VisibilityPolicy` is a function that decides whether one resolved cursor renders. The signature is:
 
-<AutoTypeTable path="../../packages/dom/src/resolver.ts" name="VisibilityPolicy" />
+```ts
+type VisibilityPolicy<TContext = unknown, TUser = unknown> = (input: {
+  presence: CursorPresence<TContext, TUser>;
+  resolution: { tier: ResolutionTier; anchorId: string | null; pointVisible: boolean };
+}) => "show" | "hide";
+```
 
 ## CURSOR_MARKER_ATTRIBUTE
 

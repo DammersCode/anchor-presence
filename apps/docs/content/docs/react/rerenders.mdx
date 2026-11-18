@@ -28,8 +28,6 @@ function TierBadge({ clientId }: { clientId: string }) {
 
 ## Rerender rules
 
-A peer is another client in the same room.
-
 | Hook                                                                          | Rerenders when                                                                                      |
 | ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
 | [useRemoteCursors](/docs/react/remote-cursors)                                | a new snapshot of resolved cursors arrives: every frame while cursors move                          |
@@ -40,12 +38,12 @@ A peer is another client in the same room.
 | [useCursorStatus](/docs/react/connection-status)                              | the connection status changes                                                                       |
 | [useLocalContext](/docs/react/local-context#local-context)                    | the local context value changes                                                                     |
 | [useLocalUser](/docs/react/local-context#local-user)                          | the local user value changes                                                                        |
-| [usePeerChanges](/docs/react/remote-users#peer-changes)                       | never: it calls its listener and returns nothing                                                    |
-| [useCursorEvents](/docs/react/cursor-events)                                  | never: it calls its listener and returns nothing                                                    |
+| [usePeerChanges](/docs/react/remote-users#peer-changes)                       | never by itself: it calls its listener and returns nothing                                          |
+| [useCursorEvents](/docs/react/cursor-events)                                  | never by itself: it calls its listener and returns nothing                                          |
 | [useCursorClient](/docs/react/api/hooks#usecursorclient)                      | the client or the binding of the provider changes                                                   |
 | [useCursorBinding](/docs/react/api/hooks#usecursorbinding)                    | the client or the binding of the provider changes                                                   |
 
-In an idle room with no inbound messages, no hook rerenders.
+A peer that turns idle or expires also changes the values that hooks return, so hooks can rerender in a room with no inbound messages. Every hook also rerenders when the client or the binding of the provider changes.
 
 ## CursorLayer rerenders
 

@@ -6,7 +6,7 @@ icon: radio
 
 import { Cable, Code, ShieldCheck, Users, Zap } from "lucide-react";
 
-`createPresenceClient` builds a `PresenceClient`. The client publishes your local cursor on a timer, and it checks and stores the presence of each peer. A peer is another client in the same room. Create one client for each connection to a room.
+`createPresenceClient` builds a `PresenceClient`. The client publishes your local cursor on a timer, and it checks and stores the presence of each peer. Create one client for each connection to a room.
 
 The client also sends and receives events: one-shot messages to every peer, for example a reaction. See [Events](/docs/core/events).
 
@@ -27,7 +27,7 @@ client.dispose();
 
 `transport` is the only required option. See [Transports](/docs/core/transports) for the transport contract, and [Codecs](/docs/core/codecs) for the `codec` option. [`PresenceClientOptions`](/docs/core/api/client#createpresenceclient) lists every option with its default.
 
-`createPresenceClient` throws a `TypeError` when a numeric option is not a finite number. See [createPresenceClient](/docs/core/api/client#createpresenceclient) for the list.
+`createPresenceClient` throws a `TypeError` for a missing transport, an ID of the wrong length, or a numeric option that is not a finite number. See [createPresenceClient](/docs/core/api/client#createpresenceclient) for the list.
 
 ## Connect the transport
 
@@ -146,8 +146,8 @@ const client = createPresenceClient({
 </Callout>
 
 <Callout type="warn">
-  If `idFactory` returns IDs longer than 64 characters, receivers drop every message of the client. The
-  default limits allow 128 characters for `clientId` and 64 for `session`.
+  A `clientId` must have 1 to 128 characters, and a session ID 1 to 64. If `idFactory` returns a session ID
+  that is empty or longer than 64 characters, `createPresenceClient` throws a `TypeError`.
 </Callout>
 
 ## Development mode

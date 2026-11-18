@@ -14,6 +14,7 @@ import type {
 } from "./internal/types.js";
 import {
   DEFAULT_MAX_CLIENT_ID_LENGTH,
+  DEFAULT_MAX_SESSION_LENGTH,
   DEFAULT_MAX_FIELD_BYTES,
   DEFAULT_MAX_MESSAGE_BYTES,
   MAX_EVENT_TYPE_LENGTH,
@@ -120,12 +121,18 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
   }
 
   const clientId = options.clientId ?? idFactory();
-  if (typeof clientId !== "string" || clientId.length < 1 || clientId.length > DEFAULT_MAX_CLIENT_ID_LENGTH) {
+  const maxClientIdLength = validationLimits?.maxClientIdLength ?? DEFAULT_MAX_CLIENT_ID_LENGTH;
+  if (typeof clientId !== "string" || clientId.length < 1 || clientId.length > maxClientIdLength) {
     throw new TypeError(
-      `createPresenceClient: clientId must be 1 to ${DEFAULT_MAX_CLIENT_ID_LENGTH} characters, got ${typeof clientId === "string" ? clientId.length : typeof clientId}`,
+      `createPresenceClient: clientId must be 1 to ${maxClientIdLength} characters, got ${typeof clientId === "string" ? clientId.length : typeof clientId}`,
     );
   }
   const session = idFactory();
+  if (typeof session !== "string" || session.length < 1 || session.length > DEFAULT_MAX_SESSION_LENGTH) {
+    throw new TypeError(
+      `createPresenceClient: session must be 1 to ${DEFAULT_MAX_SESSION_LENGTH} characters, got ${typeof session === "string" ? session.length : typeof session}`,
+    );
+  }
 
   const status = transport.subscribeStatus ? (transport.getStatus?.() ?? "connecting") : "connected";
 

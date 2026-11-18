@@ -29,7 +29,7 @@ binding.subscribe(() => {
 The binding runs its geometry scheduler only while two conditions are true:
 
 - The client is live: its status is `connecting` or `connected`.
-- At least one peer has a cursor. A peer is another client in the same room.
+- At least one peer has a cursor.
 
 In all other cases the scheduler stops, so an empty room costs no frame work.
 

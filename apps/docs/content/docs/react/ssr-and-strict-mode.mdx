@@ -52,6 +52,7 @@ On the server, and before the provider has a client, each hook returns a fixed v
 | `useLocalUser`             | `[undefined, setUser]`, and the setter does nothing    |
 | `useCursorClient`          | the `client` prop, or `null` without it                |
 | `useCursorBinding`         | the `binding` prop, or `null` without it               |
+| `useSendEvent`             | a function that sends nothing and returns `false`      |
 | `usePeerChanges`           | calls nothing                                          |
 | `useCursorEvents`          | calls nothing                                          |
 

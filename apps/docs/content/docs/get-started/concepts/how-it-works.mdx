@@ -28,7 +28,7 @@ flowchart TB
 ```
 
 - `@anchor-presence/core` has no dependencies and needs no DOM. It runs in Node.js, Bun, workers, and browsers. It owns the protocol, validation, message order, the store of remote presence, and the client. If a `document` exists, the client listens for `visibilitychange` to send a pending update when the page shows again.
-- `@anchor-presence/dom` depends only on `@anchor-presence/core`. It owns every browser API call: the anchor registry, pointer capture, layout measurement once per animation frame, and visibility policies.
+- `@anchor-presence/dom` depends only on `@anchor-presence/core`. It owns every layout and pointer API call: the anchor registry, pointer capture, layout measurement once per animation frame, and visibility policies. The core client only listens to `visibilitychange`, to send a pending update when the tab turns visible.
 - `@anchor-presence/react` is an adapter only. It keeps no cursor state of its own. It reads the stores of the other two packages with `useSyncExternalStore`.
 
 ## Path of one pointer move

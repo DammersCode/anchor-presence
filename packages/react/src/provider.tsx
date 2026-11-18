@@ -101,6 +101,12 @@ export function LiveCursorProvider<TContext = unknown, TUser = unknown>(
       "LiveCursorProvider got neither `client` nor `factory`, so it renders without presence.",
     );
   }
+  if (factory !== undefined && providedClient !== undefined) {
+    warnOnce(
+      "provider-client-and-factory",
+      "LiveCursorProvider got both `client` and `factory`; it ignores `factory`.",
+    );
+  }
   if (providedBinding !== undefined && bindingOptions !== undefined) {
     warnOnce(
       "binding-and-options",

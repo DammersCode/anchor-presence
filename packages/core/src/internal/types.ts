@@ -192,7 +192,7 @@ export interface PresenceClient<TContext = unknown, TUser = unknown> {
   hasActiveCursors?(): boolean;
   /**
    * Adds a listener for remote presence changes.
-   * The client calls the listener when it accepts a message.
+   * The client calls the listener when it accepts a message, removes a peer, or a peer changes idle state.
    * @returns A function that removes the listener.
    */
   subscribeRemote(listener: () => void): () => void;

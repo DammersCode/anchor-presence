@@ -18,7 +18,7 @@ import {
   Zap,
 } from "lucide-react";
 
-`@anchor-presence/core` is the protocol layer. It sends the local presence, and it checks and stores the presence of each peer. A peer is another client in the same room. Use the package directly in a test, on a server, or in an adapter for a UI framework other than React.
+`@anchor-presence/core` is the protocol layer. It sends the local presence, and it checks and stores the presence of each peer. Use the package directly in a test, on a server, or in an adapter for a UI framework other than React.
 
 `@anchor-presence/core` has no runtime dependencies and needs no DOM. It runs in Node.js, Bun, workers, and browsers. It reads `document` at one place only, after a check that `document` exists. There, the client listens for `visibilitychange`. When the page becomes visible, the client sends a pending publish at once.
 

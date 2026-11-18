@@ -97,6 +97,9 @@
 
 ### Changed
 
+- `@anchor-presence/dom`: `connect()` during the reconnect backoff cancels the pending timer, so it no longer opens a second socket. `WebSocketTransport` types `subscribeStatus`, `getStatus`, `subscribeClose` and `bufferedBytes` as required.
+- `@anchor-presence/core`: the `clientId` length check uses `validationLimits.maxClientIdLength`. `createPresenceClient` throws a `TypeError` when `idFactory` returns a session of 0 or more than 64 characters.
+- `@anchor-presence/react`: `LiveCursorProvider` warns in dev when a caller passes both `client` and `factory`; `client` wins.
 - `@anchor-presence/react`: `CursorLayer` without `getLabel` labels a cursor with `user.name` when it is a string that is not empty. Without `getColor`, each client gets one color from a palette of 8 colors, picked from its `clientId`.
 - `@anchor-presence/react`: the package entry starts with `"use client"`, so React Server Components frameworks treat it as client code.
 - `@anchor-presence/dom`: `createWebSocketTransport` stops reconnecting after a close with code `4007` (room name not valid).

@@ -30,7 +30,7 @@ const defaultVisibilityPolicy: VisibilityPolicy = ({ resolution }) =>
 
 ## Write a custom policy
 
-Each time the resolver resolves the cursors, it calls the policy once for each peer. A peer is another client in the same room. The policy receives two values:
+Each time the resolver resolves the cursors, it calls the policy once for each peer. The policy receives two values:
 
 - `presence`: the full presence of the peer, with its `context` and `user`.
 - `resolution`: the `tier`, the winning `anchorId`, and `pointVisible`.

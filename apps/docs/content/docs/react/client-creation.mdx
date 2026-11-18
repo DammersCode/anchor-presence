@@ -82,7 +82,7 @@ function OwnClientApp() {
 - After `dispose`, you cannot use the client again. Create a new client and pass it to the provider.
 - The client connects the transport when you create it. To connect later, pass `autoConnect: false` to `createPresenceClient`, then call `transport.connect()`.
 - Until your client exists, pass `client={null}`. Every hook then returns its empty value.
-- If you set both `factory` and `client`, `client` wins. The factory never runs, and `clientKey` has no effect.
+- The types forbid passing both `factory` and `client`. In JavaScript, `client` wins: the factory never runs, and `clientKey` has no effect.
 
 ## Related
 

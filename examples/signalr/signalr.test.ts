@@ -211,4 +211,19 @@ describe("createSignalRTransport", () => {
     expect(mapStatus(HubConnectionState.Connecting)).toBe("connecting");
     expect(mapStatus(HubConnectionState.Disconnecting)).toBe("connecting");
   });
+
+  it("disconnect removes the hub event handlers and stops the connection", async () => {
+    const fake = createFakeConnection();
+    const off: string[] = [];
+    let stopped = false;
+    Object.assign(fake.connection, {
+      off: (event: string) => off.push(event),
+      stop: async () => {
+        stopped = true;
+      },
+    });
+    await createSignalRTransport(fake.connection).disconnect?.();
+    expect(off.sort()).toEqual(["PresenceReceived", "Refused"]);
+    expect(stopped).toBe(true);
+  });
 });

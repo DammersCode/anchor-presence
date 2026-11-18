@@ -6,14 +6,23 @@ import type { ConnectionStatus, LiveCursorTransport, TransportClose } from "@anc
 type Handler<Event> = { bivarianceHack(event: Event): void }["bivarianceHack"];
 
 export type WebSocketLike = {
-  readonly readyState: number; // 1 = OPEN
+  /** `1` when the socket is open. */
+  readonly readyState: number;
+  /** Runs when the socket opens. */
   onopen: null | Handler<unknown>;
+  /** Runs when the socket closes. */
   onclose: null | Handler<{ code?: number; reason?: string }>;
+  /** Runs when the socket reports an error. */
   onerror: null | Handler<unknown>;
+  /** Runs for each received message. */
   onmessage: null | Handler<{ data: unknown }>;
+  /** Set to `"arraybuffer"` so binary frames arrive as `ArrayBuffer`. */
   binaryType: string;
+  /** Bytes queued but not yet sent. */
   bufferedAmount?: number;
+  /** Sends one binary frame. */
   send(data: ArrayBufferView<ArrayBuffer>): void;
+  /** Closes the socket. */
   close(): void;
 };
 
@@ -23,6 +32,10 @@ export type WebSocketCtor = new (url: string) => WebSocketLike;
 export type WebSocketTransport = LiveCursorTransport & {
   connect(): void;
   disconnect(): void;
+  subscribeStatus(listener: (status: ConnectionStatus) => void): () => void;
+  getStatus(): ConnectionStatus;
+  subscribeClose(listener: (close: TransportClose) => void): () => void;
+  bufferedBytes(): number;
 };
 
 /**
@@ -304,6 +317,8 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
       }
       // a socket already connecting or open must not be replaced: connect() is idempotent while one is live
       if (socket !== null && (socket.readyState === WS_CONNECTING || socket.readyState === WS_OPEN)) return;
+      if (reconnectTimer !== null) clearTimeout(reconnectTimer);
+      reconnectTimer = null;
       setStatus("connecting");
       open();
     },

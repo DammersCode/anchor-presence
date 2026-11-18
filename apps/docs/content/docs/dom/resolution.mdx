@@ -6,7 +6,7 @@ icon: crosshair
 
 import { BookOpen, Braces, Eye, Move } from "lucide-react";
 
-Resolution is the process that turns the presence of one peer into a screen position on the receiver. A peer is another client in the same room. The binding resolves every peer on each frame while it is active. Read this page to understand the `tier`, `x`, `y`, and `idle` fields of a `ResolvedCursor`.
+Resolution is the process that turns the presence of one peer into a screen position on the receiver. The binding resolves every peer on each frame while it is active. Read this page to understand the `tier`, `x`, `y`, and `idle` fields of a `ResolvedCursor`.
 
 This sample logs each cursor that falls back to the viewport position:
 
@@ -54,17 +54,17 @@ y = viewport.v * window.innerHeight
 
 `binding.getSnapshot()` returns an array of `ResolvedCursor` values. Each entry has these fields:
 
-| Field          | Meaning                                                                                                         |
-| -------------- | --------------------------------------------------------------------------------------------------------------- |
-| `clientId`     | The peer that owns the cursor.                                                                                  |
-| `x`, `y`       | The eased position, in viewport pixels. See [Motion](/docs/dom/motion).                                         |
-| `tier`         | `anchor`, `viewport`, or `hidden`.                                                                              |
-| `anchorId`     | The anchor that won, or `null`.                                                                                 |
-| `visible`      | The decision of the [visibility policy](/docs/dom/visibility-policy). Render the cursor only when it is `true`. |
-| `pointVisible` | Whether a scroll container clips the point. See [Occlusion and scroll](/docs/dom/occlusion-and-scroll).         |
-| `context`      | The `context` of the sender, when set.                                                                          |
-| `user`         | The `user` of the sender, when set.                                                                             |
-| `idle`         | `true` when the presence of the sender did not change for `idleAfterMs`.                                        |
+| Field          | Meaning                                                                                                                                                               |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `clientId`     | The peer that owns the cursor.                                                                                                                                        |
+| `x`, `y`       | The eased position, in viewport pixels. See [Motion](/docs/dom/motion).                                                                                               |
+| `tier`         | `anchor`, `viewport`, or `hidden`.                                                                                                                                    |
+| `anchorId`     | The anchor that won, or `null`.                                                                                                                                       |
+| `visible`      | The decision of the [visibility policy](/docs/dom/visibility-policy). Render the cursor only when it is `true`.                                                       |
+| `pointVisible` | `true` when the point is inside the visible part of the anchor, after the clip of every scroll container. See [Occlusion and scroll](/docs/dom/occlusion-and-scroll). |
+| `context`      | The `context` of the sender, when set.                                                                                                                                |
+| `user`         | The `user` of the sender, when set.                                                                                                                                   |
+| `idle`         | `true` when the presence of the sender did not change for `idleAfterMs`.                                                                                              |
 
 The core store sets `idle`. See [Idle stage](/docs/core/remote-presence#idle-stage). The binding copies the flag and runs no idle timer of its own. A renderer can use `idle` to fade a cursor or hide its label.
 

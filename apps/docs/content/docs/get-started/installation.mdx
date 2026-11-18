@@ -10,35 +10,6 @@ Install the packages before you write any code. A React app needs all three pack
 
 ## Install
 
-<Callout type="warn">
-  If the install command returns a 404, the packages are not published to npm. Build them from the repository,
-  then install them from their folders. The `react` and `dom` packages depend on the other packages by
-  version, so your app needs an `overrides` block that points those names to the folders.
-</Callout>
-
-Build the packages in a clone of the repository:
-
-```sh
-bun install && bun run build
-```
-
-Then add an `overrides` block to the `package.json` of your app. Use the real path of your clone:
-
-```json
-{
-  "overrides": {
-    "@anchor-presence/core": "file:../anchor-presence/packages/core",
-    "@anchor-presence/dom": "file:../anchor-presence/packages/dom"
-  }
-}
-```
-
-Last, add the packages from the same folders:
-
-```sh
-bun add file:../anchor-presence/packages/core file:../anchor-presence/packages/dom file:../anchor-presence/packages/react
-```
-
 Pick the tab that matches your app. Each tab installs only the packages that the app uses:
 
 <Tabs items={["React app", "DOM app without React", "Server or tests"]}>
@@ -64,6 +35,42 @@ Pick the tab that matches your app. Each tab installs only the packages that the
 
   </Tab>
 </Tabs>
+
+<Accordions>
+  <Accordion title="Install from a clone of the repository">
+
+<Callout type="warn">
+  If the install command returns a 404, the packages are not published to npm. Build them from the repository,
+  then install them from their folders. The `react` and `dom` packages depend on the other packages by
+  version, so your app needs an override block that points those names to the folders. The block is named
+  `overrides` for bun and npm, `pnpm.overrides` for pnpm, and `resolutions` for yarn.
+</Callout>
+
+Build the packages in a clone of the repository:
+
+```sh
+bun install && bun run build
+```
+
+Then add the override block to the `package.json` of your app. For npm and bun, the key is `overrides`. Use the real path of your clone:
+
+```json
+{
+  "overrides": {
+    "@anchor-presence/core": "file:../anchor-presence/packages/core",
+    "@anchor-presence/dom": "file:../anchor-presence/packages/dom"
+  }
+}
+```
+
+Last, add the packages from the same folders:
+
+```sh
+bun add file:../anchor-presence/packages/core file:../anchor-presence/packages/dom file:../anchor-presence/packages/react
+```
+
+  </Accordion>
+</Accordions>
 
 ## Requirements
 

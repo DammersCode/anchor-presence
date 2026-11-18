@@ -19,7 +19,7 @@ const clippedPointPolicy: VisibilityPolicy = ({ resolution }) =>
   !resolution.pointVisible || resolution.tier === "hidden" ? "hide" : "show";
 ```
 
-A portal overlay can need to skip the clip check for one anchor. For this case, write a policy that skips the `pointVisible` test for the ID of that anchor.
+To skip the clip check for one anchor, for example a portal overlay, write a policy that skips the `pointVisible` test for the ID of that anchor.
 
 This demo uses `clippedPointPolicy`. The narrow pane shows the threads of an inbox in a short scroll list. When the cursor points at a thread outside the visible part of the list, the narrow pane hides the cursor. Watch the narrow pane:
 

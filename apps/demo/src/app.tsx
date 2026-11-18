@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { useCursorContext } from "@anchor-presence/react";
+import { useCursorBinding } from "./cursors/hooks";
 import { Sidebar } from "./components/dashboard/sidebar";
 import { Topbar } from "./components/dashboard/topbar";
 import { SettingsDialog } from "./components/dashboard/settings-dialog";
 import { CursorLayer } from "./cursors/cursor-layer";
 import { WhoIsOnline } from "./components/who-is-online";
+import { LiveReactions } from "./components/live-reactions";
 import { localRoom, localUserName } from "./cursors/setup";
 import type { LocalViewState } from "./cursors/visibility-policy";
 import type { DemoContext } from "./cursors/setup";
@@ -26,6 +28,7 @@ export default function App({ localViewState, interpolatorStyle, onInterpolatorS
   const [page, navigate] = usePageRoute();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [, setContext] = useCursorContext<DemoContext>();
+  const binding = useCursorBinding();
 
   // Single writer for both the published context and the local state the visibility policy reads.
   useEffect(() => {
@@ -33,6 +36,11 @@ export default function App({ localViewState, interpolatorStyle, onInterpolatorS
     localViewState.settingsOpen = settingsOpen;
     setContext(settingsOpen ? { page, dialog: "settings" } : { page });
   }, [localViewState, page, settingsOpen, setContext]);
+
+  // the visibility policy reads localViewState, which React does not track: tell the binding when it changes
+  useEffect(() => {
+    binding?.invalidate("view state changed");
+  }, [binding, page, settingsOpen]);
 
   // Sidebar's onSelect is id: string (also used for "settings", which doesn't navigate); narrow before routing.
   const handleSelect = (id: string) => {
@@ -68,6 +76,7 @@ export default function App({ localViewState, interpolatorStyle, onInterpolatorS
       />
       <CursorLayer />
       <WhoIsOnline />
+      <LiveReactions localName={localUserName} />
     </div>
   );
 }

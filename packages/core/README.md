@@ -21,13 +21,13 @@ client.subscribeRemote(() => {
 });
 ```
 
-`getRemoteSnapshot()` returns the raw list, including `sequence`, and changes identity on every accepted message. `getRemotePresence()` returns the render-stable list, which excludes `sequence` and holds identity until an observable field changes.
+`getRemoteSnapshot()` returns the raw snapshot, including `sequence`, and changes identity on every accepted message. `getRemotePresence()` returns the stable snapshot, which excludes `sequence` and holds identity until an observable field changes.
 
 The client calls `transport.connect()` for you by default. To connect at a time that you choose, pass `autoConnect: false` and call `transport.connect()` yourself.
 
 ## Boundary rule
 
-Core imports no DOM, React, transport, or codec library, so it does not know what a browser is. Every browser API call lives in `@anchor-presence/dom`.
+`@anchor-presence/core` imports no DOM, React, transport, or codec library. It reads `document` only when it exists, to send a pending publish when the page becomes visible. Every other browser API call lives in `@anchor-presence/dom`.
 
 ## Main exports
 
@@ -35,7 +35,7 @@ Core imports no DOM, React, transport, or codec library, so it does not know wha
 | ------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | `createPresenceClient(options)`                   | Wires the transport, codec, publishing, sequencing, expiry, and the remote presence store into one client |
 | `CursorPresence`, `AnchorPoint`, `CursorPosition` | Wire protocol types                                                                                       |
-| `RemotePresence`                                  | A remote presence without `sequence`. It is the shape of the render-stable snapshot.                      |
+| `RemotePresence`                                  | A remote presence without `sequence`. It is the shape of an entry in the stable snapshot.                 |
 | `validatePresence(input, limits?)`                | Checks and clamps an untrusted decoded value                                                              |
 | `jsonCodec`                                       | The default `CursorCodec` implementation                                                                  |
 | `binaryCodec`                                     | A compact `CursorCodec` for binary WebSocket relays                                                       |
@@ -43,6 +43,7 @@ Core imports no DOM, React, transport, or codec library, so it does not know wha
 | `AdaptivePublishOptions`                          | Opt-in slow-mode options for the publish rate                                                             |
 | `createInMemoryPair`                              | A connected pair of in-memory transports for tests                                                        |
 | `RemotePresenceStore`                             | Sequencing, field-delta merge, and stale-expiry store for remote presences                                |
+| `createEventChannel(client)`                      | Typed `send` and `subscribe` for the events of a client                                                   |
 | `linearInterpolator`, `noneInterpolator`          | Interpolation factories                                                                                   |
 
 See [How it works](https://anchor-presence.vercel.app/docs/get-started/concepts/how-it-works) and [Codecs](https://anchor-presence.vercel.app/docs/core/codecs) for full guides.

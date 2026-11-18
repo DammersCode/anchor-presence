@@ -3,9 +3,9 @@ title: How it works
 description: The three package layers, the sender-to-receiver flow, and the invariants.
 ---
 
-Anchor Presence shows remote user cursors at the correct semantic position. It does not use a canvas. It works even when two clients have different layouts.
+Anchor Presence shows remote cursors at the correct semantic position. It does not use a canvas. It works even when two clients have different layouts.
 
-The central invariant:
+This central invariant gives the library its design:
 
 > A remote cursor represents a semantic DOM location, not an absolute screen coordinate.
 
@@ -24,7 +24,7 @@ flowchart TB
     react --> dom --> core
 ```
 
-- `@anchor-presence/core` has zero dependencies and no DOM globals. It runs in Node.js, Bun, workers, and browsers. It owns the protocol, validation, sequencing, the remote presence store, and client orchestration.
+- `@anchor-presence/core` has zero dependencies and needs no DOM. If `document` exists, it reads `document` to send a pending update when the page becomes visible again. It runs in Node.js, Bun, workers, and browsers. It owns the protocol, validation, sequencing, the remote presence store, and client orchestration.
 - `@anchor-presence/dom` depends only on `@anchor-presence/core`. It owns every browser API call, the anchor registry, pointer capture, the geometry scheduler, and visibility policies.
 - `@anchor-presence/react` is an adapter only. It holds no engine state. It subscribes to `@anchor-presence/core` and `@anchor-presence/dom` stores with `useSyncExternalStore`, and declares anchors through the binding's anchor attribute, with no separate registration helper of its own.
 
@@ -57,9 +57,9 @@ The sender never measures the receiver's DOM. The sender sends a semantic anchor
 
 The receiver's client stores every accepted remote presence. It exposes two read APIs.
 
-`getRemoteSnapshot()` returns the raw store, including each presence's `sequence`. Its identity changes on every accepted message. Use it for tests and diagnostics.
+`getRemoteSnapshot()` returns the raw snapshot, including each presence's `sequence`. Its identity changes on every accepted message. Use it for tests and diagnostics.
 
-`getRemotePresence()` returns a render-stable projection. Each entry is a `RemotePresence` without `sequence`. Its identity changes only when an observable field changes. The React adapter reads this projection. A remote cursor move therefore rerenders only the consumers that need it.
+`getRemotePresence()` returns a stable snapshot. Each entry is a `RemotePresence` without `sequence`. Its identity changes only when an observable field changes. The React adapter reads this stable snapshot. A remote cursor move therefore rerenders only the consumers that need it.
 
 ## The 10 invariants
 

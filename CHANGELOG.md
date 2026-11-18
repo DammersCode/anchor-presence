@@ -4,6 +4,8 @@
 
 ### Breaking
 
+- Example relays: the node-ws relay counts only admitted sockets against `maxSockets` and terminates a refused socket after one second, so a flood of refused clients that ignore the close frame cannot fill the cap.
+- Example relays: the node-ws relay survives any request that fails inside the upgrade handler, such as a malformed request target. Bun and Hono check origin and room before they call `authCheck`. Receivers drop an identity with a `clientId` above 100 characters.
 - Example relays: node-ws and Bun answer a path other than `/` with 404. Rooms come from the `room` query parameter. The node-ws relay no longer exits when a client resets the connection while an async `authCheck` runs.
 - `@anchor-presence/core`: the default shape check accepts a remote `null` for any key, and the dev console warns once when it drops a remote `user` or `context`.
 - `@anchor-presence/core`: a remote `user` or `context` must have the shape of the local value, or the client drops it. A key the local value lacks, such as an optional field, stays only as a string, number, boolean or `null`. Pass `parseUser` or `parseContext` to replace the check, for example when the client has no local value.
@@ -22,6 +24,9 @@
 
 ### Added
 
+- `@anchor-presence/core`: `createEventChannel<TEvents>(client)` gives typed `send` and `subscribe` for events. The client option `eventRateLimit` sets the per-sender burst and rate and a total rate for all senders. `client.subscribeUser(listener)` reports local `setUser` changes.
+- `@anchor-presence/react`: `useLocalUser()`, `usePeerChanges(listener)`, and a third type parameter on `createPresenceHooks<TContext, TUser, TEvents>()` that types `useCursorEvents` and adds `useSendEvent()`.
+- The demo has live reactions and chat built on events, with end-to-end tests for events, leaving and peer notices.
 - `@anchor-presence/react`: `useCursorBinding()` returns the DOM binding, so a component can call `binding.invalidate()` when state that a `visibilityPolicy` reads changes.
 - Example transports: the Socket.IO and SignalR transports implement `subscribeClose`. The relays send a `refused` event with the close code (4001, 4002, 4006, 4007) before they disconnect a client.
 - `defineRelayConformance` also checks the origin allowlist (close code 4004).

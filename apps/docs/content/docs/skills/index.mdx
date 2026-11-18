@@ -9,8 +9,8 @@ An agent skill is a folder of instructions, `SKILL.md` plus reference files, tha
 
 | Skill                                     | What it does                                                                  | When to use it                                                        |
 | ----------------------------------------- | ----------------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| [Integration](/docs/skills/integration)   | Adds live cursors to a React app: transport, client, anchors, presence list.  | Adding cursors to a new app, or fixing a broken integration.          |
-| [Layout audit](/docs/skills/layout-audit) | Scores a running app for cursor-jump risk between layouts and proposes fixes. | Before shipping a responsive or collapsible layout with live cursors. |
+| [Integration](/docs/skills/integration)   | Adds live cursors to a React app: transport, client, anchors, presence list.  | To add cursors to a new app, or to fix a broken integration.          |
+| [Layout audit](/docs/skills/layout-audit) | Scores a running app for cursor-jump risk between layouts and proposes fixes. | Before you ship a responsive or collapsible layout with live cursors. |
 
 ## Install
 
@@ -38,10 +38,10 @@ Every page on this site is also plain Markdown, for an agent that reads URLs dir
 
 Every doc page also has a **Copy Markdown** button at the top, plus **Open in ChatGPT** and **Open in Claude** actions. With these actions, a person who reads a page in a browser can give it to a chat model in one click.
 
-If the agent runs inside this repository, or in a project that depends on it, use a skill. A skill is denser than the docs. It includes steps that the reference docs spread across several pages. If the agent works from a URL without repository access, use `llms.txt`. Also use `llms.txt` if the agent needs the full API reference next to the integration steps.
+If the agent runs inside this repository, or in a project that depends on it, use a skill. A skill is denser than the docs. It includes steps that the reference docs spread across several pages. If the agent works from a URL without repository access, use `llms.txt`. If the agent needs the full API reference next to the integration steps, also use `llms.txt`.
 
 ## Related
 
 - [Quick start](/docs/get-started/quick-start)
-- [Designing layouts for presence](/docs/get-started/guides/layout-design)
+- [Layout design for presence](/docs/get-started/guides/layout-design)
 - [Security](/docs/get-started/guides/security)

@@ -1,9 +1,9 @@
 ---
 title: Custom cursors
-description: Replace the cursor content CursorLayer renders, or style the built-in DefaultCursor.
+description: Replace the cursor content that CursorLayer renders, or style the built-in DefaultCursor.
 ---
 
-`CursorLayer` owns the position of every cursor root. Each root shows the cursor of one peer. A peer is another client in the same room. `renderCursor` and `DefaultCursor` let you change what the root shows, without taking over that positioning.
+`CursorLayer` owns the position of every cursor root. Each root shows the cursor of one peer (another client in the same room). `renderCursor` and `DefaultCursor` change what the root shows. They do not change the position.
 
 ## renderCursor
 
@@ -23,7 +23,7 @@ description: Replace the cursor content CursorLayer renders, or style the built-
 
 ## DefaultCursor
 
-`DefaultCursor` is the shape `CursorLayer` renders when you pass no `renderCursor`. It has no Tailwind dependency and no external stylesheet. Three CSS variables control its look: `--anchor-presence-cursor-color`, `--anchor-presence-cursor-size`, and `--anchor-presence-cursor-label-color`. This renderer makes the arrow larger:
+`DefaultCursor` is the shape that `CursorLayer` renders when you pass no `renderCursor`. It has no Tailwind dependency and no external stylesheet. Three CSS variables control its look: `--anchor-presence-cursor-color`, `--anchor-presence-cursor-size`, and `--anchor-presence-cursor-label-color`. This renderer makes the arrow larger:
 
 ```tsx
 <CursorLayer

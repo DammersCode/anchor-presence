@@ -16,9 +16,9 @@ The resolver sets `pointVisible` to `false` when the resolved `x`/`y` position f
 The check is a simplified walk, not a full containing-block or stacking-context computation:
 
 - It does not compute CSS containing blocks. An absolutely or fixed-positioned anchor can visually escape a clipping ancestor. The ancestor walk does not know about `position`, so it still treats that anchor as clipped.
-- It does not detect an overlay covering the point from above. A cursor can report `pointVisible: true` while a modal or dropdown visually covers that pixel.
+- It does not detect an overlay that covers the point from above. A cursor can report `pointVisible: true` while a modal or dropdown visually covers that pixel.
 
-If an overlay can cover the resolved point, pass `resolution: { hitTest: true }`. The resolver then checks the point with `document.elementFromPoint`, and it also looks into open shadow roots. This check replaces the estimate from the ancestor walk, and it costs more time per frame.
+If an overlay can cover the resolved point, pass `resolution: { hitTest: true }`. The resolver then checks the point with `document.elementFromPoint`, and it also looks into open shadow roots. This check runs only when the ancestor walk reports a visible point. It can hide a covered cursor, but it cannot show an anchor that the walk treats as clipped. It costs more time per frame.
 
 ## Use pointVisible
 
@@ -31,7 +31,7 @@ const clippedPointPolicy: VisibilityPolicy = ({ resolution }) =>
   !resolution.pointVisible || resolution.tier === "hidden" ? "hide" : "show";
 ```
 
-For a portal-rendered overlay that must ignore the clipping check for one anchor, write a policy that skips the `pointVisible` test for that anchor's ID.
+A portal-rendered overlay can need to ignore the clipping check for one anchor. For this case, write a policy that skips the `pointVisible` test for the ID of that anchor.
 
 ## Related
 

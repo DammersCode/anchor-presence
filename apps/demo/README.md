@@ -21,11 +21,11 @@ bun run --cwd apps/demo dev       # vite dev server on :5173
 Open two browser windows with different `?name=` values so you can tell the cursors apart.
 
 ```
-http://localhost:5173/?name=Ari
-http://localhost:5173/?name=Bo
+http://localhost:5173/?name=Ari&room=demo
+http://localhost:5173/?name=Bo&room=demo
 ```
 
-Both windows join the same relay room by default. Use `?room=` to use a different one.
+Each window joins a random relay room unless you pass `?room=`. Open two windows with the same `?room=` value to see each other.
 
 ## What to try
 
@@ -57,4 +57,4 @@ bun run --cwd examples/elysia dev:relay
 bun run --cwd apps/demo dev
 ```
 
-Then open `http://localhost:5173/?backend=elysia` in two windows.
+Then open `http://localhost:5173/?backend=elysia&room=demo` in two windows. The same `room` value puts both windows in one room.

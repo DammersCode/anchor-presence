@@ -24,7 +24,7 @@ binding.subscribe(() => {
 
 ## Boundary rule
 
-Dom is the only package that calls browser APIs: `getBoundingClientRect`, `ResizeObserver`, `MutationObserver`, `requestAnimationFrame`, and pointer events. Core stays DOM-free. Framework adapters read from dom, never from the browser directly.
+`@anchor-presence/dom` is the only package that calls browser APIs: `getBoundingClientRect`, `ResizeObserver`, `MutationObserver`, `requestAnimationFrame`, and pointer events. `@anchor-presence/core` stays DOM-free. Framework adapters read from `@anchor-presence/dom`, never from the browser directly.
 
 ## Main exports
 
@@ -45,8 +45,8 @@ Dom is the only package that calls browser APIs: `getBoundingClientRect`, `Resiz
 type DomBindingOptions = {
   anchorAttribute?: string;
   maxAnchors?: number;
-  resolution?: { visibilityPolicy?; interpolatorFactory?; hitTest? };
-  environment?: { root?; window?; raf?; caf?; ResizeObserverCtor?; MutationObserverCtor? };
+  resolution?: ResolutionOptions;
+  environment?: EnvironmentOptions;
   localCursorCapture?: boolean;
   captureFocus?: boolean;
 };
@@ -54,11 +54,11 @@ type DomBindingOptions = {
 
 The `anchorAttribute` field names the attribute whose value is the anchor ID. The default is `"data-anchor"`. The name must start with a letter and contain only letters, digits, and single hyphens, for example `"id"` or `"data-presence"`. For another name, such as `"data_anchor"`, `createDomBinding` throws a `TypeError`.
 
-The `resolution` group controls how remote cursors turn into screen positions. It holds `visibilityPolicy`, `interpolatorFactory`, and `hitTest`.
+The `resolution` group (`ResolutionOptions`) controls how remote cursors turn into screen positions. It holds `visibilityPolicy`, `interpolatorFactory`, and `hitTest`.
 
-The `environment` group supplies the DOM and timing hosts. Each field defaults to the ambient browser global. Tests can replace one host without touching the others.
+The `environment` group (`EnvironmentOptions`) supplies the DOM and timing hosts: `root`, `window`, `raf`, `caf`, `ResizeObserverCtor`, and `MutationObserverCtor`. Each field defaults to the ambient browser global. Tests can replace one host without touching the others.
 
-`localCursorCapture` defaults to `true`. If it is `false`, the local pointer publishes no cursor, and context and user still reach peers. A peer is another client in the same room. `captureFocus` defaults to `false`. If it is `true` and local capture is on, a focus change publishes a cursor at the center of the focused element.
+`localCursorCapture` defaults to `true`. If it is `false`, the local pointer publishes no cursor, and context and user still reach peers (other clients in the same room). `captureFocus` defaults to `false`. If it is `true` and local capture is on, a focus change publishes a cursor at the center of the focused element.
 
 ### Anchor attributes
 

@@ -39,9 +39,12 @@ const transport = createSignalRTransport(connection);
 const client = createPresenceClient({ transport });
 ```
 
-Call `withAutomaticReconnect()` on the `HubConnectionBuilder`. Without it, a dropped connection goes to the closed state and never retries.
+<Callout type="warn">
+  If you do not call `withAutomaticReconnect()` on the `HubConnectionBuilder`, a dropped connection goes to
+  the closed state and never retries.
+</Callout>
 
-## Already using use-signalr?
+## Share a use-signalr connection
 
 If your app uses [`use-signalr`](https://www.npmjs.com/package/@dammers/use-signalr-react) for its other hubs, add the presence hub to its contract. Then presence shares the connection, the authentication and the reconnect policy of the app. This sample adds the presence hub to the contract:
 
@@ -88,7 +91,11 @@ function PresenceProvider({ children }: { children: ReactNode }) {
 }
 ```
 
-`getConnection` returns `null` until `use-signalr` opens the hub. Until then, the component shows its children without presence. When the hub opens, the children mount again inside the provider, so their local state resets one time. The provider runs `factory` once per mount and once more for each new connection. It disposes the client on unmount. The empty `disconnect` keeps the shared connection open after the dispose. See [Creating the client](/docs/react/client-creation) for the rules of `factory`.
+`getConnection` returns `null` until `use-signalr` opens the hub. Until then, the component shows its children without presence. When the hub opens, the children mount again inside the provider, so their local state resets one time.
+
+The provider runs `factory` once per mount and once more for each new connection. It disposes the client on unmount. The empty `disconnect` keeps the shared connection open after the dispose. See [Create the client](/docs/react/client-creation) for the rules of `factory`.
+
+Each `factory` run adds five handlers to the shared connection, and the transport never removes them. As a result, each remount and each Strict Mode double run leave one more set of handlers. A set without a client decodes each message and then drops it.
 
 ## Close reasons
 
@@ -107,7 +114,7 @@ The hub sends no other close code. It has no auth check and no connection caps. 
 - The hub adds each connection to a SignalR group for its room. `PresenceHub.OnPresence` forwards to `Clients.OthersInGroup(room)`. As a result, a sender never receives its own message, and other rooms never receive it.
 - The hub reads the room from the `room` query parameter of the hub URL. A missing parameter is the room `main`.
 - `examples/signalr/signalr-hub.test.ts` starts the real ASP.NET Core hub and runs two clients through it. If `dotnet` is not on `PATH`, the test skips.
-- `connection.send` and `connection.on` are fire-and-forget over the method name of the hub. The hub sends no acknowledgment. The `send` contract of the transport interface needs none.
+- `connection.send` and `connection.on` call a hub method by its name and do not wait for an answer. The hub sends no acknowledgment. The `send` contract of the transport interface needs none.
 - `Program.cs` caps an inbound message at 32 KiB through `MaximumReceiveMessageSize`. The cap applies to the base64 text, so the real payload cap is about 24 KiB. SignalR closes the connection on a larger message.
 - The hub takes room access control from your ASP.NET Core authentication, for example an `[Authorize]` attribute on `PresenceHub`. It reads no [room token](/docs/dom/websocket-transport#room-token). The hub binds no identity, so a client can claim any `clientId`. See [Security](/docs/get-started/guides/security).
 

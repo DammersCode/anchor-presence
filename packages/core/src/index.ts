@@ -42,6 +42,9 @@ export type { LiveCursorTransport, TransportClose } from "./transport.js";
 export { createInMemoryPair } from "./in-memory-transport.js";
 export type { InMemoryPair, InMemoryPairOptions, InMemoryTransport } from "./in-memory-transport.js";
 
+export { createEventChannel } from "./event-channel.js";
+export type { EventChannel, EventMap, TypedRemoteEvent } from "./event-channel.js";
+
 export { createPresenceClient, DEFAULT_HEARTBEAT_MS, DEFAULT_PUBLISH_INTERVAL_MS } from "./client.js";
 export type {
   AdaptivePublishOptions,

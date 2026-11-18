@@ -1,6 +1,6 @@
 ---
 title: Client API
-description: createPresenceClient, its options, PresenceClient, RemotePresenceStore, isDevMode, and the client constants.
+description: createPresenceClient, its options, PresenceClient, createEventChannel, RemotePresenceStore, isDevMode, and the client constants.
 ---
 
 `@anchor-presence/core` exports every name below.
@@ -19,36 +19,62 @@ import { createPresenceClient } from "@anchor-presence/core";
 
 ## PresenceClient
 
-The value `createPresenceClient` returns.
+`PresenceClient` is the value that `createPresenceClient` returns.
 
 <AutoTypeTable path="../../packages/core/src/internal/types.ts" name="PresenceClient" />
 
 These guides describe the methods in detail:
 
-- [Events](/docs/core/presence-client#events) for `sendEvent` and `subscribeEvents`.
+- [Events](/docs/core/presence-client#events) for `sendEvent`, `subscribeEvents`, `parseEvent`, and `eventRateLimit`.
 - [Leave the room](/docs/core/presence-client#leave-the-room) for `leave`.
 - [Close reasons](/docs/core/presence-client#close-reasons) for `subscribeClose`.
 - [Peer changes](/docs/core/remote-presence#peer-changes) for `subscribePeers`.
 - [Read remote presence](/docs/core/remote-presence#read-remote-presence) for `getRemotePresence`, `getRemoteSnapshot`, and `subscribeRemote`.
-- [Lifecycle](/docs/core/presence-client#lifecycle) for `updateLocalCursor`, `setContext`, `setUser`, `subscribeContext`, `registerTeardown`, and `dispose`.
+- [Lifecycle](/docs/core/presence-client#lifecycle) for `updateLocalCursor`, `setContext`, `setUser`, `subscribeContext`, `subscribeUser`, `registerTeardown`, and `dispose`.
 - [Status](/docs/core/presence-client#status) for `getStatus`, `subscribeStatus`, and `hasActiveCursors`.
 - [Remote user and context](/docs/core/validation#remote-user-and-context) for `parseUser` and `parseContext`.
 
+## createEventChannel
+
+`createEventChannel` and its types have these signatures:
+
+```ts
+type EventMap = Record<string, unknown>;
+
+type TypedRemoteEvent<TEvents extends EventMap> = {
+  [K in keyof TEvents & string]: { clientId: string; type: K; data: TEvents[K] };
+}[keyof TEvents & string];
+
+type EventChannel<TEvents extends EventMap> = {
+  send<K extends keyof TEvents & string>(
+    type: K,
+    ...data: undefined extends TEvents[K] ? [data?: TEvents[K]] : [data: TEvents[K]]
+  ): boolean;
+  subscribe(listener: (event: TypedRemoteEvent<TEvents>) => void): () => void;
+};
+
+function createEventChannel<TEvents extends EventMap>(
+  client: Pick<PresenceClient, "sendEvent" | "subscribeEvents">,
+): EventChannel<TEvents>;
+```
+
+An `EventMap` maps each event type to the type of its `data`. `TypedRemoteEvent<TEvents>` is a union with one member per event type. The channel does not check remote data. See [Typed events](/docs/core/presence-client#typed-events).
+
 ## AdaptivePublishOptions
 
-The shape of the `adaptivePublish` option. See [Presence client](/docs/core/presence-client#publish-rate) for the watermark behavior.
+`AdaptivePublishOptions` is the shape of the `adaptivePublish` option. See [Presence client](/docs/core/presence-client#publish-rate) for the watermark behavior.
 
 <AutoTypeTable path="../../packages/core/src/internal/types.ts" name="AdaptivePublishOptions" />
 
 ## SchedulerLike
 
-The shape of the `scheduler` option. A test can pass fake timers through it.
+`SchedulerLike` is the shape of the `scheduler` option. A test can pass fake timers through it.
 
 <AutoTypeTable path="../../packages/core/src/internal/types.ts" name="SchedulerLike" />
 
 ## RemotePresenceStore
 
-The store that holds the presence of each peer. A peer is another client in the same room. See [Use the store without a client](/docs/core/remote-presence#use-the-store-without-a-client) for the methods and the rules.
+`RemotePresenceStore` is the store that holds the presence of each peer (another client in the same room). See [Use the store without a client](/docs/core/remote-presence#use-the-store-without-a-client) for the methods and the rules.
 
 <AutoTypeTable path="../../packages/core/src/store.ts" name="RemotePresenceStoreOptions" />
 

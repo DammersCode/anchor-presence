@@ -19,11 +19,15 @@ This file renders the scene of the demo, with the spring:
 
 The provider reads `bindingOptions` once, when it creates the binding. The demo sets the React `key` of the provider to the selected style, so a style change mounts a new provider and a new binding. The remote state lives in the client, not in the binding, so the remount keeps every cursor. In your app, change `bindingKey` instead. It rebuilds the binding and keeps the tree below the provider. See [Rebuild the binding](/docs/react/live-cursor-provider#rebuild-the-binding).
 
-`target` keeps the velocity of the spring, so a target change during a glide curves the path. `sample` must return `settled: true` at the end. If it never does, the animation frame loop never stops for that cursor.
+`target` keeps the velocity of the spring, so a target change during a glide curves the path.
+
+<Callout type="warn">
+  If `sample` never returns `settled: true`, the animation frame loop never stops for that cursor.
+</Callout>
 
 ## Behavior notes
 
-- The dots behind the cursor show its last path. With `none`, the cursor jumps. With `linear`, it moves in a straight line. With the spring, it overshoots the target a little and comes back.
+- The dots behind the cursor show its last path. The labels `none` and `linear` in the narrow pane select `noneInterpolator` and `linearInterpolator`. With `none`, the cursor jumps. With `linear`, it moves in a straight line. With the spring, it moves past the target and then comes back.
 - Select an interpolator in the narrow pane. The next jump uses it.
 - The tour sends only one update per target, so all motion in the narrow pane comes from the interpolator.
 - If your system asks for reduced motion, the narrow pane starts with `none`.

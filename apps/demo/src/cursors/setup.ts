@@ -6,6 +6,30 @@ export type PageId = "dashboard" | "orders" | "customers" | "products";
 export type DemoContext = { page?: PageId; dialog?: "settings" };
 export type DemoUser = { name: string; color: string };
 
+export const DEMO_REACTIONS = [
+  { name: "thumbs-up", symbol: "👍" },
+  { name: "party", symbol: "🎉" },
+  { name: "heart", symbol: "❤️" },
+] as const;
+export const MAX_CHAT_LENGTH = 80;
+
+/** The events the demo sends, by type. */
+export type DemoEvents = { reaction: { emoji: string }; chat: { text: string } };
+
+export type DemoEvent = { type: "reaction"; emoji: string } | { type: "chat"; text: string };
+
+/** Accepts only the two events the demo sends, with an allowed emoji or a capped text. */
+export function parseDemoEvent(event: { type: string; data?: unknown }): DemoEvent | undefined {
+  const data = event.data as { emoji?: unknown; text?: unknown } | undefined;
+  if (event.type === "reaction" && DEMO_REACTIONS.some((reaction) => reaction.symbol === data?.emoji)) {
+    return { type: "reaction", emoji: String(data?.emoji) };
+  }
+  if (event.type === "chat" && typeof data?.text === "string" && data.text.length <= MAX_CHAT_LENGTH) {
+    return { type: "chat", text: data.text };
+  }
+  return undefined;
+}
+
 export function parseDemoUser(value: unknown): DemoUser | undefined {
   if (typeof value !== "object" || value === null) return undefined;
   const { name, color } = value as Record<string, unknown>;

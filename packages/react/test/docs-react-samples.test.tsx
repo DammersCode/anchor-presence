@@ -51,7 +51,9 @@ function Dashboard() {
 function Workspace({ smooth }: { smooth: boolean }) {
   return (
     <LiveCursorProvider
-      factory={() => createPresenceClient({ transport: createWebSocketTransport({ path: "/?room=main" }) })}
+      factory={() =>
+        createPresenceClient({ transport: createWebSocketTransport({ port: 8788, path: "/?room=main" }) })
+      }
       bindingKey={smooth}
       bindingOptions={{
         resolution: { interpolatorFactory: smooth ? linearInterpolator : noneInterpolator },
@@ -208,7 +210,9 @@ describe("react docs samples", () => {
   it("TokenError shows an alert after a 4006 close", () => {
     const container = mount(
       <LiveCursorProvider
-        factory={() => createPresenceClient({ transport: createWebSocketTransport({ path: "/?room=main" }) })}
+        factory={() =>
+          createPresenceClient({ transport: createWebSocketTransport({ port: 8788, path: "/?room=main" }) })
+        }
       >
         <TokenError />
       </LiveCursorProvider>,

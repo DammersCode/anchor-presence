@@ -34,7 +34,7 @@ The default URL needs `window`. If you omit `url` and `window` does not exist, f
 
 ## Room token
 
-A room token is a secret that the relay checks before it lets a connection join a room. The transport sends it as the `token` query parameter. See [Security](/docs/get-started/guides/security#room-token) for the relay side.
+A room token is a secret that the relay checks before it accepts a connection. On the reference relay, one room token opens every room. The transport sends it as the `token` query parameter. See [Security](/docs/get-started/guides/security#room-token) for the relay side.
 
 Set the `token` option to send a room token. The transport URL-encodes the value and adds `token=<value>` to the URL. If the URL already has a query string, the transport joins the parameter with `&`.
 
@@ -54,7 +54,7 @@ If the function throws or rejects, the transport reports a close with no code an
 `reconnect` defaults to `true`. When a connection drops and your own `disconnect()` call did not cause it, the transport schedules a reconnect with exponential backoff:
 
 - The first delay is `baseBackoffMs` (default `500`). The delay doubles on each attempt, up to `maxBackoffMs` (default `8000`).
-- The transport waits a random time between 50% and 100% of that delay. Many clients that reconnect at the same time then do not retry in lockstep.
+- The transport waits a random time between 50% and 100% of that delay. As a result, many clients that lose the connection at the same time do not all retry at the same moment.
 - The backoff resets only after a connection stays open for `stableAfterMs` (default `5000`). A relay that accepts a connection and then closes it therefore sees growing delays, not a retry loop.
 - A close with code `1008` (policy), `4004` (origin) or `4006` (room token) stops the reconnect, and the status becomes `disconnected`.
 - `random` overrides the jitter source. It defaults to `Math.random`. A test can pass a fixed function to get a fixed delay.
@@ -79,7 +79,7 @@ const transport = createWebSocketTransport({
 
 When `reconnect` is `false`, the transport never calls `shouldReconnect`.
 
-`connect()` is idempotent while a connection is already connecting or open: a second call does not open a second socket.
+While a connection is connecting or open, a second `connect()` call has no effect. It does not open a second socket.
 
 <Callout type="warn">
   If you call `connect()` after `disconnect()`, the transport logs a development-mode warning and does
@@ -102,7 +102,7 @@ The transport does not replay a past close to a new listener. A close after your
 
 ## Buffered bytes
 
-`transport.bufferedBytes()` returns the underlying socket's `bufferedAmount`, or `0` when no socket is open. Presence is lossy by design: `send()` drops a message silently when the socket is not open, rather than queueing it.
+`transport.bufferedBytes()` returns the underlying socket's `bufferedAmount`, or `0` when no socket is open. Presence is lossy by design. If the socket is not open, `send()` drops the message without a warning and does not queue it.
 
 ## Related
 

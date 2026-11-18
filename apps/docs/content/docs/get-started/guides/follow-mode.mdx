@@ -3,7 +3,7 @@ title: Follow mode
 description: Follow the cursor of one peer and scroll its anchor into view.
 ---
 
-In a long page, a user often wants to see what another user looks at. A peer is another client in the same room. Follow mode makes one client, the follower, track the cursor of a peer, the leader. When the leader's cursor leaves the follower's window, the follower's page scrolls the leader's anchor into view. Follow mode stops when the follower scrolls, when the follower presses Escape, or when the leader leaves the room. The recipe uses only public APIs: `useRemoteCursorsSelector`, `ResolvedCursor`, `element.scrollIntoView` and `client.subscribePeers`.
+In a long page, a user wants to see what another user looks at. A peer is another client in the same room. Follow mode makes one client, the follower, track the cursor of a peer, the leader. When the leader's cursor leaves the follower's window, the follower's page scrolls the leader's anchor into view. Follow mode stops when the follower scrolls, when the follower presses Escape, or when the leader leaves the room. The recipe uses only public APIs: `useRemoteCursorsSelector`, `ResolvedCursor`, `element.scrollIntoView` and `client.subscribePeers`.
 
 ## Find the target
 
@@ -91,7 +91,7 @@ export function useFollowMode(): {
 
 ## Pick a leader
 
-The controls list the remote users and show a stop button while follow mode is on:
+The controls list the peers and show a stop button while follow mode is on:
 
 ```tsx
 export function FollowControls() {
@@ -133,7 +133,7 @@ export function FollowApp({ client }: { client: PresenceClient<unknown, User> })
 }
 ```
 
-## Behavior
+## Behavior notes
 
 - **One scroll per target.** The selector returns the leader's anchor ID only while the point is off-screen, and `null` in all other cases. The component rerenders only when this value changes, so the page scrolls once per target and not on every frame.
 - **Scroll position.** `scrollIntoView` centers the anchor element, not the point. If the anchor is taller than the window, the point can stay off-screen. The page scrolls again when the leader moves to another anchor, or after the point was on-screen once.

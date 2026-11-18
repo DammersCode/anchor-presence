@@ -48,7 +48,7 @@ Everything else comes from your code. If you ask for a who-is-online list, the s
 3. **Install.** It runs the install command for your package manager. If the relay needs dependencies, it installs them too.
 4. **Add the client.** It adds `LiveCursorProvider` with a `factory` prop, and `CursorLayer`, to a client component.
 5. **Mark anchors.** It adds `data-anchor` to navigation items, cards, table rows, dialog controls, and every other element that a user points at. It also gives each anchor a parent anchor.
-6. **Scope with context, if necessary.** If the app has several pages, tabs, or dialogs, the agent publishes the current state as context. Context is a value that describes the app state of a user, for example the open page. Then the agent hides the cursors of users in a different state.
+6. **Scope with context.** If the app has several pages, tabs, or dialogs, the agent publishes the current state as context. Context is a value that describes the app state of a user, for example the open page. Then the agent hides the cursors of users in a different state.
 7. **Check.** It runs the typecheck and the build of the project. Then it runs two clients at different viewport widths. It checks that a cursor lands on the same element in both.
 
 ## Common questions
@@ -68,9 +68,9 @@ Everything else comes from your code. If you ask for a who-is-online list, the s
 - A cursor on an anchored element in a wide client appears on the same element in a narrow client, at a different pixel position.
 - After the transport connects, `useCursorStatus()` reports `connected`, not `connecting`.
 
-## Where it fits
+## Related
 
 - [Layout audit skill](/docs/skills/layout-audit): run it after this skill adds anchors. It finds cursor jumps between layouts before you ship.
 - [Quick start](/docs/get-started/quick-start): the same steps, written for a human who does them by hand.
 - [Troubleshooting](/docs/get-started/guides/troubleshooting): the same fixes that the skill applies to a broken integration, written for a human.
-- [Designing layouts for presence](/docs/get-started/guides/layout-design): the rules behind anchor placement.
+- [Layout design for presence](/docs/get-started/guides/layout-design): the rules behind anchor placement.

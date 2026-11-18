@@ -1,6 +1,6 @@
 ---
 title: Cursor events
-description: Send one-shot events such as reactions with client.sendEvent, and receive them with useCursorEvents.
+description: Send one-shot events such as reactions with client.sendEvent, receive them with useCursorEvents, and give them types.
 ---
 
 `useCursorEvents` calls a listener for each one-shot event that a peer sends. A peer is another client in the same room. An event has a `type` and an optional `data` value, for example a reaction or a ping. The client never stores an event and never resends it. A peer that is not connected at that time never receives the event.
@@ -34,15 +34,19 @@ function Reactions() {
 }
 ```
 
-`event.data` has the type `unknown`, because a peer can send any value. Check the type of `event.data` before you use it. To check every event in one place, pass `parseEvent` to `createPresenceClient`. A `parseEvent` that returns `undefined` or throws drops the event. See [Events and leave messages](/docs/core/validation#events-and-leave-messages).
+`event.data` has the type `unknown`, because a peer can send any value. Check the type of `event.data` before you use it. To check every event in one place, pass `parseEvent` to `createPresenceClient`. A `parseEvent` that returns `undefined` or throws drops the event. See [Events](/docs/core/presence-client#events).
 
-## Behavior
+## Typed events
 
-- `client.sendEvent(type, data?)` returns `false` when the client is not connected or the event is not valid, for example above the field limits. In both cases, the client sends nothing.
+To give events a type, pass an event map as the third type parameter of `createPresenceHooks`. The `useCursorEvents` hook of the result then receives typed events, and its `useSendEvent` hook sends only the events of the map. See [Typed events](/docs/react/typed-hooks#typed-events).
+
+## Behavior notes
+
+- `client.sendEvent(type, data?)` returns `false` when it sends nothing, for example when the client is not connected or the event breaks the field limits. See [Events](/docs/core/presence-client#events) for every case.
 - A client never receives its own events.
 - The listener receives a `RemoteEvent`: the `type`, the `data`, and the `clientId` of the sender.
 - The hook keeps one subscription per client. An inline listener does not subscribe again on each render. The hook always calls the listener from the last render.
-- The receiver limits the event rate of each sender and drops the events above the limit. For the numbers, see [Events](/docs/core/presence-client#events).
+- The receiver limits the events of each sender and the events of all senders together. It drops the events above a limit. For the numbers, see [Event rate limit](/docs/core/presence-client#event-rate-limit).
 
 ## Related
 

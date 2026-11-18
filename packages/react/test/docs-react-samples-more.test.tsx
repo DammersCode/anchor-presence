@@ -6,10 +6,13 @@ import { describe, expect, expectTypeOf, it, vi } from "vitest";
 import {
   createInMemoryPair,
   createPresenceClient,
+  type EventChannel,
+  type EventMap,
+  type PeerChange,
+  type TypedRemoteEvent,
   type ConnectionStatus,
   type CursorPresence,
   type PresenceClient,
-  type RemoteEvent,
   type RemotePresence,
 } from "@anchor-presence/core";
 import {
@@ -87,12 +90,12 @@ declare namespace Listing {
   // oxlint-disable-next-line eslint/no-shadow -- the listing keeps the exported name
   function useCursorBinding<TContext = unknown, TUser = unknown>(): DomBinding<TContext, TUser> | null;
 
-  function createPresenceHooks<TContext = unknown, TUser = unknown>(): {
+  function createPresenceHooks<TContext = unknown, TUser = unknown, TEvents extends EventMap = EventMap>(): {
     LiveCursorProvider: (props: LiveCursorProviderProps<TContext, TUser>) => ReactNode;
     useCursorBinding: () => DomBinding<TContext, TUser> | null;
     useCursorClient: () => PresenceClient<TContext, TUser> | null;
     useCursorContext: () => [TContext | undefined, (next: TContext | undefined) => void];
-    useCursorEvents: (listener: (event: RemoteEvent) => void) => void;
+    useCursorEvents: (listener: (event: TypedRemoteEvent<TEvents>) => void) => void;
     useCursorPresence: () => RemotePresence<TContext, TUser>[];
     useCursorStatus: () => ConnectionStatus;
     useRemoteCursors: () => ResolvedCursor<TContext, TUser>[];
@@ -101,6 +104,9 @@ declare namespace Listing {
       isEqual?: (a: TSelected, b: TSelected) => boolean,
     ) => TSelected;
     useRemoteUsers: () => RemoteUser<TUser>[];
+    useLocalUser: () => [TUser | undefined, (next: TUser | undefined) => void];
+    usePeerChanges: (listener: (change: PeerChange) => void) => void;
+    useSendEvent: () => EventChannel<TEvents>["send"];
   };
 }
 

@@ -3,7 +3,9 @@ title: Cursor chat
 description: Type a short message next to your cursor and show it next to your cursor on every peer's screen.
 ---
 
-Users on one page often want to say a few words without a separate chat panel. Cursor chat puts a short text bubble next to the cursor. The local user presses `/`, types a message and presses Enter. The client sends the text as a one-shot event with `client.sendEvent("chat", { text })`. A peer is another client in the same room. Each peer receives the event through `useCursorEvents` and shows the text as the label of the sender's remote cursor. After 5 seconds, the bubble disappears on both sides.
+Users on one page want to say a few words without a separate chat panel. Cursor chat puts a short text bubble next to the cursor. The local user presses `/`, types a message and presses Enter. The client sends the text as a one-shot event with `client.sendEvent("chat", { text })`.
+
+A peer is another client in the same room. Each peer receives the event through `useCursorEvents` and shows the text as the label of the sender's remote cursor. After 5 seconds, the bubble disappears on both sides.
 
 ## Read and cap the text
 
@@ -174,7 +176,7 @@ export function ChatApp({ client }: { client: PresenceClient<unknown, User> }) {
 }
 ```
 
-## Behavior
+## Behavior notes
 
 - **Keys.** `/` opens the input, Enter sends the text, and Escape closes the input. The `/` key does nothing while the focus is in an input, a text area or an editable element.
 - **Position.** The pointer listener moves the local bubble through its `style` and does not rerender the component. The remote bubble is the label of the remote cursor, so it moves with that cursor.

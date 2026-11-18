@@ -3,7 +3,7 @@ title: Bun
 description: A room-broadcast relay built directly on Bun.serve's WebSocket support.
 ---
 
-You want a relay with no framework and no extra dependency, on the WebSocket support of Bun. This example uses `Bun.serve`'s topic pub-sub for rooms, so there is no hand-written room map.
+You want a relay with no framework and no extra dependency, on the WebSocket support of Bun. Each room is one topic of `Bun.serve`. Bun forwards each message to every other socket that subscribes to the topic, so the relay needs no room map of its own.
 
 ## Install
 
@@ -54,7 +54,7 @@ The relay listens on `http://localhost:8788`. To use a different port, give the 
 - **Room name validation.** The relay reads the room from the `room` query parameter. `parseRoom` caps room names at 256 characters and restricts them to `[A-Za-z0-9_-]`. A missing name is `main`. An invalid name closes the socket with code `4007`.
 - **Upgrade path.** The relay accepts the upgrade only at `/`. It answers any other path with HTTP `404`.
 - **Max payload size.** `MAX_MESSAGE_BYTES` (default 32 KiB) drops an oversized message instead of closing the connection.
-- **Per-connection rate limit.** A token bucket limits inbound messages per socket (`RATE_CAPACITY`, `RATE_REFILL_PER_SECOND`).
+- **Per-connection rate limit.** A token bucket (a counter that refills at a fixed rate) limits inbound messages per socket (`RATE_CAPACITY`, `RATE_REFILL_PER_SECOND`).
 - **Origin allowlist.** `RELAY_ALLOWED_ORIGINS` is a comma-separated list of allowed origins. Leave it empty for local development. The relay then accepts every origin.
 - **Connection check.** Pass an `authCheck` function to check each connection. Without it, set `RELAY_AUTH_TOKEN`. The relay then compares the [room token](/docs/dom/websocket-transport#room-token) of each connection with that value.
 - **Identity binding.** If `authCheck` returns `{ clientId, user }`, the relay writes that identity into every JSON frame of the connection. See [Identity binding](/docs/examples/backends#identity-binding).
@@ -64,8 +64,9 @@ The relay listens on `http://localhost:8788`. To use a different port, give the 
 - **Slow receivers.** `RELAY_SLOW_PEER_HARD_BYTES` (default 8 MiB) sets Bun's `backpressureLimit`, and `closeOnBackpressureLimit` is on. Bun closes a receiver whose send buffer passes that size. Bun does not expose the buffer of each receiver. For this reason, the relay cannot skip sends to a slow receiver, as the `ws` relay does.
 
 <Callout type="warn">
-  If you expose this relay outside local development, set `RELAY_ALLOWED_ORIGINS` and `RELAY_AUTH_TOKEN`, and
-  put a TLS-terminating proxy in front of it. Without them, any page and any visitor can join a room.
+  If you expose this relay outside local development, set `RELAY_ALLOWED_ORIGINS` and `RELAY_AUTH_TOKEN`. Also
+  put a proxy that serves TLS (`wss://`) in front of the relay. Without them, any page and any visitor can
+  join a room.
 </Callout>
 
 ## Related

@@ -32,7 +32,7 @@ bun run dev -- --open "/?backend=socketio"
 
 The client serves at <http://localhost:5173/>. Open that address in two browser windows, both with `?backend=socketio`.
 
-To use a room other than `main`, add `&room=<name>` to both addresses. To change the cursor label, add `&name=<name>`.
+Without `&room=`, each window joins its own random room. To share a room, add `&room=<name>` with the same name to both addresses. To change the cursor label, add `&name=<name>`.
 
 ## What the demo shows
 
@@ -74,18 +74,18 @@ After any of these codes, the Socket.IO client does not reconnect, so `willRecon
 
 ## Production notes
 
-| Control                   | Status                                                                                                                                                                                                      |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Room name check           | Yes. `parseRoom` accepts up to 256 characters of `[A-Za-z0-9_-]`. A missing name is `main`. The relay refuses an invalid name with code `4007`.                                                             |
-| Max payload size          | Yes. The `maxHttpBufferSize` of Socket.IO refuses an oversized frame in the engine. `messageByteLength` also drops a message above `MAX_MESSAGE_BYTES` before the relay forwards it.                        |
-| Rate limit per connection | Yes. A token bucket with `RATE_CAPACITY` and `RATE_REFILL_PER_SECOND`.                                                                                                                                      |
-| Origin allowlist          | Yes. `RELAY_ALLOWED_ORIGINS` is a comma-separated list. An empty list (the default) accepts every origin (the Socket.IO CORS value `"*"`). `allowRequest` also checks the WebSocket upgrade.                |
-| Auth hook                 | Yes. Pass an `authCheck` option, or set `RELAY_AUTH_TOKEN` for a shared room token. An `io.use` middleware runs the check before the connection completes. A refusal has code `4006`.                       |
-| Identity binding          | Yes. If `authCheck` returns `{ clientId, user }`, the relay writes that identity into every JSON frame. `clientId` gets the suffix `~<connection>`. In this mode, the relay drops a frame that is not JSON. |
-| Room cleanup on close     | Yes. `disconnect` releases the slot of the socket in `ConnectionLimits`. Socket.IO removes the socket from the room.                                                                                        |
-| Connection caps           | Yes. `RELAY_MAX_ROOM_SOCKETS` (default 128) limits one room. `RELAY_MAX_TOTAL_SOCKETS` (default 10,000) limits the process. The relay refuses a socket above a cap with code `4001` or `4002`.              |
-| Dead connections          | Yes. The heartbeat of Socket.IO (`pingInterval`, `pingTimeout`).                                                                                                                                            |
-| Slow receivers            | **No.** Socket.IO does not expose the buffered amount of a socket, as `ws` and the `ServerWebSocket` of Bun do. For this reason, the relay cannot skip or close a slow receiver.                            |
+| Control                   | Status                                                                                                                                                                                                         |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Room name check           | Yes. `parseRoom` accepts up to 256 characters of `[A-Za-z0-9_-]`. A missing name is `main`. The relay refuses an invalid name with code `4007`.                                                                |
+| Max payload size          | Yes. The `maxHttpBufferSize` of Socket.IO closes the connection of a client that sends an oversized frame. `messageByteLength` drops a smaller message above `MAX_MESSAGE_BYTES` before the relay forwards it. |
+| Rate limit per connection | Yes. A token bucket with `RATE_CAPACITY` and `RATE_REFILL_PER_SECOND`.                                                                                                                                         |
+| Origin allowlist          | Yes. `RELAY_ALLOWED_ORIGINS` is a comma-separated list. An empty list (the default) accepts every origin (the Socket.IO CORS value `"*"`). `allowRequest` also checks the WebSocket upgrade.                   |
+| Auth hook                 | Yes. Pass an `authCheck` option, or set `RELAY_AUTH_TOKEN` for a shared room token. An `io.use` middleware runs the check before the connection completes. A refusal has code `4006`.                          |
+| Identity binding          | Yes. If `authCheck` returns `{ clientId, user }`, the relay writes that identity into every JSON frame. `clientId` gets the suffix `~<connection>`. In this mode, the relay drops a frame that is not JSON.    |
+| Room cleanup on close     | Yes. `disconnect` releases the slot of the socket in `ConnectionLimits`. Socket.IO removes the socket from the room.                                                                                           |
+| Connection caps           | Yes. `RELAY_MAX_ROOM_SOCKETS` (default 128) limits one room. `RELAY_MAX_TOTAL_SOCKETS` (default 10,000) limits the process. The relay refuses a socket above a cap with code `4001` or `4002`.                 |
+| Dead connections          | Yes. The heartbeat of Socket.IO (`pingInterval`, `pingTimeout`).                                                                                                                                               |
+| Slow receivers            | **No.** Socket.IO does not expose the buffered amount of a socket, as `ws` and the `ServerWebSocket` of Bun do. For this reason, the relay cannot skip or close a slow receiver.                               |
 
 Before you expose the relay outside local development, set `RELAY_ALLOWED_ORIGINS` and `RELAY_AUTH_TOKEN`. Put a TLS-terminating proxy in front of it.
 

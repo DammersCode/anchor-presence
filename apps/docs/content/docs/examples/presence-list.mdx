@@ -17,9 +17,16 @@ This file renders the scene of the demo:
 
 <CodeFromSource docs="components/examples/presence.tsx" lang="tsx" />
 
-The demo uses short timeouts, so that you see the idle and leave steps in seconds. Keep `heartbeatMs` below `staleTimeoutMs`. If the heartbeat is slower, the store removes a connected user who does not move. The defaults are 10 s for `heartbeatMs`, 15 s for `idleAfterMs`, and 70 s for `staleTimeoutMs`.
+The demo uses short timeouts, so that you see the idle and leave steps in seconds. The defaults are 10 s for `heartbeatMs`, 15 s for `idleAfterMs`, and 70 s for `staleTimeoutMs`.
 
-`user` is untrusted network data. Render `user.name` as text, as the scene does, and never as HTML.
+<Callout type="warn">
+  If `heartbeatMs` is not below `staleTimeoutMs`, the store removes a connected user who does not move.
+</Callout>
+
+<Callout type="warn">
+  If you render `user` as HTML, another client can inject markup into your page. `user` is untrusted network
+  data. Render `user.name` as text, as the scene does.
+</Callout>
 
 ## Behavior notes
 

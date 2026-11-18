@@ -68,18 +68,27 @@ export function createBunRelay(port: number, options: BunRelayOptions = {}) {
   const server = Bun.serve<SocketData>({
     port,
     async fetch(req, srv) {
-      const url = new URL(req.url);
+      let url: URL;
+      try {
+        url = new URL(req.url);
+      } catch {
+        return new Response("Bad request", { status: 400 });
+      }
       if (url.pathname !== "/")
         return new Response("Not found: rooms come from the room query parameter", { status: 404 });
       const parsedRoom = parseRoom(url.searchParams.get("room"));
       const room = parsedRoom ?? "main";
       const origin = req.headers.get("origin") ?? "";
-      const authOk = await authCheck({
-        token: url.searchParams.get("token") ?? "",
-        room,
-        origin,
-        headers: Object.fromEntries(req.headers),
-      });
+      // origin and room are checked before the hook runs, so a refused request never drives an expensive hook
+      const preChecked = originAllowed(allowedOrigins, origin) && parsedRoom !== null;
+      const authOk = preChecked
+        ? await authCheck({
+            token: url.searchParams.get("token") ?? "",
+            room,
+            origin,
+            headers: Object.fromEntries(req.headers),
+          })
+        : false;
       if (
         srv.upgrade(req, {
           data: {
@@ -107,12 +116,12 @@ export function createBunRelay(port: number, options: BunRelayOptions = {}) {
           ws.close(ORIGIN_REJECTED_CODE, "origin not allowed");
           return;
         }
-        if (!ws.data.authOk) {
-          ws.close(AUTH_REJECTED_CODE, "invalid token");
-          return;
-        }
         if (ws.data.roomInvalid) {
           ws.close(INVALID_ROOM_CODE, "invalid room");
+          return;
+        }
+        if (!ws.data.authOk) {
+          ws.close(AUTH_REJECTED_CODE, "invalid token");
           return;
         }
         const admission = limits.admit(ws.data.room);
@@ -124,6 +133,7 @@ export function createBunRelay(port: number, options: BunRelayOptions = {}) {
         ws.subscribe(ws.data.room);
       },
       message(ws, message) {
+        if (!ws.data.admitted) return;
         if (!ws.data.rateLimiter.tryConsume()) return;
         if (messageByteLength(message, maxMessageBytes) > maxMessageBytes) return;
         let outgoing: string | Uint8Array | Buffer = message;

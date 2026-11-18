@@ -1,8 +1,5 @@
-import { createPresenceHooks } from "@anchor-presence/react";
+import { useRemoteUsers } from "../cursors/hooks";
 import { DEFAULT_CURSOR_COLOR, isKnownCursorColor } from "../cursors/setup";
-import type { DemoContext, DemoUser } from "../cursors/setup";
-
-const { useRemoteUsers } = createPresenceHooks<DemoContext, DemoUser>();
 
 export function WhoIsOnline() {
   const users = useRemoteUsers();

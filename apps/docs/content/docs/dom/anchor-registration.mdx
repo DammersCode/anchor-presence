@@ -3,7 +3,7 @@ title: Anchor registration
 description: How an element becomes an anchor, the data-anchor attribute, and duplicate IDs.
 ---
 
-An anchor is a DOM element the binding can measure and resolve cursors against. The binding registers and unregisters anchors on its own: an application never calls a register function directly.
+An anchor is a DOM element that the binding measures and places cursors on. The binding registers and unregisters anchors on its own. An application never calls a register function.
 
 ## The anchor attribute
 
@@ -17,7 +17,7 @@ Set `anchorAttribute` in `DomBindingOptions` to use a different attribute name. 
 
 ## Auto-registration
 
-The binding watches the document with a `MutationObserver`, scoped to the `environment.root` you pass, or the global `document` by default. The observer tracks:
+The binding watches the document with a `MutationObserver`. The observer watches the `environment.root` that you pass, or the global `document` by default. The observer tracks:
 
 - New elements added anywhere under the root, including nested elements with the anchor attribute.
 - Removed elements, which unregister their anchor.
@@ -27,11 +27,13 @@ You call no registration or cleanup function. A framework that mounts and unmoun
 
 ## Empty values
 
-A blank or whitespace-only attribute value does not register an anchor. The binding logs one development-mode warning per element the first time this happens, then stays silent for that element.
+A blank or whitespace-only attribute value does not register an anchor. In development mode, the binding warns one time for each element that has such a value.
 
 ## Duplicate IDs
 
-If two elements register the same anchor ID, the newest registration wins. The registry logs one development-mode warning per duplicate ID. This keeps a remount-before-unmount case deterministic, for example React Strict Mode or a virtualized list that swaps rows.
+If two elements register the same anchor ID, the newest registration wins. In development mode, the registry warns one time for each duplicate ID.
+
+A new element can mount before the old element with the same ID unmounts. Examples are React Strict Mode and a virtualized list that swaps rows. The rule "the newest registration wins" gives the same result every time in that case.
 
 ## Shadow DOM
 

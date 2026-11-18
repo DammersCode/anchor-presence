@@ -7,7 +7,7 @@ description: CursorPresence, leave and event messages, PresenceEvent, PeerChange
 
 ## CursorPresence
 
-The wire format of one presence message.
+`CursorPresence` is the wire format of one presence message.
 
 <AutoTypeTable path="../../packages/core/src/protocol.ts" name="CursorPresence" />
 
@@ -20,11 +20,15 @@ Both codecs carry the two fields:
 - `jsonCodec` writes `leave` and `event` as JSON fields.
 - `binaryCodec` writes a leave message with cursor tag `2`. It writes an event message with cursor tag `3`, followed by the event `type`. The event `data` uses the slot of `user`.
 
-A relay that checks messages must pass `leave` and `event` through. If a relay drops these fields, a client that left stays until the stale timeout. Each event then arrives as a message that clears the cursor of the sender.
+<Callout type="warn">
+  If a relay checks messages, it must pass `leave` and `event` through. If a relay drops these fields, a
+  client that left stays until the stale timeout. Each event then arrives as a message that clears the cursor
+  of the sender.
+</Callout>
 
 ## PresenceEvent
 
-A one-shot event, as `client.sendEvent` sends it.
+A `PresenceEvent` is a one-shot event that `client.sendEvent` sends.
 
 <AutoTypeTable path="../../packages/core/src/protocol.ts" name="PresenceEvent" />
 
@@ -32,31 +36,31 @@ A one-shot event, as `client.sendEvent` sends it.
 
 ## PeerChange
 
-A peer is another client in the same room. A `PeerChange` reports a peer that joined, left, or changed its `user` or `context`. `client.subscribePeers` gives a `PeerChange` to its listener. See [Peer changes](/docs/core/remote-presence#peer-changes).
+A `PeerChange` reports a peer (another client in the same room) that joined, left, or changed its `user` or `context`. `client.subscribePeers` gives a `PeerChange` to its listener. See [Peer changes](/docs/core/remote-presence#peer-changes).
 
 <AutoTypeTable path="../../packages/core/src/protocol.ts" name="PeerChange" />
 
 ## AnchorPoint
 
-One anchor point in a cursor position. See [Anchors](/docs/get-started/concepts/anchors) for the `u`/`v` fields.
+An `AnchorPoint` is one anchor point in a cursor position. See [Anchors](/docs/get-started/concepts/anchors) for the `u`/`v` fields.
 
 <AutoTypeTable path="../../packages/core/src/protocol.ts" name="AnchorPoint" />
 
 ## CursorPosition
 
-The cursor position inside one presence message: a fallback chain of anchors plus an optional viewport fallback.
+A `CursorPosition` is the cursor position inside one presence message. It holds a fallback chain of anchors and an optional viewport fallback.
 
 <AutoTypeTable path="../../packages/core/src/protocol.ts" name="CursorPosition" />
 
 ## RemotePresence
 
-A remote presence without the `sequence` field, and with an `idle` field. `client.getRemotePresence()` returns an array of this type. `idle` is `true` when the presence did not change for `idleAfterMs`, even while heartbeats arrive. See [How it works](/docs/get-started/concepts/how-it-works) for how this differs from the raw snapshot.
+A `RemotePresence` is a presence message that has no `sequence` field and has an `idle` field. `client.getRemotePresence()` returns an array of this type. `idle` is `true` when the presence did not change for `idleAfterMs`, even while heartbeats arrive. See [How it works](/docs/get-started/concepts/how-it-works) for how this differs from the raw snapshot.
 
 <AutoTypeTable path="../../packages/core/src/protocol.ts" name="RemotePresence" />
 
 ## PointerInfo and PointerType
 
-Optional pointer info attached to a presence message.
+`PointerInfo` holds optional pointer info that a presence message carries.
 
 <AutoTypeTable path="../../packages/core/src/protocol.ts" name="PointerInfo" />
 

@@ -1,6 +1,6 @@
 # 043 Production-ready API and docs
 
-Status: in progress. Steps 1 and 2 done. Step 3 runs in rounds; see the gap ledger. Rubric: [research/api-scoring-rubric.md](research/api-scoring-rubric.md).
+Status: done. Steps 1 and 2 done. Steps 3 and 4 ran for nine scoring rounds and stopped on a plateau with no open P1 or P2 row; the P3 rows stay in the ledgers. Rubric: [research/api-scoring-rubric.md](research/api-scoring-rubric.md).
 
 Steps, each with its completion criterion:
 

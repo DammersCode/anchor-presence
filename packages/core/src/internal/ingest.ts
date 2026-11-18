@@ -66,15 +66,24 @@ function hasUnparsedField<TContext, TUser>(
 }
 
 // A peer that floods events gets dropped, per sender, so one client cannot starve the others.
+// A global bucket also caps all senders together, so a peer that rotates its clientId cannot get around the per-sender limit.
 function createEventAllowance(
-  burst = 20,
-  refillPerSecond = 10,
+  {
+    burst,
+    perSecond: refillPerSecond,
+    totalPerSecond,
+  }: { burst: number; perSecond: number; totalPerSecond: number },
+  readNow: () => number,
   maxSenders = 512,
 ): { tryConsume(clientId: string): boolean } {
   const buckets = new Map<string, { tokens: number; at: number }>();
+  const total = { tokens: totalPerSecond, at: readNow() };
   return {
     tryConsume(clientId) {
-      const now = Date.now();
+      const now = readNow();
+      total.tokens = Math.min(totalPerSecond, total.tokens + ((now - total.at) / 1000) * totalPerSecond);
+      total.at = now;
+      if (total.tokens < 1) return false;
       let bucket = buckets.get(clientId);
       if (bucket === undefined) {
         if (buckets.size >= maxSenders) buckets.clear();
@@ -85,6 +94,7 @@ function createEventAllowance(
       bucket.at = now;
       if (bucket.tokens < 1) return false;
       bucket.tokens -= 1;
+      total.tokens -= 1;
       return true;
     },
   };
@@ -154,7 +164,7 @@ function warnDropped(
 export function wireInbound<TContext, TUser>(state: PresenceClientState<TContext, TUser>): void {
   let warnedUnparsed = false;
   const warnedDropped = { user: false, context: false };
-  const eventAllowance = createEventAllowance();
+  const eventAllowance = createEventAllowance(state.eventRate, state.now);
   const unsubscribeTransport = state.transport.subscribe((data) => {
     if (state.disposed) return;
     try {

@@ -23,12 +23,6 @@ export function newConnectionId(): string {
   return Math.random().toString(36).slice(2, 10);
 }
 
-/** Validates a room name: length-capped, restricted charset. Falls back to "main" otherwise. */
-export function sanitizeRoomName(candidate: string | null | undefined): string {
-  const value = (candidate ?? "").slice(0, MAX_ROOM_LENGTH);
-  return value.length > 0 && ROOM_CHARSET.test(value) ? value : "main";
-}
-
 /** Constant-time string compare, resistant to timing side-channels on auth tokens. */
 export function timingSafeEqualString(a: string, b: string): boolean {
   const aBytes = encoder.encode(a);
@@ -136,6 +130,9 @@ export function originAllowed(allowlist: Set<string>, origin: string): boolean {
   return allowlist.size === 0 || allowlist.has(origin);
 }
 
+// receivers drop a clientId above 128 characters, and the relay appends `~` and 8 more
+const MAX_IDENTITY_LENGTH = 100;
+
 /** What an auth hook sees: the token, the room, the origin and the request headers. */
 export type AuthRequest = {
   token: string;
@@ -166,7 +163,8 @@ export function safeAuthCheck(check: AuthCheck): (request: AuthRequest) => Promi
         typeof result === "object" &&
         result !== null &&
         typeof result.clientId === "string" &&
-        result.clientId !== ""
+        result.clientId !== "" &&
+        result.clientId.length <= MAX_IDENTITY_LENGTH
       ) {
         return result;
       }

@@ -77,4 +77,4 @@ These plans describe backends the library does not ship today. They are referenc
 | Plan                                                         | Status | Summary                                                                                                           |
 | ------------------------------------------------------------ | ------ | ----------------------------------------------------------------------------------------------------------------- |
 | [Solid and Vue adapters](adapters/framework-adapters.md)     | open   | `@anchor-presence/solid` and `@anchor-presence/vue`, mirroring the react adapter.                                 |
-| [Production-ready API and docs](043-production-ready-api.md) | open   | Scored improvement loop for the API, backend contract and docs, plus docs page actions and a Vercel build filter. |
+| [Production-ready API and docs](043-production-ready-api.md) | done   | Scored improvement loop for the API, backend contract and docs, plus docs page actions and a Vercel build filter. |

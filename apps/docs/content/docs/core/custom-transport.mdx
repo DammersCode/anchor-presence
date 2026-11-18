@@ -96,7 +96,7 @@ Do a test of your transport with these cases:
 - A send while the transport is disconnected.
 - A status change with no active subscriber.
 
-`createInMemoryPair` satisfies the full contract. Use it as a reference implementation. See [In-memory transport](/docs/core/in-memory-transport).
+`createInMemoryPair` implements the required methods of the contract. It has no `subscribeClose` and no `bufferedBytes`. It also delivers a send while its side is disconnected. See [In-memory transport](/docs/core/in-memory-transport).
 
 ## Related
 

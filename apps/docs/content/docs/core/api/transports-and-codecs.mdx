@@ -7,13 +7,13 @@ description: LiveCursorTransport, TransportClose, createInMemoryPair, InMemoryTr
 
 ## LiveCursorTransport
 
-The interface that every transport implements. See [Transports](/docs/core/transports) for the full contract.
+`LiveCursorTransport` is the interface that every transport implements. See [Transports](/docs/core/transports) for the full contract.
 
 <AutoTypeTable path="../../packages/core/src/transport.ts" name="LiveCursorTransport" />
 
 ## TransportClose
 
-The value that a transport gives to `subscribeClose` listeners when a connection closes. See [Transports](/docs/core/transports#close-reasons).
+`TransportClose` is the value that a transport gives to `subscribeClose` listeners when a connection closes. See [Transports](/docs/core/transports#close-reasons).
 
 Import the type from `@anchor-presence/core`:
 
@@ -41,7 +41,7 @@ import { createInMemoryPair } from "@anchor-presence/core";
 
 ## CursorCodec
 
-The interface that every codec implements. See [Codecs](/docs/core/codecs) for the rules of the interface.
+`CursorCodec` is the interface that every codec implements. See [Codecs](/docs/core/codecs) for the rules of the interface.
 
 <AutoTypeTable path="../../packages/core/src/codec.ts" name="CursorCodec" />
 

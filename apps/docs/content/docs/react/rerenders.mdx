@@ -3,9 +3,11 @@ title: Rerenders
 description: Which hook rerenders when, so you can pick the smallest one for each component.
 ---
 
-A peer is another client in the same room. Each hook in `@anchor-presence/react` rerenders its component only when the value it returns changes. Pick the hook that returns the smallest value your component needs, so an unrelated update does not rerender it.
+Each hook in `@anchor-presence/react` rerenders its component only when the value that it returns changes. Pick the hook that returns the smallest value that your component needs. Then an unrelated update does not rerender it.
 
 ## Rerender rules
+
+A peer is another client in the same room. Each hook rerenders by these rules:
 
 | Hook                                                       | Rerenders when                                                                                           |
 | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
@@ -15,6 +17,9 @@ A peer is another client in the same room. Each hook in `@anchor-presence/react`
 | [useCursorPresence](/docs/react/cursor-presence)           | only when the `cursor`, `context`, `user`, `pointer`, `session`, `idle`, or membership of a peer changes |
 | [useCursorStatus](/docs/react/connection-status)           | only when the connection status changes                                                                  |
 | [useCursorContext](/docs/react/cursor-context)             | only when the local context value changes                                                                |
+| [useLocalUser](/docs/react/cursor-context#local-user)      | only when the local user value changes                                                                   |
+| [usePeerChanges](/docs/react/remote-users#peer-changes)    | never: it calls its listener and returns nothing                                                         |
+| [useCursorEvents](/docs/react/cursor-events)               | never: it calls its listener and returns nothing                                                         |
 | [useCursorClient](/docs/react/api/hooks#usecursorclient)   | when the provider's client or binding instance changes                                                   |
 | [useCursorBinding](/docs/react/api/hooks#usecursorbinding) | when the provider's client or binding instance changes                                                   |
 
@@ -22,7 +27,7 @@ An idle room, with no inbound messages, costs nothing: none of these hooks reren
 
 ## Choose the smallest hook
 
-A component that renders one cursor's position needs `useRemoteCursors`, or better, a `useRemoteCursorsSelector` that picks out one client. A component that renders a name list needs `useRemoteUsers`, not `useRemoteCursors`, because a presence list does not care where the cursor sits on screen.
+A component that renders one cursor's position needs `useRemoteCursors`, or better, a `useRemoteCursorsSelector` that selects one client. A component that renders a name list needs `useRemoteUsers`, not `useRemoteCursors`, because a presence list does not care where the cursor sits on screen.
 
 `CursorLayer` already applies this rule. It uses `useRemoteCursorsSelector` internally to skip cursors that `filterCursor` removes. `React.memo` then skips a cursor's row when its resolved values did not change.
 

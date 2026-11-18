@@ -16,6 +16,8 @@ describe("@anchor-presence/react public runtime API", () => {
       "useCursorEvents",
       "useCursorPresence",
       "useCursorStatus",
+      "useLocalUser",
+      "usePeerChanges",
       "useRemoteCursors",
       "useRemoteCursorsSelector",
       "useRemoteUsers",

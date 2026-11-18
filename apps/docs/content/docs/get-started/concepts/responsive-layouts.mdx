@@ -7,9 +7,7 @@ Anchor Presence places a cursor on the same element when two clients show differ
 
 ## The problem with pixel coordinates
 
-Two clients rarely render the same layout at the same time. A sidebar can be collapsed on one screen and open on another. A table can wrap to one column on a narrow screen and three columns on a wide screen. A button can be 160 pixels wide on one screen and 96 pixels wide on another.
-
-A raw pixel coordinate from the sender means nothing on a receiver with a different layout. It can land on the wrong element, or on no element at all.
+Two clients rarely render the same layout at the same time. A raw pixel coordinate from the sender means nothing on a receiver with a different layout. It can land on the wrong element, or on no element at all. See [The problem](/docs/get-started/introduction#the-problem) for examples.
 
 ## The fix: normalized position inside a named anchor
 
@@ -35,7 +33,7 @@ The cursor lands 72 pixels from the button's left edge on the receiver. That is 
 
 ## How wrapping and breakpoints resolve
 
-A responsive layout often wraps or reflows content at a breakpoint. As long as the target element keeps its registered anchor ID, resolution works without a code change:
+A responsive layout can wrap or reflow content at a breakpoint. As long as the target element keeps its registered anchor ID, resolution works without a code change:
 
 - The element can move to a new pixel position. The receiver re-measures it every frame the geometry scheduler runs.
 - The element can change size. The `u`/`v` proportion still applies.

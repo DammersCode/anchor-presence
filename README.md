@@ -44,18 +44,18 @@ To start the matching relay for this example, run `cd apps/server && bun run dev
 | ----------- | ----------------------------------------------------- |
 | React       | 18 or later                                           |
 | TypeScript  | 5.9 or later                                          |
-| Browser     | Current versions of Chrome, Edge, Firefox, and Safari |
+| Browser     | Chrome, Edge, Firefox, and Safari with ES2022 support |
 | Bun         | Needed to run the demo and the relay                  |
 
 ## Packages
 
-| Package                  | Description                                                                                    | Link                                         |
-| ------------------------ | ---------------------------------------------------------------------------------------------- | -------------------------------------------- |
-| `@anchor-presence/core`  | Protocol, validation, presence store, client orchestration. Zero dependencies, no DOM globals. | [`packages/core`](packages/core/README.md)   |
-| `@anchor-presence/dom`   | Anchor registry, pointer capture, geometry scheduler, resolver.                                | [`packages/dom`](packages/dom/README.md)     |
-| `@anchor-presence/react` | Provider component and hooks, built on `useSyncExternalStore`.                                 | [`packages/react`](packages/react/README.md) |
-| `apps/demo`              | React admin dashboard demonstrating cross-layout cursor correctness.                           | [`apps/demo`](apps/demo/README.md)           |
-| `apps/server`            | Bun WebSocket relay for the demo.                                                              | [`apps/server`](apps/server)                 |
+| Package                  | Description                                                                                   | Link                                         |
+| ------------------------ | --------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| `@anchor-presence/core`  | Protocol, validation, presence store, client orchestration. Zero dependencies, no DOM needed. | [`packages/core`](packages/core/README.md)   |
+| `@anchor-presence/dom`   | Anchor registry, pointer capture, geometry scheduler, resolver.                               | [`packages/dom`](packages/dom/README.md)     |
+| `@anchor-presence/react` | Provider component and hooks, built on `useSyncExternalStore`.                                | [`packages/react`](packages/react/README.md) |
+| `apps/demo`              | React admin dashboard that shows correct cursors across layouts.                              | [`apps/demo`](apps/demo/README.md)           |
+| `apps/server`            | Bun WebSocket relay for the demo.                                                             | [`apps/server`](apps/server)                 |
 
 ## Features
 
@@ -78,7 +78,7 @@ See also [SPECIFICATION.md](SPECIFICATION.md) for the full technical specificati
 | ------------------------------------------------------ | ------------------------------------------------------ |
 | [`apps/demo`](apps/demo/README.md)                     | The full React demo. Pick the backend with `?backend=` |
 | [`apps/server`](apps/server)                           | The reference Bun WebSocket relay, default backend     |
-| [`examples/bun-native`](examples/bun-native/README.md) | A `Bun.serve` relay using topic pub-sub                |
+| [`examples/bun-native`](examples/bun-native/README.md) | A `Bun.serve` relay that uses topic pub-sub            |
 | [`examples/node-ws`](examples/node-ws/README.md)       | A relay on the `ws` package over `node:http`           |
 | [`examples/hono`](examples/hono/README.md)             | A relay on Hono's `upgradeWebSocket` helper            |
 | [`examples/elysia`](examples/elysia/README.md)         | A relay on Elysia's `.ws()` route                      |
@@ -189,7 +189,7 @@ Run these commands from the root of the repository:
 ```sh
 bun install                  # install workspace dependencies
 bun run build                # build every package (tsc --build)
-bun run typecheck             # build-mode typecheck for core, dom, react
+bun run typecheck             # typecheck the packages, tests, demo, docs, and examples
 bun run lint                  # oxlint, type-aware
 bun run test                  # unit tests (vitest)
 bun run test:browser          # cross-layout browser tests (playwright)

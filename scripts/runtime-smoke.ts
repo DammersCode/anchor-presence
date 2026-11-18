@@ -3,6 +3,11 @@ import { createWebSocketTransport } from "../packages/dom/dist/index.js";
 import { createBunRelay } from "../examples/bun-native/server";
 import { createNodeWsRelay } from "../examples/node-ws/server";
 
+setTimeout(() => {
+  console.error("runtime smoke test timed out");
+  process.exit(1);
+}, 30_000).unref();
+
 async function waitFor(condition: () => boolean, label: string): Promise<void> {
   const deadline = Date.now() + 5000;
   while (!condition()) {
@@ -12,7 +17,8 @@ async function waitFor(condition: () => boolean, label: string): Promise<void> {
 }
 
 async function check(name: string, relay: { url: string; close: () => Promise<void> }): Promise<void> {
-  const url = `${relay.url.replace("http", "ws")}/?room=smoke`;
+  const url = `${relay.url.replace("http", "ws").replace("localhost", "127.0.0.1")}/?room=smoke`;
+  console.log(`${name}: relay at ${url}`);
   const clients = [0, 1].map(() => {
     const transport = createWebSocketTransport({ url });
     const client = createPresenceClient({ transport });
@@ -29,6 +35,11 @@ async function check(name: string, relay: { url: string; close: () => Promise<vo
   console.log(`ok: ${name} relay under ${typeof Bun === "undefined" ? "node" : "bun"}`);
 }
 
-await check("node-ws", await createNodeWsRelay(0));
-await check("bun-native", createBunRelay(0));
-process.exit(0);
+try {
+  await check("node-ws", await createNodeWsRelay(0));
+  await check("bun-native", createBunRelay(0));
+  process.exit(0);
+} catch (error) {
+  console.error(error);
+  process.exit(1);
+}

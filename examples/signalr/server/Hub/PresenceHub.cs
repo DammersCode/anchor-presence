@@ -20,6 +20,7 @@ public partial class PresenceHub : Hub
         var room = RoomFor(Context.GetHttpContext());
         if (room is null)
         {
+            await Clients.Caller.SendAsync("Refused", 4007, "invalid room");
             Context.Abort();
             return;
         }

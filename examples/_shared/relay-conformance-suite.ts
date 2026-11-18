@@ -100,6 +100,24 @@ export function defineRelayConformance(
     });
   });
 
+  describe(`relay origin conformance: ${name}`, () => {
+    const relay = useRelay(start, { RELAY_ALLOWED_ORIGINS: "https://good.example" });
+
+    it("closes a connection from an origin outside the allowlist with code 4004 and admits the listed one", async () => {
+      const { baseUrl } = relay();
+      // Node's WebSocket (undici) accepts a headers option, which sets the Origin
+      const withOrigin = (origin: string) =>
+        new WebSocket(`${baseUrl}/?room=origin`, { headers: { Origin: origin } } as never);
+
+      expect(await closeCode(withOrigin("https://evil.example"))).toBe(4004);
+
+      const admitted = withOrigin("https://good.example");
+      await opened(admitted);
+      expect(admitted.readyState).toBe(WebSocket.OPEN);
+      admitted.close();
+    });
+  });
+
   describe(`relay auth conformance: ${name}`, () => {
     const relay = useRelay(start, { RELAY_AUTH_TOKEN: "secret" });
 

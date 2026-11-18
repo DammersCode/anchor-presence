@@ -144,6 +144,27 @@ describe("Socket.IO transport integration", () => {
     }
   });
 
+  it("reports the refusal code and reason through subscribeClose", async () => {
+    const closes: unknown[] = [];
+    const room = io(url, { query: { room: "team/a" }, transports: ["websocket"], reconnection: false });
+    sockets.push(room);
+    createSocketIoTransport(room).subscribeClose?.((close) => closes.push(close));
+    await vi.waitFor(() => expect(closes).toHaveLength(1), { timeout: 5000, interval: 25 });
+    expect(closes[0]).toMatchObject({ code: 4007, reason: "invalid room", willReconnect: false });
+
+    const strict = await createSocketIoRelay(0, { authCheck: () => false });
+    try {
+      const refused = io(strict.url, { transports: ["websocket"], reconnection: false });
+      sockets.push(refused);
+      const rejected: unknown[] = [];
+      createSocketIoTransport(refused).subscribeClose?.((close) => rejected.push(close));
+      await vi.waitFor(() => expect(rejected).toHaveLength(1), { timeout: 5000, interval: 25 });
+      expect(rejected[0]).toMatchObject({ code: 4006, reason: "invalid token", willReconnect: false });
+    } finally {
+      await strict.close();
+    }
+  });
+
   it("ends disconnected when the relay refuses the token", async () => {
     const strict = await createSocketIoRelay(0, { authCheck: () => false });
     try {

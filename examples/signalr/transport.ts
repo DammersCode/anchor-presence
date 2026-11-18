@@ -1,4 +1,9 @@
-import { jsonCodec, type ConnectionStatus, type LiveCursorTransport } from "@anchor-presence/core";
+import {
+  jsonCodec,
+  type ConnectionStatus,
+  type LiveCursorTransport,
+  type TransportClose,
+} from "@anchor-presence/core";
 import { HubConnectionState, type HubConnection } from "@microsoft/signalr";
 
 // The hub path the whole app talks to; a single relay hub.
@@ -6,6 +11,7 @@ export const PRESENCE_HUB = "/hubs/presence";
 
 // Wire names between the C# hub and the client.
 export const EVENT_RECEIVED = "PresenceReceived";
+export const EVENT_REFUSED = "Refused";
 export const METHOD_SEND = "OnPresence";
 
 // Core's default JSON codec, re-exported so the transport and the presence client
@@ -65,9 +71,34 @@ export function createSignalRTransport(connection: HubConnection): LiveCursorTra
     for (const listener of statusListeners) listener(status);
   };
 
-  connection.onreconnecting(() => setStatus("reconnecting"));
+  const closeListeners = new Set<(close: TransportClose) => void>();
+  let refusal: { code: number; reason: string } | undefined;
+  const emitClose = (error: Error | undefined, willReconnect: boolean): void => {
+    const close: TransportClose = { willReconnect };
+    if (refusal !== undefined) close.code = refusal.code;
+    const reason = refusal?.reason ?? error?.message;
+    if (reason !== undefined) close.reason = reason;
+    for (const listener of closeListeners) {
+      try {
+        listener(close);
+      } catch {
+        // a throwing listener must not stop the status update
+      }
+    }
+  };
+
+  connection.on(EVENT_REFUSED, (code: number, reason: string) => {
+    refusal = { code, reason };
+  });
+  connection.onreconnecting((error) => {
+    emitClose(error, true);
+    setStatus("reconnecting");
+  });
   connection.onreconnected(() => setStatus("connected"));
-  connection.onclose(() => setStatus("disconnected"));
+  connection.onclose((error) => {
+    emitClose(error, false);
+    setStatus("disconnected");
+  });
 
   connection.on(EVENT_RECEIVED, (payload: string) => {
     const bytes = fromBase64(payload);
@@ -108,5 +139,11 @@ export function createSignalRTransport(connection: HubConnection): LiveCursorTra
       };
     },
     getStatus: () => status,
+    subscribeClose: (listener) => {
+      closeListeners.add(listener);
+      return () => {
+        closeListeners.delete(listener);
+      };
+    },
   };
 }

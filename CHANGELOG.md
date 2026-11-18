@@ -4,6 +4,8 @@
 
 ### Breaking
 
+- Example relays: node-ws and Bun answer a path other than `/` with 404. Rooms come from the `room` query parameter. The node-ws relay no longer exits when a client resets the connection while an async `authCheck` runs.
+- `@anchor-presence/core`: the default shape check accepts a remote `null` for any key, and the dev console warns once when it drops a remote `user` or `context`.
 - `@anchor-presence/core`: a remote `user` or `context` must have the shape of the local value, or the client drops it. A key the local value lacks, such as an optional field, stays only as a string, number, boolean or `null`. Pass `parseUser` or `parseContext` to replace the check, for example when the client has no local value.
 - Relays (reference and examples): a room name that is not valid now closes the socket with code `4007` instead of falling back to `main`, because two rooms would share one stream. The SignalR hub aborts the connection.
 - Example relays: identity binding rewrites `clientId` to `<identity>~<connection>`, so two tabs of one user stay two clients. It works on node-ws, Bun, Hono, Elysia and Socket.IO.
@@ -20,6 +22,9 @@
 
 ### Added
 
+- `@anchor-presence/react`: `useCursorBinding()` returns the DOM binding, so a component can call `binding.invalidate()` when state that a `visibilityPolicy` reads changes.
+- Example transports: the Socket.IO and SignalR transports implement `subscribeClose`. The relays send a `refused` event with the close code (4001, 4002, 4006, 4007) before they disconnect a client.
+- `defineRelayConformance` also checks the origin allowlist (close code 4004).
 - `@anchor-presence/core`: `createPresenceClient` takes `parseEvent`. It checks, rewrites or drops each remote event, so event data gets the same protection as `user` and `context`.
 - `@anchor-presence/dom`: `binding.dispose({ keepLocalCursor: true })` keeps the local cursor on peers. `LiveCursorProvider` uses it when only `bindingKey` changes.
 - Example Elysia client: `createElysiaClient(baseUrl, room, token?)` sends the room token.

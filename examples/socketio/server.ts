@@ -7,6 +7,7 @@ import {
   limitFromEnv,
   messageByteLength,
   RateLimiter,
+  INVALID_ROOM_CODE,
   bindIdentity,
   newConnectionId,
   parseRoom,
@@ -68,24 +69,31 @@ export function createSocketIoRelay(port: number, options: SocketIoRelayOptions 
       ),
     });
     if (!ok) {
-      next(new Error("invalid token"));
+      next(Object.assign(new Error("invalid token"), { data: { code: 4006 } }));
       return;
     }
     if (typeof ok === "object") socket.data.identity = ok;
     next();
   });
 
+  // Socket.IO has no close codes: send the code first, and the transport reports it as the close code
+  const refuse = (socket: Socket, code: number, reason: string) => {
+    socket.emit("refused", { code, reason });
+    socket.disconnect(true);
+  };
+
   io.on("connection", (socket: Socket) => {
     const parsedRoom = parseRoom(String(socket.handshake.query.room ?? ""));
     if (parsedRoom === null) {
-      socket.disconnect(true);
+      refuse(socket, INVALID_ROOM_CODE, "invalid room");
       return;
     }
     const room = parsedRoom;
     const identity = socket.data.identity as AuthIdentity | undefined;
     const connectionId = newConnectionId();
-    if (limits.admit(room) !== "ok") {
-      socket.disconnect(true);
+    const admission = limits.admit(room);
+    if (admission !== "ok") {
+      refuse(socket, admission === "server full" ? 4002 : 4001, admission);
       return;
     }
     socket.join(room);

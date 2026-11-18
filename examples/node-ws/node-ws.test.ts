@@ -272,3 +272,35 @@ describe("node-ws relay identity length", () => {
     }
   });
 });
+
+describe("node-ws relay with refused sockets that never close", () => {
+  it("does not count them against the socket cap", async () => {
+    const { connect } = await import("node:net");
+    const relay = await createNodeWsRelay(0, { maxSockets: 1, authCheck: ({ token }) => token !== "bad" });
+    const held: import("node:net").Socket[] = [];
+    try {
+      const port = Number(new URL(relay.url).port);
+      for (let index = 0; index < 5; index += 1) {
+        await new Promise<void>((resolve) => {
+          const socket = connect(port, "127.0.0.1", () => {
+            socket.write(
+              "GET /?room=r&token=bad HTTP/1.1\r\nHost: x\r\nConnection: Upgrade\r\nUpgrade: websocket\r\nSec-WebSocket-Version: 13\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n\r\n",
+            );
+            socket.pause();
+            held.push(socket);
+            setTimeout(resolve, 30);
+          });
+        });
+      }
+      const valid = new WebSocket(`${relay.url.replace(/^http/u, "ws")}/?room=r&token=ok`);
+      await opened(valid);
+      // a refused socket also opens first and is closed right after, so wait before the check
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      expect(valid.readyState).toBe(WebSocket.OPEN);
+      valid.close();
+    } finally {
+      for (const socket of held) socket.destroy();
+      await relay.close();
+    }
+  });
+});

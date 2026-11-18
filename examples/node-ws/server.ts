@@ -45,6 +45,7 @@ type SocketState = {
 };
 
 const SLOW_PEER_CODE = 4003;
+const REFUSED_LINGER_MS = 1000;
 
 /** Creates a relay on Node's `ws` package. Rooms are plain `Set<WebSocket>` maps, closed and swept on disconnect. */
 export function createNodeWsRelay(port: number, options: NodeWsRelayOptions = {}) {
@@ -66,6 +67,12 @@ export function createNodeWsRelay(port: number, options: NodeWsRelayOptions = {}
   const authCheck = safeAuthCheck(options.authCheck ?? tokenAuthCheck(process.env.RELAY_AUTH_TOKEN ?? ""));
 
   const rooms = new Map<string, Set<WebSocket>>();
+  // refused sockets are in wss.clients until they close: only admitted ones count against the cap
+  const admittedSockets = () => {
+    let total = 0;
+    for (const sockets of rooms.values()) total += sockets.size;
+    return total;
+  };
   const state = new WeakMap<WebSocket, SocketState>();
 
   const httpServer: Server = createServer((_req, res) => {
@@ -77,7 +84,11 @@ export function createNodeWsRelay(port: number, options: NodeWsRelayOptions = {}
 
   // accept the upgrade, then close with a code, like the reference relay: a destroyed socket reads as 1006
   const refuse = (req: IncomingMessage, socket: Duplex, head: Buffer, code: number, reason: string) => {
-    wss.handleUpgrade(req, socket, head, (ws) => ws.close(code, reason));
+    wss.handleUpgrade(req, socket, head, (ws) => {
+      ws.close(code, reason);
+      // a refused client that ignores the close frame must not hold the socket open
+      setTimeout(() => ws.terminate(), REFUSED_LINGER_MS).unref();
+    });
   };
 
   httpServer.on("upgrade", (req, socket, head) => {
@@ -117,7 +128,7 @@ export function createNodeWsRelay(port: number, options: NodeWsRelayOptions = {}
       refuse(req, socket, head, 4006, "invalid token");
       return;
     }
-    if (wss.clients.size >= maxSockets) {
+    if (admittedSockets() >= maxSockets) {
       refuse(req, socket, head, 4002, "server full");
       return;
     }

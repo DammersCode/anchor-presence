@@ -1,5 +1,5 @@
 import { HubConnectionState, type HubConnection } from "@microsoft/signalr";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { createSignalRTransport, mapStatus } from "./transport";
 
 // A minimal fake standing in for the parts of HubConnection the transport touches.
@@ -276,5 +276,53 @@ describe("createSignalRTransport", () => {
     setTimeout(() => fake.setState(HubConnectionState.Connected), 80);
     await done;
     expect(transport.getStatus?.()).toBe("connected");
+  });
+
+  describe("disconnect during connect", () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("stays disconnected when a stopConnection:false disconnect lands during the poll", async () => {
+      vi.useFakeTimers();
+      const fake = createFakeConnection(HubConnectionState.Connecting);
+      const transport = createSignalRTransport(fake.connection, { stopConnection: false });
+      const done = transport.connect?.();
+      await vi.advanceTimersByTimeAsync(60);
+      await transport.disconnect?.();
+      fake.setState(HubConnectionState.Connected);
+      await vi.advanceTimersByTimeAsync(500);
+      await done;
+      expect(transport.getStatus?.()).toBe("disconnected");
+      await transport.send?.(new Uint8Array([1]));
+      expect(fake.received).toEqual([]);
+      fake.fireClose();
+      expect(transport.getStatus?.()).toBe("disconnected");
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it("does not start the connection again after a disconnect during the poll", async () => {
+      vi.useFakeTimers();
+      const fake = createFakeConnection(HubConnectionState.Connecting);
+      let starts = 0;
+      Object.assign(fake.connection, {
+        start: async () => {
+          starts += 1;
+          fake.setState(HubConnectionState.Connected);
+        },
+        stop: async () => {
+          fake.setState(HubConnectionState.Disconnected);
+        },
+      });
+      const transport = createSignalRTransport(fake.connection);
+      const done = transport.connect?.();
+      await vi.advanceTimersByTimeAsync(60);
+      await transport.disconnect?.();
+      await vi.advanceTimersByTimeAsync(500);
+      await done;
+      expect(starts).toBe(0);
+      expect(fake.connection.state).toBe(HubConnectionState.Disconnected);
+      expect(vi.getTimerCount()).toBe(0);
+    });
   });
 });

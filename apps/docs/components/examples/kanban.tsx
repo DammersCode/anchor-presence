@@ -5,7 +5,9 @@ import type { VisibilityPolicy } from "@anchor-presence/dom";
 import { CursorLayer, LiveCursorProvider, useRemoteCursors } from "@anchor-presence/react";
 import { Plus, X } from "lucide-react";
 import { useRef, type ReactNode, type RefObject } from "react";
-import { safeColor } from "./safe-color";
+
+const safeColor = (color: string | undefined, fallback: string) =>
+  color !== undefined && /^#[0-9a-f]{6}$/iu.test(color) ? color : fallback;
 
 type User = { name: string; color: string };
 

@@ -97,6 +97,7 @@
 
 ### Changed
 
+- `@anchor-presence/dom`: a failed connection attempt (a rejecting `token` function or a throwing `WebSocketCtor`) asks `shouldReconnect` like a close does. A `false` answer stops the retries.
 - `@anchor-presence/dom`: `connect()` during the reconnect backoff cancels the pending timer, so it no longer opens a second socket. `WebSocketTransport` types `subscribeStatus`, `getStatus`, `subscribeClose` and `bufferedBytes` as required.
 - `@anchor-presence/core`: the `clientId` length check uses `validationLimits.maxClientIdLength`. `createPresenceClient` throws a `TypeError` when `idFactory` returns a session of 0 or more than 64 characters.
 - `@anchor-presence/react`: `LiveCursorProvider` warns in dev when a caller passes both `client` and `factory`; `client` wins.

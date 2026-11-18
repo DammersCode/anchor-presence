@@ -23,7 +23,13 @@ The recipe is one file, `cursor-chat.tsx`. It starts with the imports, the limit
 ```tsx
 import { useEffect, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
-import { CursorLayer, LiveCursorProvider, useCursorClient, useCursorEvents } from "@anchor-presence/react";
+import {
+  CursorLayer,
+  DefaultCursor,
+  LiveCursorProvider,
+  useCursorClient,
+  useCursorEvents,
+} from "@anchor-presence/react";
 import type { PresenceClient } from "@anchor-presence/react";
 
 export const CHAT_MAX_LENGTH = 100;
@@ -86,7 +92,9 @@ export function ChatCursorLayer() {
   return (
     <CursorLayer<unknown, User>
       getLabel={(cursor) => messages[cursor.clientId] ?? cursor.user?.name}
-      labelStyle={{ maxWidth: "24rem", whiteSpace: "normal" }}
+      renderCursor={({ label, color }) => (
+        <DefaultCursor label={label} color={color} labelStyle={{ maxWidth: "24rem", whiteSpace: "normal" }} />
+      )}
     />
   );
 }
@@ -196,7 +204,7 @@ export function ChatApp({ client }: { client: PresenceClient<unknown, User> }) {
 - **Position.** The pointer listener moves the local bubble through its `style` and does not rerender the component. The remote bubble is the label of the remote cursor, so it moves with that cursor.
 - **Local bubble.** The relay never sends a message back to its sender. The local bubble comes from local state. If `sendEvent` returns `false`, the recipe shows no local bubble. `sendEvent` returns `false` when the client is not connected or the event is above the field limits.
 - **One-shot events.** The client never stores or resends an event. A peer that joins after the message never sees it. For this reason, each side runs its own hide timer.
-- **Label width.** The default label has a maximum width of 20rem and cuts longer text with an ellipsis. The recipe sets `labelStyle` so a message can wrap in up to 24rem.
+- **Label width.** The default label has a maximum width of 20rem and cuts longer text with an ellipsis. The recipe renders `DefaultCursor` with its own `labelStyle`, so a message can wrap in up to 24rem.
 - **Length.** The input stops at `CHAT_MAX_LENGTH` characters, and the receiver cuts longer text. The client limit for one field is 8 KiB (`DEFAULT_MAX_FIELD_BYTES`).
 - **Rate.** A receiver drops the events of a sender above the event rate limit. See [Events](/docs/core/events) for the limit.
 

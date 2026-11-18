@@ -5,8 +5,10 @@ import type { VisibilityPolicy } from "@anchor-presence/dom";
 import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
 import { UserPlus, X } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { safeColor } from "./safe-color";
 import { MIRA } from "./_preview/scenes";
+
+const safeColor = (color: string | undefined, fallback: string) =>
+  color !== undefined && /^#[0-9a-f]{6}$/iu.test(color) ? color : fallback;
 
 type User = { name: string; color: string };
 type DialogContext = { dialog: "invite" | null };

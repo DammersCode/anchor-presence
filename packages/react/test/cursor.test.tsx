@@ -112,6 +112,11 @@ describe("cursor components", () => {
     });
     expect(label()).toBe("a".repeat(32));
 
+    act(() => {
+      publish([cursor({ user: { name: "a".repeat(1_000_000) } })]);
+    });
+    expect(label()).toBe("a".repeat(32));
+
     act(() => root.unmount());
   });
 

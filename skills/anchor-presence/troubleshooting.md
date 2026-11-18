@@ -34,7 +34,7 @@ The default ID factory uses `crypto.getRandomValues`, which works on plain http.
 
 ## Cursors never appear inside an iframe
 
-Each browsing context needs its own client. Pointer and viewport coordinates do not cross iframe boundaries, for any origin.
+A cross-origin iframe needs its own client. For a same-origin iframe, pass its `contentDocument` as `environment.root` and its `contentWindow` as `environment.window`. Pointer and viewport coordinates do not cross iframe boundaries.
 
 ## A cursor turns faint, then stays after a user leaves
 

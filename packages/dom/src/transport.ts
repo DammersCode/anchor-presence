@@ -185,10 +185,21 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
     }
   }
 
+  function decideReconnect(event: { code?: number; reason?: string }): boolean {
+    try {
+      return shouldReconnect(event);
+    } catch (error) {
+      reportListenerError(error);
+      return false;
+    }
+  }
+
   function failConnect(): void {
     // no socket opened: a token function or the constructor failed, so the app still learns why
-    emitClose({ reason: "connection attempt failed", willReconnect: reconnect });
-    if (reconnect) scheduleReconnect();
+    const reason = "connection attempt failed";
+    const willReconnect = reconnect && decideReconnect({ reason });
+    emitClose({ reason, willReconnect });
+    if (willReconnect) scheduleReconnect();
     else setStatus("disconnected");
   }
 
@@ -265,15 +276,6 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
           } catch {
             // a throwing listener must not starve the others
           }
-        }
-      };
-
-      const decideReconnect = (event: { code?: number; reason?: string }): boolean => {
-        try {
-          return shouldReconnect(event);
-        } catch (error) {
-          reportListenerError(error);
-          return false;
         }
       };
 

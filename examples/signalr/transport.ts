@@ -73,6 +73,7 @@ export function createSignalRTransport(
   let status: ConnectionStatus = mapStatus(connection.state);
   // a shared connection (stopConnection: false) keeps firing callbacks after this transport disconnects
   let active = true;
+  let connectGeneration = 0;
 
   const setStatus = (next: ConnectionStatus): void => {
     if (next === status) return;
@@ -131,6 +132,7 @@ export function createSignalRTransport(
     connect: async () => {
       registerHandlers();
       active = true;
+      const generation = ++connectGeneration;
       // a shared connection that is still starting: wait for it instead of returning early
       for (
         let tries = 0;
@@ -139,6 +141,7 @@ export function createSignalRTransport(
       ) {
         setStatus("connecting");
         await new Promise((resolve) => setTimeout(resolve, CONNECTING_POLL_MS));
+        if (generation !== connectGeneration) return;
       }
       // Idempotent: a fresh connection reports Disconnected; connected or reconnecting, skip.
       if (connection.state !== HubConnectionState.Disconnected) {
@@ -149,13 +152,16 @@ export function createSignalRTransport(
       try {
         await connection.start();
       } catch (error) {
+        if (generation !== connectGeneration) return;
         // a failed first start is not retried by withAutomaticReconnect: report it instead of hanging at "connecting"
         setStatus("disconnected");
         throw error;
       }
+      if (generation !== connectGeneration) return;
       setStatus("connected");
     },
     disconnect: () => {
+      connectGeneration++;
       connection.off(EVENT_REFUSED, onRefused);
       connection.off(EVENT_RECEIVED, onReceived);
       handlersRegistered = false;

@@ -126,7 +126,7 @@ On the `pagehide` event of the window, the binding calls `client.leave()`. Peers
 
 If a `visibilityPolicy` or an interpolator throws, the binding keeps the last snapshot and does not stop. In development mode, it logs the error with `console.error`. The binding tries again on the next remote, anchor, or layout change.
 
-If a `binding.subscribe` listener throws, the binding reports the error through the development warning. It still calls the other listeners.
+If a `binding.subscribe` listener throws, the binding still calls the other listeners. In development mode, the binding logs the error with `console.error`.
 
 ## Dispose
 

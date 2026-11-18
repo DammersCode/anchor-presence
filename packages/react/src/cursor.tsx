@@ -20,11 +20,13 @@ const graphemeSegmenter =
   typeof Intl.Segmenter === "function" ? new Intl.Segmenter(undefined, { granularity: "grapheme" }) : null;
 
 function truncateLabel(name: string): string {
-  const units =
-    graphemeSegmenter === null
-      ? Array.from(name)
-      : Array.from(graphemeSegmenter.segment(name), (part) => part.segment);
-  return units.slice(0, MAX_DEFAULT_LABEL_LENGTH).join("");
+  const units: string[] = [];
+  const parts = graphemeSegmenter === null ? Array.from(name) : graphemeSegmenter.segment(name);
+  for (const part of parts) {
+    if (units.length === MAX_DEFAULT_LABEL_LENGTH) break;
+    units.push(typeof part === "string" ? part : part.segment);
+  }
+  return units.join("");
 }
 
 function defaultLabel(cursor: ResolvedCursor): string | null {

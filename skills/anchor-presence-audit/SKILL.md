@@ -12,7 +12,7 @@ The scripts do the heavy work and print short summaries. The JSON and the report
 
 The scripts are in `scripts/` next to this file. They need Node 20+ and one dependency, `playwright`. Run them from the app root. `<skill>` is this skill's folder:
 
-- `node <skill>/scripts/measure.mjs` measures and scores. It reads `.anchor-audit/audit.config.json` and writes `.anchor-audit/anchor-audit.json`. `--config` and `--out` change the paths. It exits with code 1 when a view cannot be measured. `--check` tests the Playwright setup. `--fail-above <score>` also exits with code 1 when a pair scores above it, for the user's own CI.
+- `node <skill>/scripts/measure.mjs` measures and scores. It reads `.anchor-audit/audit.config.json` and writes `.anchor-audit/anchor-audit.json`. `--config` and `--out` change the paths. It exits with code 1 when a view cannot be measured, and with code 2 when the config is unreadable or another error stops the run. `--check` tests the Playwright setup. `--fail-above <score>` also exits with code 1 when a pair scores above it, for the user's own CI.
 - `node <skill>/scripts/report.mjs --format table|markdown|mermaid|all` renders a report from `.anchor-audit/anchor-audit.json` into `.anchor-audit/anchor-audit.md`. `--in` and `--out` change the paths. `--format` also takes a comma list. `--before <json>` prints only a before/after table and writes no file.
 - Both scripts print their usage with `--help`.
 

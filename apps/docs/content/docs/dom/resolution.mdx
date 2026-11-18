@@ -66,7 +66,7 @@ y = viewport.v * window.innerHeight
 | `user`         | The `user` of the sender, when set.                                                                                                                                   |
 | `idle`         | `true` when the presence of the sender did not change for `idleAfterMs`.                                                                                              |
 
-The core store sets `idle`. See [Idle stage](/docs/core/remote-presence#idle-stage). The binding copies the flag and runs no idle timer of its own. A renderer can use `idle` to fade a cursor or hide its label.
+The core store sets `idle`. See [Idle state](/docs/core/remote-presence#idle-state). The binding copies the flag and runs no idle timer of its own. A renderer can use `idle` to fade a cursor or hide its label.
 
 ## Result identity
 

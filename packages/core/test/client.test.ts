@@ -1524,7 +1524,10 @@ describe("default shape check for remote fields", () => {
       transport,
       idFactory,
       user: { name: "Ada" },
-      parseUser: (value) => ({ name: String((value as { label?: unknown }).label ?? "?") }),
+      parseUser: (value) => {
+        const { label } = value as { label?: unknown };
+        return { name: typeof label === "string" ? label : "?" };
+      },
     });
     remote(emit, "p", { label: "Zed" });
     expect(client.getRemotePresence()[0]?.user).toEqual({ name: "Zed" });

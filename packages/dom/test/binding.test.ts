@@ -293,6 +293,31 @@ describe("createDomBinding", () => {
     error.mockRestore();
   });
 
+  it("keeps notifying the other subscribers when one throws", () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { raf, caf, flush } = makeRafStub();
+    const { client, pushRemote } = makeFakeClient();
+    const binding = createDomBinding(client, { environment: { raf, caf } });
+    const later = vi.fn();
+    binding.subscribe(() => {
+      throw new Error("subscriber bug");
+    });
+    binding.subscribe(later);
+    pushRemote([
+      {
+        version: 1,
+        clientId: "r",
+        session: "s",
+        sequence: 1,
+        cursor: { anchors: [], viewport: { u: 0.5, v: 0.5 } },
+      },
+    ]);
+    expect(() => flush()).not.toThrow();
+    expect(later).toHaveBeenCalled();
+    expect(() => binding.dispose()).not.toThrow();
+    error.mockRestore();
+  });
+
   it("clears the local cursor on dispose, so a consumer-owned client leaves no ghost", () => {
     const { raf, caf } = makeRafStub();
     const { client } = makeFakeClient();

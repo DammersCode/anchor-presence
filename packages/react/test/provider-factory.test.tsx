@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import type { PresenceClient } from "@anchor-presence/core";
-import { LiveCursorProvider, useCursorClient } from "../src";
+import { LiveCursorProvider, useCursorClient, useCursorStatus } from "../src";
 import { makeFakeClient } from "./test-utils";
 
 describe("LiveCursorProvider factory", () => {
@@ -48,6 +48,28 @@ describe("LiveCursorProvider factory", () => {
     expect(last).not.toBeNull();
     expect(seen.at(-2)).toBe(last);
 
+    act(() => root.unmount());
+  });
+
+  it("reports connecting until the factory client exists, then the client status", () => {
+    const fake = makeFakeClient();
+    const seen: string[] = [];
+    function Comp() {
+      seen.push(useCursorStatus());
+      return null;
+    }
+    const root = createRoot(container);
+
+    act(() => {
+      root.render(
+        <LiveCursorProvider factory={() => fake.client}>
+          <Comp />
+        </LiveCursorProvider>,
+      );
+    });
+
+    expect(seen[0]).toBe("connecting");
+    expect(seen.at(-1)).toBe(fake.client.getStatus());
     act(() => root.unmount());
   });
 

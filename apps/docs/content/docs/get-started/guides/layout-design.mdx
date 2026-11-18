@@ -19,7 +19,7 @@ Give the container of a group of anchors its own anchor:
 </nav>
 ```
 
-A pointer in the gap between the links then lands on `nav`, not on a window position.
+A pointer in the gap between the links then lands on `nav`, not on a viewport position.
 
 ## How a short move becomes a jump
 
@@ -28,7 +28,7 @@ A remote cursor moves from anchor to anchor, as the pointer of the sender does. 
 Four layout differences cause jumps:
 
 - Two neighbors in one layout are far apart in the other layout.
-- The pointer crosses a gap with no anchored parent, so the cursor falls back to the window position.
+- The pointer crosses a gap with no anchored parent, so the cursor falls back to the viewport position.
 - An anchor changes shape, so the same `u`/`v` lands on another spot inside it.
 - An anchor exists in one layout only, so the cursor falls back to a parent.
 

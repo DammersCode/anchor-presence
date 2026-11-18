@@ -76,9 +76,9 @@ function PresenceProvider({ children }: { children: ReactNode }) {
     <LiveCursorProvider
       clientKey={connection}
       factory={() => {
-        const transport = createSignalRTransport(connection);
         // use-signalr owns the connection, so disposing the client must not stop it
-        return createPresenceClient({ transport: { ...transport, disconnect: () => {} } });
+        const transport = createSignalRTransport(connection, { stopConnection: false });
+        return createPresenceClient({ transport });
       }}
     >
       {children}

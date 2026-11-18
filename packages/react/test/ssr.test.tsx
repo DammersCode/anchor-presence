@@ -1,6 +1,7 @@
 import { renderToString } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { LiveCursorProvider } from "../src/provider";
+import { makeFakeClient } from "./test-utils";
 import { useSendEvent } from "../src/hooks/use-send-event";
 import {
   useCursorClient,
@@ -63,11 +64,22 @@ describe("SSR safety", () => {
     expect(html).toContain("none-nouser-0-0");
     expect(html).toContain(">false<");
   });
+
+  it("reports connecting on the server while a provider factory has not created its client", () => {
+    const factory = vi.fn(() => makeFakeClient().client);
+    const html = renderToString(
+      <LiveCursorProvider factory={factory}>
+        <AllHooks />
+      </LiveCursorProvider>,
+    );
+    expect(html).toContain(">connecting<");
+    expect(html).not.toContain("disconnected");
+    expect(factory).not.toHaveBeenCalled();
+  });
 });
 
 describe("dev warnings", () => {
-  it("warns once when a hook runs outside a provider", async () => {
-    const { vi } = await import("vitest");
+  it("warns once when a hook runs outside a provider", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     renderToString(<AllHooks />);
     renderToString(<AllHooks />);

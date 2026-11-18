@@ -466,7 +466,7 @@ describe("createPresenceClient session/context/user", () => {
 
     client.setLocalCursor({ anchors: [] });
     vi.advanceTimersByTime(50);
-    expect(decodeSent(sent[0]!).context).toBeUndefined();
+    expect(decodeSent(sent[0]!).context).toBeNull();
 
     vi.advanceTimersByTime(1000);
     const heartbeat = decodeSent(sent[1]!);
@@ -1728,5 +1728,33 @@ describe("createPresenceClient id validation", () => {
     expect(() => createPresenceClient({ transport, idFactory: ids("s".repeat(65)) })).toThrow(
       /session must be 1 to 64/u,
     );
+  });
+});
+
+describe("createPresenceClient session limit and pre-connected transports", () => {
+  it("applies validationLimits.maxSessionLength to the session", () => {
+    const { transport } = makeTransport();
+    const ids = (second: string) => {
+      let calls = 0;
+      return () => (calls++ === 0 ? "me" : second);
+    };
+    const validationLimits = { maxSessionLength: 100 };
+    createPresenceClient({ transport, idFactory: ids("s".repeat(80)), validationLimits }).dispose();
+    expect(() =>
+      createPresenceClient({ transport, idFactory: ids("s".repeat(101)), validationLimits }),
+    ).toThrow(/session must be 1 to 100/u);
+  });
+
+  it("announces a client created on an already connected transport without a cursor", () => {
+    vi.useFakeTimers();
+    const { a, b } = createInMemoryPair();
+    void a.connect?.();
+    void b.connect?.();
+    const receiver = createPresenceClient({ transport: b, clientId: "R" });
+    const sender = createPresenceClient({ transport: a, clientId: "S", user: { name: "Sam" } });
+    vi.advanceTimersByTime(200);
+    expect(receiver.getRemotePresence().map((p) => p.clientId)).toEqual(["S"]);
+    sender.dispose();
+    receiver.dispose();
   });
 });

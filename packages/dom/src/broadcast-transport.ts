@@ -1,10 +1,12 @@
 import { reportListenerError, warnOnce } from "@anchor-presence/core";
 import type { ConnectionStatus, LiveCursorTransport } from "@anchor-presence/core";
 
-/** A transport that connects and disconnects on demand. */
+/** A transport that connects and disconnects on demand, with required status members. */
 export type BroadcastChannelTransport = LiveCursorTransport & {
   connect(): void;
   disconnect(): void;
+  subscribeStatus(listener: (status: ConnectionStatus) => void): () => void;
+  getStatus(): ConnectionStatus;
 };
 
 function toBytes(value: unknown): Uint8Array | null {

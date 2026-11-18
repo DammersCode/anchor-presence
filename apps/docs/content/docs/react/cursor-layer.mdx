@@ -38,13 +38,13 @@ This preview shows `CursorLayer` in two layouts, with the label and the color fr
 ## Defaults
 
 - **Element:** one fixed-position root element per visible cursor, with `DefaultCursor` inside it.
-- **Label:** the `name` field of the peer's `user` value, if it is a string that is not empty. The layer cuts the name to 32 characters. Otherwise, the cursor has no label.
+- **Label:** the `name` field of the peer's `user` value, if it is a string that is not empty. The layer cuts the name to 32 characters (code points). Otherwise, the cursor has no label.
 - **Color:** one of 8 palette colors, picked from the peer's `clientId`. A peer keeps its color on every screen. With the default `clientId`, a page reload creates a new one, so the color can change.
 - **Stacking:** `zIndex` `9999`, above most app UI.
 
 ## Label and color
 
-`getLabel` and `getColor` run for each visible cursor. They replace the default label and the default color:
+`getLabel` and `getColor` run for each visible cursor. They replace the default label and the default color. The samples on this page pass inline callbacks for brevity. See [Keep the callbacks stable](#keep-the-callbacks-stable):
 
 ```tsx
 type MyUser = { name: string; color?: string };

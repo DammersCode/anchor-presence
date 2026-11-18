@@ -115,6 +115,7 @@ The provider ignores a new `factory` function until `clientKey` changes. An inli
 In development mode, the provider writes one console warning in each of these cases:
 
 - It gets neither `client` nor `factory`. It then renders without presence.
+- It gets both `client` and `factory`. It then ignores `factory`.
 - It gets both `binding` and `bindingOptions`. It then ignores `bindingOptions`.
 
 ## Related

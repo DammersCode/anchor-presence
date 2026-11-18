@@ -1,7 +1,7 @@
 // Top-level wiring: registry, pointer, scheduler, and resolver. The React adapter consumes it.
 
 import type { InterpolatorFactory, PresenceClient } from "@anchor-presence/core";
-import { linearInterpolator, noneInterpolator } from "@anchor-presence/core";
+import { linearInterpolator, noneInterpolator, reportListenerError } from "@anchor-presence/core";
 import { createAnchorRegistry } from "./registry.js";
 import { attachPointerSource } from "./pointer.js";
 import { createGeometryScheduler } from "./scheduler.js";
@@ -156,7 +156,13 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
   const snapshotListeners = new Set<() => void>();
 
   function notifySnapshotListeners(): void {
-    for (const listener of snapshotListeners) listener();
+    for (const listener of snapshotListeners) {
+      try {
+        listener();
+      } catch (error) {
+        reportListenerError(error);
+      }
+    }
   }
 
   // while our own connection is down, remote cursors are ghosts: hide them until it is back

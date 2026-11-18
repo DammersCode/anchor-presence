@@ -82,7 +82,7 @@ describe("TanStack Router (also the router of TanStack Start)", () => {
     const router = buildRouter(makeFactory(created), "/");
     await router.load();
     const html = renderToString(<RouterProvider router={router} />);
-    expect(html).toContain("disconnected");
+    expect(html).toContain("connecting");
     expect(created.count).toBe(0);
 
     container = document.createElement("div");

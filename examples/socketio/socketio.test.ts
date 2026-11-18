@@ -107,6 +107,22 @@ describe("Socket.IO transport integration", () => {
     expect(socket.connected).toBe(false);
   });
 
+  it.each([
+    ["room=a&room=b", 4007],
+    ["room=a&token=x&token=y", 4006],
+  ])("refuses a repeated query key in the raw URL (%s)", async (query, code) => {
+    const raw = new WebSocket(`${url.replace("http", "ws")}/socket.io/?EIO=4&transport=websocket&${query}`);
+    const packet = await new Promise<string>((resolve) => {
+      raw.onmessage = (event) => {
+        const text = String(event.data);
+        if (text.startsWith("0")) raw.send("40");
+        if (text.startsWith("44")) resolve(text);
+      };
+    });
+    raw.close();
+    expect(JSON.parse(packet.slice(2)).data.code).toBe(code);
+  });
+
   it("never delivers to a socket whose id another socket names as its room", async () => {
     const victim = io(url, { query: { room: "home" }, transports: ["websocket"] });
     sockets.push(victim);

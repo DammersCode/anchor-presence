@@ -31,8 +31,8 @@ function createFakeConnection(initial: HubConnectionState = HubConnectionState.C
     on: (event: string, next: (payload: string) => void) => {
       if (event === "PresenceReceived") handler = next;
     },
-    off: () => {
-      handler = null;
+    off: (event: string, next?: (payload: string) => void) => {
+      if (event === "PresenceReceived" && (next === undefined || next === handler)) handler = null;
     },
     onclose: (callback: () => void) => closedCallbacks.push(callback),
     onreconnecting: (callback: () => void) => reconnectingCallbacks.push(callback),
@@ -217,7 +217,9 @@ describe("createSignalRTransport", () => {
     const off: string[] = [];
     let stopped = false;
     Object.assign(fake.connection, {
-      off: (event: string) => off.push(event),
+      off: (event: string, listener?: unknown) => {
+        if (typeof listener === "function") off.push(event);
+      },
       stop: async () => {
         stopped = true;
       },
@@ -225,5 +227,35 @@ describe("createSignalRTransport", () => {
     await createSignalRTransport(fake.connection).disconnect?.();
     expect(off.sort()).toEqual(["PresenceReceived", "Refused"]);
     expect(stopped).toBe(true);
+  });
+
+  it("registers the handlers again when connect follows disconnect on the same transport", async () => {
+    const fake = createFakeConnection();
+    Object.assign(fake.connection, { stop: async () => {} });
+    const transport = createSignalRTransport(fake.connection);
+    const seen: Uint8Array[] = [];
+    transport.subscribe((data) => seen.push(data));
+    await transport.disconnect?.();
+    fake.deliver(btoa("x"));
+    expect(seen).toHaveLength(0);
+    await transport.connect?.();
+    fake.deliver(btoa("x"));
+    expect(seen).toHaveLength(1);
+  });
+
+  it("keeps the connection open and reports disconnected when stopConnection is false", async () => {
+    const fake = createFakeConnection();
+    let stopped = false;
+    Object.assign(fake.connection, {
+      stop: async () => {
+        stopped = true;
+      },
+    });
+    const transport = createSignalRTransport(fake.connection, { stopConnection: false });
+    await transport.disconnect?.();
+    expect(stopped).toBe(false);
+    expect(transport.getStatus?.()).toBe("disconnected");
+    await transport.connect?.();
+    expect(transport.getStatus?.()).toBe("connected");
   });
 });

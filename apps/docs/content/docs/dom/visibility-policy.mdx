@@ -41,7 +41,7 @@ The first type parameter of `VisibilityPolicy` is the context type, and the seco
 import { createPresenceClient } from "@anchor-presence/core";
 import { createDomBinding } from "@anchor-presence/dom";
 
-const client = createPresenceClient<{ role: string }>({ transport });
+const client = createPresenceClient<{ role: string }>({ transport: myTransport });
 const binding = createDomBinding(client, {
   resolution: { visibilityPolicy: hideStaffCursors },
 });

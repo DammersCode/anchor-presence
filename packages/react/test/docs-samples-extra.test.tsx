@@ -15,6 +15,7 @@ import {
   useRemoteCursorsSelector,
   useRemoteUsers,
 } from "../src/index";
+import { docSample, missingLines, missingSamples } from "./doc-source";
 import { makeFakeBinding, makeFakeClient } from "./test-utils";
 
 function DialogBody() {
@@ -116,11 +117,14 @@ function LargeCursorLayer() {
 // cursor-layer.mdx: Label and color
 type LayerUser = { name: string; color?: string };
 
+const safeColor = (color?: string) =>
+  color !== undefined && /^#[0-9a-f]{6}$/iu.test(color) ? color : "#6b7280";
+
 function LabeledLayer() {
   return (
     <CursorLayer<unknown, LayerUser>
       getLabel={(cursor) => cursor.user?.name ?? "Guest"}
-      getColor={(cursor) => cursor.user?.color ?? "#6b7280"}
+      getColor={(cursor) => safeColor(cursor.user?.color)}
     />
   );
 }
@@ -298,14 +302,14 @@ describe("extra docs samples", () => {
     );
     act(() =>
       publish([
-        makeCursor<LayerUser>("a", { user: { name: "Ada", color: "rgb(255, 0, 0)" } }),
+        makeCursor<LayerUser>("a", { user: { name: "Ada", color: "#ff0000" } }),
         makeCursor<LayerUser>("b"),
       ]),
     );
     const labels = [...view.querySelectorAll("[data-anchor-presence-client-id] span > span")];
     expect(labels.map((label) => label.textContent)).toEqual(["Ada", "Guest"]);
     expect(labels[0]?.parentElement?.querySelector("path")?.getAttribute("fill")).toBe(
-      "var(--anchor-presence-cursor-color, rgb(255, 0, 0))",
+      "var(--anchor-presence-cursor-color, #ff0000)",
     );
   });
 });
@@ -343,5 +347,30 @@ describe("default cursor appearance", () => {
     expect(host.textContent?.length).toBeLessThanOrEqual(32);
     act(() => root.unmount());
     host.remove();
+  });
+});
+
+describe("doc sample sources", () => {
+  it("match the copies in this file", () => {
+    expect(
+      missingSamples("docs-samples-extra.test.tsx", [
+        docSample("react/remote-cursors.mdx", "function CursorCount"),
+        docSample("react/remote-presence.mdx", "function PointerTypeBadge"),
+      ]),
+    ).toEqual([]);
+    missingLines(
+      "docs-samples-extra.test.tsx",
+      docSample("react/remote-cursors.mdx", "function selectClippedClientIds"),
+    );
+    expect(
+      missingLines("docs-samples-extra.test.tsx", docSample("react/custom-cursors.mdx", "<MyCursorGlyph")),
+    ).toEqual([]);
+    expect(
+      missingLines("docs-samples-extra.test.tsx", docSample("react/custom-cursors.mdx", 'size": "28px')),
+    ).toEqual([]);
+    const labelLayer = docSample("react/cursor-layer.mdx", "const safeColor").split("\n\n").at(-1) ?? "";
+    expect(missingLines("docs-samples-extra.test.tsx", labelLayer.replaceAll("MyUser", "LayerUser"))).toEqual(
+      [],
+    );
   });
 });

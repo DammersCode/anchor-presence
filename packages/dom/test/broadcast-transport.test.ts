@@ -18,6 +18,14 @@ function pair() {
 }
 
 describe("createBroadcastChannelTransport", () => {
+  it("exposes status members without optional chaining", () => {
+    const { a } = pair();
+    const seen: string[] = [];
+    a.subscribeStatus((status) => seen.push(status));
+    expect(a.getStatus()).toBe("connected");
+    expect(seen.at(-1)).toBe("connected");
+  });
+
   it("delivers bytes to the other transport and not to the sender", async () => {
     const { a, b } = pair();
     const seenByA: Uint8Array[] = [];

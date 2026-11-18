@@ -29,6 +29,11 @@ export type SocketIoRelayOptions = {
   authCheck?: AuthCheck;
 };
 
+// engine.io keeps only the last value of a repeated query key; the raw URL still has them all
+function rawQuery(socket: Socket, key: string): string[] {
+  return new URL(socket.request.url ?? "", "http://localhost").searchParams.getAll(key);
+}
+
 /** Minimal room-broadcast relay: no message inspection beyond size, no persistence. */
 export function createSocketIoRelay(port: number, options: SocketIoRelayOptions = {}) {
   const maxMessageBytes = options.maxMessageBytes ?? limitFromEnv(process.env.MAX_MESSAGE_BYTES, 32 * 1024);
@@ -57,13 +62,13 @@ export function createSocketIoRelay(port: number, options: SocketIoRelayOptions 
   const limits = new ConnectionLimits(maxSockets, maxRoomSockets);
 
   io.use(async (socket, next) => {
-    const { query, headers } = socket.handshake;
-    const room = parseRoom(query.room);
+    const { headers } = socket.handshake;
+    const room = parseRoom(rawQuery(socket, "room"));
     if (room === null) {
       next(Object.assign(new Error("invalid room"), { data: { code: INVALID_ROOM_CODE } }));
       return;
     }
-    const token = parseToken(query.token);
+    const token = parseToken(rawQuery(socket, "token"));
     const ok =
       token === null
         ? false
@@ -93,7 +98,7 @@ export function createSocketIoRelay(port: number, options: SocketIoRelayOptions 
   };
 
   io.on("connection", (socket: Socket) => {
-    const parsedRoom = parseRoom(socket.handshake.query.room);
+    const parsedRoom = parseRoom(rawQuery(socket, "room"));
     if (parsedRoom === null) {
       refuse(socket, INVALID_ROOM_CODE, "invalid room");
       return;

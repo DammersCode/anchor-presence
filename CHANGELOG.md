@@ -105,6 +105,12 @@
 - `@anchor-presence/dom`: `createWebSocketTransport` stops reconnecting after a close with code `4007` (room name not valid).
 - `@anchor-presence/dom`: pointer capture caches the anchor chain per target and reuses it while the target and the registry generation stay the same.
 - `@anchor-presence/dom`: the resolver reuses its per-frame containers and samples interpolators into scratch boxes, so a frame with no new work allocates nothing.
+- `@anchor-presence/core`: a client created on an already connected transport announces its user and context at once, without waiting for a cursor or the first heartbeat.
+- `@anchor-presence/core`: `validationLimits.maxSessionLength` also applies to the local `session` that `createPresenceClient` checks.
+- `@anchor-presence/react`: `LiveCursorProviderConfig` is the provider props without `children`, so a wrapper component can pass them through and keep the `client` or `factory` rule.
+- `@anchor-presence/dom`: a throwing `binding.subscribe` listener no longer stops the other listeners or the frame loop. Transitions of `opacity`, `color`, `background-color`, `box-shadow` and `filter`, and transitions inside a cursor element, no longer re-measure anchors.
+- `@anchor-presence/react`: `useCursorStatus` returns `"connecting"`, not `"disconnected"`, while a provider `factory` has not created its client, so the server and first render do not flash a disconnected state.
+- `@anchor-presence/react`: the default cursor label is cut at 32 characters by code point, so an emoji at the limit stays whole.
 
 ## 0.1.0 - 2026-09-26
 

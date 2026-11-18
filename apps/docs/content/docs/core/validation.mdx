@@ -45,7 +45,7 @@ The client runs these steps on each inbound message, in this order:
 
 1. The client drops the message when its byte length is more than `maxMessageBytes`.
 2. It decodes the bytes with the codec.
-3. It calls `validatePresence` on the decoded value. A `null` result drops the message. The result is `null` when `version` is not `1`, when `cursor` is neither `null` nor an object, or when `cursor.anchors` is not an array.
+3. It calls `validatePresence` on the decoded value. A `null` result drops the message. The result is `null` when `version` is not `1`, when `clientId` is not a string of 1 to `maxClientIdLength` characters, when `session` is not a string of 1 to `maxSessionLength` characters, when `sequence` is not an integer from `0` to `maxSequence`, when `cursor` is neither `null` nor an object, or when `cursor.anchors` is not an array.
 4. It drops an echo of its own message.
 5. It applies the [event rate limit](/docs/core/events#event-rate-limit) to an event message. A message over the limit is dropped.
 6. It passes an event message that stays to `parseEvent`, when you set one, and then to the event listeners. An event message stops at this step.

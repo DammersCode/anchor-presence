@@ -109,9 +109,9 @@ function PresenceProvider({ children }: { children: ReactNode }) {
     <LiveCursorProvider
       clientKey={connection}
       factory={() => {
-        const transport = createSignalRTransport(connection);
         // use-signalr owns the connection, so disposing the client must not stop it
-        return createPresenceClient({ transport: { ...transport, disconnect: () => {} } });
+        const transport = createSignalRTransport(connection, { stopConnection: false });
+        return createPresenceClient({ transport });
       }}
     >
       {children}
@@ -122,7 +122,7 @@ function PresenceProvider({ children }: { children: ReactNode }) {
 
 `getConnection` returns `null` until `use-signalr` opens the hub. Until then, the component shows its children without presence. When the hub opens, the children mount again inside the provider, so their local state resets one time.
 
-The provider runs `factory` once per mount and once more for each new connection. It disposes the client on unmount. The empty `disconnect` keeps the shared connection open after the dispose. See [Create the client](/docs/react/client-creation) for the rules of `factory`.
+The provider runs `factory` once per mount and once more for each new connection. It disposes the client on unmount. The option `stopConnection: false` keeps the shared connection open after the dispose. The transport still removes its `Refused` and `PresenceReceived` handlers. See [Create the client](/docs/react/client-creation) for the rules of `factory`.
 
 <Callout type="warn">
   If the provider remounts on a shared connection, the `onclose`, `onreconnecting`, and `onreconnected`

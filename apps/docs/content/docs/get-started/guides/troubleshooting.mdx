@@ -54,7 +54,7 @@ Four causes give the same symptom.
 
 ## Cursor is outside the window
 
-The resolver also resolves anchors that are scrolled out of view. `ResolvedCursor.x` and `ResolvedCursor.y` are pixels in the window. To find a cursor outside the window, compare them with the window size:
+The resolver also resolves anchors that are scrolled out of view. `ResolvedCursor.x` and `ResolvedCursor.y` are pixels in the viewport. To find a cursor outside the window, compare them with the window size:
 
 ```ts
 const offscreen = x < 0 || y < 0 || x > window.innerWidth || y > window.innerHeight;

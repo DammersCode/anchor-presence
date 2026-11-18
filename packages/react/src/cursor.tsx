@@ -18,7 +18,9 @@ const DEFAULT_PALETTE = [
 
 function defaultLabel(cursor: ResolvedCursor): string | null {
   const name = (cursor.user as { name?: unknown } | undefined)?.name;
-  return typeof name === "string" && name !== "" ? name.slice(0, MAX_DEFAULT_LABEL_LENGTH) : null;
+  return typeof name === "string" && name !== ""
+    ? Array.from(name).slice(0, MAX_DEFAULT_LABEL_LENGTH).join("")
+    : null;
 }
 
 function defaultColor(cursor: ResolvedCursor): string {

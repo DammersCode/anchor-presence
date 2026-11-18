@@ -127,10 +127,11 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
       `createPresenceClient: clientId must be 1 to ${maxClientIdLength} characters, got ${typeof clientId === "string" ? clientId.length : typeof clientId}`,
     );
   }
+  const maxSessionLength = validationLimits?.maxSessionLength ?? DEFAULT_MAX_SESSION_LENGTH;
   const session = idFactory();
-  if (typeof session !== "string" || session.length < 1 || session.length > DEFAULT_MAX_SESSION_LENGTH) {
+  if (typeof session !== "string" || session.length < 1 || session.length > maxSessionLength) {
     throw new TypeError(
-      `createPresenceClient: session must be 1 to ${DEFAULT_MAX_SESSION_LENGTH} characters, got ${typeof session === "string" ? session.length : typeof session}`,
+      `createPresenceClient: session must be 1 to ${maxSessionLength} characters, got ${typeof session === "string" ? session.length : typeof session}`,
     );
   }
 
@@ -224,6 +225,8 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
   wireInbound(state);
 
   statusMachine.wireTransport();
+
+  if (state.status === "connected") publish.markReconnected();
 
   publish.wireVisibility();
 

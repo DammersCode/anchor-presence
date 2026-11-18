@@ -1,7 +1,7 @@
 "use client";
 
 export { LiveCursorProvider } from "./provider.js";
-export type { LiveCursorProviderProps } from "./provider.js";
+export type { LiveCursorProviderConfig, LiveCursorProviderProps } from "./provider.js";
 
 export { LiveCursorContext } from "./context.js";
 export type { LiveCursorContextValue } from "./context.js";

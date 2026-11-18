@@ -10,6 +10,8 @@ export type LiveCursorContextValue<TContext = unknown, TUser = unknown> = {
   client: PresenceClient<TContext, TUser> | null;
   /** The DOM binding, or `null` when none exists. */
   binding: DomBinding<TContext, TUser> | null;
+  /** `true` while a provider `factory` has not created its client yet. */
+  clientPending?: boolean;
 };
 
 /** The context value without a provider. Compare against it to detect a missing provider. */

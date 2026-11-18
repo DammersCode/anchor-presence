@@ -60,7 +60,11 @@ export function mapStatus(state: HubConnectionState): ConnectionStatus {
  *
  * The relay never inspects the payload; validation stays receiver-side (spec §4).
  */
-export function createSignalRTransport(connection: HubConnection): LiveCursorTransport {
+export function createSignalRTransport(
+  connection: HubConnection,
+  options: { stopConnection?: boolean } = {},
+): LiveCursorTransport {
+  const stopConnection = options.stopConnection ?? true;
   const statusListeners = new Set<(status: ConnectionStatus) => void>();
   const dataListeners = new Set<(data: Uint8Array) => void>();
   let status: ConnectionStatus = mapStatus(connection.state);
@@ -87,9 +91,23 @@ export function createSignalRTransport(connection: HubConnection): LiveCursorTra
     }
   };
 
-  connection.on(EVENT_REFUSED, (code: number, reason: string) => {
+  const onRefused = (code: number, reason: string): void => {
     refusal = { code, reason };
-  });
+  };
+  const onReceived = (payload: string): void => {
+    const bytes = fromBase64(payload);
+    if (bytes === null) return;
+    for (const listener of dataListeners) listener(bytes);
+  };
+  let handlersRegistered = false;
+  const registerHandlers = (): void => {
+    if (handlersRegistered) return;
+    handlersRegistered = true;
+    connection.on(EVENT_REFUSED, onRefused);
+    connection.on(EVENT_RECEIVED, onReceived);
+  };
+  registerHandlers();
+
   connection.onreconnecting((error) => {
     emitClose(error, true);
     setStatus("reconnecting");
@@ -100,16 +118,14 @@ export function createSignalRTransport(connection: HubConnection): LiveCursorTra
     setStatus("disconnected");
   });
 
-  connection.on(EVENT_RECEIVED, (payload: string) => {
-    const bytes = fromBase64(payload);
-    if (bytes === null) return;
-    for (const listener of dataListeners) listener(bytes);
-  });
-
   return {
     connect: async () => {
+      registerHandlers();
       // Idempotent: a fresh connection reports Disconnected; starting or connected, skip.
-      if (connection.state !== HubConnectionState.Disconnected) return;
+      if (connection.state !== HubConnectionState.Disconnected) {
+        setStatus(mapStatus(connection.state));
+        return;
+      }
       setStatus("connecting");
       try {
         await connection.start();
@@ -121,9 +137,12 @@ export function createSignalRTransport(connection: HubConnection): LiveCursorTra
       setStatus("connected");
     },
     disconnect: () => {
-      connection.off(EVENT_REFUSED);
-      connection.off(EVENT_RECEIVED);
-      return connection.stop();
+      connection.off(EVENT_REFUSED, onRefused);
+      connection.off(EVENT_RECEIVED, onReceived);
+      handlersRegistered = false;
+      if (stopConnection) return connection.stop();
+      setStatus("disconnected");
+      return Promise.resolve();
     },
     send: async (data) => {
       if (status !== "connected") return;

@@ -27,6 +27,8 @@ jobs:
       - uses: ./.github/actions/setup
       - name: Typecheck
         run: bun run typecheck
+      - name: Check every vitest project runs in the test matrix
+        run: node scripts/check-ci-projects.mjs
       - name: Check package exports and unused code
         run: bun run check:package && bun run check:unused
 

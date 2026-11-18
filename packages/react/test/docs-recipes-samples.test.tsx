@@ -420,7 +420,7 @@ describe("cursor chat recipe", () => {
 describe("follow mode recipe", () => {
   it("scrolls the leader's anchor into view and stops on wheel, Escape or leave", () => {
     const { client, pushRemote } = makeFakeClient<unknown, User>();
-    const peerListeners = new Set<(change: PeerChange) => void>();
+    const peerListeners = new Set<(change: PeerChange<unknown, User>) => void>();
     client.subscribePeers = (listener) => {
       peerListeners.add(listener);
       return () => peerListeners.delete(listener);

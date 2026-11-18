@@ -21,7 +21,7 @@ export function makeFakeClient<TContext = unknown, TUser = unknown>(): {
   const client: PresenceClient<TContext, TUser> = {
     clientId: "local",
     session: "s",
-    updateLocalCursor: () => {},
+    setLocalCursor: () => {},
     setContext: (next) => {
       context = next;
     },

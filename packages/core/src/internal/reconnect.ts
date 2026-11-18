@@ -28,7 +28,7 @@ export function createStatusMachine<TContext, TUser>(
     state.status = next;
     // a peer may have left during the outage; unconfirmed entries expire unless a heartbeat refreshes them
     if (next === "connected" && (previous === "reconnecting" || previous === "disconnected")) {
-      state.store.expireUnlessRefreshed(state.heartbeatMs * 2 + 5_000);
+      state.store.expireUnlessRefreshed(state.heartbeatIntervalMs * 2 + 5_000);
     }
     // republish before listener fan-out so a throwing listener cannot kill the guarantee
     if (state.status === "connected") {

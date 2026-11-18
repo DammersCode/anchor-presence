@@ -20,7 +20,7 @@ function isScalar(value: unknown): boolean {
   );
 }
 
-export function fitShape(sample: unknown, value: unknown): unknown {
+function fitShape(sample: unknown, value: unknown): unknown {
   // `null` renders as nothing, so a remote `null` fits every type: `T | null` fields stay valid
   if (value === null) return value;
   if (sample === null || sample === undefined) return isScalar(value) ? value : undefined;

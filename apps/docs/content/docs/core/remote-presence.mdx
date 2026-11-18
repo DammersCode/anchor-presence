@@ -40,7 +40,7 @@ const unsubscribe = client.subscribePeers((change) => {
 });
 ```
 
-The listener receives a `PeerChange` with a `type` and the `clientId` of the peer:
+The listener receives a `PeerChange` with a `type`, the `clientId` of the peer, and its `user` and `context` when set:
 
 | `type`   | When the store reports it                                                                |
 | -------- | ---------------------------------------------------------------------------------------- |
@@ -66,11 +66,11 @@ One delay covers every peer that joins in this time. The random delay spreads th
 
 When the status changes to `connected` from `reconnecting` or `disconnected`, the client marks every peer unconfirmed. A peer can leave during the outage, and its leave message never reaches this client.
 
-Any accepted message confirms a peer. If an unconfirmed peer sends no message within `2 * heartbeatMs + 5 s`, the next sweep (a periodic check of the store) removes it and reports a `leave`. With the default `heartbeatMs`, this time is 25 seconds. If the stale timeout comes first, the stale timeout applies.
+Any accepted message confirms a peer. If an unconfirmed peer sends no message within `2 * heartbeatIntervalMs + 5 s`, the next sweep (a periodic check of the store) removes it and reports a `leave`. With the default `heartbeatIntervalMs`, this time is 25 seconds. If the stale timeout comes first, the stale timeout applies.
 
 <Callout type="warn">
-  If peers use a longer `heartbeatMs` than this client, they disappear after a reconnect until their next
-  message. The client uses its own `heartbeatMs` for this time.
+  If peers use a longer `heartbeatIntervalMs` than this client, they disappear after a reconnect until their
+  next message. The client uses its own `heartbeatIntervalMs` for this time.
 </Callout>
 
 ## maxRemoteClients
@@ -79,7 +79,7 @@ Any accepted message confirms a peer. If an unconfirmed peer sends no message wi
 
 <Callout type="warn">
   If a room can hold more than 64 clients, raise `maxRemoteClients`. Otherwise the clients above the cap never
-  appear. In a production build, nothing reports the drop unless you pass `onRemoteClientDrop`.
+  appear. In a production build, nothing reports the drop unless you pass `onRemoteClientDropped`.
 </Callout>
 
 This client raises the cap and reports each dropped peer:
@@ -88,11 +88,11 @@ This client raises the cap and reports each dropped peer:
 const client = createPresenceClient({
   transport: myTransport,
   maxRemoteClients: 200,
-  onRemoteClientDrop: () => reportMetric("presence.remote_client_dropped"),
+  onRemoteClientDropped: () => reportMetric("presence.remote_client_dropped"),
 });
 ```
 
-`onRemoteClientDrop` runs each time the store drops a new peer because it is full. See [maxRemoteClients](/docs/get-started/guides/security#maxremoteclients) on the Security page for capacity planning.
+`onRemoteClientDropped` runs each time the store drops a new peer because it is full. See [maxRemoteClients](/docs/get-started/guides/security#maxremoteclients) on the Security page for capacity planning.
 
 ## Message ordering
 

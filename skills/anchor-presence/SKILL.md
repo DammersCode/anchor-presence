@@ -124,9 +124,9 @@ function PresenceScope({
   );
 }
 
-// useCursorContext works only below the provider.
+// useLocalContext works only below the provider.
 function PublishPage({ page }: { page: string }) {
-  const [, setContext] = useCursorContext<{ page: string }>();
+  const [, setContext] = useLocalContext<{ page: string }>();
   useEffect(() => setContext({ page }), [page, setContext]);
   return null;
 }

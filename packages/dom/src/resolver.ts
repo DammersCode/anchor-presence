@@ -54,12 +54,12 @@ export const defaultVisibilityPolicy: VisibilityPolicy = ({ resolution }) =>
   resolution.tier === "hidden" ? "hide" : "show";
 
 /** An element is measurable when connected and its rect has width > 0 and height > 0 — spec §10. */
-export function isMeasurable(rect: Rect): boolean {
+function isMeasurable(rect: Rect): boolean {
   return rect.width > 0 && rect.height > 0;
 }
 
 /** Finds the first connected, measurable anchor in the chain (most specific first). */
-export function findResolvableAnchor(
+function findResolvableAnchor(
   presence: CursorPresence,
   registry: AnchorRegistry,
   getRect: (element: Element) => Rect | undefined,

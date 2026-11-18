@@ -13,7 +13,7 @@ type Props = {
 };
 
 // Short timeouts show idle and leave in seconds. Idle counts from the last change, so a still user turns idle while heartbeats continue.
-export const presenceTimeouts = { heartbeatMs: 1500, idleAfterMs: 2500, staleTimeoutMs: 8000 };
+export const presenceTimeouts = { heartbeatIntervalMs: 1500, idleAfterMs: 2500, staleTimeoutMs: 8000 };
 
 const COLUMNS = [
   {

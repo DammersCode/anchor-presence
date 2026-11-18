@@ -152,13 +152,13 @@ describe("react docs samples", () => {
     for (const name of [
       "LiveCursorProvider",
       "useCursorClient",
-      "useCursorContext",
+      "useLocalContext",
       "useRemoteCursors",
       "useRemoteUsers",
     ]) {
       expect(typed).toHaveProperty(name);
     }
-    expectTypeOf(typed.useCursorContext).returns.toEqualTypeOf<
+    expectTypeOf(typed.useLocalContext).returns.toEqualTypeOf<
       [Context | undefined, (next: Context | undefined) => void]
     >();
   });
@@ -256,7 +256,7 @@ describe("react docs samples", () => {
       </typed.LiveCursorProvider>,
     );
 
-    peer.updateLocalCursor({ anchors: [], viewport: { u: 0.5, v: 0.5 } });
+    peer.setLocalCursor({ anchors: [], viewport: { u: 0.5, v: 0.5 } });
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 100));
     });

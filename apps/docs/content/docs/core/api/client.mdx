@@ -30,7 +30,7 @@ These guides describe the methods in detail:
 - [Close reasons](/docs/core/presence-client#close-reasons) for `subscribeClose`.
 - [Peer changes](/docs/core/remote-presence#peer-changes) for `subscribePeers`.
 - [Read remote presence](/docs/core/remote-presence#read-remote-presence) for `getRemotePresence`, `getRemoteSnapshot`, and `subscribeRemote`.
-- [Lifecycle](/docs/core/presence-client#lifecycle) for `updateLocalCursor`, `setContext`, `setUser`, `subscribeContext`, `subscribeUser`, `registerTeardown`, and `dispose`.
+- [Lifecycle](/docs/core/presence-client#lifecycle) for `setLocalCursor`, `setContext`, `setUser`, `subscribeContext`, `subscribeUser`, `registerTeardown`, and `dispose`.
 - [Status](/docs/core/presence-client#status) for `getStatus`, `subscribeStatus`, and `hasActiveCursors`.
 - [Remote user and context](/docs/core/validation#remote-user-and-context) for `parseUser` and `parseContext`.
 
@@ -41,11 +41,11 @@ These guides describe the methods in detail:
 ```ts
 type EventMap = Record<string, unknown>;
 
-type TypedRemoteEvent<TEvents extends EventMap> = {
+type TypedRemoteEvent<TEvents extends object> = {
   [K in keyof TEvents & string]: { clientId: string; type: K; data: TEvents[K] };
 }[keyof TEvents & string];
 
-type EventChannel<TEvents extends EventMap> = {
+type EventChannel<TEvents extends object> = {
   send<K extends keyof TEvents & string>(
     type: K,
     ...data: undefined extends TEvents[K] ? [data?: TEvents[K]] : [data: TEvents[K]]
@@ -53,7 +53,7 @@ type EventChannel<TEvents extends EventMap> = {
   subscribe(listener: (event: TypedRemoteEvent<TEvents>) => void): () => void;
 };
 
-function createEventChannel<TEvents extends EventMap>(
+function createEventChannel<TEvents extends object>(
   client: Pick<PresenceClient, "sendEvent" | "subscribeEvents">,
 ): EventChannel<TEvents>;
 ```
@@ -89,20 +89,20 @@ Import the client and store constants from `@anchor-presence/core`:
 ```ts
 import {
   DEFAULT_PUBLISH_INTERVAL_MS,
-  DEFAULT_HEARTBEAT_MS,
+  DEFAULT_HEARTBEAT_INTERVAL_MS,
   DEFAULT_STALE_TIMEOUT_MS,
   DEFAULT_IDLE_AFTER_MS,
   DEFAULT_MAX_REMOTE_CLIENTS,
 } from "@anchor-presence/core";
 ```
 
-| Constant                      | Value   | Default for                       |
-| ----------------------------- | ------- | --------------------------------- |
-| `DEFAULT_PUBLISH_INTERVAL_MS` | `50`    | `publishIntervalMs`, milliseconds |
-| `DEFAULT_HEARTBEAT_MS`        | `10000` | `heartbeatMs`, milliseconds       |
-| `DEFAULT_STALE_TIMEOUT_MS`    | `70000` | `staleTimeoutMs`, milliseconds    |
-| `DEFAULT_IDLE_AFTER_MS`       | `15000` | `idleAfterMs`, milliseconds       |
-| `DEFAULT_MAX_REMOTE_CLIENTS`  | `64`    | `maxRemoteClients`                |
+| Constant                        | Value   | Default for                         |
+| ------------------------------- | ------- | ----------------------------------- |
+| `DEFAULT_PUBLISH_INTERVAL_MS`   | `50`    | `publishIntervalMs`, milliseconds   |
+| `DEFAULT_HEARTBEAT_INTERVAL_MS` | `10000` | `heartbeatIntervalMs`, milliseconds |
+| `DEFAULT_STALE_TIMEOUT_MS`      | `70000` | `staleTimeoutMs`, milliseconds      |
+| `DEFAULT_IDLE_AFTER_MS`         | `15000` | `idleAfterMs`, milliseconds         |
+| `DEFAULT_MAX_REMOTE_CLIENTS`    | `64`    | `maxRemoteClients`                  |
 
 ## Related
 

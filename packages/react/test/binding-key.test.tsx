@@ -53,7 +53,7 @@ describe("LiveCursorProvider local cursor on teardown", () => {
   it("keeps the local cursor when the binding is rebuilt and clears it on unmount", () => {
     const { client } = makeFakeClient();
     const updates: unknown[] = [];
-    client.updateLocalCursor = (cursor) => {
+    client.setLocalCursor = (cursor) => {
       updates.push(cursor);
     };
     const container = document.createElement("div");

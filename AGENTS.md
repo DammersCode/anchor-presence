@@ -49,7 +49,8 @@ All green before committing. Run in order:
 3. `bun run format:check` (run `bun run format` to fix)
 4. `bun run lint`
 5. `bun run test`
-6. `bunx playwright test --project=chromium` for changes in `packages/dom`, `packages/react`, `apps/demo`, or `e2e/`
+6. `bun run check:package` and `bun run check:unused` (publint, are-the-types-wrong, knip)
+7. `bunx playwright test --project=chromium` for changes in `packages/dom`, `packages/react`, `apps/demo`, or `e2e/`
 
 A single failed browser test: rerun that file once before you debug it. Still red on the rerun means a real failure.
 

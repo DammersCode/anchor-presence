@@ -21,7 +21,7 @@ type SceneProps = {
 
 type SceneEntry = {
   Scene: ComponentType<SceneProps>;
-  clientOptions?: Pick<PresenceClientOptions, "heartbeatMs" | "idleAfterMs" | "staleTimeoutMs">;
+  clientOptions?: Pick<PresenceClientOptions, "heartbeatIntervalMs" | "idleAfterMs" | "staleTimeoutMs">;
 };
 
 export const SCENE_COMPONENTS: Record<SceneName, SceneEntry> = {

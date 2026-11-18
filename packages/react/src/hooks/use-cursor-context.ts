@@ -7,7 +7,7 @@ import { getContextStore } from "../context-store.js";
  * The setter calls `client.setContext`, which sends the value to remote peers.
  * Returns `undefined` and a no-op setter on the server.
  */
-export function useCursorContext<TContext = unknown>(): [
+export function useLocalContext<TContext = unknown>(): [
   TContext | undefined,
   (next: TContext | undefined) => void,
 ] {

@@ -48,11 +48,11 @@ The package exports these hooks and components:
 | `useRemoteUsers()`                           | One entry per peer (another client in the same room): `clientId`, `user`, `session`, and `idle`                                   |
 | `useRemoteCursors()`                         | Resolved cursor snapshot for rendering                                                                                            |
 | `useRemoteCursorsSelector(select, isEqual?)` | A derived value that rerenders only when it changes                                                                               |
-| `useCursorPresence()`                        | Raw remote presence list, stable per peer (without `sequence`)                                                                    |
+| `useRemotePresence()`                        | Raw remote presence list, stable per peer (without `sequence`)                                                                    |
 | `useCursorStatus()`                          | Connection status                                                                                                                 |
 | `useCursorClient()`                          | The `PresenceClient` of the provider                                                                                              |
 | `useCursorBinding()`                         | The `DomBinding` of the provider, for example to call `invalidate()`                                                              |
-| `useCursorContext()`                         | `[context, setContext]`                                                                                                           |
+| `useLocalContext()`                          | `[context, setContext]`                                                                                                           |
 | `useLocalUser()`                             | `[user, setUser]` for the local user value                                                                                        |
 | `useCursorEvents(listener)`                  | Calls `listener` for each one-shot event from a peer                                                                              |
 | `usePeerChanges(listener)`                   | Calls `listener` when a peer joins, leaves, or changes its `user` or `context`                                                    |
@@ -69,15 +69,15 @@ Every hook rerenders its component only when the value that it returns changes. 
 | `useRemoteCursors()`                         | the resolved-cursor snapshot changes (every cursor frame while cursors move)                             |
 | `useRemoteCursorsSelector(select, isEqual?)` | only when the `select` output changes under `isEqual`                                                    |
 | `useRemoteUsers()`                           | only when the set of peers, or the `user`, `session`, or `idle` field of one peer, changes               |
-| `useCursorPresence()`                        | only when the `cursor`, `context`, `user`, `pointer`, `session`, `idle`, or membership of a peer changes |
+| `useRemotePresence()`                        | only when the `cursor`, `context`, `user`, `pointer`, `session`, `idle`, or membership of a peer changes |
 | `useCursorStatus()`                          | only when the connection status changes                                                                  |
-| `useCursorContext()`                         | only when the local context value changes                                                                |
+| `useLocalContext()`                          | only when the local context value changes                                                                |
 | `useLocalUser()`                             | only when the local user value changes                                                                   |
 
 Two more rules apply:
 
 - An idle room costs nothing: no inbound messages, no rerenders.
-- A message that only advances `sequence` does not rerender `useCursorPresence` consumers. `sequence` is a wire-level ordering field and is not part of the stable snapshot. To read each `sequence` value, call `client.getRemoteSnapshot()` inside a `client.subscribeRemote()` callback.
+- A message that only advances `sequence` does not rerender `useRemotePresence` consumers. `sequence` is a wire-level ordering field and is not part of the stable snapshot. To read each `sequence` value, call `client.getRemoteSnapshot()` inside a `client.subscribeRemote()` callback.
 
 `useRemoteCursors` rerenders every frame while cursors move. If your component needs less than the full snapshot, derive a smaller value with `useRemoteCursorsSelector`.
 

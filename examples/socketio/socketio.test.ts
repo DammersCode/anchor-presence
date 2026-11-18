@@ -209,7 +209,7 @@ describe("Socket.IO transport integration", () => {
     const clientA = connectClient("room-1");
     const clientB = connectClient("room-1");
 
-    clientA.updateLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
+    clientA.setLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
 
     await vi.waitFor(
       () => {

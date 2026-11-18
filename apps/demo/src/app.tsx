@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useCursorContext } from "@anchor-presence/react";
+import { useLocalContext } from "@anchor-presence/react";
 import { useCursorBinding } from "./cursors/hooks";
 import { Sidebar } from "./components/dashboard/sidebar";
 import { Topbar } from "./components/dashboard/topbar";
@@ -27,7 +27,7 @@ export default function App({ localViewState, interpolatorStyle, onInterpolatorS
   const [collapsed, setCollapsed] = useState(false);
   const [page, navigate] = usePageRoute();
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [, setContext] = useCursorContext<DemoContext>();
+  const [, setContext] = useLocalContext<DemoContext>();
   const binding = useCursorBinding();
 
   // Single writer for both the published context and the local state the visibility policy reads.

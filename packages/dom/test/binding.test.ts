@@ -33,7 +33,7 @@ function makeFakeClient() {
   const client: PresenceClient<unknown, unknown> = {
     clientId: "local",
     session: "s",
-    updateLocalCursor: () => {},
+    setLocalCursor: () => {},
     setContext: () => {},
     getContext: () => {},
     subscribeContext: () => () => {},
@@ -82,7 +82,7 @@ function makeCapturingClient(samples: (CursorPosition | null)[]): PresenceClient
   return {
     clientId: "local",
     session: "s",
-    updateLocalCursor: (cursor) => {
+    setLocalCursor: (cursor) => {
       samples.push(cursor);
     },
     setContext: () => {},
@@ -297,7 +297,7 @@ describe("createDomBinding", () => {
     const { raf, caf } = makeRafStub();
     const { client } = makeFakeClient();
     const update = vi.fn();
-    client.updateLocalCursor = update;
+    client.setLocalCursor = update;
     const binding = createDomBinding(client, { environment: { raf, caf } });
 
     binding.dispose();
@@ -673,13 +673,13 @@ describe("createDomBinding", () => {
     narrowBinding.dispose();
   });
 
-  it("localCursorCapture false attaches no pointer source: context and user flow, no cursor", () => {
+  it("capturePointer false attaches no pointer source: context and user flow, no cursor", () => {
     const deepest = buildNestedAnchors(4);
     const { raf, caf } = makeRafStub();
     const samples: (CursorPosition | null)[] = [];
     const client = makeCapturingClient(samples);
     const binding = createDomBinding(client, {
-      localCursorCapture: false,
+      capturePointer: false,
       environment: { raf, caf },
     });
 

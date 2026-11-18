@@ -4,14 +4,14 @@ import { LiveCursorProvider } from "./provider.js";
 import type { LiveCursorProviderProps } from "./provider.js";
 import { useCursorBinding } from "./hooks/use-cursor-binding.js";
 import { useCursorClient } from "./hooks/use-cursor-client.js";
-import { useCursorContext } from "./hooks/use-cursor-context.js";
+import { useLocalContext } from "./hooks/use-cursor-context.js";
 import { createEventChannel } from "@anchor-presence/core";
-import type { EventChannel, EventMap, TypedRemoteEvent } from "@anchor-presence/core";
+import type { EventChannel, EventMap, PeerChange, TypedRemoteEvent } from "@anchor-presence/core";
 import { useEffect, useMemo, useRef } from "react";
 import { useLiveCursorContext } from "./hooks/use-cursor-client.js";
 import { useLocalUser } from "./hooks/use-local-user.js";
 import { usePeerChanges } from "./hooks/use-peer-changes.js";
-import { useCursorPresence } from "./hooks/use-cursor-presence.js";
+import { useRemotePresence } from "./hooks/use-cursor-presence.js";
 import { useCursorStatus } from "./hooks/use-cursor-status.js";
 import { useRemoteCursors, useRemoteCursorsSelector } from "./hooks/use-remote-cursors.js";
 import { useRemoteUsers } from "./hooks/use-remote-users.js";
@@ -23,13 +23,13 @@ import { useRemoteUsers } from "./hooks/use-remote-users.js";
 export function createPresenceHooks<
   TContext = unknown,
   TUser = unknown,
-  TEvents extends EventMap = EventMap,
+  TEvents extends object = EventMap,
 >() {
   return {
     LiveCursorProvider: LiveCursorProvider as (props: LiveCursorProviderProps<TContext, TUser>) => ReactNode,
     useCursorBinding: () => useCursorBinding<TContext, TUser>(),
     useCursorClient: () => useCursorClient<TContext, TUser>(),
-    useCursorContext: () => useCursorContext<TContext>(),
+    useLocalContext: () => useLocalContext<TContext>(),
     useCursorEvents: (listener: (event: TypedRemoteEvent<TEvents>) => void): void => {
       const { client } = useLiveCursorContext<TContext, TUser>();
       const listenerRef = useRef(listener);
@@ -52,8 +52,9 @@ export function createPresenceHooks<
       );
     },
     useLocalUser: () => useLocalUser<TUser>(),
-    usePeerChanges,
-    useCursorPresence: () => useCursorPresence<TContext, TUser>(),
+    usePeerChanges: (listener: (change: PeerChange<TContext, TUser>) => void) =>
+      usePeerChanges<TContext, TUser>(listener),
+    useRemotePresence: () => useRemotePresence<TContext, TUser>(),
     useCursorStatus,
     useRemoteCursors: () => useRemoteCursors<TContext, TUser>(),
     useRemoteCursorsSelector: <TSelected>(

@@ -90,13 +90,13 @@ declare namespace Listing {
   // oxlint-disable-next-line eslint/no-shadow -- the listing keeps the exported name
   function useCursorBinding<TContext = unknown, TUser = unknown>(): DomBinding<TContext, TUser> | null;
 
-  function createPresenceHooks<TContext = unknown, TUser = unknown, TEvents extends EventMap = EventMap>(): {
+  function createPresenceHooks<TContext = unknown, TUser = unknown, TEvents extends object = EventMap>(): {
     LiveCursorProvider: (props: LiveCursorProviderProps<TContext, TUser>) => ReactNode;
     useCursorBinding: () => DomBinding<TContext, TUser> | null;
     useCursorClient: () => PresenceClient<TContext, TUser> | null;
-    useCursorContext: () => [TContext | undefined, (next: TContext | undefined) => void];
+    useLocalContext: () => [TContext | undefined, (next: TContext | undefined) => void];
     useCursorEvents: (listener: (event: TypedRemoteEvent<TEvents>) => void) => void;
-    useCursorPresence: () => RemotePresence<TContext, TUser>[];
+    useRemotePresence: () => RemotePresence<TContext, TUser>[];
     useCursorStatus: () => ConnectionStatus;
     useRemoteCursors: () => ResolvedCursor<TContext, TUser>[];
     useRemoteCursorsSelector: <TSelected>(
@@ -105,7 +105,7 @@ declare namespace Listing {
     ) => TSelected;
     useRemoteUsers: () => RemoteUser<TUser>[];
     useLocalUser: () => [TUser | undefined, (next: TUser | undefined) => void];
-    usePeerChanges: (listener: (change: PeerChange) => void) => void;
+    usePeerChanges: (listener: (change: PeerChange<TContext, TUser>) => void) => void;
     useSendEvent: () => EventChannel<TEvents>["send"];
   };
 }

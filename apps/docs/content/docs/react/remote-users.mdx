@@ -54,7 +54,9 @@ The client checks each remote `user` against the shape of the local `user` value
 The hook has this signature:
 
 ```ts
-function usePeerChanges(listener: (change: PeerChange) => void): void;
+function usePeerChanges<TContext = unknown, TUser = unknown>(
+  listener: (change: PeerChange<TContext, TUser>) => void,
+): void;
 ```
 
 This component shows the last peer that joined:
@@ -72,7 +74,7 @@ function JoinNotice() {
 }
 ```
 
-The listener receives a `PeerChange` with a `type` of `join`, `update`, or `leave`, and the `clientId` of the peer. Cursor moves never call it. For the rules of each `type`, see [Peer changes](/docs/core/remote-presence#peer-changes).
+The listener receives a `PeerChange` with a `type` of `join`, `update`, or `leave`, the `clientId` of the peer, and its `user` and `context` when set. On `leave`, they hold the last known values. Cursor moves never call it. For the rules of each `type`, see [Peer changes](/docs/core/remote-presence#peer-changes).
 
 The hook keeps one subscription per client, so an inline listener does not subscribe again on each render. The hook always calls the listener from the last render. Without a client, the hook calls nothing. The hook never rerenders its component.
 

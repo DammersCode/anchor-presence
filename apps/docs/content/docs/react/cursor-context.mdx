@@ -3,24 +3,24 @@ title: Cursor context
 description: Read and set the local UI context value and the local user value that travel with your cursor.
 ---
 
-`useCursorContext` reads the local context value and gives a setter that sends it to peers. A peer is another client in the same room. Context carries small facts about what a user is doing, such as the panel they have open. See [UI context](/docs/get-started/concepts/ui-context) for what context is for.
+`useLocalContext` reads the local context value and gives a setter that sends it to peers. A peer is another client in the same room. Context carries small facts about what a user is doing, such as the panel they have open. See [UI context](/docs/get-started/concepts/ui-context) for what context is for.
 
 ## Usage
 
 The hook has this signature:
 
 ```ts
-function useCursorContext<TContext = unknown>(): [TContext | undefined, (next: TContext | undefined) => void];
+function useLocalContext<TContext = unknown>(): [TContext | undefined, (next: TContext | undefined) => void];
 ```
 
 This component sets the context while its dialog is open:
 
 ```tsx
 import { useEffect } from "react";
-import { useCursorContext } from "@anchor-presence/react";
+import { useLocalContext } from "@anchor-presence/react";
 
 function SettingsDialog({ open }: { open: boolean }) {
-  const [, setContext] = useCursorContext();
+  const [, setContext] = useLocalContext();
   useEffect(() => {
     setContext({ dialog: open ? "settings" : undefined });
   }, [open, setContext]);

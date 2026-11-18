@@ -23,7 +23,7 @@ import {
 export const DEFAULT_PUBLISH_INTERVAL_MS = 50;
 
 /** Default heartbeat interval, in milliseconds. */
-export const DEFAULT_HEARTBEAT_MS = 10_000;
+export const DEFAULT_HEARTBEAT_INTERVAL_MS = 10_000;
 
 const MIN_TIMER_INTERVAL_MS = 1;
 const MIN_STALE_TIMEOUT_MS = 1000;
@@ -39,6 +39,14 @@ const defaultScheduler: SchedulerLike = {
   setTimeout: (callback, ms) => setTimeout(callback, ms),
   clearTimeout: (handle) => clearTimeout(handle),
 };
+
+function assertFiniteOptions(values: Record<string, number | undefined>): void {
+  for (const [name, value] of Object.entries(values)) {
+    if (value !== undefined && !Number.isFinite(value)) {
+      throw new TypeError(`${name} must be a finite number, got ${String(value)}`);
+    }
+  }
+}
 
 /**
  * Creates one presence client.
@@ -60,6 +68,17 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     validationLimits,
   } = options;
 
+  assertFiniteOptions({
+    publishIntervalMs: options.publishIntervalMs,
+    heartbeatIntervalMs: options.heartbeatIntervalMs,
+    staleTimeoutMs: options.staleTimeoutMs,
+    idleAfterMs: options.idleAfterMs,
+    maxRemoteClients,
+    "adaptivePublish.highWatermarkBytes": options.adaptivePublish?.highWatermarkBytes,
+    "adaptivePublish.lowWatermarkBytes": options.adaptivePublish?.lowWatermarkBytes,
+    "adaptivePublish.slowPublishIntervalMs": options.adaptivePublish?.slowPublishIntervalMs,
+  });
+
   const publishIntervalMs = Math.max(
     MIN_TIMER_INTERVAL_MS,
     options.publishIntervalMs ?? DEFAULT_PUBLISH_INTERVAL_MS,
@@ -74,7 +93,10 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     MIN_TIMER_INTERVAL_MS,
     adaptiveOptions?.slowPublishIntervalMs ?? Math.max(publishIntervalMs * 4, 100),
   );
-  const heartbeatMs = Math.max(MIN_TIMER_INTERVAL_MS, options.heartbeatMs ?? DEFAULT_HEARTBEAT_MS);
+  const heartbeatIntervalMs = Math.max(
+    MIN_TIMER_INTERVAL_MS,
+    options.heartbeatIntervalMs ?? DEFAULT_HEARTBEAT_INTERVAL_MS,
+  );
   const staleTimeoutMs =
     options.staleTimeoutMs === undefined ? undefined : Math.max(MIN_STALE_TIMEOUT_MS, options.staleTimeoutMs);
   const idleAfterMs = options.idleAfterMs === undefined ? undefined : Math.max(0, options.idleAfterMs);
@@ -99,7 +121,7 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
         );
       }
       try {
-        options.onRemoteClientDrop?.();
+        options.onRemoteClientDropped?.();
       } catch {
         // a throwing callback must not break the inbound pipeline
       }
@@ -117,7 +139,7 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     highWatermarkBytes,
     lowWatermarkBytes,
     adaptivePublish: adaptiveOptions !== undefined,
-    heartbeatMs,
+    heartbeatIntervalMs,
     // half the shorter of the two timeouts, so an idle or stale transition shows up within one sweep tick
     sweepIntervalMs:
       Math.min(staleTimeoutMs ?? DEFAULT_STALE_TIMEOUT_MS, idleAfterMs ?? DEFAULT_IDLE_AFTER_MS) / 2,
@@ -192,7 +214,7 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     clientId,
     session,
 
-    updateLocalCursor(cursor, pointer) {
+    setLocalCursor(cursor, pointer) {
       if (state.disposed) return;
       state.latestCursor = cursor;
       if (pointer !== undefined) state.latestPointer = pointer;

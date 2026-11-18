@@ -48,7 +48,7 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
 
   private readonly entries = new Map<string, Entry<TContext, TUser>>();
   private readonly listeners = new Set<() => void>();
-  private readonly peerListeners = new Set<(change: PeerChange) => void>();
+  private readonly peerListeners = new Set<(change: PeerChange<TContext, TUser>) => void>();
 
   private snapshot: CursorPresence<TContext, TUser>[] = [];
   private snapshotDirty = false;
@@ -95,7 +95,7 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
       if (normalized.cursor !== null) this.activeCursorCount += 1;
       this.stableSnapshotDirty = true;
       this.markDirty();
-      this.notifyPeer({ type: "join", clientId: presence.clientId });
+      this.notifyPeer("join", normalized);
       return true;
     }
 
@@ -130,7 +130,7 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
       this.stableSnapshotDirty = true;
     }
     this.markDirty();
-    if (profileChanged) this.notifyPeer({ type: "update", clientId: presence.clientId });
+    if (profileChanged) this.notifyPeer("update", nextPresence);
     return true;
   }
 
@@ -168,7 +168,7 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
         if (entry.presence.cursor !== null) this.activeCursorCount -= 1;
         this.entries.delete(clientId);
         changedAny = true;
-        this.notifyPeer({ type: "leave", clientId });
+        this.notifyPeer("leave", entry.presence);
         continue;
       }
       const shouldBeIdle = entry.changedAt < idleCutoff;
@@ -202,7 +202,7 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
       this.entries.delete(clientId);
       this.stableSnapshotDirty = true;
       this.markDirty();
-      this.notifyPeer({ type: "leave", clientId });
+      this.notifyPeer("leave", entry.presence);
     }
   }
 
@@ -223,7 +223,7 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
    * It updates when its `user` or `context` changes.
    * @returns A function that removes the listener.
    */
-  subscribePeers(listener: (change: PeerChange) => void): () => void {
+  subscribePeers(listener: (change: PeerChange<TContext, TUser>) => void): () => void {
     this.peerListeners.add(listener);
     return () => {
       this.peerListeners.delete(listener);
@@ -275,7 +275,10 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
     };
   }
 
-  private notifyPeer(change: PeerChange): void {
+  private notifyPeer(type: PeerChange["type"], presence: CursorPresence<TContext, TUser>): void {
+    const change: PeerChange<TContext, TUser> = { type, clientId: presence.clientId };
+    if (presence.user != null) change.user = presence.user;
+    if (presence.context != null) change.context = presence.context;
     for (const listener of this.peerListeners) {
       try {
         listener(change);

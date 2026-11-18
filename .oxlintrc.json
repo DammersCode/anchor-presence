@@ -7,7 +7,9 @@
     "perf": "warn",
     "pedantic": "warn"
   },
-  "options": { "typeAware": true },
+  "options": {
+    "typeAware": true
+  },
   "rules": {
     "typescript/no-explicit-any": "error",
     "typescript/no-non-null-assertion": "warn",
@@ -34,7 +36,24 @@
     "typescript/consistent-return": "off",
     "no-negated-condition": "off",
     "no-lonely-if": "off",
-    "unicorn/explicit-length-check": "off"
+    "unicorn/explicit-length-check": "off",
+    "typescript/no-unnecessary-type-assertion": "error",
+    "typescript/no-unnecessary-type-arguments": "error",
+    "typescript/prefer-readonly": "error",
+    "typescript/no-misused-promises": "error",
+    "typescript/require-await": "error",
+    "typescript/no-deprecated": "error",
+    "typescript/prefer-nullish-coalescing": "error",
+    "typescript/prefer-optional-chain": "error",
+    "unicorn/prefer-node-protocol": "error",
+    "eslint/eqeqeq": [
+      "error",
+      "always",
+      {
+        "null": "ignore"
+      }
+    ],
+    "eslint/no-shadow": "error"
   },
   "ignorePatterns": [
     "**/dist/**",
@@ -55,7 +74,8 @@
         "typescript/no-deprecated": "off",
         "vitest/require-mock-type-parameters": "off",
         "react/globals": "off",
-        "unicorn/consistent-function-scoping": "off"
+        "unicorn/consistent-function-scoping": "off",
+        "typescript/prefer-optional-chain": "off"
       }
     }
   ]

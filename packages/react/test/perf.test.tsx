@@ -5,7 +5,7 @@ import { createPresenceClient, jsonCodec } from "@anchor-presence/core";
 import type { CursorPresence, LiveCursorTransport } from "@anchor-presence/core";
 import type { ResolvedCursor } from "@anchor-presence/dom";
 import { LiveCursorProvider } from "../src/provider";
-import { useCursorPresence, useRemoteCursors } from "../src/hooks";
+import { useRemotePresence, useRemoteCursors } from "../src/hooks";
 import { makeFakeBinding, makeFakeClient } from "./test-utils";
 
 function cursors(n: number): ResolvedCursor[] {
@@ -210,7 +210,7 @@ function sameAnchorMessage(sequence: number, u = 0.5): CursorPresence {
   };
 }
 
-describe("useCursorPresence inbound render cost (K2)", () => {
+describe("useRemotePresence inbound render cost (K2)", () => {
   let container: HTMLDivElement;
 
   beforeEach(() => {
@@ -226,7 +226,7 @@ describe("useCursorPresence inbound render cost (K2)", () => {
     let presenceRenderCount = 0;
     function PresenceReader() {
       presenceRenderCount += 1;
-      const presence = useCursorPresence();
+      const presence = useRemotePresence();
       return <div>{presence.length}</div>;
     }
 

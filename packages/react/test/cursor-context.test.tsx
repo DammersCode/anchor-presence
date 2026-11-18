@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createPresenceClient } from "@anchor-presence/core";
 import type { LiveCursorTransport } from "@anchor-presence/core";
 import { LiveCursorProvider } from "../src/provider";
-import { useCursorContext } from "../src/hooks";
+import { useLocalContext } from "../src/hooks";
 import { makeFakeBinding } from "./test-utils";
 
 type TestContext = { route: string };
@@ -18,7 +18,7 @@ function makeStubTransport(): LiveCursorTransport {
   };
 }
 
-describe("useCursorContext", () => {
+describe("useLocalContext", () => {
   let container: HTMLDivElement;
   let renders: (TestContext | undefined)[];
   let lastSetContext: ((next: TestContext | undefined) => void) | null;
@@ -35,7 +35,7 @@ describe("useCursorContext", () => {
   });
 
   function Reader() {
-    const [context, setContext] = useCursorContext<TestContext>();
+    const [context, setContext] = useLocalContext<TestContext>();
     renders.push(context);
     lastSetContext = setContext;
     return null;

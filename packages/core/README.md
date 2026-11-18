@@ -15,7 +15,7 @@ const client = createPresenceClient({
   publishIntervalMs: 50,
 });
 
-client.updateLocalCursor({ anchors: [{ id: "nav.dashboard", u: 0.5, v: 0.5 }] });
+client.setLocalCursor({ anchors: [{ id: "nav.dashboard", u: 0.5, v: 0.5 }] });
 client.subscribeRemote(() => {
   console.log(client.getRemoteSnapshot());
 });

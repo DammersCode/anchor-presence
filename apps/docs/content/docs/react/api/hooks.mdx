@@ -40,22 +40,22 @@ function useRemoteUsers<TUser = unknown>(): RemoteUser<TUser>[];
 
 See [Remote users](/docs/react/remote-users).
 
-## useCursorPresence
+## useRemotePresence
 
-`useCursorPresence` has this signature:
+`useRemotePresence` has this signature:
 
 ```ts
-function useCursorPresence<TContext = unknown, TUser = unknown>(): RemotePresence<TContext, TUser>[];
+function useRemotePresence<TContext = unknown, TUser = unknown>(): RemotePresence<TContext, TUser>[];
 ```
 
 See [Cursor presence](/docs/react/cursor-presence).
 
-## useCursorContext
+## useLocalContext
 
-`useCursorContext` has this signature:
+`useLocalContext` has this signature:
 
 ```ts
-function useCursorContext<TContext = unknown>(): [TContext | undefined, (next: TContext | undefined) => void];
+function useLocalContext<TContext = unknown>(): [TContext | undefined, (next: TContext | undefined) => void];
 ```
 
 See [Cursor context](/docs/react/cursor-context).
@@ -115,10 +115,12 @@ A peer is another client in the same room. `useCursorEvents` calls `listener` fo
 `usePeerChanges` has this signature:
 
 ```ts
-function usePeerChanges(listener: (change: PeerChange) => void): void;
+function usePeerChanges<TContext = unknown, TUser = unknown>(
+  listener: (change: PeerChange<TContext, TUser>) => void,
+): void;
 ```
 
-It calls `listener` when a peer joins, leaves, or changes its `user` or `context`. `PeerChange` has a `type` of `join`, `update`, or `leave`, and the `clientId` of the peer. See [Peer changes](/docs/react/remote-users#peer-changes).
+It calls `listener` when a peer joins, leaves, or changes its `user` or `context`. `PeerChange` has a `type` of `join`, `update`, or `leave`, the `clientId` of the peer, and its `user` and `context`. See [Peer changes](/docs/react/remote-users#peer-changes).
 
 ## useSendEvent
 
@@ -129,13 +131,13 @@ It calls `listener` when a peer joins, leaves, or changes its `user` or `context
 `createPresenceHooks` returns a provider and hooks with your types fixed:
 
 ```ts
-function createPresenceHooks<TContext = unknown, TUser = unknown, TEvents extends EventMap = EventMap>(): {
+function createPresenceHooks<TContext = unknown, TUser = unknown, TEvents extends object = EventMap>(): {
   LiveCursorProvider: (props: LiveCursorProviderProps<TContext, TUser>) => ReactNode;
   useCursorBinding: () => DomBinding<TContext, TUser> | null;
   useCursorClient: () => PresenceClient<TContext, TUser> | null;
-  useCursorContext: () => [TContext | undefined, (next: TContext | undefined) => void];
+  useLocalContext: () => [TContext | undefined, (next: TContext | undefined) => void];
   useCursorEvents: (listener: (event: TypedRemoteEvent<TEvents>) => void) => void;
-  useCursorPresence: () => RemotePresence<TContext, TUser>[];
+  useRemotePresence: () => RemotePresence<TContext, TUser>[];
   useCursorStatus: () => ConnectionStatus;
   useRemoteCursors: () => ResolvedCursor<TContext, TUser>[];
   useRemoteCursorsSelector: <TSelected>(
@@ -144,7 +146,7 @@ function createPresenceHooks<TContext = unknown, TUser = unknown, TEvents extend
   ) => TSelected;
   useRemoteUsers: () => RemoteUser<TUser>[];
   useLocalUser: () => [TUser | undefined, (next: TUser | undefined) => void];
-  usePeerChanges: (listener: (change: PeerChange) => void) => void;
+  usePeerChanges: (listener: (change: PeerChange<TContext, TUser>) => void) => void;
   useSendEvent: () => EventChannel<TEvents>["send"];
 };
 ```

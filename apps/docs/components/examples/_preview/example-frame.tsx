@@ -19,7 +19,8 @@ const FRAME_CSS = "html, body { overflow: hidden; } nextjs-portal { display: non
 // One client per preview pane: the broadcast channel is the preview's transport.
 function usePreviewClient(
   channel: string,
-  clientOptions: Pick<PresenceClientOptions, "heartbeatMs" | "idleAfterMs" | "staleTimeoutMs"> | undefined,
+  clientOptions:
+    Pick<PresenceClientOptions, "heartbeatIntervalMs" | "idleAfterMs" | "staleTimeoutMs"> | undefined,
 ): PresenceClient<unknown, TourUser> | null {
   const [client, setClient] = useState<PresenceClient<unknown, TourUser> | null>(null);
 

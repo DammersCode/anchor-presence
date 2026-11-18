@@ -36,11 +36,11 @@ export const messagePackCodec: CursorCodec = {
 declare namespace Listing {
   type EventMap = Record<string, unknown>;
 
-  type TypedRemoteEvent<TEvents extends EventMap> = {
+  type TypedRemoteEvent<TEvents extends object> = {
     [K in keyof TEvents & string]: { clientId: string; type: K; data: TEvents[K] };
   }[keyof TEvents & string];
 
-  type EventChannel<TEvents extends EventMap> = {
+  type EventChannel<TEvents extends object> = {
     send<K extends keyof TEvents & string>(
       type: K,
       ...data: undefined extends TEvents[K] ? [data?: TEvents[K]] : [data: TEvents[K]]
@@ -49,7 +49,7 @@ declare namespace Listing {
   };
 
   // oxlint-disable-next-line eslint/no-shadow -- the listing keeps the exported name
-  function createEventChannel<TEvents extends EventMap>(
+  function createEventChannel<TEvents extends object>(
     client: Pick<PresenceClient, "sendEvent" | "subscribeEvents">,
   ): EventChannel<TEvents>;
 }

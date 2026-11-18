@@ -4,6 +4,9 @@
 
 ### Breaking
 
+- Renames, for names that say what they do: `useCursorContext` is `useLocalContext`, `useCursorPresence` is `useRemotePresence`, `client.updateLocalCursor` is `setLocalCursor`, the option `heartbeatMs` is `heartbeatIntervalMs` (and `DEFAULT_HEARTBEAT_MS` is `DEFAULT_HEARTBEAT_INTERVAL_MS`), `onRemoteClientDrop` is `onRemoteClientDropped`, and the binding option `localCursorCapture` is `capturePointer`.
+- `@anchor-presence/core`: `createPresenceClient` throws a `TypeError` for a non-finite `publishIntervalMs`, `heartbeatMs`, `staleTimeoutMs`, `idleAfterMs`, `maxRemoteClients` or adaptive-publish option, instead of running with a broken timer.
+- `@anchor-presence/core`: `PeerChange` is generic and carries the peer's `user` and `context`. For a `leave`, they hold the last known values.
 - Example relays: the node-ws relay counts only admitted sockets against `maxSockets` and terminates a refused socket after one second, so a flood of refused clients that ignore the close frame cannot fill the cap.
 - Example relays: the node-ws relay survives any request that fails inside the upgrade handler, such as a malformed request target. Bun and Hono check origin and room before they call `authCheck`. Receivers drop an identity with a `clientId` above 100 characters.
 - Example relays: node-ws and Bun answer a path other than `/` with 404. Rooms come from the `room` query parameter. The node-ws relay no longer exits when a client resets the connection while an async `authCheck` runs.
@@ -24,6 +27,7 @@
 
 ### Added
 
+- `@anchor-presence/core`: `createEventParser<TEvents>(parsers)` builds a typed `parseEvent` from one data parser per event type. An event map can be an `interface`.
 - `@anchor-presence/core`: `createEventChannel<TEvents>(client)` gives typed `send` and `subscribe` for events. The client option `eventRateLimit` sets the per-sender burst and rate and a total rate for all senders. `client.subscribeUser(listener)` reports local `setUser` changes.
 - `@anchor-presence/react`: `useLocalUser()`, `usePeerChanges(listener)`, and a third type parameter on `createPresenceHooks<TContext, TUser, TEvents>()` that types `useCursorEvents` and adds `useSendEvent()`.
 - The demo has live reactions and chat built on events, with end-to-end tests for events, leaving and peer notices.

@@ -5,7 +5,7 @@ describe("@anchor-presence/core public runtime API", () => {
     const mod = await import("../src");
 
     expect(Object.keys(mod).toSorted()).toEqual([
-      "DEFAULT_HEARTBEAT_MS",
+      "DEFAULT_HEARTBEAT_INTERVAL_MS",
       "DEFAULT_IDLE_AFTER_MS",
       "DEFAULT_MAX_ANCHORS",
       "DEFAULT_MAX_ANCHOR_ID_LENGTH",
@@ -22,6 +22,7 @@ describe("@anchor-presence/core public runtime API", () => {
       "RemotePresenceStore",
       "binaryCodec",
       "createEventChannel",
+      "createEventParser",
       "createInMemoryPair",
       "createPresenceClient",
       "isDevMode",

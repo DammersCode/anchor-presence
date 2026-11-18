@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createPresenceClient } from "../src/client";
+import { createInMemoryPair } from "../src/in-memory-transport";
 import { jsonCodec } from "../src/codec";
 import type { LiveCursorTransport } from "../src/transport";
 import type { ConnectionStatus } from "../src/protocol";
@@ -109,9 +110,9 @@ describe("createPresenceClient publishing", () => {
     const { transport, sent } = makeTransport();
     const client = createPresenceClient({ transport, idFactory, publishIntervalMs: 50 });
 
-    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.1, v: 0.1 }] });
-    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.2, v: 0.2 }] });
-    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.3, v: 0.3 }] });
+    client.setLocalCursor({ anchors: [{ id: "a", u: 0.1, v: 0.1 }] });
+    client.setLocalCursor({ anchors: [{ id: "a", u: 0.2, v: 0.2 }] });
+    client.setLocalCursor({ anchors: [{ id: "a", u: 0.3, v: 0.3 }] });
 
     vi.advanceTimersByTime(50);
 
@@ -126,7 +127,7 @@ describe("createPresenceClient publishing", () => {
     const { sent, transport } = makeTransport();
     const client = createPresenceClient({ transport, idFactory, publishIntervalMs: 50 });
 
-    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.1, v: 0.1 }] });
+    client.setLocalCursor({ anchors: [{ id: "a", u: 0.1, v: 0.1 }] });
     vi.advanceTimersByTime(50);
     expect(sent).toHaveLength(1);
 
@@ -142,17 +143,17 @@ describe("createPresenceClient publishing", () => {
     const client = createPresenceClient({ transport, idFactory, publishIntervalMs: 50 });
 
     expect(client.getStatus()).toBe("connecting");
-    client.updateLocalCursor({ anchors: [] });
+    client.setLocalCursor({ anchors: [] });
     vi.advanceTimersByTime(50);
     expect(sent).toHaveLength(0);
 
     setStatus("disconnected");
-    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
+    client.setLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
     vi.advanceTimersByTime(50);
     expect(sent).toHaveLength(0);
 
     setStatus("connected");
-    client.updateLocalCursor({ anchors: [{ id: "b", u: 0.5, v: 0.5 }] });
+    client.setLocalCursor({ anchors: [{ id: "b", u: 0.5, v: 0.5 }] });
     vi.advanceTimersByTime(50);
     expect(sent).toHaveLength(1);
 
@@ -164,7 +165,7 @@ describe("createPresenceClient publishing", () => {
     const client = createPresenceClient({ transport, idFactory, publishIntervalMs: 50 });
 
     // connecting: cursor updates are recorded locally but never sent
-    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.1, v: 0.1 }] });
+    client.setLocalCursor({ anchors: [{ id: "a", u: 0.1, v: 0.1 }] });
     vi.advanceTimersByTime(50);
     expect(sent).toHaveLength(0);
 
@@ -181,7 +182,7 @@ describe("createPresenceClient publishing", () => {
     expect(sent).toHaveLength(1); // still nothing new to send while disconnected
 
     // move the cursor while disconnected — must not be recorded as "sent" since send() never actually ran
-    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.9, v: 0.9 }] });
+    client.setLocalCursor({ anchors: [{ id: "a", u: 0.9, v: 0.9 }] });
     vi.advanceTimersByTime(50);
     expect(sent).toHaveLength(1);
 
@@ -210,7 +211,7 @@ describe("createPresenceClient publishing", () => {
     };
     const client = createPresenceClient({ transport, idFactory });
     expect(() => {
-      client.updateLocalCursor({ anchors: [] });
+      client.setLocalCursor({ anchors: [] });
       vi.advanceTimersByTime(50);
     }).not.toThrow();
     client.dispose();
@@ -218,11 +219,16 @@ describe("createPresenceClient publishing", () => {
 });
 
 describe("createPresenceClient heartbeat", () => {
-  it("resends the last state on every heartbeatMs", () => {
+  it("resends the last state on every heartbeatIntervalMs", () => {
     const { transport, sent } = makeTransport();
-    const client = createPresenceClient({ transport, idFactory, publishIntervalMs: 50, heartbeatMs: 1000 });
+    const client = createPresenceClient({
+      transport,
+      idFactory,
+      publishIntervalMs: 50,
+      heartbeatIntervalMs: 1000,
+    });
 
-    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
+    client.setLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
     vi.advanceTimersByTime(50); // publish fires
     expect(sent).toHaveLength(1);
 
@@ -342,9 +348,14 @@ describe("createPresenceClient inbound pipeline", () => {
 describe("createPresenceClient dispose", () => {
   it("stops timers and unsubscribes from the transport", () => {
     const { transport, sent, messageListenerCount } = makeTransport();
-    const client = createPresenceClient({ transport, idFactory, publishIntervalMs: 50, heartbeatMs: 200 });
+    const client = createPresenceClient({
+      transport,
+      idFactory,
+      publishIntervalMs: 50,
+      heartbeatIntervalMs: 200,
+    });
 
-    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
+    client.setLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
     vi.advanceTimersByTime(50);
     expect(sent).toHaveLength(1);
     expect(messageListenerCount()).toBe(1);
@@ -375,12 +386,12 @@ describe("createPresenceClient dispose", () => {
     }).not.toThrow();
   });
 
-  it("ignores updateLocalCursor after dispose", () => {
+  it("ignores setLocalCursor after dispose", () => {
     const { transport, sent } = makeTransport();
     const client = createPresenceClient({ transport, idFactory, publishIntervalMs: 50 });
     client.dispose();
     expect(sent).toHaveLength(1); // only the leave message
-    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
+    client.setLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
     vi.advanceTimersByTime(50);
     expect(sent).toHaveLength(1);
   });
@@ -417,7 +428,7 @@ describe("createPresenceClient session/context/user", () => {
     const client = createPresenceClient({ transport, idFactory, publishIntervalMs: 50 });
     client.setContext({ route: "/settings" });
     client.setUser({ name: "Ada" });
-    client.updateLocalCursor({ anchors: [] });
+    client.setLocalCursor({ anchors: [] });
     vi.advanceTimersByTime(50);
     const message = decodeSent(sent[0]!);
     expect(message.context).toEqual({ route: "/settings" });
@@ -435,7 +446,7 @@ describe("createPresenceClient session/context/user", () => {
       user: { name: "Ada" },
     });
 
-    client.updateLocalCursor({ anchors: [] });
+    client.setLocalCursor({ anchors: [] });
     vi.advanceTimersByTime(50);
     const message = decodeSent(sent[0]!);
     expect(message.context).toEqual({ route: "/" });
@@ -450,10 +461,10 @@ describe("createPresenceClient session/context/user", () => {
       transport,
       idFactory,
       publishIntervalMs: 50,
-      heartbeatMs: 1000,
+      heartbeatIntervalMs: 1000,
     });
 
-    client.updateLocalCursor({ anchors: [] });
+    client.setLocalCursor({ anchors: [] });
     vi.advanceTimersByTime(50);
     expect(decodeSent(sent[0]!).context).toBeUndefined();
 
@@ -471,12 +482,12 @@ describe("createPresenceClient session/context/user", () => {
 
     client.setContext({ route: "/a" });
     client.setUser({ name: "Ada" });
-    client.updateLocalCursor({ anchors: [] });
+    client.setLocalCursor({ anchors: [] });
     vi.advanceTimersByTime(50);
     expect(decodeSent(sent[0]!).context).toEqual({ route: "/a" });
     expect(decodeSent(sent[0]!).user).toEqual({ name: "Ada" });
 
-    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.2, v: 0.2 }] });
+    client.setLocalCursor({ anchors: [{ id: "a", u: 0.2, v: 0.2 }] });
     vi.advanceTimersByTime(50);
     const delta = decodeSent(sent[1]!);
     expect(delta.cursor.anchors[0].u).toBe(0.2);
@@ -492,7 +503,7 @@ describe("createPresenceClient session/context/user", () => {
 
     client.setContext({ route: "/a" });
     client.setUser({ name: "Ada" });
-    client.updateLocalCursor({ anchors: [] });
+    client.setLocalCursor({ anchors: [] });
     vi.advanceTimersByTime(50);
 
     client.setContext(undefined);
@@ -527,12 +538,12 @@ describe("createPresenceClient session/context/user", () => {
       transport,
       idFactory,
       publishIntervalMs: 50,
-      heartbeatMs: 1000,
+      heartbeatIntervalMs: 1000,
     });
 
     client.setContext({ route: "/a" });
     client.setUser({ name: "Ada" });
-    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
+    client.setLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
     vi.advanceTimersByTime(50);
     expect(decodeSent(sent[0]!).context).toEqual({ route: "/a" });
 
@@ -661,11 +672,11 @@ describe("createPresenceClient adaptive publish rate", () => {
       adaptivePublish: { highWatermarkBytes: 100, lowWatermarkBytes: 0, slowPublishIntervalMs: 200 },
     });
 
-    client.updateLocalCursor({ anchors: [] });
+    client.setLocalCursor({ anchors: [] });
     vi.advanceTimersByTime(50);
     expect(sent).toHaveLength(1);
 
-    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
+    client.setLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
     vi.advanceTimersByTime(50);
     expect(sent).toHaveLength(1);
 
@@ -685,15 +696,15 @@ describe("createPresenceClient adaptive publish rate", () => {
       adaptivePublish: { highWatermarkBytes: 100, lowWatermarkBytes: 0, slowPublishIntervalMs: 200 },
     });
 
-    client.updateLocalCursor({ anchors: [] });
+    client.setLocalCursor({ anchors: [] });
     vi.advanceTimersByTime(50);
     expect(sent).toHaveLength(1);
 
-    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.1, v: 0.1 }] });
+    client.setLocalCursor({ anchors: [{ id: "a", u: 0.1, v: 0.1 }] });
     vi.advanceTimersByTime(200);
     expect(sent).toHaveLength(2);
 
-    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.2, v: 0.2 }] });
+    client.setLocalCursor({ anchors: [{ id: "a", u: 0.2, v: 0.2 }] });
     vi.advanceTimersByTime(50);
     expect(sent).toHaveLength(3);
 
@@ -728,7 +739,7 @@ describe("createPresenceClient dirty-flag publishing", () => {
     const { transport, sent, setStatus } = makeTransport(true, "connected");
     const client = createPresenceClient({ transport, idFactory, publishIntervalMs: 50 });
     setStatus("reconnecting");
-    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
+    client.setLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
     vi.advanceTimersByTime(200);
     expect(sent).toHaveLength(0);
     client.dispose();
@@ -738,12 +749,12 @@ describe("createPresenceClient dirty-flag publishing", () => {
     const { transport, sent, setStatus } = makeTransport(true, "connected");
     const client = createPresenceClient({ transport, idFactory, publishIntervalMs: 50 });
 
-    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.4, v: 0.4 }] });
+    client.setLocalCursor({ anchors: [{ id: "a", u: 0.4, v: 0.4 }] });
     vi.advanceTimersByTime(50);
     expect(sent).toHaveLength(1);
 
     setStatus("reconnecting");
-    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.6, v: 0.6 }] });
+    client.setLocalCursor({ anchors: [{ id: "a", u: 0.6, v: 0.6 }] });
     vi.advanceTimersByTime(200);
     expect(sent).toHaveLength(1);
 
@@ -776,7 +787,7 @@ describe("createPresenceClient dirty-flag publishing", () => {
     };
     const client = createPresenceClient({ transport, idFactory, publishIntervalMs: 50 });
 
-    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
+    client.setLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
     vi.advanceTimersByTime(50);
     expect(sent).toHaveLength(0);
 
@@ -809,7 +820,7 @@ describe("createPresenceClient publish retry backoff", () => {
     const { transport, send } = makeThrowingTransport();
     const client = createPresenceClient({ transport, idFactory, publishIntervalMs: 50 });
 
-    client.updateLocalCursor({ anchors: [] });
+    client.setLocalCursor({ anchors: [] });
 
     vi.advanceTimersByTime(50); // t=50: initial attempt fails, retry in 50 ms
     expect(send).toHaveBeenCalledTimes(1);
@@ -837,7 +848,7 @@ describe("createPresenceClient publish retry backoff", () => {
     const { transport, send, setFailing } = makeThrowingTransport();
     const client = createPresenceClient({ transport, idFactory, publishIntervalMs: 50 });
 
-    client.updateLocalCursor({ anchors: [] });
+    client.setLocalCursor({ anchors: [] });
     vi.advanceTimersByTime(50); // t=50: fails, schedules retry in 50 ms
     expect(send).toHaveBeenCalledTimes(1);
 
@@ -847,7 +858,7 @@ describe("createPresenceClient publish retry backoff", () => {
 
     // a new failing publish must start the backoff at 50 ms again, not the grown delay
     setFailing(true);
-    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
+    client.setLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
     vi.advanceTimersByTime(50); // t=150: fails, schedules retry in 50 ms
     expect(send).toHaveBeenCalledTimes(3);
 
@@ -865,11 +876,11 @@ describe("createPresenceClient pointer type", () => {
     const { transport, sent } = makeTransport();
     const client = createPresenceClient({ transport, idFactory, publishIntervalMs: 50 });
 
-    client.updateLocalCursor({ anchors: [] }, { type: "touch" });
+    client.setLocalCursor({ anchors: [] }, { type: "touch" });
     vi.advanceTimersByTime(50);
     expect(decodeSent(sent[0]!).pointer).toEqual({ type: "touch" });
 
-    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.2, v: 0.2 }] });
+    client.setLocalCursor({ anchors: [{ id: "a", u: 0.2, v: 0.2 }] });
     vi.advanceTimersByTime(50);
     expect(decodeSent(sent[1]!).pointer).toEqual({ type: "touch" });
 
@@ -883,7 +894,7 @@ describe("createPresenceClient initial status via transport.getStatus", () => {
     const client = createPresenceClient({ transport, idFactory, publishIntervalMs: 50 });
     expect(client.getStatus()).toBe("connected");
 
-    client.updateLocalCursor({ anchors: [] });
+    client.setLocalCursor({ anchors: [] });
     vi.advanceTimersByTime(50);
     expect(sent).toHaveLength(1);
     client.dispose();
@@ -902,7 +913,7 @@ describe("createPresenceClient dispose lifecycle", () => {
     const { transport, sent } = makeTransport();
     const client = createPresenceClient({ transport, idFactory, publishIntervalMs: 50 });
 
-    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
+    client.setLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
     vi.advanceTimersByTime(50);
     expect(sent).toHaveLength(1);
 
@@ -1063,7 +1074,7 @@ describe("createPresenceClient guarded fan-out", () => {
     });
     client.subscribeStatus((status) => seen.push(status));
 
-    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
+    client.setLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
     expect(() => setStatus("connected")).not.toThrow();
     expect(seen).toEqual(["connected"]);
 
@@ -1097,9 +1108,9 @@ describe("createPresenceClient guarded fan-out", () => {
 });
 
 describe("createPresenceClient option clamping", () => {
-  it("clamps heartbeatMs to at least 1 ms", () => {
+  it("clamps heartbeatIntervalMs to at least 1 ms", () => {
     const { transport, sent } = makeTransport();
-    const client = createPresenceClient({ transport, idFactory, heartbeatMs: 0 });
+    const client = createPresenceClient({ transport, idFactory, heartbeatIntervalMs: 0 });
     vi.advanceTimersByTime(5);
     expect(sent).toHaveLength(5);
     client.dispose();
@@ -1139,7 +1150,7 @@ describe("createPresenceClient dev-mode size warnings", () => {
     expect(warnSpy).toHaveBeenCalledTimes(1);
 
     warnSpy.mockClear();
-    client.updateLocalCursor({ anchors: [] });
+    client.setLocalCursor({ anchors: [] });
     vi.advanceTimersByTime(50);
     expect(warnSpy).not.toHaveBeenCalled();
 
@@ -1202,7 +1213,7 @@ describe("createPresenceClient dev-mode remote-cap warning", () => {
   });
 });
 
-describe("createPresenceClient onRemoteClientDrop", () => {
+describe("createPresenceClient onRemoteClientDropped", () => {
   function emitRemote(emit: (data: Uint8Array) => void, clientId: string) {
     emit(
       jsonCodec.encode({
@@ -1215,30 +1226,30 @@ describe("createPresenceClient onRemoteClientDrop", () => {
     );
   }
 
-  it("invokes onRemoteClientDrop whenever a new remote client is dropped at the cap", () => {
-    const onRemoteClientDrop = vi.fn();
+  it("invokes onRemoteClientDropped whenever a new remote client is dropped at the cap", () => {
+    const onRemoteClientDropped = vi.fn();
     const { transport, emit } = makeTransport();
     const client = createPresenceClient({
       transport,
       idFactory,
       maxRemoteClients: 1,
-      onRemoteClientDrop,
+      onRemoteClientDropped,
     });
 
     emitRemote(emit, "remote-1");
-    expect(onRemoteClientDrop).not.toHaveBeenCalled();
+    expect(onRemoteClientDropped).not.toHaveBeenCalled();
 
     emitRemote(emit, "remote-2");
-    expect(onRemoteClientDrop).toHaveBeenCalledTimes(1);
+    expect(onRemoteClientDropped).toHaveBeenCalledTimes(1);
 
     emitRemote(emit, "remote-3");
-    expect(onRemoteClientDrop).toHaveBeenCalledTimes(2);
+    expect(onRemoteClientDropped).toHaveBeenCalledTimes(2);
 
     client.dispose();
   });
 
   it("keeps ingesting existing clients when the drop callback throws", () => {
-    const onRemoteClientDrop = vi.fn(() => {
+    const onRemoteClientDropped = vi.fn(() => {
       throw new Error("boom");
     });
     const { transport, emit } = makeTransport();
@@ -1246,7 +1257,7 @@ describe("createPresenceClient onRemoteClientDrop", () => {
       transport,
       idFactory,
       maxRemoteClients: 1,
-      onRemoteClientDrop,
+      onRemoteClientDropped,
     });
 
     expect(() => {
@@ -1294,7 +1305,7 @@ describe("createPresenceClient visibilitychange publish flush", () => {
     const { transport, sent } = makeTransport();
     const client = createPresenceClient({ transport, idFactory, publishIntervalMs: 50 });
 
-    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
+    client.setLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
     expect(sent).toHaveLength(0); // rate-limited: the 50 ms timer has not fired yet
     expect(listeners).toHaveLength(1);
 
@@ -1315,7 +1326,7 @@ describe("createPresenceClient visibilitychange publish flush", () => {
     const { transport, sent } = makeTransport();
     const client = createPresenceClient({ transport, idFactory, publishIntervalMs: 50 });
 
-    client.updateLocalCursor({ anchors: [] });
+    client.setLocalCursor({ anchors: [] });
     documentStub.visibilityState = "hidden";
     fire();
     expect(sent).toHaveLength(0);
@@ -1336,7 +1347,7 @@ describe("createPresenceClient visibilitychange publish flush", () => {
     expect(listeners).toHaveLength(0);
     expect(documentStub.removeEventListener).toHaveBeenCalledTimes(1);
 
-    client.updateLocalCursor({ anchors: [] });
+    client.setLocalCursor({ anchors: [] });
     fire();
     vi.advanceTimersByTime(100);
     expect(sent).toHaveLength(1); // only the leave message
@@ -1369,15 +1380,20 @@ describe("leave", () => {
   it("sends a leave message once, and the next publish carries the full state again", () => {
     vi.useFakeTimers();
     const { transport, sent } = makeTransport();
-    const client = createPresenceClient({ transport, idFactory, user: { name: "Ada" }, heartbeatMs: 60_000 });
-    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.1, v: 0.1 }] });
+    const client = createPresenceClient({
+      transport,
+      idFactory,
+      user: { name: "Ada" },
+      heartbeatIntervalMs: 60_000,
+    });
+    client.setLocalCursor({ anchors: [{ id: "a", u: 0.1, v: 0.1 }] });
     vi.advanceTimersByTime(100);
 
     client.leave();
     client.leave();
     expect(sent.map((bytes) => decodeSent(bytes).leave)).toEqual([undefined, true]);
 
-    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.2, v: 0.2 }] });
+    client.setLocalCursor({ anchors: [{ id: "a", u: 0.2, v: 0.2 }] });
     vi.advanceTimersByTime(100);
     expect(decodeSent(sent.at(-1)!)).toMatchObject({
       user: { name: "Ada" },
@@ -1392,8 +1408,13 @@ describe("late join", () => {
   it("answers a first message from an unknown peer with one full publish", () => {
     vi.useFakeTimers();
     const { transport, sent, emit } = makeTransport();
-    const client = createPresenceClient({ transport, idFactory, user: { name: "Ada" }, heartbeatMs: 60_000 });
-    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.1, v: 0.1 }] });
+    const client = createPresenceClient({
+      transport,
+      idFactory,
+      user: { name: "Ada" },
+      heartbeatIntervalMs: 60_000,
+    });
+    client.setLocalCursor({ anchors: [{ id: "a", u: 0.1, v: 0.1 }] });
     vi.advanceTimersByTime(100);
     const before = sent.length;
 
@@ -1421,7 +1442,12 @@ describe("late join", () => {
   it("answers a known clientId that returns with a new session", () => {
     vi.useFakeTimers();
     const { transport, sent, emit } = makeTransport();
-    const client = createPresenceClient({ transport, idFactory, user: { name: "Ada" }, heartbeatMs: 60_000 });
+    const client = createPresenceClient({
+      transport,
+      idFactory,
+      user: { name: "Ada" },
+      heartbeatIntervalMs: 60_000,
+    });
     const send = (session: string, sequence: number) =>
       emit(
         new TextEncoder().encode(
@@ -1616,5 +1642,19 @@ describe("default shape check for remote fields", () => {
     remote(emit, "p", { label: "Zed" });
     expect(client.getRemotePresence()[0]?.user).toEqual({ name: "Zed" });
     client.dispose();
+  });
+});
+
+describe("numeric option validation", () => {
+  it.each([
+    "publishIntervalMs",
+    "heartbeatIntervalMs",
+    "staleTimeoutMs",
+    "idleAfterMs",
+    "maxRemoteClients",
+  ] as const)("rejects a non-finite %s", (name) => {
+    const { a } = createInMemoryPair();
+    expect(() => createPresenceClient({ transport: a, [name]: Number.NaN })).toThrow(TypeError);
+    expect(() => createPresenceClient({ transport: a, [name]: Number.POSITIVE_INFINITY })).toThrow(/finite/);
   });
 });

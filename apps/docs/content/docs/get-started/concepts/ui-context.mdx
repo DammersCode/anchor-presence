@@ -71,7 +71,7 @@ Anchor Presence never changes what the receiver's UI shows. Resolving a remote c
 
 This rule keeps the receiving user in full control of their own screen. A remote cursor only gives information. A resolved position can land inside UI that is closed on the receiver. Then the correct response is fallback or hide. Never force that UI open to match the sender.
 
-Do not change local UI state, such as dialogs, routes, or sidebar toggles, as a reaction to `useRemoteCursors()` or `useCursorPresence()`. Use `context` for display decisions only.
+Do not change local UI state, such as dialogs, routes, or sidebar toggles, as a reaction to `useRemoteCursors()` or `useRemotePresence()`. Use `context` for display decisions only.
 
 ## Related
 

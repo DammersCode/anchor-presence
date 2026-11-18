@@ -7,7 +7,7 @@ import { EMPTY_PRESENCE, getServerPresence, useLiveCursorContext } from "./use-c
  * The hook rerenders only when an observable field changes.
  * Watch `sequence` with `client.getRemoteSnapshot()` and `client.subscribeRemote()`.
  */
-export function useCursorPresence<TContext = unknown, TUser = unknown>(): RemotePresence<TContext, TUser>[] {
+export function useRemotePresence<TContext = unknown, TUser = unknown>(): RemotePresence<TContext, TUser>[] {
   const { client } = useLiveCursorContext<TContext, TUser>();
   const subscribe = useCallback(
     (listener: () => void) => (client !== null ? client.subscribeRemote(listener) : () => {}),

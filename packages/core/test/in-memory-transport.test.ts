@@ -25,7 +25,7 @@ describe("createInMemoryPair", () => {
     void a.connect?.();
     void b.connect?.();
 
-    clientA.updateLocalCursor({ anchors: [{ id: "x", u: 0.5, v: 0.5 }] });
+    clientA.setLocalCursor({ anchors: [{ id: "x", u: 0.5, v: 0.5 }] });
     vi.advanceTimersByTime(50);
 
     const fromA = clientB.getRemoteSnapshot().find((p) => p.clientId === "A");
@@ -54,7 +54,7 @@ describe("createInMemoryPair", () => {
     void a.connect?.();
     void b.connect?.();
 
-    clientA.updateLocalCursor({ anchors: [{ id: "x", u: 0.5, v: 0.5 }] });
+    clientA.setLocalCursor({ anchors: [{ id: "x", u: 0.5, v: 0.5 }] });
     vi.advanceTimersByTime(50);
 
     const initial = clientB.getRemoteSnapshot().find((p) => p.clientId === "A");

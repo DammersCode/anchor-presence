@@ -17,6 +17,7 @@
     "---[book-open]Guides---",
     "guides/layout-design",
     "guides/security",
+    "guides/deploy-relay",
     "guides/performance",
     "guides/troubleshooting",
     "---[list-checks]Recipes---",

@@ -16,7 +16,7 @@ const binding = createDomBinding(client, { captureFocus: true });
 
 ## What the binding sends
 
-On `pointermove`, `pointerdown`, and `pointerover`, the binding reads the event target, walks its anchor ancestors, and builds a `CursorPosition`. It ignores an event whose `isPrimary` is `false`, for example a second finger on a touch screen. The `CursorPosition` has these fields:
+On `pointermove`, `pointerdown`, and `pointerover`, the binding reads the event target, walks its anchor ancestors, and builds a `CursorPosition`. It ignores a touch or pen event whose `isPrimary` is `false`, for example a second finger on a touch screen. The `CursorPosition` has these fields:
 
 - `anchors`: the fallback chain, most specific first, up to `maxAnchors` entries. Each entry carries the anchor ID and the `u`/`v` position inside the rectangle of that anchor. The binding skips an anchor with a zero width or height.
 - `viewport`: the `u`/`v` position across the full window, when the window has a non-zero size.
@@ -63,6 +63,10 @@ The binding adds its listeners to the document and the window, not to each ancho
 ## Touch behavior
 
 A touch pointer fires the same `pointermove`, `pointerdown`, and `pointerover` events as a mouse. The binding does not separate a touch scroll from a touch drag, and it has no option to ignore touch pointers.
+
+## Browser coverage
+
+CI runs the browser tests of pointer and focus capture in Chromium. Firefox and WebKit run the same tests locally before each merge to `main`. The touch test runs in Chromium only, and a unit test covers the `isPrimary` rule.
 
 ## Related
 

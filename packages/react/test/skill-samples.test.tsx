@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { useEffect, useRef } from "react";
 import { describe, expect, it } from "vitest";
-import { createPresenceClient, type PresenceClient } from "@anchor-presence/core";
+import { createPresenceClient } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
 import { CursorLayer, LiveCursorProvider, useLocalContext } from "../src/index";
 
@@ -32,12 +32,14 @@ export function PresenceRoot({
   );
 }
 
-function PresenceScope({
-  client,
+function ScopedPresenceRoot({
+  room,
+  userName,
   currentPage,
   children,
 }: {
-  client: PresenceClient<{ page: string }> | null;
+  room: string;
+  userName: string;
   currentPage: string;
   children: React.ReactNode;
 }) {
@@ -48,8 +50,16 @@ function PresenceScope({
   }, [currentPage]);
 
   return (
-    <LiveCursorProvider<{ page: string }>
-      client={client}
+    <LiveCursorProvider<{ page: string }, { name: string }>
+      factory={() => {
+        const transport = createWebSocketTransport({
+          url: `wss://relay.example.com/?room=${encodeURIComponent(room)}`,
+        });
+        return createPresenceClient<{ page: string }, { name: string }>({
+          transport,
+          user: { name: userName },
+        });
+      }}
       bindingOptions={{
         resolution: {
           visibilityPolicy: ({ presence, resolution }) =>
@@ -59,6 +69,7 @@ function PresenceScope({
     >
       <PublishPage page={currentPage} />
       {children}
+      <CursorLayer<{ page: string }, { name: string }> getLabel={(cursor) => cursor.user?.name ?? null} />
     </LiveCursorProvider>
   );
 }
@@ -89,7 +100,12 @@ describe("skills/anchor-presence/SKILL.md samples", () => {
     const source = readRepoFile("packages/react/test/skill-samples.test.tsx");
     const samples = sampleBodies(readRepoFile("skills/anchor-presence/SKILL.md"));
     expect(samples).toHaveLength(2);
-    for (const sample of samples) expect(source).toContain(sample);
-    expect(PresenceScope).toBeTypeOf("function");
+    const [rootSample = "", scopedSample = ""] = samples;
+    expect(source).toContain(rootSample);
+    // The test file renames the step 6 copy, because step 4 already declares PresenceRoot.
+    expect(source).toContain(
+      scopedSample.replace("export function PresenceRoot(", "function ScopedPresenceRoot("),
+    );
+    expect(ScopedPresenceRoot).toBeTypeOf("function");
   });
 });

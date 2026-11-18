@@ -37,7 +37,7 @@ Each browsing context needs its own client — pointer and viewport coordinates 
 
 ## A cursor turns faint, then stays after a user leaves
 
-A peer with no message for `idleAfterMs` (15 s default) is idle: `CursorLayer` dims it. Presence expires after the stale timeout (70 s default) without a heartbeat. Closing the pointer path (`cursor: null` on leave/blur) hides immediately; abrupt disconnects wait for expiry. Shorten `staleTimeoutMs` only above 60 s — browsers clamp hidden-tab timers to one minute, so lower values make backgrounded users flicker.
+A peer whose presence does not change for `idleAfterMs` (15 s default) is idle, even while its heartbeats arrive: `CursorLayer` dims it. Presence expires after the stale timeout (70 s default) without a heartbeat. Closing the pointer path (`cursor: null` on leave/blur) hides immediately; abrupt disconnects wait for expiry. Shorten `staleTimeoutMs` only above 60 s — browsers clamp hidden-tab timers to one minute, so lower values make backgrounded users flicker.
 
 ## Cursors jump instead of gliding
 

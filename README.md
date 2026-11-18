@@ -58,12 +58,12 @@ const transport = createWebSocketTransport({ port: 8788, path: "/?room=main" });
 
 ## Requirements
 
-| Requirement | Version                                               |
-| ----------- | ----------------------------------------------------- |
-| React       | 18 or later                                           |
-| TypeScript  | 5.9 or later                                          |
-| Browser     | Chrome, Edge, Firefox, and Safari with ES2022 support |
-| Bun         | Needed to run the demo and the relay                  |
+| Requirement | Version                                                                                                              |
+| ----------- | -------------------------------------------------------------------------------------------------------------------- |
+| React       | 18 or later                                                                                                          |
+| TypeScript  | 5.9 or later                                                                                                         |
+| Browser     | Chrome, Edge, Firefox, and Safari with ES2022 support                                                                |
+| Bun         | Needed to run the demo and the Bun relays. The `ws` relay in `examples/node-ws` also runs on Node.js 22.18 or later. |
 
 ## Packages
 

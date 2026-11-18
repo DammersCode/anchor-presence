@@ -55,13 +55,13 @@ declare namespace Listing {
     client: Pick<PresenceClient, "sendEvent" | "subscribeEvents">,
   ): EventChannel<TEvents>;
 
-  type EventParsers<TEvents extends EventMap> = {
+  type EventParsers<TEvents extends object> = {
     [K in keyof TEvents & string]:
       ((data: unknown) => TEvents[K] | undefined) | (undefined extends TEvents[K] ? null : never);
   };
 
   // oxlint-disable-next-line eslint/no-shadow -- the listing keeps the exported name
-  function createEventParser<TEvents extends EventMap>(
+  function createEventParser<TEvents extends object>(
     parsers: EventParsers<TEvents>,
   ): (event: RemoteEvent) => TypedRemoteEvent<TEvents> | undefined;
 }
@@ -76,7 +76,7 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-describe("presence-client.mdx: event rate limit", () => {
+describe("events.mdx: event rate limit", () => {
   it("drops the events of one sender above the burst", () => {
     const { a, b } = createInMemoryPair();
     const myTransport = b;
@@ -119,7 +119,7 @@ describe("presence-client.mdx: create a client", () => {
   });
 });
 
-describe("presence-client.mdx: typed events", () => {
+describe("events.mdx: typed events", () => {
   it("sends typed events, and the parser drops data that does not fit the map", () => {
     const { a, b } = createInMemoryPair();
     const transport = a;
@@ -230,9 +230,9 @@ describe("doc sample sources", () => {
       .filter((line) => !line.includes("oxlint-disable"))
       .join("\n");
     const samples = [
-      docSample("core/presence-client.mdx", "eventRateLimit: { burst: 40"),
+      docSample("core/events.mdx", "eventRateLimit: { burst: 40"),
       docSample("core/presence-client.mdx", 'user: { name: "Ada" } });'),
-      docSample("core/presence-client.mdx", "createEventParser<Events>"),
+      docSample("core/events.mdx", "createEventParser<Events>"),
       docSample("core/api/client.mdx", "type EventMap"),
       docSample("core/api/client.mdx", "type EventParsers"),
       docSample("core/custom-codec.mdx", "messagePackCodec"),

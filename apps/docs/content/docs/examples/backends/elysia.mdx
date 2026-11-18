@@ -92,13 +92,13 @@ Bun does not expose the send buffer of each subscriber. For this reason, the rel
 
 ### Auth
 
-| Check            | Setting                                                                              | On refusal                                                         |
-| ---------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------ |
-| Origin           | `RELAY_ALLOWED_ORIGINS`, comma-separated. Empty allows every origin.                 | Upgrades, then closes with code `4004`.                            |
-| Room token       | `RELAY_AUTH_TOKEN`. Compares the `token` query parameter. Empty turns the check off. | Closes with code `4006`.                                           |
-| `authCheck` hook | Factory option. Replaces the room token check.                                       | Closes with code `4006` on `false` or an error.                    |
-| Identity binding | `authCheck` returns `{ clientId, user }`.                                            | Drops a frame that is not a JSON object.                           |
-| Check order      | Origin, then the hook, then room name.                                               | The hook runs for an invalid room name, with `room` set to `main`. |
+| Check            | Setting                                                                              | On refusal                                        |
+| ---------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------- |
+| Origin           | `RELAY_ALLOWED_ORIGINS`, comma-separated. Empty allows every origin.                 | Upgrades, then closes with code `4004`.           |
+| Room token       | `RELAY_AUTH_TOKEN`. Compares the `token` query parameter. Empty turns the check off. | Closes with code `4006`.                          |
+| `authCheck` hook | Factory option. Replaces the room token check.                                       | Closes with code `4006` on `false` or an error.   |
+| Identity binding | `authCheck` returns `{ clientId, user }`.                                            | Drops a frame that is not a JSON object.          |
+| Check order      | Origin, then room name, then the hook.                                               | The hook never runs for a refused origin or room. |
 
 See [Identity binding](/docs/examples/backends#identity-binding) for the demo identity mode.
 

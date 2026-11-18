@@ -4,7 +4,7 @@ description: What @anchor-presence/core does, when to use it directly, and where
 icon: box
 ---
 
-import { Binary, Cable, Code, Puzzle, Radio, ShieldCheck, Spline, Users } from "lucide-react";
+import { Binary, Cable, Code, Puzzle, Radio, ShieldCheck, Spline, Users, Zap } from "lucide-react";
 
 `@anchor-presence/core` is the protocol layer. It sends the local presence, and it checks and stores the presence of each peer. A peer is another client in the same room. Use the package directly in a test, on a server, or in an adapter for a UI framework other than React.
 
@@ -24,7 +24,10 @@ const clientB = createPresenceClient({ transport: b, user: { name: "Bob" } });
 
 <Cards>
   <Card icon={<Radio />} title="Presence client" href="/docs/core/presence-client">
-    Create a client, publish the local cursor, send events, and stop the client.
+    Create a client, publish the local cursor, and stop the client.
+  </Card>
+  <Card icon={<Zap />} title="Events" href="/docs/core/events">
+    Send one-shot messages to peers, with rate limits and types.
   </Card>
   <Card icon={<Users />} title="Remote presence" href="/docs/core/remote-presence">
     Read peers, the idle stage, the stale timeout, and peer changes.

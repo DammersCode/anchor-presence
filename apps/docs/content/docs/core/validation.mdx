@@ -146,7 +146,7 @@ An event message has a `null` cursor and an `event` field. `validatePresence` dr
 - The event `type` is not a string of 1 to `MAX_EVENT_TYPE_LENGTH` characters.
 - The event `data` breaks `maxFieldBytes` or `maxFieldDepth`.
 
-As a result, a bad event never reaches the store as a message that clears the cursor. `validatePresence` does not check the shape of the event `data`. To check it, pass `parseEvent`. See [Events](/docs/core/presence-client#events).
+As a result, a bad event never reaches the store as a message that clears the cursor. `validatePresence` does not check the shape of the event `data`. To check it, pass `parseEvent`. See [Events](/docs/core/events).
 
 `validatePresence` keeps `leave: true` only on a message with a `null` cursor.
 

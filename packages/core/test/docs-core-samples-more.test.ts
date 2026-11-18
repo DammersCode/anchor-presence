@@ -16,33 +16,46 @@ import {
 // Verbatim copies of doc samples; the last test checks each copy against its .mdx source.
 
 function createBroadcastChannelTransport(channelName: string): LiveCursorTransport {
-  const channel = new BroadcastChannel(channelName);
+  const listeners = new Set<(data: Uint8Array) => void>();
   const statusListeners = new Set<(status: ConnectionStatus) => void>();
+  let channel: BroadcastChannel | null = null;
+  let status: ConnectionStatus = "disconnected";
+
+  function setStatus(next: ConnectionStatus) {
+    status = next;
+    for (const listener of statusListeners) listener(next);
+  }
 
   return {
     connect() {
-      // a BroadcastChannel has no handshake and is open from construction
-      for (const listener of statusListeners) listener("connected");
+      if (channel !== null) return;
+      channel = new BroadcastChannel(channelName);
+      channel.addEventListener("message", (event: MessageEvent<Uint8Array>) => {
+        for (const listener of listeners) listener(event.data);
+      });
+      // a BroadcastChannel has no handshake, so it is connected at once
+      setStatus("connected");
     },
     disconnect() {
-      channel.close();
+      channel?.close();
+      channel = null;
+      setStatus("disconnected");
     },
     send(data) {
       // oxlint-disable-next-line unicorn/require-post-message-target-origin -- BroadcastChannel takes no origin
-      channel.postMessage(data);
+      channel?.postMessage(data);
     },
     subscribe(listener) {
-      const onMessage = (event: MessageEvent<Uint8Array>) => listener(event.data);
-      channel.addEventListener("message", onMessage);
-      return () => channel.removeEventListener("message", onMessage);
+      listeners.add(listener);
+      return () => listeners.delete(listener);
     },
     subscribeStatus(listener) {
-      listener("connected");
+      listener(status);
       statusListeners.add(listener);
       return () => statusListeners.delete(listener);
     },
     getStatus() {
-      return "connected";
+      return status;
     },
   };
 }
@@ -92,6 +105,9 @@ describe("custom-transport.mdx: BroadcastChannel sketch", () => {
   it("carries bytes between two transports on one channel", async () => {
     const sender = createBroadcastChannelTransport("docs-more");
     const receiver = createBroadcastChannelTransport("docs-more");
+    expect(sender.getStatus?.()).toBe("disconnected");
+    await sender.connect?.();
+    await receiver.connect?.();
     const received = new Promise<Uint8Array>((resolve) => {
       receiver.subscribe(resolve);
     });
@@ -102,6 +118,7 @@ describe("custom-transport.mdx: BroadcastChannel sketch", () => {
     expect(sender.getStatus?.()).toBe("connected");
     await sender.disconnect?.();
     await receiver.disconnect?.();
+    expect(sender.getStatus?.()).toBe("disconnected");
   });
 });
 

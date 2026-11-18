@@ -186,7 +186,7 @@ export function ChatApp({ client }: { client: PresenceClient<unknown, User> }) {
 - **Local bubble.** The relay never sends a message back to its sender. The local bubble comes from local state. If `sendEvent` returns `false`, the recipe shows no local bubble. `sendEvent` returns `false` when the client is not connected or the event is above the field limits.
 - **One-shot events.** The client never stores or resends an event. A peer that joins after the message never sees it. For this reason, each side runs its own hide timer.
 - **Length.** The input stops at `CHAT_MAX_LENGTH` characters, and the receiver cuts longer text. The client limit for one field is 8 KiB (`DEFAULT_MAX_FIELD_BYTES`).
-- **Rate.** A receiver drops the events of a sender above the event rate limit. See [Events](/docs/core/presence-client#events) for the limit.
+- **Rate.** A receiver drops the events of a sender above the event rate limit. See [Events](/docs/core/events) for the limit.
 
 ## Related
 
@@ -197,7 +197,7 @@ export function ChatApp({ client }: { client: PresenceClient<unknown, User> }) {
   <Card icon={<MousePointer />} title="CursorLayer" href="/docs/react/cursor-layer">
     Labels, colors, and the `getLabel` prop.
   </Card>
-  <Card icon={<Box />} title="Presence client" href="/docs/core/presence-client#events">
+  <Card icon={<Box />} title="Events" href="/docs/core/events">
     The event API and its rate limit.
   </Card>
   <Card icon={<ShieldCheck />} title="Security" href="/docs/get-started/guides/security">

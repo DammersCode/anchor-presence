@@ -111,8 +111,11 @@ export function createNodeWsRelay(port: number, options: NodeWsRelayOptions = {}
       refuse(req, socket, head, 4004, "origin not allowed");
       return;
     }
-    const parsedRoom = parseRoom(url.searchParams.get("room"));
-    const authRoom = parsedRoom ?? "main";
+    const room = parseRoom(url.searchParams.get("room"));
+    if (room === null) {
+      refuse(req, socket, head, INVALID_ROOM_CODE, "invalid room");
+      return;
+    }
     const headers = Object.fromEntries(
       Object.entries(req.headers).map(([name, value]) => [
         name,
@@ -121,7 +124,7 @@ export function createNodeWsRelay(port: number, options: NodeWsRelayOptions = {}
     );
     const auth = await authCheck({
       token: url.searchParams.get("token") ?? "",
-      room: authRoom,
+      room,
       origin,
       headers,
     });
@@ -134,11 +137,6 @@ export function createNodeWsRelay(port: number, options: NodeWsRelayOptions = {}
       refuse(req, socket, head, 4002, "server full");
       return;
     }
-    if (parsedRoom === null) {
-      refuse(req, socket, head, INVALID_ROOM_CODE, "invalid room");
-      return;
-    }
-    const room = parsedRoom;
     const sockets = rooms.get(room);
     if (sockets && sockets.size >= maxRoomSockets) {
       refuse(req, socket, head, 4001, "room full");

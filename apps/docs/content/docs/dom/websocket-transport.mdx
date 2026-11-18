@@ -26,7 +26,7 @@ The transport uses `globalThis.WebSocket` by default. If there is no global `Web
 
 <Callout type="warn">
   If there is no global `WebSocket` and no `WebSocketCtor`, the transport never opens a socket. Its status
-  stays `connecting`, with no warning and no close.
+  changes to `disconnected`, and it reports no close. In development mode, it warns one time.
 </Callout>
 
 ## Connection status
@@ -43,7 +43,10 @@ The transport moves through these statuses:
   connected --> disconnected: close, no retry
   reconnecting --> disconnected: close, no retry
   connecting --> disconnected: close, no retry
-  connected --> disconnected: disconnect()`}
+  connecting --> disconnected: no WebSocket
+  connected --> disconnected: disconnect()
+  connecting --> disconnected: disconnect()
+  reconnecting --> disconnected: disconnect()`}
 />
 
 ## The default URL

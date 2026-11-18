@@ -42,16 +42,16 @@ The test starts a real relay on a free port and connects two `createPresenceClie
 | Origin allowlist          | Yes. `RELAY_ALLOWED_ORIGINS` is a comma-separated list. An empty list (the default) accepts every origin. A foreign origin closes the socket with code `4004`.                                                                                                                                |
 | Auth hook                 | Yes. Pass an `authCheck` option, or set `RELAY_AUTH_TOKEN` for a shared room token. A refused connection closes with code `4006`.                                                                                                                                                             |
 | Identity binding          | Yes. If `authCheck` returns `{ clientId, user }`, the relay writes that identity into every JSON frame. `clientId` gets the suffix `~<connection>`. In this mode, the relay drops a frame that is not JSON.                                                                                   |
-| Room cleanup on close     | Yes. `onClose` removes the socket from its room, and the relay deletes an empty room.                                                                                                                                                                                                         |
+| Room cleanup on close     | Yes. Bun removes a closed socket from its room topic.                                                                                                                                                                                                                                         |
 | Connection caps           | Yes. `RELAY_MAX_ROOM_SOCKETS` (default 64) limits one room. `RELAY_MAX_TOTAL_SOCKETS` (default 10,000) limits the process. A refused socket closes with code `4001` or `4002`.                                                                                                                |
 | Dead connections          | Yes. The `idleTimeout` of Bun (`RELAY_IDLE_TIMEOUT_SECONDS`, default 60) with `sendPings`. Bun pings a silent socket. If no pong comes back, Bun closes the socket.                                                                                                                           |
 | Slow receivers            | Close only. The relay publishes to Bun topics through `WSContext.raw`. The `backpressureLimit` of Bun (`RELAY_SLOW_PEER_HARD_BYTES`, default 8 MiB) with `closeOnBackpressureLimit` closes a slow receiver. Bun does not expose the buffer of each receiver, so the relay cannot skip a send. |
 
 Before you expose the relay outside local development, set `RELAY_ALLOWED_ORIGINS` and `RELAY_AUTH_TOKEN`. Put a TLS-terminating proxy in front of it.
 
-## Key room state on `ws.raw`
+## Use `ws.raw` for topics
 
-Hono gives each WebSocket event (`onOpen`, `onMessage`, `onClose`) a different `WSContext` wrapper around the same Bun socket. For this reason, a `Map` key or a `Set` check on the `WSContext` object never matches across events. Key the room state on `ws.raw`, the Bun socket, as `server.ts` does.
+Hono gives each WebSocket event (`onOpen`, `onMessage`, `onClose`) a different `WSContext` wrapper around the same Bun socket. Call `subscribe` and `publish` on `ws.raw`, the Bun socket, as `server.ts` does. Bun then sends each message to the room topic without a loop in your code.
 
 ## Room routing
 

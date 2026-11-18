@@ -1,10 +1,10 @@
 ---
 title: Client API
-description: createPresenceClient, its options, PresenceClient, createEventChannel, createEventParser, RemotePresenceStore, isDevMode, warnOnce, reportListenerError, and the client constants.
+description: createPresenceClient, its options, PresenceClient, createEventChannel, createEventParser, RemotePresenceStore, the interpolators, isDevMode, warnOnce, reportListenerError, and the client constants.
 icon: code
 ---
 
-import { FileCode, Radio, Users } from "lucide-react";
+import { FileCode, Radio, Users, Zap } from "lucide-react";
 
 This page lists the client exports of `@anchor-presence/core` with their types. Use it to look up an option or a method. The guides explain the behavior.
 
@@ -14,7 +14,15 @@ import { createPresenceClient } from "@anchor-presence/core";
 
 ## createPresenceClient
 
-`createPresenceClient(options)` builds a `PresenceClient`. It throws a `TypeError` when a numeric option is not a finite number. See [Presence client](/docs/core/presence-client).
+`createPresenceClient(options)` builds a `PresenceClient`. See [Presence client](/docs/core/presence-client).
+
+It throws a `TypeError` when one of these options is not a finite number:
+
+- `publishIntervalMs`, `heartbeatIntervalMs`, `staleTimeoutMs`, and `idleAfterMs`.
+- `maxRemoteClients`.
+- `adaptivePublish.highWatermarkBytes`, `adaptivePublish.lowWatermarkBytes`, and `adaptivePublish.slowPublishIntervalMs`.
+
+The fields of `eventRateLimit` and `validationLimits` get no such check.
 
 <AutoTypeTable path="../../packages/core/src/internal/types.ts" name="PresenceClientOptions" />
 
@@ -30,7 +38,7 @@ These guides describe the methods:
 | -------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
 | `setLocalCursor`, `setContext`, `setUser`, `getContext`, `getUser`, `subscribeContext`, `subscribeUser`, `registerTeardown`, `dispose` | [Lifecycle](/docs/core/presence-client#lifecycle)                       |
 | `getStatus`, `subscribeStatus`, `hasActiveCursors`                                                                                     | [Status](/docs/core/presence-client#status)                             |
-| `sendEvent`, `subscribeEvents`                                                                                                         | [Events](/docs/core/presence-client#events)                             |
+| `sendEvent`, `subscribeEvents`                                                                                                         | [Events](/docs/core/events)                                             |
 | `leave`                                                                                                                                | [Leave the room](/docs/core/presence-client#leave-the-room)             |
 | `subscribeClose`                                                                                                                       | [Close reasons](/docs/core/presence-client#close-reasons)               |
 | `getRemotePresence`, `getRemoteSnapshot`, `subscribeRemote`                                                                            | [Read remote presence](/docs/core/remote-presence#read-remote-presence) |
@@ -60,19 +68,19 @@ function createEventChannel<TEvents extends object>(
 ): EventChannel<TEvents>;
 ```
 
-An `EventMap` maps each event type to the type of its `data`. `TypedRemoteEvent<TEvents>` is a union with one member for each event type. The channel does not check remote data. See [Typed events](/docs/core/presence-client#typed-events).
+An `EventMap` maps each event type to the type of its `data`. The functions accept any object type, so an `interface` works as well as a `type`. `TypedRemoteEvent<TEvents>` is a union with one member for each event type. The channel does not check remote data. See [Typed events](/docs/core/events#typed-events).
 
 ## createEventParser
 
 `createEventParser` and `EventParsers` have these signatures:
 
 ```ts
-type EventParsers<TEvents extends EventMap> = {
+type EventParsers<TEvents extends object> = {
   [K in keyof TEvents & string]:
     ((data: unknown) => TEvents[K] | undefined) | (undefined extends TEvents[K] ? null : never);
 };
 
-function createEventParser<TEvents extends EventMap>(
+function createEventParser<TEvents extends object>(
   parsers: EventParsers<TEvents>,
 ): (event: RemoteEvent) => TypedRemoteEvent<TEvents> | undefined;
 ```
@@ -83,7 +91,7 @@ function createEventParser<TEvents extends EventMap>(
 - Its parser returns `undefined`.
 - Its entry is `null` and the event carries data.
 
-See [Typed events](/docs/core/presence-client#typed-events) for a sample.
+See [Typed events](/docs/core/events#typed-events) for a sample.
 
 ## AdaptivePublishOptions
 
@@ -102,6 +110,16 @@ See [Typed events](/docs/core/presence-client#typed-events) for a sample.
 `RemotePresenceStore` is the store that holds the presence of each peer. Its constructor takes `RemotePresenceStoreOptions`. See [Use the store without a client](/docs/core/remote-presence#use-the-store-without-a-client) for the methods and the rules.
 
 <AutoTypeTable path="../../packages/core/src/store.ts" name="RemotePresenceStoreOptions" />
+
+## Interpolators
+
+`linearInterpolator(durationMs?)` returns an `Interpolator` with a linear ease. `durationMs` defaults to `80`. `noneInterpolator` is an `InterpolatorFactory` whose interpolator jumps to each target. See [Interpolation](/docs/core/interpolation) for the rules and a custom interpolator.
+
+`Interpolator` is the interface of one eased cursor:
+
+<AutoTypeTable path="../../packages/core/src/interpolate.ts" name="Interpolator" />
+
+`InterpolatorFactory` is `() => Interpolator`. The DOM binding calls it one time for each peer.
 
 ## isDevMode
 
@@ -142,6 +160,9 @@ import {
 <Cards>
   <Card icon={<Radio />} title="Presence client" href="/docs/core/presence-client">
     The guide to the client.
+  </Card>
+  <Card icon={<Zap />} title="Events" href="/docs/core/events">
+    The guide to events.
   </Card>
   <Card icon={<Users />} title="Remote presence" href="/docs/core/remote-presence">
     The guide to the store.

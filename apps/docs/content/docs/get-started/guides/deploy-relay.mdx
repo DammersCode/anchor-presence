@@ -1,0 +1,103 @@
+---
+title: Deploy a relay
+description: Pick a relay runtime, keep each room on one process, put TLS in front, and set the limits.
+icon: cloud-upload
+---
+
+import { Cable, FileCheck, Gauge, Server, ShieldCheck } from "lucide-react";
+
+A relay forwards each message to the other clients in a room. This page tells you how to run a WebSocket relay outside local development. It covers the reference relay in `apps/server` and the Bun, Node.js (ws), Hono and Elysia relays in [Backends](/docs/examples/backends). Read it before your users connect from other networks.
+
+## Connect the client
+
+In production, pass `url` to `createWebSocketTransport`. Put the room query in the URL, and pass the room token with the `token` option:
+
+```ts
+const transport = createWebSocketTransport({
+  url: "wss://relay.example.com/?room=main",
+  token: async () => (await fetch("/api/room-token")).text(),
+});
+```
+
+With `url`, the transport ignores `host`, `port` and `path`. Without `url`, the transport connects to port 8787 of the page host. That port is wrong behind a proxy on port 443. See [Room token](/docs/dom/websocket-transport#room-token) for the token function.
+
+## Pick a runtime
+
+The relays differ in what they do with a slow receiver. A slow receiver is a client that reads messages more slowly than the relay sends them:
+
+| Relay             | Runtime                        | Slow receiver                                                                                                                         |
+| ----------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Reference relay   | Bun                            | Bun drops frames above `RELAY_SLOW_PEER_SOFT_BYTES`. The relay closes a stalled receiver with code `4005`.                            |
+| Bun, Hono, Elysia | Bun                            | Bun closes the receiver above `RELAY_SLOW_PEER_HARD_BYTES`, its `backpressureLimit`. The relay skips no sends.                        |
+| Node.js (ws)      | Node.js 22.18 or later, or Bun | The relay skips sends above `RELAY_SLOW_PEER_SOFT_BYTES`. It closes the receiver with code `4003` above `RELAY_SLOW_PEER_HARD_BYTES`. |
+
+On every Bun relay, Bun closes the sender of a frame above `maxPayloadLength`: four times `MAX_MESSAGE_BYTES`, at least 1 MiB. The Node.js (ws) relay has the same cap through the `maxPayload` of `ws`.
+
+If your server runs Node.js, use the Node.js (ws) relay. If your server runs Bun, any relay works. If a slow receiver must stay connected and skip frames, use the Node.js (ws) relay.
+
+## Keep each room on one process
+
+Each relay keeps its rooms in the memory of one process. Two processes never share a room. If two clients of one room connect to different processes, they never see each other.
+
+<Callout type="warn">
+  If you run more than one relay process, route each room to one process. A load balancer that spreads
+  connections by client splits a room into parts.
+</Callout>
+
+To route by room, hash the `room` query parameter in the load balancer. Or give each process its own host name, and let your app pick the host for each room. To share a room across processes, add a message bus between the processes. The example relays have no message bus.
+
+## Put TLS in front
+
+The relays serve plain `ws://`. Put a proxy in front of the relay that serves TLS, so that browsers connect with `wss://`. A page on `https://` cannot open a `ws://` connection.
+
+The proxy must pass the WebSocket upgrade to the relay. It forwards the `Upgrade` and `Connection` headers of the request. Without them, the relay gets a plain HTTP request and refuses it.
+
+The room token travels in the query string. For this reason, the token can appear in the access logs of the proxy. Remove the query string from the logs, or use short-lived tokens.
+
+## Set the environment variables
+
+Every relay reads its limits from environment variables. Set at least the first two before you go live:
+
+| Variable                       | Default      | Read by                         | Purpose                                                                                                              |
+| ------------------------------ | ------------ | ------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `RELAY_ALLOWED_ORIGINS`        | empty        | All                             | The origins that can connect, comma-separated. Empty allows every origin.                                            |
+| `RELAY_AUTH_TOKEN`             | empty        | All                             | The shared room token. Empty turns the check off.                                                                    |
+| `MAX_MESSAGE_BYTES`            | 32 KiB       | All                             | The largest message. The relay drops a larger message.                                                               |
+| `RATE_CAPACITY`                | 80           | All                             | The burst of messages per socket.                                                                                    |
+| `RATE_REFILL_PER_SECOND`       | 40           | All                             | The messages per second per socket after the burst.                                                                  |
+| `RELAY_MAX_ROOM_SOCKETS`       | 64           | All                             | The sockets in one room. The relay closes a new socket above it with `4001`.                                         |
+| `RELAY_MAX_TOTAL_SOCKETS`      | 10,000       | All                             | The sockets in one process. The relay closes a new socket above it with `4002`.                                      |
+| `RELAY_SLOW_PEER_HARD_BYTES`   | 8 MiB        | All                             | The send buffer of a receiver above which the relay or Bun closes it.                                                |
+| `RELAY_SLOW_PEER_SOFT_BYTES`   | 1 MiB        | Reference relay, Node.js (ws)   | The send buffer of a receiver above which the relay skips or drops frames.                                           |
+| `RELAY_SLOW_PEER_RESUME_BYTES` | 512 KiB      | Node.js (ws)                    | The send buffer of a receiver below which the relay sends again.                                                     |
+| `RELAY_IDLE_TIMEOUT_SECONDS`   | 60           | Bun, Node.js (ws), Hono, Elysia | The seconds without a pong before the relay closes a socket.                                                         |
+| `PORT`                         | 8787 or 8789 | Reference relay, Node.js (ws)   | The port: 8787 for the reference relay, 8789 for Node.js (ws). The other relays take the port as the first argument. |
+
+The reference relay pings every 30 seconds, and closes a socket with no pong for 60 seconds with code `4005`. Its ping interval has no variable.
+
+The room token of `RELAY_AUTH_TOKEN` opens every room, and it does not name a user. To check a token for each user, write an `authCheck` hook in an example relay. See [Identity binding](/docs/examples/backends#identity-binding).
+
+<Callout type="warn">
+  If `RELAY_DEMO_IDENTITY` is set in production, any client can claim any user name. Leave it unset, and
+  return a verified user from your own `authCheck`.
+</Callout>
+
+## Related
+
+<Cards>
+  <Card icon={<Server />} title="Backends" href="/docs/examples/backends">
+    The relays, their limits, and their auth checks.
+  </Card>
+  <Card icon={<FileCheck />} title="Relay contract" href="/docs/examples/backends/relay-contract">
+    The rules, the close codes, and the conformance suite.
+  </Card>
+  <Card icon={<ShieldCheck />} title="Security" href="/docs/get-started/guides/security">
+    What the library validates, and what your relay must protect.
+  </Card>
+  <Card icon={<Gauge />} title="Performance" href="/docs/get-started/guides/performance#scaling-limits">
+    How relay load grows with the size of a room.
+  </Card>
+  <Card icon={<Cable />} title="WebSocket transport" href="/docs/dom/websocket-transport">
+    The client transport: reconnect, backoff, and room tokens.
+  </Card>
+</Cards>

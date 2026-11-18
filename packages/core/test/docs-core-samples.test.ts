@@ -60,7 +60,7 @@ describe("presence client docs: events", () => {
     const showWave = (clientId: string) => waves.push(clientId);
     peer.subscribeEvents((event) => received.push(event));
 
-    // Copied from apps/docs/content/docs/core/presence-client.mdx (Events).
+    // Copied from apps/docs/content/docs/core/events.mdx (Send and receive events).
     const unsubscribe = client.subscribeEvents((event) => {
       if (event.type === "wave") showWave(event.clientId);
     });
@@ -503,13 +503,13 @@ describe("remote presence docs: store and samples", () => {
     const dropped: string[] = [];
     vi.spyOn(console, "log").mockImplementation((value: unknown) => logged.push(value));
     vi.spyOn(console, "warn").mockImplementation(() => {});
-    const reportMetric = (name: string) => dropped.push(name);
+    const reportMetric = (name: string, clientId: string) => dropped.push(`${name}:${clientId}`);
 
     // Copied from apps/docs/content/docs/core/remote-presence.mdx (maxRemoteClients).
     const client = createPresenceClient({
       transport: myTransport,
       maxRemoteClients: 200,
-      onRemoteClientDropped: () => reportMetric("presence.remote_client_dropped"),
+      onRemoteClientDropped: ({ clientId }) => reportMetric("presence.remote_client_dropped", clientId),
     });
 
     // Copied from apps/docs/content/docs/core/remote-presence.mdx (Read remote presence).
@@ -744,36 +744,49 @@ describe("codec docs", () => {
 });
 
 describe("custom transport docs: BroadcastChannel sketch", () => {
-  it("builds a transport that reports connected and closes on disconnect", () => {
+  it("tracks its status through connect and disconnect", () => {
     // Copied from apps/docs/content/docs/core/custom-transport.mdx (BroadcastChannel sketch).
     function createBroadcastChannelTransport(channelName: string): LiveCursorTransport {
-      const channel = new BroadcastChannel(channelName);
+      const listeners = new Set<(data: Uint8Array) => void>();
       const statusListeners = new Set<(status: ConnectionStatus) => void>();
+      let channel: BroadcastChannel | null = null;
+      let status: ConnectionStatus = "disconnected";
+
+      function setStatus(next: ConnectionStatus) {
+        status = next;
+        for (const listener of statusListeners) listener(next);
+      }
 
       return {
         connect() {
-          // a BroadcastChannel has no handshake and is open from construction
-          for (const listener of statusListeners) listener("connected");
+          if (channel !== null) return;
+          channel = new BroadcastChannel(channelName);
+          channel.addEventListener("message", (event: MessageEvent<Uint8Array>) => {
+            for (const listener of listeners) listener(event.data);
+          });
+          // a BroadcastChannel has no handshake, so it is connected at once
+          setStatus("connected");
         },
         disconnect() {
-          channel.close();
+          channel?.close();
+          channel = null;
+          setStatus("disconnected");
         },
         send(data) {
           // oxlint-disable-next-line unicorn/require-post-message-target-origin -- BroadcastChannel takes no origin
-          channel.postMessage(data);
+          channel?.postMessage(data);
         },
         subscribe(listener) {
-          const onMessage = (event: MessageEvent<Uint8Array>) => listener(event.data);
-          channel.addEventListener("message", onMessage);
-          return () => channel.removeEventListener("message", onMessage);
+          listeners.add(listener);
+          return () => listeners.delete(listener);
         },
         subscribeStatus(listener) {
-          listener("connected");
+          listener(status);
           statusListeners.add(listener);
           return () => statusListeners.delete(listener);
         },
         getStatus() {
-          return "connected";
+          return status;
         },
       };
     }
@@ -782,8 +795,9 @@ describe("custom transport docs: BroadcastChannel sketch", () => {
     const statuses: ConnectionStatus[] = [];
     transport.subscribeStatus?.((status) => statuses.push(status));
     void transport.connect?.();
-    expect(statuses).toEqual(["connected", "connected"]);
     void transport.disconnect?.();
+    expect(statuses).toEqual(["disconnected", "connected", "disconnected"]);
+    expect(transport.getStatus?.()).toBe("disconnected");
   });
 });
 

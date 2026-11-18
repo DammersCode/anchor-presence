@@ -50,13 +50,15 @@ The client connects with `createWebSocketTransport`. The server file exports a f
 
 ## Run it
 
-Start the entry file with Bun, or with a TypeScript runner on Node.js:
+Start the entry file with Bun, or with Node.js 22.18 or later:
 
 ```sh
 bun relay.ts
-# On Node.js:
-npx tsx relay.ts
+# On Node.js 22.18 or later:
+node relay.ts
 ```
+
+Node.js runs the TypeScript files directly, with type stripping. For this reason, the imports use `.ts` extensions. In a clone of the repository, `bun run dev:relay` and `bun run dev:relay:node` in `examples/node-ws` run the same two commands.
 
 The relay listens on `http://localhost:8789`. To use a different port, give the port as the first argument.
 
@@ -73,6 +75,7 @@ Each setting is an environment variable. The factory options `maxMessageBytes`, 
 | Fan-out          | Sends to every other open socket in the room `Set`.                                                                                                |
 | Payload          | Forwards each frame unchanged. Decodes a frame only for identity binding.                                                                          |
 | Dead connections | Pings each socket every half of `RELAY_IDLE_TIMEOUT_SECONDS` (60, so every 30 seconds). Terminates a socket that did not answer the previous ping. |
+| Send batching    | Corks the socket of each receiver and flushes it once per event-loop turn. Each receiver gets one write per turn, not one write per frame.         |
 | Room cleanup     | Drops the room entry when its last socket closes.                                                                                                  |
 
 ### Limits
@@ -93,13 +96,13 @@ The relay reads the send buffer of a receiver from `bufferedAmount`.
 
 ### Auth
 
-| Check            | Setting                                                                              | On refusal                                                         |
-| ---------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------ |
-| Origin           | `RELAY_ALLOWED_ORIGINS`, comma-separated. Empty allows every origin.                 | Upgrades, then closes with code `4004`.                            |
-| Room token       | `RELAY_AUTH_TOKEN`. Compares the `token` query parameter. Empty turns the check off. | Closes with code `4006`.                                           |
-| `authCheck` hook | Factory option. Replaces the room token check.                                       | Closes with code `4006` on `false` or an error.                    |
-| Identity binding | `authCheck` returns `{ clientId, user }`.                                            | Drops a frame that is not a JSON object.                           |
-| Check order      | Origin, then the hook, then room name.                                               | The hook runs for an invalid room name, with `room` set to `main`. |
+| Check            | Setting                                                                              | On refusal                                        |
+| ---------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------- |
+| Origin           | `RELAY_ALLOWED_ORIGINS`, comma-separated. Empty allows every origin.                 | Upgrades, then closes with code `4004`.           |
+| Room token       | `RELAY_AUTH_TOKEN`. Compares the `token` query parameter. Empty turns the check off. | Closes with code `4006`.                          |
+| `authCheck` hook | Factory option. Replaces the room token check.                                       | Closes with code `4006` on `false` or an error.   |
+| Identity binding | `authCheck` returns `{ clientId, user }`.                                            | Drops a frame that is not a JSON object.          |
+| Check order      | Origin, then room name, then the hook.                                               | The hook never runs for a refused origin or room. |
 
 See [Identity binding](/docs/examples/backends#identity-binding) for the demo identity mode.
 
@@ -116,7 +119,7 @@ See [Identity binding](/docs/examples/backends#identity-binding) for the demo id
     The same relay on Bun topics, with no dependency.
   </Card>
   <Card icon={<Flame />} title="Hono" href="/docs/examples/backends/hono">
-    The same room loop with Hono routes on Bun.
+    Bun topics with Hono routes.
   </Card>
   <Card icon={<FileCheck />} title="Relay contract" href="/docs/examples/backends/relay-contract">
     The rules, the close codes, and the conformance suite.

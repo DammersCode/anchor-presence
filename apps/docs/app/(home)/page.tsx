@@ -8,7 +8,7 @@ const GUARANTEES = [
   {
     n: "01",
     title: "No pixels on the wire",
-    body: "Position is a label plus an offset, never a coordinate.",
+    body: "Position is an anchor ID plus an offset, never a coordinate.",
   },
   {
     n: "02",
@@ -19,7 +19,7 @@ const GUARANTEES = [
   {
     n: "04",
     title: "Fails in a defined order",
-    body: "Element, then parent, then region, then viewport, then hidden.",
+    body: "Element, then parent anchors, then viewport, then hidden.",
   },
   { n: "05", title: "Adapters stay thin", body: "The framework layer never owns the engine's state." },
   { n: "06", title: "The channel is swappable", body: "The engine imports no transport." },
@@ -34,7 +34,7 @@ const GUARANTEES = [
     body: "Anchor IDs resolve only against elements marked with the binding's anchor attribute.",
   },
   { n: "09", title: "You own the rendering", body: "No cursor component is required." },
-  { n: "10", title: "Built to grow", body: "The boundary is designed to extend without touching the core." },
+  { n: "10", title: "Built to grow", body: "Svelte, Vue or Solid adapters reuse core and dom unchanged." },
 ];
 
 const FRAMEWORKS = ["Next.js", "TanStack Start and Router", "Remix and React Router", "Vite", "Astro"];
@@ -72,8 +72,8 @@ export default function HomePage() {
           <span className="text-[#4f46e5] dark:text-fd-accent-foreground">right element</span>.
         </h1>
         <p className="mt-6 max-w-[52ch] text-lg text-fd-muted-foreground">
-          Anchor Presence sends a label, not pixels. Each browser resolves it against its own layout. Your
-          teammate&apos;s cursor stays on the element, even when their screen differs from yours.
+          Anchor Presence sends an anchor ID, not pixels. Each browser resolves it against its own layout.
+          Your teammate&apos;s cursor stays on the element, even when their screen differs from yours.
         </p>
         <p id="frameworks" className="mt-6 mb-2 text-sm text-fd-muted-foreground">
           Works with
@@ -147,7 +147,8 @@ export default function HomePage() {
             <div className={`mb-3 font-mono text-xs ${accent}`}>01</div>
             <h3 className="mb-2 font-semibold">You send what, not where</h3>
             <p className="text-sm text-fd-muted-foreground">
-              A pointer move becomes a label plus a position inside it. Never a screen coordinate.
+              A pointer move becomes an anchor ID plus a position inside that element. Never a screen
+              coordinate.
             </p>
           </div>
           <div className="rounded-2xl border border-fd-border bg-fd-card p-6">
@@ -161,7 +162,7 @@ export default function HomePage() {
             <div className={`mb-3 font-mono text-xs ${accent}`}>03</div>
             <h3 className="mb-2 font-semibold">Their browser does the rest</h3>
             <p className="text-sm text-fd-muted-foreground">
-              The label is measured against their own layout and turned into pixels there.
+              Their browser measures the anchor in its own layout and turns the position into pixels.
             </p>
           </div>
         </div>
@@ -173,7 +174,7 @@ export default function HomePage() {
           Built so it doesn&apos;t break.
         </h2>
         <p className="mb-8 max-w-[60ch] text-fd-muted-foreground">
-          The library holds ten rules on every message. The ones you feel on the first move:
+          The library holds ten rules on every message. The ten rules:
         </p>
         <div className="grid gap-x-11 gap-y-0 rounded-2xl border border-fd-border bg-fd-card p-8 md:grid-cols-2">
           {GUARANTEES.map((g) => (
@@ -196,9 +197,7 @@ export default function HomePage() {
         <h2 className="font-display mt-3 mb-3 text-3xl font-extrabold tracking-tight md:text-4xl">
           Add live cursors in minutes.
         </h2>
-        <p className="max-w-[60ch] text-fd-muted-foreground">
-          One provider, one hook, one layer. Your transport, your rendering.
-        </p>
+        <p className="max-w-[60ch] text-fd-muted-foreground">One provider, one layer, your transport.</p>
         <InstallCommand />
         <p className="max-w-[60ch] text-xs text-fd-muted-foreground">
           For a React app. Other setups need fewer packages.{" "}

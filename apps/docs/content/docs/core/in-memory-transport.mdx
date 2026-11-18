@@ -32,7 +32,7 @@ const { a, b } = createInMemoryPair({ async: true });
 
 ## Limits
 
-- Both sides must run in the same JavaScript realm. The pair cannot cross a process, tab, or iframe boundary.
+- Both sides must run in the same JavaScript realm, that is, one global environment such as one page or one worker. The pair cannot cross a process, tab, or iframe boundary.
 - Each side starts `disconnected`. `connect()` sets it to `connected`, and `disconnect()` sets it to `disconnected`.
 - A send reaches the other side also while the sending side is `disconnected`. The browser transports drop such a send. A test of offline behavior can pass with this pair and fail in the browser.
 - The pair has no `subscribeClose` and no `bufferedBytes`.

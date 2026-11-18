@@ -87,7 +87,8 @@ function Reactions() {
 
 <Callout type="warn">
   If a peer sends data of another type, `useCursorEvents` still delivers it. The types check only the code
-  that you write. Pass the client a `parseEvent` that checks the same event map.
+  that you write. Build a `parseEvent` for the same event map with `createEventParser`, and pass it to the
+  client. See [Events](/docs/core/events).
 </Callout>
 
 `createEventParser` from `@anchor-presence/core` builds this `parseEvent` from one parser per event type. For an event without data, use `null` as the parser. Pass the result to `createPresenceClient` in the provider `factory`:
@@ -116,7 +117,7 @@ function App() {
 }
 ```
 
-Declare the event map with `type`, not with `interface`. `createEventParser` rejects an `interface` at compile time, while `createPresenceHooks` accepts both. For the parser rules, see [Typed events](/docs/core/presence-client#typed-events).
+An event map can be a `type` or an `interface`. For the parser rules, see [Typed events](/docs/core/events#typed-events).
 
 ## What the result contains
 
@@ -133,6 +134,8 @@ Declare the event map with `type`, not with `interface`. `createEventParser` rej
 | `useCursorStatus`                       | none                                                                 |
 
 Without `TEvents`, an event can have any `type`, and its `data` has the type `unknown`. `CursorLayer` and `DefaultCursor` are not in the result. Import them from `@anchor-presence/react`, and pass your types as type arguments, for example `<CursorLayer<Context, User> />`.
+
+In development mode, a hook outside the provider writes a console warning. If you use the provider from your own module, the warning still names `LiveCursorProvider`.
 
 ## Related
 

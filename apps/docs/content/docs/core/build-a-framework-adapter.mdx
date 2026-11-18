@@ -43,7 +43,10 @@ An adapter holds no protocol state of its own ([invariant 5](/docs/get-started/c
     **Give the binding an owner.** A Solid `createRoot` scope or the `setup()` of a Vue component owns the
     `DomBinding`. When a `client` is available, it calls `createDomBinding(client, options)`.
   </Step>
-  <Step>**Add an SSR guard.** If `window` or `document` does not exist, do not create the binding.</Step>
+  <Step>
+    **Add an SSR guard.** SSR (server-side rendering) runs your components on a server, where `window` and
+    `document` do not exist. In that case, do not create the binding.
+  </Step>
   <Step>
     **Expose the client and the binding.** Expose them as a Solid signal pair or a Vue `ref`. The adapter
     makes their state observable. It does not copy that state.

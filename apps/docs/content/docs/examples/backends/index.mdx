@@ -4,7 +4,19 @@ description: Pick a relay for your server, and learn what every relay does, chec
 icon: server
 ---
 
-import { Cable, Cpu, FileCheck, Flame, Gauge, Hexagon, Radio, Signal, Sparkles, Zap } from "lucide-react";
+import {
+  Cable,
+  CloudUpload,
+  Cpu,
+  FileCheck,
+  Flame,
+  Gauge,
+  Hexagon,
+  Radio,
+  Signal,
+  Sparkles,
+  Zap,
+} from "lucide-react";
 
 Live cursors need a relay: a server that forwards each message to the peers of the sender. A peer is another client in the same room. `@anchor-presence/core` imports no transport library, so any channel that implements `LiveCursorTransport` works. This section has one tested relay for each common backend.
 
@@ -37,12 +49,14 @@ This table compares the relays. "Topics" means that the runtime forwards a messa
 | ------------ | -------------- | ------------------------ | --------------------- | ---------------------------------------------------- |
 | Bun          | Bun            | none (`Bun.serve`)       | Topics (`ws.publish`) | You run Bun and want the least code.                 |
 | Node.js (ws) | Node.js or Bun | `ws` over `node:http`    | Room loop             | You run Node.js, or you need a soft slow-peer limit. |
-| Hono         | Bun            | `hono` (`hono/bun`)      | Room loop             | You already route HTTP with Hono.                    |
+| Hono         | Bun            | `hono` (`hono/bun`)      | Topics (`ws.publish`) | You already route HTTP with Hono.                    |
 | Elysia       | Bun            | `elysia`, `@elysia/eden` | Topics (`ws.publish`) | You use Elysia and want a typed client.              |
 | Socket.IO    | Node.js or Bun | `socket.io`              | Socket.IO rooms       | Your app already uses Socket.IO.                     |
 | SignalR      | .NET 10        | ASP.NET Core SignalR     | SignalR groups        | Your server runs ASP.NET Core.                       |
 
 The Bun, Node.js (ws), Hono and Elysia relays need no custom client transport. The client connects with `createWebSocketTransport` from `@anchor-presence/dom`. Socket.IO and SignalR need the client transport of their example.
+
+To run a relay in production, see [Deploy a relay](/docs/get-started/guides/deploy-relay).
 
 Every relay has an integration test that starts the real server and connects two clients. The Bun, Node.js (ws), Hono and Elysia relays also pass the [conformance suite](#conformance-suite).
 
@@ -116,5 +130,8 @@ In this mode, the [room token](/docs/dom/websocket-transport#room-token) names t
   </Card>
   <Card icon={<Gauge />} title="Performance" href="/docs/get-started/guides/performance">
     How relay load grows with the size of a room.
+  </Card>
+  <Card icon={<CloudUpload />} title="Deploy a relay" href="/docs/get-started/guides/deploy-relay">
+    Pick a relay runtime, then run it behind TLS with one process per room.
   </Card>
 </Cards>

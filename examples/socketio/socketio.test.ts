@@ -100,8 +100,11 @@ describe("Socket.IO transport integration", () => {
   it("disconnects a socket that names an invalid room instead of merging it into main", async () => {
     const socket = io(url, { query: { room: "team/a" }, transports: ["websocket"], reconnection: false });
     sockets.push(socket);
-    const reason = await new Promise<string>((resolve) => socket.on("disconnect", (why) => resolve(why)));
-    expect(reason).toBe("io server disconnect");
+    const error = await new Promise<Error & { data?: { code?: number } }>((resolve) =>
+      socket.on("connect_error", resolve),
+    );
+    expect(error.data?.code).toBe(4007);
+    expect(socket.connected).toBe(false);
   });
 
   it("rewrites clientId and user to the identity the auth hook returned, one clientId per connection", async () => {

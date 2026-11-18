@@ -12,13 +12,12 @@ Install the adapter and the two packages that it uses:
 bun add @anchor-presence/react @anchor-presence/dom @anchor-presence/core
 ```
 
-This app shares one client with the tree and renders the remote cursors:
+This app creates the client in the provider `factory` and renders the remote cursors:
 
 ```tsx
 import { createPresenceClient } from "@anchor-presence/core";
-import { LiveCursorProvider, CursorLayer } from "@anchor-presence/react";
-
-const client = createPresenceClient({ transport: myTransport });
+import { createWebSocketTransport } from "@anchor-presence/dom";
+import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
 
 function DashboardButton() {
   return <button data-anchor="nav.dashboard">Dashboard</button>;
@@ -26,7 +25,12 @@ function DashboardButton() {
 
 function App() {
   return (
-    <LiveCursorProvider client={client}>
+    <LiveCursorProvider
+      factory={() => {
+        const transport = createWebSocketTransport({ path: "/?room=main" });
+        return createPresenceClient({ transport });
+      }}
+    >
       <DashboardButton />
       <CursorLayer />
     </LiveCursorProvider>
@@ -56,7 +60,8 @@ The package exports these hooks and components:
 | `useLocalUser()`                             | `[user, setUser]` for the local user value                                                                                        |
 | `useCursorEvents(listener)`                  | Calls `listener` for each one-shot event from a peer                                                                              |
 | `usePeerChanges(listener)`                   | Calls `listener` when a peer joins, leaves, or changes its `user` or `context`                                                    |
-| `createPresenceHooks()`                      | Returns the provider and every hook with your context, user, and event types fixed, plus `useSendEvent` for typed events          |
+| `useSendEvent<TEvents>()`                    | A function that sends one-shot events of the event map `TEvents`                                                                  |
+| `createPresenceHooks()`                      | Returns the provider and every hook with your context, user, and event types fixed                                                |
 | `CursorLayer`                                | Optional component that renders every visible remote cursor                                                                       |
 | `DefaultCursor`                              | Optional neutral cursor visual, used by `CursorLayer` by default                                                                  |
 
@@ -85,26 +90,7 @@ Two more rules apply:
 
 Pass `LiveCursorProvider` a `factory`. The provider runs it once per mount, in an effect, and disposes the client that it created on unmount. It runs the factory only in the browser, so a server render creates no client. In development, React Strict Mode mounts the provider twice. The provider then creates two clients in sequence and disposes the first, so one live client remains. Before the effect runs, the provider renders its children with a `null` client, and every hook returns its server-safe value.
 
-This app creates the client in the factory:
-
-```tsx
-import { createPresenceClient } from "@anchor-presence/core";
-import { createWebSocketTransport } from "@anchor-presence/dom";
-import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
-
-function App() {
-  return (
-    <LiveCursorProvider
-      factory={() => {
-        const transport = createWebSocketTransport({ path: "/?room=main" });
-        return createPresenceClient({ transport });
-      }}
-    >
-      <CursorLayer />
-    </LiveCursorProvider>
-  );
-}
-```
+The sample in [Install](#install) creates the client in the factory.
 
 The client connects the transport by default. To connect at a time that you choose, pass `autoConnect: false` to `createPresenceClient` and call `transport.connect()` yourself.
 
@@ -148,4 +134,4 @@ type MyUser = { name: string; color?: string };
 > [!WARNING]
 > If you render `cursor.user`, check it first. A peer sends this data, and it can hold any value.
 
-See the [React guide](https://anchor-presence.vercel.app/docs/react) for the full hook reference, custom interpolation, and more examples.
+See the [React guide](https://anchor-presence.vercel.app/docs/react) for the full hook reference and more examples. For cursor motion, see [Motion](https://anchor-presence.vercel.app/docs/dom/motion).

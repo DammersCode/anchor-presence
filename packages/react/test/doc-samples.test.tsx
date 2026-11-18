@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { createInMemoryPair, createPresenceClient, type PresenceClient } from "@anchor-presence/core";
+import { createPresenceClient, type PresenceClient } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
 import type { ResolvedCursor } from "@anchor-presence/dom";
 import { LiveCursorProvider } from "../src/provider";
@@ -13,17 +13,19 @@ const ws = createWebSocketTransport({ url: "ws://x" });
 void ws.connect;
 void ws.disconnect;
 
-// a provider tree on an in-memory transport, so the render needs no network
-const { a: transport } = createInMemoryPair();
-const client = createPresenceClient({ transport, user: { name: "Alice" } });
-
+// packages/react/README.md install sample, verbatim
 function DashboardButton() {
   return <button data-anchor="nav.dashboard">Dashboard</button>;
 }
 
 function App() {
   return (
-    <LiveCursorProvider client={client}>
+    <LiveCursorProvider
+      factory={() => {
+        const transport = createWebSocketTransport({ path: "/?room=main" });
+        return createPresenceClient({ transport });
+      }}
+    >
       <DashboardButton />
       <CursorLayer />
     </LiveCursorProvider>
@@ -48,7 +50,6 @@ function CursorLayerSample() {
 
 // react/client-creation.mdx: Your own client, verbatim
 function OwnClientApp() {
-  // oxlint-disable-next-line eslint/no-shadow -- the sample copies the docs text
   const [client, setClient] = useState<PresenceClient | null>(null);
   useEffect(() => {
     const created = createPresenceClient({ transport: createWebSocketTransport({ path: "/?room=main" }) });
@@ -87,7 +88,7 @@ describe("doc samples compile and render", () => {
     expect(html).toContain("hidden");
   });
 
-  it("renders a provider tree on an in-memory transport", () => {
+  it("renders the README install sample on the server without a client", () => {
     const html = renderToString(<App />);
     expect(html).toContain("data-anchor");
   });

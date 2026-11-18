@@ -87,7 +87,7 @@ The reference relay (`apps/server`) has these limits:
 
 It also checks the origin, checks an optional [room token](/docs/dom/websocket-transport#room-token), and pings each socket. Bun closes a connection with a frame above `maxPayloadLength`: four times `MAX_MESSAGE_BYTES`, or at least 1 MiB.
 
-Scaling across servers and identity checks belong to your server, not to the transport. See [Transports](/docs/core/transports).
+Scaling across servers and identity checks belong to your server, not to the transport. Each relay keeps its rooms in the memory of one process, so one room must live on one relay process. See [Deploy a relay](/docs/get-started/guides/deploy-relay) and [Identity](/docs/examples/backends/relay-contract#identity).
 
 ## Capacity planning
 

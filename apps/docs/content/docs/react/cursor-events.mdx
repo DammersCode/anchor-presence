@@ -39,26 +39,47 @@ function Reactions() {
 
 ## Check the data
 
-`event.data` has the type `unknown`, because a peer can send any value. Check its type before you use it. To check every event in one place, pass `parseEvent` to `createPresenceClient`. If `parseEvent` returns `undefined` or throws, the client drops the event. See [Events](/docs/core/presence-client#events).
+`event.data` has the type `unknown`, because a peer can send any value. Check its type before you use it. To check every event in one place, pass `parseEvent` to `createPresenceClient`. If `parseEvent` returns `undefined` or throws, the client drops the event. See [Events](/docs/core/events).
 
-To give events types, use [typed events](/docs/react/typed-hooks#typed-events). The typed hooks also include `useSendEvent`, which sends only the events of your event map.
+## Send typed events
+
+`useSendEvent<TEvents>()` returns a function that sends only the events of the event map `TEvents`. A misspelled `type` or a `data` value of the wrong type does not compile. Without a client, the function sends nothing and returns `false`.
+
+This button sends a typed reaction:
+
+```tsx
+import { useSendEvent } from "@anchor-presence/react";
+
+type Events = { reaction: string };
+
+function WaveButton() {
+  const sendEvent = useSendEvent<Events>();
+  return (
+    <button type="button" onClick={() => sendEvent("reaction", "wave")}>
+      Wave
+    </button>
+  );
+}
+```
+
+`useSendEvent` types only the events that you send. To give the received events types too, use [typed events](/docs/react/typed-hooks#typed-events).
 
 ## Behavior
 
 - The client never stores an event and never sends it again. A peer that is not connected at that time never receives it.
 - A client never receives its own events.
 - The listener receives a `RemoteEvent`: the `type`, the `data`, and the `clientId` of the sender.
-- `client.sendEvent(type, data?)` returns `false` when it sends nothing, for example while the client is not connected. See [Events](/docs/core/presence-client#events) for every case.
-- The receiver limits the events of each sender and of all senders together. It drops the events above a limit. See [Event rate limit](/docs/core/presence-client#event-rate-limit).
+- `client.sendEvent(type, data?)` returns `false` when it sends nothing, for example while the client is not connected. See [Events](/docs/core/events) for every case.
+- The receiver limits the events of each sender and of all senders together. It drops the events above a limit. See [Event rate limit](/docs/core/events#event-rate-limit).
 - The hook subscribes one time per client. An inline listener does not subscribe again on each render, and the hook always calls the listener of the last render. The hook never rerenders its component.
 
 ## Related
 
 <Cards>
   <Card icon={<Braces />} title="Typed hooks" href="/docs/react/typed-hooks#typed-events">
-    Give events types and send them with useSendEvent.
+    Type the events that you send and the events that you receive.
   </Card>
-  <Card icon={<Zap />} title="Events in the client" href="/docs/core/presence-client#events">
+  <Card icon={<Zap />} title="Events in the client" href="/docs/core/events">
     Field limits, rate limits, and parseEvent.
   </Card>
   <Card icon={<Wifi />} title="Connection status" href="/docs/react/connection-status">

@@ -15,7 +15,7 @@ import { CursorLayer, LiveCursorProvider } from "../src/index";
 
 function createClient() {
   const transport = createWebSocketTransport({ port: 8788, path: "/?room=main" });
-  return createPresenceClient({ transport });
+  return createPresenceClient({ transport, user: { name: `Guest ${Math.floor(Math.random() * 100)}` } });
 }
 
 export function PresenceProvider({ children }: { children: ReactNode }) {

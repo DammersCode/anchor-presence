@@ -269,13 +269,13 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
         const willReconnect = reconnect && shouldReconnect(event);
         const closeInfo: TransportClose = { willReconnect };
         if (event.code !== undefined) closeInfo.code = event.code;
-        if (event.reason) closeInfo.reason = event.reason;
+        if (event.reason !== undefined && event.reason !== "") closeInfo.reason = event.reason;
         emitClose(closeInfo);
         if (isDevMode() && (event.code ?? 0) >= FIRST_APPLICATION_CLOSE_CODE) {
           console.warn(
             "[anchor-presence] the relay closed the connection with code %d%s%s",
             event.code,
-            event.reason ? ` (${event.reason})` : "",
+            event.reason !== undefined && event.reason !== "" ? ` (${event.reason})` : "",
             willReconnect ? "; reconnecting" : "",
           );
         }

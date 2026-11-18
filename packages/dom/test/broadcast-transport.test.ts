@@ -28,7 +28,7 @@ describe("createBroadcastChannelTransport", () => {
     void a.send(new Uint8Array([1, 2, 3]));
     await new Promise((resolve) => setTimeout(resolve, 50));
 
-    expect(seenByB.map((data) => [...data])).toEqual([[1, 2, 3]]);
+    expect(seenByB.map((data) => Array.from(data))).toEqual([[1, 2, 3]]);
     expect(seenByA).toEqual([]);
   });
 

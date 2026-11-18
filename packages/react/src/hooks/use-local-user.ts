@@ -13,6 +13,7 @@ export function useLocalUser<TUser = unknown>(): [TUser | undefined, (next: TUse
     [client],
   );
   const getSnapshot = useCallback(() => client?.getUser(), [client]);
+  // oxlint-disable-next-line unicorn/no-useless-undefined -- the server snapshot function returns no user
   const user = useSyncExternalStore(subscribe, getSnapshot, () => undefined);
   const setUser = useCallback((next: TUser | undefined) => client?.setUser(next), [client]);
   return [user, setUser];

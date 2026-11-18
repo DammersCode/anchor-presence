@@ -109,7 +109,7 @@ export function attachPointerSource(
   // shortcut: the hit lags up to one publish interval on moves, so a hit test does not run on every event
   function pointerTarget(event: PointerEvent): Element | null {
     const target = eventTargetElement(event);
-    if (!target?.hasPointerCapture?.(event.pointerId)) return target;
+    if (target?.hasPointerCapture?.(event.pointerId) !== true) return target;
     const fresh =
       event.type === "pointermove" &&
       cachedHit?.pointerId === event.pointerId &&

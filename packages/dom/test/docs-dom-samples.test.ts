@@ -76,6 +76,7 @@ describe("dom docs samples", () => {
     vi.stubGlobal("WebSocket", FakeSocket);
 
     // Copied from apps/docs/content/docs/dom/websocket-transport.mdx (Stop reconnecting).
+    // oxlint-disable-next-line unicorn/prefer-set-has -- word-for-word copy of the docs sample
     const NO_RETRY_CODES = [1008, 4001, 4004, 4006, 4007];
 
     const transport = createWebSocketTransport({

@@ -23,7 +23,7 @@ function defaultLabel(cursor: ResolvedCursor): string | null {
 
 function defaultColor(cursor: ResolvedCursor): string {
   let hash = 0;
-  for (const char of cursor.clientId) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  for (const char of cursor.clientId) hash = (hash * 31 + (char.codePointAt(0) ?? 0)) >>> 0;
   return DEFAULT_PALETTE[hash % DEFAULT_PALETTE.length] ?? DEFAULT_COLOR;
 }
 const DEFAULT_Z_INDEX = 9999;

@@ -1655,7 +1655,7 @@ describe("numeric option validation", () => {
   ] as const)("rejects a non-finite %s", (name) => {
     const { a } = createInMemoryPair();
     expect(() => createPresenceClient({ transport: a, [name]: Number.NaN })).toThrow(TypeError);
-    expect(() => createPresenceClient({ transport: a, [name]: Number.POSITIVE_INFINITY })).toThrow(/finite/);
+    expect(() => createPresenceClient({ transport: a, [name]: Number.POSITIVE_INFINITY })).toThrow(/finite/u);
   });
 });
 

@@ -1,5 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
 
 const packages = ["core", "dom", "react"] as const;
@@ -16,7 +18,10 @@ describe.skipIf(!built)("built packages in a server runtime", () => {
     (runtime, flags, name) => {
       const output = execFileSync(
         runtime,
-        [...flags, `import("@anchor-presence/${name}").then((m) => console.log(Object.keys(m).length))`],
+        [
+          ...flags,
+          `import(${JSON.stringify(pathToFileURL(resolve(`packages/${name}/dist/index.js`)).href)}).then((m) => console.log(Object.keys(m).length))`,
+        ],
         { encoding: "utf8" },
       );
       expect(Number(output.trim())).toBeGreaterThan(0);

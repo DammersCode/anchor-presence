@@ -48,6 +48,14 @@ export function missingLines(file: string, sample: string): string[] {
     .filter((text) => text !== "" && !sourceLines.has(text));
 }
 
+const stripSemicolons = (text: string) =>
+  trimLines(text)
+    .split("\n")
+    .map((line) => stripSemicolon(line))
+    .join("\n");
+
+// A sample is present when it appears as one contiguous block, so reordered lines fail.
 export function missingSamples(file: string, samples: string[]): string[] {
-  return samples.filter((sample) => missingLines(file, sample).length > 0);
+  const source = stripSemicolons(trimmedTestSource(file));
+  return samples.filter((sample) => !source.includes(stripSemicolons(sample)));
 }

@@ -68,7 +68,7 @@ function RemoteName({ cursor }: { cursor: ResolvedCursor<unknown, { name: string
 
 A peer can send `{ name: {} }` where you expect a string. React throws when it renders that object as a child.
 
-If you pass a local `user` or `context` to `createPresenceClient`, the client compares each remote value with its shape. For example, with `user: { name: "Ada" }`, a remote `user` must be an object whose `name` is a string or `null`. The client drops a value that does not fit, and keeps the previous value. Your render code must accept `null` in every field. [Remote user and context](/docs/core/validation#remote-user-and-context) lists every rule.
+If you pass a local `user` or `context` to `createPresenceClient`, the client compares each remote value with its shape. For example, with `user: { name: "Ada" }`, a remote `user` must be an object whose `name` is a string, `null`, or missing. The client drops a value that does not fit, and keeps the previous value. Your render code must accept `null` and missing fields. [Remote user and context](/docs/core/validation#remote-user-and-context) lists every rule.
 
 A client with no local value has no shape to compare with. Pass `parseUser` or `parseContext` instead. Return `undefined` to drop the value:
 

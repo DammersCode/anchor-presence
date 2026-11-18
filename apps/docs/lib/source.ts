@@ -46,6 +46,9 @@ const EXAMPLE_PREVIEW = /<ExamplePreview scene="[^"]+" \/>\n?/g;
 const INSTALL_COMMAND = /<InstallCommand(?: packages="([^"]+)")? \/>/g;
 const MERMAID = /<Mermaid\s+chart="([\s\S]*?)"\s*\/>/g;
 const WARN_CALLOUT = /<Callout type="warn">\s*([\s\S]*?)\s*<\/Callout>/g;
+const SCENE_NOTE = /<SceneNote \/>/g;
+const SCENE_NOTE_TEXT =
+  "The scene takes `client`, `layout`, and `children` from the preview. In your app, create the client through the provider's `factory` with a real transport, and render your own status bar as `children`. The scene also uses docs theme classes such as `bg-fd-secondary`, `text-fd-muted-foreground`, and `bg-gradient-brand`. Replace them with your own styles.";
 const LUCIDE_IMPORT = /^import \{[^}]*\} from "lucide-react";\n/gm;
 // The catch-all excludes quotes, braces and "/" so each character has one match path (no backtracking blowup).
 const CARD_ATTRIBUTES = String.raw`(?:"[^"]*"|\{[^}]*\}|[^>"{/])*?`;
@@ -107,15 +110,16 @@ async function inlineComponents(markdown: string): Promise<string> {
         `${FENCE}mermaid\n${unescapeMdxAttribute(chart).replace(/^`|`$/gu, "")}\n${FENCE}`,
     )
     .replace(WARN_CALLOUT, (_tag, body: string) => warningQuote(body))
+    .replace(SCENE_NOTE, () => warningQuote(SCENE_NOTE_TEXT))
     .replace(LUCIDE_IMPORT, "")
     .replace(CARD, (_tag, title: string, href: string, body: string | undefined) =>
       body === undefined ? `- [${title}](${href})` : `- [${title}](${href}): ${body.replaceAll("\n", " ")}`,
     )
     .replace(STEP_BODY, dedentBody)
     .replace(TAB_BODY, dedentBody)
-    .replace(TAB, (_tag, name: string) => `**${name}**\n`)
     .replace(ACCORDION, (_tag, title: string) => `**${title}**\n`)
-    .replace(STRUCTURE_TAGS, "");
+    .replace(STRUCTURE_TAGS, "")
+    .replace(TAB, (_tag, name: string) => `\n**${name}**\n\n`);
   for (const [tag, path, name] of markdown.matchAll(AUTO_TYPE_TABLE)) {
     const docs = await getTypeGenerator().generateTypeTable({ path, name });
     out = out.replace(tag, docs.map(typeTableMarkdown).join("\n\n"));

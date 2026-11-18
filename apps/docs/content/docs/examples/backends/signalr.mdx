@@ -185,7 +185,7 @@ See [Security](/docs/get-started/guides/security) for the risks of a relay witho
 
 ### Tests
 
-`examples/signalr/signalr-hub.test.ts` starts the real ASP.NET Core hub and runs two clients through it. It checks the relay in one room, the isolation between rooms, the origin check, and the `4007` refusal. If `dotnet` is not on `PATH`, the test skips.
+`examples/signalr/signalr-hub.test.ts` starts the real ASP.NET Core hub and runs two clients through it. It checks the relay in one room, the isolation between rooms, the origin check, and the `4007` refusal. If `dotnet` is not on `PATH`, the test skips. `examples/signalr/signalr.test.ts` covers the transport states with a fake hub connection: disconnect, reconnect, and the wait for a connection that is still starting.
 
 <Callout type="warn">
   If you expose the hub publicly, add a rate limit, for example [ASP.NET Core rate

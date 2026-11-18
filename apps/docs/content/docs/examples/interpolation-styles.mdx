@@ -4,7 +4,7 @@ description: Compare no easing, linear easing, and a custom spring on the same c
 icon: spline
 ---
 
-import { AppWindow, Brush, Cpu, Gauge } from "lucide-react";
+import { AppWindow, Brush, Cpu, Gauge, RotateCcw } from "lucide-react";
 
 A remote cursor arrives as a series of positions. An interpolator decides how the cursor moves between them. The library ships `noneInterpolator` and `linearInterpolator`, and a spring is application code on the public `Interpolator` interface. In this demo, the remote cursor jumps between four far-apart targets. The wide pane shows each update with no easing. In the narrow pane, you select the interpolator.
 
@@ -19,6 +19,8 @@ Install the packages:
 This file renders the scene of the demo, with the spring:
 
 <CodeFromSource docs="components/examples/interpolation.tsx" lang="tsx" />
+
+<SceneNote />
 
 The provider reads `bindingOptions` once, when it creates the binding. The demo sets `bindingKey` to the selected style, so a style change builds a new binding and keeps the tree below the provider. The remote state lives in the client, not in the binding, so every cursor stays. See [Rebuild the binding](/docs/react/live-cursor-provider#rebuild-the-binding).
 
@@ -55,7 +57,7 @@ Try it: Select an interpolator in the narrow pane.
     Where to pass the factory.
   </Card>
   <Card
-    icon={<AppWindow />}
+    icon={<RotateCcw />}
     title="When motion restarts instead of easing"
     href="/docs/dom/motion#when-motion-restarts-instead-of-easing"
   >

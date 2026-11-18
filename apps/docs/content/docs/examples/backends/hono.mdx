@@ -14,6 +14,10 @@ Install the packages:
 
 <InstallCommand packages="@anchor-presence/core @anchor-presence/dom hono" />
 
+Install the types of Bun as a development dependency:
+
+<InstallCommand packages="-D @types/bun" />
+
 ## Code
 
 The client connects with `createWebSocketTransport`. The server file exports a factory, and the entry file starts it:

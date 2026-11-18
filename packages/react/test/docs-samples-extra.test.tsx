@@ -358,10 +358,12 @@ describe("doc sample sources", () => {
         docSample("react/remote-presence.mdx", "function PointerTypeBadge"),
       ]),
     ).toEqual([]);
-    missingLines(
-      "docs-samples-extra.test.tsx",
-      docSample("react/remote-cursors.mdx", "function selectClippedClientIds"),
-    );
+    expect(
+      missingLines(
+        "docs-samples-extra.test.tsx",
+        docSample("react/remote-cursors.mdx", "function selectClippedClientIds"),
+      ),
+    ).toEqual([]);
     expect(
       missingLines("docs-samples-extra.test.tsx", docSample("react/custom-cursors.mdx", "<MyCursorGlyph")),
     ).toEqual([]);

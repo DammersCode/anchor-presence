@@ -49,7 +49,7 @@
 - Reference relay: it checks origin, then room name, then the token, like every example relay.
 - Example relays: node-ws, Elysia and Socket.IO check the room name before they call `authCheck`, so the hook never sees a made-up room. Socket.IO caps one message at 4 times `MAX_MESSAGE_BYTES` (at least 1 MiB) and drops a larger one instead of closing the connection.
 - Example relays: Hono uses Bun publish and subscribe. The node-ws relay corks its writes, starts under Node with `dev:relay:node`, and closes within two seconds.
-- `@anchor-presence/core`: `createEventParser<TEvents>(parsers)` builds a typed `parseEvent`. A parser that returns `undefined` drops the event, and `null` declares an event without data.
+- `@anchor-presence/core`: `createEventParser<TEvents>(parsers)` builds a typed `parseEvent` from one data parser per event type. A parser that returns `undefined` drops the event, and `null` declares an event without data. An event map can be an `interface`.
 - `@anchor-presence/core`: `warnOnce(key, message)` prints a development warning once. The sibling packages share it.
 - Reference relay and Bun examples: rooms use Bun publish and subscribe, the default room cap is 64, the rate limit refills 40 tokens per second, and `maxPayloadLength` caps one frame. The node-ws and Socket.IO relays use the same defaults.
 - `@anchor-presence/dom`: a cursor message rounds `u` and `v` to four decimals, which makes a JSON frame about a quarter smaller.
@@ -57,7 +57,6 @@
 - CI and gates: `check:package` (publint and are-the-types-wrong), `check:unused` (knip), and `test:bun-runtime` runs a Node relay and a Bun relay with real clients under Bun.
 - `@anchor-presence/dom`: `createBroadcastChannelTransport(channelName)` connects the tabs and iframes of one origin with no server.
 - Development warnings, once each, for a hook outside `LiveCursorProvider`, a provider with neither `client` nor `factory`, `binding` together with `bindingOptions`, a dropped inbound message, a duplicate `clientId`, and a `staleTimeoutMs` of at most twice `heartbeatIntervalMs`. The WebSocket transport warns on each relay close with a code of 4000 or more.
-- `@anchor-presence/core`: `createEventParser<TEvents>(parsers)` builds a typed `parseEvent` from one data parser per event type. An event map can be an `interface`.
 - `@anchor-presence/core`: `createEventChannel<TEvents>(client)` gives typed `send` and `subscribe` for events. The client option `eventRateLimit` sets the per-sender burst and rate and a total rate for all senders. `client.subscribeUser(listener)` reports local `setUser` changes.
 - `@anchor-presence/react`: `useLocalUser()`, `usePeerChanges(listener)`, and a third type parameter on `createPresenceHooks<TContext, TUser, TEvents>()` that types `useCursorEvents` and adds `useSendEvent()`.
 - The demo has live reactions and chat built on events, with end-to-end tests for events, leaving and peer notices.

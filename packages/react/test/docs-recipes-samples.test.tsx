@@ -84,7 +84,8 @@ function ChatCursorLayer() {
   return (
     <CursorLayer<unknown, User>
       getLabel={(cursor) =>
-        messages[cursor.clientId] ?? (cursor.user && cutGraphemes(cursor.user.name, NAME_MAX_LENGTH))
+        messages[cursor.clientId] ??
+        (typeof cursor.user?.name === "string" ? cutGraphemes(cursor.user.name, NAME_MAX_LENGTH) : undefined)
       }
       renderCursor={({ label, color }) => (
         <DefaultCursor label={label} color={color} labelStyle={{ maxWidth: "24rem", whiteSpace: "normal" }} />

@@ -137,11 +137,27 @@ describe("cursor components", () => {
         );
       });
       const smile = "\u{1F600}";
-      const start = performance.now();
-      act(() => {
-        publish([cursor({ user: { name: smile.repeat(500_000) } })]);
+      const originalIterator = String.prototype[Symbol.iterator];
+      let reads = 0;
+      const spy = vi.spyOn(String.prototype, Symbol.iterator).mockImplementation(function (this: string) {
+        const iterator = originalIterator.call(this);
+        if (this.length < 1_000) return iterator;
+        return (function* () {
+          for (const char of iterator) {
+            if (++reads > 64) throw new Error("read past the label limit");
+            yield char;
+          }
+        })() as ReturnType<typeof originalIterator>;
       });
-      expect(performance.now() - start).toBeLessThan(500);
+      try {
+        act(() => {
+          publish([cursor({ user: { name: smile.repeat(500_000) } })]);
+        });
+      } finally {
+        spy.mockRestore();
+      }
+      expect(reads).toBeGreaterThanOrEqual(32);
+      expect(reads).toBeLessThanOrEqual(64);
       expect(container.querySelector("[data-anchor-presence-cursor]")?.textContent).toBe(smile.repeat(32));
       act(() => root.unmount());
     } finally {

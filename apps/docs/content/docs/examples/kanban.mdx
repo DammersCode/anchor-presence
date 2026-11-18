@@ -4,7 +4,7 @@ description: A board of fixed-size cards that scrolls when the pane shrinks, so 
 icon: kanban
 ---
 
-import { AppWindow, LayoutGrid, Ruler, TableProperties } from "lucide-react";
+import { AppWindow, Eye, LayoutGrid, Ruler, TableProperties } from "lucide-react";
 
 When the pane shrinks, this layout keeps every card and column at the same size and position. The board scrolls instead of squishing the columns. In this demo, both panes show the same five-column board. On a wide screen, the wide pane fits three columns and the narrow pane shows two. The board scrolls to the rest.
 
@@ -50,7 +50,7 @@ Try it: Select the colored button at the board edge to scroll the card into view
   >
     The policy that hides a cursor over a scrolled-out card.
   </Card>
-  <Card icon={<AppWindow />} title="Use pointVisible" href="/docs/dom/occlusion-and-scroll#use-pointvisible">
+  <Card icon={<Eye />} title="Use pointVisible" href="/docs/dom/occlusion-and-scroll#use-pointvisible">
     The field that the edge button reads.
   </Card>
   <Card icon={<LayoutGrid />} title="Responsive grid" href="/docs/examples/responsive-grid">

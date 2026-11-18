@@ -1,0 +1,193 @@
+---
+title: Cursor chat
+description: Type a short message next to your cursor and show it next to your cursor on every peer's screen.
+---
+
+Users on one page often want to say a few words without a separate chat panel. Cursor chat puts a short text bubble next to the cursor. The local user presses `/`, types a message and presses Enter. The client sends the text as a one-shot event with `client.sendEvent("chat", { text })`. A peer is another client in the same room. Each peer receives the event through `useCursorEvents` and shows the text as the label of the sender's remote cursor. After 5 seconds, the bubble disappears on both sides.
+
+## Read and cap the text
+
+The recipe is one file, `cursor-chat.tsx`. It starts with the imports, the limits and the text check:
+
+```tsx
+import { useEffect, useRef, useState } from "react";
+import type { KeyboardEvent as ReactKeyboardEvent } from "react";
+import { CursorLayer, LiveCursorProvider, useCursorClient, useCursorEvents } from "@anchor-presence/react";
+import type { PresenceClient } from "@anchor-presence/react";
+
+export const CHAT_MAX_LENGTH = 100;
+export const CHAT_HIDE_MS = 5000;
+
+export function readChatText(data: unknown): string | null {
+  if (typeof data !== "object" || data === null) return null;
+  const text: unknown = (data as { text?: unknown }).text;
+  if (typeof text !== "string") return null;
+  const trimmed = text.trim().slice(0, CHAT_MAX_LENGTH);
+  return trimmed === "" ? null : trimmed;
+}
+```
+
+`readChatText` runs on both sides. On the sender, it trims the typed text. On the receiver, it rejects data that is not `{ text: string }` and cuts the text to `CHAT_MAX_LENGTH`. A peer can send any data, so the receiver never trusts the sender's cap.
+
+## Show remote messages
+
+The next part keeps the last message of each peer and removes it after `CHAT_HIDE_MS`:
+
+```tsx
+export function useRemoteChat(): Record<string, string> {
+  const [messages, setMessages] = useState<Record<string, string>>({});
+  const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+
+  useCursorEvents((event) => {
+    if (event.type !== "chat") return;
+    const text = readChatText(event.data);
+    if (text === null) return;
+    const { clientId } = event;
+    setMessages((current) => ({ ...current, [clientId]: text }));
+    clearTimeout(timers.current.get(clientId));
+    timers.current.set(
+      clientId,
+      setTimeout(() => {
+        timers.current.delete(clientId);
+        setMessages((current) => {
+          const next = { ...current };
+          delete next[clientId];
+          return next;
+        });
+      }, CHAT_HIDE_MS),
+    );
+  });
+
+  useEffect(() => {
+    const pending = timers.current;
+    return () => {
+      for (const timer of pending.values()) clearTimeout(timer);
+    };
+  }, []);
+
+  return messages;
+}
+
+type User = { name: string };
+
+export function ChatCursorLayer() {
+  const messages = useRemoteChat();
+  return <CursorLayer<unknown, User> getLabel={(cursor) => messages[cursor.clientId] ?? cursor.user?.name} />;
+}
+```
+
+`ChatCursorLayer` replaces your `CursorLayer`. While a message is active, the label of the remote cursor shows the message. After the timeout, the label shows the user name again.
+
+<Callout type="warn">
+  If you render the chat text with `dangerouslySetInnerHTML` or `innerHTML`, a peer can inject markup and
+  scripts into your page. Render the text as a React text child, as `getLabel` does.
+</Callout>
+
+## Type and send a message
+
+The last part opens an input at the local pointer, sends the text and shows the local bubble:
+
+```tsx
+function isTextField(target: EventTarget | null): boolean {
+  return (
+    target instanceof HTMLElement &&
+    (target.isContentEditable || target.tagName === "INPUT" || target.tagName === "TEXTAREA")
+  );
+}
+
+export function ChatComposer() {
+  const client = useCursorClient();
+  const pointer = useRef({ x: 0, y: 0 });
+  const bubble = useRef<HTMLDivElement>(null);
+  const [origin, setOrigin] = useState({ x: 0, y: 0 });
+  const [open, setOpen] = useState(false);
+  const [sent, setSent] = useState<string | null>(null);
+
+  useEffect(() => {
+    function onPointerMove(event: PointerEvent) {
+      pointer.current = { x: event.clientX, y: event.clientY };
+      if (bubble.current !== null) {
+        bubble.current.style.transform = `translate(${event.clientX + 16}px, ${event.clientY + 16}px)`;
+      }
+    }
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key !== "/" || isTextField(event.target)) return;
+      event.preventDefault();
+      setOrigin(pointer.current);
+      setOpen(true);
+    }
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (sent === null) return;
+    const timer = setTimeout(() => setSent(null), CHAT_HIDE_MS);
+    return () => clearTimeout(timer);
+  }, [sent]);
+
+  function onInputKeyDown(event: ReactKeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Escape") setOpen(false);
+    if (event.key !== "Enter") return;
+    const text = readChatText({ text: event.currentTarget.value });
+    setOpen(false);
+    if (text !== null && client?.sendEvent("chat", { text }) === true) setSent(text);
+  }
+
+  if (!open && sent === null) return null;
+  return (
+    <div
+      ref={bubble}
+      style={{
+        position: "fixed",
+        left: 0,
+        top: 0,
+        zIndex: 10000,
+        transform: `translate(${origin.x + 16}px, ${origin.y + 16}px)`,
+      }}
+    >
+      {open ? (
+        <input aria-label="Chat message" maxLength={CHAT_MAX_LENGTH} autoFocus onKeyDown={onInputKeyDown} />
+      ) : (
+        <div role="status">{sent}</div>
+      )}
+    </div>
+  );
+}
+```
+
+Render both components inside the provider:
+
+```tsx
+export function ChatApp({ client }: { client: PresenceClient<unknown, User> }) {
+  return (
+    <LiveCursorProvider client={client}>
+      <main>{/* your app */}</main>
+      <ChatCursorLayer />
+      <ChatComposer />
+    </LiveCursorProvider>
+  );
+}
+```
+
+## Behavior
+
+- **Keys.** `/` opens the input, Enter sends the text, and Escape closes the input. The `/` key does nothing while the focus is in an input, a text area or an editable element.
+- **Position.** The pointer listener moves the local bubble through its `style` and does not rerender the component. The remote bubble is the label of the remote cursor, so it moves with that cursor.
+- **Local bubble.** The relay never sends a message back to its sender. The local bubble comes from local state. If `sendEvent` returns `false`, the recipe shows no local bubble. `sendEvent` returns `false` when the client is not connected or the event is above the field limits.
+- **One-shot events.** The client never stores or resends an event. A peer that joins after the message never sees it. For this reason, each side runs its own hide timer.
+- **Length.** The input stops at `CHAT_MAX_LENGTH` characters, and the receiver cuts longer text. The client limit for one field is 8 KiB (`DEFAULT_MAX_FIELD_BYTES`).
+- **Rate.** A receiver drops the events of a sender above the event rate limit. See [Events](/docs/core/presence-client#events) for the limit.
+
+## Related
+
+- [Cursor events](/docs/react/cursor-events)
+- [Remote cursors](/docs/react/remote-cursors)
+- [CursorLayer](/docs/react/cursor-layer)
+- [Presence client](/docs/core/presence-client)
+- [Security](/docs/get-started/guides/security)
+- [Follow mode](/docs/get-started/guides/follow-mode)

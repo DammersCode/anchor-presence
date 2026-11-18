@@ -2,6 +2,7 @@
 
 import type { Rect, ViewportSize } from "./geometry.js";
 import type { StyleValues } from "./occlusion.js";
+import { isDevMode } from "@anchor-presence/core";
 import { createFrameCache } from "./frame-cache.js";
 import { createSignalHub } from "./internal/signals.js";
 
@@ -128,7 +129,15 @@ export function createGeometryScheduler<TSnapshot>(
     // interpolation-only pass: reuse the last read phase's rects, no re-measure
     const readState = (shouldRemeasure ? null : frameCache.reuse()) ?? frameCache.measure(signals.anchors());
 
-    const result = options.compute(readState, timestampMs);
+    let result: ComputeResult<TSnapshot>;
+    try {
+      result = options.compute(readState, timestampMs);
+    } catch (error) {
+      // a throwing policy or interpolator must not kill the frame loop: keep the last snapshot, retry on the next change
+      if (isDevMode())
+        console.error("[anchor-presence] cursor resolution threw; keeping the last snapshot", error);
+      return;
+    }
     signals.syncAnchors(result.activeAnchors);
     options.notify(result.snapshot);
 

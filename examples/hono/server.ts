@@ -9,9 +9,14 @@ import {
   messageByteLength,
   originAllowed,
   RateLimiter,
-  sanitizeRoomName,
+  INVALID_ROOM_CODE,
+  bindIdentity,
+  newConnectionId,
+  parseRoom,
   slowPeerAction,
+  safeAuthCheck,
   tokenAuthCheck,
+  type AuthCheck,
 } from "../_shared/relay-guard";
 
 export type HonoRelayOptions = {
@@ -27,7 +32,7 @@ export type HonoRelayOptions = {
   slowPeerResumeBytes?: number;
   allowedOrigins?: Set<string>;
   /** Auth hook placeholder: verify a token query param. Default accepts every token. */
-  authCheck?: (token: string) => boolean;
+  authCheck?: AuthCheck;
 };
 
 type RawSocket = { readyState: number; getBufferedAmount(): number };
@@ -61,7 +66,7 @@ export function createHonoRelay(port: number, options: HonoRelayOptions = {}) {
   const slowPeerResumeBytes =
     options.slowPeerResumeBytes ?? limitFromEnv(process.env.RELAY_SLOW_PEER_RESUME_BYTES, 512 * 1024);
   const allowedOrigins = options.allowedOrigins ?? allowedOriginsFromEnv(process.env.RELAY_ALLOWED_ORIGINS);
-  const authCheck = options.authCheck ?? tokenAuthCheck(process.env.RELAY_AUTH_TOKEN ?? "");
+  const authCheck = safeAuthCheck(options.authCheck ?? tokenAuthCheck(process.env.RELAY_AUTH_TOKEN ?? ""));
 
   const rooms = new Map<string, Set<RoomEntry>>();
   const limits = new ConnectionLimits(maxSockets, maxRoomSockets);
@@ -71,10 +76,17 @@ export function createHonoRelay(port: number, options: HonoRelayOptions = {}) {
 
   app.get(
     "/",
-    upgradeWebSocket((c) => {
-      const room = sanitizeRoomName(c.req.query("room"));
+    upgradeWebSocket(async (c) => {
+      const parsedRoom = parseRoom(c.req.query("room"));
+      const room = parsedRoom ?? "main";
+      const connectionId = newConnectionId();
       const origin = c.req.header("origin") ?? "";
-      const authOk = authCheck(c.req.query("token") ?? "");
+      const authOk = await authCheck({
+        token: c.req.query("token") ?? "",
+        room,
+        origin,
+        headers: c.req.header(),
+      });
       const rateLimiter = new RateLimiter(rateCapacity, rateRefillPerSecond);
 
       return {
@@ -86,6 +98,10 @@ export function createHonoRelay(port: number, options: HonoRelayOptions = {}) {
           }
           if (!authOk) {
             ws.close(AUTH_REJECTED_CODE, "invalid token");
+            return;
+          }
+          if (parsedRoom === null) {
+            ws.close(INVALID_ROOM_CODE, "invalid room");
             return;
           }
           const admission = limits.admit(room);
@@ -106,6 +122,17 @@ export function createHonoRelay(port: number, options: HonoRelayOptions = {}) {
           const message = typeof data === "string" ? data : (data as ArrayBuffer);
           if (messageByteLength(message, maxMessageBytes) > maxMessageBytes) return;
 
+          let outgoing: string | ArrayBuffer | Uint8Array<ArrayBuffer> = message;
+          if (typeof authOk === "object") {
+            const bound = bindIdentity(
+              typeof message === "string" ? message : new Uint8Array(message),
+              authOk,
+              connectionId,
+            );
+            if (bound === null) return;
+            outgoing = bound;
+          }
+
           const senderRaw = ws.raw as RawSocket;
           for (const peer of sockets) {
             if (peer.raw === senderRaw || peer.raw.readyState !== OPEN) continue;
@@ -123,7 +150,7 @@ export function createHonoRelay(port: number, options: HonoRelayOptions = {}) {
             }
             skipped.set(peer.raw, action === "skip");
             if (action === "skip") continue;
-            peer.ws.send(message);
+            peer.ws.send(outgoing);
           }
         },
         onClose(_evt, ws) {

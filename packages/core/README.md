@@ -4,6 +4,8 @@
 
 [![MIT](https://img.shields.io/badge/license-MIT-blue.svg)](../../LICENSE)
 
+This sample creates a client, publishes a cursor, and logs each remote change:
+
 ```ts
 import { createPresenceClient, jsonCodec } from "@anchor-presence/core";
 
@@ -21,7 +23,7 @@ client.subscribeRemote(() => {
 
 `getRemoteSnapshot()` returns the raw list, including `sequence`, and changes identity on every accepted message. `getRemotePresence()` returns the render-stable list, which excludes `sequence` and holds identity until an observable field changes.
 
-The client calls `transport.connect()` for you by default. Pass `autoConnect: false` and call `transport.connect()` yourself when you need that control.
+The client calls `transport.connect()` for you by default. To connect at a time that you choose, pass `autoConnect: false` and call `transport.connect()` yourself.
 
 ## Boundary rule
 
@@ -33,13 +35,13 @@ Core imports no DOM, React, transport, or codec library, so it does not know wha
 | ------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | `createPresenceClient(options)`                   | Wires the transport, codec, publishing, sequencing, expiry, and the remote presence store into one client |
 | `CursorPresence`, `AnchorPoint`, `CursorPosition` | Wire protocol types                                                                                       |
-| `RemotePresence`                                  | A remote presence without `sequence`; the shape of the render-stable snapshot                             |
-| `validatePresence(input, limits?)`                | Validates and clamps an untrusted decoded value                                                           |
+| `RemotePresence`                                  | A remote presence without `sequence`. It is the shape of the render-stable snapshot.                      |
+| `validatePresence(input, limits?)`                | Checks and clamps an untrusted decoded value                                                              |
 | `jsonCodec`                                       | The default `CursorCodec` implementation                                                                  |
 | `binaryCodec`                                     | A compact `CursorCodec` for binary WebSocket relays                                                       |
 | `LiveCursorTransport`, `ConnectionStatus`         | The transport interface                                                                                   |
 | `AdaptivePublishOptions`                          | Opt-in slow-mode options for the publish rate                                                             |
-| `createInMemoryPair`                              | A 2-peer in-memory transport for tests                                                                    |
+| `createInMemoryPair`                              | A connected pair of in-memory transports for tests                                                        |
 | `RemotePresenceStore`                             | Sequencing, field-delta merge, and stale-expiry store for remote presences                                |
 | `linearInterpolator`, `noneInterpolator`          | Interpolation factories                                                                                   |
 

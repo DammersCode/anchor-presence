@@ -24,7 +24,8 @@
     "version": "node scripts/sync-versions.mjs && bun install && git add package.json packages/*/package.json apps/*/package.json examples/*/package.json bun.lock",
     "postversion": "git push && git push --tags",
     "release:check": "node scripts/check-release.mjs",
-    "typecheck:examples": "tsc -p examples/socketio && tsc -p examples/signalr && tsc -p examples/bun-native && tsc -p examples/node-ws && tsc -p examples/hono && tsc -p examples/elysia"
+    "typecheck:examples": "tsc -p examples/socketio && tsc -p examples/signalr && tsc -p examples/bun-native && tsc -p examples/node-ws && tsc -p examples/hono && tsc -p examples/elysia",
+    "perf:score": "bun run scripts/perf-score.ts"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",

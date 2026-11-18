@@ -3,7 +3,7 @@ title: Anchors
 description: Semantic anchors, anchor IDs, and normalized u/v coordinates.
 ---
 
-This page defines an anchor: a marked DOM element, its ID, and the normalized position inside it.
+An anchor is a DOM element with a stable ID. A cursor position names an anchor and a normalized position inside it.
 
 ## Semantic anchors
 
@@ -25,7 +25,7 @@ An anchor ID is an opaque string, 1 to 256 characters. Choose your own naming sc
 
 Anchor IDs are map keys only. They never become CSS selectors, query strings, or code. A remote message cannot make the receiver look up any DOM location except through the registered anchor map. See [Security](/docs/get-started/guides/security).
 
-If two elements register the same ID, the newest one wins. The registry logs a warning in development builds. This keeps remount-before-unmount cases deterministic, for example React Strict Mode or a virtualized list.
+If two elements register the same ID, the newest one wins. The registry logs a warning in development builds. A new element can mount before the old one unmounts, for example in React Strict Mode or a virtualized list. This rule gives a fixed result in that case.
 
 ## Normalized u/v coordinates
 

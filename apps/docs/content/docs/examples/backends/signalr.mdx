@@ -1,17 +1,21 @@
 ---
 title: SignalR
-description: An ASP.NET Core SignalR hub and a shipped client transport.
+description: An ASP.NET Core SignalR hub and a client transport for it.
 ---
 
-`examples/signalr` runs the demo over an ASP.NET Core SignalR hub instead of a WebSocket relay. The hub is a dumb relay, same as the Socket.IO example: it forwards one method call to every other connection and never parses the payload.
+Your app runs on ASP.NET Core, and you want presence without a second WebSocket server. `examples/signalr` relays presence through a SignalR hub. A peer is another client in the same room. The hub forwards each message to the peers of the sender and never parses the payload.
 
-Tested with `@microsoft/signalr` 10.0.11 and .NET 10 (`net10.0`).
+The tests of this example use `@microsoft/signalr` 10.0.11 and .NET 10 (`net10.0`).
+
+Install the SignalR client with your package manager:
+
+<InstallCommand packages="@microsoft/signalr" />
 
 ## Server
 
-<CodeFromSource repo="examples/signalr/server/Hub/PresenceHub.cs" lang="csharp" />
+The hub forwards each presence message to the other connections of its room:
 
-`withAutomaticReconnect()` on the client's `HubConnectionBuilder` is required on the ASP.NET Core side for reconnection to work. Without it, a drop goes straight to the closed state with no retry.
+<CodeFromSource repo="examples/signalr/server/Hub/PresenceHub.cs" lang="csharp" />
 
 ## Client transport
 
@@ -19,7 +23,7 @@ Tested with `@microsoft/signalr` 10.0.11 and .NET 10 (`net10.0`).
 
 <CodeFromSource repo="examples/signalr/transport.ts" lang="ts" />
 
-Use it like any other transport:
+Use it like any other transport. The presence client starts the connection:
 
 ```ts
 import { createPresenceClient } from "@anchor-presence/core";
@@ -33,12 +37,13 @@ const connection = new HubConnectionBuilder()
 
 const transport = createSignalRTransport(connection);
 const client = createPresenceClient({ transport });
-await transport.connect?.();
 ```
+
+Call `withAutomaticReconnect()` on the `HubConnectionBuilder`. Without it, a dropped connection goes to the closed state and never retries.
 
 ## Already using use-signalr?
 
-If your app already uses [`use-signalr`](https://www.npmjs.com/package/@dammers/use-signalr-react) for its other hubs, add the presence hub to its contract instead of opening a second connection. Presence then shares the app's single connection, auth, and reconnect policy.
+If your app uses [`use-signalr`](https://www.npmjs.com/package/@dammers/use-signalr-react) for its other hubs, add the presence hub to its contract. Then presence shares the connection, the authentication and the reconnect policy of the app. This sample adds the presence hub to the contract:
 
 ```ts
 // signalr.ts
@@ -50,38 +55,71 @@ export const { SignalRProvider, useSignalR } = createSignalRClient({
       events: { PresenceReceived: event<[payload: string]>() },
       methods: { OnPresence: method<[payload: string]>() },
     },
-    // ...your app's other hubs
+    // your app's other hubs
   },
 });
 ```
 
-Build the presence transport on the provider's connection with `getConnection`, the escape hatch `useSignalR` exposes to the raw `HubConnection`:
+`useSignalR` gives access to the raw `HubConnection` through `getConnection`. This component creates the presence client on that connection, in the `factory` of a `LiveCursorProvider`:
 
-```ts
+```tsx
+import type { ReactNode } from "react";
 import { createPresenceClient } from "@anchor-presence/core";
-import { createSignalRTransport } from "../examples/signalr/transport";
+import { LiveCursorProvider } from "@anchor-presence/react";
+import { createSignalRTransport } from "./transport";
 import { useSignalR } from "./signalr";
 
-function usePresenceClient() {
+function PresenceProvider({ children }: { children: ReactNode }) {
   const { getConnection } = useSignalR();
   const connection = getConnection("/hubs/presence");
-  return connection && createPresenceClient({ transport: createSignalRTransport(connection) });
+  if (connection === null) return children;
+  return (
+    <LiveCursorProvider
+      clientKey={connection}
+      factory={() => {
+        const transport = createSignalRTransport(connection);
+        // use-signalr owns the connection, so disposing the client must not stop it
+        return createPresenceClient({ transport: { ...transport, disconnect: () => {} } });
+      }}
+    >
+      {children}
+    </LiveCursorProvider>
+  );
 }
 ```
 
-`getConnection` returns `null` until `use-signalr` opens the hub, so guard for that before building the client.
+`getConnection` returns `null` until `use-signalr` opens the hub. Until then, the component shows its children without presence. When the hub opens, the children mount again inside the provider, so their local state resets one time. The provider runs `factory` once per mount and once more for each new connection. It disposes the client on unmount. The empty `disconnect` keeps the shared connection open after the dispose. See [Creating the client](/docs/react/client-creation) for the rules of `factory`.
+
+## Close reasons
+
+The hub refuses a connection with an invalid room name. It first sends a `Refused` message with the code `4007` and the reason `invalid room`. Then it aborts the connection. The transport reports the code through `subscribeClose`:
+
+```ts
+client.subscribeClose((close) => {
+  if (close.code === 4007) console.warn("The room name is not valid.");
+});
+```
+
+The hub sends no other close code. It has no auth check and no connection caps. An origin outside the allowlist gets an HTTP `403` before the hub starts, so the transport reports no code for it. `willReconnect` is `true` while `withAutomaticReconnect` retries, and `false` after the connection closes.
 
 ## Behavior notes
 
-- The hub adds each connection to a SignalR group for its room. `PresenceHub.OnPresence` forwards to `Clients.OthersInGroup(room)`, so a sender never receives its own message and other rooms never receive it.
-- `examples/signalr/signalr-hub.test.ts` starts the real ASP.NET Core hub and runs two clients through it. The test skips when `dotnet` is not on `PATH`.
-- `connection.send` and `connection.on` are fire-and-forget over the hub's method name. There is no acknowledgment, matching the transport interface's `send` contract.
-- `Program.cs` caps an inbound message at 32 KiB through `MaximumReceiveMessageSize`. SignalR closes the connection on an oversized frame.
-- The hub has no rate limit of its own. Add one, for example [ASP.NET Core rate limiting](https://learn.microsoft.com/aspnet/core/performance/rate-limit), before you expose the hub publicly.
-- The hub takes room access control from your existing ASP.NET Core authentication, for example an `[Authorize]` attribute on `PresenceHub`, not from a relay token. See [Security](/docs/get-started/guides/security).
+- The hub adds each connection to a SignalR group for its room. `PresenceHub.OnPresence` forwards to `Clients.OthersInGroup(room)`. As a result, a sender never receives its own message, and other rooms never receive it.
+- The hub reads the room from the `room` query parameter of the hub URL. A missing parameter is the room `main`.
+- `examples/signalr/signalr-hub.test.ts` starts the real ASP.NET Core hub and runs two clients through it. If `dotnet` is not on `PATH`, the test skips.
+- `connection.send` and `connection.on` are fire-and-forget over the method name of the hub. The hub sends no acknowledgment. The `send` contract of the transport interface needs none.
+- `Program.cs` caps an inbound message at 32 KiB through `MaximumReceiveMessageSize`. The cap applies to the base64 text, so the real payload cap is about 24 KiB. SignalR closes the connection on a larger message.
+- The hub takes room access control from your ASP.NET Core authentication, for example an `[Authorize]` attribute on `PresenceHub`. It reads no [room token](/docs/dom/websocket-transport#room-token). The hub binds no identity, so a client can claim any `clientId`. See [Security](/docs/get-started/guides/security).
+
+<Callout type="warn">
+  If you expose the hub publicly, add a rate limit, for example [ASP.NET Core rate
+  limiting](https://learn.microsoft.com/aspnet/core/performance/rate-limit). The hub has no rate limit and no
+  connection caps, so one client can flood a room.
+</Callout>
 
 ## Related
 
 - [Backends](/docs/examples/backends)
+- [Relay contract](/docs/examples/backends/relay-contract)
 - [Transports](/docs/core/transports)
 - [Security](/docs/get-started/guides/security)

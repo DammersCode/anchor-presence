@@ -1,11 +1,13 @@
 ---
 title: Client API
-description: createPresenceClient, its options, PresenceClient, and its constants.
+description: createPresenceClient, its options, PresenceClient, RemotePresenceStore, isDevMode, and the client constants.
 ---
 
-Every name on this page is exported from `packages/core/src/index.ts`.
+`@anchor-presence/core` exports every name below.
 
 ## createPresenceClient
+
+Import `createPresenceClient` from `@anchor-presence/core`:
 
 ```ts
 import { createPresenceClient } from "@anchor-presence/core";
@@ -21,25 +23,60 @@ The value `createPresenceClient` returns.
 
 <AutoTypeTable path="../../packages/core/src/internal/types.ts" name="PresenceClient" />
 
+These guides describe the methods in detail:
+
+- [Events](/docs/core/presence-client#events) for `sendEvent` and `subscribeEvents`.
+- [Leave the room](/docs/core/presence-client#leave-the-room) for `leave`.
+- [Close reasons](/docs/core/presence-client#close-reasons) for `subscribeClose`.
+- [Peer changes](/docs/core/remote-presence#peer-changes) for `subscribePeers`.
+- [Read remote presence](/docs/core/remote-presence#read-remote-presence) for `getRemotePresence`, `getRemoteSnapshot`, and `subscribeRemote`.
+- [Lifecycle](/docs/core/presence-client#lifecycle) for `updateLocalCursor`, `setContext`, `setUser`, `subscribeContext`, `registerTeardown`, and `dispose`.
+- [Status](/docs/core/presence-client#status) for `getStatus`, `subscribeStatus`, and `hasActiveCursors`.
+- [Remote user and context](/docs/core/validation#remote-user-and-context) for `parseUser` and `parseContext`.
+
 ## AdaptivePublishOptions
 
-The `adaptivePublish` option's shape. See [Presence client](/docs/core/presence-client#publish-rate) for the watermark behavior.
+The shape of the `adaptivePublish` option. See [Presence client](/docs/core/presence-client#publish-rate) for the watermark behavior.
 
 <AutoTypeTable path="../../packages/core/src/internal/types.ts" name="AdaptivePublishOptions" />
 
 ## SchedulerLike
 
-The `scheduler` option's shape, for injecting fake timers in a test.
+The shape of the `scheduler` option. A test can pass fake timers through it.
 
 <AutoTypeTable path="../../packages/core/src/internal/types.ts" name="SchedulerLike" />
 
+## RemotePresenceStore
+
+The store that holds the presence of each peer. A peer is another client in the same room. See [Use the store without a client](/docs/core/remote-presence#use-the-store-without-a-client) for the methods and the rules.
+
+<AutoTypeTable path="../../packages/core/src/store.ts" name="RemotePresenceStoreOptions" />
+
+## isDevMode
+
+`isDevMode()` returns whether the code runs in development mode. See [Development mode](/docs/core/presence-client#development-mode).
+
 ## Constants
 
+Import the client and store constants from `@anchor-presence/core`:
+
 ```ts
-import { DEFAULT_PUBLISH_INTERVAL_MS, DEFAULT_HEARTBEAT_MS } from "@anchor-presence/core";
+import {
+  DEFAULT_PUBLISH_INTERVAL_MS,
+  DEFAULT_HEARTBEAT_MS,
+  DEFAULT_STALE_TIMEOUT_MS,
+  DEFAULT_IDLE_AFTER_MS,
+  DEFAULT_MAX_REMOTE_CLIENTS,
+} from "@anchor-presence/core";
 ```
 
-`DEFAULT_PUBLISH_INTERVAL_MS` is `50`, the default publish interval in milliseconds. `DEFAULT_HEARTBEAT_MS` is `10000`, the default heartbeat interval in milliseconds.
+| Constant                      | Value   | Default for                       |
+| ----------------------------- | ------- | --------------------------------- |
+| `DEFAULT_PUBLISH_INTERVAL_MS` | `50`    | `publishIntervalMs`, milliseconds |
+| `DEFAULT_HEARTBEAT_MS`        | `10000` | `heartbeatMs`, milliseconds       |
+| `DEFAULT_STALE_TIMEOUT_MS`    | `70000` | `staleTimeoutMs`, milliseconds    |
+| `DEFAULT_IDLE_AFTER_MS`       | `15000` | `idleAfterMs`, milliseconds       |
+| `DEFAULT_MAX_REMOTE_CLIENTS`  | `64`    | `maxRemoteClients`                |
 
 ## Related
 

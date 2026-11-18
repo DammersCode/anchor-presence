@@ -3,35 +3,36 @@ title: Dialogs and layers
 description: A cursor belongs to the layer its anchor sits in. A visibility policy decides what shows while a dialog is open.
 ---
 
-A dialog covers the layout behind it, but a remote cursor can belong to either layer. Your teammate's cursor on a card behind your dialog, and your cursor inside a dialog the receiver has not opened, both need a rule. This demo runs that rule with a visibility policy. The cursor itself always paints above the dialog, because `CursorLayer` defaults to `z-index: 9999`.
+A dialog covers the layout behind it, but a remote cursor can belong to either layer. A peer is another client in the same room. Two cases need a rule: the cursor of a peer on a card behind your open dialog, and your cursor inside a dialog that is closed for the peer. This demo runs that rule with a visibility policy. The cursor itself always paints above the dialog, because `CursorLayer` defaults to `z-index: 9999`.
 
 <ExamplePreview scene="dialogs" />
 
-## What's in the demo
-
-- The wide pane runs a team board with an invite dialog. The narrow pane renders the board without the dialog.
-- Mira opens the dialog with the context `{ dialog: "invite" }` and points at an anchor inside it. She closes it with the context `{ dialog: null }`. Theo stays on a card behind the dialog.
-- While the wide dialog is open, the wide pane hides Theo's cursor: his anchor sits outside the dialog. The narrow pane hides Mira's cursor: her context names a dialog this pane has not opened.
-- Your cursor follows the same rule: while the dialog is open, it only shows where a dialog exists. The open pane hides your cursor on the board behind the dialog. The other pane hides your cursor, because your context names a dialog it has not opened.
-- A cursor inside the dialog paints above the dialog, because the cursor's z-index beats the dialog's.
-- The Invite button opens the dialog and its close button closes it. It stays open while Mira or you have it open.
-
 ## Code
 
-The scene of this demo:
+Install the packages:
+
+<InstallCommand />
+
+This file renders the scene of the demo:
 
 <CodeFromSource docs="components/examples/dialogs.tsx" lang="tsx" />
 
-Both panes pass the same policy through `resolution.visibilityPolicy`. The policy reads the sender's `context` and the resolved `anchorId` against the pane's own dialog state, which it reads through a ref, because the binding reads `bindingOptions` once at creation.
+Both panes pass the same policy through `resolution.visibilityPolicy`. The policy compares the sender's `context` and the resolved `anchorId` with the dialog state of its own pane. The binding reads `bindingOptions` once at creation. For this reason, the policy reads the dialog state through a ref.
 
-## Behavior reference
+## Behavior notes
 
-- [Dialog mismatch handling](/docs/get-started/concepts/ui-context#dialog-mismatch-handling): the hide rule this demo applies.
-- [Writing a custom policy](/docs/dom/visibility-policy#writing-a-custom-policy): the policy shape and its inputs.
-- [CursorLayer](/docs/react/cursor-layer#extra-props-on-the-root): the z-index default and the `zIndex` prop.
+- The wide pane runs a team board with an invite dialog. The narrow pane renders the board without the dialog.
+- Mira opens the dialog with the context `{ dialog: "invite" }` and points at an anchor inside it. She closes it with the context `{ dialog: null }`. Theo stays on a card behind the dialog.
+- While the wide dialog is open, the wide pane hides Theo's cursor: his anchor sits outside the dialog. The narrow pane hides Mira's cursor: her context names a dialog that is closed in this pane.
+- Your cursor follows the same rule: while the dialog is open, it only shows where a dialog exists. The open pane hides your cursor on the board behind the dialog. The other pane hides your cursor, because your context names a dialog that is closed in that pane.
+- A cursor inside the dialog paints above the dialog, because the cursor's z-index beats the dialog's.
+- The Invite button opens the dialog, and its close button closes it. Mira's context also opens and closes the dialog. The dialog shows while Mira's context or your button keeps it open.
 
 ## Related
 
+- [Dialog mismatch handling](/docs/get-started/concepts/ui-context#dialog-mismatch-handling): the hide rule this demo applies.
+- [Write a custom policy](/docs/dom/visibility-policy#write-a-custom-policy): the policy shape and its inputs.
+- [CursorLayer](/docs/react/cursor-layer#extra-props-on-the-root): the z-index default and the `zIndex` prop.
 - [UI context](/docs/get-started/concepts/ui-context)
 - [Visibility policy](/docs/dom/visibility-policy)
 - [Occlusion and scroll containers](/docs/examples/occlusion-and-scroll-containers)

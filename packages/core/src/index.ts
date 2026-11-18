@@ -3,8 +3,11 @@ export type {
   ConnectionStatus,
   CursorPosition,
   CursorPresence,
+  PeerChange,
   PointerInfo,
   PointerType,
+  PresenceEvent,
+  RemoteEvent,
   RemotePresence,
 } from "./protocol.js";
 export {
@@ -16,6 +19,7 @@ export {
   DEFAULT_MAX_MESSAGE_BYTES,
   DEFAULT_MAX_SEQUENCE,
   DEFAULT_MAX_SESSION_LENGTH,
+  MAX_EVENT_TYPE_LENGTH,
 } from "./protocol.js";
 
 export { validatePresence } from "./validate.js";
@@ -33,7 +37,7 @@ export { jsonCodec } from "./codec.js";
 export { binaryCodec } from "./binary-codec.js";
 export type { CursorCodec } from "./codec.js";
 
-export type { LiveCursorTransport } from "./transport.js";
+export type { LiveCursorTransport, TransportClose } from "./transport.js";
 
 export { createInMemoryPair } from "./in-memory-transport.js";
 export type { InMemoryPair, InMemoryPairOptions, InMemoryTransport } from "./in-memory-transport.js";

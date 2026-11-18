@@ -7,8 +7,9 @@ import {
   DEFAULT_MAX_MESSAGE_BYTES,
   DEFAULT_MAX_SEQUENCE,
   DEFAULT_MAX_SESSION_LENGTH,
+  MAX_EVENT_TYPE_LENGTH,
 } from "./protocol.js";
-import type { AnchorPoint, CursorPosition, CursorPresence } from "./protocol.js";
+import type { AnchorPoint, CursorPosition, CursorPresence, PresenceEvent } from "./protocol.js";
 
 /**
  * Limits for `validatePresence`.
@@ -161,9 +162,20 @@ function validateCursor(input: unknown, limits: ResolvedLimits): CursorPosition 
   return cursor;
 }
 
+function validateEvent(input: unknown, limits: ResolvedLimits): PresenceEvent | undefined {
+  if (!isPlainObject(input)) return undefined;
+  const { type, data } = input;
+  if (typeof type !== "string" || type.length < 1 || type.length > MAX_EVENT_TYPE_LENGTH) return undefined;
+  if (data === undefined) return { type };
+  if (exceedsMaxDepth(data, limits.maxFieldDepth) || !jsonFieldFits(data, limits.maxFieldBytes))
+    return undefined;
+  return { type, data };
+}
+
 /**
  * Returns a validated `CursorPresence` from one decoded message, or `null`.
- * The function enforces every wire limit and never throws.
+ * The function enforces the limits of the decoded message and never throws.
+ * The client checks `maxMessageBytes` on the wire bytes before it decodes.
  * It clamps anchor and viewport values into the `0` to `1` range.
  * @param input The decoded message, from a codec.
  * @param limits Optional limits. The defaults fill the fields you omit.
@@ -209,6 +221,14 @@ export function validatePresence<TContext = unknown, TUser = unknown>(
     };
 
     if (input.leave === true && cursor === null) message.leave = true;
+
+    if (cursor === null && input.event !== undefined) {
+      // an event that fails validation is dropped; it must never fall through as a presence that clears the cursor
+      const event = validateEvent(input.event, resolved);
+      if (event === undefined) return null;
+      message.event = event;
+      return message;
+    }
 
     if (
       "context" in input &&

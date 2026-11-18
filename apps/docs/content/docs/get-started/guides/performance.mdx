@@ -1,15 +1,15 @@
 ---
 title: Performance
-description: The geometry scheduler model, invalidation signals, budgets, and scaling guidance.
+description: The geometry scheduler model, invalidation signals, byte sizes, and capacity planning.
 ---
 
-The geometry scheduler is the one place Anchor Presence touches layout. This page explains its model, its invalidation signals, its idle behavior, its performance budgets, and guidance for keeping it fast.
+The geometry scheduler is the one place where Anchor Presence touches layout. It measures each active anchor at most once per frame, and it stops all work while no remote cursor is active.
 
 ## Geometry scheduler model
 
 One shared scheduler runs per client. There are no per-cursor measurement loops.
 
-The scheduler exposes one method: `invalidate(reason?: string)`. Any signal calls it. The scheduler coalesces every call inside a frame into one `requestAnimationFrame` pass with three phases:
+The scheduler exposes one method: `invalidate(reason?: string)`. Any signal calls it. The scheduler combines every call inside a frame into one `requestAnimationFrame` pass. The pass has three phases:
 
 ```text
 READ PHASE     measure every active anchor once (getBoundingClientRect), plus viewport size
@@ -17,7 +17,7 @@ COMPUTE PHASE  resolve every remote cursor from the cached rects
 NOTIFY PHASE   publish one immutable snapshot to subscribers
 ```
 
-Active anchors are the union of anchor IDs referenced by current remote cursors: the first resolvable anchor per cursor, probed in fallback chain order. Each element is measured at most once per frame. All reads happen before any consumer code runs, so one pass causes at most one forced reflow.
+An active anchor is an anchor that a current remote cursor uses: the first anchor in its fallback chain that resolves. The scheduler measures each element at most once per frame. All reads happen before any consumer code runs, so one pass causes at most one forced reflow.
 
 ## Invalidation signals
 
@@ -27,84 +27,88 @@ The scheduler listens for these signals while at least one remote cursor is acti
 - `scroll` on `window` and on scrollable ancestors, through one capture-phase document scroll listener
 - `ResizeObserver` on each active anchor element and on `document.documentElement`
 - one `MutationObserver` on `document.body` (`childList`, `attributes`, `subtree`), for moves with no dedicated signal: sibling insertion or removal, instant class toggles, transform changes
-- a capture-phase scroll listener and a `MutationObserver` on each open shadow root that holds an active anchor, because document-level scroll and mutation signals stop at shadow boundaries
+- a capture-phase scroll listener and a `MutationObserver` on each open shadow root that holds an active anchor. Document-level scroll and mutation signals stop at shadow boundaries.
 - anchor register or unregister
 - new remote presence data
 - CSS transition and animation start and end events
 - the public `invalidate()` call, for application-triggered layout changes
 
-`ResizeObserver` alone cannot detect an element that moves without resizing. The combination of scroll, resize, mutation, and transition signals is what makes Invariant 7 hold: a local layout change repositions a stationary remote cursor without a new network packet.
+`ResizeObserver` alone cannot detect an element that moves without resizing. The scroll, resize, mutation and transition signals together keep [invariant 7](/docs/get-started/concepts/how-it-works#the-10-invariants): a local layout change moves a stationary remote cursor without a new network message.
 
 ### When to call invalidate() yourself
 
-If a programmatic layout change is invisible to the built-in signals, call the binding's `invalidate()` yourself. Two examples are an instant CSS Custom Highlight and a canvas-driven layout shift.
-
-```ts
-const binding = createDomBinding(client);
-// after a programmatic layout change
-binding.invalidate("manual-layout-shift");
-```
-
-`invalidate` marks the layout dirty. The binding re-resolves the cursors on the next frame. Most application code never needs to call this. The built-in signals cover ordinary DOM mutation, resize, scroll, and animation.
+The built-in signals cover ordinary DOM mutation, resize, scroll, and animation. Some programmatic layout changes are invisible to them, for example a canvas-driven layout shift. After such a change, call `binding.invalidate()`. See [invalidate](/docs/dom/binding#invalidate) for the rules.
 
 ## Idle behavior
 
-With no active remote cursors, no `requestAnimationFrame` loop runs, and every scheduler signal disconnects: transition listeners, mutation observers, scroll and resize listeners, and every `ResizeObserver`. The scheduler is event-driven, not polling. It reattaches automatically when a remote cursor becomes active again.
+While no remote cursor is active, no `requestAnimationFrame` loop runs. Every scheduler signal disconnects: transition listeners, mutation observers, scroll and resize listeners, and every `ResizeObserver`. The scheduler reacts to events and never polls. When a remote cursor becomes active again, the scheduler attaches its signals again.
 
-## Budgets
+## Cost per frame and per message
 
-- One `requestAnimationFrame` pass per frame maximum. Zero passes while idle.
-- Each active anchor is measured at most once per frame.
-- 100 cursors over 20 distinct anchors: one snapshot object per frame, under 2 ms scripting per pass on a mid-range laptop. This is a benchmark target, not a gated test.
-- Publishing rate defaults to 20 Hz (`publishIntervalMs: 50`), and is configurable per client.
-- Outbound `context` and `user` fields are delta-encoded: a changed field is sent once, full reconnect and heartbeat publishes include the current values, and later cursor messages omit unchanged fields.
+- The scheduler runs at most one `requestAnimationFrame` pass per frame, and zero passes while idle.
+- The scheduler measures each active anchor at most once per frame.
+- A client publishes at 20 Hz by default (`publishIntervalMs: 50`). You can change this value per client.
+- The client sends a changed `context` or `user` field once. Later cursor messages leave out the fields that did not change. Reconnect and heartbeat messages carry the current values.
 - The optional `adaptivePublish` client option slows the publish rate when a transport reports a growing send buffer.
+- Minified and gzipped, `@anchor-presence/core` is about 8.0 KB, `@anchor-presence/dom` about 7.6 KB, and `@anchor-presence/react` about 2.6 KB. Each size excludes React and the other Anchor Presence packages.
 
 ## Scaling limits
 
-The default relay forwards every message to every other socket in a room, so relay traffic grows with senders times receivers. The library reduces per-message cost through delta `context`/`user`, one validation pass, and an optional adaptive publish rate, but it does not change the room-broadcast fan-out. For a large room, move receivers into smaller rooms, add relay-side rate limits and message caps, or introduce a server-side aggregator.
+A room-broadcast relay forwards every message to every other socket in a room. Relay traffic therefore grows with senders times receivers. The library lowers the cost of each message: delta `context` and `user` fields, one validation pass, and an optional adaptive publish rate. It does not change the fan-out of the room broadcast.
 
-The reference relay in `apps/server/index.ts` enforces a per-room socket cap, a per-message byte cap, and a per-socket token-bucket rate limit. Production relay hardening, such as authentication, broader connection quotas, ping, or horizontal scale, remains a server concern, not a library transport concern. See [Transports](/docs/core/transports) for the boundary.
+For a large room, use one or more of these measures:
+
+- Move receivers into smaller rooms.
+- Add relay-side rate limits and message size caps.
+- Add a server-side aggregator.
+
+The reference relay has these limits and checks:
+
+- a socket cap per room and per server
+- a byte cap per message
+- a token-bucket rate limit per socket
+- an origin check and an optional [room token](/docs/dom/websocket-transport#room-token) check
+- a liveness ping
+
+Horizontal scale and authentication of identity are server concerns, not transport concerns. See [Transports](/docs/core/transports) for the boundary.
 
 ## Guidance
 
-**Register stable anchors.** Map an anchor ID to one long-lived semantic location: a button, a row template, a section. Do not generate a new anchor ID per render for the same logical element. Each new ID is a fresh registry entry and forces re-registration.
+**Register stable anchors.** Map an anchor ID to one long-lived semantic location: a button, a row template, a section. Do not generate a new anchor ID per render for the same logical element. Each new ID adds a registry entry and forces a new registration.
 
-**Avoid registering thousands of ephemeral anchors.** A very long, fully-rendered list that registers one anchor per row scales the registry and the `MutationObserver` surface with row count. Prefer registering anchors on visible or windowed rows only, and fall back to a coarser anchor, such as the list container, for off-screen rows.
+**Do not register thousands of short-lived anchors.** A long list with one anchor per row grows the registry and the `MutationObserver` work with each row. Register anchors on visible or windowed rows only. For off-screen rows, use a coarser anchor, such as the list container.
 
-**Call `invalidate()` after programmatic layout changes** the built-in signals cannot see. Do not call it on every render. The scheduler already coalesces signal-driven invalidation into one pass per frame, so an unnecessary call only adds a dirty flag, not a full reflow. It is cheap but still unneeded in most cases.
+**Do not call `invalidate()` on every render.** Call it only after a programmatic layout change that the built-in signals cannot see. The scheduler already combines all signals into one pass per frame. An extra call only sets a dirty flag, so it is cheap but not necessary.
 
 ## Capacity planning
 
-A typical 4-anchor cursor message is 292 bytes with `jsonCodec` and 144 bytes with `binaryCodec`, measured from the fixture in `packages/core/bench/hotpath.bench.ts`. Run `bun run bench` to measure on your own hardware and message shape.
+A cursor message with 4 anchors is 292 bytes with `jsonCodec` and 144 bytes with `binaryCodec`. That message has two-letter anchor IDs, coordinates with one decimal place, and a small `user`. Real pointer coordinates have more decimal places, so a JSON message is larger. Measure your own messages before you plan with these numbers.
 
-A client publishes at most once every `publishIntervalMs` (`DEFAULT_PUBLISH_INTERVAL_MS`, 50 ms) while the pointer moves. That is up to 20 messages per second per moving client. A stationary pointer sends nothing until it moves again. The one exception is a heartbeat every `heartbeatMs` (`DEFAULT_HEARTBEAT_MS`, 10 seconds), which keeps every field current for a client that just joined.
+While the pointer moves, a client publishes at most once every `publishIntervalMs` (`DEFAULT_PUBLISH_INTERVAL_MS`, 50 ms). That is up to 20 messages per second per moving client. A stationary pointer sends no cursor messages. The one exception is a heartbeat every `heartbeatMs` (`DEFAULT_HEARTBEAT_MS`, 10 seconds). The heartbeat carries every field, so a client that joins late gets the current values.
 
-**Worked example.** A room of 50 clients, 10 of them moving their pointer at once, on `binaryCodec`:
+**Worked example.** A room has 50 clients on `binaryCodec`. 10 of them move their pointer at the same time:
 
 - Each client receives from the 10 movers: 10 × 20 messages/s × 144 bytes ≈ 29 KB/s.
-- The relay forwards every sender to every other client in the room. Its egress is 10 senders × 49 receivers × 20 messages/s × 144 bytes ≈ 1.4 MB/s.
+- The relay forwards every message to every other client in the room. Its egress is 10 senders × 49 receivers × 20 messages/s × 144 bytes ≈ 1.4 MB/s.
 
-Recompute both numbers for your own anchor count, codec, and room size before you commit to a capacity plan.
+Before you commit to a capacity plan, calculate both numbers again for your own anchor count, codec, and room size.
 
 **Checklist:**
 
-- Pick `binaryCodec` over the default `jsonCodec` for the smaller wire size. See [Codecs](/docs/core/codecs).
-- Split a large room into smaller rooms. Relay traffic grows with senders times receivers, so halving room size roughly quarters egress.
-- Raise `maxRemoteClients` above its default of 64 when a room holds more clients than that. See [Remote presence](/docs/core/remote-presence).
+- For a smaller wire size, pick `binaryCodec` instead of the default `jsonCodec`. See [Codecs](/docs/core/codecs).
+- Split a large room into smaller rooms. Relay traffic grows with senders times receivers, so a room of half the size has about a quarter of the egress.
+- If a room holds more than 64 clients, raise `maxRemoteClients` above its default of 64. See [Remote presence](/docs/core/remote-presence).
 - Set relay-side limits: connection quotas, message size caps, and rate limits. See [Security](/docs/get-started/guides/security).
-
-The library ships a benchmark for per-message cost (`bun run bench`), gated against a committed baseline.
 
 ## Measured at scale
 
-These numbers come from two local benchmarks: a Chromium receiver test and a relay load script. Both are opt-in — neither runs in CI — so you can reproduce them on your own hardware.
+These numbers come from two local benchmarks: a Chromium receiver test and a relay load test.
 
 **Machine:** 13th Gen Intel Core i7-13850HX, 28 logical cores, Windows 11 Pro (build 26200), Bun 1.3.14, Playwright 1.62.1 with its bundled Chromium.
 
 ### Receiver resolve cost
 
-The demo bench page (`?page=bench`) drives N synthetic remote cursors over M registered anchors. It measures the scheduler's resolve-pass duration on the main thread. `e2e/perf-scale.spec.ts` runs this at three sizes and prints the table below.
+A benchmark page drives N synthetic remote cursors over M registered anchors. It measures the duration of the scheduler's resolve pass on the main thread:
 
 | Anchors × cursors | Mean pass (ms) | p95 pass (ms) |
 | ----------------- | -------------- | ------------- |
@@ -112,24 +116,13 @@ The demo bench page (`?page=bench`) drives N synthetic remote cursors over M reg
 | 1000 × 200        | 2.24           | 3.00          |
 | 2000 × 200        | 2.52           | 3.30          |
 
-Reproduce with:
-
-```sh
-PERF_SCALE=1 bunx playwright test --project=chromium e2e/perf-scale.spec.ts
-```
-
 ### Relay load
 
-`scripts/relay-load.ts` starts `apps/server`. It opens N native WebSocket clients in one room. Each client publishes a real `binaryCodec` cursor message at 20 Hz.
+The load test starts the reference relay. It opens N native WebSocket clients in one room. Each client publishes a real `binaryCodec` cursor message at 20 Hz.
 
-The script measures delivery against the rate clients sent, not the nominal 20 Hz. On a busy machine, timers can run under the nominal rate, so this comparison is fair. The script also measures latency percentiles and the relay process's CPU and memory.
+The test measures delivery against the rate that the clients sent, not against the nominal 20 Hz. On a busy machine, timers can run below the nominal rate, so this comparison is fair. The test also measures latency percentiles and the CPU and memory of the relay process.
 
-<Callout type="warn">
-  Read the 100 and 200 rows as the limit of this test setup, not as a proven relay limit. All clients run in
-  one load-generator process on the same machine, and at 100 clients that process uses a full CPU core too
-  (the script prints its CPU next to the relay's). The relay's slow-peer and rate-limit protections did not
-  trigger: every socket stayed open, and messages queued instead.
-</Callout>
+The 100 and 200 rows show the limit of this test setup, not a limit of the relay. All clients run in one load-generator process on the same machine. At 100 clients, that process also uses a full CPU core. The slow-receiver and rate-limit protections of the relay did not trigger: every socket stayed open, and messages queued.
 
 | Clients | Sent (msg/s) | Delivered (msg/s) | Delivery ratio | Latency p50 | Latency p99 | Relay CPU | Relay RSS |
 | ------- | ------------ | ----------------- | -------------- | ----------- | ----------- | --------- | --------- |
@@ -137,19 +130,13 @@ The script measures delivery against the rate clients sent, not the nominal 20 H
 | 100     | 1,963        | 80,408            | 41%            | 3.7 s       | 5.2 s       | 100%      | 70 MB     |
 | 200     | 3,950        | 27,656            | 3.5%           | 4.0 s       | 9.4 s       | 98%       | 70 MB     |
 
-Reproduce with:
-
-```sh
-bun run scripts/relay-load.ts --clients 50,100,200 --seconds 10
-```
-
-The test raised the room and socket caps through `RELAY_MAX_ROOM_SOCKETS` and `RELAY_MAX_TOTAL_SOCKETS`. This kept the relay from rejecting the client count under test. The rate limit stayed at the shipped default: a 40-message burst, with a refill of 20 messages/s per socket.
+The test raised the room and server socket caps, so the relay accepted every client under test. The rate limit stayed at the default: a burst of 40 messages, with a refill of 20 messages/s per socket.
 
 ### What this means for capacity planning
 
-At 50 clients in one room, the reference relay delivers every message with a p99 latency under 200 ms and uses less than one CPU core. Relay work grows with senders × receivers: 100 moving clients need about 200,000 deliveries per second. Plan rooms of up to about 50 active clients per relay process, and measure your own relay on your own hardware before you allow larger rooms.
+At 50 clients in one room, the reference relay delivers every message. Its p99 latency stays under 200 ms, and it uses less than one CPU core. Relay work grows with senders × receivers: 100 moving clients need about 200,000 deliveries per second. Plan rooms of up to about 50 active clients per relay process. Before you allow larger rooms, measure your own relay on your own hardware.
 
-See the [capacity planning](#capacity-planning) checklist above. Split large rooms and prefer `binaryCodec`.
+See the [capacity planning](#capacity-planning) checklist. Split large rooms and pick `binaryCodec`.
 
 ## Related
 

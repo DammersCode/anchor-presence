@@ -13,7 +13,7 @@ An element becomes an anchor the moment it has a non-empty value for the configu
 <button data-anchor="nav.dashboard">Dashboard</button>
 ```
 
-Set `anchorAttribute` in `DomBindingOptions` to use a different attribute name. The name must be a valid DOM attribute: letters and digits, with an optional hyphen between groups.
+Set `anchorAttribute` in `DomBindingOptions` to use a different attribute name. The name must start with a letter and contain only letters and digits, with single hyphens between groups. For any other name, `createDomBinding` throws a `TypeError`.
 
 ## Auto-registration
 
@@ -23,7 +23,7 @@ The binding watches the document with a `MutationObserver`, scoped to the `envir
 - Removed elements, which unregister their anchor.
 - Changes to the anchor attribute's value on an existing element.
 
-No manual registration or cleanup call is needed. A framework that mounts and unmounts elements, such as React, keeps the anchor map in sync through this observer alone.
+You call no registration or cleanup function. A framework that mounts and unmounts elements, such as React, keeps the anchor map in sync through this observer alone.
 
 ## Empty values
 

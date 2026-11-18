@@ -4,6 +4,17 @@
 
 ### Breaking
 
+- Example relays: node-ws and Bun answer a path other than `/` with 404. Rooms come from the `room` query parameter. The node-ws relay no longer exits when a client resets the connection while an async `authCheck` runs.
+- `@anchor-presence/core`: the default shape check accepts a remote `null` for any key, and the dev console warns once when it drops a remote `user` or `context`.
+- `@anchor-presence/core`: a remote `user` or `context` must have the shape of the local value, or the client drops it. A key the local value lacks, such as an optional field, stays only as a string, number, boolean or `null`. Pass `parseUser` or `parseContext` to replace the check, for example when the client has no local value.
+- Relays (reference and examples): a room name that is not valid now closes the socket with code `4007` instead of falling back to `main`, because two rooms would share one stream. The SignalR hub aborts the connection.
+- Example relays: identity binding rewrites `clientId` to `<identity>~<connection>`, so two tabs of one user stay two clients. It works on node-ws, Bun, Hono, Elysia and Socket.IO.
+- `@anchor-presence/core`: an event that fails validation is dropped. `sendEvent` returns `false` for an event above the field limits. A failing teardown no longer stops `dispose()`.
+- `@anchor-presence/dom`: a throwing `visibilityPolicy` or interpolator no longer stops the frame loop. The binding keeps the last snapshot and retries on the next change.
+- `@anchor-presence/core`: the default `clientId` and `session` are 12 URL-safe characters (72 random bits) instead of UUIDs. Every message gets about 48 bytes smaller: a steady cursor is 106 bytes in the binary codec and 261 bytes in JSON.
+- `@anchor-presence/dom`: `binding.dispose()` clears the local cursor on the client, so a consumer-owned client leaves no ghost cursor on peers.
+- Example relays: the `authCheck` option now takes a request (`{ token, room, origin, headers }`) and may be async, so it can verify a JWT or authorize per room. It replaces the token-only signature.
+- `@anchor-presence/dom`: the binding hides remote cursors while the client status is `reconnecting` or `disconnected`, and shows them again when the connection returns.
 - `@anchor-presence/core`: `RemotePresence.idle` now measures the time since the last change, not since the last message. A still peer goes idle while its heartbeats keep arriving.
 - `@anchor-presence/core`: `CursorPresence` gains an optional `leave` field. A relay that validates messages must pass it through.
 - `@anchor-presence/react`: `usePresenceClient` is removed. Pass `LiveCursorProvider` a `factory` prop instead. The provider runs it once per mount, in a browser-only effect, and disposes the client it created on unmount. The `client` prop stays as bring-your-own: the provider never disposes a client you pass, and it wins over `factory` when both are set.
@@ -11,6 +22,24 @@
 
 ### Added
 
+- `@anchor-presence/react`: `useCursorBinding()` returns the DOM binding, so a component can call `binding.invalidate()` when state that a `visibilityPolicy` reads changes.
+- Example transports: the Socket.IO and SignalR transports implement `subscribeClose`. The relays send a `refused` event with the close code (4001, 4002, 4006, 4007) before they disconnect a client.
+- `defineRelayConformance` also checks the origin allowlist (close code 4004).
+- `@anchor-presence/core`: `createPresenceClient` takes `parseEvent`. It checks, rewrites or drops each remote event, so event data gets the same protection as `user` and `context`.
+- `@anchor-presence/dom`: `binding.dispose({ keepLocalCursor: true })` keeps the local cursor on peers. `LiveCursorProvider` uses it when only `bindingKey` changes.
+- Example Elysia client: `createElysiaClient(baseUrl, room, token?)` sends the room token.
+- `@anchor-presence/core`: `subscribePeers` also reports an `update` when a remote `user` or `context` changes. A sender that floods events is limited to a burst of 20 and 10 per second.
+- Example relays: an `authCheck` can return `{ clientId, user }`. The node-ws relay then rewrites those fields in every JSON frame, so a peer cannot claim another identity or send a leave for another client. `defineRelayConformance` in `examples/_shared` tests any relay.
+- `bun run perf:score` measures bundle size, wire size, core hot paths, heap per message and, with `--relay`, relay latency, and scores each against a budget.
+- `@anchor-presence/react`: `LiveCursorProvider` takes `clientKey`. Change it to dispose the client the factory made and create a new one, for example to switch rooms without remounting the subtree.
+- `@anchor-presence/core`: after a reconnect the client marks every remote client unconfirmed. An entry that no heartbeat refreshes within `2 * heartbeatMs + 5 s` is removed, so peers that left during the outage do not linger.
+- `@anchor-presence/react`: `LiveCursorProvider` takes `bindingKey`. Change it to rebuild the binding with the current `bindingOptions` while the client stays connected. The demo uses it for the interpolator switch.
+- `@anchor-presence/core`: `LiveCursorTransport.subscribeClose` and `client.subscribeClose` report why a connection closed (close code, reason and whether the transport reconnects). `createWebSocketTransport` implements it.
+- `@anchor-presence/core`: `client.leave()` tells peers the client left; the next publish or heartbeat announces it again. `createDomBinding` calls it on `pagehide`, so a closed tab disappears at once.
+- `@anchor-presence/core`: `client.sendEvent(type, data?)` and `client.subscribeEvents(listener)` carry one-shot events such as reactions or pings. Events are never stored or resent. Both codecs support them (binary cursor tag 3). `CursorPresence` gains an optional `event` field.
+- `@anchor-presence/core`: `client.subscribePeers(listener)` reports remote clients that join or leave.
+- `@anchor-presence/react`: `useCursorEvents(listener)` subscribes to remote events.
+- `@anchor-presence/core`: a client answers a first message from an unknown peer, or a known `clientId` with a new session, with one full publish after up to 500 ms.
 - `@anchor-presence/dom`: `createWebSocketTransport` takes a `token` function that runs before every connection attempt and may return a promise.
 - `@anchor-presence/react`: `createPresenceHooks<TContext, TUser>()` returns the provider and every hook with the generics fixed, so `useRemoteUsers<Wrong>()` no longer compiles.
 - `@anchor-presence/core`: `dispose()` sends an explicit leave message (`leave: true`, binary cursor tag 2). Receivers remove the client at once instead of after `staleTimeoutMs`.

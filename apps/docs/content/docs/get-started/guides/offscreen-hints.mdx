@@ -1,0 +1,97 @@
+---
+title: Off-screen hints
+description: Show an arrow at the window edge for each remote cursor outside the window.
+---
+
+A remote cursor can point at a part of the page that the local user scrolled away from. A peer is another client in the same room. The cursor of the peer then sits outside the window, and the local user does not know that the peer is there. An off-screen hint is an arrow at the window edge. It sits at the nearest edge point and points at the remote cursor. The recipe computes the hint from the `x` and `y` fields of `ResolvedCursor`.
+
+## Clamp the point to the edge
+
+The recipe is one file, `offscreen-hints.tsx`. It starts with the imports and the clamp function:
+
+```tsx
+import { CursorLayer, LiveCursorProvider, useRemoteCursors } from "@anchor-presence/react";
+import type { PresenceClient, ResolvedCursor } from "@anchor-presence/react";
+
+export type EdgeHint = { clientId: string; x: number; y: number; angle: number };
+
+export function edgeHint(cursor: ResolvedCursor, width: number, height: number, inset = 16): EdgeHint | null {
+  if (!cursor.visible || cursor.tier === "hidden") return null;
+  const inside = cursor.x >= 0 && cursor.x <= width && cursor.y >= 0 && cursor.y <= height;
+  if (inside) return null;
+  const x = Math.min(Math.max(cursor.x, inset), width - inset);
+  const y = Math.min(Math.max(cursor.y, inset), height - inset);
+  return { clientId: cursor.clientId, x, y, angle: Math.atan2(cursor.y - y, cursor.x - x) };
+}
+```
+
+The clamp keeps each coordinate between `inset` and the window size minus `inset`. A point above the window keeps its `x` and gets `y = inset`. A point past a corner gets both coordinates clamped. The angle is `Math.atan2(dy, dx)` from the hint to the real point. An angle of `0` points right, and `Math.PI` points left.
+
+For example, take an 800 × 600 window and an inset of 16. A cursor at (-200, 300) then gives a hint at (16, 300) with an angle of `Math.PI`.
+
+## Render the hints
+
+The component reads the resolved cursors and draws one arrow for each hint:
+
+```tsx
+export function OffscreenHints() {
+  const cursors = useRemoteCursors();
+  const hints = cursors.flatMap((cursor) => {
+    const hint = edgeHint(cursor, window.innerWidth, window.innerHeight);
+    return hint === null ? [] : [hint];
+  });
+
+  return (
+    <div aria-hidden="true" style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 9999 }}>
+      {hints.map((hint) => (
+        <svg
+          key={hint.clientId}
+          data-edge-hint={hint.clientId}
+          width="16"
+          height="16"
+          viewBox="0 0 16 16"
+          style={{
+            position: "absolute",
+            left: 0,
+            top: 0,
+            transform: `translate(${hint.x - 8}px, ${hint.y - 8}px) rotate(${hint.angle}rad)`,
+          }}
+        >
+          <path d="M2 2 L14 8 L2 14 Z" fill="#2563eb" />
+        </svg>
+      ))}
+    </div>
+  );
+}
+```
+
+Render the hints next to the cursor layer:
+
+```tsx
+export function HintsApp({ client }: { client: PresenceClient }) {
+  return (
+    <LiveCursorProvider client={client}>
+      <main>{/* your app */}</main>
+      <CursorLayer />
+      <OffscreenHints />
+    </LiveCursorProvider>
+  );
+}
+```
+
+## Behavior
+
+- **Window size.** The recipe uses `window.innerWidth` and `window.innerHeight`. The resolver uses the same size for viewport coordinates. On a resize, the binding resolves the cursors again, so the hints move.
+- **`pointVisible`.** `pointVisible` is `false` when a scroll container inside the page clips the point. It stays `true` for a point outside the window, and it is always `true` on the viewport tier. For this reason, the recipe compares `x` and `y` with the window size. A clipped point inside the window gets no hint.
+- **Hidden tier.** A cursor on the `hidden` tier has no useful position. Its `x` and `y` are `0`, or the last position before it went hidden. The recipe skips it, and it also skips a cursor with `visible: false`.
+- **Inset.** The arrow is 16 pixels wide. An inset of 16 keeps the full arrow inside the window.
+- **Rerenders.** `useRemoteCursors` rerenders the component on every cursor snapshot. For a room with many peers, select only the off-screen cursors with `useRemoteCursorsSelector`.
+- **Server rendering.** On the server, `useRemoteCursors` returns an empty list, so the component never reads `window` there.
+
+## Related
+
+- [Remote cursors](/docs/react/remote-cursors)
+- [Resolution](/docs/dom/resolution)
+- [Custom cursors](/docs/react/custom-cursors)
+- [Rerenders](/docs/react/rerenders)
+- [Follow mode](/docs/get-started/guides/follow-mode)

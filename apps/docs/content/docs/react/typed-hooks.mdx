@@ -1,0 +1,54 @@
+---
+title: Typed hooks
+description: Fix the context and user types once with createPresenceHooks.
+---
+
+`createPresenceHooks<TContext, TUser>()` returns `LiveCursorProvider` and every hook with `TContext` and `TUser` fixed. A hook from the result takes no type parameter, so a call with a wrong type does not compile.
+
+## Create the hooks
+
+Call `createPresenceHooks` once, at module level, and export the result:
+
+```ts
+// presence.ts
+import { createPresenceHooks } from "@anchor-presence/react";
+
+export type User = { name: string; color: string };
+export type Context = { pageId: string };
+
+export const { LiveCursorProvider, useCursorClient, useCursorContext, useRemoteCursors, useRemoteUsers } =
+  createPresenceHooks<Context, User>();
+```
+
+## Use the hooks
+
+Import the provider and the hooks from your module, not from `@anchor-presence/react`:
+
+```tsx
+import { useRemoteUsers } from "./presence";
+
+function PresenceList() {
+  const users = useRemoteUsers();
+  return (
+    <ul>
+      {users.map((entry) => (
+        <li key={entry.clientId}>{entry.user?.name ?? "Guest"}</li>
+      ))}
+    </ul>
+  );
+}
+```
+
+`entry.user` has the type `User | undefined`. A field that `User` does not have, for example `entry.user?.age`, is a type error. A type argument such as `useRemoteUsers<OtherUser>()` is also a type error.
+
+## What the result contains
+
+The result has `LiveCursorProvider`, `useCursorBinding`, `useCursorClient`, `useCursorContext`, `useCursorPresence`, `useRemoteCursors`, `useRemoteCursorsSelector`, and `useRemoteUsers`, each with your types. It also has `useCursorEvents` and `useCursorStatus`, which have no type parameters.
+
+`CursorLayer` and `DefaultCursor` are not in the result. Import them from `@anchor-presence/react`.
+
+## Related
+
+- [Hooks API](/docs/react/api/hooks)
+- [LiveCursorProvider](/docs/react/live-cursor-provider)
+- [Remote users](/docs/react/remote-users)

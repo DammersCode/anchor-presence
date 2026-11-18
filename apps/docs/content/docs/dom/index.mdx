@@ -7,12 +7,12 @@ description: What @anchor-presence/dom does and how it sits between the core cli
 
 ## What the binding does
 
-`createDomBinding` wires together four jobs:
+`createDomBinding` does four jobs:
 
-1. It watches the page for elements marked with an anchor attribute and registers them.
-2. It listens for pointer events and reports the local cursor position relative to the nearest anchors.
-3. It reads remote presence from the client and resolves each one against the page's own layout.
-4. It schedules geometry reads on the frame clock, so a resolve pass never runs more than once per frame.
+- It watches the page for elements marked with an anchor attribute and registers them.
+- It listens for pointer events and reports the local cursor position relative to the nearest anchors.
+- It reads remote presence from the client and resolves each one against the page's own layout.
+- It schedules geometry reads on the frame clock, so a resolve pass never runs more than once per frame.
 
 The React package (`@anchor-presence/react`) calls `createDomBinding` for you and exposes its snapshot through hooks. Call it directly to build an adapter for another UI layer. See [Build a framework adapter](/docs/core/build-a-framework-adapter).
 

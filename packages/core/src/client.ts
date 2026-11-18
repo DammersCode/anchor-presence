@@ -11,7 +11,7 @@ import type {
   PresenceClientState,
   SchedulerLike,
 } from "./internal/types.js";
-import { DEFAULT_MAX_FIELD_BYTES, DEFAULT_MAX_MESSAGE_BYTES } from "./protocol.js";
+import { DEFAULT_MAX_FIELD_BYTES, DEFAULT_MAX_MESSAGE_BYTES, MAX_EVENT_TYPE_LENGTH } from "./protocol.js";
 import {
   DEFAULT_IDLE_AFTER_MS,
   DEFAULT_MAX_REMOTE_CLIENTS,
@@ -129,12 +129,14 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     context: options.context,
     user: options.user,
     onNewPeer: () => publish.requestFullPublish(),
+    parseEvent: options.parseEvent,
     parseUser: options.parseUser,
     parseContext: options.parseContext,
     contextDirty: options.context !== undefined,
     userDirty: options.user !== undefined,
     sequence: 0,
     disposed: false,
+    left: false,
     latestCursor: null,
     latestPointer: undefined,
     pendingPublish: false,
@@ -147,6 +149,7 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     newPeerTimer: null,
     status,
     contextListeners: new Set(),
+    eventListeners: new Set(),
     teardowns: [],
   };
 
@@ -187,6 +190,31 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
       state.latestCursor = cursor;
       if (pointer !== undefined) state.latestPointer = pointer;
       publish.markPending();
+    },
+
+    subscribeClose(listener) {
+      return transport.subscribeClose?.(listener) ?? (() => {});
+    },
+
+    leave() {
+      if (state.disposed || state.left) return;
+      if (publish.send(null, false, true)) state.left = true;
+    },
+
+    sendEvent(type, data) {
+      if (state.disposed || type.length < 1 || type.length > MAX_EVENT_TYPE_LENGTH) return false;
+      return publish.sendEvent(type, data);
+    },
+
+    subscribeEvents(listener) {
+      state.eventListeners.add(listener);
+      return () => {
+        state.eventListeners.delete(listener);
+      };
+    },
+
+    subscribePeers(listener) {
+      return state.store.subscribePeers(listener);
     },
 
     setContext(next) {
@@ -279,8 +307,13 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
       state.newPeerTimer = null;
       statusMachine.dispose();
       state.contextListeners.clear();
+      state.eventListeners.clear();
       for (const teardown of state.teardowns.splice(0)) {
-        teardown();
+        try {
+          teardown();
+        } catch {
+          // one throwing teardown must not skip the rest, or leave the transport connected
+        }
       }
       try {
         void transport.disconnect?.();

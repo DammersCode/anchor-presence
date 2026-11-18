@@ -40,3 +40,13 @@ Each score cites file:line, a test name, a bench number or a demo path. A score 
 - Success: all dimensions 9 or more, and a round adds no new P1 or P2 row.
 - Stall: the open P1 plus P2 count does not fall for two rounds, or the same error fails twice with the same approach. Score noise between scorers is larger than a fix, so means alone never stop the loop.
 - Limit: a model or plan limit stops the loop until the reset.
+
+## Performance is measured
+
+The performance dimension comes from `bun run perf:score --relay`, not from reading code. The script scores each metric 10, 9, 7 or 5 against the budgets in `scripts/perf-score.ts`. The dimension equals the lowest metric score, so 9 means every metric meets its 9 budget. A scorer reports the table and does not estimate. Metrics:
+
+- gzip size of each package bundle (core, dom, react),
+- steady cursor message size in the JSON and binary codec,
+- inbound path time per message and `store.ingest` time per message,
+- heap growth per ingested message,
+- relay p99 latency and delivery ratio at 50 clients, as the median of three runs. The load generator shares the machine with the relay, so these budgets are loose: they catch a relay that falls behind, not a few milliseconds.

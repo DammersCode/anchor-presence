@@ -3,15 +3,22 @@ title: Cursor context
 description: Read and set the local UI context value that travels with your cursor.
 ---
 
-`useCursorContext` reads the local context value and gives a setter that sends it to remote peers. Context carries small facts about what a user is doing, such as the panel they have open. See [UI context](/docs/get-started/concepts/ui-context) for what context is for.
+`useCursorContext` reads the local context value and gives a setter that sends it to peers. A peer is another client in the same room. Context carries small facts about what a user is doing, such as the panel they have open. See [UI context](/docs/get-started/concepts/ui-context) for what context is for.
 
 ## Usage
+
+The hook has this signature:
 
 ```ts
 function useCursorContext<TContext = unknown>(): [TContext | undefined, (next: TContext | undefined) => void];
 ```
 
+This component sets the context while its dialog is open:
+
 ```tsx
+import { useEffect } from "react";
+import { useCursorContext } from "@anchor-presence/react";
+
 function SettingsDialog({ open }: { open: boolean }) {
   const [, setContext] = useCursorContext();
   useEffect(() => {
@@ -21,15 +28,9 @@ function SettingsDialog({ open }: { open: boolean }) {
 }
 ```
 
-The setter calls `client.setContext()`, which sends the value to remote peers and updates every component that reads context through this hook.
+The setter calls `client.setContext()`, which sends the value to peers and updates every component that reads context through this hook. A direct `client.setContext()` call outside the hook updates these components too.
 
-<Callout type="warn">
-  A direct `client.setContext()` call outside this hook still updates the client. A component that reads
-  context through `useCursorContext` rerenders only on the next hook-driven update. Set context through the
-  hook's setter.
-</Callout>
-
-The hook returns `undefined` and a no-op setter on the server, and after the hook runs with no provider above it.
+On the server, and with no provider above it, the hook returns `undefined` and a no-op setter.
 
 ## Related
 

@@ -6,8 +6,14 @@ import {
   messageByteLength,
   originAllowed,
   RateLimiter,
-  sanitizeRoomName,
+  INVALID_ROOM_CODE,
+  bindIdentity,
+  newConnectionId,
+  parseRoom,
+  type AuthIdentity,
+  safeAuthCheck,
   tokenAuthCheck,
+  type AuthCheck,
 } from "../_shared/relay-guard";
 
 export type BunRelayOptions = {
@@ -20,13 +26,16 @@ export type BunRelayOptions = {
   idleTimeoutSeconds?: number;
   allowedOrigins?: Set<string>;
   /** Auth hook placeholder: verify a token query param. Default accepts every token. */
-  authCheck?: (token: string) => boolean;
+  authCheck?: AuthCheck;
 };
 
 type SocketData = {
   room: string;
   origin: string;
   authOk: boolean;
+  roomInvalid: boolean;
+  identity: AuthIdentity | undefined;
+  connectionId: string;
   admitted: boolean;
   rateLimiter: RateLimiter;
 };
@@ -52,23 +61,34 @@ export function createBunRelay(port: number, options: BunRelayOptions = {}) {
     options.idleTimeoutSeconds ?? limitFromEnv(process.env.RELAY_IDLE_TIMEOUT_SECONDS, 60);
   const slowPeerHardBytes = limitFromEnv(process.env.RELAY_SLOW_PEER_HARD_BYTES, 8 * 1024 * 1024);
   const allowedOrigins = options.allowedOrigins ?? allowedOriginsFromEnv(process.env.RELAY_ALLOWED_ORIGINS);
-  const authCheck = options.authCheck ?? tokenAuthCheck(process.env.RELAY_AUTH_TOKEN ?? "");
+  const authCheck = safeAuthCheck(options.authCheck ?? tokenAuthCheck(process.env.RELAY_AUTH_TOKEN ?? ""));
 
   const limits = new ConnectionLimits(maxSockets, maxRoomSockets);
 
   const server = Bun.serve<SocketData>({
     port,
-    fetch(req, srv) {
+    async fetch(req, srv) {
       const url = new URL(req.url);
-      const room = sanitizeRoomName(url.searchParams.get("room"));
+      if (url.pathname !== "/")
+        return new Response("Not found: rooms come from the room query parameter", { status: 404 });
+      const parsedRoom = parseRoom(url.searchParams.get("room"));
+      const room = parsedRoom ?? "main";
       const origin = req.headers.get("origin") ?? "";
-      const authOk = authCheck(url.searchParams.get("token") ?? "");
+      const authOk = await authCheck({
+        token: url.searchParams.get("token") ?? "",
+        room,
+        origin,
+        headers: Object.fromEntries(req.headers),
+      });
       if (
         srv.upgrade(req, {
           data: {
             room,
             origin,
-            authOk,
+            authOk: authOk !== false,
+            roomInvalid: parsedRoom === null,
+            identity: typeof authOk === "object" ? authOk : undefined,
+            connectionId: newConnectionId(),
             admitted: false,
             rateLimiter: new RateLimiter(rateCapacity, rateRefillPerSecond),
           },
@@ -91,6 +111,10 @@ export function createBunRelay(port: number, options: BunRelayOptions = {}) {
           ws.close(AUTH_REJECTED_CODE, "invalid token");
           return;
         }
+        if (ws.data.roomInvalid) {
+          ws.close(INVALID_ROOM_CODE, "invalid room");
+          return;
+        }
         const admission = limits.admit(ws.data.room);
         if (admission !== "ok") {
           ws.close(admission === "server full" ? SERVER_FULL_CODE : ROOM_FULL_CODE, admission);
@@ -102,8 +126,14 @@ export function createBunRelay(port: number, options: BunRelayOptions = {}) {
       message(ws, message) {
         if (!ws.data.rateLimiter.tryConsume()) return;
         if (messageByteLength(message, maxMessageBytes) > maxMessageBytes) return;
+        let outgoing: string | Uint8Array | Buffer = message;
+        if (ws.data.identity !== undefined) {
+          const bound = bindIdentity(message, ws.data.identity, ws.data.connectionId);
+          if (bound === null) return;
+          outgoing = bound;
+        }
         // ws.publish (not server.publish) excludes the sender from the topic fan-out.
-        ws.publish(ws.data.room, message);
+        ws.publish(ws.data.room, outgoing);
       },
       close(ws) {
         if (ws.data.admitted) limits.release(ws.data.room);

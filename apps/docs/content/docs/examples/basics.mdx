@@ -7,40 +7,31 @@ A live cursor needs three things: a client, a provider, and at least one anchor.
 
 <ExamplePreview scene="basics" />
 
-<Callout type="warn">
-  As the pane shrinks, the elements in this layout move or change size. That is on purpose in this example. It
-  shows the worst case, so the cursor movement is easy to see. In an app, a short pointer move on one screen
-  becomes a long jump on the other. Keep element sizes fixed and let the page scroll. See the [Kanban
-  example](/docs/examples/kanban).
-</Callout>
-
-## What's in the demo
-
-- `data-anchor` on each button: `post.save`, `post.preview`, and `post.publish`.
-- The draft tag, the title, and the summary are anchors too: `post.tag`, `post.title`, `post.summary`. A point on the text resolves to that text.
-- `data-anchor="post"` on the card. A point in a gap resolves to the card, not to the viewport.
-- The status bar under each pane shows the tier and the anchor of the remote cursor.
-- Move your pointer over a button or a line of text in one pane. The other pane shows your cursor on the same element, at a different position.
-
 ## Code
 
 Install the packages:
 
 <InstallCommand />
 
-The scene of this demo:
+This file renders the scene of the demo:
 
 <CodeFromSource docs="components/examples/basics.tsx" lang="tsx" />
 
 The preview gives the scene a `client` on a `BroadcastChannel` transport, so the two panes can talk without a relay. It also passes its status bar as `children`. In your app, create the client through the provider's `factory` with a real transport. See [Quick start](/docs/get-started/quick-start).
 
-## Behavior reference
+## Behavior notes
+
+- `data-anchor` on each button: `post.save`, `post.preview`, and `post.publish`.
+- The draft tag, the title, and the summary are anchors too: `post.tag`, `post.title`, `post.summary`. A point on the text resolves to that text.
+- `data-anchor="post"` on the card. A point in a gap resolves to the card, not to the viewport.
+- The status bar under each pane shows the tier and the anchor of the remote cursor.
+- Move your pointer over a button or a line of text in one pane. The other pane shows your cursor on the same element, at a different position.
+- The buttons change size when the pane shrinks. The demo shows this worst case on purpose. For the layout rule, see [Keep item sizes and shapes alike](/docs/get-started/guides/layout-design#keep-item-sizes-and-shapes-alike).
+
+## Related
 
 - [Anchors](/docs/get-started/concepts/anchors): what an anchor ID is, and how `u` and `v` place the cursor inside it.
 - [The anchor attribute](/docs/dom/anchor-registration#the-anchor-attribute): how the binding finds anchors without a registration call.
 - [CursorLayer](/docs/react/cursor-layer): which cursors the layer renders, and where.
-
-## Related
-
 - [Responsive grid](/docs/examples/responsive-grid): the same idea with cards of different sizes.
 - [Anchors and fallbacks](/docs/examples/anchors-and-fallbacks): what happens when an anchor is missing.

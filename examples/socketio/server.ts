@@ -7,8 +7,14 @@ import {
   limitFromEnv,
   messageByteLength,
   RateLimiter,
-  sanitizeRoomName,
+  INVALID_ROOM_CODE,
+  bindIdentity,
+  newConnectionId,
+  parseRoom,
+  type AuthIdentity,
+  safeAuthCheck,
   tokenAuthCheck,
+  type AuthCheck,
 } from "../_shared/relay-guard";
 
 export type SocketIoRelayOptions = {
@@ -19,7 +25,7 @@ export type SocketIoRelayOptions = {
   maxSockets?: number;
   allowedOrigins?: string[];
   /** Auth hook placeholder: verify a token query param. Default accepts every token. */
-  authCheck?: (token: string) => boolean;
+  authCheck?: AuthCheck;
 };
 
 /** Minimal room-broadcast relay: no message inspection beyond size, no persistence. */
@@ -33,7 +39,7 @@ export function createSocketIoRelay(port: number, options: SocketIoRelayOptions 
   const allowedOrigins = options.allowedOrigins ?? [
     ...allowedOriginsFromEnv(process.env.RELAY_ALLOWED_ORIGINS),
   ];
-  const authCheck = options.authCheck ?? tokenAuthCheck(process.env.RELAY_AUTH_TOKEN ?? "");
+  const authCheck = safeAuthCheck(options.authCheck ?? tokenAuthCheck(process.env.RELAY_AUTH_TOKEN ?? ""));
 
   const httpServer = createServer();
   const io = new Server(httpServer, {
@@ -49,27 +55,61 @@ export function createSocketIoRelay(port: number, options: SocketIoRelayOptions 
 
   const limits = new ConnectionLimits(maxSockets, maxRoomSockets);
 
-  io.use((socket, next) => {
-    if (!authCheck(String(socket.handshake.query.token ?? ""))) {
-      next(new Error("invalid token"));
+  io.use(async (socket, next) => {
+    const { query, headers } = socket.handshake;
+    const ok = await authCheck({
+      token: String(query.token ?? ""),
+      room: parseRoom(String(query.room ?? "")) ?? "main",
+      origin: headers.origin ?? "",
+      headers: Object.fromEntries(
+        Object.entries(headers).map(([name, value]) => [
+          name,
+          Array.isArray(value) ? value.join(", ") : value,
+        ]),
+      ),
+    });
+    if (!ok) {
+      next(Object.assign(new Error("invalid token"), { data: { code: 4006 } }));
       return;
     }
+    if (typeof ok === "object") socket.data.identity = ok;
     next();
   });
 
+  // Socket.IO has no close codes: send the code first, and the transport reports it as the close code
+  const refuse = (socket: Socket, code: number, reason: string) => {
+    socket.emit("refused", { code, reason });
+    socket.disconnect(true);
+  };
+
   io.on("connection", (socket: Socket) => {
-    const room = sanitizeRoomName(String(socket.handshake.query.room ?? ""));
-    if (limits.admit(room) !== "ok") {
-      socket.disconnect(true);
+    const parsedRoom = parseRoom(String(socket.handshake.query.room ?? ""));
+    if (parsedRoom === null) {
+      refuse(socket, INVALID_ROOM_CODE, "invalid room");
+      return;
+    }
+    const room = parsedRoom;
+    const identity = socket.data.identity as AuthIdentity | undefined;
+    const connectionId = newConnectionId();
+    const admission = limits.admit(room);
+    if (admission !== "ok") {
+      refuse(socket, admission === "server full" ? 4002 : 4001, admission);
       return;
     }
     socket.join(room);
 
     const rateLimiter = new RateLimiter(rateCapacity, rateRefillPerSecond);
-    socket.on("presence", (data: Uint8Array) => {
+    socket.on("presence", (data: unknown) => {
       if (!rateLimiter.tryConsume()) return;
       if (messageByteLength(data, maxMessageBytes) > maxMessageBytes) return;
-      socket.to(room).emit("presence", data);
+      let outgoing = data;
+      if (identity !== undefined) {
+        const bytes = data instanceof ArrayBuffer ? new Uint8Array(data) : (data as Uint8Array);
+        const bound = bindIdentity(bytes, identity, connectionId);
+        if (bound === null) return;
+        outgoing = bound;
+      }
+      socket.to(room).emit("presence", outgoing);
     });
 
     socket.on("disconnect", () => {

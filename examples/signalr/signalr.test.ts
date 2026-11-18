@@ -28,8 +28,8 @@ function createFakeConnection(initial: HubConnectionState = HubConnectionState.C
     send: async (_method: string, payload: string) => {
       received.push(payload);
     },
-    on: (_event: string, next: (payload: string) => void) => {
-      handler = next;
+    on: (event: string, next: (payload: string) => void) => {
+      if (event === "PresenceReceived") handler = next;
     },
     off: () => {
       handler = null;
@@ -128,6 +128,33 @@ describe("createSignalRTransport", () => {
       sequence: 3,
       cursor: { anchors: [{ id: "overview-card", u: 0.25, v: 0.5 }] },
     });
+  });
+
+  it("ends disconnected and rejects when the first start fails", async () => {
+    const fake = createFakeConnection(HubConnectionState.Disconnected);
+    (fake.connection as unknown as { start: () => Promise<void> }).start = async () => {
+      throw new Error("refused");
+    };
+    const transport = createSignalRTransport(fake.connection);
+
+    await expect(transport.connect?.()).rejects.toThrow("refused");
+    expect(transport.getStatus?.()).toBe("disconnected");
+  });
+
+  it("reports a close with the refusal the hub sent", () => {
+    const fake = createFakeConnection(HubConnectionState.Connected);
+    const refused: Array<(code: number, reason: string) => void> = [];
+    (fake.connection as unknown as { on: (event: string, handler: never) => void }).on = (event, handler) => {
+      if (event === "Refused") refused.push(handler as never);
+    };
+    const transport = createSignalRTransport(fake.connection);
+    const closes: unknown[] = [];
+    transport.subscribeClose?.((close) => closes.push(close));
+
+    refused[0]?.(4007, "invalid room");
+    fake.fireClose();
+
+    expect(closes).toEqual([{ code: 4007, reason: "invalid room", willReconnect: false }]);
   });
 
   it("round-trips bytes that are not valid UTF-8", async () => {

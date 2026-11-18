@@ -3,7 +3,7 @@ title: Overview
 description: What @anchor-presence/react provides and how to add it to a React app.
 ---
 
-`@anchor-presence/react` adapts a presence client to React. It provides one provider that creates and shares the client, and two optional components to render cursors. It holds no state of its own. Every hook subscribes to the `@anchor-presence/core` client and the `@anchor-presence/dom` binding with `useSyncExternalStore`.
+`@anchor-presence/react` adapts a presence client to React. It provides one provider that creates and shares the client, and two optional components to render cursors. It holds no state of its own. A peer is another client in the same room. Every hook subscribes to the `@anchor-presence/core` client and the `@anchor-presence/dom` binding with `useSyncExternalStore`.
 
 ## What you get
 
@@ -11,7 +11,9 @@ description: What @anchor-presence/react provides and how to add it to a React a
 | -------------------------------------------------------- | ----------------------------------------------------------------------- |
 | [`LiveCursorProvider`](/docs/react/live-cursor-provider) | creates the client through `factory` and shares it with its DOM binding |
 | [`CursorLayer`](/docs/react/cursor-layer)                | renders every visible remote cursor                                     |
-| Hooks under [Hooks](/docs/react/remote-cursors)          | read cursors, users, context, and status                                |
+| Hooks under [Hooks](/docs/react/remote-cursors)          | read cursors, users, context, status, the client, and the binding       |
+| [`useCursorEvents`](/docs/react/cursor-events)           | receives one-shot events from peers                                     |
+| [`createPresenceHooks`](/docs/react/typed-hooks)         | returns the provider and the hooks with your types fixed                |
 
 ## Minimal setup
 
@@ -37,7 +39,7 @@ function App() {
 }
 ```
 
-The provider runs `factory` once, in a mount effect. Until it has run, the provider renders its children with no cursors, so the tree stays safe during that gap and during server rendering. See [Quick start](/docs/get-started/quick-start) for the full walkthrough, including the anchor markup.
+Before the factory runs, the provider renders its children with no cursors. The tree stays safe during that gap and during server rendering. For when the factory runs, see [Creating the client](/docs/react/client-creation). See [Quick start](/docs/get-started/quick-start) for the full walkthrough, including the anchor markup.
 
 ## Related
 

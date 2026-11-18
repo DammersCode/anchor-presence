@@ -24,7 +24,12 @@ export function createStatusMachine<TContext, TUser>(
 
   function setStatus(next: ConnectionStatus): void {
     if (state.status === next) return;
+    const previous = state.status;
     state.status = next;
+    // a peer may have left during the outage; unconfirmed entries expire unless a heartbeat refreshes them
+    if (next === "connected" && (previous === "reconnecting" || previous === "disconnected")) {
+      state.store.expireUnlessRefreshed(state.heartbeatMs * 2 + 5_000);
+    }
     // republish before listener fan-out so a throwing listener cannot kill the guarantee
     if (state.status === "connected") {
       publish.markReconnected();

@@ -373,31 +373,24 @@ describe("adversarial relay e2e", () => {
     expect(flooderBytes.length).toBeLessThanOrEqual(8);
   }, 15_000);
 
-  it("truncates room names above 256 characters", async () => {
+  it("refuses a room name above 256 characters instead of merging it with another room", async () => {
     const longRoom = `room-${"r".repeat(300)}`;
-    const sender = await connect(`ws://127.0.0.1:${referencePort}/?room=${encodeURIComponent(longRoom)}`);
-    const receiver = await connect(`ws://127.0.0.1:${referencePort}/?room=${encodeURIComponent(longRoom)}`);
+    const refused = await connect(
+      `ws://127.0.0.1:${referencePort}/?room=${encodeURIComponent(longRoom)}`,
+    ).catch(() => undefined);
+    expect(await refused?.closeCode).toBe(4007);
 
+    // a name of exactly 256 characters is valid and stays its own room
+    const roomA = "a".repeat(256);
+    const senderA = await connect(`ws://127.0.0.1:${referencePort}/?room=${roomA}`);
+    const sameRoom = await connect(`ws://127.0.0.1:${referencePort}/?room=${roomA}`);
     const received: unknown[] = [];
-    receiver.ws.onmessage = (event) => {
+    sameRoom.ws.onmessage = (event) => {
       received.push(event.data);
     };
-    sender.ws.send(new Uint8Array([1]));
+    senderA.ws.send(new Uint8Array([2]));
     await new Promise((resolve) => setTimeout(resolve, 300));
     expect(received).toHaveLength(1);
-
-    // two different long names that share a 256-char prefix truncate to the same room
-    const roomA = "a".repeat(256);
-    const roomB = `${"a".repeat(256)}b`;
-    const senderB = await connect(`ws://127.0.0.1:${referencePort}/?room=${roomA}`);
-    const receiverB = await connect(`ws://127.0.0.1:${referencePort}/?room=${roomB}`);
-    const receivedB: unknown[] = [];
-    receiverB.ws.onmessage = (event) => {
-      receivedB.push(event.data);
-    };
-    senderB.ws.send(new Uint8Array([2]));
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    expect(receivedB).toHaveLength(1);
   }, 15_000);
 
   it("rejects a spoofed sequence above the cap and keeps cursors working", async () => {

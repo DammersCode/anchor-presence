@@ -1,0 +1,281 @@
+import { afterEach, describe, expect, expectTypeOf, it, vi } from "vitest";
+import { createInMemoryPair, createPresenceClient } from "@anchor-presence/core";
+import type { TransportClose } from "@anchor-presence/core";
+import { CURSOR_MARKER_ATTRIBUTE, createDomBinding, createWebSocketTransport } from "../src/index";
+import type {
+  CafLike,
+  DomBinding,
+  MutationObserverCtor,
+  MutationObserverLike,
+  RafLike,
+  ResizeObserverCtor,
+  ResizeObserverLike,
+  WebSocketLike,
+} from "../src/index";
+
+class FakeSocket implements WebSocketLike {
+  static instances: FakeSocket[] = [];
+  readyState = 0;
+  onopen: WebSocketLike["onopen"] = null;
+  onclose: WebSocketLike["onclose"] = null;
+  onerror: WebSocketLike["onerror"] = null;
+  onmessage: WebSocketLike["onmessage"] = null;
+  binaryType = "";
+  constructor(readonly url: string) {
+    FakeSocket.instances.push(this);
+  }
+  send(): void {}
+  close(): void {
+    this.readyState = 3;
+  }
+}
+
+afterEach(() => {
+  FakeSocket.instances = [];
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
+});
+
+describe("dom docs samples", () => {
+  it("binding.mdx: dispose keeps the local cursor on peers only with keepLocalCursor", () => {
+    vi.useFakeTimers();
+    const { a, b } = createInMemoryPair();
+    const client = createPresenceClient({ transport: a });
+    const peer = createPresenceClient({ transport: b });
+    const binding = createDomBinding(client);
+    const peerCursor = () =>
+      peer.getRemoteSnapshot().find((p) => p.clientId === client.clientId)?.cursor ?? null;
+
+    client.updateLocalCursor({ anchors: [], viewport: { u: 0.5, v: 0.5 } });
+    vi.advanceTimersByTime(1000);
+    expect(peerCursor()).not.toBeNull();
+
+    binding.dispose({ keepLocalCursor: true });
+    const nextBinding = createDomBinding(client, { resolution: { hitTest: true } });
+    vi.advanceTimersByTime(1000);
+    expect(peerCursor()).not.toBeNull();
+
+    nextBinding.dispose();
+    vi.advanceTimersByTime(1000);
+    expect(peerCursor()).toBeNull();
+    client.dispose();
+    peer.dispose();
+  });
+
+  it("websocket-transport.mdx: shouldReconnect stops on 4007 and keeps retrying on 1006", () => {
+    vi.useFakeTimers();
+    const NO_RETRY_CODES = [1008, 4004, 4006, 4007];
+
+    const transport = createWebSocketTransport({
+      url: "wss://relay.example.com/?room=main",
+      shouldReconnect: (close) => close.code === undefined || !NO_RETRY_CODES.includes(close.code),
+      WebSocketCtor: FakeSocket,
+    });
+    void transport.connect();
+    FakeSocket.instances.at(-1)!.onclose?.({ code: 1006 });
+    expect(transport.getStatus?.()).toBe("reconnecting");
+    vi.advanceTimersByTime(10_000);
+    FakeSocket.instances.at(-1)!.onclose?.({ code: 4007 });
+    expect(transport.getStatus?.()).toBe("disconnected");
+  });
+
+  it("websocket-transport.mdx: subscribeClose reports a final close", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const transport = createWebSocketTransport({
+      url: "wss://relay.example.com/?room=main",
+      WebSocketCtor: FakeSocket,
+    });
+    const seen: TransportClose[] = [];
+    transport.subscribeClose?.((close) => seen.push(close));
+
+    transport.subscribeClose?.((close) => {
+      if (!close.willReconnect) {
+        console.warn(`Relay closed the connection: ${close.code ?? "no code"} ${close.reason ?? ""}`);
+      }
+    });
+
+    void transport.connect();
+    FakeSocket.instances.at(-1)!.onclose?.({ code: 4006, reason: "auth" });
+    expect(seen).toEqual([{ code: 4006, reason: "auth", willReconnect: false }]);
+    expect(warn).toHaveBeenCalledWith("Relay closed the connection: 4006 auth");
+    warn.mockRestore();
+  });
+
+  it("websocket-transport.mdx: throws a TypeError without url when window is missing", () => {
+    vi.stubGlobal("window", undefined);
+    expect(() => createWebSocketTransport()).toThrow(TypeError);
+  });
+
+  it("api/websocket-transport.mdx: accepts the platform WebSocket constructor", () => {
+    vi.stubGlobal("WebSocket", FakeSocket);
+    const transport = createWebSocketTransport({
+      url: "wss://relay.example.com/?room=main",
+      WebSocketCtor: WebSocket,
+    });
+    void transport.connect();
+    expect(FakeSocket.instances[0]?.url).toBe("wss://relay.example.com/?room=main");
+    void transport.disconnect();
+  });
+});
+
+function rafQueue() {
+  const queue = new Map<number, (timestampMs: number) => void>();
+  let next = 1;
+  const raf: RafLike = (callback) => {
+    queue.set(next, callback);
+    return next++;
+  };
+  const caf: CafLike = (handle) => {
+    queue.delete(handle);
+  };
+  const flush = () => {
+    const pending = [...queue.values()];
+    queue.clear();
+    for (const callback of pending) callback(0);
+  };
+  return { raf, caf, flush };
+}
+
+describe("binding docs", () => {
+  it("binding.mdx: the create sample renders each visible cursor", () => {
+    vi.useFakeTimers();
+    const { a, b } = createInMemoryPair();
+    const myTransport = a;
+    const rendered: string[] = [];
+    const renderCursor = (clientId: string, x: number, y: number) => rendered.push(`${clientId}@${x},${y}`);
+    const { raf, caf, flush } = rafQueue();
+
+    // Copied from apps/docs/content/docs/dom/binding.mdx (Create a binding), plus a frame stub.
+    const client = createPresenceClient({ transport: myTransport });
+    const binding = createDomBinding(client, { environment: { raf, caf } });
+
+    binding.subscribe(() => {
+      for (const cursor of binding.getSnapshot()) {
+        if (cursor.visible) renderCursor(cursor.clientId, cursor.x, cursor.y);
+      }
+    });
+
+    const peer = createPresenceClient({ transport: b });
+    peer.updateLocalCursor({ anchors: [], viewport: { u: 0.5, v: 0.5 } });
+    vi.advanceTimersByTime(100);
+    flush();
+    expect(rendered.at(-1)?.startsWith(`${peer.clientId}@`)).toBe(true);
+    binding.dispose();
+    client.dispose();
+    peer.dispose();
+  });
+
+  it("binding.mdx: throws a TypeError for a bad anchorAttribute or a non-integer maxAnchors", () => {
+    const { a } = createInMemoryPair();
+    const client = createPresenceClient({ transport: a });
+    expect(() => createDomBinding(client, { anchorAttribute: "data_anchor" })).toThrow(TypeError);
+    expect(() => createDomBinding(client, { anchorAttribute: "1-anchor" })).toThrow(TypeError);
+    expect(() => createDomBinding(client, { maxAnchors: 2.5 })).toThrow(TypeError);
+    expect(() => createDomBinding(client, { maxAnchors: Number.NaN })).toThrow(TypeError);
+    createDomBinding(client, { anchorAttribute: "anchor", maxAnchors: 20 }).dispose();
+    client.dispose();
+  });
+
+  it("binding.mdx: drawCursors keeps one marked element per visible cursor", () => {
+    vi.useFakeTimers();
+    const { a, b } = createInMemoryPair();
+    const { raf, caf, flush } = rafQueue();
+    const client = createPresenceClient({ transport: a });
+    const domBinding = createDomBinding(client, { environment: { raf, caf } });
+
+    // Copied from apps/docs/content/docs/dom/binding.mdx (Draw cursors without React).
+    function drawCursors(binding: DomBinding, layer: HTMLElement): () => void {
+      const elements = new Map<string, HTMLElement>();
+      return binding.subscribe(() => {
+        const shown = new Set<string>();
+        for (const cursor of binding.getSnapshot()) {
+          if (!cursor.visible) continue;
+          shown.add(cursor.clientId);
+          let element = elements.get(cursor.clientId);
+          if (element === undefined) {
+            element = document.createElement("div");
+            element.setAttribute(CURSOR_MARKER_ATTRIBUTE, "");
+            element.className = "remote-cursor";
+            layer.append(element);
+            elements.set(cursor.clientId, element);
+          }
+          element.style.transform = `translate(${cursor.x}px, ${cursor.y}px)`;
+        }
+        for (const [clientId, element] of elements) {
+          if (shown.has(clientId)) continue;
+          element.remove();
+          elements.delete(clientId);
+        }
+      });
+    }
+
+    const layer = document.createElement("div");
+    document.body.append(layer);
+    const stop = drawCursors(domBinding, layer);
+    const peer = createPresenceClient({ transport: b });
+    peer.updateLocalCursor({ anchors: [], viewport: { u: 0.5, v: 0.5 } });
+    vi.advanceTimersByTime(100);
+    flush();
+    expect(layer.children).toHaveLength(1);
+    expect(layer.firstElementChild?.hasAttribute(CURSOR_MARKER_ATTRIBUTE)).toBe(true);
+
+    domBinding.dispose();
+    expect(layer.children).toHaveLength(0);
+    stop();
+    layer.remove();
+    client.dispose();
+    peer.dispose();
+  });
+
+  it("binding.mdx: the invalidate sample marks the layout dirty after the fonts load", async () => {
+    const { a } = createInMemoryPair();
+    const client = createPresenceClient({ transport: a });
+    const binding = createDomBinding(client);
+    const invalidate = vi.spyOn(binding, "invalidate");
+    const document = { fonts: { ready: Promise.resolve() } };
+
+    // Copied from apps/docs/content/docs/dom/binding.mdx (invalidate).
+    await document.fonts.ready.then(() => {
+      binding.invalidate("fonts-loaded");
+    });
+
+    expect(invalidate).toHaveBeenCalledWith("fonts-loaded");
+    binding.dispose();
+    client.dispose();
+  });
+});
+
+describe("binding api docs: host types", () => {
+  // Copied from apps/docs/content/docs/dom/api/binding.mdx (Host types).
+  type DocRafLike = (callback: (timestampMs: number) => void) => number;
+  type DocCafLike = (handle: number) => void;
+
+  type DocResizeObserverLike = {
+    observe(target: Element): void;
+    unobserve(target: Element): void;
+    disconnect(): void;
+  };
+  type DocResizeObserverCtor = new (callback: () => void) => DocResizeObserverLike;
+
+  type DocMutationObserverLike = {
+    observe(target: Node, options: MutationObserverInit): void;
+    unobserve?(target: Node): void;
+    disconnect(): void;
+  };
+  type DocMutationObserverCtor = new (
+    callback: (records?: MutationRecord[]) => void,
+  ) => DocMutationObserverLike;
+
+  it("matches the exported host types, and the browser globals fit them", () => {
+    expectTypeOf<DocRafLike>().toEqualTypeOf<RafLike>();
+    expectTypeOf<DocCafLike>().toEqualTypeOf<CafLike>();
+    expectTypeOf<DocResizeObserverLike>().toEqualTypeOf<ResizeObserverLike>();
+    expectTypeOf<DocResizeObserverCtor>().toEqualTypeOf<ResizeObserverCtor>();
+    expectTypeOf<DocMutationObserverLike>().toEqualTypeOf<MutationObserverLike>();
+    expectTypeOf<DocMutationObserverCtor>().toEqualTypeOf<MutationObserverCtor>();
+    expectTypeOf(requestAnimationFrame).toMatchTypeOf<RafLike>();
+    expectTypeOf(cancelAnimationFrame).toMatchTypeOf<CafLike>();
+    expectTypeOf(MutationObserver).toMatchTypeOf<MutationObserverCtor>();
+    expectTypeOf<typeof ResizeObserver>().toMatchTypeOf<ResizeObserverCtor>();
+  });
+});

@@ -1,11 +1,13 @@
 ---
 title: Remote presence
-description: RemotePresenceStore, the stale timeout, the idle stage, and maxRemoteClients.
+description: RemotePresenceStore, the stale timeout, the idle stage, peer changes, leave messages, late join, reconnect expiry, and maxRemoteClients.
 ---
 
-`RemotePresenceStore` holds every remote presence a client accepts. `createPresenceClient` creates one store per client. Read the store through `client.getRemotePresence()` and `client.subscribeRemote(listener)`.
+`RemotePresenceStore` holds the presence of every peer that a client accepts. A peer is another client in the same room. `createPresenceClient` creates one store for each client. Read the store through `client.getRemotePresence()` and `client.subscribeRemote(listener)`.
 
-## Reading remote presence
+## Read remote presence
+
+This sample reads the stable snapshot and logs it on each change:
 
 ```ts
 const remotePresences = client.getRemotePresence();
@@ -14,28 +16,73 @@ const unsubscribe = client.subscribeRemote(() => {
 });
 ```
 
-`getRemotePresence()` returns the stable snapshot: a `RemotePresence[]` without the `sequence` field. The store keeps the array and entry identity while nothing observable changes, so it fits a render loop or a `useSyncExternalStore` subscription. `getRemoteSnapshot()` returns the raw snapshot with `sequence` included, as a new array on every accepted message. Use it to watch sequence numbers, not for rendering.
+`getRemotePresence()` returns the stable snapshot: a `RemotePresence[]` without the `sequence` field. The store keeps the array and entry identity while nothing observable changes. As a result, the stable snapshot fits a render loop or a `useSyncExternalStore` subscription.
+
+`getRemoteSnapshot()` returns the raw snapshot, with `sequence`. It returns a new array on every accepted message. Use it to watch sequence numbers, not for rendering.
 
 ## Stale timeout
 
-A remote client with no accepted message for `staleTimeoutMs` is removed from the store. The default is `DEFAULT_STALE_TIMEOUT_MS`, `70000` milliseconds. Set `staleTimeoutMs` on `createPresenceClient` to change it. The client enforces a minimum of `1000` milliseconds.
+The store removes a peer when it accepts no message from that peer for `staleTimeoutMs`. The default is `DEFAULT_STALE_TIMEOUT_MS`, `70000` milliseconds. Set `staleTimeoutMs` on `createPresenceClient` to change it. The client enforces a minimum of `1000` milliseconds.
 
 ## Idle stage
 
-A remote client whose presence has not changed for `idleAfterMs` is marked `idle: true` in its `RemotePresence`, before it goes stale. The default is `DEFAULT_IDLE_AFTER_MS`, `15000` milliseconds. `idleAfterMs` always stays below `staleTimeoutMs`. The store clamps it to `staleTimeoutMs - 1` when you pass a larger value.
+The store sets `idle: true` on the `RemotePresence` of a peer whose presence did not change for `idleAfterMs`. This happens before the peer goes stale. The store measures this time from the last change, not from the last message. The default is `DEFAULT_IDLE_AFTER_MS`, `15000` milliseconds. `idleAfterMs` always stays below `staleTimeoutMs`. If you pass a larger value, the store clamps it to `staleTimeoutMs - 1`.
 
-Heartbeats do not end idle, because they repeat the same state. Any change in cursor, user, context or pointer ends it. Use idle to dim or gray out a cursor that stopped moving, while `staleTimeoutMs` decides when the cursor disappears.
+Heartbeats do not end idle, because they repeat the same state. A still peer goes idle while its heartbeats keep arriving. Any change in cursor, user, context, or pointer ends it. Use idle to dim a cursor that stopped moving. `staleTimeoutMs` decides when the cursor disappears.
 
-A client that calls `dispose()` sends a leave message, and receivers remove it at once.
+## Peer changes
+
+Call `client.subscribePeers(listener)` to learn when peers join, leave, or change their profile:
+
+```ts
+const unsubscribe = client.subscribePeers((change) => {
+  if (change.type === "join") showToast(`${change.clientId} joined`);
+});
+```
+
+The listener receives a `PeerChange` with a `type` and the `clientId` of the peer:
+
+| `type`   | When the store reports it                                                                |
+| -------- | ---------------------------------------------------------------------------------------- |
+| `join`   | The store accepts the first message of an unknown `clientId`.                            |
+| `update` | The `user` or `context` of a known peer changes.                                         |
+| `leave`  | The store removes the peer: a leave message, the stale timeout, or the reconnect expiry. |
+
+Cursor moves, pointer changes, and events never produce a change. A heartbeat that repeats an equal `user` or `context` produces no `update`. A message from a known `clientId` with another `session` produces no `join`. It produces an `update` when its `user` differs by value from the stored one. A message that the store drops because it is full produces no `join`.
+
+## Leave messages
+
+A client sends a leave message when you call `client.leave()` or `client.dispose()`. See [Leave the room](/docs/core/presence-client#leave-the-room). Receivers remove the client at once. They do not wait for `staleTimeoutMs`.
+
+A receiver accepts a leave message only from the stored `session`, and only with a higher `sequence`. A leave message for an unknown `clientId` changes nothing.
+
+## Late join
+
+When the client accepts the first message of an unknown `clientId`, it answers with one full publish. The answer comes after a random delay of up to 500 ms. A known `clientId` with another `session` gets the same answer. The full publish carries the cursor, `user`, and `context`. As a result, the peer that joined sees this client before the next heartbeat.
+
+One delay covers every peer that joins in this time. The random delay spreads the answers of the clients in a full room. A leave message or an event gets no answer.
+
+## After a reconnect
+
+When the status changes to `connected` from `reconnecting` or `disconnected`, the client marks every peer unconfirmed. A peer can leave during the outage, and its leave message never reaches this client.
+
+Any accepted message confirms a peer. If an unconfirmed peer sends no message within `2 * heartbeatMs + 5 s`, the next sweep removes it and reports a `leave`. With the default `heartbeatMs`, this time is 25 seconds. If the stale timeout comes first, the stale timeout applies.
+
+<Callout type="warn">
+  If peers use a longer `heartbeatMs` than this client, they disappear after a reconnect until their next
+  message. The client uses its own `heartbeatMs` for this time.
+</Callout>
 
 ## maxRemoteClients
 
-The store caps the number of distinct remote clients it tracks at `maxRemoteClients`, `64` by default (`DEFAULT_MAX_REMOTE_CLIENTS`). A message from a new `clientId` beyond the cap is dropped. Existing clients keep updating.
+`maxRemoteClients` caps the number of peers that the store tracks. The default is `64` (`DEFAULT_MAX_REMOTE_CLIENTS`). When the store is full, it drops each message from a new `clientId`. Known peers keep their updates.
 
 <Callout type="warn">
   If a room can hold more than 64 tabs, raise `maxRemoteClients`. Otherwise the users above the cap never
-  appear, and nothing reports it unless you pass `onRemoteClientDrop`.
+  appear. In a production build, nothing reports the drop unless you pass `onRemoteClientDrop`.
 </Callout>
+
+This client raises the cap and reports each dropped peer:
 
 ```ts
 const client = createPresenceClient({
@@ -45,11 +92,60 @@ const client = createPresenceClient({
 });
 ```
 
-`onRemoteClientDrop` runs each time the store drops a new client because it is full. See [maxRemoteClients](/docs/get-started/guides/security#maxremoteclients) on the Security page for the capacity-planning guidance.
+`onRemoteClientDrop` runs each time the store drops a new peer because it is full. See [maxRemoteClients](/docs/get-started/guides/security#maxremoteclients) on the Security page for capacity planning.
 
 ## Message ordering
 
-The store drops a same-session message whose `sequence` is not higher than the stored value, so an out-of-order or duplicate delivery from the transport never moves a cursor backward. A message from a new `session` for a known `clientId` always replaces the stored value. This covers a client that reconnects with a new session ID.
+The store drops a same-session message whose `sequence` is not higher than the stored value. As a result, an out-of-order or duplicate delivery never moves a cursor backward. A message from a new `session` for a known `clientId` always replaces the stored value. This rule covers a client that reconnects with a new session ID.
+
+## Use the store without a client
+
+`RemotePresenceStore` is exported, so a relay or a test can hold remote presence without a `PresenceClient`. This sample checks each decoded message, stores it, and runs the sweep on a timer:
+
+```ts
+import { RemotePresenceStore, validatePresence } from "@anchor-presence/core";
+
+const store = new RemotePresenceStore({ maxRemoteClients: 200 });
+const sweepTimer = setInterval(() => store.sweep(), 1000);
+
+function receive(decoded: unknown) {
+  const presence = validatePresence(decoded);
+  if (presence !== null && presence.event === undefined) store.ingest(presence);
+}
+```
+
+The store has no timer of its own. If you use the store without a client, call `sweep()` on a timer. Without the sweep, no peer goes stale or idle.
+
+`ingest` does not check a message. Before you call `ingest`, do the steps that the client does:
+
+- Pass the decoded value through `validatePresence`.
+- Drop the echoes of your own `clientId`.
+- Keep event messages out of the store. An event message has a `null` cursor, so `ingest` stores it as a peer without a cursor.
+
+The constructor takes `RemotePresenceStoreOptions`. Omit a field to keep its default:
+
+| Option             | Default                      | Effect                                                                        |
+| ------------------ | ---------------------------- | ----------------------------------------------------------------------------- |
+| `maxRemoteClients` | `DEFAULT_MAX_REMOTE_CLIENTS` | The largest number of peers in the store.                                     |
+| `staleTimeoutMs`   | `DEFAULT_STALE_TIMEOUT_MS`   | The time without a message before `sweep` removes a peer. No minimum.         |
+| `idleAfterMs`      | `DEFAULT_IDLE_AFTER_MS`      | The time without a change before `sweep` marks a peer idle.                   |
+| `now`              | `Date.now`                   | Returns the current time in milliseconds.                                     |
+| `onDropNewClient`  | none                         | Runs each time the store drops a message from a new peer, because it is full. |
+
+The store has these methods:
+
+| Method                           | Effect                                                                                                               |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `ingest(presence)`               | Applies one checked message. Returns `true` when the store accepts it. The ordering and leave rules above apply.     |
+| `sweep()`                        | Removes stale peers and sets or clears `idle`.                                                                       |
+| `remove(clientId)`               | Removes one peer and reports a `leave`. An unknown `clientId` changes nothing.                                       |
+| `has(clientId, session?)`        | Returns whether the store holds the peer, with this `session` when you pass one.                                     |
+| `expireUnlessRefreshed(graceMs)` | Marks every peer unconfirmed. A later `sweep` removes each peer that sends no message within `graceMs`.              |
+| `subscribe(listener)`            | Calls `listener` on each accepted message, each removal, and each `idle` change. Returns a function that removes it. |
+| `subscribePeers(listener)`       | Calls `listener` with a `PeerChange`. Returns a function that removes it.                                            |
+| `getSnapshot()`                  | Returns the raw snapshot, with `sequence`.                                                                           |
+| `getStableSnapshot()`            | Returns the stable snapshot, with `idle` and without `sequence`.                                                     |
+| `hasActiveCursors()`             | Returns whether at least one peer has a cursor. The store keeps a count, so this check costs no scan.                |
 
 ## Related
 

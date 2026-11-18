@@ -3,11 +3,13 @@ import type {
   ConnectionStatus,
   CursorPosition,
   CursorPresence,
+  PeerChange,
   PointerInfo,
+  RemoteEvent,
   RemotePresence,
 } from "../protocol.js";
 import type { RemotePresenceStore } from "../store.js";
-import type { LiveCursorTransport } from "../transport.js";
+import type { LiveCursorTransport, TransportClose } from "../transport.js";
 import type { ValidationLimits } from "../validate.js";
 
 /** Handle for one scheduled timer. */
@@ -62,10 +64,12 @@ export type PresenceClientOptions<TContext = unknown, TUser = unknown> = {
   onRemoteClientDrop?: () => void;
   /** The user value the client sends to remote peers. */
   user?: TUser;
-  /** Checks the `user` of each remote message. Return `undefined` or throw to drop the field. Default: accept as is. */
+  /** Checks the `user` of each remote message. Return `undefined` or throw to drop the field. Default: the value must have the shape of the local `user`. */
   parseUser?: (value: unknown) => TUser | undefined;
-  /** Checks the `context` of each remote message. Return `undefined` or throw to drop the field. Default: accept as is. */
+  /** Checks the `context` of each remote message. Return `undefined` or throw to drop the field. Default: the value must have the shape of the local `context`. */
   parseContext?: (value: unknown) => TContext | undefined;
+  /** Checks each remote event. Return the event to deliver it, or `undefined` or throw to drop it. Default: deliver as is. */
+  parseEvent?: (event: RemoteEvent) => RemoteEvent | undefined;
   /** The context value the client sends to remote peers. */
   context?: TContext;
   /** Returns a new random ID. The client uses it for `clientId` and `session`. */
@@ -104,6 +108,33 @@ export interface PresenceClient<TContext = unknown, TUser = unknown> {
    * @param pointer Optional pointer info to send with the cursor.
    */
   updateLocalCursor(cursor: CursorPosition | null, pointer?: PointerInfo): void;
+  /**
+   * Adds a listener for connection closes, with the close code and reason.
+   * A transport without `subscribeClose` never calls it.
+   * @returns A function that removes the listener.
+   */
+  subscribeClose(listener: (close: TransportClose) => void): () => void;
+  /**
+   * Tells remote peers that this client left, so they remove it at once.
+   * The next publish or heartbeat announces the client again.
+   */
+  leave(): void;
+  /**
+   * Sends a one-shot event to every remote peer, for example a reaction or a ping.
+   * The client never stores the event, and never resends it.
+   * @returns `false` when the client is not connected or the event is invalid.
+   */
+  sendEvent(type: string, data?: unknown): boolean;
+  /**
+   * Adds a listener for events from remote peers.
+   * @returns A function that removes the listener.
+   */
+  subscribeEvents(listener: (event: RemoteEvent) => void): () => void;
+  /**
+   * Adds a listener for remote clients that join or leave, or change their `user` or `context`.
+   * @returns A function that removes the listener.
+   */
+  subscribePeers(listener: (change: PeerChange) => void): () => void;
   /**
    * Sets the context value the client sends to remote peers.
    * `undefined` clears the value.
@@ -192,12 +223,14 @@ export type PresenceClientState<TContext, TUser> = {
   context: TContext | undefined;
   user: TUser | undefined;
   onNewPeer: () => void;
+  parseEvent: ((event: RemoteEvent) => RemoteEvent | undefined) | undefined;
   parseUser: ((value: unknown) => TUser | undefined) | undefined;
   parseContext: ((value: unknown) => TContext | undefined) | undefined;
   contextDirty: boolean;
   userDirty: boolean;
   sequence: number;
   disposed: boolean;
+  left: boolean;
   latestCursor: CursorPosition | null;
   latestPointer: PointerInfo | undefined;
   pendingPublish: boolean;
@@ -210,5 +243,6 @@ export type PresenceClientState<TContext, TUser> = {
   newPeerTimer: TimerHandle | null;
   status: ConnectionStatus;
   contextListeners: Set<() => void>;
+  eventListeners: Set<(event: RemoteEvent) => void>;
   teardowns: Array<() => void>;
 };

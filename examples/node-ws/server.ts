@@ -1,5 +1,6 @@
 // Node `ws` on node:http. Same security baseline as the Bun relay example.
-import { createServer, type Server } from "node:http";
+import { createServer, type IncomingMessage, type Server } from "node:http";
+import type { Duplex } from "node:stream";
 import { WebSocketServer, type WebSocket } from "ws";
 import {
   allowedOriginsFromEnv,
@@ -7,9 +8,15 @@ import {
   messageByteLength,
   originAllowed,
   RateLimiter,
-  sanitizeRoomName,
+  INVALID_ROOM_CODE,
+  newConnectionId,
+  parseRoom,
   slowPeerAction,
+  safeAuthCheck,
+  bindIdentity,
+  type AuthIdentity,
   tokenAuthCheck,
+  type AuthCheck,
 } from "../_shared/relay-guard";
 
 export type NodeWsRelayOptions = {
@@ -25,11 +32,13 @@ export type NodeWsRelayOptions = {
   slowPeerResumeBytes?: number;
   allowedOrigins?: Set<string>;
   /** Auth hook placeholder: verify a token query param. Default accepts every token. */
-  authCheck?: (token: string) => boolean;
+  authCheck?: AuthCheck;
 };
 
 type SocketState = {
   room: string;
+  identity: AuthIdentity | undefined;
+  connectionId: string;
   rateLimiter: RateLimiter;
   skipped: boolean;
   alive: boolean;
@@ -54,7 +63,7 @@ export function createNodeWsRelay(port: number, options: NodeWsRelayOptions = {}
   const slowPeerResumeBytes =
     options.slowPeerResumeBytes ?? limitFromEnv(process.env.RELAY_SLOW_PEER_RESUME_BYTES, 512 * 1024);
   const allowedOrigins = options.allowedOrigins ?? allowedOriginsFromEnv(process.env.RELAY_ALLOWED_ORIGINS);
-  const authCheck = options.authCheck ?? tokenAuthCheck(process.env.RELAY_AUTH_TOKEN ?? "");
+  const authCheck = safeAuthCheck(options.authCheck ?? tokenAuthCheck(process.env.RELAY_AUTH_TOKEN ?? ""));
 
   const rooms = new Map<string, Set<WebSocket>>();
   const state = new WeakMap<WebSocket, SocketState>();
@@ -66,35 +75,67 @@ export function createNodeWsRelay(port: number, options: NodeWsRelayOptions = {}
   // keep going" mid-frame), so the real drop-don't-crash size check runs in the message handler below.
   const wss = new WebSocketServer({ noServer: true, maxPayload: Math.max(maxMessageBytes * 4, 1024 * 1024) });
 
-  httpServer.on("upgrade", (req, socket, head) => {
+  // accept the upgrade, then close with a code, like the reference relay: a destroyed socket reads as 1006
+  const refuse = (req: IncomingMessage, socket: Duplex, head: Buffer, code: number, reason: string) => {
+    wss.handleUpgrade(req, socket, head, (ws) => ws.close(code, reason));
+  };
+
+  httpServer.on("upgrade", async (req, socket, head) => {
+    // Node removes its own socket error listener before it emits `upgrade`: without this one, a reset during an async hook kills the process
+    socket.on("error", () => socket.destroy());
     const url = new URL(req.url ?? "/", "http://localhost");
-    const origin = req.headers.origin ?? "";
-    if (!originAllowed(allowedOrigins, origin)) {
-      socket.destroy();
+    if (url.pathname !== "/") {
+      socket.end("HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n");
       return;
     }
-    if (!authCheck(url.searchParams.get("token") ?? "")) {
-      socket.destroy();
+    const origin = req.headers.origin ?? "";
+    if (!originAllowed(allowedOrigins, origin)) {
+      refuse(req, socket, head, 4004, "origin not allowed");
+      return;
+    }
+    const parsedRoom = parseRoom(url.searchParams.get("room"));
+    const authRoom = parsedRoom ?? "main";
+    const headers = Object.fromEntries(
+      Object.entries(req.headers).map(([name, value]) => [
+        name,
+        Array.isArray(value) ? value.join(", ") : value,
+      ]),
+    );
+    const auth = await authCheck({
+      token: url.searchParams.get("token") ?? "",
+      room: authRoom,
+      origin,
+      headers,
+    });
+    if (socket.destroyed) return;
+    if (auth === false) {
+      refuse(req, socket, head, 4006, "invalid token");
       return;
     }
     if (wss.clients.size >= maxSockets) {
-      socket.destroy();
+      refuse(req, socket, head, 4002, "server full");
       return;
     }
-    const room = sanitizeRoomName(url.searchParams.get("room"));
+    if (parsedRoom === null) {
+      refuse(req, socket, head, INVALID_ROOM_CODE, "invalid room");
+      return;
+    }
+    const room = parsedRoom;
     const sockets = rooms.get(room);
     if (sockets && sockets.size >= maxRoomSockets) {
-      socket.destroy();
+      refuse(req, socket, head, 4001, "room full");
       return;
     }
     wss.handleUpgrade(req, socket, head, (ws) => {
-      wss.emit("connection", ws, room);
+      wss.emit("connection", ws, room, auth === true ? undefined : auth);
     });
   });
 
-  wss.on("connection", (ws: WebSocket, room: string) => {
+  wss.on("connection", (ws: WebSocket, room: string, identity: AuthIdentity | undefined) => {
     const socketState: SocketState = {
       room,
+      identity,
+      connectionId: newConnectionId(),
       rateLimiter: new RateLimiter(rateCapacity, rateRefillPerSecond),
       skipped: false,
       alive: true,
@@ -118,6 +159,16 @@ export function createNodeWsRelay(port: number, options: NodeWsRelayOptions = {}
       const message = isBinary ? (data as Buffer) : data.toString();
       if (messageByteLength(message, maxMessageBytes) > maxMessageBytes) return;
 
+      // a verified identity replaces whatever clientId and user the peer claims
+      let outgoing: Buffer | string | Uint8Array = data as Buffer;
+      let outgoingBinary = isBinary;
+      if (socketState.identity !== undefined) {
+        const bound = bindIdentity(message, socketState.identity, socketState.connectionId);
+        if (bound === null) return;
+        outgoing = bound;
+        outgoingBinary = true;
+      }
+
       const peers = rooms.get(room);
       if (!peers) return;
       for (const peer of peers) {
@@ -137,7 +188,7 @@ export function createNodeWsRelay(port: number, options: NodeWsRelayOptions = {}
         }
         peerState.skipped = action === "skip";
         if (action === "skip") continue;
-        peer.send(data, { binary: isBinary });
+        peer.send(outgoing, { binary: outgoingBinary });
       }
     });
 

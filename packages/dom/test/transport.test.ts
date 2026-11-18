@@ -523,6 +523,47 @@ describe("createWebSocketTransport", () => {
     expect(transport.getStatus?.()).toBe("disconnected");
   });
 
+  it("reports the close code, reason and whether it reconnects", () => {
+    vi.useFakeTimers();
+    const transport = make();
+    const closes: unknown[] = [];
+    transport.subscribeClose?.((close) => closes.push(close));
+    void transport.connect();
+    FakeWebSocket.fire(lastSocket(), "close", { code: 1006 });
+    vi.advanceTimersByTime(60_000);
+    FakeWebSocket.fire(lastSocket(), "close", { code: 4006, reason: "invalid token" });
+
+    expect(closes).toEqual([
+      { code: 1006, willReconnect: true },
+      { code: 4006, reason: "invalid token", willReconnect: false },
+    ]);
+  });
+
+  it("reports a failed token function as a close with a reason", async () => {
+    vi.useFakeTimers();
+    const transport = make({ token: () => Promise.reject(new Error("expired")), baseBackoffMs: 100 });
+    const closes: unknown[] = [];
+    transport.subscribeClose?.((close) => closes.push(close));
+    void transport.connect();
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(closes).toEqual([{ reason: "connection attempt failed", willReconnect: true }]);
+  });
+
+  it("keeps reconnecting when a close listener throws", () => {
+    vi.useFakeTimers();
+    const transport = make({ baseBackoffMs: 100, random: () => 1 });
+    transport.subscribeClose?.(() => {
+      throw new Error("listener bug");
+    });
+    void transport.connect();
+    FakeWebSocket.fire(lastSocket(), "close", { code: 1006 });
+
+    expect(transport.getStatus?.()).toBe("reconnecting");
+    vi.advanceTimersByTime(100);
+    expect(FakeWebSocket.instances).toHaveLength(2);
+  });
+
   it("accepts the platform WebSocket constructor without a cast", () => {
     const ctor: WebSocketCtor = WebSocket;
     expect(ctor).toBe(WebSocket);

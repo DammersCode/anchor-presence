@@ -1,11 +1,13 @@
 ---
 title: Components API
-description: Prop types for LiveCursorProvider, CursorLayer, and DefaultCursor.
+description: Prop types for LiveCursorProvider, CursorLayer, and DefaultCursor, and the LiveCursorContext value.
 ---
 
-Full prop types for every component `@anchor-presence/react` exports. See [LiveCursorProvider](/docs/react/live-cursor-provider), [CursorLayer](/docs/react/cursor-layer), and [Custom cursors](/docs/react/custom-cursors) for prose and examples.
+`@anchor-presence/react` exports the components below, with these prop types. See [LiveCursorProvider](/docs/react/live-cursor-provider), [CursorLayer](/docs/react/cursor-layer), and [Custom cursors](/docs/react/custom-cursors) for prose and examples.
 
 ## LiveCursorProvider
+
+Import `LiveCursorProvider` from `@anchor-presence/react`:
 
 ```ts
 import { LiveCursorProvider } from "@anchor-presence/react";
@@ -13,7 +15,11 @@ import { LiveCursorProvider } from "@anchor-presence/react";
 
 <AutoTypeTable path="../../packages/react/src/provider.tsx" name="LiveCursorProviderProps" />
 
+See [Rebuild the binding](/docs/react/live-cursor-provider#rebuild-the-binding) for `bindingKey` and [Switch rooms](/docs/react/live-cursor-provider#switch-rooms) for `clientKey`. For a provider with your types fixed, see [Typed hooks](/docs/react/typed-hooks).
+
 ## CursorLayer
+
+Import `CursorLayer` from `@anchor-presence/react`:
 
 ```ts
 import { CursorLayer } from "@anchor-presence/react";
@@ -21,17 +27,43 @@ import { CursorLayer } from "@anchor-presence/react";
 
 <AutoTypeTable path="../../packages/react/src/cursor.tsx" name="CursorLayerProps" />
 
-`CursorRenderProps` is the shape `renderCursor` receives:
+`CursorRenderProps` is the shape that `renderCursor` receives:
 
 <AutoTypeTable path="../../packages/react/src/cursor.tsx" name="CursorRenderProps" />
 
 ## DefaultCursor
+
+Import `DefaultCursor` from `@anchor-presence/react`:
 
 ```ts
 import { DefaultCursor } from "@anchor-presence/react";
 ```
 
 <AutoTypeTable path="../../packages/react/src/cursor.tsx" name="DefaultCursorProps" />
+
+## LiveCursorContext
+
+`LiveCursorContext` is the React context that `LiveCursorProvider` fills. Import it and its value type from `@anchor-presence/react`:
+
+```ts
+import { LiveCursorContext, type LiveCursorContextValue } from "@anchor-presence/react";
+```
+
+<AutoTypeTable path="../../packages/react/src/context.ts" name="LiveCursorContextValue" />
+
+Outside a provider, both fields are `null`. During server rendering, `binding` is `null`. The hooks read this context for you. To get the `DomBinding`, call [`useCursorBinding`](/docs/react/api/hooks#usecursorbinding).
+
+This component reads the context directly and shows a line when the client and the binding exist:
+
+```tsx
+import { useContext } from "react";
+import { LiveCursorContext } from "@anchor-presence/react";
+
+function PresenceReady() {
+  const { client, binding } = useContext(LiveCursorContext);
+  return client !== null && binding !== null ? <p>Presence is ready.</p> : null;
+}
+```
 
 ## Related
 

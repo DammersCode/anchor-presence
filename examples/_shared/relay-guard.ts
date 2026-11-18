@@ -6,6 +6,23 @@ const encoder = new TextEncoder();
 const ROOM_CHARSET = /^[A-Za-z0-9_-]+$/;
 const MAX_ROOM_LENGTH = 256;
 
+/** Close code a relay uses when a connection names a room that is not a valid room name. */
+export const INVALID_ROOM_CODE = 4007;
+
+/**
+ * Reads a room name. A missing or empty value is the default room `main`.
+ * A name with other characters, or above 256 characters, returns `null`: refuse the connection, never merge it into `main`.
+ */
+export function parseRoom(candidate: string | null | undefined): string | null {
+  if (candidate === null || candidate === undefined || candidate === "") return "main";
+  return candidate.length <= MAX_ROOM_LENGTH && ROOM_CHARSET.test(candidate) ? candidate : null;
+}
+
+/** A short random ID that tells the connections of one identity apart. */
+export function newConnectionId(): string {
+  return Math.random().toString(36).slice(2, 10);
+}
+
 /** Validates a room name: length-capped, restricted charset. Falls back to "main" otherwise. */
 export function sanitizeRoomName(candidate: string | null | undefined): string {
   const value = (candidate ?? "").slice(0, MAX_ROOM_LENGTH);
@@ -25,8 +42,9 @@ export function timingSafeEqualString(a: string, b: string): boolean {
 }
 
 /** Byte length of a text or binary message, without a full UTF-8 encode when the length already proves it is over budget. */
-export function messageByteLength(message: string | ArrayBufferView | ArrayBuffer, maxBytes: number): number {
-  if (typeof message !== "string") return message.byteLength;
+export function messageByteLength(message: unknown, maxBytes: number): number {
+  if (message instanceof ArrayBuffer || ArrayBuffer.isView(message)) return message.byteLength;
+  if (typeof message !== "string") return Number.POSITIVE_INFINITY; // an object has no byte length: over budget
   if (message.length > maxBytes) return message.length;
   if (message.length * 3 <= maxBytes) return message.length;
   return encoder.encode(message).byteLength;
@@ -118,18 +136,95 @@ export function originAllowed(allowlist: Set<string>, origin: string): boolean {
   return allowlist.size === 0 || allowlist.has(origin);
 }
 
+/** What an auth hook sees: the token, the room, the origin and the request headers. */
+export type AuthRequest = {
+  token: string;
+  room: string;
+  origin: string;
+  headers: Record<string, string | undefined>;
+};
+
 /**
- * Auth hook placeholder: verifies a token query param via a user-supplied function.
+ * Auth hook: decides whether a connection may join. It may be async, for example to verify a JWT or look up a session.
  * The default accepts everything, matching the reference relay's opt-in auth.
  */
-export type AuthCheck = (token: string) => boolean;
+export type AuthCheck = (request: AuthRequest) => AuthResult | Promise<AuthResult>;
+
+/** Who the relay says a connection is. A relay that supports it rewrites `clientId` and `user` of every JSON frame to these values. */
+export type AuthIdentity = { clientId: string; user?: unknown };
+
+/** `true` admits, `false` refuses, an identity admits and binds the connection to that identity. */
+export type AuthResult = boolean | AuthIdentity;
+
+/** Wraps an auth hook so a throw or a rejection counts as a refusal, never as a crash or a hang. */
+export function safeAuthCheck(check: AuthCheck): (request: AuthRequest) => Promise<AuthResult> {
+  return async (request) => {
+    try {
+      const result = await check(request);
+      if (result === true) return true;
+      if (
+        typeof result === "object" &&
+        result !== null &&
+        typeof result.clientId === "string" &&
+        result.clientId !== ""
+      ) {
+        return result;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  };
+}
+
+const identityEncoder = new TextEncoder();
+const identityDecoder = new TextDecoder();
+
+/**
+ * Rewrites a JSON presence frame so it carries the identity the relay verified.
+ * The `clientId` gets the connection ID as a suffix, so two tabs of one user stay two clients.
+ * Returns `null` for a frame that is not a JSON object, for example a binaryCodec frame: drop it.
+ */
+export function bindIdentity(
+  frame: Uint8Array | string,
+  identity: AuthIdentity,
+  connectionId: string,
+): Uint8Array<ArrayBuffer> | null {
+  try {
+    const parsed: unknown = JSON.parse(typeof frame === "string" ? frame : identityDecoder.decode(frame));
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return null;
+    const message: Record<string, unknown> = {
+      ...(parsed as Record<string, unknown>),
+      clientId: `${identity.clientId}~${connectionId}`,
+    };
+    if (identity.user !== undefined) message.user = identity.user;
+    return identityEncoder.encode(JSON.stringify(message));
+  } catch {
+    return null;
+  }
+}
 
 export function tokenAuthCheck(expectedToken: string): AuthCheck {
   if (expectedToken === "") return () => true;
-  return (token) => timingSafeEqualString(token, expectedToken);
+  return (request) => timingSafeEqualString(request.token, expectedToken);
 }
 
 export function limitFromEnv(value: string | undefined, fallback: number): number {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback;
+}
+
+/**
+ * Demo identity for the relay entry files: with RELAY_DEMO_IDENTITY=1 the token names the user.
+ * A real relay verifies the token, for example as a JWT, and returns the verified user.
+ */
+export function demoIdentityFromEnv(): AuthCheck | undefined {
+  if (process.env.RELAY_DEMO_IDENTITY !== "1") return undefined;
+  return ({ token }) => (token === "" ? false : { clientId: `user-${token}`, user: { name: token } });
+}
+
+/** Options for a relay entry file: the demo identity when RELAY_DEMO_IDENTITY=1, no auth hook otherwise. */
+export function demoIdentityOptions(): { authCheck?: AuthCheck } {
+  const check = demoIdentityFromEnv();
+  return check === undefined ? {} : { authCheck: check };
 }

@@ -3,11 +3,11 @@ title: Custom codec
 description: Write your own codec with MessagePack, and debug binaryCodec traffic.
 ---
 
-Write a codec when you need a wire format `jsonCodec` and `binaryCodec` do not cover, such as MessagePack. This page also shows how to debug a binary codec's traffic during development.
+If you need a wire format that `jsonCodec` and `binaryCodec` do not cover, write a codec. MessagePack is one example. You can also wrap a codec to log the traffic of `binaryCodec` during development.
 
 ## MessagePack sketch
 
-MessagePack produces smaller payloads than JSON for the same data. Use any MessagePack library that exposes an `encode`/`decode` pair operating on `Uint8Array`:
+MessagePack makes smaller payloads than JSON for the same data. This sketch uses `@msgpack/msgpack`. Any MessagePack library with an `encode` and `decode` pair on `Uint8Array` works the same way:
 
 ```ts
 import { encode, decode } from "@msgpack/msgpack";
@@ -27,17 +27,17 @@ export const messagePackCodec: CursorCodec = {
 };
 ```
 
-Wrap every decode call in `try`/`catch`. A malformed or truncated buffer must produce `null`, never an uncaught exception.
+Wrap every decode call in `try`/`catch`. For a malformed or truncated buffer, `decode` must return `null` and never throw.
 
-## Debugging binary traffic
+## Debug binary traffic
 
-The DevTools network tab cannot show the content of `binaryCodec` frames. Use one of these two options.
+The network tab of the browser DevTools cannot show the content of `binaryCodec` frames. Use one of these two options.
 
 **Option A:** use `jsonCodec` in development and `binaryCodec` in production. The network tab then shows every development message as readable JSON.
 
 <Callout type="warn">
-  If a development client and a production client join the same room, they drop each other's messages. All
-  clients in a room must use the same codec.
+  If a development client and a production client join the same room, each client drops the messages of the
+  other. All clients in a room must use the same codec.
 </Callout>
 
 **Option B:** wrap the codec so that it logs every message. This wrapper keeps `binaryCodec` on the wire:
@@ -58,7 +58,7 @@ const debugCodec: CursorCodec = {
 };
 ```
 
-To read one captured frame, call `binaryCodec.decode(new Uint8Array([/* bytes */]))` in the console.
+To read one captured frame, call `binaryCodec.decode(new Uint8Array([/* bytes */]))` in the browser console.
 
 ## Related
 

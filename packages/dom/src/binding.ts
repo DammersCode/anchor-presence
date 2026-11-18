@@ -107,8 +107,9 @@ export type DomBinding<TContext = unknown, TUser = unknown> = {
   /**
    * Stops the binding and clears its listeners.
    * The binding sends one final empty snapshot before it stops.
+   * It also clears the local cursor on the client, unless you pass `keepLocalCursor`, for example when you rebuild the binding.
    */
-  dispose(): void;
+  dispose(options?: { keepLocalCursor?: boolean }): void;
 };
 
 const EMPTY_SNAPSHOT: ResolvedCursor[] = [];
@@ -159,9 +160,17 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
     for (const listener of snapshotListeners) listener();
   }
 
+  // while our own connection is down, remote cursors are ghosts: hide them until it is back
+  const isLive = () => {
+    const status = client.getStatus();
+    return status !== "reconnecting" && status !== "disconnected";
+  };
+
   const scheduler = createGeometryScheduler<ResolvedCursor<TContext, TUser>[]>({
     hasActiveCursors: () =>
-      client.hasActiveCursors?.() ?? client.getRemoteSnapshot().some((presence) => presence.cursor !== null),
+      isLive() &&
+      (client.hasActiveCursors?.() ??
+        client.getRemoteSnapshot().some((presence) => presence.cursor !== null)),
 
     compute(readState, timestampMs) {
       const idleClientIds = new Set<string>();
@@ -170,7 +179,7 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
       }
 
       const { cursors, unsettled, activeAnchors } = resolver.resolveAll(
-        client.getRemoteSnapshot(),
+        isLive() ? client.getRemoteSnapshot() : [],
         readState,
         timestampMs,
         (clientId) => idleClientIds.has(clientId),
@@ -188,7 +197,14 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
     },
 
     onRegistryChange: (listener) => registry.onChange(listener),
-    onRemoteData: (listener) => client.subscribeRemote(listener),
+    onRemoteData: (listener) => {
+      const stopRemote = client.subscribeRemote(listener);
+      const stopStatus = client.subscribeStatus(() => listener());
+      return () => {
+        stopRemote();
+        stopStatus();
+      };
+    },
     onMutationRecords: (records) => autoHandle.handleRecords(records),
     onAttach: () => autoHandle.setEnabled(false),
     onDetach: () => autoHandle.setEnabled(true),
@@ -207,11 +223,19 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
         })
       : { detach() {} };
 
+  // a closed tab never disposes the client: tell peers on pagehide, and the next publish rejoins
+  const pageWindow = environment.window ?? (typeof window === "undefined" ? undefined : window);
+  const leaveOnPageHide = () => client.leave();
+  pageWindow?.addEventListener("pagehide", leaveOnPageHide);
+
   let disposed = false;
   let unregisterTeardown: (() => void) | undefined;
-  function dispose(): void {
+  function dispose(disposeOptions?: { keepLocalCursor?: boolean }): void {
     if (disposed) return;
     disposed = true;
+    // a consumer-owned client stays alive: do not leave the last cursor on peers
+    if (disposeOptions?.keepLocalCursor !== true) client.updateLocalCursor(null);
+    pageWindow?.removeEventListener("pagehide", leaveOnPageHide);
     unregisterTeardown?.();
     autoHandle?.dispose();
     scheduler.dispose();

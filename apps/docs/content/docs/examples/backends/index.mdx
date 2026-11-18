@@ -3,33 +3,21 @@ title: Overview
 description: How transports and relays fit together, the transport interface, and a matrix of options.
 ---
 
-Anchor Presence needs a bidirectional byte channel between clients: a relay that forwards each message to the other clients in the same room. Core imports no transport library, so any channel works as long as it implements `LiveCursorTransport`. This page is the map: what a relay's job is, the interface every transport implements, and which backend fits which situation.
+Anchor Presence needs a bidirectional byte channel between clients: a relay that forwards each message to the peers of the sender. A peer is another client in the same room. Core imports no transport library. Any channel that implements `LiveCursorTransport` works. Pick a backend from the [backend matrix](#backend-matrix).
 
 ## What a relay does
 
-A relay is deliberately simple. It does not understand the presence protocol. It only forwards bytes between the sockets in one room:
+A relay does not read the presence protocol. It only forwards bytes between the sockets in one room:
 
 ```text
 sender.send(bytes) -> relay -> every other socket in the same room -> receiver.subscribe(listener)
 ```
 
-The reference relay in `apps/server/index.ts` enforces a per-room socket cap, a per-message byte cap, and a per-socket rate limit, and forwards binary frames opaquely. It never inspects a message's `anchors`, `context`, or `user` fields. See [Performance](/docs/get-started/guides/performance#scaling-limits) for the scaling shape of a room-broadcast relay.
+The reference relay forwards binary frames without a look at their content. It never reads the `anchors`, `context`, or `user` field of a message. It also has caps, a rate limit, an origin check, an optional [room token](/docs/dom/websocket-transport#room-token) check, and a liveness ping. Every relay reads the room from the `room` query parameter, and only the reference relay also reads it from the path. See [Relay contract](/docs/examples/backends/relay-contract#room-from-the-url) for the rules. See [Performance](/docs/get-started/guides/performance#scaling-limits) for the scaling shape of a room-broadcast relay.
 
 ## The transport interface
 
-```ts
-interface LiveCursorTransport {
-  connect?(): Promise<void> | void;
-  disconnect?(): Promise<void> | void;
-  send(data: Uint8Array): Promise<void> | void;
-  subscribe(listener: (data: Uint8Array) => void): () => void;
-  subscribeStatus?(listener: (status: ConnectionStatus) => void): () => void;
-  getStatus?(): ConnectionStatus;
-  bufferedBytes?(): number;
-}
-```
-
-See [Transports](/docs/core/transports) for the full contract and the shipped WebSocket transport.
+Every transport implements `LiveCursorTransport`. Only `send` and `subscribe` are required. See [Transports](/docs/core/transports) for the full interface, its contract, and the shipped WebSocket transport.
 
 ## Backend matrix
 
@@ -43,25 +31,64 @@ See [Transports](/docs/core/transports) for the full contract and the shipped We
 | [Socket.IO](/docs/examples/backends/socketio)   | `examples/socketio`   | Socket.IO transport (example) | Integration test against a real relay |
 | [SignalR](/docs/examples/backends/signalr)      | `examples/signalr`    | SignalR transport (example)   | Integration test against a real hub   |
 
-A transport that needs a third-party library lives in `examples/`, never in a package. `@anchor-presence/core`, `@anchor-presence/dom`, and `@anchor-presence/react` stay free of framework and vendor dependencies. The [package table](/docs/get-started/introduction#packages) shows what each package may depend on.
+A transport that needs a third-party library lives in `examples/`, never in a package. `@anchor-presence/core`, `@anchor-presence/dom`, and `@anchor-presence/react` have no framework or vendor dependencies. The [package table](/docs/get-started/introduction#packages) shows the dependencies of each package.
 
 ### No server
 
-Two options need no relay at all: `createInMemoryPair` from `@anchor-presence/core` wires two transports directly together in one process, used by this site's own code samples. A `BroadcastChannel` transport (not shipped, write your own) connects two tabs or iframes on the same origin, used by the live demos on this site.
+Two options need no relay:
 
-## Choosing one
+- `createInMemoryPair` from `@anchor-presence/core` connects two transports directly in one process. The code samples of this site use it.
+- A `BroadcastChannel` transport connects two tabs or iframes on the same origin. The library does not ship one, so write your own. The live demos of this site use one.
 
-- **Already running a plain WebSocket server, or starting fresh?** Use `createWebSocketTransport` from `@anchor-presence/dom`. It is the only transport that ships in a package, with reconnect and backoff built in.
+## Choose a backend
+
+- **Already running a plain WebSocket server, or starting fresh?** Use `createWebSocketTransport` from `@anchor-presence/dom`. It is the only transport that ships in a package. It has reconnect and backoff.
 - **Already on Bun, Node, Hono, or Elysia?** Use the matching relay example. The client uses `createWebSocketTransport` with no custom transport.
-- **Already running Socket.IO for other real-time features?** Reuse that connection with the [Socket.IO example](/docs/examples/backends/socketio) instead of running a second WebSocket server.
+- **Already running Socket.IO for other real-time features?** Reuse that connection with the [Socket.IO example](/docs/examples/backends/socketio). You then need no second WebSocket server.
 - **Already on ASP.NET Core?** The [SignalR example](/docs/examples/backends/signalr) wraps a `HubConnection` as a transport.
-- **Prototyping, writing tests, or building this docs site's demos?** Use `createInMemoryPair` for a single process, or a `BroadcastChannel` transport for two tabs or iframes on the same origin with no server at all.
+- **Prototyping or writing tests?** Use `createInMemoryPair` in a single process. For two tabs or iframes on the same origin with no server, use a `BroadcastChannel` transport.
 
 ## Shared guard helpers
 
-The Bun, Node.js (ws), Hono, Elysia, and Socket.IO relays share one file of guard helpers: room-name validation, a per-connection rate limiter, a message size check, Origin and token checks, and connection caps per room and per process. Copy it together with the server you pick:
+The Bun, Node.js (ws), Hono, Elysia, and Socket.IO relays share one file of guard helpers. The file has these helpers:
+
+- room name validation
+- a rate limiter per connection
+- a message size check
+- origin and room token checks
+- connection caps per room and per process
+
+Read the room name with `parseRoom`. It returns `null` for an invalid name, and the relay then closes the connection with code `4007`. Copy this file together with the server you pick:
 
 <CodeFromSource repo="examples/_shared/relay-guard.ts" lang="ts" />
+
+## Identity binding
+
+A relay that does not decode messages cannot tell who sent a message. Identity binding fixes the identity on the relay. The `authCheck` hook returns `{ clientId, user }` instead of `true`. The relay then writes these values into every JSON frame of the connection. It adds a suffix per connection to `clientId`, in the form `<clientId>~<connection>`, so two tabs of one user stay two clients.
+
+The Node.js (ws), Bun, Hono, Elysia and Socket.IO relays support identity binding. The reference relay and the SignalR hub have no `authCheck` hook and bind no identity.
+
+Identity binding works with `jsonCodec` only. The relay drops a frame that is not a JSON object, for example a `binaryCodec` frame.
+
+The entry files of the Bun, Node.js (ws), Hono and Elysia relays have a demo identity mode. To turn it on, set `RELAY_DEMO_IDENTITY=1` before you start the relay:
+
+```sh
+RELAY_DEMO_IDENTITY=1 bun relay.ts
+```
+
+In this mode, the [room token](/docs/dom/websocket-transport#room-token) names the user. A client with the room token `ada` gets the `clientId` `user-ada~<connection>` and the user `{ name: "ada" }`. The relay refuses a connection without a room token.
+
+<Callout type="warn">
+  If you use the demo identity mode in production, any client can claim any name. The relay trusts the room
+  token as the user name. Verify the room token in your own `authCheck`, for example as a JWT, and return the
+  verified user.
+</Callout>
+
+## Conformance suite
+
+`examples/_shared/relay-conformance-suite.ts` exports `defineRelayConformance(name, start, options)`. The suite runs in vitest against any relay. `start(env)` starts your relay with the given environment variables. It returns the `ws://` base URL of the relay and a stop function.
+
+The suite checks the forwarding, the room isolation and the size cap. It also checks the room name, the origin allowlist, the room token and the rate limit. With `{ identity: true }`, it also starts the relay with `RELAY_DEMO_IDENTITY=1` and checks the identity rewrite. The Bun, Node.js (ws), Hono and Elysia relays pass the full suite. See [Relay contract](/docs/examples/backends/relay-contract#check-your-relay) for the rules that the suite checks.
 
 ## Related
 

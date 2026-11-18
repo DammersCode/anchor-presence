@@ -1,4 +1,5 @@
 import type { CursorPosition, CursorPresence } from "../protocol.js";
+import { validatePresence } from "../validate.js";
 import type { PresenceClientState } from "./types.js";
 
 const PUBLISH_RETRY_INITIAL_MS = 50;
@@ -20,6 +21,8 @@ type DocumentLike = {
 export type PublishLoop = {
   /** Sends one message now. Returns `false` when the message cannot be sent. */
   send: (cursor: CursorPosition | null, includeFull?: boolean, leave?: boolean) => boolean;
+  /** Sends one event message now. Returns `false` when the message cannot be sent. */
+  sendEvent: (type: string, data?: unknown) => boolean;
   /** Marks a publish pending and schedules one when none is scheduled. */
   markPending: () => void;
   /** Marks a full publish pending after a reconnect and schedules one. */
@@ -68,6 +71,11 @@ export function createPublishLoop<TContext, TUser>(state: PresenceClientState<TC
 
   function send(cursor: CursorPosition | null, includeFull = false, leave = false): boolean {
     if (state.status !== "connected") return false;
+    // peers dropped us on leave, so the next message must carry the full state
+    if (!leave && state.left) {
+      includeFull = true;
+      state.left = false;
+    }
     try {
       const message = buildMessage(cursor, includeFull, leave);
       const bytes = state.codec.encode(message);
@@ -81,6 +89,27 @@ export function createPublishLoop<TContext, TUser>(state: PresenceClientState<TC
       return true;
     } catch {
       // swallow send errors — presence is lossy by design
+      return false;
+    }
+  }
+
+  function sendEvent(type: string, data?: unknown): boolean {
+    if (state.status !== "connected") return false;
+    try {
+      const message: CursorPresence<TContext, TUser> = {
+        version: 1,
+        clientId: state.clientId,
+        session: state.session,
+        sequence: state.sequence++,
+        cursor: null,
+        event: data === undefined ? { type } : { type, data },
+      };
+      // the receiver drops an event above its limits, so refuse it here instead of reporting success
+      if (validatePresence(message, state.validationLimits)?.event === undefined) return false;
+      const result = state.transport.send(state.codec.encode(message));
+      if (result && typeof result.catch === "function") result.catch(() => {});
+      return true;
+    } catch {
       return false;
     }
   }
@@ -147,5 +176,5 @@ export function createPublishLoop<TContext, TUser>(state: PresenceClientState<TC
     state.teardowns.push(() => browserDocument.removeEventListener("visibilitychange", onVisibilityChange));
   }
 
-  return { send, markPending, markReconnected, requestFullPublish, sendHeartbeat, wireVisibility };
+  return { send, sendEvent, markPending, markReconnected, requestFullPublish, sendHeartbeat, wireVisibility };
 }

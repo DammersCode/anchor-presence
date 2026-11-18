@@ -3,44 +3,51 @@ title: Security
 description: Validation limits, why anchor IDs never touch selectors, and the rendering rule for untrusted data.
 ---
 
-All inbound presence data is untrusted. This page lists the validation limits, explains why anchor IDs never touch selectors, states the rendering rule for user and context data, and covers `maxRemoteClients`.
+All inbound presence data is untrusted. A peer is another client in the same room. The client drops data above the validation limits, anchor IDs never reach a selector, and your app must render `user` and `context` as text.
 
 ## Validation limits
 
-Every decoded message passes through `validatePresence()` before it reaches the store. A message or field that fails a rule is dropped.
+The client checks every inbound message in two steps. First, it drops a message whose encoded bytes are above `maxMessageBytes`, before it decodes the message. Then it passes the decoded message to `validatePresence()`, which checks the fields in this table:
 
-| Field                           | Rule                                                                               |
-| ------------------------------- | ---------------------------------------------------------------------------------- |
-| `version`                       | must equal `1`, else the whole message is dropped                                  |
-| `clientId`                      | string, 1 to 128 characters, else dropped                                          |
-| `session`                       | string, 1 to 64 characters, else dropped                                           |
-| `sequence`                      | finite integer, 0 or greater, max `maxSequence` (default 2147483647), else dropped |
-| `anchors`                       | array, max 8 entries, extra entries truncated                                      |
-| anchor `id`                     | string, 1 to 256 characters, else that entry is dropped                            |
-| anchor `u`, `v`                 | finite number, clamped to `[0, 1]`                                                 |
-| `viewport.u`, `viewport.v`      | finite number, clamped to `[0, 1]`                                                 |
-| `context`                       | max 8 KiB when JSON-encoded, else the field is dropped                             |
-| `user`                          | max 8 KiB when JSON-encoded, else the field is dropped                             |
-| `context`, `user` nesting depth | max `maxFieldDepth` (default 8), else the field is dropped                         |
-| whole message                   | max 32 KiB encoded, else the whole message is dropped                              |
+| Field                           | Rule                                                           | Limit key           |
+| ------------------------------- | -------------------------------------------------------------- | ------------------- |
+| `version`                       | must equal `1`, else the client drops the message              |                     |
+| `clientId`                      | string, 1 to 128 characters, else the client drops the message | `maxClientIdLength` |
+| `session`                       | string, 1 to 64 characters, else the client drops the message  | `maxSessionLength`  |
+| `sequence`                      | finite integer from 0 to 2147483647, else the client drops it  | `maxSequence`       |
+| `anchors`                       | array, max 8 entries, the client cuts extra entries            | `maxAnchors`        |
+| anchor `id`                     | string, 1 to 256 characters, else the client drops that entry  | `maxAnchorIdLength` |
+| anchor `u`, `v`                 | finite number, clamped to `[0, 1]`                             |                     |
+| `viewport.u`, `viewport.v`      | finite number, clamped to `[0, 1]`                             |                     |
+| `context`                       | max 8 KiB when JSON-encoded, else the client drops the field   | `maxFieldBytes`     |
+| `user`                          | max 8 KiB when JSON-encoded, else the client drops the field   | `maxFieldBytes`     |
+| `context`, `user` nesting depth | max 8 levels, else the client drops the field                  | `maxFieldDepth`     |
+| whole message                   | max 32 KiB encoded, else the client drops the message          | `maxMessageBytes`   |
 
-These limits are constants in `@anchor-presence/core`. Every one is overridable through `ValidationLimits` passed to `validatePresence`, or through `PresenceClientOptions.validationLimits` on `createPresenceClient`.
+The defaults are constants in `@anchor-presence/core`. To change a limit, pass its key in `PresenceClientOptions.validationLimits` to `createPresenceClient`. `validatePresence` also takes a `ValidationLimits` object, but it ignores `maxMessageBytes`. A decoded message has no byte length, so only the client checks the size. A relay that calls `validatePresence` must cap the frame size itself. See [Relay contract](/docs/examples/backends/relay-contract).
 
-A message with an invalid `version`, `clientId`, `session`, `sequence`, or `cursor` shape is dropped in full. A message with an oversized `context` or `user` field keeps the rest of the message and drops only that field.
+The client drops a message in full when its `version`, `clientId`, `session`, `sequence`, or `cursor` shape is invalid. When only a `context` or `user` field is too large, the client drops that field and keeps the rest of the message.
 
-Wire encoding for `context` and `user`: a missing field means "unchanged since the previous same-session message", and an explicit `null` clears the field. The store normalizes a cleared field to `undefined` in the receiver snapshot.
+On the wire, a missing `context` or `user` field means "unchanged since the previous message of the same session". An explicit `null` clears the field. The store turns a cleared field into `undefined` in the receiver snapshot.
 
 ## Why anchor IDs never touch selectors
 
-An anchor ID is an opaque string. The resolver looks it up as a plain object key in the registry's `Map<string, Element>`. It is never passed to `querySelector`, `eval`, a template engine, or any other code path that interprets a string as a program or a selector.
+An anchor ID is an opaque string. The resolver looks it up as a plain key in the registry's `Map<string, Element>`. The library never passes it to `querySelector`, `eval`, a template engine, or any other code that reads a string as a program or a selector.
 
-A malicious or malformed anchor ID from the network cannot address any DOM location outside the set the application registered. This holds no matter what string it contains. The worst outcome from an unrecognized anchor ID is a lookup miss, which the fallback chain already treats as a normal case.
+An anchor ID from the network can only address an element that the application registered. This holds for any string. An unknown anchor ID causes a lookup miss, and the fallback chain treats a miss as a normal case.
 
 ## Render user and context as text
 
 `user` and `context` values are untrusted, even after validation passes. Validation checks size, not content. The field can hold attacker-controlled strings, numbers, or nested objects.
 
-Render both fields as text: text nodes in plain DOM code, or framework text interpolation such as JSX's `{value}`. Never render them as HTML, and never pass them to `innerHTML`, `dangerouslySetInnerHTML`, or an equivalent.
+Render both fields as text: text nodes in plain DOM code, or framework text interpolation such as JSX's `{value}`.
+
+<Callout type="warn">
+  If you render `user` or `context` as HTML, through `innerHTML`, `dangerouslySetInnerHTML`, or an equivalent,
+  a peer can inject markup and scripts into your page.
+</Callout>
+
+This sample shows the correct and the wrong way to render a remote name:
 
 ```tsx
 // correct: renders as text, no matter what the string contains
@@ -50,21 +57,42 @@ Render both fields as text: text nodes in plain DOM code, or framework text inte
 <span dangerouslySetInnerHTML={{ __html: cursor.user?.name }} />
 ```
 
+## Check the shape of remote values
+
+Validation checks the size and depth of `user` and `context`, not their shape. A peer can send `{ name: {} }` where you expect a string. React throws when it renders that object as a child.
+
+For this reason, the client compares each remote value with your own local value. If you pass `user: { name: "Ada" }` to `createPresenceClient`, a remote `user` must be an object whose `name` is a string or `null`. A remote `null` fits every key, so your render code must accept `null` in every field. A key that your local value lacks stays only when it holds a string, a number, a boolean, or `null`. The client drops a field that does not fit, so the receiver keeps the previous value. [Remote user and context](/docs/core/validation#remote-user-and-context) lists every rule of the shape check.
+
+A client with no local `user` or `context` has no shape to compare with. To check the value yourself, pass `parseUser` or `parseContext`. Return `undefined` to drop the value:
+
+```ts
+const client = createPresenceClient<unknown, { name: string; avatar?: string }>({
+  transport,
+  parseUser: (value) => {
+    const { name, avatar } = value as { name?: unknown; avatar?: unknown };
+    if (typeof name !== "string") return undefined;
+    return typeof avatar === "string" ? { name, avatar } : { name };
+  },
+});
+```
+
+In [development mode](/docs/core/presence-client#development-mode), the client warns one time when a remote value arrives and no check applies. It also warns one time when the shape check drops a remote `user` or `context`. That warning names `parseUser` or `parseContext`.
+
 ## Identity is not authenticated
 
 `clientId` and `session` are plain fields on the wire. Any peer can send any value for either. The store accepts a new session for a known `clientId` without proof that the same person sent the earlier one.
 
-The relay token, when set, gates access to a room. It does not authenticate the identity inside a message. Bind identity on your own server if your app needs to know who a message really came from.
+If your app needs to know who sent a message, bind the identity on your own server. The [relay contract](/docs/examples/backends/relay-contract#identity) shows how a relay replaces `clientId` and `user` with a verified identity.
 
 ## maxRemoteClients
 
-`maxRemoteClients` bounds every allocation driven by network data: store entries, resolved cursors, and observed anchors. It defaults to 64. See [Remote presence](/docs/core/remote-presence) for the drop rule and how to react to it.
+`maxRemoteClients` limits every allocation that network data causes: store entries, resolved cursors, and observed anchors. It defaults to 64. See [Remote presence](/docs/core/remote-presence) for the drop rule and how to react to it.
 
-Set `maxRemoteClients` to match your expected concurrent session count. Because the cap drops newcomers once full, a flooder that claims every slot with distinct `clientId` values can keep out real clients until those slots expire after `staleTimeoutMs`.
+Set `maxRemoteClients` to the number of sessions that you expect at the same time. When the store is full, it drops new clients. A flooder can take every slot with distinct `clientId` values. Real clients then stay out until those slots expire after `staleTimeoutMs`.
 
-## Relay token auth
+## Room token
 
-When `RELAY_AUTH_TOKEN` is set, the reference relay requires a matching `token` query parameter on every room upgrade. It closes a missing or wrong token with code 4006. The token is a room credential for reaching the relay, not a presence credential: it does not authenticate who a message claims to be. Every message still passes the same validation and sequencing rules as on an open relay. Use it to keep random visitors out of a room, not to authorize presence data.
+When `RELAY_AUTH_TOKEN` is set, the reference relay requires a matching [room token](/docs/dom/websocket-transport#room-token) on every connection. It closes a connection with a missing or wrong room token with code `4006`. The room token controls who can reach a room. It does not authenticate the identity inside a message. Every message still passes the same validation and sequence rules as on an open relay.
 
 ## Related
 

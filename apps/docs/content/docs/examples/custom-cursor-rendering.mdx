@@ -7,15 +7,13 @@ description: Replace the default arrow with a name pill, an avatar, or a crossha
 
 <ExamplePreview scene="custom-cursors" />
 
-## What's in the demo
-
-- Four renderers: the default arrow, a name pill, an avatar with initials, and a crosshair with the receiver coordinates.
-- Select a renderer in either pane. Each pane has its own setting, because the receiver renders the cursor.
-- The crosshair shows `cursor.x` and `cursor.y`. The numbers are different in the two panes, because each pane resolves the anchor in its own layout.
-
 ## Code
 
-The scene of this demo:
+Install the packages:
+
+<InstallCommand />
+
+This file renders the scene of the demo:
 
 <CodeFromSource docs="components/examples/custom-cursors.tsx" lang="tsx" />
 
@@ -23,13 +21,16 @@ The scene of this demo:
 
 Pick cursor colors that reach WCAG AA contrast (4.5:1) against the label text. `cursor.user` is untrusted, also inside a custom renderer.
 
-## Behavior reference
+## Behavior notes
+
+- Four renderers: the default arrow, a name pill, an avatar with initials, and a crosshair with the receiver coordinates.
+- Select a renderer in either pane. Each pane has its own setting, because the receiver renders the cursor.
+- The crosshair shows `cursor.x` and `cursor.y`. The numbers are different in the two panes, because each pane resolves the anchor in its own layout.
+
+## Related
 
 - [renderCursor](/docs/react/custom-cursors#rendercursor): the props that a renderer gets.
 - [Positioning contract](/docs/react/custom-cursors#positioning-contract): what `CursorLayer` sets on the root, and what a renderer cannot change.
 - [Label and color](/docs/react/cursor-layer#label-and-color): `getLabel` and `getColor`.
-
-## Related
-
 - [Presence list](/docs/examples/presence-list): the same user data in a roster.
 - [Interpolation styles](/docs/examples/interpolation-styles): change how a cursor moves, not how it looks.

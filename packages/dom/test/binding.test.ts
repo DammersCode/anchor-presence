@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { PresenceClient, CursorPresence, CursorPosition } from "@anchor-presence/core";
+import type { ConnectionStatus, PresenceClient, CursorPresence, CursorPosition } from "@anchor-presence/core";
 import { linearInterpolator } from "@anchor-presence/core";
 import { createDomBinding } from "../src/binding";
 
@@ -39,6 +39,11 @@ function makeFakeClient() {
     subscribeContext: () => () => {},
     setUser: () => {},
     getUser: () => {},
+    leave: () => {},
+    subscribeClose: () => () => {},
+    sendEvent: () => false,
+    subscribeEvents: () => () => {},
+    subscribePeers: () => () => {},
     getStatus: () => "connected",
     subscribeStatus: () => () => {},
     getRemoteSnapshot: () => remoteSnapshot,
@@ -84,6 +89,11 @@ function makeCapturingClient(samples: (CursorPosition | null)[]): PresenceClient
     subscribeContext: () => () => {},
     setUser: () => {},
     getUser: () => {},
+    leave: () => {},
+    subscribeClose: () => () => {},
+    sendEvent: () => false,
+    subscribeEvents: () => () => {},
+    subscribePeers: () => () => {},
     getStatus: () => "connected",
     subscribeStatus: () => () => {},
     getRemoteSnapshot: () => [],
@@ -191,6 +201,121 @@ describe("createDomBinding", () => {
     expect(snapshot[0]?.y).toBeCloseTo(50);
 
     binding.dispose();
+  });
+
+  it("hides remote cursors while the connection is down and shows them again after", () => {
+    const el = document.createElement("div");
+    el.dataset.anchor = "a";
+    document.body.append(el);
+    vi.spyOn(el, "getBoundingClientRect").mockReturnValue({
+      left: 0,
+      top: 0,
+      width: 100,
+      height: 100,
+      right: 100,
+      bottom: 100,
+      x: 0,
+      y: 0,
+      toJSON() {
+        return this;
+      },
+    });
+    const { raf, caf, flush } = makeRafStub();
+    const { client, pushRemote } = makeFakeClient();
+    let status: ConnectionStatus = "connected";
+    const statusListeners = new Set<(next: ConnectionStatus) => void>();
+    client.getStatus = () => status;
+    client.subscribeStatus = (listener) => {
+      statusListeners.add(listener);
+      return () => statusListeners.delete(listener);
+    };
+    const setStatus = (next: ConnectionStatus) => {
+      status = next;
+      for (const listener of statusListeners) listener(next);
+      flush();
+    };
+    const binding = createDomBinding(client, { environment: { raf, caf } });
+    pushRemote([
+      {
+        version: 1,
+        clientId: "r",
+        session: "s",
+        sequence: 1,
+        cursor: { anchors: [{ id: "a", u: 0.5, v: 0.5 }] },
+      },
+    ]);
+    flush();
+    expect(binding.getSnapshot()).toHaveLength(1);
+
+    setStatus("reconnecting");
+    expect(binding.getSnapshot()).toHaveLength(0);
+
+    setStatus("connected");
+    expect(binding.getSnapshot()).toHaveLength(1);
+    binding.dispose();
+  });
+
+  it("survives a throwing visibility policy and recovers on the next change", () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { raf, caf, flush } = makeRafStub();
+    const { client, pushRemote } = makeFakeClient();
+    let broken = true;
+    const binding = createDomBinding(client, {
+      environment: { raf, caf },
+      resolution: {
+        visibilityPolicy: () => {
+          if (broken) throw new Error("policy bug");
+          return "show";
+        },
+      },
+    });
+    const remote = (sequence: number) => [
+      {
+        version: 1 as const,
+        clientId: "r",
+        session: "s",
+        sequence,
+        cursor: { anchors: [], viewport: { u: 0.5, v: 0.5 } },
+      },
+    ];
+
+    pushRemote(remote(1));
+    expect(() => flush()).not.toThrow();
+    expect(binding.getSnapshot()).toHaveLength(0);
+
+    broken = false;
+    pushRemote(remote(2));
+    flush();
+    expect(binding.getSnapshot()).toHaveLength(1);
+    binding.dispose();
+    error.mockRestore();
+  });
+
+  it("clears the local cursor on dispose, so a consumer-owned client leaves no ghost", () => {
+    const { raf, caf } = makeRafStub();
+    const { client } = makeFakeClient();
+    const update = vi.fn();
+    client.updateLocalCursor = update;
+    const binding = createDomBinding(client, { environment: { raf, caf } });
+
+    binding.dispose();
+
+    expect(update).toHaveBeenLastCalledWith(null);
+  });
+
+  it("tells peers the client left on pagehide, and stops after dispose", () => {
+    const { raf, caf } = makeRafStub();
+    const { client } = makeFakeClient();
+    const leave = vi.fn();
+    client.leave = leave;
+    const binding = createDomBinding(client, { environment: { raf, caf } });
+
+    window.dispatchEvent(new Event("pagehide"));
+    expect(leave).toHaveBeenCalledTimes(1);
+
+    binding.dispose();
+    window.dispatchEvent(new Event("pagehide"));
+    expect(leave).toHaveBeenCalledTimes(1);
   });
 
   it("carries idle from client.getRemotePresence() onto the resolved cursor", () => {

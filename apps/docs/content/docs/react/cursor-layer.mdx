@@ -7,6 +7,8 @@ description: Render every visible remote cursor with labels, colors, and filteri
 
 ## Basic use
 
+This app renders the remote cursors with the defaults:
+
 ```tsx
 import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
 
@@ -37,7 +39,7 @@ type MyUser = { name: string; color?: string };
 
 Remote `user` data is untrusted. Treat it as text, never as HTML. See [Security](/docs/get-started/guides/security).
 
-## Filtering cursors
+## Filter cursors
 
 `filterCursor` hides a cursor when it returns `false`. It runs after the visibility check, so a hidden cursor never reaches `getLabel` or `getColor`:
 
@@ -58,13 +60,13 @@ Remote `user` data is untrusted. Treat it as text, never as HTML. See [Security]
 />
 ```
 
-`CursorLayer` sets `position`, `left`, `top`, `transform`, and `pointerEvents` after your style, so your value never replaces them. The `zIndex` prop replaces the default of `9999`, which keeps cursors above most app UI, including dialogs.
+`CursorLayer` sets `position`, `left`, `top`, `transform`, `pointerEvents`, and `opacity` after your style, so your value never replaces them. The `zIndex` prop replaces the default of `9999`, which keeps cursors above most app UI, including dialogs.
 
 ## Accessibility
 
 - Each cursor root has `aria-hidden="true"` and `pointerEvents: "none"`, so a screen reader and pointer input both skip it.
 - The opacity transition on a cursor's root follows the OS reduced-motion setting: `CursorLayer` skips it when the operating system prefers reduced motion.
-- `DefaultCursor` keeps its own arrow and label colors under Windows forced-colors mode instead of flattening to system colors.
+- `DefaultCursor` sets `forced-color-adjust: none`, so its arrow and label keep their own colors under Windows forced-colors mode.
 - Label text contrast is your app's palette choice: `getLabel`, `getColor`, and `renderCursor` control the content and colors `CursorLayer` renders.
 
 See [Custom cursors](/docs/react/custom-cursors) to change what a cursor renders, and [Motion](/docs/dom/motion) for the interpolator and reduced-motion behavior underneath it.

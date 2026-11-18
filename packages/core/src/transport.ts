@@ -2,6 +2,16 @@ import type { ConnectionStatus } from "./protocol.js";
 
 export type { ConnectionStatus } from "./protocol.js";
 
+/** Why a connection closed, as the transport reports it. */
+export type TransportClose = {
+  /** The close code the relay sent, for example `4006` for a rejected token. */
+  code?: number;
+  /** The close reason text, when the relay sent one. */
+  reason?: string;
+  /** `true` when the transport schedules another attempt. */
+  willReconnect: boolean;
+};
+
 /**
  * Byte channel that moves messages between the client and a network.
  * A transport never validates messages. The client runs `validatePresence` on inbound data.
@@ -27,6 +37,11 @@ export interface LiveCursorTransport {
    * @returns A function that removes the listener.
    */
   subscribeStatus?(listener: (status: ConnectionStatus) => void): () => void;
+  /**
+   * Adds a listener that runs each time a connection closes, with the reason.
+   * @returns A function that removes the listener.
+   */
+  subscribeClose?(listener: (close: TransportClose) => void): () => void;
   /** Returns the current connection status. */
   getStatus?(): ConnectionStatus;
   /**

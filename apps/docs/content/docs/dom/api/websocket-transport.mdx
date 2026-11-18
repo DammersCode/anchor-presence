@@ -1,9 +1,11 @@
 ---
 title: WebSocket transport API
-description: createWebSocketTransport, WebSocketTransport, and WebSocketTransportOptions.
+description: createWebSocketTransport, WebSocketTransport, WebSocketTransportOptions, WebSocketCtor, WebSocketLike, and TransportClose.
 ---
 
-Full type reference for `createWebSocketTransport`. See [WebSocket transport](/docs/dom/websocket-transport) for the guide.
+`createWebSocketTransport` and its options have the types below. See [WebSocket transport](/docs/dom/websocket-transport) for the guide.
+
+Import the function and its types from `@anchor-presence/dom`:
 
 ```ts
 import { createWebSocketTransport } from "@anchor-presence/dom";
@@ -12,7 +14,9 @@ import type { WebSocketTransport, WebSocketTransportOptions } from "@anchor-pres
 
 ## createWebSocketTransport
 
-`createWebSocketTransport(options?)` returns a `WebSocketTransport`: a `LiveCursorTransport` from `@anchor-presence/core` whose `connect` and `disconnect` methods are always present, not optional.
+`createWebSocketTransport(options?)` returns a `WebSocketTransport`: a `LiveCursorTransport` from `@anchor-presence/core` whose `connect` and `disconnect` methods are always present, not optional. The transport also implements `subscribeClose`.
+
+If `options.url` is missing and `window` does not exist, `createWebSocketTransport` throws a `TypeError`.
 
 ## WebSocketTransportOptions
 
@@ -20,7 +24,30 @@ import type { WebSocketTransport, WebSocketTransportOptions } from "@anchor-pres
 
 ## WebSocketCtor
 
-`WebSocketCtor` overrides the WebSocket constructor the transport uses, and defaults to `globalThis.WebSocket`. It exists so a test can supply a fake `WebSocketLike` implementation without touching the real network stack.
+`WebSocketCtor` is the type of the `WebSocketCtor` option: `new (url: string) => WebSocketLike`. The option replaces the WebSocket constructor of the transport. Its default is `globalThis.WebSocket`. Without a global `WebSocket` and without this option, the status stays `connecting`. A test can pass a fake `WebSocketLike` and use no network.
+
+The browser `WebSocket` constructor fits `WebSocketCtor` without a cast:
+
+```ts
+const transport = createWebSocketTransport({
+  url: "wss://relay.example.com/?room=main",
+  WebSocketCtor: WebSocket,
+});
+```
+
+## WebSocketLike
+
+`WebSocketLike` is the part of the browser `WebSocket` that the transport uses. A fake socket for a test must have these members:
+
+<AutoTypeTable path="../../packages/dom/src/transport.ts" name="WebSocketLike" />
+
+`readyState` `1` means that the socket is open.
+
+## TransportClose
+
+`subscribeClose` listeners receive a `TransportClose` from `@anchor-presence/core`:
+
+<AutoTypeTable path="../../packages/core/src/transport.ts" name="TransportClose" />
 
 ## Related
 

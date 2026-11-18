@@ -1343,6 +1343,51 @@ describe("createPresenceClient visibilitychange publish flush", () => {
   });
 });
 
+describe("close reasons", () => {
+  it("forwards the transport close reason and tolerates a transport without it", () => {
+    const { transport } = makeTransport();
+    const received: unknown[] = [];
+    let emit: (close: { code?: number; willReconnect: boolean }) => void = () => {};
+    transport.subscribeClose = (listener) => {
+      emit = listener;
+      return () => {};
+    };
+    const client = createPresenceClient({ transport, idFactory });
+    client.subscribeClose((close) => received.push(close));
+    emit({ code: 4004, willReconnect: false });
+    expect(received).toEqual([{ code: 4004, willReconnect: false }]);
+    client.dispose();
+
+    const plain = makeTransport().transport;
+    const other = createPresenceClient({ transport: plain, idFactory });
+    expect(() => other.subscribeClose(() => {})()).not.toThrow();
+    other.dispose();
+  });
+});
+
+describe("leave", () => {
+  it("sends a leave message once, and the next publish carries the full state again", () => {
+    vi.useFakeTimers();
+    const { transport, sent } = makeTransport();
+    const client = createPresenceClient({ transport, idFactory, user: { name: "Ada" }, heartbeatMs: 60_000 });
+    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.1, v: 0.1 }] });
+    vi.advanceTimersByTime(100);
+
+    client.leave();
+    client.leave();
+    expect(sent.map((bytes) => decodeSent(bytes).leave)).toEqual([undefined, true]);
+
+    client.updateLocalCursor({ anchors: [{ id: "a", u: 0.2, v: 0.2 }] });
+    vi.advanceTimersByTime(100);
+    expect(decodeSent(sent.at(-1)!)).toMatchObject({
+      user: { name: "Ada" },
+      cursor: { anchors: [{ u: 0.2 }] },
+    });
+    client.dispose();
+    vi.useRealTimers();
+  });
+});
+
 describe("late join", () => {
   it("answers a first message from an unknown peer with one full publish", () => {
     vi.useFakeTimers();
@@ -1372,6 +1417,28 @@ describe("late join", () => {
     client.dispose();
     vi.useRealTimers();
   });
+
+  it("answers a known clientId that returns with a new session", () => {
+    vi.useFakeTimers();
+    const { transport, sent, emit } = makeTransport();
+    const client = createPresenceClient({ transport, idFactory, user: { name: "Ada" }, heartbeatMs: 60_000 });
+    const send = (session: string, sequence: number) =>
+      emit(
+        new TextEncoder().encode(
+          JSON.stringify({ version: 1, clientId: "peer", session, sequence, cursor: null }),
+        ),
+      );
+    send("s1", 0);
+    vi.advanceTimersByTime(600);
+    const before = sent.length;
+
+    send("s2", 0);
+    vi.advanceTimersByTime(600);
+
+    expect(sent.length).toBe(before + 1);
+    client.dispose();
+    vi.useRealTimers();
+  });
 });
 
 describe("remote field validation warning", () => {
@@ -1396,5 +1463,158 @@ describe("remote field validation warning", () => {
     expect(warn.mock.calls.filter((call) => String(call[0]).includes("parseUser"))).toHaveLength(1);
     client.dispose();
     warn.mockRestore();
+  });
+});
+
+describe("default shape check for remote fields", () => {
+  const remote = (emit: (data: Uint8Array) => void, clientId: string, user: unknown) =>
+    emit(
+      new TextEncoder().encode(
+        JSON.stringify({ version: 1, clientId, session: "s", sequence: 0, cursor: null, user }),
+      ),
+    );
+
+  it("drops a remote user that does not have the shape of the local user, and removes extra object keys", () => {
+    const { transport, emit } = makeTransport();
+    const client = createPresenceClient<unknown, { name: string; tags: string[] }>({
+      transport,
+      idFactory,
+      user: { name: "Ada", tags: ["x"] },
+    });
+
+    remote(emit, "bad-type", { name: {}, tags: ["a"] });
+    remote(emit, "bad-array", { name: "B", tags: "nope" });
+    remote(emit, "bad-item", { name: "B", tags: [1] });
+    remote(emit, "good", { name: "Bob", tags: ["a", "b"], extra: "kept", nested: { evil: true } });
+
+    const users = Object.fromEntries(client.getRemotePresence().map((p) => [p.clientId, p.user]));
+    expect(users).toEqual({
+      "bad-type": undefined,
+      "bad-array": undefined,
+      "bad-item": undefined,
+      good: { name: "Bob", tags: ["a", "b"], extra: "kept" },
+    });
+    client.dispose();
+  });
+
+  it("accepts only plain values where the local value is null or an empty array", () => {
+    const { transport, emit } = makeTransport();
+    const client = createPresenceClient<unknown, { name: string; avatar: string | null; tags: string[] }>({
+      transport,
+      idFactory,
+      user: { name: "Ada", avatar: null, tags: [] },
+    });
+
+    remote(emit, "object-avatar", { name: "B", avatar: { evil: true }, tags: [] });
+    remote(emit, "object-tag", { name: "B", avatar: null, tags: [{ evil: true }] });
+    remote(emit, "fine", { name: "B", avatar: "a.png", tags: ["x"] });
+
+    const users = Object.fromEntries(client.getRemotePresence().map((p) => [p.clientId, p.user]));
+    expect(users).toEqual({
+      "object-avatar": undefined,
+      "object-tag": undefined,
+      fine: { name: "B", avatar: "a.png", tags: ["x"] },
+    });
+    client.dispose();
+  });
+
+  it("keeps an optional context key that the local context lacks, as in a dialog flag", () => {
+    const { transport, emit } = makeTransport();
+    const client = createPresenceClient<{ page: string; dialog?: string }>({
+      transport,
+      idFactory,
+      context: { page: "dashboard" },
+    });
+    const send = (clientId: string, context: unknown) =>
+      emit(
+        new TextEncoder().encode(
+          JSON.stringify({ version: 1, clientId, session: "s", sequence: 0, cursor: null, context }),
+        ),
+      );
+
+    send("dialog", { page: "orders", dialog: "settings" });
+    send("object", { page: "orders", dialog: { evil: true } });
+
+    const contexts = Object.fromEntries(client.getRemotePresence().map((p) => [p.clientId, p.context]));
+    expect(contexts).toEqual({
+      dialog: { page: "orders", dialog: "settings" },
+      object: { page: "orders" },
+    });
+    client.dispose();
+  });
+
+  it("accepts a remote null for any key and warns once when a value is dropped", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { transport, emit } = makeTransport();
+    const client = createPresenceClient<{ hover: { id: string } | null; name: string }>({
+      transport,
+      idFactory,
+      context: { hover: { id: "a" }, name: "Ada" },
+    });
+    const send = (clientId: string, context: unknown) =>
+      emit(
+        new TextEncoder().encode(
+          JSON.stringify({ version: 1, clientId, session: "s", sequence: 0, cursor: null, context }),
+        ),
+      );
+
+    send("cleared", { hover: null, name: "B" });
+    send("bad-one", { hover: "nope", name: "B" });
+    send("bad-two", { hover: 3, name: "B" });
+
+    const contexts = Object.fromEntries(client.getRemotePresence().map((p) => [p.clientId, p.context]));
+    expect(contexts).toEqual({
+      cleared: { hover: null, name: "B" },
+      "bad-one": undefined,
+      "bad-two": undefined,
+    });
+    expect(warn.mock.calls.filter((call) => String(call[0]).includes("parseContext"))).toHaveLength(1);
+    client.dispose();
+    warn.mockRestore();
+  });
+
+  it("ignores prototype and inherited keys in a remote value", () => {
+    const { transport, emit } = makeTransport();
+    const client = createPresenceClient<unknown, { name: string }>({
+      transport,
+      idFactory,
+      user: { name: "Ada" },
+    });
+    const raw = (clientId: string, user: string) =>
+      emit(
+        new TextEncoder().encode(
+          `{"version":1,"clientId":"${clientId}","session":"s","sequence":0,"cursor":null,"user":${user}}`,
+        ),
+      );
+
+    raw("proto", '{"name":"x","__proto__":{"admin":true}}');
+    raw("inherited", '{"name":"y","toString":"hijack","constructor":"c"}');
+
+    const users = new Map(
+      client.getRemotePresence().map((p) => [p.clientId, p.user as Record<string, unknown>]),
+    );
+    const proto = users.get("proto");
+    expect(proto).toEqual({ name: "x" });
+    expect(Object.getPrototypeOf(proto)).toBe(Object.prototype);
+    expect((proto as { admin?: unknown }).admin).toBeUndefined();
+    expect(users.get("inherited")).toMatchObject({ name: "y" });
+    expect(({} as { admin?: unknown }).admin).toBeUndefined();
+    client.dispose();
+  });
+
+  it("lets an explicit parseUser replace the default check", () => {
+    const { transport, emit } = makeTransport();
+    const client = createPresenceClient<unknown, { name: string }>({
+      transport,
+      idFactory,
+      user: { name: "Ada" },
+      parseUser: (value) => {
+        const { label } = value as { label?: unknown };
+        return { name: typeof label === "string" ? label : "?" };
+      },
+    });
+    remote(emit, "p", { label: "Zed" });
+    expect(client.getRemotePresence()[0]?.user).toEqual({ name: "Zed" });
+    client.dispose();
   });
 });

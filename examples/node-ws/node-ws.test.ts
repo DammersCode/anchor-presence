@@ -124,16 +124,37 @@ describe("node-ws relay limits", () => {
     return socket;
   }
 
-  it("rejects the upgrade above the per-process cap until a slot frees", async () => {
+  it("rejects connections above the per-process cap with close code 4002 until a slot frees", async () => {
     const first = connect("room-1");
     await opened(first);
 
-    await expect(opened(connect("room-2"))).rejects.toThrow("closed before open");
+    expect(await closeCode(connect("room-2"))).toBe(4002);
 
     first.close();
     await closeCode(first);
     await vi.waitFor(() => opened(connect("room-3")), { timeout: 2000, interval: 50 });
   }, 10_000);
+});
+
+describe("node-ws relay with a failing auth hook", () => {
+  it("refuses with 4006 when the hook throws or rejects, and keeps serving", async () => {
+    for (const authCheck of [
+      () => {
+        throw new Error("jwt malformed");
+      },
+      () => Promise.reject(new Error("jwks down")),
+    ]) {
+      const relay = await createNodeWsRelay(0, { authCheck });
+      try {
+        const socket = new WebSocket(`${relay.url.replace(/^http/u, "ws")}/?room=r&token=bad`);
+        expect(await closeCode(socket)).toBe(4006);
+        const again = new WebSocket(`${relay.url.replace(/^http/u, "ws")}/?room=r&token=bad`);
+        expect(await closeCode(again)).toBe(4006);
+      } finally {
+        await relay.close();
+      }
+    }
+  });
 });
 
 describe("node-ws relay liveness", () => {
@@ -165,5 +186,75 @@ describe("node-ws relay liveness", () => {
     await silent.closed;
     await new Promise((resolve) => setTimeout(resolve, 300));
     expect(responsive.readyState).toBe(WebSocket.OPEN);
+  });
+});
+
+describe("node-ws relay identity binding", () => {
+  it("rewrites clientId and user of a frame to the identity the auth hook returned", async () => {
+    const relay = await createNodeWsRelay(0, {
+      authCheck: ({ token }) => ({ clientId: `user-${token}`, user: { name: `Name ${token}` } }),
+    });
+    try {
+      const base = relay.url.replace(/^http/u, "ws");
+      const sender = new WebSocket(`${base}/?room=bind&token=ada`);
+      const peer = new WebSocket(`${base}/?room=bind&token=bob`);
+      peer.binaryType = "arraybuffer";
+      const received: unknown[] = [];
+      peer.addEventListener("message", (event) =>
+        received.push(JSON.parse(new TextDecoder().decode(event.data as ArrayBuffer))),
+      );
+      await Promise.all([opened(sender), opened(peer)]);
+
+      const forged = {
+        version: 1,
+        clientId: "someone-else",
+        session: "s",
+        sequence: 1,
+        cursor: null,
+        leave: true,
+      };
+      sender.send(new TextEncoder().encode(JSON.stringify(forged)));
+      sender.send(new Uint8Array([0x41, 0x02, 0xff]));
+
+      await vi.waitFor(() => expect(received).toHaveLength(1), { timeout: 3000, interval: 25 });
+      expect(received[0]).toMatchObject({ user: { name: "Name ada" } });
+      expect((received[0] as { clientId: string }).clientId).toMatch(/^user-ada~/u);
+      sender.close();
+      peer.close();
+    } finally {
+      await relay.close();
+    }
+  });
+});
+
+describe("node-ws relay with a reset connection during async auth", () => {
+  it("survives a client that resets the TCP connection while the hook runs, and 404s other paths", async () => {
+    const { connect } = await import("node:net");
+    const relay = await createNodeWsRelay(0, {
+      authCheck: () => new Promise<boolean>((resolve) => setTimeout(() => resolve(true), 150)),
+    });
+    try {
+      const port = Number(new URL(relay.url).port);
+      await new Promise<void>((resolve) => {
+        const socket = connect(port, "127.0.0.1", () => {
+          socket.write(
+            "GET /?room=r HTTP/1.1\r\nHost: x\r\nConnection: Upgrade\r\nUpgrade: websocket\r\nSec-WebSocket-Version: 13\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n\r\n",
+          );
+          setTimeout(() => {
+            socket.resetAndDestroy();
+            resolve();
+          }, 30);
+        });
+      });
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      const fine = new WebSocket(`${relay.url.replace(/^http/u, "ws")}/?room=r`);
+      await opened(fine);
+      fine.close();
+      const moved = new WebSocket(`${relay.url.replace(/^http/u, "ws")}/room-42`);
+      await expect(opened(moved)).rejects.toThrow();
+    } finally {
+      await relay.close();
+    }
   });
 });

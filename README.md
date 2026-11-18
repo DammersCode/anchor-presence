@@ -8,13 +8,13 @@ Each cursor tracks a named element, not a screen pixel. Every client resolves it
 
 ## Quick start
 
-Install the three packages.
+Install the three packages:
 
 ```sh
 bun add @anchor-presence/react @anchor-presence/dom @anchor-presence/core
 ```
 
-Pass the provider a `factory` that builds the transport and the client. The client connects the transport by default. Mark one element with `data-anchor`. Then render the provider and the cursor layer.
+Pass the provider a `factory` that builds the transport and the client. The client connects the transport by default. Mark one element with `data-anchor`. Then render the provider and the cursor layer, as in this sample:
 
 ```tsx
 import { createPresenceClient } from "@anchor-presence/core";
@@ -36,7 +36,7 @@ function App() {
 }
 ```
 
-`apps/server` is the matching relay for this example: run `cd apps/server && bun run dev` to start it. Open your app in two browser windows and move the pointer in one; a live cursor appears in the other, tracking the same element even at a different window size. See the [docs site](https://anchor-presence.vercel.app/docs) for the full quick start, every transport, and the API reference.
+To start the matching relay for this example, run `cd apps/server && bun run dev`. Open your app in two browser windows. Move the pointer in one window. A live cursor appears in the other window, on the same element, even at a different window size. See the [docs site](https://anchor-presence.vercel.app/docs) for the full quick start, every transport, and the API reference.
 
 ## Requirements
 
@@ -64,7 +64,7 @@ function App() {
 - **No network on reposition.** A scroll or resize moves a stationary remote cursor for free.
 - **Transport-agnostic.** `@anchor-presence/core` imports no transport library.
 - **Framework-optional.** `@anchor-presence/core` and `@anchor-presence/dom` run without React. `@anchor-presence/react` is a thin adapter.
-- **Validated input.** Every inbound message passes size and shape limits first.
+- **Checked input.** Every inbound message passes size and shape limits first.
 
 ## Docs
 
@@ -87,14 +87,14 @@ See also [SPECIFICATION.md](SPECIFICATION.md) for the full technical specificati
 
 ## Run the demo
 
-Requires [Bun](https://bun.sh).
+The demo needs [Bun](https://bun.sh). Install the dependencies and build the packages:
 
 ```sh
 bun install
 bun run build
 ```
 
-Run the relay and the demo in two separate terminals.
+Run the relay and the demo in two separate terminals:
 
 ```sh
 # terminal 1: relay
@@ -106,16 +106,18 @@ cd apps/demo
 bun run dev
 ```
 
-Open the demo URL in two browser windows. Give each window a distinct name so the cursors are easy to tell apart.
+Open the demo URL in two browser windows. Give each window a distinct name, so that you can tell the cursors apart:
 
 ```text
 http://localhost:5173/?name=Alice&room=main
 http://localhost:5173/?room=main
 ```
 
-Move the pointer in one window. The other window shows a live cursor tracking the same semantic location, even at a different window size or sidebar state.
+Move the pointer in one window. The other window shows a live cursor at the same semantic location, even at a different window size or sidebar state.
 
-## The Contract
+## How a cursor travels
+
+This diagram shows the path of one pointer move from the sender to the receiver:
 
 ```mermaid
 flowchart TD
@@ -135,22 +137,20 @@ flowchart TD
 
 The sender never measures the DOM of the receiver. It sends a semantic anchor ID and a normalized position inside it. The receiver measures its own anchor and turns that into pixels. See [How it works](https://anchor-presence.vercel.app/docs/get-started/concepts/how-it-works) for the full flow and the 10 invariants.
 
-## Capability matrix
+## Capabilities
 
-| Capability                                                                                  | React         |
-| ------------------------------------------------------------------------------------------- | ------------- |
-| Semantic anchors                                                                            | ✅            |
-| `[data-anchor]` anchors with always-on auto-registration and configurable `anchorAttribute` | ✅            |
-| Fallback chains                                                                             | ✅            |
-| Viewport fallback                                                                           | ✅            |
-| UI context visibility policies (route- or dialog-aware, application-defined)                | ✅            |
-| Occlusion detection (clipped-ancestor + optional hit-test)                                  | ✅            |
-| Interpolation (`none`, `linear`, or a custom `Interpolator`)                                | ✅            |
-| Transport-agnostic (bring your own WebSocket, Socket.IO, SignalR, `BroadcastChannel`)       | ✅            |
-| Delta `context`/`user` wire encoding + optional adaptive publish rate                       | ✅            |
-| SSR-safe hooks                                                                              | ✅            |
-| Mobile viewing (read-only presence)                                                         | ✅            |
-| Mobile sending (touch as a pointer source)                                                  | not supported |
+Anchor Presence has these capabilities:
+
+- Semantic anchors.
+- `[data-anchor]` anchors with always-on auto-registration and a configurable `anchorAttribute`.
+- Fallback chains and a viewport fallback.
+- UI context visibility policies, for example route-aware or dialog-aware rules that your app defines.
+- Occlusion detection: a clipped-ancestor check and an optional hit test.
+- Interpolation: `noneInterpolator`, `linearInterpolator`, or your own `Interpolator`.
+- Any transport: WebSocket, Socket.IO, SignalR, `BroadcastChannel`, or your own.
+- Delta encoding for `context` and `user`, and an optional adaptive publish rate.
+- SSR-safe hooks.
+- Touch input. A touch pointer publishes a cursor with the pointer type `touch`, and the cursor clears when the last touch lifts.
 
 ## Pick by intent
 
@@ -164,11 +164,11 @@ The sender never measures the DOM of the receiver. It sends a semantic anchor ID
 
 **Visibility policy outcome.** What to return from a custom `VisibilityPolicy`:
 
-| Outcome                                   | Use it when                                                                               |
-| ----------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `"show"` (default at `anchor`/`viewport`) | Geometric resolution alone decides correctly. Use this for most UI.                       |
-| `"hide"` on context mismatch              | The `context.dialog` value of the sender names a dialog that the receiver has not opened. |
-| `"hide"` on `!pointVisible`               | A clipping ancestor hides the resolved point.                                             |
+| Outcome                                   | Use it when                                                                             |
+| ----------------------------------------- | --------------------------------------------------------------------------------------- |
+| `"show"` (default at `anchor`/`viewport`) | Geometric resolution alone decides correctly. Use this for most UI.                     |
+| `"hide"` on context mismatch              | The `context.dialog` value of the sender names a dialog that is closed on the receiver. |
+| `"hide"` on `!pointVisible`               | A clipping ancestor hides the resolved point.                                           |
 
 ## Agent skill
 
@@ -183,6 +183,8 @@ The skill teaches an agent the anchor model, the integration steps, and the trou
 A second skill, [`skills/anchor-presence-audit/`](skills/anchor-presence-audit/), scores a running app for cursor jumps between layouts and proposes fixes. See [Skills](https://anchor-presence.vercel.app/docs/skills).
 
 ## Development commands
+
+Run these commands from the root of the repository:
 
 ```sh
 bun install                  # install workspace dependencies

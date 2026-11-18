@@ -1,0 +1,51 @@
+---
+title: Cursor events
+description: Send one-shot events such as reactions with client.sendEvent, and receive them with useCursorEvents.
+---
+
+`useCursorEvents` calls a listener for each one-shot event that a peer sends. A peer is another client in the same room. An event has a `type` and an optional `data` value, for example a reaction or a ping. The client never stores an event and never resends it. A peer that is not connected at that time never receives the event.
+
+## Send and receive
+
+This component sends a reaction with `client.sendEvent` and shows the last reaction from a peer:
+
+```tsx
+import { useState } from "react";
+import { useCursorClient, useCursorEvents } from "@anchor-presence/react";
+
+function Reactions() {
+  const client = useCursorClient();
+  const [lastReaction, setLastReaction] = useState<string | null>(null);
+
+  useCursorEvents((event) => {
+    if (event.type === "reaction" && typeof event.data === "string") {
+      setLastReaction(`${event.clientId}: ${event.data}`);
+    }
+  });
+
+  return (
+    <div>
+      <button type="button" onClick={() => client?.sendEvent("reaction", "wave")}>
+        Wave
+      </button>
+      {lastReaction !== null && <p role="status">{lastReaction}</p>}
+    </div>
+  );
+}
+```
+
+`event.data` has the type `unknown`, because a peer can send any value. Check the type of `event.data` before you use it. To check every event in one place, pass `parseEvent` to `createPresenceClient`. A `parseEvent` that returns `undefined` or throws drops the event. See [Events and leave messages](/docs/core/validation#events-and-leave-messages).
+
+## Behavior
+
+- `client.sendEvent(type, data?)` returns `false` when the client is not connected or the event is not valid, for example above the field limits. In both cases, the client sends nothing.
+- A client never receives its own events.
+- The listener receives a `RemoteEvent`: the `type`, the `data`, and the `clientId` of the sender.
+- The hook keeps one subscription per client. An inline listener does not subscribe again on each render. The hook always calls the listener from the last render.
+- The receiver limits the event rate of each sender and drops the events above the limit. For the numbers, see [Events](/docs/core/presence-client#events).
+
+## Related
+
+- [Hooks API](/docs/react/api/hooks)
+- [Typed hooks](/docs/react/typed-hooks)
+- [Connection status](/docs/react/connection-status)

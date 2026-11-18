@@ -7,9 +7,13 @@ description: Read the client's connection status with useCursorStatus.
 
 ## Usage
 
+The hook takes no arguments:
+
 ```ts
 function useCursorStatus(): ConnectionStatus;
 ```
+
+This component shows the status while the client is not connected:
 
 ```tsx
 import { useCursorStatus } from "@anchor-presence/react";
@@ -23,7 +27,37 @@ function ConnectionBanner() {
 
 `ConnectionStatus` is one of `"connecting"`, `"connected"`, `"reconnecting"`, or `"disconnected"`. The hook returns `"disconnected"` on the server, and after the hook runs with no provider above it. It rerenders only when the status changes.
 
+## Cursors during an outage
+
+While the status is `reconnecting` or `disconnected`, the binding hides every remote cursor. `useRemoteCursors` returns an empty list, and `CursorLayer` renders no cursors. When the status returns to `connected`, the cursors come back. A banner from `useCursorStatus` tells the user why the cursors are gone.
+
+## Close reasons
+
+`client.subscribeClose(listener)` runs the listener each time the connection closes, with the close `code`, the `reason`, and `willReconnect`. The WebSocket transport reports these values. A transport without `subscribeClose` never runs the listener. This component shows an error when the relay rejects the [room token](/docs/dom/websocket-transport#room-token) with code `4006`:
+
+```tsx
+import { useEffect, useState } from "react";
+import { useCursorClient } from "@anchor-presence/react";
+
+function TokenError() {
+  const client = useCursorClient();
+  const [closeCode, setCloseCode] = useState<number | null>(null);
+
+  useEffect(
+    () =>
+      client?.subscribeClose((close) => {
+        if (!close.willReconnect) setCloseCode(close.code ?? null);
+      }),
+    [client],
+  );
+
+  if (closeCode !== 4006) return null;
+  return <div role="alert">The relay rejected the room token.</div>;
+}
+```
+
 ## Related
 
+- [WebSocket transport](/docs/dom/websocket-transport#close-reasons)
 - [Rerenders](/docs/react/rerenders)
 - [Hooks API](/docs/react/api/hooks)

@@ -10,11 +10,11 @@ The binding eases a remote cursor from its last resolved position to its new one
 `createDomBinding` chooses the interpolator with `resolution.interpolatorFactory`, or a default when you omit it:
 
 - `linearInterpolator` from `@anchor-presence/core`, a fixed-duration ease, unless the OS prefers reduced motion.
-- `noneInterpolator` from `@anchor-presence/core`, an instant snap, when `window.matchMedia("(prefers-reduced-motion: reduce)").matches` is `true` at the moment the binding is created.
+- `noneInterpolator` from `@anchor-presence/core`, an instant snap, when `window.matchMedia("(prefers-reduced-motion: reduce)").matches` is `true` at the moment you create the binding.
 
 The reduced-motion check reads `environment.window`, or the global `window` when you omit it. The check runs once, so a preference change after the binding starts does not switch the interpolator on an existing binding.
 
-## Choosing a custom interpolator
+## Choose a custom interpolator
 
 Pass `resolution.interpolatorFactory` to use a different easing style, for example a spring:
 
@@ -28,19 +28,19 @@ const binding = createDomBinding(client, {
 
 Write a factory against the public `Interpolator` interface. See [Interpolation](/docs/core/interpolation) for the interface and the settled-flag rule.
 
-## Why interpolation lives here, not in `@anchor-presence/core`
+## Where easing runs
 
-`@anchor-presence/core` defines the `Interpolator` interface and ships `linearInterpolator` and `noneInterpolator`, but it never calls them: `@anchor-presence/core` has no frame clock. The binding is what samples an interpolator on every scheduled frame and feeds its output into `ResolvedCursor.x`/`y`. A framework-free consumer of `@anchor-presence/core` alone sees only raw presence data, with no easing.
+`@anchor-presence/core` defines the `Interpolator` interface and exports `linearInterpolator` and `noneInterpolator`. Core never calls them, because it has no frame clock. The binding samples the interpolator on each scheduled frame and writes the result into `ResolvedCursor.x` and `ResolvedCursor.y`. Code that uses only `@anchor-presence/core` reads raw presence data, with no easing.
 
 ## When motion restarts instead of easing
 
-The resolver restarts the interpolator at the new position, instead of easing to it, in three cases:
+The resolver moves a cursor without easing in three cases:
 
-1. The cursor was hidden and becomes visible again.
-2. The sender's presence object changed identity after being idle or hidden.
-3. The cursor's identity is new: its clientId first appears.
+- The `clientId` of the cursor appears for the first time. The cursor starts at its first position.
+- The cursor was hidden and becomes visible again. While the cursor has the `hidden` tier, the resolver calls the optional `reset` method of the interpolator. The cursor then snaps to its next position.
+- A local layout change, such as a scroll or a resize, moves the anchor while no message arrives. The resolver shifts the cursor and its target by the same distance.
 
-A cursor that moves continuously while visible always eases.
+In all other cases, a new remote position eases the cursor from where it is.
 
 ## Related
 

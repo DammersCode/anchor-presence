@@ -1,0 +1,151 @@
+---
+title: Follow mode
+description: Follow the cursor of one peer and scroll its anchor into view.
+---
+
+In a long page, a user often wants to see what another user looks at. A peer is another client in the same room. Follow mode makes one client, the follower, track the cursor of a peer, the leader. When the leader's cursor leaves the follower's window, the follower's page scrolls the leader's anchor into view. Follow mode stops when the follower scrolls, when the follower presses Escape, or when the leader leaves the room. The recipe uses only public APIs: `useRemoteCursorsSelector`, `ResolvedCursor`, `element.scrollIntoView` and `client.subscribePeers`.
+
+## Find the target
+
+The recipe is one file, `follow-mode.tsx`. It starts with the imports, the off-screen test and the anchor lookup:
+
+```tsx
+import { useCallback, useEffect, useState } from "react";
+import {
+  CursorLayer,
+  LiveCursorProvider,
+  useCursorClient,
+  useRemoteCursorsSelector,
+  useRemoteUsers,
+} from "@anchor-presence/react";
+import type { PresenceClient, ResolvedCursor } from "@anchor-presence/react";
+
+type User = { name: string };
+
+const SCROLL_KEYS = new Set(["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " "]);
+
+export function isOffscreen(cursor: ResolvedCursor, width: number, height: number): boolean {
+  return !cursor.pointVisible || cursor.x < 0 || cursor.y < 0 || cursor.x > width || cursor.y > height;
+}
+
+function findAnchor(anchorId: string): HTMLElement | null {
+  for (const element of document.querySelectorAll<HTMLElement>("[data-anchor]")) {
+    if (element.dataset.anchor === anchorId) return element;
+  }
+  return null;
+}
+```
+
+A point is off-screen in two cases. The point lies outside the window, or `pointVisible` is `false`. `pointVisible` is `false` when a scroll container clips the point. `pointVisible` does not check the window, so `isOffscreen` also compares `x` and `y` with the window size.
+
+## Follow and stop
+
+The hook keeps the leader, scrolls to the leader's anchor and applies the stop rules:
+
+```tsx
+export function useFollowMode(): {
+  leaderId: string | null;
+  follow: (clientId: string) => void;
+  stop: () => void;
+} {
+  const client = useCursorClient();
+  const [leaderId, setLeaderId] = useState<string | null>(null);
+  const stop = useCallback(() => setLeaderId(null), []);
+
+  const selectTarget = useCallback(
+    (cursors: ResolvedCursor[]) => {
+      const leader = cursors.find((cursor) => cursor.clientId === leaderId);
+      if (leader === undefined || leader.anchorId === null) return null;
+      return isOffscreen(leader, window.innerWidth, window.innerHeight) ? leader.anchorId : null;
+    },
+    [leaderId],
+  );
+  const target = useRemoteCursorsSelector(selectTarget);
+
+  useEffect(() => {
+    if (target !== null) findAnchor(target)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [target]);
+
+  useEffect(() => {
+    if (leaderId === null) return;
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape" || SCROLL_KEYS.has(event.key)) stop();
+    }
+    window.addEventListener("wheel", stop, { passive: true });
+    window.addEventListener("touchmove", stop, { passive: true });
+    window.addEventListener("keydown", onKeyDown);
+    const unsubscribe = client?.subscribePeers((change) => {
+      if (change.type === "leave" && change.clientId === leaderId) stop();
+    });
+    return () => {
+      window.removeEventListener("wheel", stop);
+      window.removeEventListener("touchmove", stop);
+      window.removeEventListener("keydown", onKeyDown);
+      unsubscribe?.();
+    };
+  }, [client, leaderId, stop]);
+
+  return { leaderId, follow: setLeaderId, stop };
+}
+```
+
+## Pick a leader
+
+The controls list the remote users and show a stop button while follow mode is on:
+
+```tsx
+export function FollowControls() {
+  const users = useRemoteUsers<User>();
+  const { leaderId, follow, stop } = useFollowMode();
+
+  if (leaderId !== null) {
+    return (
+      <button type="button" onClick={stop}>
+        Stop following
+      </button>
+    );
+  }
+  return (
+    <ul>
+      {users.map((peer) => (
+        <li key={peer.clientId}>
+          <button type="button" onClick={() => follow(peer.clientId)}>
+            Follow {peer.user?.name ?? "Guest"}
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+```
+
+Render the controls inside the provider:
+
+```tsx
+export function FollowApp({ client }: { client: PresenceClient<unknown, User> }) {
+  return (
+    <LiveCursorProvider client={client}>
+      <FollowControls />
+      <main>{/* your app, with data-anchor elements */}</main>
+      <CursorLayer />
+    </LiveCursorProvider>
+  );
+}
+```
+
+## Behavior
+
+- **One scroll per target.** The selector returns the leader's anchor ID only while the point is off-screen, and `null` in all other cases. The component rerenders only when this value changes, so the page scrolls once per target and not on every frame.
+- **Scroll position.** `scrollIntoView` centers the anchor element, not the point. If the anchor is taller than the window, the point can stay off-screen. The page scrolls again when the leader moves to another anchor, or after the point was on-screen once.
+- **Viewport tier.** If the leader's cursor resolves through the viewport tier, `anchorId` is `null`. The page does not scroll then.
+- **Stop on scroll.** `scrollIntoView` fires `scroll` events, so the recipe does not listen for `scroll`. It stops on `wheel`, on `touchmove` and on the scroll keys. A drag on the scrollbar fires none of these events. For this case, the controls show the stop button.
+- **Stop on leave.** `subscribePeers` reports a `leave` each time the store removes the leader. The causes are a leave message, the stale timeout, the reconnect expiry, and a `store.remove` call. A leader without a cursor is not a leave, so follow mode continues.
+- **Anchor attribute.** `findAnchor` reads `data-anchor`. If you set `anchorAttribute` in the binding options, read that attribute instead.
+
+## Related
+
+- [Remote cursors](/docs/react/remote-cursors)
+- [Remote users](/docs/react/remote-users)
+- [Resolution](/docs/dom/resolution)
+- [Rerenders](/docs/react/rerenders)
+- [Off-screen hints](/docs/get-started/guides/offscreen-hints)

@@ -1,22 +1,22 @@
 ---
 title: Codecs
-description: The CursorCodec interface, jsonCodec, and choosing a codec for a room.
+description: The CursorCodec interface, jsonCodec, and how to choose a codec for a room.
 ---
 
-A codec turns a `CursorPresence` message into bytes for the wire, and turns bytes back into a value. `@anchor-presence/core` ships `jsonCodec`, the default, and `binaryCodec`, a compact fixed-layout binary codec.
+A codec turns a `CursorPresence` message into bytes for the wire, and turns bytes back into a value. `@anchor-presence/core` ships `jsonCodec`, the default, and `binaryCodec`, a compact binary codec with a fixed layout.
 
 ## CursorCodec
 
-```ts
-import type { CursorCodec } from "@anchor-presence/core";
+`@anchor-presence/core` exports `CursorCodec` with this shape:
 
+```ts
 interface CursorCodec {
   encode(message: CursorPresence): Uint8Array;
-  decode(data: Uint8Array): unknown; // validated afterwards by core
+  decode(data: Uint8Array): unknown;
 }
 ```
 
-`decode` returns `unknown`, not `CursorPresence`. A codec must never throw past the decode boundary. Malformed input must produce a value that fails validation, not an exception.
+`decode` returns `unknown`, not `CursorPresence`, because the client checks the value after the decode. A codec must never throw from `decode`. For malformed input, `decode` returns a value that fails validation, for example `null`.
 
 Pass a codec to `createPresenceClient`:
 
@@ -26,10 +26,10 @@ const client = createPresenceClient({ transport: myTransport, codec: myCodec });
 
 ## jsonCodec
 
-```ts
-import { jsonCodec } from "@anchor-presence/core";
+`jsonCodec` works like this code:
 
-export const jsonCodec: CursorCodec = {
+```ts
+const jsonCodec: CursorCodec = {
   encode(message) {
     return new TextEncoder().encode(JSON.stringify(message));
   },
@@ -43,15 +43,15 @@ export const jsonCodec: CursorCodec = {
 };
 ```
 
-`decode` catches JSON parse errors and returns `null` instead of throwing. `validatePresence(null)` then returns `null`, and the message is dropped. `jsonCodec` is the default when you omit `codec` from `createPresenceClient`.
+`decode` catches JSON parse errors and returns `null`. `validatePresence(null)` then returns `null`, and the client drops the message. When you omit `codec` from `createPresenceClient`, the client uses `jsonCodec`.
 
-## Choosing a codec
+## Choose a codec
 
-For a new deployment, `binaryCodec` is the recommended choice: about half the wire size of `jsonCodec` (144 bytes against 292 bytes for a typical 4-anchor message), and a modestly lower decode cost. `jsonCodec` remains the default so a mixed-version room, where an older client still speaks JSON, keeps working. Run `bun run bench` to measure both codecs on your own hardware. See [Binary codec](/docs/core/binary-codec) for the wire layout and encode limits.
+`binaryCodec` sends about half the bytes of `jsonCodec`. A message with 4 anchors is 144 bytes with `binaryCodec` and 292 bytes with `jsonCodec`. That message has two-letter anchor IDs, coordinates with one decimal place, and a `user` with a name and a color. Coordinates with more decimal places make the JSON message longer. The binary message keeps its size, because each coordinate is an `f32`. `jsonCodec` writes readable JSON, so the network tab of the browser shows each message. See [Binary codec](/docs/core/binary-codec) for the wire layout and the encode limits.
 
 ## Same codec per room
 
-All clients in the same room must use the same codec. The relay forwards bytes opaquely and does not mix `jsonCodec` and `binaryCodec` frames. A client that decodes another codec's bytes gets `null` back, and `validatePresence` drops the message.
+All clients in the same room must use the same codec. The relay forwards bytes and does not convert between `jsonCodec` and `binaryCodec` frames. A client that decodes the bytes of another codec gets `null`, and `validatePresence` drops the message.
 
 ## Related
 

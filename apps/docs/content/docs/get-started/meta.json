@@ -16,6 +16,9 @@
     "---[BookOpen]Guides---",
     "guides/security",
     "guides/performance",
+    "guides/cursor-chat",
+    "guides/follow-mode",
+    "guides/offscreen-hints",
     "guides/layout-design",
     "guides/troubleshooting"
   ]

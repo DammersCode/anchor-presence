@@ -7,20 +7,26 @@ description: Share a presence client and its DOM binding with the tree below.
 
 ## Props
 
+The samples on this page use these imports:
+
 ```tsx
-import { createPresenceClient } from "@anchor-presence/core";
+import { createPresenceClient, linearInterpolator, noneInterpolator } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
-import { LiveCursorProvider } from "@anchor-presence/react";
+import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
 import type { LiveCursorProviderProps } from "@anchor-presence/react";
 ```
 
-| Prop             | Type                                      | Default                   |
-| ---------------- | ----------------------------------------- | ------------------------- |
-| `factory`        | `() => PresenceClient<TContext, TUser>`   | none                      |
-| `client`         | `PresenceClient<TContext, TUser> \| null` | none; wins over `factory` |
-| `binding`        | `DomBinding`                              | the provider creates one  |
-| `bindingOptions` | `DomBindingOptions`                       | none                      |
-| `children`       | `ReactNode`                               | none                      |
+The provider takes these props:
+
+| Prop             | Type                                      | Default                    |
+| ---------------- | ----------------------------------------- | -------------------------- |
+| `factory`        | `() => PresenceClient<TContext, TUser>`   | none                       |
+| `client`         | `PresenceClient<TContext, TUser> \| null` | none (wins over `factory`) |
+| `binding`        | `DomBinding`                              | the provider creates one   |
+| `bindingOptions` | `DomBindingOptions`                       | none                       |
+| `clientKey`      | `unknown`                                 | none                       |
+| `bindingKey`     | `unknown`                                 | none                       |
+| `children`       | `ReactNode`                               | none                       |
 
 Create the client through `factory`, or pass a client you own:
 
@@ -37,20 +43,59 @@ Create the client through `factory`, or pass a client you own:
 
 ## Client ownership
 
-The provider runs `factory` once per mount, in an effect, and only in the browser. It disposes the client it created on unmount. A `client` you pass stays yours: the provider never disposes it. When both `factory` and `client` are set, `client` wins and the factory never runs. Pass `client={null}` to provide no client. The factory does not run.
-
-For the full rules, read [Creating the client](/docs/react/client-creation).
+The provider disposes a client that `factory` created. It never disposes a `client` that you pass. For when the factory runs and which prop wins, read [Creating the client](/docs/react/client-creation).
 
 ## The binding the provider creates
 
-When you omit `binding`, the provider creates a `DomBinding` for the client with `createDomBinding(client, bindingOptions)`. It disposes that binding when the client changes or the provider unmounts. Pass your own `binding` only when you created it yourself, for example to share one binding across two providers.
+When you omit `binding`, the provider creates a `DomBinding` for the client with `createDomBinding(client, bindingOptions)`. It disposes that binding when the client changes, when `bindingKey` changes, or when the provider unmounts. If you created a binding yourself, for example to share one binding across two providers, pass it as `binding`. The provider then creates no binding and never disposes yours.
 
-`bindingOptions` configures the binding the provider creates. The provider reads `bindingOptions` only once, at binding creation. A later change to the `bindingOptions` object does not recreate the binding.
+`bindingOptions` configures the binding the provider creates. The provider reads `bindingOptions` only when it creates the binding. A later change to the `bindingOptions` object does not recreate the binding.
+
+## Rebuild the binding
+
+To apply a new `bindingOptions` value, change `bindingKey`. The provider then disposes the binding and creates a new one with the current `bindingOptions`. The client stays connected. A peer is another client in the same room. Peers keep the local cursor. This example switches the interpolator:
+
+```tsx
+function Workspace({ smooth }: { smooth: boolean }) {
+  return (
+    <LiveCursorProvider
+      factory={() => createPresenceClient({ transport: createWebSocketTransport({ path: "/?room=main" }) })}
+      bindingKey={smooth}
+      bindingOptions={{
+        resolution: { interpolatorFactory: smooth ? linearInterpolator : noneInterpolator },
+      }}
+    >
+      <Dashboard />
+      <CursorLayer />
+    </LiveCursorProvider>
+  );
+}
+```
+
+## Switch rooms
+
+To replace the client that `factory` made, change `clientKey`. The provider then disposes the old client and runs the current `factory` again. The tree below the provider does not remount. This example joins the room that the `room` prop names:
+
+```tsx
+function Room({ room }: { room: string }) {
+  return (
+    <LiveCursorProvider
+      clientKey={room}
+      factory={() => {
+        const transport = createWebSocketTransport({ path: `/?room=${encodeURIComponent(room)}` });
+        return createPresenceClient({ transport });
+      }}
+    >
+      <Dashboard />
+      <CursorLayer />
+    </LiveCursorProvider>
+  );
+}
+```
 
 <Callout type="warn">
-  To apply a new `bindingOptions` value, change the provider's `key` prop. A `key` change remounts the
-  provider and creates a fresh binding. Cursor state lives on the relay, not in the binding, so the remount
-  does not reset any remote cursor's position.
+  If you pass `client`, the provider ignores `clientKey`. To switch the room of a client you own, dispose it
+  and pass a new client.
 </Callout>
 
 ## client={null}

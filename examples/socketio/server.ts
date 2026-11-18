@@ -31,10 +31,10 @@ export type SocketIoRelayOptions = {
 /** Minimal room-broadcast relay: no message inspection beyond size, no persistence. */
 export function createSocketIoRelay(port: number, options: SocketIoRelayOptions = {}) {
   const maxMessageBytes = options.maxMessageBytes ?? limitFromEnv(process.env.MAX_MESSAGE_BYTES, 32 * 1024);
-  const rateCapacity = options.rateCapacity ?? limitFromEnv(process.env.RATE_CAPACITY, 40);
+  const rateCapacity = options.rateCapacity ?? limitFromEnv(process.env.RATE_CAPACITY, 80);
   const rateRefillPerSecond =
-    options.rateRefillPerSecond ?? limitFromEnv(process.env.RATE_REFILL_PER_SECOND, 20);
-  const maxRoomSockets = options.maxRoomSockets ?? limitFromEnv(process.env.RELAY_MAX_ROOM_SOCKETS, 128);
+    options.rateRefillPerSecond ?? limitFromEnv(process.env.RATE_REFILL_PER_SECOND, 40);
+  const maxRoomSockets = options.maxRoomSockets ?? limitFromEnv(process.env.RELAY_MAX_ROOM_SOCKETS, 64);
   const maxSockets = options.maxSockets ?? limitFromEnv(process.env.RELAY_MAX_TOTAL_SOCKETS, 10_000);
   const allowedOrigins = options.allowedOrigins ?? [
     ...allowedOriginsFromEnv(process.env.RELAY_ALLOWED_ORIGINS),

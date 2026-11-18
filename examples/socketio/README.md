@@ -83,7 +83,7 @@ After any of these codes, the Socket.IO client does not reconnect, so `willRecon
 | Auth hook                 | Yes. Pass an `authCheck` option, or set `RELAY_AUTH_TOKEN` for a shared room token. An `io.use` middleware runs the check before the connection completes. A refusal has code `4006`.                          |
 | Identity binding          | Yes. If `authCheck` returns `{ clientId, user }`, the relay writes that identity into every JSON frame. `clientId` gets the suffix `~<connection>`. In this mode, the relay drops a frame that is not JSON.    |
 | Room cleanup on close     | Yes. `disconnect` releases the slot of the socket in `ConnectionLimits`. Socket.IO removes the socket from the room.                                                                                           |
-| Connection caps           | Yes. `RELAY_MAX_ROOM_SOCKETS` (default 128) limits one room. `RELAY_MAX_TOTAL_SOCKETS` (default 10,000) limits the process. The relay refuses a socket above a cap with code `4001` or `4002`.                 |
+| Connection caps           | Yes. `RELAY_MAX_ROOM_SOCKETS` (default 64) limits one room. `RELAY_MAX_TOTAL_SOCKETS` (default 10,000) limits the process. The relay refuses a socket above a cap with code `4001` or `4002`.                  |
 | Dead connections          | Yes. The heartbeat of Socket.IO (`pingInterval`, `pingTimeout`).                                                                                                                                               |
 | Slow receivers            | **No.** Socket.IO does not expose the buffered amount of a socket, as `ws` and the `ServerWebSocket` of Bun do. For this reason, the relay cannot skip or close a slow receiver.                               |
 

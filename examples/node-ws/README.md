@@ -39,7 +39,7 @@ The test starts a real relay on a free port and connects two `createPresenceClie
 | Auth hook                 | Yes. Pass an `authCheck` option, or set `RELAY_AUTH_TOKEN` for a shared room token. A refused connection closes with code `4006`.                                                                           |
 | Identity binding          | Yes. If `authCheck` returns `{ clientId, user }`, the relay writes that identity into every JSON frame. `clientId` gets the suffix `~<connection>`. In this mode, the relay drops a frame that is not JSON. |
 | Room cleanup on close     | Yes. The `close` handler removes the socket from the `Set<WebSocket>` of its room, and the relay deletes an empty room.                                                                                     |
-| Connection caps           | Yes. `RELAY_MAX_ROOM_SOCKETS` (default 128) limits one room. `RELAY_MAX_TOTAL_SOCKETS` (default 10,000) limits the process. A refused socket closes with code `4001` or `4002`.                             |
+| Connection caps           | Yes. `RELAY_MAX_ROOM_SOCKETS` (default 64) limits one room. `RELAY_MAX_TOTAL_SOCKETS` (default 10,000) limits the process. A refused socket closes with code `4001` or `4002`.                              |
 | Dead connections          | Yes. The relay pings every socket at half of `RELAY_IDLE_TIMEOUT_SECONDS` (default 60). It terminates a socket that did not answer the previous ping.                                                       |
 | Slow receivers            | Yes. The relay skips sends above `RELAY_SLOW_PEER_SOFT_BYTES` and closes the socket with code `4003` above `RELAY_SLOW_PEER_HARD_BYTES`. It sends again below `RELAY_SLOW_PEER_RESUME_BYTES`.               |
 

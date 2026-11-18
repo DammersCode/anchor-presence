@@ -1,6 +1,9 @@
 export { createDomBinding } from "./binding.js";
 export type { DomBinding, DomBindingOptions, EnvironmentOptions, ResolutionOptions } from "./binding.js";
 
+export { createBroadcastChannelTransport } from "./broadcast-transport.js";
+export type { BroadcastChannelTransport } from "./broadcast-transport.js";
+
 export { createWebSocketTransport } from "./transport.js";
 export type {
   WebSocketCtor,

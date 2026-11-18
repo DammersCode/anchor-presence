@@ -4,6 +4,27 @@ import { CURSOR_MARKER_ATTRIBUTE, type ResolvedCursor } from "@anchor-presence/d
 import { useRemoteCursorsSelector } from "./hooks/index.js";
 
 const DEFAULT_COLOR = "#6b7280";
+const DEFAULT_PALETTE = [
+  "#2563eb",
+  "#dc2626",
+  "#059669",
+  "#d97706",
+  "#7c3aed",
+  "#db2777",
+  "#0891b2",
+  "#4b5563",
+];
+
+function defaultLabel(cursor: ResolvedCursor): string | null {
+  const name = (cursor.user as { name?: unknown } | undefined)?.name;
+  return typeof name === "string" && name !== "" ? name : null;
+}
+
+function defaultColor(cursor: ResolvedCursor): string {
+  let hash = 0;
+  for (const char of cursor.clientId) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  return DEFAULT_PALETTE[hash % DEFAULT_PALETTE.length] ?? DEFAULT_COLOR;
+}
 const DEFAULT_Z_INDEX = 9999;
 const IDLE_OPACITY = 0.4;
 
@@ -96,20 +117,21 @@ export function DefaultCursor(props: DefaultCursorProps): ReactNode {
 
   return (
     // forced-color-adjust keeps the cursor's own colors under forced-colors mode instead of flattening to system colors
-    <span className={className} style={{ forcedColorAdjust: "none", ...style }}>
+    <span className={className} dir="ltr" style={{ forcedColorAdjust: "none", ...style }}>
       {/* size via CSS properties: var() does not resolve in SVG presentation attributes */}
       <svg style={{ width: cssSize, height: cssSize }} viewBox="0 0 20 20">
         <path d="M2 2 L18 9 L10.5 11 L8 18.5 Z" fill={cssColor} stroke="white" strokeWidth={1} />
       </svg>
       {label !== null && label !== undefined ? (
         <span
+          dir="auto"
           className={labelClassName}
           style={{
             marginLeft: 12,
             display: "inline-block",
             borderRadius: 6,
             padding: "2px 6px",
-            fontSize: 12,
+            fontSize: "0.75rem",
             fontWeight: 500,
             color: cssLabelColor,
             backgroundColor: cssColor,
@@ -136,8 +158,8 @@ type CursorItemProps<TContext = unknown, TUser = unknown> = {
 
 function CursorItem<TContext = unknown, TUser = unknown>(props: CursorItemProps<TContext, TUser>): ReactNode {
   const { cursor, getLabel, getColor, getCursorProps, renderCursor, zIndex } = props;
-  const label = getLabel ? getLabel(cursor) : null;
-  const color = getColor ? getColor(cursor) : DEFAULT_COLOR;
+  const label = getLabel ? getLabel(cursor) : defaultLabel(cursor);
+  const color = getColor ? getColor(cursor) : defaultColor(cursor);
   const consumerProps = getCursorProps ? getCursorProps(cursor) : undefined;
   const { style: consumerStyle, ...consumerRest } = consumerProps ?? {};
 

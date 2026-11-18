@@ -25,11 +25,11 @@ The pointer crossed space between two anchors with no anchored parent, so the **
 
 ## Cursor flaps between two positions
 
-Two tabs share one `clientId`. `clientId` identifies a tab; put user identity in `user` and let each tab generate its own ID.
+Two tabs share one `clientId`. Each of the two tabs hides the cursor of the other, and a third tab sees one cursor jump between them. In development the console warns `another client uses the clientId`. `clientId` identifies a tab; put user identity in `user` and let each tab generate its own ID.
 
 ## Works on localhost, breaks on plain http
 
-`crypto.randomUUID` is secure-context-only; the default ID factory falls back automatically. If a custom `idFactory` was supplied, give it the same fallback.
+The default ID factory uses `crypto.getRandomValues`, which works on plain http. Only a custom `idFactory` that calls `crypto.randomUUID` fails there: `crypto.randomUUID` exists only in a secure context (https or localhost). Remove the custom `idFactory`, or build the ID from `crypto.getRandomValues`.
 
 ## Cursors never appear inside an iframe
 

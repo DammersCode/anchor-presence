@@ -30,6 +30,7 @@ describe("@anchor-presence/core public runtime API", () => {
       "linearInterpolator",
       "noneInterpolator",
       "validatePresence",
+      "warnOnce",
     ]);
   });
 });

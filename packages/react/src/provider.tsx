@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
+import { warnOnce } from "@anchor-presence/core";
 import type { PresenceClient } from "@anchor-presence/core";
 import { createDomBinding } from "@anchor-presence/dom";
 import type { DomBinding, DomBindingOptions } from "@anchor-presence/dom";
@@ -83,6 +84,18 @@ export function LiveCursorProvider<TContext = unknown, TUser = unknown>(
   }, [clientKey]);
 
   const client = providedClient ?? ownClient;
+  if (factory === undefined && providedClient === undefined) {
+    warnOnce(
+      "provider-without-client",
+      "LiveCursorProvider got neither `client` nor `factory`, so it renders without presence.",
+    );
+  }
+  if (providedBinding !== undefined && bindingOptions !== undefined) {
+    warnOnce(
+      "binding-and-options",
+      "LiveCursorProvider got both `binding` and `bindingOptions`; it ignores `bindingOptions`.",
+    );
+  }
 
   // set on unmount only, so a bindingKey rebuild keeps the local cursor and an unmount clears it
   const unmountingRef = useRef(false);

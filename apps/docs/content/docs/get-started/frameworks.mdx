@@ -1,0 +1,139 @@
+---
+title: Frameworks
+description: Use Anchor Presence with Vite, Next.js, TanStack Start and Router, React Router and Remix, and Astro.
+---
+
+`@anchor-presence/react` works with any React framework. `LiveCursorProvider` and `CursorLayer` run only in the browser. On the server, the provider renders its children with a `null` client and creates no client. See [SSR and Strict Mode](/docs/react/ssr-and-strict-mode) for the rule.
+
+## Create a provider module
+
+Every section below uses one provider module. It creates the client in the `factory` of the provider, never at module scope:
+
+```tsx
+// presence-provider.tsx
+"use client";
+
+import type { ReactNode } from "react";
+import { createPresenceClient } from "@anchor-presence/core";
+import { createWebSocketTransport } from "@anchor-presence/dom";
+import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
+
+function createClient() {
+  const transport = createWebSocketTransport({ port: 8788, path: "/?room=main" });
+  return createPresenceClient({ transport });
+}
+
+export function PresenceProvider({ children }: { children: ReactNode }) {
+  return (
+    <LiveCursorProvider factory={createClient}>
+      {children}
+      <CursorLayer />
+    </LiveCursorProvider>
+  );
+}
+```
+
+The `"use client"` line has an effect only in a framework with React Server Components, such as the Next.js App Router. Other frameworks ignore it.
+
+## Vite and React SPA
+
+Render `PresenceProvider` around your app in the entry file. A single-page app renders nothing on the server, so it needs no other step.
+
+## Next.js App Router
+
+Keep `"use client"` at the top of the provider module. A Server Component cannot pass a function, such as `factory`, to a Client Component. As a result, the `factory` must live in a Client Component. Render the provider in the root layout:
+
+```tsx
+// app/layout.tsx
+import type { ReactNode } from "react";
+import { PresenceProvider } from "./presence-provider";
+
+export default function RootLayout({ children }: { children: ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        <PresenceProvider>{children}</PresenceProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+The root layout stays mounted across navigation, so the page keeps one client.
+
+## TanStack Router and TanStack Start
+
+Render the provider in the component of the root route, around `<Outlet />`:
+
+```tsx
+// src/routes/__root.tsx
+import { createRootRoute, Outlet } from "@tanstack/react-router";
+import { PresenceProvider } from "../presence-provider";
+
+export const Route = createRootRoute({
+  component: () => (
+    <PresenceProvider>
+      <Outlet />
+    </PresenceProvider>
+  ),
+});
+```
+
+The root route stays mounted across navigation, so the page keeps one client. TanStack Start renders the root route on the server too. There, the provider renders with a `null` client. The provider creates the client after hydration.
+
+## React Router and Remix
+
+Render the provider in the root route module, around `<Outlet />`:
+
+```tsx
+// app/root.tsx
+import { Outlet } from "react-router";
+import { PresenceProvider } from "./presence-provider";
+
+export default function App() {
+  return (
+    <PresenceProvider>
+      <Outlet />
+    </PresenceProvider>
+  );
+}
+```
+
+For Remix, import `Outlet` from `@remix-run/react`. The root route stays mounted across navigation, so the page keeps one client.
+
+## Astro
+
+Render the provider as a React island. Use `client:only="react"` to skip the server render, or `client:load` to render on the server and hydrate:
+
+```astro
+---
+// src/pages/index.astro
+import { PresenceProvider } from "../components/presence-provider";
+---
+
+<PresenceProvider client:only="react">
+  <button data-anchor="nav.dashboard">Dashboard</button>
+</PresenceProvider>
+```
+
+The binding registers every `data-anchor` element in the document. As a result, elements outside the island are anchors too. Each island has its own React tree. A hook or a `CursorLayer` in another island has no provider and returns empty data.
+
+## Test coverage
+
+This table shows which frameworks the test suite covers:
+
+| Framework          | Status                                                                                               |
+| ------------------ | ---------------------------------------------------------------------------------------------------- |
+| TanStack Router    | Tested: server render, hydration with no mismatch, and one client across navigation.                 |
+| TanStack Start     | Not tested. It uses TanStack Router, which is tested.                                                |
+| React Router       | Tested: server render inside a router, and one client across navigation.                             |
+| Remix              | Not tested. It uses React Router, which is tested.                                                   |
+| Next.js App Router | Not tested. The built packages import in plain Node, and the React entry starts with `"use client"`. |
+| Vite and React SPA | Not tested. The package tests mount the provider with `createRoot`, as a single-page app does.       |
+| Astro              | Not tested.                                                                                          |
+
+## Related
+
+- [Quick start](/docs/get-started/quick-start)
+- [SSR and Strict Mode](/docs/react/ssr-and-strict-mode)
+- [LiveCursorProvider](/docs/react/live-cursor-provider)

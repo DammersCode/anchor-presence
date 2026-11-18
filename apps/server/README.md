@@ -15,19 +15,18 @@ The relay listens on port `8787`.
 
 ## Environment variables
 
-| Variable                       | Default          | Meaning                                                                                                                                             |
-| ------------------------------ | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `PORT`                         | `8787`           | The port of the relay.                                                                                                                              |
-| `RELAY_ALLOWED_ORIGINS`        | unset (no check) | A comma-separated list of allowed `Origin` header values. If it is unset, the relay accepts every origin. A foreign origin closes with code `4004`. |
-| `RELAY_AUTH_TOKEN`             | unset (no check) | If it is set, every upgrade must carry a matching `token` query parameter, the room token. Otherwise, the relay closes the socket with code `4006`. |
-| `MAX_MESSAGE_BYTES`            | `32768`          | The maximum size of one inbound message, in bytes. The relay drops a larger message.                                                                |
-| `RATE_CAPACITY`                | `40`             | The token-bucket capacity of the rate limit per socket.                                                                                             |
-| `RATE_REFILL_PER_SECOND`       | `20`             | The tokens that the relay adds to the bucket of each socket per second.                                                                             |
-| `RELAY_MAX_ROOM_SOCKETS`       | `128`            | The maximum sockets in one room. Above it, the relay closes a new socket with code `4001`.                                                          |
-| `RELAY_MAX_TOTAL_SOCKETS`      | `10000`          | The maximum sockets in all rooms. Above it, the relay closes a new socket with code `4002`.                                                         |
-| `RELAY_SLOW_PEER_SOFT_BYTES`   | `1048576`        | Above this buffered size, the relay skips sends to a slow peer.                                                                                     |
-| `RELAY_SLOW_PEER_HARD_BYTES`   | `8388608`        | Above this buffered size, the relay closes a slow peer with code `4003`.                                                                            |
-| `RELAY_SLOW_PEER_RESUME_BYTES` | `524288`         | Below this buffered size, the relay sends to a skipped peer again.                                                                                  |
+| Variable                     | Default          | Meaning                                                                                                                                             |
+| ---------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PORT`                       | `8787`           | The port of the relay.                                                                                                                              |
+| `RELAY_ALLOWED_ORIGINS`      | unset (no check) | A comma-separated list of allowed `Origin` header values. If it is unset, the relay accepts every origin. A foreign origin closes with code `4004`. |
+| `RELAY_AUTH_TOKEN`           | unset (no check) | If it is set, every upgrade must carry a matching `token` query parameter, the room token. Otherwise, the relay closes the socket with code `4006`. |
+| `MAX_MESSAGE_BYTES`          | `32768`          | The maximum size of one inbound message, in bytes. The relay drops a larger message.                                                                |
+| `RATE_CAPACITY`              | `80`             | The token-bucket capacity of the rate limit per socket.                                                                                             |
+| `RATE_REFILL_PER_SECOND`     | `40`             | The tokens that the relay adds to the bucket of each socket per second.                                                                             |
+| `RELAY_MAX_ROOM_SOCKETS`     | `64`             | The maximum sockets in one room. Above it, the relay closes a new socket with code `4001`.                                                          |
+| `RELAY_MAX_TOTAL_SOCKETS`    | `10000`          | The maximum sockets in all rooms. Above it, the relay closes a new socket with code `4002`.                                                         |
+| `RELAY_SLOW_PEER_SOFT_BYTES` | `1048576`        | Above this buffered size, the relay drops frames for a slow peer.                                                                                   |
+| `RELAY_SLOW_PEER_HARD_BYTES` | `8388608`        | Above this buffered size, the relay closes a slow peer with code `4003`.                                                                            |
 
 The relay pings every socket every 30 seconds. It closes a socket with no pong for 60 seconds with code `4005`.
 

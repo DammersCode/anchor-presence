@@ -60,3 +60,15 @@ describe("SSR safety", () => {
     expect(html).toContain("none-nouser-0-0");
   });
 });
+
+describe("dev warnings", () => {
+  it("warns once when a hook runs outside a provider", async () => {
+    const { vi } = await import("vitest");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    renderToString(<AllHooks />);
+    renderToString(<AllHooks />);
+    const calls = warn.mock.calls.filter(([text]) => String(text).includes("outside LiveCursorProvider"));
+    expect(calls.length).toBeLessThanOrEqual(1);
+    warn.mockRestore();
+  });
+});

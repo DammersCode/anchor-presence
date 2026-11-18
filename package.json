@@ -27,12 +27,14 @@
     "typecheck:examples": "tsc -p examples/socketio && tsc -p examples/signalr && tsc -p examples/bun-native && tsc -p examples/node-ws && tsc -p examples/hono && tsc -p examples/elysia",
     "perf:score": "bun run scripts/perf-score.ts",
     "check:unused": "knip --no-progress --workspace packages/core --workspace packages/dom --workspace packages/react",
-    "check:package": "node scripts/check-package.mjs"
+    "check:package": "node scripts/check-package.mjs",
+    "test:bun-runtime": "bunx --bun vitest run --pool=threads --project core --project server --project relay-conformance --project built-packages --project node-ws-example --project hono-example --project bun-native-example --project elysia-example --project socketio-example"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.5",
     "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "^1.62.1",
+    "@tanstack/react-router": "^1.170.46",
     "@types/bun": "^1.4.2",
     "@types/node": "^26.4.1",
     "jsdom": "^30.0.1",
@@ -41,6 +43,7 @@
     "oxlint-tsgolint": "^7.0.2001",
     "prettier": "^3.9.6",
     "publint": "^0.3.25",
+    "react-router": "^8.5.1",
     "tinybench": "^6.2.0",
     "typescript": "^7.0.2",
     "vitest": "^5.0.0"

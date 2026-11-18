@@ -6,6 +6,7 @@ describe("@anchor-presence/dom public runtime API", () => {
 
     expect(Object.keys(mod).toSorted()).toEqual([
       "CURSOR_MARKER_ATTRIBUTE",
+      "createBroadcastChannelTransport",
       "createDomBinding",
       "createWebSocketTransport",
     ]);

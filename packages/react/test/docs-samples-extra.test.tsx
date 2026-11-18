@@ -25,7 +25,7 @@ function MyCursorGlyph({ color, children }: { color: string; children: ReactNode
   return <span data-color={color}>{children}</span>;
 }
 
-// cursor-context.mdx: Usage
+// local-context.mdx: Usage
 function SettingsDialog({ open }: { open: boolean }) {
   const [, setContext] = useLocalContext();
   useEffect(() => {
@@ -39,7 +39,7 @@ function ContextReader() {
   return <output>{String(context?.dialog)}</output>;
 }
 
-// cursor-presence.mdx: Usage
+// remote-presence.mdx: Usage
 function PointerTypeBadge() {
   const presence = useRemotePresence();
   const touchCount = presence.filter((p) => p.pointer?.type === "touch").length;
@@ -158,7 +158,7 @@ describe("extra docs samples", () => {
     for (const container of containers.splice(0)) container.remove();
   });
 
-  it("cursor-context.mdx: SettingsDialog sets the context, and a direct setContext reaches the hook", () => {
+  it("local-context.mdx: SettingsDialog sets the context, and a direct setContext reaches the hook", () => {
     const { a } = createInMemoryPair();
     const client = createPresenceClient<{ dialog?: string }>({ transport: a });
     const view = mount(
@@ -175,7 +175,7 @@ describe("extra docs samples", () => {
     client.dispose();
   });
 
-  it("cursor-presence.mdx: PointerTypeBadge counts touch pointers", () => {
+  it("remote-presence.mdx: PointerTypeBadge counts touch pointers", () => {
     const { client, pushRemote } = makeFakeClient();
     const view = mount(
       <LiveCursorProvider client={client}>
@@ -248,7 +248,7 @@ describe("extra docs samples", () => {
     expect(view.textContent).toBe("1 out of view");
   });
 
-  it("custom-cursors.mdx: renderCursor receives the color and an empty label by default", () => {
+  it("custom-cursors.mdx: renderCursor receives a color from the palette by default", () => {
     const { client } = makeFakeClient();
     const { binding, publish } = makeFakeBinding();
     const view = mount(
@@ -259,7 +259,20 @@ describe("extra docs samples", () => {
     act(() => publish([makeCursor("a")]));
     expect(
       view.querySelector<HTMLElement>("[data-anchor-presence-client-id=a] [data-color]")?.dataset.color,
-    ).toBe("#6b7280");
+    ).toMatch(/^#[0-9a-f]{6}$/u);
+  });
+
+  it("shows the user name as the default label and keeps one color per client", () => {
+    const { client } = makeFakeClient();
+    const { binding, publish } = makeFakeBinding();
+    const view = mount(
+      <LiveCursorProvider client={client} binding={binding}>
+        <CursorLayer />
+      </LiveCursorProvider>,
+    );
+    act(() => publish([{ ...makeCursor("a"), user: { name: "Ada" } }, makeCursor("b")]));
+    expect(view.textContent).toContain("Ada");
+    expect(view.querySelectorAll("[data-anchor-presence-client-id]")).toHaveLength(2);
   });
 
   it("custom-cursors.mdx: the CSS variable on DefaultCursor reaches its style", () => {

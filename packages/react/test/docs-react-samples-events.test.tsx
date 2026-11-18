@@ -5,6 +5,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest";
 import {
   createEventChannel,
+  createEventParser,
   createInMemoryPair,
   createPresenceClient,
   type PeerChange,
@@ -19,6 +20,7 @@ import {
 } from "../src/index";
 import type { useLocalUser as exportedUseLocalUser } from "../src/hooks/use-local-user";
 import type { usePeerChanges as exportedUsePeerChanges } from "../src/hooks/use-peer-changes";
+import { createWebSocketTransport } from "@anchor-presence/dom";
 import { makeFakeBinding } from "./test-utils";
 
 // Verbatim copies of doc samples; the last test checks each copy against its .mdx source.
@@ -55,6 +57,24 @@ function Reactions() {
       </button>
       {lastEmoji !== null && <p role="status">{lastEmoji}</p>}
     </div>
+  );
+}
+
+const parseEvent = createEventParser<Events>({
+  reaction: (data) => {
+    const emoji = (data as { emoji?: unknown } | undefined)?.emoji;
+    return typeof emoji === "string" ? { emoji } : undefined;
+  },
+  ping: null,
+});
+
+function App() {
+  return (
+    <LiveCursorProvider
+      factory={() => createPresenceClient({ transport: createWebSocketTransport(), parseEvent })}
+    >
+      <Reactions />
+    </LiveCursorProvider>
   );
 }
 
@@ -145,6 +165,19 @@ describe("typed-hooks.mdx: typed events", () => {
   });
 });
 
+describe("typed-hooks.mdx: parseEvent", () => {
+  it("keeps a valid reaction and drops other data", () => {
+    expect(parseEvent({ clientId: "a", type: "reaction", data: { emoji: "tada" } })).toEqual({
+      clientId: "a",
+      type: "reaction",
+      data: { emoji: "tada" },
+    });
+    expect(parseEvent({ clientId: "a", type: "reaction", data: { emoji: 3 } })).toBeUndefined();
+    expect(parseEvent({ clientId: "a", type: "ping", data: 1 })).toBeUndefined();
+    expect(App).toBeTypeOf("function");
+  });
+});
+
 describe("remote-users.mdx: peer changes", () => {
   it("shows the peer that joined", () => {
     const { local, peer } = connectedPair();
@@ -165,7 +198,7 @@ describe("remote-users.mdx: peer changes", () => {
   });
 });
 
-describe("cursor-context.mdx: local user", () => {
+describe("local-context.mdx: local user", () => {
   it("shows the local user and sends a typed name to the client", () => {
     const { local } = connectedPair<MyUser>({ name: "Ada", color: "#000000" });
     act(() =>
@@ -237,10 +270,11 @@ describe("doc sample sources", () => {
       .join("\n");
     const samples = [
       docSample("react/typed-hooks.mdx", "function Reactions"),
+      docSample("react/typed-hooks.mdx", "createEventParser<Events>"),
       docSample("react/remote-users.mdx", "function JoinNotice"),
       docSample("react/remote-users.mdx", "function usePeerChanges"),
-      docSample("react/cursor-context.mdx", "function NameField"),
-      docSample("react/cursor-context.mdx", "function useLocalUser"),
+      docSample("react/local-context.mdx", "function NameField"),
+      docSample("react/local-context.mdx", "function useLocalUser"),
       docSample("react/api/hooks.mdx", "function useLocalUser"),
       docSample("react/api/hooks.mdx", "function usePeerChanges"),
     ];

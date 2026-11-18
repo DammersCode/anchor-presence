@@ -9,21 +9,33 @@ All inbound presence data is untrusted. A peer is another client in the same roo
 
 The client checks every inbound message in two steps. First, it drops a message whose encoded bytes are above `maxMessageBytes`, before it decodes the message. Then it passes the decoded message to `validatePresence()`, which checks the fields in this table:
 
-| Field                           | Rule                                                           | Limit key           |
-| ------------------------------- | -------------------------------------------------------------- | ------------------- |
-| `version`                       | must equal `1`, else the client drops the message              |                     |
-| `clientId`                      | string, 1 to 128 characters, else the client drops the message | `maxClientIdLength` |
-| `session`                       | string, 1 to 64 characters, else the client drops the message  | `maxSessionLength`  |
-| `sequence`                      | finite integer from 0 to 2147483647, else the client drops it  | `maxSequence`       |
-| `anchors`                       | array, max 8 entries, the client cuts extra entries            | `maxAnchors`        |
-| anchor `id`                     | string, 1 to 256 characters, else the client drops that entry  | `maxAnchorIdLength` |
-| anchor `u`, `v`                 | finite number, clamped to `[0, 1]`                             |                     |
-| `viewport.u`, `viewport.v`      | finite number, clamped to `[0, 1]`                             |                     |
-| `context`                       | max 8 KiB when JSON-encoded, else the client drops the field   | `maxFieldBytes`     |
-| `user`                          | max 8 KiB when JSON-encoded, else the client drops the field   | `maxFieldBytes`     |
-| `context`, `user` nesting depth | max 8 levels, else the client drops the field                  | `maxFieldDepth`     |
-| `pointer.type`                  | `mouse`, `pen` or `touch`, else the client drops the field     |                     |
-| whole message                   | max 32 KiB encoded, else the client drops the message          | `maxMessageBytes`   |
+| Field                           | Rule                                                                      | Limit key                        |
+| ------------------------------- | ------------------------------------------------------------------------- | -------------------------------- |
+| `version`                       | must equal `1`, else the client drops the message                         |                                  |
+| `clientId`                      | string, 1 to 128 characters, else the client drops the message            | `maxClientIdLength`              |
+| `session`                       | string, 1 to 64 characters, else the client drops the message             | `maxSessionLength`               |
+| `sequence`                      | finite integer from 0 to 2147483647, else the client drops it             | `maxSequence`                    |
+| `anchors`                       | array, max 8 entries, the client cuts extra entries                       | `maxAnchors`                     |
+| anchor `id`                     | string, 1 to 256 characters, else the client drops that entry             | `maxAnchorIdLength`              |
+| anchor `u`, `v`                 | finite number, clamped to `[0, 1]`                                        |                                  |
+| `viewport.u`, `viewport.v`      | finite number, clamped to `[0, 1]`                                        |                                  |
+| `context`                       | max 8 KiB when JSON-encoded, else the client drops the field              | `maxFieldBytes`                  |
+| `user`                          | max 8 KiB when JSON-encoded, else the client drops the field              | `maxFieldBytes`                  |
+| `context`, `user` nesting depth | max 8 levels, else the client drops the field                             | `maxFieldDepth`                  |
+| `pointer.type`                  | `mouse`, `pen` or `touch`, else the client drops the field                |                                  |
+| whole message                   | max 32 KiB encoded, else the client drops the message                     | `maxMessageBytes`                |
+| event `type`                    | string, 1 to 64 characters, else the client drops the event               |                                  |
+| event `data`                    | max 8 KiB and 8 levels when JSON-encoded, else the client drops the event | `maxFieldBytes`, `maxFieldDepth` |
+
+Each receiver also limits the rate of inbound events, with the `eventRateLimit` option of `createPresenceClient`:
+
+| Key              | Default | Limit                                            |
+| ---------------- | ------- | ------------------------------------------------ |
+| `burst`          | `20`    | The events that one sender can send at once.     |
+| `perSecond`      | `10`    | The events per second that refill one sender.    |
+| `totalPerSecond` | `100`   | The events per second from all senders together. |
+
+These limits protect one receiver. A sender can still flood the whole room, so the rate limit per socket on the relay is the real control against a flood. See [Event rate limit](/docs/core/presence-client#event-rate-limit).
 
 The defaults are constants in `@anchor-presence/core`. To change a limit, pass its key in `PresenceClientOptions.validationLimits` to `createPresenceClient`. `validatePresence` also takes a `ValidationLimits` object, but it ignores `maxMessageBytes`. A decoded message has no byte length, so only the client checks the size. A relay that calls `validatePresence` must cap the frame size itself. See [Relay contract](/docs/examples/backends/relay-contract).
 

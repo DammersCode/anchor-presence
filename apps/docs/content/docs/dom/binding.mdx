@@ -64,6 +64,7 @@ function drawCursors(binding: DomBinding, layer: HTMLElement): () => void {
       if (element === undefined) {
         element = document.createElement("div");
         element.setAttribute(CURSOR_MARKER_ATTRIBUTE, "");
+        element.setAttribute("aria-hidden", "true");
         element.className = "remote-cursor";
         layer.append(element);
         elements.set(cursor.clientId, element);
@@ -79,7 +80,7 @@ function drawCursors(binding: DomBinding, layer: HTMLElement): () => void {
 }
 ```
 
-`x` and `y` are viewport pixels. Give `.remote-cursor` the CSS `position: fixed`, `left: 0`, `top: 0`, and `pointer-events: none`. `@anchor-presence/react` uses the same styles on each cursor root. The final empty snapshot of `dispose` removes every element.
+`x` and `y` are viewport pixels. Give `.remote-cursor` the CSS `position: fixed`, `left: 0`, `top: 0`, and `pointer-events: none`. `aria-hidden="true"` keeps the cursor away from screen readers. `@anchor-presence/react` uses the same styles and attribute on each cursor root. The final empty snapshot of `dispose` removes every element.
 
 ## invalidate
 

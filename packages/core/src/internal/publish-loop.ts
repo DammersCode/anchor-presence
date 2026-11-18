@@ -69,6 +69,8 @@ export function createPublishLoop<TContext, TUser>(state: PresenceClientState<TC
     return message;
   }
 
+  let warnedSendFailure = false;
+
   function send(cursor: CursorPosition | null, includeFull = false, leave = false): boolean {
     if (state.status !== "connected") return false;
     // peers dropped us on leave, so the next message must carry the full state
@@ -87,8 +89,14 @@ export function createPublishLoop<TContext, TUser>(state: PresenceClientState<TC
       if (message.context !== undefined) state.contextDirty = false;
       if (message.user !== undefined) state.userDirty = false;
       return true;
-    } catch {
-      // swallow send errors — presence is lossy by design
+    } catch (error) {
+      if (state.devMode && !warnedSendFailure) {
+        warnedSendFailure = true;
+        console.warn(
+          "[anchor-presence] a message failed to encode or send; check that `user` and `context` are plain JSON values.",
+          error,
+        );
+      }
       return false;
     }
   }

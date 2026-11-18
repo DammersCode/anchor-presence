@@ -32,7 +32,7 @@ Before the factory runs, the provider renders its children with a `null` client,
 
 ## Why Strict Mode matters here
 
-In development, React Strict Mode mounts every component, unmounts it, and mounts it again. This finds effects that break when they run two times. If a `createPresenceClient` call sits at module scope, or directly inside a component body, it runs twice. Two clients then exist, or one transport's socket connects twice.
+In development, React Strict Mode renders every component twice, and mounts, unmounts, and mounts it again. This finds effects that break when they run two times. A `createPresenceClient` call directly inside a component body runs on each render, so two clients exist. A client at module scope runs once, but it also runs on the server, and every request then shares that one client.
 
 The provider creates the client in an effect with a cleanup. The first mount creates the client, and Strict Mode's cleanup disposes it. The second mount's effect creates a new client, so the page always holds one live client.
 
@@ -54,3 +54,4 @@ Every hook that reads changing data has a server-safe snapshot: `useRemoteCursor
 - [Create the client](/docs/react/client-creation)
 - [LiveCursorProvider](/docs/react/live-cursor-provider)
 - [Quick start](/docs/get-started/quick-start)
+- [Frameworks](/docs/get-started/frameworks)

@@ -3,7 +3,7 @@ title: Custom transport
 description: Write a transport for BroadcastChannel or a managed real-time service.
 ---
 
-If your app already has a byte channel, such as `BroadcastChannel`, write your own transport. Do the same for a managed real-time service. A transport only moves bytes. It never checks or reads them.
+If your app already has a byte channel, write your own transport. Do the same for a managed real-time service. A transport only moves bytes. It never checks or reads them.
 
 If your app uses Socket.IO or SignalR, use the [Socket.IO](/docs/examples/backends/socketio) or [SignalR](/docs/examples/backends/signalr) example. You do not need to write a transport.
 
@@ -11,7 +11,7 @@ If your app uses Socket.IO or SignalR, use the [Socket.IO](/docs/examples/backen
 
 `BroadcastChannel` sends messages between browsing contexts (tabs, iframes, workers) on the same origin. It never crosses a network. As a result, it fits demos and multi-tab apps on one origin, not presence over the internet.
 
-This transport wraps one `BroadcastChannel`:
+`@anchor-presence/dom` ships `createBroadcastChannelTransport` for this channel. This sketch shows the parts of a transport on a smaller version of it:
 
 ```ts
 import type { ConnectionStatus, LiveCursorTransport } from "@anchor-presence/core";

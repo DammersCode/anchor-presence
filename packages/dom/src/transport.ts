@@ -53,13 +53,14 @@ export type WebSocketTransportOptions = {
   random?: () => number;
   /** How long a connection must stay open before the backoff resets, in milliseconds. Default `5000`. */
   stableAfterMs?: number;
-  /** Return `false` to stop reconnecting after a close. Default: reconnect unless the close code is 1008, 4004 (origin) or 4006 (auth). */
+  /** Return `false` to stop reconnecting after a close. Default: reconnect unless the close code is 1008, 4004 (origin), 4006 (auth) or 4007 (room). */
   shouldReconnect?: (close: { code?: number; reason?: string }) => boolean;
   /** A WebSocket constructor to use. Default: `globalThis.WebSocket`. */
   WebSocketCtor?: WebSocketCtor;
 };
 
-const NO_RETRY_CODES = new Set([1008, 4004, 4006]);
+const NO_RETRY_CODES = new Set([1008, 4004, 4006, 4007]);
+const FIRST_APPLICATION_CLOSE_CODE = 4000;
 const WS_CONNECTING = 0;
 const WS_OPEN = 1;
 
@@ -113,7 +114,13 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
   function setStatus(next: ConnectionStatus): void {
     if (status === next) return;
     status = next;
-    for (const listener of statusListeners) listener(status);
+    for (const listener of statusListeners) {
+      try {
+        listener(status);
+      } catch {
+        // a throwing listener must not stop the reconnect
+      }
+    }
   }
 
   function clearStableTimer(): void {
@@ -123,7 +130,6 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
 
   function scheduleReconnect(): void {
     if (disposedByUser || reconnectTimer !== null) return;
-    setStatus("reconnecting");
     const capped = Math.min(baseBackoffMs * 2 ** reconnectAttempt, maxBackoffMs);
     // full-jitter on a lower bound: spreads reconnect storms without doubling the worst case
     const delay = Math.max(1, Math.round(capped * (0.5 + random() * 0.5)));
@@ -132,6 +138,7 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
       reconnectTimer = null;
       open();
     }, delay);
+    setStatus("reconnecting");
   }
 
   function nextUrl(): string | Promise<string> {
@@ -215,7 +222,13 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
         const data = event.data;
         if (!(data instanceof ArrayBuffer)) return;
         const bytes = new Uint8Array(data);
-        for (const listener of dataListeners) listener(bytes);
+        for (const listener of dataListeners) {
+          try {
+            listener(bytes);
+          } catch {
+            // a throwing listener must not starve the others
+          }
+        }
       };
 
       ws.onclose = (event) => {
@@ -227,6 +240,11 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
         if (event.code !== undefined) closeInfo.code = event.code;
         if (event.reason) closeInfo.reason = event.reason;
         emitClose(closeInfo);
+        if (isDevMode() && (event.code ?? 0) >= FIRST_APPLICATION_CLOSE_CODE) {
+          console.warn(
+            `[anchor-presence] the relay closed the connection with code ${event.code}${event.reason ? ` (${event.reason})` : ""}${willReconnect ? "; reconnecting" : ""}`,
+          );
+        }
         if (willReconnect) scheduleReconnect();
         else setStatus("disconnected");
       };

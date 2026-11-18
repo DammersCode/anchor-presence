@@ -62,9 +62,9 @@ describe("dom docs samples", () => {
     peer.dispose();
   });
 
-  it("websocket-transport.mdx: shouldReconnect stops on 4007 and keeps retrying on 1006", () => {
+  it("websocket-transport.mdx: shouldReconnect stops on 4001 and keeps retrying on 1006", () => {
     vi.useFakeTimers();
-    const NO_RETRY_CODES = [1008, 4004, 4006, 4007];
+    const NO_RETRY_CODES = [1008, 4001, 4004, 4006, 4007];
 
     const transport = createWebSocketTransport({
       url: "wss://relay.example.com/?room=main",
@@ -75,7 +75,7 @@ describe("dom docs samples", () => {
     FakeSocket.instances.at(-1)!.onclose?.({ code: 1006 });
     expect(transport.getStatus?.()).toBe("reconnecting");
     vi.advanceTimersByTime(10_000);
-    FakeSocket.instances.at(-1)!.onclose?.({ code: 4007 });
+    FakeSocket.instances.at(-1)!.onclose?.({ code: 4001 });
     expect(transport.getStatus?.()).toBe("disconnected");
   });
 
@@ -195,6 +195,7 @@ describe("binding docs", () => {
           if (element === undefined) {
             element = document.createElement("div");
             element.setAttribute(CURSOR_MARKER_ATTRIBUTE, "");
+            element.setAttribute("aria-hidden", "true");
             element.className = "remote-cursor";
             layer.append(element);
             elements.set(cursor.clientId, element);

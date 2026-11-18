@@ -21,7 +21,7 @@ jobs:
     # Only listed maintainers burn Actions minutes; add a login to let another user's PRs run checks.
     if: >-
       github.event_name != 'pull_request' ||
-      contains('["DammersCode"]', github.event.pull_request.user.login)
+      contains(fromJSON('["DammersCode"]'), github.event.pull_request.user.login)
     steps:
       - uses: actions/checkout@v7
       - uses: oven-sh/setup-bun@v2
@@ -47,3 +47,5 @@ jobs:
       # No .NET on this runner, so the real SignalR hub test skips itself; main runs it.
       - name: Unit tests
         run: bun run test
+      - name: Unit tests under the Bun runtime
+        run: bun run test:bun-runtime

@@ -22,11 +22,11 @@ function App() {
 }
 ```
 
-With no props, `CursorLayer` renders `DefaultCursor` for each visible cursor. See [Custom cursors](/docs/react/custom-cursors) to replace the cursor content or its default styling.
+With no props, `CursorLayer` renders `DefaultCursor` for each visible cursor. If `user.name` is a string that is not empty, it is the label of the cursor. Each client gets one color from a palette of 8 colors, picked from its `clientId`, so one client keeps its color on every screen. See [Custom cursors](/docs/react/custom-cursors) to replace the cursor content or its default styling.
 
 ## Label and color
 
-`getLabel` and `getColor` run once per visible cursor:
+`getLabel` and `getColor` run once per visible cursor. They replace the default label and the default color:
 
 ```tsx
 type MyUser = { name: string; color?: string };
@@ -63,7 +63,21 @@ type MyUser = { name: string; color?: string };
 />
 ```
 
-`CursorLayer` sets `position`, `left`, `top`, `transform`, `pointerEvents`, and `opacity` after your style, so your value never replaces them. The `zIndex` prop replaces the default of `9999`, which keeps cursors above most app UI, including dialogs.
+`CursorLayer` sets `position`, `left`, `top`, `transform`, `pointerEvents`, and `opacity` after your style, so your value never replaces them. The `zIndex` prop replaces the default of `9999`, which keeps cursors above most app UI.
+
+## Dialogs and the top layer
+
+<Callout type="warn">
+  If a dialog opens with `<dialog>.showModal()`, or an element uses `popover`, it covers the cursors. The
+  browser renders these elements in the top layer, above every `z-index`. Render a second `CursorLayer` inside
+  the dialog or the popover.
+</Callout>
+
+<Callout type="warn">
+  If an ancestor of `CursorLayer` has a `transform`, `filter`, or `contain` style, the cursors move to wrong
+  positions. These styles change the box that `position: fixed` refers to. Render `CursorLayer` at the root of
+  the app.
+</Callout>
 
 ## Accessibility
 

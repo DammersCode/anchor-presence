@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { createPresenceClient } from "@anchor-presence/core";
 import type { PresenceClient, PresenceClientOptions } from "@anchor-presence/core";
 import { useSearchParams } from "next/navigation";
-import { createBroadcastChannelTransport } from "@/components/demo/broadcast-transport";
+import { createBroadcastChannelTransport } from "@anchor-presence/dom";
 import { ResolutionInsight } from "./resolution-insight";
 import { SCENE_COMPONENTS } from "./scene-components";
 import { READER, SCENES, type Layout, type SceneName } from "./scenes";

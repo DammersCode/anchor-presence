@@ -31,19 +31,25 @@ The client calls `transport.connect()` for you by default. To connect at a time 
 
 ## Main exports
 
-| Export                                            | What it does                                                                                              |
-| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `createPresenceClient(options)`                   | Wires the transport, codec, publishing, sequencing, expiry, and the remote presence store into one client |
-| `CursorPresence`, `AnchorPoint`, `CursorPosition` | Wire protocol types                                                                                       |
-| `RemotePresence`                                  | A remote presence without `sequence`. It is the shape of an entry in the stable snapshot.                 |
-| `validatePresence(input, limits?)`                | Checks and clamps an untrusted decoded value                                                              |
-| `jsonCodec`                                       | The default `CursorCodec` implementation                                                                  |
-| `binaryCodec`                                     | A compact `CursorCodec` for binary WebSocket relays                                                       |
-| `LiveCursorTransport`, `ConnectionStatus`         | The transport interface                                                                                   |
-| `AdaptivePublishOptions`                          | Opt-in slow-mode options for the publish rate                                                             |
-| `createInMemoryPair`                              | A connected pair of in-memory transports for tests                                                        |
-| `RemotePresenceStore`                             | Sequencing, field-delta merge, and stale-expiry store for remote presences                                |
-| `createEventChannel(client)`                      | Typed `send` and `subscribe` for the events of a client                                                   |
-| `linearInterpolator`, `noneInterpolator`          | Interpolation factories                                                                                   |
+| Export                                                              | What it does                                                                                              |
+| ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `createPresenceClient(options)`                                     | Wires the transport, codec, publishing, sequencing, expiry, and the remote presence store into one client |
+| `CursorPresence`, `AnchorPoint`, `CursorPosition`                   | Wire protocol types                                                                                       |
+| `RemotePresence`                                                    | A remote presence without `sequence`. It is the shape of an entry in the stable snapshot.                 |
+| `validatePresence(input, limits?)`                                  | Checks and clamps an untrusted decoded value                                                              |
+| `jsonCodec`                                                         | The default `CursorCodec` implementation                                                                  |
+| `binaryCodec`                                                       | A compact `CursorCodec` for binary WebSocket relays                                                       |
+| `LiveCursorTransport`, `ConnectionStatus`                           | The transport interface                                                                                   |
+| `AdaptivePublishOptions`                                            | Opt-in slow-mode options for the publish rate                                                             |
+| `createInMemoryPair`                                                | A connected pair of in-memory transports for tests                                                        |
+| `RemotePresenceStore`                                               | Sequencing, field-delta merge, and stale-expiry store for remote presences                                |
+| `createEventChannel(client)`                                        | Typed `send` and `subscribe` for the events of a client                                                   |
+| `createEventParser(parsers)`, `EventParsers`                        | Builds a typed `parseEvent` from one data parser per event type                                           |
+| `client.sendEvent(type, data?)`, `client.subscribeEvents(listener)` | One-shot events, such as reactions, to every peer. The client never stores or resends them.               |
+| `client.subscribePeers(listener)`                                   | Reports a remote client that joins, changes its `user` or `context`, or leaves                            |
+| `client.subscribeClose(listener)`                                   | Reports the close code and reason of each closed connection, and whether the transport reconnects         |
+| `client.leave()`                                                    | Tells peers that the client left. The next publish announces it again.                                    |
+| `parseUser`, `parseContext`, `parseEvent` options                   | Check, rewrite, or drop each remote `user`, `context`, and event                                          |
+| `linearInterpolator`, `noneInterpolator`                            | Interpolation factories                                                                                   |
 
 See [How it works](https://anchor-presence.vercel.app/docs/get-started/concepts/how-it-works) and [Codecs](https://anchor-presence.vercel.app/docs/core/codecs) for full guides.

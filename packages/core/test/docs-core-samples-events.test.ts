@@ -3,12 +3,14 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest";
 import {
   createEventChannel,
+  createEventParser,
   createInMemoryPair,
   createPresenceClient,
   type CursorCodec,
   type CursorPresence,
   type EventChannel as ExportedEventChannel,
   type EventMap as ExportedEventMap,
+  type EventParsers as ExportedEventParsers,
   type PresenceClient,
   type RemoteEvent,
   type TypedRemoteEvent as ExportedTypedRemoteEvent,
@@ -52,6 +54,16 @@ declare namespace Listing {
   function createEventChannel<TEvents extends object>(
     client: Pick<PresenceClient, "sendEvent" | "subscribeEvents">,
   ): EventChannel<TEvents>;
+
+  type EventParsers<TEvents extends EventMap> = {
+    [K in keyof TEvents & string]:
+      ((data: unknown) => TEvents[K] | undefined) | (undefined extends TEvents[K] ? null : never);
+  };
+
+  // oxlint-disable-next-line eslint/no-shadow -- the listing keeps the exported name
+  function createEventParser<TEvents extends EventMap>(
+    parsers: EventParsers<TEvents>,
+  ): (event: RemoteEvent) => TypedRemoteEvent<TEvents> | undefined;
 }
 
 type ListingEvents = { reaction: { emoji: string }; ping: undefined };
@@ -98,14 +110,15 @@ describe("presence-client.mdx: typed events", () => {
 
     type Events = { reaction: { emoji: string }; ping: undefined };
 
-    function parseEvents(event: RemoteEvent): RemoteEvent | undefined {
-      if (event.type === "ping") return { clientId: event.clientId, type: "ping" };
-      const emoji = (event.data as { emoji?: unknown } | undefined)?.emoji;
-      if (event.type !== "reaction" || typeof emoji !== "string") return undefined;
-      return { clientId: event.clientId, type: "reaction", data: { emoji } };
-    }
+    const parseEvent = createEventParser<Events>({
+      reaction: (data) => {
+        const emoji = (data as { emoji?: unknown } | undefined)?.emoji;
+        return typeof emoji === "string" ? { emoji } : undefined;
+      },
+      ping: null,
+    });
 
-    const client = createPresenceClient({ transport, parseEvent: parseEvents });
+    const client = createPresenceClient({ transport, parseEvent });
     const events = createEventChannel<Events>(client);
 
     events.send("reaction", { emoji: "tada" });
@@ -147,6 +160,13 @@ describe("api/client.mdx: createEventChannel listing", () => {
       typeof createEventChannel<ListingEvents>
     >();
     expect(createEventChannel).toBeTypeOf("function");
+  });
+
+  it("lists the exported createEventParser and EventParsers", () => {
+    expectTypeOf<Listing.EventParsers<ListingEvents>>().toEqualTypeOf<ExportedEventParsers<ListingEvents>>();
+    expectTypeOf<typeof Listing.createEventParser<ListingEvents>>().toEqualTypeOf<
+      typeof createEventParser<ListingEvents>
+    >();
   });
 });
 
@@ -191,8 +211,9 @@ describe("doc sample sources", () => {
       .join("\n");
     const samples = [
       docSample("core/presence-client.mdx", "eventRateLimit: { burst: 40"),
-      docSample("core/presence-client.mdx", "function parseEvents"),
+      docSample("core/presence-client.mdx", "createEventParser<Events>"),
       docSample("core/api/client.mdx", "type EventMap"),
+      docSample("core/api/client.mdx", "type EventParsers"),
       docSample("core/custom-codec.mdx", "messagePackCodec"),
     ];
     for (const sample of samples) expect(source).toContain(trimLines(sample));

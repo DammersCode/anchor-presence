@@ -123,7 +123,7 @@ function OnlineBar() {
 }
 ```
 
-`user` is the `TUser` that you passed to `createPresenceClient`. The library does not derive labels or colors from `clientId`. Check `user` before you render it.
+`user` is the `TUser` that you passed to `createPresenceClient`. Without `getLabel`, `CursorLayer` shows `user.name` when it is a string that is not empty. Without `getColor`, it picks one color per `clientId` from a palette of 8 colors. Check `user` before you render it.
 
 ## CursorLayer
 

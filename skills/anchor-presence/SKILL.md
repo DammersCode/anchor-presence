@@ -146,5 +146,6 @@ Run the project's typecheck and build. Then run two clients in the same room wit
 
 - Render `user` and `context` values as text nodes: they arrive from the network untrusted. Map colors through a fixed palette.
 - Create clients and transports only in browser code, through the provider's `factory`.
+- A custom cursor element gets `position: fixed`, `pointer-events: none`, and `aria-hidden="true"`. Render it at the app root, outside any ancestor with `transform`, `filter`, or `contain`.
 - Treat anchor IDs as opaque keys: the receiver looks them up in a map and never runs them as selectors.
 - Every client in a room uses the same codec. The default is `jsonCodec`.

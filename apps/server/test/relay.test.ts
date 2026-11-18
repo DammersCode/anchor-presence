@@ -362,8 +362,8 @@ describe("reference relay hardening", () => {
       stalled.socket.pause();
 
       const sender = await connect(`ws://127.0.0.1:${slowPort}/?room=${room}`);
-      // the 4003 close only fires once the paused peer's buffers back up past the hard threshold, so over-send + retry to stay deterministic on slow CI
-      const burst = 16;
+      // loopback socket buffers on Linux absorb several MB, so the burst must exceed them before the hard limit trips
+      const burst = 96;
       for (let i = 0; i < burst; i++) sender.ws.send(new Uint8Array(256 * 1024));
       await new Promise((resolve) => setTimeout(resolve, 5000));
 

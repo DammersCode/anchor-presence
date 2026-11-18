@@ -1,6 +1,8 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { afterEach, describe, expect, expectTypeOf, it, vi } from "vitest";
-import { createInMemoryPair, createPresenceClient } from "@anchor-presence/core";
-import type { TransportClose } from "@anchor-presence/core";
+import { createInMemoryPair, createPresenceClient, linearInterpolator } from "@anchor-presence/core";
+import type { InterpolatorFactory, TransportClose } from "@anchor-presence/core";
 import {
   CURSOR_MARKER_ATTRIBUTE,
   createBroadcastChannelTransport,
@@ -71,13 +73,16 @@ describe("dom docs samples", () => {
 
   it("websocket-transport.mdx: shouldReconnect stops on 4001 and keeps retrying on 1006", () => {
     vi.useFakeTimers();
+    vi.stubGlobal("WebSocket", FakeSocket);
+
+    // Copied from apps/docs/content/docs/dom/websocket-transport.mdx (Stop reconnecting).
     const NO_RETRY_CODES = [1008, 4001, 4004, 4006, 4007];
 
     const transport = createWebSocketTransport({
       url: "wss://relay.example.com/?room=main",
       shouldReconnect: (close) => close.code === undefined || !NO_RETRY_CODES.includes(close.code),
-      WebSocketCtor: FakeSocket,
     });
+
     void transport.connect();
     FakeSocket.instances.at(-1)!.onclose?.({ code: 1006 });
     expect(transport.getStatus?.()).toBe("reconnecting");
@@ -355,6 +360,26 @@ describe("dom docs samples: pages without a guide test", () => {
     client.dispose();
   });
 
+  it("motion.mdx: the binding eases each peer with the custom interpolatorFactory", () => {
+    vi.useFakeTimers();
+    const { a, b } = createInMemoryPair();
+    const mySpringInterpolatorFactory = vi.fn<InterpolatorFactory>(() => linearInterpolator(200));
+    const client = createPresenceClient({ transport: a });
+
+    // Copied from apps/docs/content/docs/dom/motion.mdx (Choose a custom interpolator).
+    const binding = createDomBinding(client, {
+      resolution: { interpolatorFactory: mySpringInterpolatorFactory },
+    });
+
+    const peer = createPresenceClient({ transport: b });
+    peer.setLocalCursor({ anchors: [], viewport: { u: 0.5, v: 0.5 } });
+    vi.advanceTimersByTime(100);
+    expect(mySpringInterpolatorFactory).toHaveBeenCalled();
+    binding.dispose();
+    client.dispose();
+    peer.dispose();
+  });
+
   it("broadcast-channel-transport.mdx: two clients on one channel see each other", async () => {
     vi.useFakeTimers();
     // Copied from apps/docs/content/docs/dom/broadcast-channel-transport.mdx (Usage).
@@ -367,5 +392,44 @@ describe("dom docs samples: pages without a guide test", () => {
     await vi.waitFor(() => expect(client.getRemotePresence()).toHaveLength(1));
     client.dispose();
     peer.dispose();
+  });
+});
+
+const readRepoFile = (file: string) =>
+  readFileSync(join(process.cwd(), file), "utf8").replaceAll("\r\n", "\n");
+
+// Leading whitespace differs between a sample and its copy inside a block, so compare trimmed lines.
+const trimLines = (text: string) =>
+  text
+    .split("\n")
+    .map((line) => line.trim())
+    .join("\n");
+
+// Returns the ts block of `page` that contains `marker`, without import lines.
+function docSample(page: string, marker: string): string {
+  const markdown = readRepoFile(`apps/docs/content/docs/${page}`);
+  const blocks = [...markdown.matchAll(/```tsx?\n([\s\S]*?)```/gu)].map(([, body = ""]) =>
+    body
+      .split("\n")
+      .filter((line) => !line.startsWith("import "))
+      .join("\n")
+      .trim(),
+  );
+  const block = blocks.find((body) => body.includes(marker));
+  if (block === undefined) throw new Error(`no sample with "${marker}" in ${page}`);
+  return block;
+}
+
+describe("doc sample sources", () => {
+  it("match the copies in this file", () => {
+    const source = trimLines(readRepoFile("packages/dom/test/docs-dom-samples.test.ts"));
+    const samples = [
+      docSample("dom/binding.mdx", "function drawCursors"),
+      docSample("core/build-a-framework-adapter.mdx", "function observeCursors"),
+      docSample("dom/occlusion-and-scroll.mdx", "const clippedPointPolicy"),
+      docSample("dom/websocket-transport.mdx", "const NO_RETRY_CODES"),
+      docSample("dom/motion.mdx", "interpolatorFactory: mySpringInterpolatorFactory"),
+    ];
+    for (const sample of samples) expect(source).toContain(trimLines(sample));
   });
 });

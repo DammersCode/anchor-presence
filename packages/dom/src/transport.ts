@@ -49,7 +49,7 @@ export type WebSocketTransportOptions = {
   baseBackoffMs?: number;
   /** Cap on the reconnect backoff, in milliseconds. Default `8000`. */
   maxBackoffMs?: number;
-  /** Returns a value in `[0, 1)` for backoff jitter. Default: `Math.random`. */
+  /** Returns a value in `[0, 1)` for the random part of the reconnect wait. Default: `Math.random`. */
   random?: () => number;
   /** How long a connection must stay open before the backoff resets, in milliseconds. Default `5000`. */
   stableAfterMs?: number;

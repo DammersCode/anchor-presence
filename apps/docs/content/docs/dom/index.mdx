@@ -75,7 +75,7 @@ binding.subscribe(() => {
 `createDomBinding` does four jobs:
 
 <Mermaid
-  chart={`flowchart TD
+  chart={`flowchart LR
   page["data-anchor elements"] -->|register| registry["anchor registry"]
   registry -->|nearest anchors| pointer["pointer capture"]
   pointer -->|local cursor| client["PresenceClient"]

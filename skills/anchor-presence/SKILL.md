@@ -62,6 +62,7 @@ export function PresenceRoot({
 }) {
   return (
     <LiveCursorProvider<unknown, { name: string }>
+      clientKey={room}
       factory={() => {
         const transport = createWebSocketTransport({
           url: `wss://relay.example.com/?room=${encodeURIComponent(room)}`,
@@ -77,7 +78,8 @@ export function PresenceRoot({
 ```
 
 - The `factory` never runs on the server or before the mount effect; until then the provider renders its children with a `null` client. This keeps SSR and React Strict Mode safe. The provider disposes the client it created on unmount.
-- A client identifies one browser tab. User identity goes in `user`.
+- The provider ignores a new `factory` until `clientKey` changes. For this reason, `clientKey={room}` makes a room change create a new client.
+- A client identifies one browser tab. User identity goes in `user`. If the user name changes, call `client.setUser` or the setter from `useLocalUser`. Do not change `factory` for it.
 - `CursorLayer` owns positioning. Customize it with `getLabel`, `getColor`, `filterCursor`, `getCursorProps`, or `renderCursor`.
 
 **Done when** the provider wraps every target view and the project typechecks.
@@ -115,6 +117,7 @@ export function PresenceRoot({
 
   return (
     <LiveCursorProvider<{ page: string }, { name: string }>
+      clientKey={room}
       factory={() => {
         const transport = createWebSocketTransport({
           url: `wss://relay.example.com/?room=${encodeURIComponent(room)}`,

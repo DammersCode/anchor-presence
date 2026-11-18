@@ -103,3 +103,10 @@ html {
   outline: 2px solid var(--color-fd-ring);
   outline-offset: -2px;
 }
+
+/* On narrow screens, long first lines run under fumadocs' absolute copy button in untitled code blocks. */
+@media (max-width: 640px) {
+  figure.shiki:not(:has(figcaption)) > [role="region"] {
+    padding-top: 2.5rem;
+  }
+}

@@ -190,13 +190,19 @@ Anchor Presence has these capabilities:
 
 ## Agent skill
 
-AI coding agents can install the integration skill for this library:
+AI coding agents can install the skills for this library. The command installs both skills, `anchor-presence` (integration) and `anchor-presence-audit` (layout audit):
 
 ```bash
 npx skills add DammersCode/anchor-presence
 ```
 
-The skill teaches an agent the anchor model, the integration steps, and the troubleshooting paths. The source is in [`skills/anchor-presence/`](skills/anchor-presence/).
+To install only the layout audit skill, add the `--skill` option:
+
+```bash
+npx skills add DammersCode/anchor-presence --skill anchor-presence-audit
+```
+
+The integration skill teaches an agent the anchor model, the integration steps, and the troubleshooting paths. The source is in [`skills/anchor-presence/`](skills/anchor-presence/).
 
 A second skill, [`skills/anchor-presence-audit/`](skills/anchor-presence-audit/), scores a running app for cursor jumps between layouts and proposes fixes. See [Skills](https://anchor-presence.vercel.app/docs/skills).
 

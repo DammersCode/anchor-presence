@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest";
 import {
+  binaryCodec,
   createEventChannel,
   createEventParser,
   createInMemoryPair,
@@ -198,6 +199,17 @@ describe("custom-codec.mdx: MessagePack sketch", () => {
   });
 });
 
+describe("binary-codec.mdx: usage", () => {
+  it("creates a client that encodes with binaryCodec", () => {
+    const { a: myTransport } = createInMemoryPair();
+
+    const client = createPresenceClient({ transport: myTransport, codec: binaryCodec });
+
+    expect(client.getStatus()).toBe("connected");
+    client.dispose();
+  });
+});
+
 const readRepoFile = (file: string) =>
   readFileSync(join(process.cwd(), file), "utf8").replaceAll("\r\n", "\n");
 
@@ -236,6 +248,7 @@ describe("doc sample sources", () => {
       docSample("core/api/client.mdx", "type EventMap"),
       docSample("core/api/client.mdx", "type EventParsers"),
       docSample("core/custom-codec.mdx", "messagePackCodec"),
+      docSample("core/binary-codec.mdx", "codec: binaryCodec"),
     ];
     for (const sample of samples) expect(source).toContain(trimLines(sample));
   });

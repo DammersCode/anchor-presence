@@ -65,7 +65,7 @@ Everything else comes from your code. If you ask for a who-is-online list, the s
   </Step>
   <Step>
     **Mark anchors.** It adds `data-anchor` to navigation items, cards, table rows, dialog controls, and every
-    other element that a user points at. It also gives each anchor a parent anchor.
+    other element that a user points at. It also gives every specific anchor a marked parent anchor.
   </Step>
   <Step>
     **Scope with context.** If the app has several pages, tabs, or dialogs, the agent publishes the current
@@ -86,8 +86,9 @@ Everything else comes from your code. If you ask for a who-is-online list, the s
     choose. If the project has a channel, the agent adds one presence event or route to it.
   </Accordion>
   <Accordion title="Will it read or send my data?">
-    The skill reads your code and fetches these docs as Markdown. The library sends no screen coordinates.
-    Each message holds an anchor ID and a normalized offset, and your own channel carries it.
+    The skill reads your code and fetches these docs as Markdown. The library sends no pixel coordinates. Each
+    message holds anchor IDs with normalized offsets, or a normalized viewport position. Your own channel
+    carries it.
   </Accordion>
   <Accordion title="What if my project has no React yet?">
     The skill assumes React 18 or later. For a DOM app without React, use `@anchor-presence/dom` directly. See
@@ -102,7 +103,7 @@ Everything else comes from your code. If you ask for a who-is-online list, the s
 ## It works if
 
 - The provider wraps every target view, and the project typechecks.
-- Every navigation item, card, table row, row action, dialog, and primary control in the target views has an anchor. Every anchor has a marked parent.
+- Every navigation item, card, table row, row action, dialog, and primary control in the target views has an anchor. Every specific anchor has a marked parent anchor.
 - A cursor on an anchored element in a wide client appears on the same element in a narrow client, at a different pixel position.
 - After the transport connects, `useCursorStatus()` reports `connected`, not `connecting`.
 

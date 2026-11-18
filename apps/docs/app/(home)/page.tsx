@@ -76,13 +76,13 @@ export default function HomePage() {
           Your teammate&apos;s cursor stays on the element, even when their screen differs from yours.
         </p>
         <p id="frameworks" className="mt-6 mb-2 text-sm text-fd-muted-foreground">
-          Works with
+          Runs in
         </p>
         <ul aria-labelledby="frameworks" className="flex flex-wrap gap-2">
           {FRAMEWORKS.map((name) => (
             <li key={name}>
               <Link
-                href="/docs/get-started/frameworks"
+                href="/docs/get-started/frameworks#test-coverage"
                 className="inline-flex rounded-full border border-fd-border bg-fd-card px-3 py-1 text-sm font-medium text-fd-muted-foreground transition-colors hover:border-[#4f46e5]/40 hover:text-fd-foreground"
               >
                 {name}
@@ -110,8 +110,8 @@ export default function HomePage() {
         <div className="mt-10 md:mt-14">
           <Demo />
           <p className="text-xs text-fd-muted-foreground">
-            The same board in two layouts. Move your pointer in one pane. Your cursor lands on the same card
-            in the other pane.
+            On a wide screen, the two panes show the same board in two layouts. Move your pointer in one pane.
+            Your cursor lands on the same card in the other pane.
           </p>
         </div>
       </section>

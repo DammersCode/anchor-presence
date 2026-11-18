@@ -26,7 +26,7 @@ import {
 
 ## Minimal setup
 
-This app connects to a WebSocket relay and renders the cursors of every peer:
+This app connects to the Bun relay of the [Quick start](/docs/get-started/quick-start#connect-a-relay), on port 8788. It renders the cursors of every peer:
 
 ```tsx
 import { createPresenceClient } from "@anchor-presence/core";
@@ -37,7 +37,7 @@ function App() {
   return (
     <LiveCursorProvider
       factory={() => {
-        const transport = createWebSocketTransport({ path: "/?room=main" });
+        const transport = createWebSocketTransport({ port: 8788, path: "/?room=main" });
         return createPresenceClient({ transport });
       }}
     >

@@ -22,7 +22,7 @@ function App() {
   return (
     <LiveCursorProvider
       factory={() => {
-        const transport = createWebSocketTransport({ path: "/?room=main" });
+        const transport = createWebSocketTransport({ port: 8788, path: "/?room=main" });
         return createPresenceClient({ transport });
       }}
     >
@@ -56,7 +56,9 @@ function CursorLayerSample() {
 function OwnClientApp() {
   const [client, setClient] = useState<PresenceClient | null>(null);
   useEffect(() => {
-    const created = createPresenceClient({ transport: createWebSocketTransport({ path: "/?room=main" }) });
+    const created = createPresenceClient({
+      transport: createWebSocketTransport({ port: 8788, path: "/?room=main" }),
+    });
     // oxlint-disable-next-line react/set-state-in-effect -- the sample copies the docs text
     setClient(created);
     return () => created.dispose();

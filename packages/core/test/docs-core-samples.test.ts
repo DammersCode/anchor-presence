@@ -529,7 +529,7 @@ describe("remote presence docs: store and samples", () => {
     const client = createPresenceClient({
       transport: myTransport,
       maxRemoteClients: 200,
-      onRemoteClientDropped: ({ clientId }) => reportMetric("presence.remote_client_dropped", clientId),
+      onRemoteClientRejected: ({ clientId }) => reportMetric("presence.remote_client_dropped", clientId),
     });
 
     // Copied from apps/docs/content/docs/core/remote-presence.mdx (Read remote presence).

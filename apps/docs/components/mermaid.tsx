@@ -86,7 +86,12 @@ export function Mermaid({ chart }: { chart: string }) {
   }, [chart, id, resolvedTheme]);
 
   return (
-    <div className="my-6 min-h-32 overflow-x-auto rounded-lg border border-fd-border bg-fd-card p-4">
+    <div
+      tabIndex={0}
+      role="region"
+      aria-label="Diagram"
+      className="my-6 min-h-32 overflow-x-auto rounded-lg border border-fd-border bg-fd-card p-4"
+    >
       {svg ? (
         <div className="[&_svg]:mx-auto [&_svg]:max-w-none" dangerouslySetInnerHTML={{ __html: svg }} />
       ) : (

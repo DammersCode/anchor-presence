@@ -4,4 +4,4 @@ import { createHonoRelay } from "./server.js";
 // Usage: bun relay.ts [port]
 const port = Number(process.argv[2] ?? 8790);
 const relay = createHonoRelay(port, demoIdentityOptions());
-console.log(`hono relay listening on ${relay.url}`);
+console.log(`hono relay listening on ${relay.url.replace("http", "ws")}/?room=main`);

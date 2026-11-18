@@ -18,7 +18,7 @@ bun run dev:relay
 
 To start the relay on Node, run `bun run dev:relay:node` or `node relay.ts`. Node runs the TypeScript files directly, with type stripping. For this reason, the imports use `.ts` extensions.
 
-The relay listens on <http://localhost:8789>. To use another port, give the port as the first argument or set `PORT`. To connect `apps/demo`, open it with `?backend=node-ws`.
+The relay listens on `ws://localhost:8789/?room=main`. To use another port, give the port as the first argument or set `PORT`. To connect `apps/demo`, open it with `?backend=node-ws`.
 
 ## Run the integration test
 

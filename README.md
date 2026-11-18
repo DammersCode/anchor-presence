@@ -46,7 +46,9 @@ export function App() {
 }
 ```
 
-Open your app in two tabs of the same browser. Move the pointer in one tab. A cursor with a guest name appears in the other tab, on the same element, even at a different window size. `createBroadcastChannelTransport` connects the tabs of one origin and needs no server.
+Open your app in two windows of the same browser, side by side. To get the second window, drag a tab out of the window. Move the pointer in one window. A cursor with a guest name appears in the other window, on the same element, even at a different window size. `createBroadcastChannelTransport` connects the windows and tabs of one origin and needs no server.
+
+When its window loses focus or the pointer leaves the page, the sender clears its cursor. For this reason, two tabs in one window never show each other a cursor.
 
 To connect two browsers, run a relay. Start the Bun relay with `cd examples/bun-native && bun run dev:relay`. Then change the transport in `createClient`:
 

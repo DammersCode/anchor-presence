@@ -10,7 +10,7 @@ import { Crosshair, Gauge, Component, Paintbrush } from "lucide-react";
 
 ## Usage
 
-This app renders the remote cursors with the defaults:
+This app connects to the Bun relay of the [Quick start](/docs/get-started/quick-start#connect-a-relay), on port 8788. It renders the remote cursors with the defaults:
 
 ```tsx
 import { createPresenceClient } from "@anchor-presence/core";
@@ -20,7 +20,9 @@ import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
 function App() {
   return (
     <LiveCursorProvider
-      factory={() => createPresenceClient({ transport: createWebSocketTransport({ path: "/?room=main" }) })}
+      factory={() =>
+        createPresenceClient({ transport: createWebSocketTransport({ port: 8788, path: "/?room=main" }) })
+      }
     >
       <Dashboard />
       <CursorLayer />

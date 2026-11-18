@@ -74,7 +74,12 @@ const parseEvent = createEventParser<Events>({
 function App() {
   return (
     <LiveCursorProvider
-      factory={() => createPresenceClient({ transport: createWebSocketTransport(), parseEvent })}
+      factory={() =>
+        createPresenceClient({
+          transport: createWebSocketTransport({ port: 8788, path: "/?room=main" }),
+          parseEvent,
+        })
+      }
     >
       <Reactions />
     </LiveCursorProvider>

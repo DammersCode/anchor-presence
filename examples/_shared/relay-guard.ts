@@ -63,23 +63,25 @@ export function slowPeerAction(
 export class RateLimiter {
   private readonly capacity: number;
   private readonly refillPerSecond: number;
+  private readonly now: () => number;
   private tokens: number;
-  private lastRefill = Date.now();
+  private lastRefill: number;
 
-  constructor(capacity: number, refillPerSecond: number) {
+  /** `now` returns milliseconds from a monotonic clock; a wall clock that steps back would stall the refill. */
+  constructor(capacity: number, refillPerSecond: number, now: () => number = () => performance.now()) {
     this.capacity = capacity;
     this.refillPerSecond = refillPerSecond;
+    this.now = now;
     this.tokens = capacity;
+    this.lastRefill = now();
   }
 
   /** Refills based on elapsed time, then consumes one token. Returns false when the bucket is empty. */
   tryConsume(): boolean {
-    const now = Date.now();
-    const elapsedMs = now - this.lastRefill;
-    if (elapsedMs > 0) {
-      this.tokens = Math.min(this.capacity, this.tokens + (elapsedMs / 1000) * this.refillPerSecond);
-      this.lastRefill = now;
-    }
+    const now = this.now();
+    const elapsedMs = Math.max(0, now - this.lastRefill);
+    this.tokens = Math.min(this.capacity, this.tokens + (elapsedMs / 1000) * this.refillPerSecond);
+    this.lastRefill = now;
     if (this.tokens < 1) return false;
     this.tokens -= 1;
     return true;
@@ -167,7 +169,9 @@ export function safeAuthCheck(check: AuthCheck): (request: AuthRequest) => Promi
         result !== null &&
         typeof result.clientId === "string" &&
         result.clientId !== "" &&
-        result.clientId.length <= MAX_IDENTITY_LENGTH
+        result.clientId.length <= MAX_IDENTITY_LENGTH &&
+        // `~` separates the identity from the connection ID that bindIdentity appends
+        !result.clientId.includes("~")
       ) {
         return result;
       }

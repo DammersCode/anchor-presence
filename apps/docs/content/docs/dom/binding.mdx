@@ -46,6 +46,8 @@ In all other cases the scheduler stops, so an empty room costs no frame work.
 
 Each `environment` field defaults to the matching browser global. A test can replace one host with a fake and keep the others. See [Binding API](/docs/dom/api/binding) for the full types.
 
+For a same-origin iframe, `root` can be its `contentDocument`, with its `contentWindow` as `window`. The binding identifies an element by its `nodeType`, so the elements of the iframe pass that check. The tests cover only a root in the same document as the binding code, so an iframe root is not tested.
+
 `createDomBinding` throws a `TypeError` in these cases:
 
 - `anchorAttribute` is not letters and digits in groups split by single hyphens, with a letter first. For example, `data-anchor` and `anchor` pass, and `data_anchor` and `1-anchor` fail.

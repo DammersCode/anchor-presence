@@ -49,7 +49,16 @@ A `disconnect()` call changes any status to `disconnected`. With no `WebSocket`,
 
 ## The default URL
 
-When you omit `url`, the transport builds one from `host` (default `window.location.hostname`), `port` (default `8787`), and `path` (default `/`, including the query). The protocol is `wss:` when the page loads over `https:`, and `ws:` otherwise.
+When you omit `url`, the transport builds the URL from these options:
+
+| Option | Default                    | Rule                                                                                                                  |
+| ------ | -------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `url`  | none                       | The full URL. If you pass `url`, the transport ignores `host`, `port`, and `path`, and warns in development mode.     |
+| `host` | `window.location.hostname` | The host of the default URL.                                                                                          |
+| `port` | `8787`                     | The port of the default URL. The transport adds the port to the URL on `https:` pages too.                            |
+| `path` | `/`                        | The path and the query, for example `/?room=main`. It must start with `/` or `?`. Another value throws a `TypeError`. |
+
+The protocol is `wss:` when the page loads over `https:`, and `ws:` otherwise. Behind a proxy on port 443, pass `port: 443`, or pass `url`.
 
 The default URL needs `window`. If you omit `url` and `window` does not exist, for example on a server, `createWebSocketTransport` throws a `TypeError`. Outside the browser, pass `url`.
 

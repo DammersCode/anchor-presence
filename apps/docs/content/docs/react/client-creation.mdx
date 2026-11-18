@@ -10,7 +10,7 @@ The provider gets its presence client in one of two ways. Pass a `factory`, and 
 
 ## Usage
 
-Pick one path and use it in the whole app:
+The samples connect to the Bun relay of the [Quick start](/docs/get-started/quick-start#connect-a-relay), on port 8788. Pick one path and use it in the whole app:
 
 <Tabs items={["factory (standard)", "Your own client"]}>
 <Tab value="factory (standard)">
@@ -24,7 +24,7 @@ function App() {
   return (
     <LiveCursorProvider
       factory={() => {
-        const transport = createWebSocketTransport({ path: "/?room=main" });
+        const transport = createWebSocketTransport({ port: 8788, path: "/?room=main" });
         return createPresenceClient({ transport });
       }}
     >
@@ -46,7 +46,9 @@ import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
 function OwnClientApp() {
   const [client, setClient] = useState<PresenceClient | null>(null);
   useEffect(() => {
-    const created = createPresenceClient({ transport: createWebSocketTransport({ path: "/?room=main" }) });
+    const created = createPresenceClient({
+      transport: createWebSocketTransport({ port: 8788, path: "/?room=main" }),
+    });
     setClient(created);
     return () => created.dispose();
   }, []);

@@ -107,13 +107,14 @@ function encodeMessage(message: CursorPresence): Uint8Array {
   if (cursor === null) {
     if (event !== undefined) cursorSize += 2 + eventType.byteLength;
   } else {
+    if (event !== undefined) throw new Error("binaryCodec: an event message carries no cursor");
     if (!Array.isArray(cursor.anchors)) throw new Error("binaryCodec: invalid cursor");
     if (cursor.anchors.length > 0xff) throw new Error("binaryCodec: too many anchors");
     cursorSize += 1;
     for (const anchor of cursor.anchors) {
       const id = encoder.encode(anchor.id);
       if (id.byteLength > 0xffff) throw new Error("binaryCodec: anchor id too large");
-      if (!Number.isFinite(anchor.u) || !Number.isFinite(anchor.v))
+      if (!Number.isFinite(Math.fround(anchor.u)) || !Number.isFinite(Math.fround(anchor.v)))
         throw new Error("binaryCodec: invalid anchor");
       anchorParts.push({ id, u: anchor.u, v: anchor.v });
       cursorSize += 2 + id.byteLength + 8;
@@ -121,7 +122,7 @@ function encodeMessage(message: CursorPresence): Uint8Array {
     const viewportValue = cursor.viewport;
     hasViewport = viewportValue !== undefined;
     if (viewportValue !== undefined) {
-      if (!Number.isFinite(viewportValue.u) || !Number.isFinite(viewportValue.v)) {
+      if (!Number.isFinite(Math.fround(viewportValue.u)) || !Number.isFinite(Math.fround(viewportValue.v))) {
         throw new TypeError("binaryCodec: invalid viewport");
       }
       viewport = { u: viewportValue.u, v: viewportValue.v };

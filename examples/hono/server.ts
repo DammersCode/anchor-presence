@@ -144,8 +144,6 @@ export function createHonoRelay(port: number, options: HonoRelayOptions = {}) {
 
   return {
     url: `http://localhost:${server.port}`,
-    close: async () => {
-      server.stop(true);
-    },
+    close: () => server.stop(true),
   };
 }

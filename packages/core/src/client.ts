@@ -1,4 +1,5 @@
 import { jsonCodec } from "./codec.js";
+import { defaultNow } from "./internal/clock.js";
 import { createOversizedWarning, isDevMode, reportListenerError, warnOnce } from "./internal/dev-warnings.js";
 import { defaultIdFactory } from "./internal/ids.js";
 import { wireInbound } from "./internal/ingest.js";
@@ -64,7 +65,7 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     codec = jsonCodec,
     maxRemoteClients,
     idFactory = defaultIdFactory,
-    now = () => Date.now(),
+    now = defaultNow,
     scheduler = defaultScheduler,
     validationLimits,
   } = options;
@@ -129,7 +130,7 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
         );
       }
       try {
-        options.onRemoteClientDropped?.({ clientId: droppedClientId });
+        options.onRemoteClientRejected?.({ clientId: droppedClientId });
       } catch {
         // a throwing callback must not break the inbound pipeline
       }

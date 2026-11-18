@@ -5,6 +5,7 @@ Work down this list. Each symptom names its usual cause and fix.
 ## Cursor invisible
 
 - The transport never connected. The provider's `factory` creates the client, and the client connects the transport by default. If you pass `autoConnect: false`, call `transport.connect()` yourself in the factory. If you never connect, `useCursorStatus()` stays `connecting` (WebSocket transport) or `disconnected` (BroadcastChannel transport). A custom transport without `subscribeStatus` always reports `connected`, so check its own connection state instead.
+- The sender is not active. When its window loses focus or the pointer leaves the page, the sender clears its cursor. Two tabs in one window never show each other a cursor. To test on one computer, open two windows side by side.
 - The two clients use different room keys or different codecs.
 - The sender and receiver publish different `context` values, and a **policy** hides the cursor. Log the policy inputs first.
 - The resolution **tier** is `hidden`. No anchor in the **chain** exists on the receiver, and the message carried no viewport fallback. Register a shared parent anchor.

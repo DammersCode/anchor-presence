@@ -61,6 +61,7 @@ These plans are done. The code, tests, and docs already show the result, so ther
 | [023 Fumadocs docs site](023-fumadocs-docs-site.md)                        | done        | Spec for the docs site.                                                                                                          |
 | [024 Backend examples](024-backend-examples.md)                            | done        | Spec and security baseline for the backend examples.                                                                             |
 | [022 Gap closure](022-gap-closure-2026-09-25.md)                           | done        | Closes the gaps from the 2026-09-25 advisor audit.                                                                               |
+| [Release hardening](release-hardening.md)                                  | open        | Proposed `release.yml` patch (scoped permissions, environment, SHA pins) and the owner's GitHub and npm setup.                   |
 
 ## Future backends (planning only, not scheduled)
 

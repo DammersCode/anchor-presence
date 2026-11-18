@@ -88,6 +88,18 @@ function messageByteLength(message: string | ArrayBuffer): number {
   return encoder.encode(message).byteLength;
 }
 
+/** Refills the token bucket from a monotonic `now` in milliseconds; a backward step refills nothing but keeps refilling after it. */
+export function refillBucket(
+  bucket: { tokens: number; lastRefill: number },
+  now: number,
+  capacity = RATE_CAPACITY,
+  refillPerSecond = RATE_REFILL_PER_SECOND,
+): void {
+  const elapsedMs = Math.max(0, now - bucket.lastRefill);
+  bucket.tokens = Math.min(capacity, bucket.tokens + (elapsedMs / 1000) * refillPerSecond);
+  bucket.lastRefill = now;
+}
+
 export function closePeerAboveHardLimit(
   peer: Pick<RoomSocket, "getBufferedAmount" | "close">,
   hardBytes = SLOW_PEER_HARD_BYTES,
@@ -111,8 +123,8 @@ if (typeof Bun !== "undefined" && import.meta.main) {
             room,
             origin,
             tokens: RATE_CAPACITY,
-            lastRefill: Date.now(),
-            lastPong: Date.now(),
+            lastRefill: performance.now(),
+            lastPong: performance.now(),
             authOk,
             roomInvalid: parsedRoom === null,
           },
@@ -157,15 +169,7 @@ if (typeof Bun !== "undefined" && import.meta.main) {
         const sockets = rooms.get(ws.data.room);
         if (!sockets?.has(ws)) return;
 
-        const now = Date.now();
-        const elapsedMs = now - ws.data.lastRefill;
-        if (elapsedMs > 0) {
-          ws.data.tokens = Math.min(
-            RATE_CAPACITY,
-            ws.data.tokens + (elapsedMs / 1000) * RATE_REFILL_PER_SECOND,
-          );
-          ws.data.lastRefill = now;
-        }
+        refillBucket(ws.data, performance.now());
         if (ws.data.tokens < 1) return;
         ws.data.tokens -= 1;
 
@@ -176,7 +180,7 @@ if (typeof Bun !== "undefined" && import.meta.main) {
         for (const peer of sockets) if (peer !== ws) closePeerAboveHardLimit(peer);
       },
       pong(ws: RoomSocket) {
-        ws.data.lastPong = Date.now();
+        ws.data.lastPong = performance.now();
       },
       close(ws: RoomSocket) {
         const sockets = rooms.get(ws.data.room);
@@ -189,7 +193,7 @@ if (typeof Bun !== "undefined" && import.meta.main) {
   });
 
   setInterval(() => {
-    const now = Date.now();
+    const now = performance.now();
     for (const sockets of rooms.values()) {
       for (const peer of sockets) {
         if (peer.readyState !== WebSocket.OPEN || closePeerAboveHardLimit(peer)) continue;

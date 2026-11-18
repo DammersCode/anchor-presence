@@ -4,7 +4,7 @@ import net from "node:net";
 import { randomBytes, randomUUID } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { closePeerAboveHardLimit } from "../index";
+import { closePeerAboveHardLimit, refillBucket } from "../index";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 
@@ -398,5 +398,13 @@ describe("reference relay hardening", () => {
     const refilled = await refillPromise;
 
     expect(refilled.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("keeps refilling the bucket after the clock steps back", () => {
+    const bucket = { tokens: 0, lastRefill: 10_000 };
+    refillBucket(bucket, 5_000, 10, 2);
+    expect(bucket.tokens).toBe(0);
+    refillBucket(bucket, 6_000, 10, 2);
+    expect(bucket.tokens).toBe(2);
   });
 });

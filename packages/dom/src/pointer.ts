@@ -29,11 +29,16 @@ const POINTER_INFO: Record<string, PointerInfo | undefined> = {
 
 type AnchorEntry = { id: string; element: Element };
 
+// nodeType instead of instanceof: an element of an iframe belongs to another realm
+function isElement(value: unknown): value is Element {
+  return typeof value === "object" && value !== null && (value as Node).nodeType === 1;
+}
+
 function eventTargetElement(event: Event): Element | null {
   const path = typeof event.composedPath === "function" ? event.composedPath() : [];
   const first = path[0];
-  if (first instanceof Element) return first;
-  return event.target instanceof Element ? event.target : null;
+  if (isElement(first)) return first;
+  return isElement(event.target) ? event.target : null;
 }
 
 // 1e-4 of a box is 0.2 px at 2000 px, and it shortens every JSON frame by about a quarter
@@ -41,12 +46,7 @@ function roundFraction(value: number): number {
   return Math.round(value * 1e4) / 1e4;
 }
 
-// a captured pointer keeps its start element as target; the element under the pointer is the real anchor
-function pointerTarget(event: PointerEvent): Element | null {
-  const target = eventTargetElement(event);
-  if (!target?.hasPointerCapture?.(event.pointerId)) return target;
-  return target.ownerDocument.elementFromPoint(event.clientX, event.clientY) ?? target;
-}
+const HIT_CACHE_MS = 50;
 
 function buildCursorPosition(
   clientX: number,
@@ -103,6 +103,22 @@ export function attachPointerSource(
   }
 
   const activeTouchPointers = new Set<number>();
+  let cachedHit: { pointerId: number; at: number; element: Element } | null = null;
+
+  // a captured pointer keeps its start element as target; the element under the pointer is the real anchor
+  // shortcut: the hit lags up to one publish interval on moves, so a hit test does not run on every event
+  function pointerTarget(event: PointerEvent): Element | null {
+    const target = eventTargetElement(event);
+    if (!target?.hasPointerCapture?.(event.pointerId)) return target;
+    const fresh =
+      event.type === "pointermove" &&
+      cachedHit?.pointerId === event.pointerId &&
+      event.timeStamp - cachedHit.at < HIT_CACHE_MS;
+    if (fresh && cachedHit !== null) return cachedHit.element;
+    const element = target.ownerDocument.elementFromPoint(event.clientX, event.clientY) ?? target;
+    cachedHit = { pointerId: event.pointerId, at: event.timeStamp, element };
+    return element;
+  }
 
   function onPointerEvent(event: PointerEvent): void {
     // a synthetic mouse event reports isPrimary false, so only a second touch or pen contact is skipped
@@ -115,6 +131,7 @@ export function attachPointerSource(
   }
 
   function onPointerEnd(event: PointerEvent): void {
+    cachedHit = null;
     if (event.pointerType !== "touch") return;
     activeTouchPointers.delete(event.pointerId);
     if (activeTouchPointers.size === 0) client.setLocalCursor(null);
@@ -130,7 +147,7 @@ export function attachPointerSource(
 
   function onFocusIn(event: FocusEvent): void {
     const target = event.target;
-    if (!(target instanceof Element)) return;
+    if (!isElement(target)) return;
     const rect = getCachedRect?.(target) ?? target.getBoundingClientRect();
     if (rect.width <= 0 || rect.height <= 0) return;
     const position = buildCursorPosition(

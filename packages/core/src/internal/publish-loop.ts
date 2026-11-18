@@ -82,10 +82,24 @@ export function createPublishLoop<TContext, TUser>(state: PresenceClientState<TC
         "unencodable-profile",
         "`user` or `context` could not be encoded, so the client sends the cursor without them. Use plain JSON values.",
       );
-      delete message.context;
-      delete message.user;
-      return state.codec.encode(message);
+      return encodeWithoutFailingField(message);
     }
+  }
+
+  // drop one field at a time so a bad `user` keeps a good `context`
+  function encodeWithoutFailingField(message: CursorPresence<TContext, TUser>): Uint8Array {
+    const { context, user, ...rest } = message;
+    for (const candidate of [
+      { ...rest, ...(user === undefined ? {} : { user }) },
+      { ...rest, ...(context === undefined ? {} : { context }) },
+    ]) {
+      try {
+        return state.codec.encode(candidate);
+      } catch {
+        // try the next candidate
+      }
+    }
+    return state.codec.encode(rest);
   }
 
   function send(cursor: CursorPosition | null, includeFull = false, leave = false): boolean {

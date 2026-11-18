@@ -226,3 +226,35 @@ describe("node-ws relay identity binding", () => {
     }
   });
 });
+
+describe("node-ws relay with a reset connection during async auth", () => {
+  it("survives a client that resets the TCP connection while the hook runs, and 404s other paths", async () => {
+    const { connect } = await import("node:net");
+    const relay = await createNodeWsRelay(0, {
+      authCheck: () => new Promise<boolean>((resolve) => setTimeout(() => resolve(true), 150)),
+    });
+    try {
+      const port = Number(new URL(relay.url).port);
+      await new Promise<void>((resolve) => {
+        const socket = connect(port, "127.0.0.1", () => {
+          socket.write(
+            "GET /?room=r HTTP/1.1\r\nHost: x\r\nConnection: Upgrade\r\nUpgrade: websocket\r\nSec-WebSocket-Version: 13\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n\r\n",
+          );
+          setTimeout(() => {
+            socket.resetAndDestroy();
+            resolve();
+          }, 30);
+        });
+      });
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      const fine = new WebSocket(`${relay.url.replace(/^http/u, "ws")}/?room=r`);
+      await opened(fine);
+      fine.close();
+      const moved = new WebSocket(`${relay.url.replace(/^http/u, "ws")}/room-42`);
+      await expect(opened(moved)).rejects.toThrow();
+    } finally {
+      await relay.close();
+    }
+  });
+});

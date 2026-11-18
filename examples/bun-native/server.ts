@@ -69,6 +69,8 @@ export function createBunRelay(port: number, options: BunRelayOptions = {}) {
     port,
     async fetch(req, srv) {
       const url = new URL(req.url);
+      if (url.pathname !== "/")
+        return new Response("Not found: rooms come from the room query parameter", { status: 404 });
       const parsedRoom = parseRoom(url.searchParams.get("room"));
       const room = parsedRoom ?? "main";
       const origin = req.headers.get("origin") ?? "";

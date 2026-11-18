@@ -113,3 +113,31 @@ describe("LiveCursorProvider clientKey", () => {
     container.remove();
   });
 });
+
+describe("useCursorBinding", () => {
+  it("returns the binding of the provider, and null without one", async () => {
+    const { useCursorBinding } = await import("../src/hooks/use-cursor-binding");
+    const { client } = makeFakeClient();
+    const { binding } = (await import("./test-utils")).makeFakeBinding();
+    const seen: unknown[] = [];
+    function Probe() {
+      seen.push(useCursorBinding());
+      return null;
+    }
+    const container = document.createElement("div");
+    document.body.append(container);
+    const root = createRoot(container);
+    act(() => root.render(<Probe />));
+    act(() =>
+      root.render(
+        <LiveCursorProvider client={client} binding={binding}>
+          <Probe />
+        </LiveCursorProvider>,
+      ),
+    );
+    expect(seen[0]).toBeNull();
+    expect(seen.at(-1)).toBe(binding);
+    act(() => root.unmount());
+    container.remove();
+  });
+});

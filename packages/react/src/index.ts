@@ -4,6 +4,7 @@ export type { LiveCursorProviderProps } from "./provider.js";
 export { LiveCursorContext } from "./context.js";
 export type { LiveCursorContextValue } from "./context.js";
 
+export { useCursorBinding } from "./hooks/use-cursor-binding.js";
 export { useCursorClient } from "./hooks/use-cursor-client.js";
 export { useCursorContext } from "./hooks/use-cursor-context.js";
 export { useCursorEvents } from "./hooks/use-cursor-events.js";

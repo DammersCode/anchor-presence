@@ -81,7 +81,13 @@ export function createNodeWsRelay(port: number, options: NodeWsRelayOptions = {}
   };
 
   httpServer.on("upgrade", async (req, socket, head) => {
+    // Node removes its own socket error listener before it emits `upgrade`: without this one, a reset during an async hook kills the process
+    socket.on("error", () => socket.destroy());
     const url = new URL(req.url ?? "/", "http://localhost");
+    if (url.pathname !== "/") {
+      socket.end("HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n");
+      return;
+    }
     const origin = req.headers.origin ?? "";
     if (!originAllowed(allowedOrigins, origin)) {
       refuse(req, socket, head, 4004, "origin not allowed");
@@ -101,6 +107,7 @@ export function createNodeWsRelay(port: number, options: NodeWsRelayOptions = {}
       origin,
       headers,
     });
+    if (socket.destroyed) return;
     if (auth === false) {
       refuse(req, socket, head, 4006, "invalid token");
       return;

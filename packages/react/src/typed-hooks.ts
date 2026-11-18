@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type { ResolvedCursor } from "@anchor-presence/dom";
 import { LiveCursorProvider } from "./provider.js";
 import type { LiveCursorProviderProps } from "./provider.js";
+import { useCursorBinding } from "./hooks/use-cursor-binding.js";
 import { useCursorClient } from "./hooks/use-cursor-client.js";
 import { useCursorContext } from "./hooks/use-cursor-context.js";
 import { useCursorEvents } from "./hooks/use-cursor-events.js";
@@ -17,6 +18,7 @@ import { useRemoteUsers } from "./hooks/use-remote-users.js";
 export function createPresenceHooks<TContext = unknown, TUser = unknown>() {
   return {
     LiveCursorProvider: LiveCursorProvider as (props: LiveCursorProviderProps<TContext, TUser>) => ReactNode,
+    useCursorBinding: () => useCursorBinding<TContext, TUser>(),
     useCursorClient: () => useCursorClient<TContext, TUser>(),
     useCursorContext: () => useCursorContext<TContext>(),
     useCursorEvents,

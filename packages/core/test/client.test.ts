@@ -1543,6 +1543,36 @@ describe("default shape check for remote fields", () => {
     client.dispose();
   });
 
+  it("accepts a remote null for any key and warns once when a value is dropped", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { transport, emit } = makeTransport();
+    const client = createPresenceClient<{ hover: { id: string } | null; name: string }>({
+      transport,
+      idFactory,
+      context: { hover: { id: "a" }, name: "Ada" },
+    });
+    const send = (clientId: string, context: unknown) =>
+      emit(
+        new TextEncoder().encode(
+          JSON.stringify({ version: 1, clientId, session: "s", sequence: 0, cursor: null, context }),
+        ),
+      );
+
+    send("cleared", { hover: null, name: "B" });
+    send("bad-one", { hover: "nope", name: "B" });
+    send("bad-two", { hover: 3, name: "B" });
+
+    const contexts = Object.fromEntries(client.getRemotePresence().map((p) => [p.clientId, p.context]));
+    expect(contexts).toEqual({
+      cleared: { hover: null, name: "B" },
+      "bad-one": undefined,
+      "bad-two": undefined,
+    });
+    expect(warn.mock.calls.filter((call) => String(call[0]).includes("parseContext"))).toHaveLength(1);
+    client.dispose();
+    warn.mockRestore();
+  });
+
   it("ignores prototype and inherited keys in a remote value", () => {
     const { transport, emit } = makeTransport();
     const client = createPresenceClient<unknown, { name: string }>({

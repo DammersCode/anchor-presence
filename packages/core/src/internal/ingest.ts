@@ -10,6 +10,7 @@ function isPlainRecord(value: unknown): value is Record<string, unknown> {
  * Returns `value` cut to the shape of `sample`, or `undefined` when it does not fit.
  * A key of the sample must have the sample's type, or the whole value is dropped.
  * A key the sample lacks, such as an optional field, stays when its value is a string, number, boolean or `null`, and is removed when it is an object or array.
+ * A remote `null` always fits.
  * A `null` sample or an empty array says nothing about the type, so it accepts a string, number, boolean or `null` and never an object or array.
  * An empty object sample accepts the same extra keys as any other sample.
  */
@@ -20,6 +21,8 @@ function isScalar(value: unknown): boolean {
 }
 
 export function fitShape(sample: unknown, value: unknown): unknown {
+  // `null` renders as nothing, so a remote `null` fits every type: `T | null` fields stay valid
+  if (value === null) return value;
   if (sample === null || sample === undefined) return isScalar(value) ? value : undefined;
   if (Array.isArray(sample)) {
     if (!Array.isArray(value)) return undefined;
@@ -131,12 +134,26 @@ function parseField(
   }
 }
 
+// The default check drops a value that does not fit the local one; say so once, and name the way out.
+function warnDropped(
+  key: "user" | "context",
+  parser: string,
+  warned: { user: boolean; context: boolean },
+): void {
+  if (warned[key]) return;
+  warned[key] = true;
+  console.warn(
+    `[anchor-presence] a remote ${key} was dropped: it does not have the shape of the local ${key}. Pass ${parser} to accept other shapes.`,
+  );
+}
+
 /**
  * Wires the transport inbound stream into the remote store.
  * Oversized, invalid, and self-echoed messages are dropped.
  */
 export function wireInbound<TContext, TUser>(state: PresenceClientState<TContext, TUser>): void {
   let warnedUnparsed = false;
+  const warnedDropped = { user: false, context: false };
   const eventAllowance = createEventAllowance();
   const unsubscribeTransport = state.transport.subscribe((data) => {
     if (state.disposed) return;
@@ -160,8 +177,17 @@ export function wireInbound<TContext, TUser>(state: PresenceClientState<TContext
       }
       const parseUser = parserFor(state.parseUser, state.user);
       const parseContext = parserFor(state.parseContext, state.context);
+      const hadUser = presence.user !== undefined && presence.user !== null;
+      const hadContext = presence.context !== undefined && presence.context !== null;
       if (parseUser !== undefined) parseField(presence, "user", parseUser);
       if (parseContext !== undefined) parseField(presence, "context", parseContext);
+      if (state.devMode) {
+        if (hadUser && presence.user === undefined && state.parseUser === undefined)
+          warnDropped("user", "parseUser", warnedDropped);
+        if (hadContext && presence.context === undefined && state.parseContext === undefined) {
+          warnDropped("context", "parseContext", warnedDropped);
+        }
+      }
       const known = state.store.has(presence.clientId, presence.session);
       if (state.store.ingest(presence) && !known && presence.leave !== true) state.onNewPeer();
     } catch {

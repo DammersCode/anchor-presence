@@ -1,3 +1,4 @@
+export { useCursorBinding } from "./use-cursor-binding.js";
 export { useCursorClient } from "./use-cursor-client.js";
 export { useCursorContext } from "./use-cursor-context.js";
 export { useCursorEvents } from "./use-cursor-events.js";

@@ -32,7 +32,7 @@
 - Reference relay and Bun examples: rooms use Bun publish and subscribe, the default room cap is 64, the rate limit refills 40 tokens per second, and `maxPayloadLength` caps one frame. The node-ws and Socket.IO relays use the same defaults.
 - `@anchor-presence/dom`: a cursor message rounds `u` and `v` to four decimals, which makes a JSON frame about a quarter smaller.
 - `@anchor-presence/dom`: the pointer source resolves the anchor under the pointer while the pointer is captured.
-- CI and gates: `check:package` (publint and are-the-types-wrong), `check:unused` (knip), and `test:bun-runtime` run the suites under Bun.
+- CI and gates: `check:package` (publint and are-the-types-wrong), `check:unused` (knip), and `test:bun-runtime` runs a Node relay and a Bun relay with real clients under Bun.
 - `@anchor-presence/dom`: `createBroadcastChannelTransport(channelName)` connects the tabs and iframes of one origin with no server.
 - Development warnings, once each, for a hook outside `LiveCursorProvider`, a provider with neither `client` nor `factory`, `binding` together with `bindingOptions`, a dropped inbound message, a duplicate `clientId`, and a `staleTimeoutMs` of at most twice `heartbeatIntervalMs`. The WebSocket transport warns on each relay close with a code of 4000 or more.
 - `@anchor-presence/core`: `createEventParser<TEvents>(parsers)` builds a typed `parseEvent` from one data parser per event type. An event map can be an `interface`.

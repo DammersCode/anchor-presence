@@ -1,0 +1,34 @@
+import { createPresenceClient } from "../packages/core/dist/index.js";
+import { createWebSocketTransport } from "../packages/dom/dist/index.js";
+import { createBunRelay } from "../examples/bun-native/server";
+import { createNodeWsRelay } from "../examples/node-ws/server";
+
+async function waitFor(condition: () => boolean, label: string): Promise<void> {
+  const deadline = Date.now() + 5000;
+  while (!condition()) {
+    if (Date.now() > deadline) throw new Error(`timed out: ${label}`);
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  }
+}
+
+async function check(name: string, relay: { url: string; close: () => Promise<void> }): Promise<void> {
+  const url = `${relay.url.replace("http", "ws")}/?room=smoke`;
+  const clients = [0, 1].map(() => {
+    const transport = createWebSocketTransport({ url });
+    const client = createPresenceClient({ transport });
+    void transport.connect();
+    return client;
+  });
+  const [a, b] = clients;
+  if (a === undefined || b === undefined) throw new Error("no clients");
+  await waitFor(() => a.getStatus() === "connected" && b.getStatus() === "connected", `${name} connect`);
+  a.setLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
+  await waitFor(() => b.getRemoteSnapshot().length === 1, `${name} delivery`);
+  for (const client of clients) client.dispose();
+  await relay.close();
+  console.log(`ok: ${name} relay under ${typeof Bun === "undefined" ? "node" : "bun"}`);
+}
+
+await check("node-ws", await createNodeWsRelay(0));
+await check("bun-native", createBunRelay(0));
+process.exit(0);

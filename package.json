@@ -28,7 +28,7 @@
     "perf:score": "bun run scripts/perf-score.ts",
     "check:unused": "knip --no-progress --workspace packages/core --workspace packages/dom --workspace packages/react",
     "check:package": "node scripts/check-package.mjs",
-    "test:bun-runtime": "bunx --bun vitest run --pool=threads --project core --project server --project relay-conformance --project built-packages --project node-ws-example --project hono-example --project bun-native-example --project elysia-example --project socketio-example"
+    "test:bun-runtime": "bun scripts/runtime-smoke.ts"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.5",

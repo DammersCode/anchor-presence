@@ -51,7 +51,7 @@ import { LiveCursorContext, type LiveCursorContextValue } from "@anchor-presence
 
 <AutoTypeTable path="../../packages/react/src/context.ts" name="LiveCursorContextValue" />
 
-Outside a provider, both fields are `null`. During server rendering, `binding` is `null`. The hooks read this context for you. To get the `DomBinding`, call [`useCursorBinding`](/docs/react/api/hooks#usecursorbinding).
+Outside a provider, both fields are `null`. During server rendering, `binding` is the `binding` prop of the provider, or `null` without that prop. The hooks read this context for you. To get the `DomBinding`, call [`useCursorBinding`](/docs/react/api/hooks#usecursorbinding).
 
 This component reads the context directly and shows a line when the client and the binding exist:
 

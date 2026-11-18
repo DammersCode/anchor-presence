@@ -1,9 +1,9 @@
 ---
 title: Typed hooks
-description: Fix the context and user types once with createPresenceHooks.
+description: Fix the context, user, and event types once with createPresenceHooks.
 ---
 
-`createPresenceHooks<TContext, TUser>()` returns `LiveCursorProvider` and every hook with `TContext` and `TUser` fixed. A hook from the result takes no type parameter, so a call with a wrong type does not compile.
+`createPresenceHooks<TContext, TUser, TEvents>()` returns `LiveCursorProvider` and every hook with `TContext`, `TUser`, and `TEvents` fixed. A hook from the result takes no type parameter, so a call with a wrong type does not compile. `TEvents` is optional.
 
 ## Create the hooks
 
@@ -15,9 +15,18 @@ import { createPresenceHooks } from "@anchor-presence/react";
 
 export type User = { name: string; color: string };
 export type Context = { pageId: string };
+export type Events = { reaction: { emoji: string }; ping: undefined };
 
-export const { LiveCursorProvider, useCursorClient, useCursorContext, useRemoteCursors, useRemoteUsers } =
-  createPresenceHooks<Context, User>();
+export const {
+  LiveCursorProvider,
+  useCursorClient,
+  useCursorContext,
+  useCursorEvents,
+  useLocalUser,
+  useRemoteCursors,
+  useRemoteUsers,
+  useSendEvent,
+} = createPresenceHooks<Context, User, Events>();
 ```
 
 ## Use the hooks
@@ -41,9 +50,47 @@ function PresenceList() {
 
 `entry.user` has the type `User | undefined`. A field that `User` does not have, for example `entry.user?.age`, is a type error. A type argument such as `useRemoteUsers<OtherUser>()` is also a type error.
 
+## Typed events
+
+`TEvents` is an event map: an object type that maps each event type to the type of its `data`. The result has two hooks for these events:
+
+- `useSendEvent()` returns a function that sends one event. A misspelled type or a `data` value of the wrong type does not compile. The function returns the result of `client.sendEvent`. Without a client, it sends nothing and returns `false`. It keeps its identity while the client stays the same.
+- `useCursorEvents(listener)` calls `listener` with a typed event. A check of `event.type` narrows `event.data` to the type of that event.
+
+A peer is another client in the same room. This component sends a reaction and shows the last reaction from a peer:
+
+```tsx
+import { useState } from "react";
+import { useCursorEvents, useSendEvent } from "./presence";
+
+function Reactions() {
+  const sendEvent = useSendEvent();
+  const [lastEmoji, setLastEmoji] = useState<string | null>(null);
+
+  useCursorEvents((event) => {
+    if (event.type === "reaction") setLastEmoji(event.data.emoji);
+  });
+
+  return (
+    <div>
+      <button type="button" onClick={() => sendEvent("reaction", { emoji: "tada" })}>
+        React
+      </button>
+      {lastEmoji !== null && <p role="status">{lastEmoji}</p>}
+    </div>
+  );
+}
+```
+
+<Callout type="warn">
+  If a peer sends data of another type, `useCursorEvents` still delivers it. The types check only the code
+  that you write. Pass a `parseEvent` that checks the same event map, as in [Typed
+  events](/docs/core/presence-client#typed-events).
+</Callout>
+
 ## What the result contains
 
-The result has `LiveCursorProvider`, `useCursorBinding`, `useCursorClient`, `useCursorContext`, `useCursorPresence`, `useRemoteCursors`, `useRemoteCursorsSelector`, and `useRemoteUsers`, each with your types. It also has `useCursorEvents` and `useCursorStatus`, which have no type parameters.
+The result has `LiveCursorProvider`, `useCursorBinding`, `useCursorClient`, `useCursorContext`, `useCursorPresence`, `useLocalUser`, `useRemoteCursors`, `useRemoteCursorsSelector`, and `useRemoteUsers`, each with your context and user types. `useCursorEvents` and `useSendEvent` have your event types. `useCursorStatus` and `usePeerChanges` have no type parameters. Without `TEvents`, an event has any `type` and `data` of the type `unknown`.
 
 `CursorLayer` and `DefaultCursor` are not in the result. Import them from `@anchor-presence/react`.
 
@@ -52,3 +99,4 @@ The result has `LiveCursorProvider`, `useCursorBinding`, `useCursorClient`, `use
 - [Hooks API](/docs/react/api/hooks)
 - [LiveCursorProvider](/docs/react/live-cursor-provider)
 - [Remote users](/docs/react/remote-users)
+- [Cursor events](/docs/react/cursor-events)

@@ -28,7 +28,7 @@ The provider takes these props:
 | `bindingKey`     | `unknown`                                 | none                       |
 | `children`       | `ReactNode`                               | none                       |
 
-Create the client through `factory`, or pass a client you own:
+Create the client through `factory`, or pass a client that you own:
 
 ```tsx
 <LiveCursorProvider
@@ -45,15 +45,17 @@ Create the client through `factory`, or pass a client you own:
 
 The provider disposes a client that `factory` created. It never disposes a `client` that you pass. For when the factory runs and which prop wins, read [Creating the client](/docs/react/client-creation).
 
-## The binding the provider creates
+## The binding that the provider creates
 
 When you omit `binding`, the provider creates a `DomBinding` for the client with `createDomBinding(client, bindingOptions)`. It disposes that binding when the client changes, when `bindingKey` changes, or when the provider unmounts. If you created a binding yourself, for example to share one binding across two providers, pass it as `binding`. The provider then creates no binding and never disposes yours.
 
-`bindingOptions` configures the binding the provider creates. The provider reads `bindingOptions` only when it creates the binding. A later change to the `bindingOptions` object does not recreate the binding.
+`bindingOptions` configures the binding that the provider creates. The provider reads `bindingOptions` only when it creates the binding. A later change to the `bindingOptions` object does not recreate the binding.
 
 ## Rebuild the binding
 
-To apply a new `bindingOptions` value, change `bindingKey`. The provider then disposes the binding and creates a new one with the current `bindingOptions`. The client stays connected. A peer is another client in the same room. Peers keep the local cursor. This example switches the interpolator:
+To apply a new `bindingOptions` value, change `bindingKey`. The provider then disposes the binding and creates a new one with the current `bindingOptions`. The client stays connected, so each peer keeps the local cursor. A peer is another client in the same room.
+
+This example switches the interpolator:
 
 ```tsx
 function Workspace({ smooth }: { smooth: boolean }) {
@@ -94,8 +96,8 @@ function Room({ room }: { room: string }) {
 ```
 
 <Callout type="warn">
-  If you pass `client`, the provider ignores `clientKey`. To switch the room of a client you own, dispose it
-  and pass a new client.
+  If you pass `client`, the provider ignores `clientKey`. To switch the room of a client that you own, dispose
+  it and pass a new client.
 </Callout>
 
 ## client={null}

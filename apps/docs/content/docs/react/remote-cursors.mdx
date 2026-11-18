@@ -25,7 +25,7 @@ function CursorCount() {
 }
 ```
 
-Each entry is `{ clientId, x, y, visible, pointVisible, anchorId, tier, idle, context?, user? }`. `x` and `y` are pixels in the receiver's own viewport. Position an element with these values using `position: fixed`.
+Each entry is `{ clientId, x, y, visible, pointVisible, anchorId, tier, idle, context?, user? }`. `x` and `y` are pixels in the receiver's own viewport. To position an element at these values, use `position: fixed`.
 
 The hook rerenders its component on every new resolved-cursor snapshot. While cursors move, that is every animation frame. If your component needs less than the full list, use `useRemoteCursorsSelector`.
 

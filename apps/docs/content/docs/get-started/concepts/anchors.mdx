@@ -23,9 +23,9 @@ A binding can use another attribute through `anchorAttribute`. See [`DomBindingO
 
 An anchor ID is an opaque string, 1 to 256 characters. Choose your own naming scheme, for example `nav.dashboard`, `stats.revenue`, or `orders.row:17.actions`.
 
-Anchor IDs are map keys only. They never become CSS selectors, query strings, or code. A remote message cannot make the receiver look up any DOM location except through the registered anchor map. See [Security](/docs/get-started/guides/security).
+Anchor IDs are map keys only. They never become CSS selectors, query strings, or code. A remote message can only address an element in the registered anchor map. See [Security](/docs/get-started/guides/security).
 
-If two elements register the same ID, the newest one wins. The registry logs a warning in development builds. A new element can mount before the old one unmounts, for example in React Strict Mode or a virtualized list. This rule gives a fixed result in that case.
+If two elements register the same ID, the newest one wins. See [Duplicate IDs](/docs/dom/anchor-registration#duplicate-ids) for the reason and the development-mode warning.
 
 ## Normalized u/v coordinates
 

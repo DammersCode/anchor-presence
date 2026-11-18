@@ -30,7 +30,7 @@ Write a factory against the public `Interpolator` interface. See [Interpolation]
 
 ## Where easing runs
 
-`@anchor-presence/core` defines the `Interpolator` interface and exports `linearInterpolator` and `noneInterpolator`. Core never calls them, because it has no frame clock. The binding samples the interpolator on each scheduled frame and writes the result into `ResolvedCursor.x` and `ResolvedCursor.y`. Code that uses only `@anchor-presence/core` reads raw presence data, with no easing.
+`@anchor-presence/core` defines the `Interpolator` interface and exports `linearInterpolator` and `noneInterpolator`. `@anchor-presence/core` never calls them, because it has no frame clock. The binding samples the interpolator on each scheduled frame and writes the result into `ResolvedCursor.x` and `ResolvedCursor.y`. Code that uses only `@anchor-presence/core` reads raw presence data, with no easing.
 
 ## When motion restarts instead of easing
 

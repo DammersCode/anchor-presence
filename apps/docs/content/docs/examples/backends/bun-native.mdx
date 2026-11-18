@@ -3,7 +3,7 @@ title: Bun
 description: A room-broadcast relay built directly on Bun.serve's WebSocket support.
 ---
 
-You want a relay with no framework and no extra dependency, on the WebSocket support of Bun. This example uses `Bun.serve`'s topic pub-sub for rooms, so there is no hand-written room map.
+You want a relay with no framework and no extra dependency, on the WebSocket support of Bun. Each room is one topic of `Bun.serve`. Bun forwards each message to every other socket that subscribes to the topic, so the relay needs no room map of its own.
 
 ## Install
 
@@ -65,7 +65,8 @@ The relay listens on `http://localhost:8788`. To use a different port, give the 
 
 <Callout type="warn">
   If you expose this relay outside local development, set `RELAY_ALLOWED_ORIGINS` and `RELAY_AUTH_TOKEN`, and
-  put a TLS-terminating proxy in front of it. Without them, any page and any visitor can join a room.
+  put a proxy that serves TLS (`wss://`) in front of it. Without them, any page and any visitor can join a
+  room.
 </Callout>
 
 ## Related

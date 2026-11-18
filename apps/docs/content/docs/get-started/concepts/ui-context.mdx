@@ -7,7 +7,7 @@ UI context is application state, such as an open dialog, that a sender attaches 
 
 ## Opaque context
 
-`CursorPresence` carries an optional `context` field. Core gives this field no meaning. It checks the size of the context, 8 KiB of JSON at most. If the client has a local context, it also checks the shape of each remote context. See [Remote user and context](/docs/core/validation#remote-user-and-context) for the shape check.
+`CursorPresence` carries an optional `context` field. `@anchor-presence/core` gives this field no meaning. It checks the size of the context, 8 KiB of JSON at most. If the client has a local context, it also checks the shape of each remote context. See [Remote user and context](/docs/core/validation#remote-user-and-context) for the shape check.
 
 Set context on the client:
 
@@ -17,7 +17,12 @@ client.setContext({ route: "/settings", dialog: "invite" });
 
 The client sends each change to context one time. Full publishes (reconnect and heartbeat) include the current context. A missing field means "unchanged since the previous same-session message". An explicit `null` clears it. On the receiver, context reaches two places: the visibility policy input, and the `context` field on each `ResolvedCursor`.
 
-Use context for the state that a receiver needs to decide how to show a cursor. Examples are the route, the open dialog, and the active tab. Do not put private data in context. Every receiver in the room gets it on each change and on each full publish. See [Security](/docs/get-started/guides/security) for validation limits and rendering rules.
+Use context for the state that a receiver needs to decide how to show a cursor. Examples are the route, the open dialog, and the active tab. See [Security](/docs/get-started/guides/security) for validation limits and rendering rules.
+
+<Callout type="warn">
+  If you put private data in context, every receiver in the room gets it. The client sends context on each
+  change and on each full publish.
+</Callout>
 
 ## Visibility policies
 

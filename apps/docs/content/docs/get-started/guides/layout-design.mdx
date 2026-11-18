@@ -1,5 +1,5 @@
 ---
-title: Designing layouts for presence
+title: Layout design for presence
 description: Rules that keep remote cursors steady when two users see different layouts.
 ---
 
@@ -89,7 +89,7 @@ return collapsed ? <IconLink data-anchor={id} /> : <LabeledLink data-anchor={id}
 
 ## Keep the parent of a hidden anchor anchored
 
-A layout can drop an anchor: a narrow table without its action column, a list that shows fewer rows. The cursor then falls back to the nearest parent that remains. Anchor each level (the button, its row, the table), so the fallback lands one step up and not on the viewport. See the [Anchors and fallbacks example](/docs/examples/anchors-and-fallbacks).
+A layout can drop an anchor, for example a narrow table without its action column, or a list that shows fewer rows. The cursor then falls back to the nearest parent that remains. Anchor each level: the button, its row, and the table. The fallback then lands one step up, not on the viewport. See the [Anchors and fallbacks example](/docs/examples/anchors-and-fallbacks).
 
 ## Anchor meaning, not wrappers
 

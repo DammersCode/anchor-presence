@@ -3,7 +3,9 @@ title: Elysia
 description: A room-broadcast relay built on Elysia's .ws() route for Bun.
 ---
 
-You want a relay built on [Elysia](https://elysiajs.com)'s route-based API instead of raw `Bun.serve`. This example uses Elysia's `.ws()` route on Bun, backed by Elysia/Bun's own topic pub-sub, the same model `examples/bun-native` uses. The relay types its query with a schema, and the client connects through an Eden treaty. Eden gives the connection end-to-end type safety: a wrong query parameter is a compile error on the client.
+You want a relay built on the route API of [Elysia](https://elysiajs.com) instead of raw `Bun.serve`. This example uses the `.ws()` route of Elysia on Bun. Each room is one topic. Bun forwards each message to every other socket that subscribes to the topic. The [Bun relay](/docs/examples/backends/bun-native) uses the same model.
+
+The relay types its query with a schema. The client connects through Eden, the typed client of Elysia. A wrong query parameter is then a compile error on the client.
 
 ## Install
 
@@ -23,11 +25,17 @@ The server imports the shared guard helpers. See [Shared guard helpers](/docs/ex
 
 ## Client
 
-The client builds its socket with Eden, Elysia's end-to-end type safety layer. Eden checks the query parameters against the relay's `ElysiaRelayApp` type. The presence transport takes the Eden socket through its `WebSocketCtor` option and keeps owning the reconnects:
+The client builds its socket with Eden. Eden checks the query parameters against the `ElysiaRelayApp` type of the relay. The presence transport takes the Eden socket through its `WebSocketCtor` option, and the transport still controls the reconnects:
 
 <CodeFromSource repo="examples/elysia/client.ts" lang="ts" />
 
-The `edenSocket` function hands the transport a fresh Eden socket for each connection. The transport ignores the URL that it builds, because Eden builds the URL from the treaty base and the typed query.
+The `edenSocket` function gives the transport a fresh Eden socket for each connection. The cast to `WebSocketCtor` is necessary, because the Eden function does not match the WebSocket constructor type. The Eden function ignores the URL that the transport builds. Eden builds the URL from the base URL of `treaty` and the typed query.
+
+<Callout type="warn">
+  If your room token expires, do not use this typed client. It sends one fixed room token on every connection,
+  because Eden ignores the URL that carries the `token` function result. Use `createWebSocketTransport` with a
+  `token` function instead.
+</Callout>
 
 ## Run it
 
@@ -60,7 +68,8 @@ The relay listens on `http://localhost:8791`. To use a different port, give the 
 
 <Callout type="warn">
   If you expose this relay outside local development, set `RELAY_ALLOWED_ORIGINS` and `RELAY_AUTH_TOKEN`, and
-  put a TLS-terminating proxy in front of it. Without them, any page and any visitor can join a room.
+  put a proxy that serves TLS (`wss://`) in front of it. Without them, any page and any visitor can join a
+  room.
 </Callout>
 
 ## Related

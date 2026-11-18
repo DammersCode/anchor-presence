@@ -11,12 +11,12 @@ export type TypedRemoteEvent<TEvents extends EventMap> = {
 /** Sends and receives the events of one `EventMap`. */
 export type EventChannel<TEvents extends EventMap> = {
   /** Sends an event. A misspelled type or data of the wrong type does not compile. */
-  send<K extends keyof TEvents & string>(
+  send: <K extends keyof TEvents & string>(
     type: K,
     ...data: undefined extends TEvents[K] ? [data?: TEvents[K]] : [data: TEvents[K]]
-  ): boolean;
+  ) => boolean;
   /** Adds a listener for remote events. Returns a function that removes it. */
-  subscribe(listener: (event: TypedRemoteEvent<TEvents>) => void): () => void;
+  subscribe: (listener: (event: TypedRemoteEvent<TEvents>) => void) => () => void;
 };
 
 /**

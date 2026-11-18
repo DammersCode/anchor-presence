@@ -32,7 +32,7 @@ bun run dev -- --open "/?backend=socketio"
 
 The client serves at <http://localhost:5173/>. Open that address in two browser windows, both with `?backend=socketio`.
 
-To use a room other than `main`, add `&room=<name>` to both addresses. To change the cursor label, add `&name=<name>`.
+Without `&room=`, each window joins its own random room. To share a room, add `&room=<name>` with the same name to both addresses. To change the cursor label, add `&name=<name>`.
 
 ## What the demo shows
 

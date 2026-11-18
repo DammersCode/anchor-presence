@@ -23,6 +23,9 @@
 
 ### Added
 
+- `@anchor-presence/core`: `createEventChannel<TEvents>(client)` gives typed `send` and `subscribe` for events. The client option `eventRateLimit` sets the per-sender burst and rate and a total rate for all senders. `client.subscribeUser(listener)` reports local `setUser` changes.
+- `@anchor-presence/react`: `useLocalUser()`, `usePeerChanges(listener)`, and a third type parameter on `createPresenceHooks<TContext, TUser, TEvents>()` that types `useCursorEvents` and adds `useSendEvent()`.
+- The demo has live reactions and chat built on events, with end-to-end tests for events, leaving and peer notices.
 - `@anchor-presence/react`: `useCursorBinding()` returns the DOM binding, so a component can call `binding.invalidate()` when state that a `visibilityPolicy` reads changes.
 - Example transports: the Socket.IO and SignalR transports implement `subscribeClose`. The relays send a `refused` event with the close code (4001, 4002, 4006, 4007) before they disconnect a client.
 - `defineRelayConformance` also checks the origin allowlist (close code 4004).

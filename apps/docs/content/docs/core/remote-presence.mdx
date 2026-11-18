@@ -28,7 +28,7 @@ The store removes a peer when it accepts no message from that peer for `staleTim
 
 The store sets `idle: true` on the `RemotePresence` of a peer whose presence did not change for `idleAfterMs`. This happens before the peer goes stale. The store measures this time from the last change, not from the last message. The default is `DEFAULT_IDLE_AFTER_MS`, `15000` milliseconds. `idleAfterMs` always stays below `staleTimeoutMs`. If you pass a larger value, the store clamps it to `staleTimeoutMs - 1`.
 
-Heartbeats do not end idle, because they repeat the same state. A still peer goes idle while its heartbeats keep arriving. Any change in cursor, user, context, or pointer ends it. Use idle to dim a cursor that stopped moving. `staleTimeoutMs` decides when the cursor disappears.
+Heartbeats do not end idle, because they repeat the same state. A peer that changes nothing goes idle while its heartbeats keep arriving. Any change in cursor, user, context, or pointer ends it. Use idle to dim a cursor that stopped moving. `staleTimeoutMs` decides when the cursor disappears.
 
 ## Peer changes
 
@@ -48,7 +48,7 @@ The listener receives a `PeerChange` with a `type` and the `clientId` of the pee
 | `update` | The `user` or `context` of a known peer changes.                                         |
 | `leave`  | The store removes the peer: a leave message, the stale timeout, or the reconnect expiry. |
 
-Cursor moves, pointer changes, and events never produce a change. A heartbeat that repeats an equal `user` or `context` produces no `update`. A message from a known `clientId` with another `session` produces no `join`. It produces an `update` when its `user` differs by value from the stored one. A message that the store drops because it is full produces no `join`.
+Cursor moves, pointer changes, and events never produce a change. A heartbeat that repeats an equal `user` or `context` produces no `update`. A message from a known `clientId` with another `session` produces no `join`. It produces an `update` when its `user` differs by value from the stored one. A message that the store drops because it is full produces no `join`. In React, [`usePeerChanges`](/docs/react/remote-users#peer-changes) wraps this method.
 
 ## Leave messages
 

@@ -22,6 +22,7 @@ The client checks every inbound message in two steps. First, it drops a message 
 | `context`                       | max 8 KiB when JSON-encoded, else the client drops the field   | `maxFieldBytes`     |
 | `user`                          | max 8 KiB when JSON-encoded, else the client drops the field   | `maxFieldBytes`     |
 | `context`, `user` nesting depth | max 8 levels, else the client drops the field                  | `maxFieldDepth`     |
+| `pointer.type`                  | `mouse`, `pen` or `touch`, else the client drops the field     |                     |
 | whole message                   | max 32 KiB encoded, else the client drops the message          | `maxMessageBytes`   |
 
 The defaults are constants in `@anchor-presence/core`. To change a limit, pass its key in `PresenceClientOptions.validationLimits` to `createPresenceClient`. `validatePresence` also takes a `ValidationLimits` object, but it ignores `maxMessageBytes`. A decoded message has no byte length, so only the client checks the size. A relay that calls `validatePresence` must cap the frame size itself. See [Relay contract](/docs/examples/backends/relay-contract).
@@ -61,7 +62,7 @@ This sample shows the correct and the wrong way to render a remote name:
 
 Validation checks the size and depth of `user` and `context`, not their shape. A peer can send `{ name: {} }` where you expect a string. React throws when it renders that object as a child.
 
-For this reason, the client compares each remote value with your own local value. If you pass `user: { name: "Ada" }` to `createPresenceClient`, a remote `user` must be an object whose `name` is a string or `null`. A remote `null` fits every key, so your render code must accept `null` in every field. A key that your local value lacks stays only when it holds a string, a number, a boolean, or `null`. The client drops a field that does not fit, so the receiver keeps the previous value. [Remote user and context](/docs/core/validation#remote-user-and-context) lists every rule of the shape check.
+For this reason, the client compares each remote value with your own local value. If you pass `user: { name: "Ada" }` to `createPresenceClient`, a remote `user` must be an object whose `name` is a string or `null`. Your render code must accept `null` in every field. The client drops a field that does not fit, so the receiver keeps the previous value. [Remote user and context](/docs/core/validation#remote-user-and-context) lists every rule of the shape check.
 
 A client with no local `user` or `context` has no shape to compare with. To check the value yourself, pass `parseUser` or `parseContext`. Return `undefined` to drop the value:
 
@@ -76,7 +77,7 @@ const client = createPresenceClient<unknown, { name: string; avatar?: string }>(
 });
 ```
 
-In [development mode](/docs/core/presence-client#development-mode), the client warns one time when a remote value arrives and no check applies. It also warns one time when the shape check drops a remote `user` or `context`. That warning names `parseUser` or `parseContext`.
+In [development mode](/docs/core/presence-client#development-mode), the client warns when no check applies to a remote value, and when the shape check drops a value.
 
 ## Identity is not authenticated
 
@@ -88,11 +89,22 @@ If your app needs to know who sent a message, bind the identity on your own serv
 
 `maxRemoteClients` limits every allocation that network data causes: store entries, resolved cursors, and observed anchors. It defaults to 64. See [Remote presence](/docs/core/remote-presence) for the drop rule and how to react to it.
 
-Set `maxRemoteClients` to the number of sessions that you expect at the same time. When the store is full, it drops new clients. A flooder can take every slot with distinct `clientId` values. Real clients then stay out until those slots expire after `staleTimeoutMs`.
+Set `maxRemoteClients` to the number of sessions that you expect at the same time. When the store is full, it drops new clients. An attacker in the room can take every slot with distinct `clientId` values. Real clients then stay out until those slots expire after `staleTimeoutMs`.
 
 ## Room token
 
-When `RELAY_AUTH_TOKEN` is set, the reference relay requires a matching [room token](/docs/dom/websocket-transport#room-token) on every connection. It closes a connection with a missing or wrong room token with code `4006`. The room token controls who can reach a room. It does not authenticate the identity inside a message. Every message still passes the same validation and sequence rules as on an open relay.
+When `RELAY_AUTH_TOKEN` is set, the reference relay requires a matching [room token](/docs/dom/websocket-transport#room-token) on every connection. It closes a connection with a missing or wrong room token with code `4006`. The room token controls who can connect to the relay. It does not authenticate the identity inside a message. Every message still passes the same validation and sequence rules as on an open relay.
+
+The reference relay and the example relays compare every connection with one `RELAY_AUTH_TOKEN` for the whole process. As a result, one room token opens every room. The example relays give the room name to the `authCheck` hook. To limit a room token to one room, check the `room` field in your own `authCheck`.
+
+The transport sends the room token in the `token` query parameter of the URL. Many proxies and servers write the full URL, with its query string, into their access logs. As a result, the room token can appear in those logs.
+
+<Callout type="warn">
+  If you use a long-lived room token, anyone who reads the access logs can join the relay. Create a
+  short-lived room token for each session on your server. Check it in your own `authCheck`, because
+  `RELAY_AUTH_TOKEN` is one fixed value. On the client, pass a `token` function to `createWebSocketTransport`.
+  The transport calls the function before each connection attempt.
+</Callout>
 
 ## Related
 

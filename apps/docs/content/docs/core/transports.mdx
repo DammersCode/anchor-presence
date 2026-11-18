@@ -46,13 +46,13 @@ const client = createPresenceClient({ transport: myTransport });
 
 ## Connection status
 
-`subscribeStatus` and `getStatus` are optional. When a transport omits both, the client reports a constant `"connected"` status.
+`subscribeStatus` and `getStatus` are optional. When a transport omits `subscribeStatus`, the client reports a constant `"connected"` status and never reads `getStatus`.
 
 Replay the current status to every new subscriber inside `subscribeStatus`. Without a replay, a client that subscribes after the connection opened never learns that it can send.
 
-The client reads `getStatus()` one time, at creation, for its first status. Without `getStatus`, the client starts at `"connecting"` until the first status callback arrives.
+If the transport has `subscribeStatus`, the client reads `getStatus()` one time, at creation, for its first status. Without `getStatus`, the client starts at `"connecting"` until the first status callback arrives.
 
-When the status changes to `connected` from `reconnecting` or `disconnected`, the client publishes its full state again. A peer is another client in the same room. The client also expires the peers that no message confirms. See [After a reconnect](/docs/core/remote-presence#after-a-reconnect).
+When the status changes to `connected` from `reconnecting` or `disconnected`, the client publishes its full state again. It also expires each peer that no message confirms, as [After a reconnect](/docs/core/remote-presence#after-a-reconnect) describes. A peer is another client in the same room.
 
 `bufferedBytes` is optional. It reports the number of bytes in the send queue of the transport. The client uses it only for the opt-in `adaptivePublish` option on [Presence client](/docs/core/presence-client#publish-rate).
 

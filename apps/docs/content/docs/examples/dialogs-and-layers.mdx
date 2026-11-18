@@ -3,7 +3,7 @@ title: Dialogs and layers
 description: A cursor belongs to the layer its anchor sits in. A visibility policy decides what shows while a dialog is open.
 ---
 
-A dialog covers the layout behind it, but a remote cursor can belong to either layer. A peer is another client in the same room. Two cases need a rule: the cursor of a peer on a card behind your open dialog, and your cursor inside a dialog that is closed for the peer. This demo runs that rule with a visibility policy. The cursor itself always paints above the dialog, because `CursorLayer` defaults to `z-index: 9999`.
+A dialog covers the layout behind it, but a remote cursor can belong to either layer. A peer is another client in the same room. Two cases need a rule. In the first case, the cursor of a peer is on a card behind your open dialog. In the second case, your cursor is inside a dialog that is closed for the peer. This demo runs that rule with a visibility policy. The cursor itself always paints above the dialog, because `CursorLayer` defaults to `z-index: 9999`.
 
 <ExamplePreview scene="dialogs" />
 

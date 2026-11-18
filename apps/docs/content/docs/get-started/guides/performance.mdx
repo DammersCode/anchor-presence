@@ -50,11 +50,11 @@ While no remote cursor is active, no `requestAnimationFrame` loop runs. Every sc
 - A client publishes at 20 Hz by default (`publishIntervalMs: 50`). You can change this value per client.
 - The client sends a changed `context` or `user` field once. Later cursor messages leave out the fields that did not change. Reconnect and heartbeat messages carry the current values.
 - The optional `adaptivePublish` client option slows the publish rate when a transport reports a growing send buffer.
-- Minified and gzipped, `@anchor-presence/core` is about 8.0 KB, `@anchor-presence/dom` about 7.6 KB, and `@anchor-presence/react` about 2.6 KB. Each size excludes React and the other Anchor Presence packages.
+- Minified and gzipped, `@anchor-presence/core` is about 8.4 KB, `@anchor-presence/dom` about 7.6 KB, and `@anchor-presence/react` about 2.8 KB. Each size excludes React and the other Anchor Presence packages.
 
 ## Scaling limits
 
-A room-broadcast relay forwards every message to every other socket in a room. Relay traffic therefore grows with senders times receivers. The library lowers the cost of each message: delta `context` and `user` fields, one validation pass, and an optional adaptive publish rate. It does not change the fan-out of the room broadcast.
+A room-broadcast relay forwards every message to every other socket in a room. Relay traffic therefore grows with senders times receivers. The library lowers the cost of each message: delta `context` and `user` fields, one validation pass, and an optional adaptive publish rate. It does not change the number of copies that the relay sends for each message.
 
 For a large room, use one or more of these measures:
 
@@ -89,14 +89,14 @@ While the pointer moves, a client publishes at most once every `publishIntervalM
 **Worked example.** A room has 50 clients on `binaryCodec`. 10 of them move their pointer at the same time:
 
 - Each client receives from the 10 movers: 10 × 20 messages/s × 144 bytes ≈ 29 KB/s.
-- The relay forwards every message to every other client in the room. Its egress is 10 senders × 49 receivers × 20 messages/s × 144 bytes ≈ 1.4 MB/s.
+- The relay forwards every message to every other client in the room. Its outbound traffic is 10 senders × 49 receivers × 20 messages/s × 144 bytes ≈ 1.4 MB/s.
 
 Before you commit to a capacity plan, calculate both numbers again for your own anchor count, codec, and room size.
 
 **Checklist:**
 
 - For a smaller wire size, pick `binaryCodec` instead of the default `jsonCodec`. See [Codecs](/docs/core/codecs).
-- Split a large room into smaller rooms. Relay traffic grows with senders times receivers, so a room of half the size has about a quarter of the egress.
+- Split a large room into smaller rooms. A room of half the size has about a quarter of the outbound traffic.
 - If a room holds more than 64 clients, raise `maxRemoteClients` above its default of 64. See [Remote presence](/docs/core/remote-presence).
 - Set relay-side limits: connection quotas, message size caps, and rate limits. See [Security](/docs/get-started/guides/security).
 
@@ -134,9 +134,9 @@ The test raised the room and server socket caps, so the relay accepted every cli
 
 ### What this means for capacity planning
 
-At 50 clients in one room, the reference relay delivers every message. Its p99 latency stays under 200 ms, and it uses less than one CPU core. Relay work grows with senders × receivers: 100 moving clients need about 200,000 deliveries per second. Plan rooms of up to about 50 active clients per relay process. Before you allow larger rooms, measure your own relay on your own hardware.
+At 50 clients in one room, the reference relay delivers every message. Its p99 latency stays under 200 ms, and it uses less than one CPU core. At 100 moving clients, the relay needs about 200,000 deliveries per second. Plan rooms of up to about 50 active clients per relay process. Before you allow larger rooms, measure your own relay on your own hardware.
 
-See the [capacity planning](#capacity-planning) checklist. Split large rooms and pick `binaryCodec`.
+See the [capacity planning](#capacity-planning) checklist.
 
 ## Related
 

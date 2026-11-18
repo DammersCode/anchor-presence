@@ -163,7 +163,8 @@ export function safeAuthCheck(check: AuthCheck): (request: AuthRequest) => Promi
         typeof result === "object" &&
         result !== null &&
         typeof result.clientId === "string" &&
-        result.clientId !== ""
+        result.clientId !== "" &&
+        result.clientId.length <= MAX_IDENTITY_LENGTH
       ) {
         return result;
       }

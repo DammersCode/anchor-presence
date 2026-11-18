@@ -66,7 +66,8 @@ The relay listens on `http://localhost:8789`. To use a different port, give the 
 
 <Callout type="warn">
   If you expose this relay outside local development, set `RELAY_ALLOWED_ORIGINS` and `RELAY_AUTH_TOKEN`, and
-  put a TLS-terminating proxy in front of it. Without them, any page and any visitor can join a room.
+  put a proxy that serves TLS (`wss://`) in front of it. Without them, any page and any visitor can join a
+  room.
 </Callout>
 
 ## Related

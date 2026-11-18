@@ -1,6 +1,6 @@
 ---
 title: Cursor context
-description: Read and set the local UI context value that travels with your cursor.
+description: Read and set the local UI context value and the local user value that travel with your cursor.
 ---
 
 `useCursorContext` reads the local context value and gives a setter that sends it to peers. A peer is another client in the same room. Context carries small facts about what a user is doing, such as the panel they have open. See [UI context](/docs/get-started/concepts/ui-context) for what context is for.
@@ -32,7 +32,39 @@ The setter calls `client.setContext()`, which sends the value to peers and updat
 
 On the server, and with no provider above it, the hook returns `undefined` and a no-op setter.
 
+## Local user
+
+`useLocalUser` reads the local `user` value and gives a setter that sends it to peers. The hook has this signature:
+
+```ts
+function useLocalUser<TUser = unknown>(): [TUser | undefined, (next: TUser | undefined) => void];
+```
+
+This component lets a user change the name that peers see:
+
+```tsx
+import { useLocalUser } from "@anchor-presence/react";
+
+type MyUser = { name: string; color: string };
+
+function NameField() {
+  const [user, setUser] = useLocalUser<MyUser>();
+  return (
+    <input
+      aria-label="Your name"
+      value={user?.name ?? ""}
+      onChange={(event) => setUser({ name: event.target.value, color: user?.color ?? "#6366f1" })}
+    />
+  );
+}
+```
+
+The setter calls `client.setUser()`, which sends the value to peers. Each `setUser` call that changes the value rerenders the component. A direct `client.setUser()` call outside the hook rerenders it too. A call changes the value when its value is another reference than the current value.
+
+During server rendering, the hook returns `undefined`. Without a client, the setter does nothing.
+
 ## Related
 
 - [UI context](/docs/get-started/concepts/ui-context)
+- [Remote users](/docs/react/remote-users)
 - [Hooks API](/docs/react/api/hooks)

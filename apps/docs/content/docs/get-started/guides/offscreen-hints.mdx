@@ -79,7 +79,7 @@ export function HintsApp({ client }: { client: PresenceClient }) {
 }
 ```
 
-## Behavior
+## Behavior notes
 
 - **Window size.** The recipe uses `window.innerWidth` and `window.innerHeight`. The resolver uses the same size for viewport coordinates. On a resize, the binding resolves the cursors again, so the hints move.
 - **`pointVisible`.** `pointVisible` is `false` when a scroll container inside the page clips the point. It stays `true` for a point outside the window, and it is always `true` on the viewport tier. For this reason, the recipe compares `x` and `y` with the window size. A clipped point inside the window gets no hint.

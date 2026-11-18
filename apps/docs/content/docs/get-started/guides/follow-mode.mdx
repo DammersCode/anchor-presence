@@ -133,7 +133,7 @@ export function FollowApp({ client }: { client: PresenceClient<unknown, User> })
 }
 ```
 
-## Behavior
+## Behavior notes
 
 - **One scroll per target.** The selector returns the leader's anchor ID only while the point is off-screen, and `null` in all other cases. The component rerenders only when this value changes, so the page scrolls once per target and not on every frame.
 - **Scroll position.** `scrollIntoView` centers the anchor element, not the point. If the anchor is taller than the window, the point can stay off-screen. The page scrolls again when the leader moves to another anchor, or after the point was on-screen once.

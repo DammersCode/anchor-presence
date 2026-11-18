@@ -13,7 +13,6 @@ import {
   type ConnectionStatus,
   type CursorPresence,
   type PresenceClient,
-  type RemoteEvent,
   type RemotePresence,
 } from "@anchor-presence/core";
 import {

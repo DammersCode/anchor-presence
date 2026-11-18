@@ -3,7 +3,7 @@ title: Hono
 description: A room-broadcast relay built on Hono's upgradeWebSocket helper for Bun.
 ---
 
-You want a relay built on a small, framework-shaped router instead of raw `Bun.serve`. This example uses [Hono](https://hono.dev)'s `hono/bun` adapter. The adapter connects `upgradeWebSocket` and a `websocket` handler directly to `Bun.serve`.
+You want a relay built on a small router with routes and middleware instead of raw `Bun.serve`. This example uses [Hono](https://hono.dev)'s `hono/bun` adapter. The adapter connects `upgradeWebSocket` and a `websocket` handler directly to `Bun.serve`.
 
 ## Install
 
@@ -69,7 +69,8 @@ The relay listens on `http://localhost:8790`. To use a different port, give the 
 
 <Callout type="warn">
   If you expose this relay outside local development, set `RELAY_ALLOWED_ORIGINS` and `RELAY_AUTH_TOKEN`, and
-  put a TLS-terminating proxy in front of it. Without them, any page and any visitor can join a room.
+  put a proxy that serves TLS (`wss://`) in front of it. Without them, any page and any visitor can join a
+  room.
 </Callout>
 
 ## Related

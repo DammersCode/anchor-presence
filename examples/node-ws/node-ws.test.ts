@@ -258,3 +258,17 @@ describe("node-ws relay with a reset connection during async auth", () => {
     }
   });
 });
+
+describe("node-ws relay identity length", () => {
+  it("refuses an identity with a clientId above 100 characters", async () => {
+    const relay = await createNodeWsRelay(0, {
+      authCheck: () => ({ clientId: "x".repeat(101), user: { name: "long" } }),
+    });
+    try {
+      const socket = new WebSocket(`${relay.url.replace(/^http/u, "ws")}/?room=r`);
+      expect(await closeCode(socket)).toBe(4006);
+    } finally {
+      await relay.close();
+    }
+  });
+});

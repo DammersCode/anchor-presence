@@ -47,4 +47,4 @@ The relay has no `authCheck` hook and binds no identity. Any client in a room ca
 
 By default, the relay accepts connections from every origin and needs no room token. It does not terminate TLS. It has no connection cap per IP, only the caps per room and in total.
 
-Before you expose the relay outside local development, set `RELAY_ALLOWED_ORIGINS` and `RELAY_AUTH_TOKEN`. Put a TLS-terminating proxy in front of it.
+Before you expose the relay outside local development, set `RELAY_ALLOWED_ORIGINS` and `RELAY_AUTH_TOKEN`. Put a proxy that serves TLS (`wss://`) in front of it. The room token travels in the query string, so it can appear in proxy and access logs. See [Security](https://anchor-presence.vercel.app/docs/get-started/guides/security#room-token).

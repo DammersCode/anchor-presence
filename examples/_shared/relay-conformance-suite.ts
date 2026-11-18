@@ -1,7 +1,8 @@
 // Relay conformance suite: copy this file and relay-test-helpers.ts to test a relay of your own.
 // Call defineRelayConformance(name, start) from a vitest file. `start(env)` runs your relay with these
 // environment variables and returns its ws:// base URL and a stop function:
-// MAX_MESSAGE_BYTES, RELAY_AUTH_TOKEN, RATE_CAPACITY, RATE_REFILL_PER_SECOND.
+// MAX_MESSAGE_BYTES, RELAY_AUTH_TOKEN, RATE_CAPACITY, RATE_REFILL_PER_SECOND, RELAY_ALLOWED_ORIGINS,
+// RELAY_DEMO_IDENTITY (1 makes the token name the user: clientId `user-<token>`, user { name: <token> }).
 import { connect as netConnect } from "node:net";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { closeCode, opened } from "./relay-test-helpers";

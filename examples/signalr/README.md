@@ -42,7 +42,7 @@ bun run dev -- --open "/?backend=signalr"
 
 The client serves at <http://localhost:5173/>. Open that address in two browser windows, both with `?backend=signalr`.
 
-To change the cursor label, add `&name=<name>`. To use a room other than `main`, add `&room=<name>`.
+Without `&room=`, each window joins its own random room. To share a room, add `&room=<name>` with the same name to both addresses. To change the cursor label, add `&name=<name>`.
 
 ## What the demo shows
 
@@ -64,13 +64,11 @@ The transport reports the `4007` code of a `Refused` message through `subscribeC
 
 ## Validation in the receiver
 
-The hub checks only the size of a message. The receiving client checks the rest. Core checks every incoming message against the presence schema before it stores it.
+The hub checks only the size of a message. The receiving client checks the rest. `@anchor-presence/core` checks every incoming message against the presence schema before it stores it.
 
-## Stale cursor removal
+## Cursor removal
 
-When a window closes, the server drops the connection. The other clients stop receiving its updates. Core marks that client stale after `staleTimeoutMs` (default `70000` ms) and removes its cursor.
-
-To see this faster, add `?stale-ms=12000&heartbeat-ms=2000` to the URL, then close one window. The other window removes the cursor in about 15 seconds.
+When a window closes, the binding sends a `leave` message on `pagehide`. The other windows remove its cursor at once. The `leave` message can fail to arrive, for example after a crash. Then `@anchor-presence/core` marks that client stale after `staleTimeoutMs` (default `70000` ms) and removes its cursor.
 
 ## Transport tests
 

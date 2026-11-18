@@ -14,7 +14,8 @@ A relay forwards bytes between the clients of one room. A peer is another client
 - Never map an invalid room name to `main`. Otherwise, two different rooms share one stream.
 - If the relay checks a [room token](/docs/dom/websocket-transport#room-token), read it from the `token` query parameter.
 - Drop a frame above the size cap and keep the socket open. The default cap is 32 KiB (`MAX_MESSAGE_BYTES`). This rule applies to binary and to text frames.
-- Without identity binding, do not decode the presence message. The relay forwards the bytes without a look at their content.
+- Without identity binding, do not decode the presence message. Forward the bytes as they arrive.
+- Keep serving other connections after a malformed request line, a reset during the handshake, or an oversized header.
 
 ## Room from the URL
 
@@ -39,7 +40,9 @@ These relays have an `authCheck` hook and bind the identity that it returns:
 - Elysia
 - Socket.IO
 
-The relay adds a suffix per connection to `clientId`, in the form `<clientId>~<connection>`. Identity binding works with `jsonCodec` only. The relay drops a frame that is not a JSON object, for example a `binaryCodec` frame.
+The relay adds a suffix per connection to `clientId`, in the form `<clientId>~<connection>`, so two tabs of one user stay two clients. Identity binding works with `jsonCodec` only. The relay drops a frame that is not a JSON object, for example a `binaryCodec` frame.
+
+Every relay with a hook checks the origin before it calls `authCheck`. The Bun and Hono relays also check the room name first. On these two relays, a connection from a refused origin or with an invalid room name never runs the hook.
 
 The reference relay and the SignalR hub have no `authCheck` hook and bind no identity. The reference relay checks only a shared room token. See [Identity binding](/docs/examples/backends#identity-binding) for the demo identity mode.
 
@@ -76,9 +79,22 @@ The conformance suite `examples/_shared/relay-conformance-suite.ts` runs in vite
 - The relay closes a connection from an origin outside the allowlist with code `4004`, and accepts a listed origin.
 - The relay closes a connection without the room token with code `4006`, and accepts a connection with it.
 - The relay drops frames above the rate limit of a socket, and keeps the socket open.
+- The relay keeps serving after a malformed request line, a reset during the handshake, and an oversized header.
 - With `{ identity: true }`, the relay replaces `clientId` and `user` with the verified identity, with one `clientId` per connection.
 
+The suite does not check the codes `4001`, `4002`, `4003` and `4005`.
+
 To test a relay of your own, copy `relay-conformance-suite.ts` and `relay-test-helpers.ts` from `examples/_shared`. Then call `defineRelayConformance(name, start, options)` in a vitest file. The `start(env)` function starts your relay with the given environment variables. It returns `{ baseUrl, stop }`: the `ws://` base URL of the relay and a function that stops it.
+
+Your relay must read these environment variables:
+
+- `MAX_MESSAGE_BYTES`: the size cap.
+- `RELAY_AUTH_TOKEN`: the expected room token.
+- `RATE_CAPACITY` and `RATE_REFILL_PER_SECOND`: the rate limit of a socket.
+- `RELAY_ALLOWED_ORIGINS`: a comma-separated origin allowlist.
+- `RELAY_DEMO_IDENTITY`: with the value `1`, the demo identity mode. The suite sets it only with `{ identity: true }`.
+
+In the demo identity mode, the room token names the user. Make `authCheck` return `{ clientId: "user-<token>", user: { name: "<token>" } }`, and refuse an empty room token. [Identity binding](/docs/examples/backends#identity-binding) shows an example.
 
 ## Related
 

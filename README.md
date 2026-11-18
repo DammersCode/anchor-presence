@@ -44,18 +44,18 @@ To start the matching relay for this example, run `cd apps/server && bun run dev
 | ----------- | ----------------------------------------------------- |
 | React       | 18 or later                                           |
 | TypeScript  | 5.9 or later                                          |
-| Browser     | Current versions of Chrome, Edge, Firefox, and Safari |
+| Browser     | Chrome, Edge, Firefox, and Safari with ES2022 support |
 | Bun         | Needed to run the demo and the relay                  |
 
 ## Packages
 
-| Package                  | Description                                                                                    | Link                                         |
-| ------------------------ | ---------------------------------------------------------------------------------------------- | -------------------------------------------- |
-| `@anchor-presence/core`  | Protocol, validation, presence store, client orchestration. Zero dependencies, no DOM globals. | [`packages/core`](packages/core/README.md)   |
-| `@anchor-presence/dom`   | Anchor registry, pointer capture, geometry scheduler, resolver.                                | [`packages/dom`](packages/dom/README.md)     |
-| `@anchor-presence/react` | Provider component and hooks, built on `useSyncExternalStore`.                                 | [`packages/react`](packages/react/README.md) |
-| `apps/demo`              | React admin dashboard demonstrating cross-layout cursor correctness.                           | [`apps/demo`](apps/demo/README.md)           |
-| `apps/server`            | Bun WebSocket relay for the demo.                                                              | [`apps/server`](apps/server)                 |
+| Package                  | Description                                                                                   | Link                                         |
+| ------------------------ | --------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| `@anchor-presence/core`  | Protocol, validation, presence store, client orchestration. Zero dependencies, no DOM needed. | [`packages/core`](packages/core/README.md)   |
+| `@anchor-presence/dom`   | Anchor registry, pointer capture, geometry scheduler, resolver.                               | [`packages/dom`](packages/dom/README.md)     |
+| `@anchor-presence/react` | Provider component and hooks, built on `useSyncExternalStore`.                                | [`packages/react`](packages/react/README.md) |
+| `apps/demo`              | React admin dashboard demonstrating cross-layout cursor correctness.                          | [`apps/demo`](apps/demo/README.md)           |
+| `apps/server`            | Bun WebSocket relay for the demo.                                                             | [`apps/server`](apps/server)                 |
 
 ## Features
 

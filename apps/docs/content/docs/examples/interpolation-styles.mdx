@@ -23,7 +23,7 @@ The provider reads `bindingOptions` once, when it creates the binding. The demo 
 
 ## Behavior notes
 
-- The dots behind the cursor show its last path. With `none`, the cursor jumps. With `linear`, it moves in a straight line. With the spring, it overshoots the target a little and comes back.
+- The dots behind the cursor show its last path. The labels `none` and `linear` in the narrow pane select `noneInterpolator` and `linearInterpolator`. With `none`, the cursor jumps. With `linear`, it moves in a straight line. With the spring, it overshoots the target a little and comes back.
 - Select an interpolator in the narrow pane. The next jump uses it.
 - The tour sends only one update per target, so all motion in the narrow pane comes from the interpolator.
 - If your system asks for reduced motion, the narrow pane starts with `none`.

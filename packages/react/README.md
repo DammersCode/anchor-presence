@@ -40,7 +40,7 @@ function App() {
 
 ## Main exports
 
-A peer is another client in the same room.
+The package exports these hooks and components. A peer is another client in the same room.
 
 | Hook or component                            | What it does                                                                                                                      |
 | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
@@ -53,8 +53,10 @@ A peer is another client in the same room.
 | `useCursorClient()`                          | The `PresenceClient` of the provider                                                                                              |
 | `useCursorBinding()`                         | The `DomBinding` of the provider, for example to call `invalidate()`                                                              |
 | `useCursorContext()`                         | `[context, setContext]`                                                                                                           |
+| `useLocalUser()`                             | `[user, setUser]` for the local user value                                                                                        |
 | `useCursorEvents(listener)`                  | Calls `listener` for each one-shot event from a peer                                                                              |
-| `createPresenceHooks()`                      | Returns the provider and every hook with your context and user types fixed                                                        |
+| `usePeerChanges(listener)`                   | Calls `listener` when a peer joins, leaves, or changes its `user` or `context`                                                    |
+| `createPresenceHooks()`                      | Returns the provider and every hook with your context, user, and event types fixed, plus `useSendEvent` for typed events          |
 | `CursorLayer`                                | Optional component that renders every visible remote cursor                                                                       |
 | `DefaultCursor`                              | Optional neutral cursor visual, used by `CursorLayer` by default                                                                  |
 
@@ -70,6 +72,7 @@ Every hook rerenders its component only when the value it returns changes. Pick 
 | `useCursorPresence()`                        | only when the `cursor`, `context`, `user`, `pointer`, `session`, `idle`, or membership of a peer changes |
 | `useCursorStatus()`                          | only when the connection status changes                                                                  |
 | `useCursorContext()`                         | only when the local context value changes                                                                |
+| `useLocalUser()`                             | only when the local user value changes                                                                   |
 
 Two more rules apply:
 
@@ -139,6 +142,9 @@ type MyUser = { name: string; color?: string };
 />;
 ```
 
-`CursorLayer` owns the cursor position and size. A custom style or `renderCursor` cannot change them. Remote user data is untrusted. Check `cursor.user` before you render it.
+`CursorLayer` owns the cursor position and size. A custom style or `renderCursor` cannot change them.
+
+> [!WARNING]
+> If you render `cursor.user`, check it first. A peer sends this data, and it can hold any value.
 
 See the [React guide](https://anchor-presence.vercel.app/docs/react) for the full hook reference, custom interpolation, and more examples.

@@ -1,9 +1,9 @@
 ---
 title: Presence client
-description: createPresenceClient, its lifecycle, events, leave, close reasons, status, publish rate, heartbeat, IDs, and development mode.
+description: createPresenceClient, its lifecycle, events, typed events, the event rate limit, leave, close reasons, status, publish rate, heartbeat, IDs, and development mode.
 ---
 
-`createPresenceClient` builds a `PresenceClient`. A peer is another client in the same room. The client checks and stores the presence of each peer. It publishes your local cursor on a timer. It also sends heartbeats, so that peers keep a still client past their stale timeout.
+`createPresenceClient` builds a `PresenceClient`. A peer is another client in the same room. The client checks and stores the presence of each peer. It publishes your local cursor on a timer. It also sends heartbeats, so that peers keep a client that changes nothing.
 
 ## Create a client
 
@@ -34,9 +34,11 @@ A transport with no `connect` method needs no call in either mode. A `connect()`
 
 Call `client.updateLocalCursor(cursor, pointer?)` to set the local cursor position. A `null` cursor clears it for peers. The client batches updates. It sends the last value on its next publish tick, not on every call.
 
-Call `client.setContext(value)` and `client.setUser(value)` to set the values that the client sends to peers. Both accept `undefined` to clear the value. Read the current local values with `getContext()` and `getUser()`. `client.subscribeContext(listener)` calls `listener` on each `setContext` call that changes the value. The [`useCursorContext`](/docs/react/cursor-context) hook uses it.
+Call `client.setContext(value)` and `client.setUser(value)` to set the values that the client sends to peers. Both accept `undefined` to clear the value. Read the current local values with `getContext()` and `getUser()`.
 
-If you no longer need the client, call `client.dispose()`. `dispose` sends a best-effort leave message and stops every timer. It also calls `transport.disconnect()` when the transport has one. You cannot use a client after `dispose`. Create a new client instead:
+`client.subscribeContext(listener)` calls `listener` on each `setContext` call that changes the value. `client.subscribeUser(listener)` does the same for `setUser`. A call changes the value when `next` is another reference than the current value. The listener receives no argument, so read the value with `getContext()` or `getUser()`. Both methods return a function that removes the listener. The [`useCursorContext`](/docs/react/cursor-context) and [`useLocalUser`](/docs/react/cursor-context#local-user) hooks use them.
+
+To stop the client, call `client.dispose()`. `dispose` sends a best-effort leave message and stops every timer. It also calls `transport.disconnect()` when the transport has one. You cannot use a client after `dispose`. Create a new client instead:
 
 ```ts
 client.dispose();
@@ -75,14 +77,13 @@ The client never stores an event and never sends it again. A peer that is not co
 - The client is disposed.
 - `type` is empty or longer than 64 characters.
 - `data` breaks the field limits.
+- The codec or a synchronous `transport.send` throws.
 
 In all other cases, `sendEvent` gives the message to the transport and returns `true`. `true` does not mean that a peer received the event.
 
-Each receiver limits each sender to a burst of 20 events. The limit refills at 10 events per second. The receiver drops the events above this limit, and the sender still gets `true` for them.
-
 <Callout type="warn">
   If you render `event.data`, check its shape first. `parseUser` and `parseContext` do not apply to events, so
-  a peer can send any JSON within the field limits. Pass `parseEvent` to check or rewrite each event.
+  a peer can send any JSON within the field limits.
 </Callout>
 
 To check events, pass `parseEvent`. It receives each remote event and returns the event to deliver, or `undefined` to drop it. A parser that throws drops the event:
@@ -95,6 +96,63 @@ const client = createPresenceClient({
     const emoji = (event.data as { emoji?: unknown } | undefined)?.emoji;
     return typeof emoji === "string" ? { ...event, data: { emoji: emoji.slice(0, 2) } } : undefined;
   },
+});
+```
+
+### Event rate limit
+
+Each receiver limits the events that it accepts. Pass `eventRateLimit` to change the limits:
+
+```ts
+const client = createPresenceClient({
+  transport: myTransport,
+  eventRateLimit: { burst: 40, perSecond: 20, totalPerSecond: 200 },
+});
+```
+
+| Field            | Default | Limit                                                                |
+| ---------------- | ------- | -------------------------------------------------------------------- |
+| `burst`          | `20`    | The number of events that one sender can send at once.               |
+| `perSecond`      | `10`    | The number of events per second that refill the burst of one sender. |
+| `totalPerSecond` | `100`   | The number of events per second from all senders together.           |
+
+The receiver drops each event above a limit, and the sender still gets `true` for it. Each field is optional. A field that you omit keeps its default.
+
+The total limit stops a peer that sends each event with another `clientId`. Each new `clientId` gets its own burst, but all events share the total limit. The receiver keeps a burst for at most 512 senders. When a new sender arrives after that, the receiver resets the burst of every sender. The limits read the time from the `now` option.
+
+### Typed events
+
+`createEventChannel<TEvents>(client)` gives the events of a client a type. `TEvents` is an `EventMap`: an object type that maps each event type to the type of its `data`. The channel has two methods:
+
+- `send(type, data)` calls `client.sendEvent` and returns its result. A misspelled `type` or a `data` value of the wrong type does not compile. If the `data` type of an event includes `undefined`, `data` is optional.
+- `subscribe(listener)` calls `client.subscribeEvents` and returns a function that removes the listener. The listener receives a `TypedRemoteEvent<TEvents>`. A check of `event.type` narrows `event.data` to the type of that event.
+
+<Callout type="warn">
+  If a peer sends data of another type, the listener still receives it. The channel types only the code that
+  you write, and it does not check remote data. Pass a `parseEvent` that checks the same `EventMap`.
+</Callout>
+
+This sample declares two events, checks them with `parseEvent`, and sends and receives them through a channel:
+
+```ts
+import { createEventChannel, createPresenceClient, type RemoteEvent } from "@anchor-presence/core";
+
+type Events = { reaction: { emoji: string }; ping: undefined };
+
+function parseEvents(event: RemoteEvent): RemoteEvent | undefined {
+  if (event.type === "ping") return { clientId: event.clientId, type: "ping" };
+  const emoji = (event.data as { emoji?: unknown } | undefined)?.emoji;
+  if (event.type !== "reaction" || typeof emoji !== "string") return undefined;
+  return { clientId: event.clientId, type: "reaction", data: { emoji } };
+}
+
+const client = createPresenceClient({ transport, parseEvent: parseEvents });
+const events = createEventChannel<Events>(client);
+
+events.send("reaction", { emoji: "tada" });
+events.send("ping");
+const unsubscribe = events.subscribe((event) => {
+  if (event.type === "reaction") showReaction(event.clientId, event.data.emoji);
 });
 ```
 
@@ -120,7 +178,7 @@ The client gives the listener to the optional `subscribeClose` method of the tra
 
 ## Publish rate
 
-The client publishes the local cursor every `publishIntervalMs`, `50` by default (`DEFAULT_PUBLISH_INTERVAL_MS`). A publish sends a message when a send is pending. An `updateLocalCursor`, `setContext`, or `setUser` call makes a send pending, and so do a reconnect and a new peer. The client does not compare the values, so a call with an equal value also sends a message.
+The client publishes the local cursor every `publishIntervalMs`, `50` by default (`DEFAULT_PUBLISH_INTERVAL_MS`). A publish sends a message when a send is pending. Each `updateLocalCursor` call makes a send pending, and so do a reconnect and a new peer. A `setContext` or `setUser` call makes a send pending only when its value is another reference than the current value. The client does not compare the content, so a new object with equal content also sends a message.
 
 If a send fails while the status is `connected`, the client tries again after 50 ms. Each failure doubles the delay, up to 2 s. If a publish is pending when the page becomes visible again, the client sends it at once.
 
@@ -137,7 +195,7 @@ const client = createPresenceClient({
 
 ## Heartbeat
 
-The client sends a full-state heartbeat every `heartbeatMs`, `10000` by default (`DEFAULT_HEARTBEAT_MS`). It sends the heartbeat even when nothing changed. As a result, peers keep a still client past their stale timeout. See [Remote presence](/docs/core/remote-presence#stale-timeout) for the stale timeout.
+The client sends a full-state heartbeat every `heartbeatMs`, `10000` by default (`DEFAULT_HEARTBEAT_MS`). It sends the heartbeat even when nothing changed. As a result, the stale timeout of a peer does not remove a client that changes nothing. See [Remote presence](/docs/core/remote-presence#stale-timeout) for the stale timeout.
 
 ## IDs
 
@@ -161,20 +219,21 @@ const client = createPresenceClient({
 
 ## Other options
 
-| Option               | Default                       | Effect                                                                                                        |
-| -------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `clientId`           | an ID from `idFactory`        | A stable ID for this client instance.                                                                         |
-| `staleTimeoutMs`     | `DEFAULT_STALE_TIMEOUT_MS`    | Goes to the `RemotePresenceStore` of the client. Minimum `1000`.                                              |
-| `idleAfterMs`        | `DEFAULT_IDLE_AFTER_MS`       | Goes to the store. See [Remote presence](/docs/core/remote-presence#idle-stage).                              |
-| `maxRemoteClients`   | `DEFAULT_MAX_REMOTE_CLIENTS`  | Goes to the store.                                                                                            |
-| `onRemoteClientDrop` | none                          | Runs when the store drops a new `clientId` because the store is full.                                         |
-| `validationLimits`   | the protocol defaults         | Limits for inbound messages. See [Validation](/docs/core/validation#validationlimits).                        |
-| `idFactory`          | 12 random URL-safe characters | Returns a random ID. The client uses it for `clientId` and `session`.                                         |
-| `parseUser`          | the shape check               | Checks the `user` of each remote message. See [Validation](/docs/core/validation#remote-user-and-context).    |
-| `parseContext`       | the shape check               | Checks the `context` of each remote message. See [Validation](/docs/core/validation#remote-user-and-context). |
-| `parseEvent`         | deliver as is                 | Checks, rewrites, or drops each remote event.                                                                 |
-| `now`                | `Date.now`                    | Returns the current time in milliseconds. A test can pass a fake clock.                                       |
-| `scheduler`          | the global timers             | Timer functions for the schedules of the client. A test can pass fake timers.                                 |
+| Option               | Default                       | Effect                                                                                                              |
+| -------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `clientId`           | an ID from `idFactory`        | A stable ID for this client instance.                                                                               |
+| `staleTimeoutMs`     | `DEFAULT_STALE_TIMEOUT_MS`    | Goes to the `RemotePresenceStore` of the client. Minimum `1000`.                                                    |
+| `idleAfterMs`        | `DEFAULT_IDLE_AFTER_MS`       | Goes to the store. See [Remote presence](/docs/core/remote-presence#idle-stage).                                    |
+| `maxRemoteClients`   | `DEFAULT_MAX_REMOTE_CLIENTS`  | Goes to the store.                                                                                                  |
+| `onRemoteClientDrop` | none                          | Runs when the store drops a new `clientId` because the store is full.                                               |
+| `validationLimits`   | the protocol defaults         | Limits for inbound messages. See [Validation](/docs/core/validation#validationlimits).                              |
+| `idFactory`          | 12 random URL-safe characters | Returns a random ID. The client uses it for `clientId` and `session`.                                               |
+| `parseUser`          | the shape check               | Checks the `user` of each remote message. See [Validation](/docs/core/validation#remote-user-and-context).          |
+| `parseContext`       | the shape check               | Checks the `context` of each remote message. See [Validation](/docs/core/validation#remote-user-and-context).       |
+| `parseEvent`         | deliver as is                 | Checks, rewrites, or drops each remote event.                                                                       |
+| `eventRateLimit`     | `20`, `10`, `100`             | Limits the inbound events. See [Event rate limit](#event-rate-limit).                                               |
+| `now`                | `Date.now`                    | Returns the current time in milliseconds. The store and the event rate limit read it. A test can pass a fake clock. |
+| `scheduler`          | the global timers             | Timer functions for the schedules of the client. A test can pass fake timers.                                       |
 
 ## Development mode
 

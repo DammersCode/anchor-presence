@@ -19,8 +19,6 @@ The client runs these steps on each inbound message, in this order:
 
 A codec does not check limits. Its job is to turn bytes into a value and back, without a throw. `validatePresence` checks a decoded value against the protocol limits. It clamps anchor and viewport coordinates into `0` to `1`, and it never throws.
 
-`validatePresence` does not read `maxMessageBytes`. Only the client checks the byte length of a message, before it decodes the message.
-
 ## Use validatePresence directly
 
 `createPresenceClient` calls `validatePresence` for you on every inbound message. If you process presence data outside a `PresenceClient`, call `validatePresence` yourself. One example is a relay that inspects messages.
@@ -57,6 +55,8 @@ function inspect(frame: Uint8Array) {
 | `maxFieldBytes`     | `8192`       | JSON size in bytes of `user`, `context`, or event `data` | Drops the `user` or `context` field. Drops an event message. |
 | `maxFieldDepth`     | `8`          | Nesting depth of `user`, `context`, or event `data`      | Drops the `user` or `context` field. Drops an event message. |
 | `maxMessageBytes`   | `32768`      | Byte length of one encoded message                       | The client drops the message. `validatePresence` ignores it. |
+
+`validatePresence` also checks `pointer`. It keeps a `pointer` with the `type` `mouse`, `pen`, or `touch`, or with no `type`. It drops a `pointer` with any other `type` and keeps the rest of the message.
 
 Pass the limits as the second argument of `validatePresence`, or through `validationLimits` on `createPresenceClient`:
 
@@ -123,6 +123,8 @@ See [Security](/docs/get-started/guides/security#check-the-shape-of-remote-value
 ## Events and leave messages
 
 An event message has a `null` cursor and an `event` field. `validatePresence` drops the whole message when the event `type` is not a string of 1 to `MAX_EVENT_TYPE_LENGTH` characters. It also drops the message when the event `data` breaks `maxFieldBytes` or `maxFieldDepth`. A dropped event never reaches the store as a message that clears the cursor.
+
+`validatePresence` does not check the shape of the event `data`. To check it, pass `parseEvent`. See [Events](/docs/core/presence-client#events).
 
 `validatePresence` keeps `leave: true` only on a message with a `null` cursor.
 

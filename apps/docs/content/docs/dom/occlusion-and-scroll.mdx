@@ -31,7 +31,7 @@ const clippedPointPolicy: VisibilityPolicy = ({ resolution }) =>
   !resolution.pointVisible || resolution.tier === "hidden" ? "hide" : "show";
 ```
 
-For a portal-rendered overlay that must ignore the clipping check for one anchor, write a policy that skips the `pointVisible` test for that anchor's ID.
+A portal-rendered overlay can need to ignore the clipping check for one anchor. For this case, write a policy that skips the `pointVisible` test for the ID of that anchor.
 
 ## Related
 

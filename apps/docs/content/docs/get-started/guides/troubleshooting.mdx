@@ -1,109 +1,128 @@
 ---
 title: Troubleshooting
-description: Common problems and their causes.
+description: Find the cause of a missing, hidden, drifting, or jumping cursor, and read the development warnings.
+icon: life-buoy
 ---
 
-Most cursor problems come from a missing anchor, a connection that is not open, or a layout change that the binding cannot see. Find your symptom below for its causes and the fix.
+import { Box, Gauge, LayoutDashboard, Eye } from "lucide-react";
+
+Most cursor problems have one of three causes: a missing anchor, a connection that is not open, or a layout change that the binding cannot see. Find your symptom below. Read the [development warnings](#development-warnings) in the browser console first, because they name most causes.
 
 ## No cursor at all
 
 If no remote cursor ever appears, do these checks in order:
 
-1. Open the browser console. Read the [development warnings](#development-warnings) of the library.
-2. Show the value of `useCursorStatus()`. If it is not `"connected"`, the transport has no open connection.
-3. Call `client.subscribeClose(listener)` and log the close `code` and `reason`. Find the code in the [close code table](/docs/examples/backends/relay-contract#close-codes).
-4. Open the network panel of the browser developer tools. Select the WebSocket connection and read its frames. If no frames arrive, the relay does not forward the messages of the other client.
-5. Make sure that both clients use the same room and the same codec.
+<Steps>
+<Step>
+
+Open the browser console, and read the warnings with the prefix `[anchor-presence]`.
+
+</Step>
+<Step>
+
+Show the value of `useCursorStatus()`. If it is not `"connected"`, the transport has no open connection.
+
+</Step>
+<Step>
+
+Log the close `code` and `reason` with `client.subscribeClose(listener)`. Find the code in the [close code table](/docs/examples/backends/relay-contract#close-codes).
+
+</Step>
+<Step>
+
+For a WebSocket transport, open the network panel of the browser developer tools, and read the frames of the connection. If no frames arrive, the relay does not forward the messages of the other client.
+
+</Step>
+<Step>
+
+Make sure that both clients use the same room and the same codec.
+
+</Step>
+</Steps>
 
 ## Cursor not visible
 
-Three separate causes produce the same symptom.
+Three causes give the same symptom.
 
-**The anchor is not registered.** The sender's cursor can sit over an element with no matching anchor ID on the receiver. If the fallback chain and the viewport position both miss, the resolution tier is `hidden`. Make sure that sender and receiver render the same non-empty anchor attribute value for the same semantic location.
+**The anchor is not registered.** The sender can point at an element that has no matching anchor ID on the receiver. If the fallback chain and the viewport position both miss, the tier is `hidden`. Make sure that both clients render the same anchor ID for the same element.
 
-**A visibility policy hides it.** A custom `VisibilityPolicy` can return `"hide"` for a tier that otherwise shows. Check the policy in `bindingOptions.resolution.visibilityPolicy` or `DomBindingOptions.resolution.visibilityPolicy`. The default policy hides only the `hidden` tier. Anything else that hides an `anchor` or `viewport` tier cursor is application logic. See [UI context](/docs/get-started/concepts/ui-context).
+**A visibility policy hides it.** A custom policy can return `"hide"` for a cursor that the default policy shows. The default policy hides only the `hidden` tier. Check the policy in `resolution.visibilityPolicy` of the binding options. See [UI context](/docs/get-started/concepts/ui-context).
 
-**The presence is idle or stale.** A peer (another client in the same room) is idle when its presence did not change for `idleAfterMs` (default 15000 ms). A heartbeat that changes nothing does not end idle. `CursorLayer` dims the cursor of an idle peer. The store clamps `idleAfterMs` below `staleTimeoutMs`.
-
-The store removes a client after `staleTimeoutMs` (default 70000 ms) with no message. A sender on a background tab still sends a heartbeat every `heartbeatIntervalMs` (default 10000 ms). A browser can slow the timers of a hidden tab to one run per minute, so a long background period can still expire the entry. Make sure that the sender tab is not fully suspended, and that the transport is connected on both sides.
+**The peer is idle or stale.** A peer is **idle** after `idleAfterMs` (default 15 000 ms) with no change. `CursorLayer` dims an idle cursor. A heartbeat that changes nothing does not end the idle state. A peer is **stale** after `staleTimeoutMs` (default 70 000 ms) with no message, and the store then removes it. A background tab still sends a heartbeat every `heartbeatIntervalMs` (default 10 000 ms). A browser can slow the timers of a hidden tab to one run per minute, so a long background period can still remove the peer.
 
 ## Cursor is outside the window
 
-The resolver also resolves anchors that are scrolled out of view or clipped. `ResolvedCursor.x` and `ResolvedCursor.y` are viewport pixels. To show an edge hint, compare them with the window size:
+The resolver also resolves anchors that are scrolled out of view. `ResolvedCursor.x` and `ResolvedCursor.y` are pixels in the window. To find a cursor outside the window, compare them with the window size:
 
 ```ts
 const offscreen = x < 0 || y < 0 || x > window.innerWidth || y > window.innerHeight;
 ```
 
-See [Off-screen hints](/docs/get-started/guides/offscreen-hints) for a full recipe.
+[Off-screen hints](/docs/get-started/guides/offscreen-hints) shows an arrow at the window edge for each such cursor.
 
 ## Cursor floats over empty space
 
-An anchor can be measurable while an internal scroll container clips it. The resolver sets `pointVisible` to false when the resolved point is outside the clipped area. The default policy still shows the cursor. See [Occlusion and scroll](/docs/dom/occlusion-and-scroll) for a policy that hides these cursors, and for the limits of the check.
+An inner scroll container can clip an anchor that is still measurable. The resolver then sets `pointVisible` to `false`, but the default policy still shows the cursor. [Occlusion and scroll](/docs/dom/occlusion-and-scroll) shows a policy that hides these cursors, and the limits of the check.
 
 ## Cursor drifts
 
-A resolved cursor can slowly move away from its target element. The cause is a moving container that the automatic invalidation signals of the scheduler do not cover.
-
-The built-in signals cover `resize`, `scroll`, `ResizeObserver`, a `MutationObserver` on `document.body`, and CSS transition and animation events. Some layout changes are outside all of these signals. One example is a manual `style.transform` write in a `requestAnimationFrame` loop with no CSS transition. Such a change does not start a new measurement.
-
-After a programmatic layout change that the built-in signals do not cover, call the binding's `invalidate()`:
+A cursor can slowly move away from its element when a container moves without a signal that the scheduler watches. One example is a `style.transform` write in your own `requestAnimationFrame` loop, with no CSS transition. After such a change, call `invalidate()` on the binding:
 
 ```ts
 binding.invalidate("custom-layout-change");
 ```
 
-See [Invalidation signals](/docs/get-started/guides/performance#invalidation-signals) for the full signal list.
+See [Invalidation signals](/docs/get-started/guides/performance#invalidation-signals) for the signals that the scheduler watches.
 
 ## Cursor jumps between two elements
 
-If the pointer crosses a gap with no anchored parent, the fallback chain drops to the viewport position. The viewport position maps to a different spot in a receiver layout that arranges elements differently, so the cursor jumps.
+If the pointer crosses a gap with no anchored parent, the cursor falls back to the viewport position. On a receiver with another layout, that position is at another place, so the cursor jumps. Give the parent container its own anchor, for example `data-anchor="nav"` on a sidebar.
 
-Give the parent container its own anchor, for example `data-anchor="nav"` on a sidebar. A pointer that crosses the gap between two child anchors then resolves against the shared parent, not against the viewport. The live demo uses `data-anchor="nav"` on its sidebar for this reason.
-
-A jump can also occur with no gap: two neighbors in one layout can sit far apart in the other layout. For layout rules that prevent both cases, and a skill that measures them, see [Layout design for presence](/docs/get-started/guides/layout-design).
-
-## Plain HTTP
-
-`createPresenceClient` generates a `clientId` and a `session` value with an `idFactory`. The default factory builds a 12-character ID from 72 random bits of `crypto.getRandomValues()`, which works on plain HTTP too. When `crypto` is missing, it uses a mix of `Date.now()` and `Math.random()`.
-
-For this reason, client creation never throws on plain HTTP. For a specific ID format or an externally issued ID, pass your own `idFactory` or a fixed `clientId` through `PresenceClientOptions`.
+Two neighbors can also be far apart in the other layout. [Layout design for presence](/docs/get-started/guides/layout-design) gives the rules for both cases, and a skill that measures them.
 
 ## Two tabs share one clientId
 
-A `clientId` identifies a client instance, not a user. Two live tabs that share one `clientId` generate two different `session` values, because `session` is random per client instance.
+A `clientId` identifies one client instance, not one user. If two tabs use one `clientId`, each tab ignores the messages of the other, because a client ignores its own `clientId`. A third tab sees one peer whose cursor jumps between the two tabs.
 
-A client ignores every message with its own `clientId`, so the two tabs do not see the cursors of each other. A third tab sees one client. The sequence rule of the receiver treats a session change as a restart, so its cursor jumps between the positions of the two tabs.
+Use the default `clientId`, which is random for each client. Put the identity of the user in the `user` field.
 
-In development, the console warns one time when a client receives its own `clientId` from another session. Give every tab or connection its own `clientId`. The default `clientId` is different for each client. Attach the user identity through the `user` field, and do not reuse a `clientId` across tabs.
+## Plain HTTP
 
-## Development warnings
-
-Outside production builds, the library writes warnings to the console with the prefix `[anchor-presence]`. Production builds write none of them. [`isDevMode()`](/docs/core/presence-client#development-mode) decides which build is a production build.
-
-| Warning                                                 | Cause                                                                                                                                    | How often                |
-| ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
-| A hook or `CursorLayer` runs outside the provider       | A hook or `CursorLayer` has no `LiveCursorProvider` above it. It returns empty data.                                                     | One time                 |
-| The provider got neither `client` nor `factory`         | `LiveCursorProvider` has no client, so it renders without presence.                                                                      | One time                 |
-| The provider got both `binding` and `bindingOptions`    | The provider uses `binding` and ignores `bindingOptions`.                                                                                | One time                 |
-| A client dropped an inbound message                     | A message is larger than `maxMessageBytes`, fails to decode or validate, or a subscriber throws. The warning names the reason.           | One time for each reason |
-| Another client uses the same `clientId`                 | Two tabs share one `clientId`. See [Two tabs share one clientId](#two-tabs-share-one-clientid).                                          | One time                 |
-| `staleTimeoutMs` is at most twice `heartbeatIntervalMs` | A quiet peer expires between two heartbeats. Raise `staleTimeoutMs` or lower `heartbeatIntervalMs`.                                      | One time                 |
-| The relay closed the connection with code N             | The relay closed the WebSocket with a code of `4000` or more. See the [close codes](/docs/examples/backends/relay-contract#close-codes). | On each close            |
-| A message failed to encode or send                      | The codec or `transport.send` threw, for example because `user` or `context` is not plain JSON.                                          | One time for each client |
-
-The client writes more warnings for oversized outbound values and for remote values that fail a check. See [Development mode](/docs/core/presence-client#development-mode).
+The client works on plain HTTP. The default `idFactory` builds each ID from 72 random bits of `crypto.getRandomValues()`. If `crypto` is missing, it uses `Date.now()` and `Math.random()`. For your own ID format, pass `idFactory` or `clientId` to `createPresenceClient`.
 
 ## Tests in jsdom
 
-jsdom has no real layout. `getBoundingClientRect()` always returns zeros unless a test mocks it. `ResizeObserver` and `MutationObserver` can be absent, or behave differently from a real browser.
+jsdom has no layout. `getBoundingClientRect()` returns zeros unless a test mocks it, and `ResizeObserver` can be missing. A jsdom test can check your own logic with mocked rectangles. For wrapping, sidebar states, and element sizes, use a real browser, for example Playwright on Chromium, Firefox, and WebKit. If a behavior is correct in jsdom but wrong in a browser, suspect a jsdom gap first.
 
-A unit test in jsdom can check the logic of your own code with mocked rects. Cross-layout behavior needs a real-browser test, for example with Playwright on Chromium, Firefox, and WebKit. Examples of cross-layout behavior are wrapping, sidebar states, and element-size proportions.
+## Development warnings
 
-If a behavior looks correct in a jsdom test but wrong in the browser, suspect a jsdom gap first. Make sure that the real browser has the observer or CSS feature that the test mocked.
+Outside production builds, the library writes warnings to the console with the prefix `[anchor-presence]`. Production builds write none. [`isDevMode()`](/docs/core/presence-client#development-mode) decides which build is a production build. [Development mode](/docs/core/presence-client#development-mode) lists the warnings of the client in `@anchor-presence/core`. This table lists the warnings of the other packages:
+
+| Package | Warning                                              | Cause and fix                                                                                                                            | How often            |
+| ------- | ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
+| react   | A hook or `CursorLayer` runs outside the provider    | No `LiveCursorProvider` is above it, so it returns empty data. Wrap the tree in the provider.                                            | One time             |
+| react   | The provider got neither `client` nor `factory`      | The provider renders without presence. Pass one of the two props.                                                                        | One time             |
+| react   | The provider got both `binding` and `bindingOptions` | The provider uses `binding` and ignores `bindingOptions`. Pass one of the two props.                                                     | One time             |
+| dom     | Duplicate anchor ID                                  | Two elements use one anchor ID. The newest element wins. See [Duplicate IDs](/docs/dom/anchor-registration#duplicate-ids).               | One time for each ID |
+| dom     | Empty anchor attribute value                         | An element has `data-anchor=""`. The binding ignores it.                                                                                 | One time per element |
+| dom     | The relay closed the connection with code N          | The relay closed the WebSocket with a code of `4000` or more. See the [close codes](/docs/examples/backends/relay-contract#close-codes). | On each close        |
+| dom     | `connect()` after `disconnect()` is a no-op          | After `disconnect()`, a WebSocket transport cannot connect again. Create a new transport.                                                | On each call         |
+| dom     | A BroadcastChannel transport dropped a message       | The client sent while the transport was not connected. Call `connect()` first, or keep the default `autoConnect`.                        | One time             |
+| dom     | Cursor resolution threw (console error)              | A visibility policy or an interpolator threw. The binding keeps the last snapshot and tries again on the next change.                    | On each throw        |
 
 ## Related
 
-- [Performance](/docs/get-started/guides/performance)
-- [Layout design for presence](/docs/get-started/guides/layout-design)
-- [UI context](/docs/get-started/concepts/ui-context)
+<Cards>
+  <Card icon={<LayoutDashboard />} title="Layout design" href="/docs/get-started/guides/layout-design">
+    Layout rules that prevent jumps.
+  </Card>
+  <Card icon={<Gauge />} title="Performance" href="/docs/get-started/guides/performance">
+    The scheduler and its signals.
+  </Card>
+  <Card icon={<Eye />} title="UI context" href="/docs/get-started/concepts/ui-context">
+    Visibility policies.
+  </Card>
+  <Card icon={<Box />} title="Presence client" href="/docs/core/presence-client">
+    Client options, close reasons, and development mode.
+  </Card>
+</Cards>

@@ -1,39 +1,65 @@
 ---
 title: Rerenders
 description: Which hook rerenders when, so you can pick the smallest one for each component.
+icon: gauge
 ---
 
-Each hook in `@anchor-presence/react` rerenders its component only when the value that it returns changes. Pick the hook that returns the smallest value that your component needs. Then an unrelated update does not rerender it.
+import { Activity, Crosshair, Users } from "lucide-react";
+
+Each hook in `@anchor-presence/react` rerenders its component only when the value that it returns changes. Use this page to pick the hook with the smallest value that a component needs. Then an unrelated update does not rerender the component.
+
+## Usage
+
+This badge shows the resolution tier of one peer. It rerenders only when that tier changes, not on every cursor frame:
+
+```tsx
+import { useCallback } from "react";
+import { useRemoteCursorsSelector, type ResolvedCursor } from "@anchor-presence/react";
+
+function TierBadge({ clientId }: { clientId: string }) {
+  const select = useCallback(
+    (cursors: ResolvedCursor[]) => cursors.find((cursor) => cursor.clientId === clientId)?.tier ?? "hidden",
+    [clientId],
+  );
+  const tier = useRemoteCursorsSelector(select);
+  return <span>{tier}</span>;
+}
+```
 
 ## Rerender rules
 
-A peer is another client in the same room. Each hook rerenders by these rules:
+A peer is another client in the same room.
 
-| Hook                                                       | Rerenders when                                                                                           |
-| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| [useRemoteCursors](/docs/react/remote-cursors)             | on every resolved-cursor snapshot, which is every frame while cursors move                               |
-| [useRemoteCursorsSelector](/docs/react/remote-cursors)     | only when its `select` output changes under `isEqual`                                                    |
-| [useRemoteUsers](/docs/react/remote-users)                 | only when the set of peers, or the `user`, `session`, or `idle` field of one peer, changes               |
-| [useRemotePresence](/docs/react/remote-presence)           | only when the `cursor`, `context`, `user`, `pointer`, `session`, `idle`, or membership of a peer changes |
-| [useCursorStatus](/docs/react/connection-status)           | only when the connection status changes                                                                  |
-| [useLocalContext](/docs/react/local-context)               | only when the local context value changes                                                                |
-| [useLocalUser](/docs/react/local-context#local-user)       | only when the local user value changes                                                                   |
-| [usePeerChanges](/docs/react/remote-users#peer-changes)    | never: it calls its listener and returns nothing                                                         |
-| [useCursorEvents](/docs/react/cursor-events)               | never: it calls its listener and returns nothing                                                         |
-| [useCursorClient](/docs/react/api/hooks#usecursorclient)   | when the provider's client or binding instance changes                                                   |
-| [useCursorBinding](/docs/react/api/hooks#usecursorbinding) | when the provider's client or binding instance changes                                                   |
+| Hook                                                                          | Rerenders when                                                                                      |
+| ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| [useRemoteCursors](/docs/react/remote-cursors)                                | a new snapshot of resolved cursors arrives: every frame while cursors move                          |
+| [useRemoteCursorsSelector](/docs/react/remote-cursors#select-a-smaller-value) | its `select` output changes under `isEqual`                                                         |
+| [useRemoteUsers](/docs/react/remote-users)                                    | a peer joins or leaves, or the `user`, `session`, or `idle` field of a peer changes                 |
+| [useRemotePresence](/docs/react/remote-presence)                              | a peer joins or leaves, or its `cursor`, `context`, `user`, `pointer`, `session`, or `idle` changes |
+| [useCursorStatus](/docs/react/connection-status)                              | the connection status changes                                                                       |
+| [useLocalContext](/docs/react/local-context#local-context)                    | the local context value changes                                                                     |
+| [useLocalUser](/docs/react/local-context#local-user)                          | the local user value changes                                                                        |
+| [usePeerChanges](/docs/react/remote-users#peer-changes)                       | never: it calls its listener and returns nothing                                                    |
+| [useCursorEvents](/docs/react/cursor-events)                                  | never: it calls its listener and returns nothing                                                    |
+| [useCursorClient](/docs/react/api/hooks#usecursorclient)                      | the client or the binding of the provider changes                                                   |
+| [useCursorBinding](/docs/react/api/hooks#usecursorbinding)                    | the client or the binding of the provider changes                                                   |
 
-An idle room, with no inbound messages, costs nothing: none of these hooks rerender.
+In an idle room with no inbound messages, no hook rerenders.
 
-## Choose the smallest hook
+## CursorLayer
 
-A component that renders one cursor's position needs `useRemoteCursors`, or better, a `useRemoteCursorsSelector` that selects one client. A component that renders a name list needs `useRemoteUsers`, not `useRemoteCursors`, because a presence list does not care where the cursor sits on screen.
-
-`CursorLayer` already applies this rule. It uses `useRemoteCursorsSelector` internally to skip cursors that `filterCursor` removes. `React.memo` then skips a cursor's row when its resolved values did not change.
+`CursorLayer` follows the same rule. It reads the cursors through `useRemoteCursorsSelector`, so a cursor that `filterCursor` removes causes no render. Each cursor row is memoized, so a row renders again only when its resolved values change. This works only with stable callbacks. See [Keep the callbacks stable](/docs/react/cursor-layer#keep-the-callbacks-stable).
 
 ## Related
 
-- [Remote cursors](/docs/react/remote-cursors)
-- [Remote users](/docs/react/remote-users)
-- [Hooks API](/docs/react/api/hooks)
-- [Performance](/docs/get-started/guides/performance)
+<Cards>
+  <Card icon={<Crosshair />} title="Remote cursors" href="/docs/react/remote-cursors">
+    Select a smaller value from the cursor list.
+  </Card>
+  <Card icon={<Users />} title="Remote users" href="/docs/react/remote-users">
+    A list that ignores cursor moves.
+  </Card>
+  <Card icon={<Activity />} title="Performance" href="/docs/get-started/guides/performance">
+    Costs across the whole stack.
+  </Card>
+</Cards>

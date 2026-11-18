@@ -1,7 +1,10 @@
 ---
 title: Responsive grid
 description: A cursor stays on the same dashboard card when the grid changes from four columns to two.
+icon: layout-grid
 ---
+
+import { BookOpen, MousePointer2, TableProperties } from "lucide-react";
 
 A dashboard grid changes its column count at each breakpoint. Cards move to new rows and change their size. In this demo, the wide pane shows a 4-column grid with cards of mixed sizes. The narrow pane shows the same cards in 2 columns. The remote cursor stays on the same card, and on the same day in the chart.
 
@@ -29,8 +32,32 @@ The scene gets `layout` as a prop, so that the two panes can show different layo
 
 ## Related
 
-- [How wrapping and breakpoints resolve](/docs/get-started/concepts/responsive-layouts#how-wrapping-and-breakpoints-resolve): why the cursor follows a card to its new row.
-- [How element-size differences resolve](/docs/get-started/concepts/responsive-layouts#how-element-size-differences-resolve): how `u` and `v` scale with the card size.
-- [Normalized u/v coordinates](/docs/get-started/concepts/anchors#normalized-uv-coordinates): the position inside an anchor.
-- [Table and cards](/docs/examples/table-and-cards): one record as a table row and as a card.
-- [Basics](/docs/examples/basics): the smallest setup.
+<Cards>
+  <Card
+    icon={<BookOpen />}
+    title="How wrapping and breakpoints resolve"
+    href="/docs/get-started/concepts/responsive-layouts#how-wrapping-and-breakpoints-resolve"
+  >
+    Why the cursor follows a card to its new row.
+  </Card>
+  <Card
+    icon={<BookOpen />}
+    title="How element-size differences resolve"
+    href="/docs/get-started/concepts/responsive-layouts#how-element-size-differences-resolve"
+  >
+    How `u` and `v` scale with the card size.
+  </Card>
+  <Card
+    icon={<BookOpen />}
+    title="Normalized u/v coordinates"
+    href="/docs/get-started/concepts/anchors#normalized-uv-coordinates"
+  >
+    The position inside an anchor.
+  </Card>
+  <Card icon={<TableProperties />} title="Table and cards" href="/docs/examples/table-and-cards">
+    One record as a table row and as a card.
+  </Card>
+  <Card icon={<MousePointer2 />} title="Basics" href="/docs/examples/basics">
+    The smallest setup.
+  </Card>
+</Cards>

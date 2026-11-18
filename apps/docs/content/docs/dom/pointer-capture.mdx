@@ -1,48 +1,79 @@
 ---
 title: Pointer capture
-description: What the binding sends on pointer activity, and when it clears the local cursor.
+description: What the binding sends on pointer and focus activity, and when it clears the local cursor.
+icon: pointer
 ---
 
-The binding listens for pointer events on the document and reports the local cursor position to the presence client on every relevant event.
+import { Anchor, BookOpen, Link } from "lucide-react";
+
+Pointer capture is the part of the binding that turns local pointer events into the local cursor. The binding listens on the document and calls `client.setLocalCursor` on each relevant event. It is on by default. Set `capturePointer: false` for a client that only shows remote cursors.
+
+This binding also sends a cursor for keyboard focus:
+
+```ts
+const binding = createDomBinding(client, { captureFocus: true });
+```
 
 ## What the binding sends
 
-On `pointermove`, `pointerdown`, and `pointerover`, the binding reads the event target, walks its anchor ancestors, and builds a `CursorPosition`:
+On `pointermove`, `pointerdown`, and `pointerover`, the binding reads the event target, walks its anchor ancestors, and builds a `CursorPosition`. It ignores an event whose `isPrimary` is `false`, for example a second finger on a touch screen. The `CursorPosition` has these fields:
 
-- `anchors`: the fallback chain, most specific first, up to `maxAnchors` entries. Each entry carries the anchor ID and the `u`/`v` position inside that anchor's own rectangle.
+- `anchors`: the fallback chain, most specific first, up to `maxAnchors` entries. Each entry carries the anchor ID and the `u`/`v` position inside the rectangle of that anchor. The binding skips an anchor with a zero width or height.
 - `viewport`: the `u`/`v` position across the full window, when the window has a non-zero size.
 
-The chain uses a cached rectangle from the current scheduler frame when one is available, and falls back to a live `getBoundingClientRect()` call otherwise. The cache is at most one frame old.
+The binding rounds each `u` and `v` value to 4 decimal places. It reads each rectangle from the cache of the current frame when one exists, and calls `getBoundingClientRect()` otherwise. The cache is at most one frame old.
 
-The binding also reports the pointer type, one of `mouse`, `pen`, or `touch`, taken from the event's `pointerType`. The binding omits a pointer type that it does not recognize.
+If an element has pointer capture, the event target stays the element where the drag started. In this case, the binding uses the element under the pointer instead, through `document.elementFromPoint`.
+
+The binding also sends the pointer type, `mouse`, `pen`, or `touch`, from the `pointerType` of the event.
+
+<Callout type="warn">
+  If the browser reports another pointer type, the binding sends no new type, and peers keep the last pointer
+  type that they received.
+</Callout>
 
 ## When the cursor clears
 
-The binding sends a `null` cursor position, which hides the local cursor on every receiver, in four cases:
+The binding sends a `null` cursor position, which hides the local cursor on every receiver, in these cases:
 
 - `pointerleave` on the document, when the pointer leaves the browser window.
 - `blur` on the window, when the tab or window loses focus.
-- `pointerup` or `pointercancel` of the last active touch pointer, so a touch cursor does not stay after the finger leaves the screen. The binding tracks every active touch pointer and clears only when the last one lifts.
+- `pointerup` or `pointercancel` of the last active touch pointer. The binding tracks every active touch pointer and clears only when the last one lifts. As a result, a touch cursor does not stay after the finger leaves the screen.
 - `binding.dispose()`, unless you pass `keepLocalCursor: true`. See [Dispose](/docs/dom/binding#dispose).
 
-## When the page hides
-
-On `pagehide`, the binding calls `client.leave()` instead of sending a `null` cursor. Each peer, another client in the same room, removes the whole client at once, not only its cursor. See [Page hide](/docs/dom/binding#page-hide).
+On `pagehide`, the binding calls `client.leave()` instead. Each peer then removes the whole client at once, not only its cursor. See [Page hide](/docs/dom/binding#page-hide).
 
 ## Keyboard focus
 
-By default, the binding ignores keyboard focus. Pass `captureFocus: true` in the binding options to publish a cursor for keyboard users. On `focusin`, the binding publishes a cursor at the center of the focused element. On `focusout`, it clears the cursor when focus leaves the document. The cursor carries no pointer type, because a focus event has none. If the focused element has a zero-size rectangle, the binding publishes no cursor.
+By default, the binding ignores keyboard focus. With `captureFocus: true`, the binding sends a cursor for keyboard users:
+
+- On `focusin`, it sends a cursor at the center of the focused element.
+- On `focusout`, it clears the cursor when focus leaves the document.
+- If the focused element has a zero-size rectangle, it sends no cursor.
+
+<Callout type="warn">
+  If the user used a mouse before, peers show the focus cursor with the mouse pointer type. A focus cursor
+  sends no pointer type of its own.
+</Callout>
 
 ## Event listeners
 
-The binding listens for `pointerover` on the document. `pointerover` bubbles, so one listener on the document covers every element. The binding adds no listener to each anchor.
+The binding adds its listeners to the document and the window, not to each anchor. `pointerover` and `pointermove` bubble, so one listener on the document covers every element.
 
 ## Touch behavior
 
-A touch pointer generates the same `pointermove`, `pointerdown`, and `pointerover` events as a mouse. The binding does not distinguish touch scrolling from touch dragging. An application that needs different behavior for a touch drag filters by pointer type in its own event handling, before the binding sees the event.
+A touch pointer fires the same `pointermove`, `pointerdown`, and `pointerover` events as a mouse. The binding does not separate a touch scroll from a touch drag, and it has no option to ignore touch pointers.
 
 ## Related
 
-- [Anchor registration](/docs/dom/anchor-registration)
-- [Binding](/docs/dom/binding)
-- [Anchors](/docs/get-started/concepts/anchors)
+<Cards>
+  <Card icon={<Anchor />} title="Anchor registration" href="/docs/dom/anchor-registration">
+    The elements that the chain can contain.
+  </Card>
+  <Card icon={<Link />} title="Binding" href="/docs/dom/binding">
+    The `capturePointer` and `captureFocus` options.
+  </Card>
+  <Card icon={<BookOpen />} title="Fallback chain" href="/docs/get-started/concepts/fallback-chain">
+    Why the chain has more than one anchor.
+  </Card>
+</Cards>

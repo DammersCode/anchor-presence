@@ -1,9 +1,12 @@
 ---
 title: Custom codec
 description: Write your own codec with MessagePack, and debug binaryCodec traffic.
+icon: file-code
 ---
 
-If you need a wire format that `jsonCodec` and `binaryCodec` do not cover, write a codec. MessagePack is one example. You can also wrap a codec to log the traffic of `binaryCodec` during development.
+import { Binary, FileDigit } from "lucide-react";
+
+A custom codec is your own `CursorCodec`. Write one when you need a wire format that `jsonCodec` and `binaryCodec` do not cover, for example MessagePack. A codec that wraps another codec also lets you log the traffic of `binaryCodec` during development.
 
 ## MessagePack sketch
 
@@ -27,20 +30,24 @@ export const messagePackCodec: CursorCodec = {
 };
 ```
 
-Wrap every decode call in `try`/`catch`. For a malformed or truncated buffer, `decode` must return `null` and never throw.
+Wrap every decode call in `try`/`catch`. For a malformed or truncated buffer, `decode` must return `null` and never throw. `encode` can throw. If it throws on a message with `user` or `context`, the client encodes the message again without them. If the second encode also throws, the client drops the message.
 
 ## Debug binary traffic
 
-The network tab of the browser DevTools cannot show the content of `binaryCodec` frames. Use one of these two options.
+The network tab of the browser DevTools cannot show the content of `binaryCodec` frames. Use one of these two options:
 
-In the first option, use `jsonCodec` in development and `binaryCodec` in production. The network tab then shows every development message as readable JSON.
+<Tabs items={["Switch the codec", "Wrap the codec"]}>
+  <Tab value="Switch the codec">
+    Use `jsonCodec` in development and `binaryCodec` in production. The network tab then shows every development message as readable JSON.
 
-<Callout type="warn">
-  If a development client and a production client join the same room, each client drops the messages of the
-  other. All clients in a room must use the same codec.
-</Callout>
+    <Callout type="warn">
+      If a development client and a production client join the same room, each client drops the messages of
+      the other. All clients in a room must use the same codec.
+    </Callout>
 
-In the second option, wrap the codec so that it logs every message. This wrapper keeps `binaryCodec` on the wire:
+  </Tab>
+  <Tab value="Wrap the codec">
+    This wrapper logs every message and keeps `binaryCodec` on the wire:
 
 ```ts
 import { binaryCodec, type CursorCodec } from "@anchor-presence/core";
@@ -58,9 +65,18 @@ const debugCodec: CursorCodec = {
 };
 ```
 
+  </Tab>
+</Tabs>
+
 To read one captured frame, call `binaryCodec.decode(new Uint8Array([/* bytes */]))` in the browser console.
 
 ## Related
 
-- [Codecs](/docs/core/codecs)
-- [Binary codec](/docs/core/binary-codec)
+<Cards>
+  <Card icon={<Binary />} title="Codecs" href="/docs/core/codecs">
+    The codec contract and how to choose a codec.
+  </Card>
+  <Card icon={<FileDigit />} title="Binary codec" href="/docs/core/binary-codec">
+    The wire layout of `binaryCodec`.
+  </Card>
+</Cards>

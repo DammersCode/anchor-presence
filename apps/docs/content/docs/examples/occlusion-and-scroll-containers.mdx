@@ -1,7 +1,10 @@
 ---
 title: Occlusion and scroll containers
 description: Hide a cursor whose anchor is scrolled out of its container, and show where it is.
+icon: eye-off
 ---
+
+import { AppWindow, Atom, LifeBuoy, ListTree } from "lucide-react";
 
 An anchor inside a scroll container can exist, with a real size and position, while the container clips it out of view. Without a policy for this case, the cursor floats outside the container. In this demo, the wide pane shows every thread of an inbox. The narrow pane shows the same threads in a short scroll list.
 
@@ -27,9 +30,35 @@ This file renders the scene of the demo:
 
 ## Related
 
-- [How the check works](/docs/dom/occlusion-and-scroll#how-the-check-works): how the resolver finds a clipped point.
-- [Use pointVisible](/docs/dom/occlusion-and-scroll#use-pointvisible): the field that the policy and the hint read.
-- [Write a custom policy](/docs/dom/visibility-policy#write-a-custom-policy): the `VisibilityPolicy` contract.
-- [useRemoteCursors](/docs/react/remote-cursors#useremotecursors): all resolved cursors, visible or not.
-- [Anchors and fallbacks](/docs/examples/anchors-and-fallbacks): an anchor that does not exist on the receiver.
-- [Troubleshooting: cursor floats over empty space](/docs/get-started/guides/troubleshooting#cursor-floats-over-empty-space)
+<Cards>
+  <Card
+    icon={<AppWindow />}
+    title="How the check works"
+    href="/docs/dom/occlusion-and-scroll#how-the-check-works"
+  >
+    How the resolver finds a clipped point.
+  </Card>
+  <Card icon={<AppWindow />} title="Use pointVisible" href="/docs/dom/occlusion-and-scroll#use-pointvisible">
+    The field that the policy and the hint read.
+  </Card>
+  <Card
+    icon={<AppWindow />}
+    title="Write a custom policy"
+    href="/docs/dom/visibility-policy#write-a-custom-policy"
+  >
+    The `VisibilityPolicy` contract.
+  </Card>
+  <Card icon={<Atom />} title="useRemoteCursors" href="/docs/react/remote-cursors#useremotecursors">
+    All resolved cursors, visible or not.
+  </Card>
+  <Card icon={<ListTree />} title="Anchors and fallbacks" href="/docs/examples/anchors-and-fallbacks">
+    An anchor that does not exist on the receiver.
+  </Card>
+  <Card
+    icon={<LifeBuoy />}
+    title="Troubleshooting: cursor floats over empty space"
+    href="/docs/get-started/guides/troubleshooting#cursor-floats-over-empty-space"
+  >
+    The fix when a cursor shows outside its container.
+  </Card>
+</Cards>

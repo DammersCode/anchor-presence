@@ -11,7 +11,6 @@ const config = {
     return [
       { source: "/docs", destination: "/docs/get-started/introduction", permanent: false },
       { source: "/docs/get-started", destination: "/docs/get-started/introduction", permanent: false },
-      { source: "/docs/examples", destination: "/docs/examples/basics", permanent: false },
       { source: "/docs/react/cursor-context", destination: "/docs/react/local-context", permanent: true },
       { source: "/docs/react/cursor-presence", destination: "/docs/react/remote-presence", permanent: true },
     ];

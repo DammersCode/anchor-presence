@@ -1,15 +1,24 @@
 ---
 title: Protocol types
 description: CursorPresence, leave and event messages, PresenceEvent, PeerChange, RemotePresence, and the protocol constants.
+icon: file-code
 ---
 
-`@anchor-presence/core` exports every name below. These types describe the wire protocol that the client checks, stores, and sends.
+import { Code, ShieldCheck, Users } from "lucide-react";
+
+These types describe the wire protocol that the client sends, checks, and stores. `@anchor-presence/core` exports every name on this page. Use the page when you write a relay, a codec, or code that reads raw messages.
+
+```ts
+import type { CursorPresence, RemotePresence } from "@anchor-presence/core";
+```
 
 ## CursorPresence
 
 `CursorPresence` is the wire format of one presence message.
 
 <AutoTypeTable path="../../packages/core/src/protocol.ts" name="CursorPresence" />
+
+A missing `user` or `context` field keeps the previous value of the same session. A `null` value clears it.
 
 ### Leave and event messages
 
@@ -32,49 +41,41 @@ A `PresenceEvent` is a one-shot event that `client.sendEvent` sends.
 
 <AutoTypeTable path="../../packages/core/src/protocol.ts" name="PresenceEvent" />
 
-`RemoteEvent` is a `PresenceEvent` with the `clientId` of the sender added. `client.subscribeEvents` gives a `RemoteEvent` to its listener.
+`RemoteEvent` is a `PresenceEvent` plus the `clientId` of the sender. `client.subscribeEvents` gives a `RemoteEvent` to its listener.
 
 ## PeerChange
 
-A `PeerChange` reports a peer (another client in the same room) that joined, left, or changed its `user` or `context`. `client.subscribePeers` gives a `PeerChange` to its listener. See [Peer changes](/docs/core/remote-presence#peer-changes).
+A `PeerChange` reports a peer that joined, left, or changed its `user` or `context`. A peer is another client in the same room. `client.subscribePeers` gives a `PeerChange` to its listener. See [Peer changes](/docs/core/remote-presence#peer-changes).
 
 <AutoTypeTable path="../../packages/core/src/protocol.ts" name="PeerChange" />
 
 ## AnchorPoint
 
-An `AnchorPoint` is one anchor point in a cursor position. See [Anchors](/docs/get-started/concepts/anchors) for the `u`/`v` fields.
+An `AnchorPoint` is one anchor in a cursor position. See [Anchors](/docs/get-started/concepts/anchors) for the `u` and `v` fields.
 
 <AutoTypeTable path="../../packages/core/src/protocol.ts" name="AnchorPoint" />
 
 ## CursorPosition
 
-A `CursorPosition` is the cursor position inside one presence message. It holds a fallback chain of anchors and an optional viewport fallback.
+A `CursorPosition` is the cursor position inside one presence message. It holds a fallback chain of anchors and an optional viewport position.
 
 <AutoTypeTable path="../../packages/core/src/protocol.ts" name="CursorPosition" />
 
 ## RemotePresence
 
-A `RemotePresence` is a presence message that has no `sequence` field and has an `idle` field. `client.getRemotePresence()` returns an array of this type. `idle` is `true` when the presence did not change for `idleAfterMs`, even while heartbeats arrive. See [How it works](/docs/get-started/concepts/how-it-works) for how this differs from the raw snapshot.
+A `RemotePresence` is a stored presence message without the `sequence` field and with an `idle` field. `client.getRemotePresence()` returns an array of this type. See [Idle stage](/docs/core/remote-presence#idle-stage).
 
 <AutoTypeTable path="../../packages/core/src/protocol.ts" name="RemotePresence" />
 
 ## PointerInfo and PointerType
 
-`PointerInfo` holds optional pointer info that a presence message carries.
+`PointerInfo` holds the optional pointer info of a presence message. `PointerType` is `"mouse" | "pen" | "touch"`.
 
 <AutoTypeTable path="../../packages/core/src/protocol.ts" name="PointerInfo" />
 
-`PointerType` is `"mouse" | "pen" | "touch"`.
-
 ## ConnectionStatus
 
-Import `ConnectionStatus` from `@anchor-presence/core`:
-
-```ts
-import type { ConnectionStatus } from "@anchor-presence/core";
-```
-
-`ConnectionStatus` is `"connecting" | "connected" | "reconnecting" | "disconnected"`. See [Transports](/docs/core/transports) for how a transport reports it.
+`ConnectionStatus` is `"connecting" | "connected" | "reconnecting" | "disconnected"`. See [Connection status](/docs/core/transports#connection-status) for how a transport reports it.
 
 ## Protocol constants
 
@@ -94,12 +95,20 @@ import {
 } from "@anchor-presence/core";
 ```
 
-The `DEFAULT_` constants are the defaults of `ValidationLimits`. See [ValidationLimits](/docs/core/validation#validationlimits) for the field, the value, and the result of each limit.
+The `DEFAULT_` constants are the defaults of `ValidationLimits`. See [ValidationLimits](/docs/core/validation#validationlimits) for the value and the result of each limit.
 
 `MAX_EVENT_TYPE_LENGTH` is `64`, the maximum length of an event `type`. `ValidationLimits` cannot change it.
 
 ## Related
 
-- [Validation](/docs/core/validation)
-- [Remote presence](/docs/core/remote-presence)
-- [Client API](/docs/core/api/client)
+<Cards>
+  <Card icon={<ShieldCheck />} title="Validation" href="/docs/core/validation">
+    The checks that each message must pass.
+  </Card>
+  <Card icon={<Users />} title="Remote presence" href="/docs/core/remote-presence">
+    How the store applies messages.
+  </Card>
+  <Card icon={<Code />} title="Client API" href="/docs/core/api/client">
+    The client that sends these messages.
+  </Card>
+</Cards>

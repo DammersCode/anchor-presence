@@ -1,4 +1,15 @@
 {
   "title": "Backends",
-  "pages": ["index", "relay-contract", "bun-native", "node-ws", "hono", "elysia", "socketio", "signalr"]
+  "icon": "server",
+  "pages": [
+    "index",
+    "relay-contract",
+    "---[radio-tower]Relays---",
+    "bun-native",
+    "node-ws",
+    "hono",
+    "elysia",
+    "socketio",
+    "signalr"
+  ]
 }

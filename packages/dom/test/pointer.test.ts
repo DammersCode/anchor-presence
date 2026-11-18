@@ -94,6 +94,30 @@ describe("attachPointerSource (spec §9)", () => {
     registry = createAnchorRegistry();
   });
 
+  it("ignores a second touch contact and keeps a synthetic mouse event", () => {
+    const el = document.createElement("div");
+    document.body.append(el);
+    mockRect(el, { left: 0, top: 0, width: 100, height: 100 });
+    registry.register("a", el);
+    const { client, samples } = makeClient();
+    const handle = attachPointerSource(client, registry, { maxAnchors: 4 });
+
+    const secondTouch = new Event("pointermove", { bubbles: true });
+    Object.defineProperties(secondTouch, {
+      clientX: { value: 5 },
+      clientY: { value: 5 },
+      pointerType: { value: "touch" },
+      pointerId: { value: 2 },
+      isPrimary: { value: false },
+    });
+    el.dispatchEvent(secondTouch);
+    expect(samples).toHaveLength(0);
+
+    firePointerEvent("pointermove", el, { clientX: 5, clientY: 5, pointerType: "mouse" });
+    expect(samples).toHaveLength(1);
+    handle.detach();
+  });
+
   it("builds a fallback chain from nested anchors, innermost first, computing u/v per anchor", () => {
     const outer = document.createElement("div");
     const inner = document.createElement("div");
@@ -498,7 +522,7 @@ describe("pointer path with the scheduler's rect cache (spec §9/§11, K3)", () 
     expect(cursor?.anchors.map((a) => a.id)).toEqual(["a"]);
     expect(cursor?.anchors[0]?.u).toBeCloseTo(0.5);
     expect(cursor?.anchors[0]?.v).toBeCloseTo(0.5);
-    expect(pointers.at(-1)).toBeUndefined();
+    expect(pointers.at(-1)).toEqual({});
 
     handle.detach();
   });

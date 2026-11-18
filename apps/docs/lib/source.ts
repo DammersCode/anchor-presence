@@ -2,26 +2,21 @@ import { docs } from "collections/server";
 import { loader } from "fumadocs-core/source";
 import type { GeneratedDoc } from "fumadocs-typescript";
 import { createElement } from "react";
-import { Atom, Bot, Box, Compass, FlaskConical, MousePointer } from "lucide-react";
+import { icons } from "lucide-react";
 import { readDocsSource, readExampleSource } from "./read-example-source";
 import { docsContentRoute, docsImageRoute, docsRoute, installPackages } from "./shared";
 import { getTypeGenerator } from "./type-generator";
 
-const icons = {
-  compass: Compass,
-  box: Box,
-  "mouse-pointer": MousePointer,
-  atom: Atom,
-  "flask-conical": FlaskConical,
-  bot: Bot,
-};
+function toPascalCase(name: string): string {
+  return name.replace(/(^|-)([a-z0-9])/gu, (_match, _dash, char: string) => char.toUpperCase());
+}
 
 export const source = loader({
   baseUrl: docsRoute,
   source: docs.toFumadocsSource(),
   icon(icon) {
     if (!icon) return undefined;
-    const Icon = icons[icon as keyof typeof icons];
+    const Icon = icons[toPascalCase(icon) as keyof typeof icons];
     return Icon ? createElement(Icon) : undefined;
   },
 });
@@ -51,6 +46,11 @@ const EXAMPLE_PREVIEW = /<ExamplePreview scene="[^"]+" \/>\n?/g;
 const INSTALL_COMMAND = /<InstallCommand(?: packages="([^"]+)")? \/>/g;
 const MERMAID = /<Mermaid\s+chart="([\s\S]*?)"\s*\/>/g;
 const WARN_CALLOUT = /<Callout type="warn">\s*([\s\S]*?)\s*<\/Callout>/g;
+const LUCIDE_IMPORT = /^import \{[^}]*\} from "lucide-react";\n/gm;
+const CARD = /<Card\b[^>]*?title="([^"]+)"[^>]*?href="([^"]+)"[^>]*>\s*([\s\S]*?)\s*<\/Card>/g;
+const TAB = /<Tab value="([^"]+)">/g;
+const ACCORDION = /<Accordion title="([^"]+)">/g;
+const STRUCTURE_TAGS = /^\s*<\/?(?:Cards|Tabs|Steps|Accordions)\b[^>]*>\s*\n?|<\/?(?:Tab|Step|Accordion)>/gm;
 const FENCE = "```";
 
 function unescapeMdxAttribute(value: string): string {
@@ -91,7 +91,16 @@ async function inlineComponents(markdown: string): Promise<string> {
       return `${FENCE}${lang}\n${code.trimEnd()}\n${FENCE}`;
     })
     .replace(MERMAID, (_tag, chart: string) => `${FENCE}mermaid\n${unescapeMdxAttribute(chart)}\n${FENCE}`)
-    .replace(WARN_CALLOUT, (_tag, body: string) => warningQuote(body));
+    .replace(WARN_CALLOUT, (_tag, body: string) => warningQuote(body))
+    .replace(LUCIDE_IMPORT, "")
+    .replace(
+      CARD,
+      (_tag, title: string, href: string, body: string) =>
+        `- [${title}](${href}): ${body.replaceAll("\n", " ")}`,
+    )
+    .replace(TAB, (_tag, name: string) => `**${name}**\n`)
+    .replace(ACCORDION, (_tag, title: string) => `**${title}**\n`)
+    .replace(STRUCTURE_TAGS, "");
   for (const [tag, path, name] of markdown.matchAll(AUTO_TYPE_TABLE)) {
     const docs = await getTypeGenerator().generateTypeTable({ path, name });
     out = out.replace(tag, docs.map(typeTableMarkdown).join("\n\n"));

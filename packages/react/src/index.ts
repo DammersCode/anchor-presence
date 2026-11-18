@@ -8,11 +8,12 @@ export type { LiveCursorContextValue } from "./context.js";
 
 export { useCursorBinding } from "./hooks/use-cursor-binding.js";
 export { useCursorClient } from "./hooks/use-cursor-client.js";
-export { useLocalContext } from "./hooks/use-cursor-context.js";
+export { useLocalContext } from "./hooks/use-local-context.js";
 export { useCursorEvents } from "./hooks/use-cursor-events.js";
+export { useSendEvent } from "./hooks/use-send-event.js";
 export { useLocalUser } from "./hooks/use-local-user.js";
 export { usePeerChanges } from "./hooks/use-peer-changes.js";
-export { useRemotePresence } from "./hooks/use-cursor-presence.js";
+export { useRemotePresence } from "./hooks/use-remote-presence.js";
 export { useCursorStatus } from "./hooks/use-cursor-status.js";
 export { useRemoteCursors, useRemoteCursorsSelector } from "./hooks/use-remote-cursors.js";
 export { useRemoteUsers } from "./hooks/use-remote-users.js";

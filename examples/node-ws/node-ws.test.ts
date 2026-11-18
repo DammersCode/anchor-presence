@@ -1,5 +1,7 @@
 import { createPresenceClient, type PresenceClient } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
+import { spawn } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   closeCode,
@@ -7,6 +9,7 @@ import {
   openUnresponsivePeer,
   type UnresponsivePeer,
 } from "../_shared/relay-test-helpers";
+import { slowPeerAction } from "../_shared/relay-guard";
 import { createNodeWsRelay } from "./server";
 
 describe("node-ws relay integration", () => {
@@ -303,4 +306,68 @@ describe("node-ws relay with refused sockets that never close", () => {
       await relay.close();
     }
   });
+});
+
+describe("node-ws relay slow-peer policy", () => {
+  it("classifies slow-peer actions with skip hysteresis", () => {
+    expect(slowPeerAction(0, false, 64, 192, 32)).toBe("send");
+    expect(slowPeerAction(64, false, 64, 192, 32)).toBe("send");
+    expect(slowPeerAction(65, false, 64, 192, 32)).toBe("skip");
+    expect(slowPeerAction(128, true, 64, 192, 32)).toBe("skip");
+    expect(slowPeerAction(192, true, 64, 192, 32)).toBe("skip");
+    expect(slowPeerAction(31, true, 64, 192, 32)).toBe("send");
+    expect(slowPeerAction(32, true, 64, 192, 32)).toBe("skip");
+    expect(slowPeerAction(0, true, 64, 192, 32)).toBe("send");
+    expect(slowPeerAction(193, false, 64, 192, 32)).toBe("close");
+    expect(slowPeerAction(193, true, 64, 192, 32)).toBe("close");
+    expect(slowPeerAction(4096, true, 64, 192, 32)).toBe("close");
+  });
+});
+
+describe("node-ws relay shutdown", () => {
+  it("closes while a client is still connected", async () => {
+    const relay = await createNodeWsRelay(0);
+    const client = new WebSocket(`${relay.url.replace(/^http/u, "ws")}/?room=r`);
+    await opened(client);
+    const started = Date.now();
+    await relay.close();
+    expect(Date.now() - started).toBeLessThan(2500);
+    await vi.waitFor(() => expect(client.readyState).toBe(WebSocket.CLOSED), { timeout: 2000, interval: 25 });
+  });
+});
+
+describe("node-ws relay entry file", () => {
+  it.skipIf(process.versions.bun !== undefined)(
+    "runs under Node with type stripping and relays a frame",
+    async () => {
+      const child = spawn(process.execPath, ["relay.ts"], {
+        cwd: fileURLToPath(new URL(".", import.meta.url)),
+        env: { ...process.env, PORT: "0" },
+        stdio: ["ignore", "pipe", "inherit"],
+        windowsHide: true,
+      });
+      try {
+        const url = await new Promise<string>((resolve, reject) => {
+          child.once("exit", (code) => reject(new Error(`relay exited with ${code}`)));
+          child.stdout.on("data", (chunk: Buffer) => {
+            const match = /listening on (\S+)/u.exec(chunk.toString());
+            if (match?.[1] !== undefined) resolve(match[1].replace(/^http/u, "ws"));
+          });
+        });
+        const sender = new WebSocket(`${url}/?room=r`);
+        const receiver = new WebSocket(`${url}/?room=r`);
+        await Promise.all([opened(sender), opened(receiver)]);
+        const received = new Promise<string>((resolve) => {
+          receiver.addEventListener("message", (event) => resolve(String(event.data)), { once: true });
+        });
+        sender.send(JSON.stringify({ hello: "node" }));
+        expect(await received).toBe('{"hello":"node"}');
+        sender.close();
+        receiver.close();
+      } finally {
+        child.kill();
+      }
+    },
+    15_000,
+  );
 });

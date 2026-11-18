@@ -1,46 +1,64 @@
 ---
 title: Anchor registration
-description: How an element becomes an anchor, the data-anchor attribute, and duplicate IDs.
+description: How an element becomes an anchor, the data-anchor attribute, duplicate IDs, and the shadow DOM limit.
+icon: anchor
 ---
 
-An anchor is a DOM element that the binding measures and places cursors on. The binding registers and unregisters anchors on its own. An application never calls a register function.
+import { BookOpen, Link, Pointer } from "lucide-react";
+
+An anchor is a DOM element that the binding measures and places cursors on. The binding registers and unregisters anchors on its own: you mark an element with an attribute, and the binding finds it. Read this page to choose anchor IDs and to know which elements the binding can find.
 
 ## The anchor attribute
 
-An element becomes an anchor the moment it has a non-empty value for the configured attribute. The default attribute is `data-anchor`:
+An element becomes an anchor when it has a non-empty value for the anchor attribute. The value is the anchor ID. The default attribute is `data-anchor`:
 
 ```html
 <button data-anchor="nav.dashboard">Dashboard</button>
 ```
 
-Set `anchorAttribute` in `DomBindingOptions` to use a different attribute name. The name must start with a letter and contain only letters and digits, with single hyphens between groups. For any other name, `createDomBinding` throws a `TypeError`.
+The binding trims spaces at the start and the end of the value. Set `anchorAttribute` in `DomBindingOptions` to use another attribute name. The name must start with a letter and contain only letters and digits, with single hyphens between groups. For any other name, `createDomBinding` throws a `TypeError`.
 
 ## Auto-registration
 
-The binding watches the document with a `MutationObserver`. The observer watches the `environment.root` that you pass, or the global `document` by default. The observer tracks:
+The binding watches the root with a `MutationObserver`. The root is the `environment.root` that you pass, or the global `document`. The binding reacts to these changes:
 
-- New elements added anywhere under the root, including nested elements with the anchor attribute.
-- Removed elements, which unregister their anchor.
-- Changes to the anchor attribute's value on an existing element.
+- A new element anywhere under the root, including nested elements with the anchor attribute.
+- A removed element, which unregisters its anchor.
+- A change of the anchor attribute on an existing element.
 
-You call no registration or cleanup function. A framework that mounts and unmounts elements, such as React, keeps the anchor map in sync through this observer alone.
+You call no registration or cleanup function. A framework that mounts and unmounts elements, such as React, keeps the anchors in sync through this observer alone.
 
 ## Empty values
 
-A blank or whitespace-only attribute value does not register an anchor. In development mode, the binding warns one time for each element that has such a value.
+A blank or whitespace-only value does not register an anchor. In development mode, the binding warns one time for each element that has such a value.
 
 ## Duplicate IDs
 
-If two elements register the same anchor ID, the newest registration wins. In development mode, the registry warns one time for each duplicate ID.
+If two elements register the same anchor ID, the newest registration wins. In development mode, the binding warns one time for each duplicate ID. When the newest element unmounts, the older element with the same ID becomes the anchor again.
 
 A new element can mount before the old element with the same ID unmounts. Examples are React Strict Mode and a virtualized list that swaps rows. The rule "the newest registration wins" gives the same result every time in that case.
 
 ## Shadow DOM
 
-The anchor ancestor walk crosses open shadow boundaries. An anchor inside a shadow root still resolves as an ancestor of a pointer target in that shadow tree.
+The binding registers only elements in the light DOM of the root. It does not look inside shadow roots, so an element with the anchor attribute inside a shadow root never becomes an anchor.
+
+The walk from a pointer target to its anchors crosses open shadow boundaries. As a result, a pointer target inside an open shadow root still finds the anchors on its shadow host and above it.
+
+<Callout type="warn">
+  If a web component holds the elements that you want to anchor, put the anchor attribute on the host element.
+  An anchor attribute inside its shadow root has no effect.
+</Callout>
 
 ## Related
 
-- [Binding](/docs/dom/binding)
-- [Pointer capture](/docs/dom/pointer-capture)
-- [Anchors](/docs/get-started/concepts/anchors)
+<Cards>
+  <Card icon={<Link />} title="Binding" href="/docs/dom/binding">
+    The options that control registration.
+  </Card>
+  <Card icon={<Pointer />} title="Pointer capture" href="/docs/dom/pointer-capture">
+    How the binding builds the chain of anchors.
+  </Card>
+  <Card icon={<BookOpen />} title="Anchors" href="/docs/get-started/concepts/anchors">
+    How to choose good anchor IDs.
+  </Card>
+</Cards>

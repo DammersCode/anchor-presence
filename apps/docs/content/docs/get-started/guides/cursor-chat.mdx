@@ -1,11 +1,14 @@
 ---
 title: Cursor chat
 description: Type a short message next to your cursor and show it next to your cursor on every peer's screen.
+icon: message-square-text
 ---
 
-Users on one page want to say a few words without a separate chat panel. Cursor chat puts a short text bubble next to the cursor. The local user presses `/`, types a message and presses Enter. The client sends the text as a one-shot event with `client.sendEvent("chat", { text })`.
+import { Box, Footprints, MousePointer, ShieldCheck, Zap } from "lucide-react";
 
-A peer is another client in the same room. Each peer receives the event through `useCursorEvents` and shows the text as the label of the sender's remote cursor. After 5 seconds, the bubble disappears on both sides.
+Users on one page want to say a few words without a separate chat panel. Cursor chat puts a short text bubble next to the cursor. The local user presses `/`, types a message, and presses Enter. The client sends the text as a one-shot event with `client.sendEvent("chat", { text })`.
+
+Each peer receives the event through `useCursorEvents` and shows the text as the label of the remote cursor of the sender. After 5 seconds, the bubble disappears on both sides.
 
 ## Read and cap the text
 
@@ -187,9 +190,20 @@ export function ChatApp({ client }: { client: PresenceClient<unknown, User> }) {
 
 ## Related
 
-- [Cursor events](/docs/react/cursor-events)
-- [Remote cursors](/docs/react/remote-cursors)
-- [CursorLayer](/docs/react/cursor-layer)
-- [Presence client](/docs/core/presence-client)
-- [Security](/docs/get-started/guides/security)
-- [Follow mode](/docs/get-started/guides/follow-mode)
+<Cards>
+  <Card icon={<Zap />} title="Cursor events" href="/docs/react/cursor-events">
+    Send and receive one-shot events in React.
+  </Card>
+  <Card icon={<MousePointer />} title="CursorLayer" href="/docs/react/cursor-layer">
+    Labels, colors, and the `getLabel` prop.
+  </Card>
+  <Card icon={<Box />} title="Presence client" href="/docs/core/presence-client#events">
+    The event API and its rate limit.
+  </Card>
+  <Card icon={<ShieldCheck />} title="Security" href="/docs/get-started/guides/security">
+    Render peer text as text.
+  </Card>
+  <Card icon={<Footprints />} title="Follow mode" href="/docs/get-started/guides/follow-mode">
+    Follow the cursor of one peer.
+  </Card>
+</Cards>

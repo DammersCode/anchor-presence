@@ -1,9 +1,12 @@
 ---
 title: Follow mode
 description: Follow the cursor of one peer and scroll its anchor into view.
+icon: footprints
 ---
 
-In a long page, a user wants to see what another user looks at. A peer is another client in the same room. Follow mode makes one client, the follower, track the cursor of a peer, the leader. When the leader's cursor leaves the follower's window, the follower's page scrolls the leader's anchor into view. Follow mode stops when the follower scrolls, when the follower presses Escape, or when the leader leaves the room. The recipe uses only public APIs: `useRemoteCursorsSelector`, `ResolvedCursor`, `element.scrollIntoView` and `client.subscribePeers`.
+import { Crosshair, Gauge, LocateFixed, MousePointer, Users } from "lucide-react";
+
+In a long page, a user wants to see what another user looks at. Follow mode makes one client, the follower, track the cursor of a peer, the leader. When the leader's cursor leaves the follower's window, the follower's page scrolls the leader's anchor into view. Follow mode stops when the follower scrolls, when the follower presses Escape, or when the leader leaves the room. The recipe uses only public APIs: `useRemoteCursorsSelector`, `ResolvedCursor`, `element.scrollIntoView` and `client.subscribePeers`.
 
 ## Find the target
 
@@ -144,8 +147,20 @@ export function FollowApp({ client }: { client: PresenceClient<unknown, User> })
 
 ## Related
 
-- [Remote cursors](/docs/react/remote-cursors)
-- [Remote users](/docs/react/remote-users)
-- [Resolution](/docs/dom/resolution)
-- [Rerenders](/docs/react/rerenders)
-- [Off-screen hints](/docs/get-started/guides/offscreen-hints)
+<Cards>
+  <Card icon={<MousePointer />} title="Remote cursors" href="/docs/react/remote-cursors">
+    `useRemoteCursors` and `useRemoteCursorsSelector`.
+  </Card>
+  <Card icon={<Users />} title="Remote users" href="/docs/react/remote-users">
+    List the peers in the room.
+  </Card>
+  <Card icon={<Crosshair />} title="Resolution" href="/docs/dom/resolution">
+    The fields of `ResolvedCursor`.
+  </Card>
+  <Card icon={<Gauge />} title="Rerenders" href="/docs/react/rerenders">
+    Why a selector keeps rerenders low.
+  </Card>
+  <Card icon={<LocateFixed />} title="Off-screen hints" href="/docs/get-started/guides/offscreen-hints">
+    Show an arrow for each cursor outside the window.
+  </Card>
+</Cards>

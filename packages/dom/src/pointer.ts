@@ -105,6 +105,8 @@ export function attachPointerSource(
   const activeTouchPointers = new Set<number>();
 
   function onPointerEvent(event: PointerEvent): void {
+    // a synthetic mouse event reports isPrimary false, so only a second touch or pen contact is skipped
+    if (event.pointerType !== "mouse" && "isPrimary" in event && !event.isPrimary) return;
     const target = pointerTarget(event);
     if (target === null) return;
     if (event.pointerType === "touch") activeTouchPointers.add(event.pointerId);
@@ -138,7 +140,7 @@ export function attachPointerSource(
       win,
       getCachedRect,
     );
-    client.setLocalCursor(position);
+    client.setLocalCursor(position, {});
   }
 
   function onFocusOut(): void {

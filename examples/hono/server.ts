@@ -1,7 +1,7 @@
 // Hono on Bun with hono/bun's upgradeWebSocket. On plain Node, use @hono/node-ws instead.
+import type { ServerWebSocket } from "bun";
 import { Hono } from "hono";
 import { upgradeWebSocket, websocket } from "hono/bun";
-import type { WSContext } from "hono/ws";
 import {
   allowedOriginsFromEnv,
   ConnectionLimits,
@@ -13,7 +13,6 @@ import {
   bindIdentity,
   newConnectionId,
   parseRoom,
-  slowPeerAction,
   safeAuthCheck,
   tokenAuthCheck,
   type AuthCheck,
@@ -27,28 +26,20 @@ export type HonoRelayOptions = {
   maxSockets?: number;
   /** Seconds without a message or a pong before Bun closes the socket. Bun sends a ping before it closes. */
   idleTimeoutSeconds?: number;
-  slowPeerSoftBytes?: number;
-  slowPeerHardBytes?: number;
-  slowPeerResumeBytes?: number;
   allowedOrigins?: Set<string>;
   /** Auth hook placeholder: verify a token query param. Default accepts every token. */
   authCheck?: AuthCheck;
 };
 
-type RawSocket = { readyState: number; getBufferedAmount(): number };
-
 const AUTH_REJECTED_CODE = 4006;
 const ORIGIN_REJECTED_CODE = 4004;
 const ROOM_FULL_CODE = 4001;
 const SERVER_FULL_CODE = 4002;
-const SLOW_PEER_CODE = 4003;
-const OPEN = 1;
-
-type RoomEntry = { ws: WSContext; raw: RawSocket };
 
 /**
- * Creates a Hono relay on Bun. Rooms are `Set<RoomEntry>` maps keyed by the raw Bun socket:
- * hono wraps every event in a fresh `WSContext`, so `ws.raw` (not `ws` itself) is the stable identity.
+ * Creates a Hono relay on Bun. Rooms are Bun pub-sub topics on `ws.raw`, the Bun socket under Hono's `WSContext`.
+ * Bun closes a receiver whose buffer passes `RELAY_SLOW_PEER_HARD_BYTES` but cannot skip a send for it;
+ * see the README for the tradeoff.
  */
 export function createHonoRelay(port: number, options: HonoRelayOptions = {}) {
   const maxMessageBytes = options.maxMessageBytes ?? limitFromEnv(process.env.MAX_MESSAGE_BYTES, 32 * 1024);
@@ -59,18 +50,11 @@ export function createHonoRelay(port: number, options: HonoRelayOptions = {}) {
   const maxSockets = options.maxSockets ?? limitFromEnv(process.env.RELAY_MAX_TOTAL_SOCKETS, 10_000);
   const idleTimeoutSeconds =
     options.idleTimeoutSeconds ?? limitFromEnv(process.env.RELAY_IDLE_TIMEOUT_SECONDS, 60);
-  const slowPeerSoftBytes =
-    options.slowPeerSoftBytes ?? limitFromEnv(process.env.RELAY_SLOW_PEER_SOFT_BYTES, 1024 * 1024);
-  const slowPeerHardBytes =
-    options.slowPeerHardBytes ?? limitFromEnv(process.env.RELAY_SLOW_PEER_HARD_BYTES, 8 * 1024 * 1024);
-  const slowPeerResumeBytes =
-    options.slowPeerResumeBytes ?? limitFromEnv(process.env.RELAY_SLOW_PEER_RESUME_BYTES, 512 * 1024);
+  const slowPeerHardBytes = limitFromEnv(process.env.RELAY_SLOW_PEER_HARD_BYTES, 8 * 1024 * 1024);
   const allowedOrigins = options.allowedOrigins ?? allowedOriginsFromEnv(process.env.RELAY_ALLOWED_ORIGINS);
   const authCheck = safeAuthCheck(options.authCheck ?? tokenAuthCheck(process.env.RELAY_AUTH_TOKEN ?? ""));
 
-  const rooms = new Map<string, Set<RoomEntry>>();
   const limits = new ConnectionLimits(maxSockets, maxRoomSockets);
-  const skipped = new WeakMap<RawSocket, boolean>();
 
   const app = new Hono();
 
@@ -96,7 +80,6 @@ export function createHonoRelay(port: number, options: HonoRelayOptions = {}) {
 
       return {
         onOpen(_evt, ws) {
-          const raw = ws.raw as RawSocket;
           if (!originAllowed(allowedOrigins, origin)) {
             ws.close(ORIGIN_REJECTED_CODE, "origin not allowed");
             return;
@@ -114,15 +97,11 @@ export function createHonoRelay(port: number, options: HonoRelayOptions = {}) {
             ws.close(admission === "server full" ? SERVER_FULL_CODE : ROOM_FULL_CODE, admission);
             return;
           }
-          const sockets = rooms.get(room) ?? new Set<RoomEntry>();
-          sockets.add({ ws, raw });
-          rooms.set(room, sockets);
           admitted = true;
+          (ws.raw as ServerWebSocket).subscribe(room);
         },
         onMessage(evt, ws) {
           if (!admitted) return;
-          const sockets = rooms.get(room);
-          if (!sockets) return;
           if (!rateLimiter.tryConsume()) return;
 
           const data = evt.data;
@@ -139,40 +118,12 @@ export function createHonoRelay(port: number, options: HonoRelayOptions = {}) {
             if (bound === null) return;
             outgoing = bound;
           }
-
-          const senderRaw = ws.raw as RawSocket;
-          for (const peer of sockets) {
-            if (peer.raw === senderRaw || peer.raw.readyState !== OPEN) continue;
-            const bufferedAmount = peer.raw.getBufferedAmount();
-            const action = slowPeerAction(
-              bufferedAmount,
-              skipped.get(peer.raw) ?? false,
-              slowPeerSoftBytes,
-              slowPeerHardBytes,
-              slowPeerResumeBytes,
-            );
-            if (action === "close") {
-              peer.ws.close(SLOW_PEER_CODE, "slow peer");
-              continue;
-            }
-            skipped.set(peer.raw, action === "skip");
-            if (action === "skip") continue;
-            peer.ws.send(outgoing);
-          }
+          // the raw socket's publish (not server.publish) excludes the sender from the topic fan-out
+          (ws.raw as ServerWebSocket).publish(room, outgoing);
         },
-        onClose(_evt, ws) {
-          const sockets = rooms.get(room);
-          if (!sockets) return;
-          const raw = ws.raw as RawSocket;
-          for (const peer of sockets) {
-            if (peer.raw === raw) {
-              sockets.delete(peer);
-              skipped.delete(peer.raw);
-              limits.release(room);
-              break;
-            }
-          }
-          if (sockets.size === 0) rooms.delete(room);
+        onClose() {
+          if (admitted) limits.release(room);
+          admitted = false;
         },
       };
     }),
@@ -186,6 +137,8 @@ export function createHonoRelay(port: number, options: HonoRelayOptions = {}) {
       idleTimeout: idleTimeoutSeconds,
       sendPings: true,
       maxPayloadLength: Math.max(maxMessageBytes * 4, 1024 * 1024),
+      backpressureLimit: slowPeerHardBytes,
+      closeOnBackpressureLimit: true,
     },
   });
 

@@ -43,8 +43,8 @@ type ConnectionState = {
 
 /**
  * Creates an Elysia relay on Bun. Rooms are Elysia/Bun pub-sub topics, `ws.publish` excludes the
- * sender. Bun's pub-sub gives no per-subscriber buffered-amount, so this example has no slow-peer
- * backpressure; see the README for the tradeoff.
+ * sender. Bun closes a receiver whose buffer passes `RELAY_SLOW_PEER_HARD_BYTES` but cannot skip a
+ * send for it; see the README for the tradeoff.
  */
 export function createElysiaRelay(port: number, options: ElysiaRelayOptions = {}) {
   const maxMessageBytes = options.maxMessageBytes ?? limitFromEnv(process.env.MAX_MESSAGE_BYTES, 32 * 1024);

@@ -1,5 +1,5 @@
 import { jsonCodec } from "./codec.js";
-import { createOversizedWarning, isDevMode, warnOnce } from "./internal/dev-warnings.js";
+import { createOversizedWarning, isDevMode, reportListenerError, warnOnce } from "./internal/dev-warnings.js";
 import { defaultIdFactory } from "./internal/ids.js";
 import { wireInbound } from "./internal/ingest.js";
 import { startLiveness } from "./internal/liveness.js";
@@ -121,7 +121,7 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     ...(staleTimeoutMs !== undefined ? { staleTimeoutMs } : {}),
     ...(idleAfterMs !== undefined ? { idleAfterMs } : {}),
     now,
-    onDropNewClient: () => {
+    onDropNewClient: (droppedClientId) => {
       if (devMode && !warnedAboutRemoteCap) {
         warnedAboutRemoteCap = true;
         console.warn(
@@ -129,7 +129,7 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
         );
       }
       try {
-        options.onRemoteClientDropped?.();
+        options.onRemoteClientDropped?.({ clientId: droppedClientId });
       } catch {
         // a throwing callback must not break the inbound pipeline
       }
@@ -266,8 +266,8 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
       for (const listener of state.contextListeners) {
         try {
           listener();
-        } catch {
-          // one throwing listener must not starve the rest
+        } catch (error) {
+          reportListenerError(error);
         }
       }
     },
@@ -293,8 +293,8 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
       for (const listener of state.userListeners) {
         try {
           listener();
-        } catch {
-          // one throwing listener must not starve the rest
+        } catch (error) {
+          reportListenerError(error);
         }
       }
     },

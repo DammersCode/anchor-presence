@@ -31,13 +31,21 @@ async function check(name: string, relay: { url: string; close: () => Promise<vo
   a.setLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
   await waitFor(() => b.getRemoteSnapshot().length === 1, `${name} delivery`);
   for (const client of clients) client.dispose();
-  await relay.close();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const closed = await Promise.race([
+    relay.close().then(() => true),
+    new Promise<false>((resolve) => {
+      timer = setTimeout(() => resolve(false), 5000);
+    }),
+  ]);
+  clearTimeout(timer);
+  if (!closed) throw new Error(`timed out: ${name} close`);
   console.log(`ok: ${name} relay under ${typeof Bun === "undefined" ? "node" : "bun"}`);
 }
 
 try {
-  await check("node-ws", await createNodeWsRelay(0));
   await check("bun-native", createBunRelay(0));
+  await check("node-ws", await createNodeWsRelay(0));
   process.exit(0);
 } catch (error) {
   console.error(error);

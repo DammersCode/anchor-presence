@@ -1,25 +1,27 @@
 ---
 title: Overview
 description: What @anchor-presence/react provides and how to add it to a React app.
+icon: info
 ---
 
-`@anchor-presence/react` adapts a presence client to React. It provides one provider that creates and shares the client, and two optional components to render cursors. It holds no state of its own. Every hook subscribes to the `@anchor-presence/core` client and the `@anchor-presence/dom` binding with `useSyncExternalStore`.
+import {
+  Braces,
+  Factory,
+  MousePointer2,
+  Paintbrush,
+  Plug,
+  Rocket,
+  Server,
+  Users,
+  Wifi,
+  Zap,
+} from "lucide-react";
 
-## What you get
-
-A peer is another client in the same room. The package gives you these exports:
-
-| Export                                                   | Purpose                                                                                         |
-| -------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| [`LiveCursorProvider`](/docs/react/live-cursor-provider) | creates the client through `factory` and shares it with its DOM binding                         |
-| [`CursorLayer`](/docs/react/cursor-layer)                | renders every visible remote cursor                                                             |
-| Hooks under [Hooks](/docs/react/remote-cursors)          | read cursors, users, peer changes, context, the local user, status, the client, and the binding |
-| [`useCursorEvents`](/docs/react/cursor-events)           | receives one-shot events from peers                                                             |
-| [`createPresenceHooks`](/docs/react/typed-hooks)         | returns the provider and the hooks with your types fixed                                        |
+`@anchor-presence/react` connects a presence client to React. Use it in a React app that shows the cursors of other users. It gives you one provider, hooks that read presence data, and two components that draw cursors. A peer is another client in the same room.
 
 ## Minimal setup
 
-This example connects to a WebSocket relay and renders remote cursors:
+This app connects to a WebSocket relay and renders the cursors of every peer:
 
 ```tsx
 import { createPresenceClient } from "@anchor-presence/core";
@@ -41,11 +43,64 @@ function App() {
 }
 ```
 
-Before the factory runs, the provider renders its children with no cursors. The tree stays safe during that gap and during server rendering. For when the factory runs, see [Create the client](/docs/react/client-creation). See [Quick start](/docs/get-started/quick-start) for the full walkthrough, including the anchor markup.
+Until the factory runs, the provider renders its children with no cursors. For the anchor markup and the relay, follow the [Quick start](/docs/get-started/quick-start).
+
+## Set up
+
+<Cards>
+  <Card icon={<Plug />} title="LiveCursorProvider" href="/docs/react/live-cursor-provider">
+    Share one client and its DOM binding with the tree.
+  </Card>
+  <Card icon={<Factory />} title="Create the client" href="/docs/react/client-creation">
+    Let the provider own the client, or pass a client that you own.
+  </Card>
+  <Card icon={<Server />} title="SSR and Strict Mode" href="/docs/react/ssr-and-strict-mode">
+    Render on the server and in development without a second client.
+  </Card>
+</Cards>
+
+## Render cursors
+
+<Cards>
+  <Card icon={<MousePointer2 />} title="CursorLayer" href="/docs/react/cursor-layer">
+    Draw every visible remote cursor with a label and a color.
+  </Card>
+  <Card icon={<Paintbrush />} title="Custom cursors" href="/docs/react/custom-cursors">
+    Replace the cursor content or style the default arrow.
+  </Card>
+</Cards>
+
+## Read and send presence
+
+<Cards>
+  <Card icon={<Users />} title="Remote users" href="/docs/react/remote-users">
+    Build a presence list and react to joins and leaves.
+  </Card>
+  <Card icon={<Wifi />} title="Connection status" href="/docs/react/connection-status">
+    Show a banner while the connection is down.
+  </Card>
+  <Card icon={<Zap />} title="Cursor events" href="/docs/react/cursor-events">
+    Send one-shot events, such as reactions.
+  </Card>
+  <Card icon={<Braces />} title="Typed hooks" href="/docs/react/typed-hooks">
+    Fix the context, user, and event types one time.
+  </Card>
+</Cards>
+
+## Package facts
+
+- The package has no state store of its own. The hooks read the client from `@anchor-presence/core` and the binding from `@anchor-presence/dom`.
+- The package entry starts with `"use client"`. In a framework with React Server Components, its exports are Client Components. See [Frameworks](/docs/get-started/frameworks).
+- The peer dependency is `react` 18 or later. The test suite runs on React 19 only.
+- In development mode, the provider and the hooks write console warnings for setup errors. See [Development warnings](/docs/get-started/guides/troubleshooting#development-warnings).
 
 ## Related
 
-- [LiveCursorProvider](/docs/react/live-cursor-provider)
-- [Create the client](/docs/react/client-creation)
-- [SSR and Strict Mode](/docs/react/ssr-and-strict-mode)
-- [Quick start](/docs/get-started/quick-start)
+<Cards>
+  <Card icon={<Rocket />} title="Quick start" href="/docs/get-started/quick-start">
+    Build a first working app, step by step.
+  </Card>
+  <Card icon={<Braces />} title="Hooks API" href="/docs/react/api/hooks">
+    The signature of every hook.
+  </Card>
+</Cards>

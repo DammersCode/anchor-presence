@@ -1,17 +1,14 @@
 ---
 title: Remote cursors
 description: Read the resolved remote cursor positions with useRemoteCursors and useRemoteCursorsSelector.
+icon: crosshair
 ---
 
-`useRemoteCursors` returns the current list of resolved remote cursors. Use it to build your own cursor renderer instead of [CursorLayer](/docs/react/cursor-layer). You can also use it to read cursor geometry for another purpose, such as a minimap.
+import { Braces, Gauge, MousePointer2 } from "lucide-react";
 
-## useRemoteCursors
+`useRemoteCursors` returns the list of resolved remote cursors. A resolved cursor is the cursor of a peer (another client in the same room), converted into a position on your screen. Use the hook to build your own cursor renderer instead of [CursorLayer](/docs/react/cursor-layer), or to read cursor positions for another purpose, such as a minimap.
 
-The hook has this signature:
-
-```ts
-function useRemoteCursors<TContext = unknown, TUser = unknown>(): ResolvedCursor<TContext, TUser>[];
-```
+## Usage
 
 The list also contains the hidden cursors. This component counts the visible ones:
 
@@ -25,22 +22,17 @@ function CursorCount() {
 }
 ```
 
-Each entry is `{ clientId, x, y, visible, pointVisible, anchorId, tier, idle, context?, user? }`. `x` and `y` are pixels in the receiver's own viewport. To position an element at these values, use `position: fixed`. Give the element `pointer-events: none` and `aria-hidden="true"`, so pointer input and screen readers skip it.
+## ResolvedCursor fields
 
-The hook rerenders its component on every new resolved-cursor snapshot. While cursors move, that is every animation frame. If your component needs less than the full list, use `useRemoteCursorsSelector`.
+Each entry has `clientId`, `x`, `y`, `visible`, `pointVisible`, `anchorId`, `tier`, `idle`, and, when the peer sent them, `context` and `user`. For the meaning of each field, see [ResolvedCursor](/docs/dom/api/resolution#resolvedcursor).
 
-## useRemoteCursorsSelector
+`x` and `y` are pixels in your viewport. To place an element at these values, use `position: fixed`. Give the element `pointer-events: none` and `aria-hidden="true"`, so that pointer input and screen readers skip it.
 
-The hook has this signature:
+## Select a smaller value
 
-```ts
-function useRemoteCursorsSelector<TSelected, TContext = unknown, TUser = unknown>(
-  select: (cursors: ResolvedCursor<TContext, TUser>[]) => TSelected,
-  isEqual?: (a: TSelected, b: TSelected) => boolean, // default Object.is
-): TSelected;
-```
+`useRemoteCursors` rerenders its component on every new snapshot of resolved cursors. While cursors move, this is every animation frame. If your component needs less than the full list, use `useRemoteCursorsSelector(select, isEqual?)`.
 
-`useRemoteCursorsSelector` applies `select` to each snapshot and rerenders only when `isEqual` reports that the selected value changed. Declare `select` and `isEqual` at module level, or wrap them in `useCallback`, so their identity stays stable across renders.
+The hook applies `select` to each snapshot. It rerenders only when `isEqual` reports a change in the selected value. `isEqual` defaults to `Object.is`.
 
 This selector derives the set of clients whose cursor is clipped out of view:
 
@@ -63,10 +55,23 @@ function PresencePill() {
 }
 ```
 
-`selectClippedClientIds` builds a new `Set` on every call. Without `sameClientIds`, the default `Object.is` comparison rerenders the component on every frame.
+`selectClippedClientIds` builds a new `Set` on every call. Without `sameClientIds`, the default `Object.is` check rerenders the component on every frame.
+
+<Callout type="warn">
+  If `select` or `isEqual` is an inline function, the hook runs `select` again on every render. Declare both
+  at module level, or wrap them in `useCallback`.
+</Callout>
 
 ## Related
 
-- [CursorLayer](/docs/react/cursor-layer)
-- [Rerenders](/docs/react/rerenders)
-- [Hooks API](/docs/react/api/hooks)
+<Cards>
+  <Card icon={<MousePointer2 />} title="CursorLayer" href="/docs/react/cursor-layer">
+    The built-in renderer for these cursors.
+  </Card>
+  <Card icon={<Gauge />} title="Rerenders" href="/docs/react/rerenders">
+    Which hook rerenders when.
+  </Card>
+  <Card icon={<Braces />} title="Hooks API" href="/docs/react/api/hooks#useremotecursors">
+    The signatures of both hooks.
+  </Card>
+</Cards>

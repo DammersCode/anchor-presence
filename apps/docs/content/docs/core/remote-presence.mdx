@@ -1,9 +1,12 @@
 ---
 title: Remote presence
 description: RemotePresenceStore, the stale timeout, the idle stage, peer changes, leave messages, late join, reconnect expiry, and maxRemoteClients.
+icon: users
 ---
 
-`RemotePresenceStore` holds the presence of every peer that a client accepts. A peer is another client in the same room. `createPresenceClient` creates one store for each client. Read the store through `client.getRemotePresence()` and `client.subscribeRemote(listener)`.
+import { Code, Radio, Shield, ShieldCheck } from "lucide-react";
+
+`RemotePresenceStore` holds the presence of every peer that a client accepts. A peer is another client in the same room. `createPresenceClient` creates one store for each client. Read the store through the client to render peers, or use the store alone on a relay or in a test.
 
 ## Read remote presence
 
@@ -16,9 +19,22 @@ const unsubscribe = client.subscribeRemote(() => {
 });
 ```
 
-`getRemotePresence()` returns the stable snapshot: a `RemotePresence[]` without the `sequence` field. The store keeps the array and entry identity while nothing observable changes. As a result, the stable snapshot fits a render loop or a `useSyncExternalStore` subscription.
+`getRemotePresence()` returns the stable snapshot: a `RemotePresence[]` without the `sequence` field. The store keeps the array and the identity of each entry while nothing observable changes. As a result, the stable snapshot fits a render loop or a `useSyncExternalStore` subscription.
 
 `getRemoteSnapshot()` returns the raw snapshot, with `sequence`. It returns a new array on every accepted message. Use it to watch sequence numbers, not for rendering.
+
+## The life of a peer
+
+A peer joins on its first accepted message. It goes idle when its presence stops changing, and it leaves on a leave message or a timeout:
+
+<Mermaid
+  chart={`stateDiagram-v2
+  [*] --> active: first message (join)
+  active --> idle: no change for idleAfterMs
+  idle --> active: cursor, user, context, or pointer changes
+  active --> [*]: leave message or timeout (leave)
+  idle --> [*]: leave message or timeout (leave)`}
+/>
 
 ## Stale timeout
 
@@ -26,13 +42,13 @@ The store removes a peer when it accepts no message from that peer for `staleTim
 
 ## Idle stage
 
-The store sets `idle: true` on the `RemotePresence` of a peer whose presence did not change for `idleAfterMs`. This happens before the peer goes stale. The store measures this time from the last change, not from the last message. The default is `DEFAULT_IDLE_AFTER_MS`, `15000` milliseconds. `idleAfterMs` always stays below `staleTimeoutMs`. If you pass a larger value, the store clamps it to `staleTimeoutMs - 1`.
+The store sets `idle: true` on the `RemotePresence` of a peer whose presence did not change for `idleAfterMs`. The store measures this time from the last change, not from the last message. The default is `DEFAULT_IDLE_AFTER_MS`, `15000` milliseconds. `idleAfterMs` always stays below `staleTimeoutMs`. If you pass a larger value, the store clamps it to `staleTimeoutMs - 1`.
 
-Heartbeats do not end idle, because they repeat the same state. A peer that changes nothing goes idle while its heartbeats keep arriving. Any change in cursor, user, context, or pointer ends it. Use idle to dim a cursor that stopped moving. `staleTimeoutMs` decides when the cursor disappears.
+Heartbeats do not end the idle stage, because they repeat the same state. A peer that changes nothing goes idle while its heartbeats keep arriving. Any change in cursor, user, context, or pointer ends it. Use `idle` to dim a cursor that stopped moving. `staleTimeoutMs` decides when the cursor disappears.
 
 ## Peer changes
 
-Call `client.subscribePeers(listener)` to learn when peers join, leave, or change their profile:
+`client.subscribePeers(listener)` reports when peers join, leave, or change their profile:
 
 ```ts
 const unsubscribe = client.subscribePeers((change) => {
@@ -48,7 +64,14 @@ The listener receives a `PeerChange` with a `type`, the `clientId` of the peer, 
 | `update` | The `user` or `context` of a known peer changes.                                         |
 | `leave`  | The store removes the peer: a leave message, the stale timeout, or the reconnect expiry. |
 
-Cursor moves, pointer changes, and events never produce a change. A heartbeat that repeats an equal `user` or `context` produces no `update`. A message from a known `clientId` with another `session` produces no `join`. It produces an `update` when its `user` differs by value from the stored one. A message that the store drops because it is full produces no `join`. In React, [`usePeerChanges`](/docs/react/remote-users#peer-changes) wraps this method.
+These rules decide the edge cases:
+
+- Cursor moves, pointer changes, and events never produce a change.
+- A heartbeat that repeats an equal `user` or `context` produces no `update`.
+- A message from a known `clientId` with another `session` produces no `join`. It produces an `update` when its `user` or `context` differs by value from the stored one.
+- A message that the store drops because it is full produces no `join`.
+
+In React, [`usePeerChanges`](/docs/react/remote-users#peer-changes) wraps this method.
 
 ## Leave messages
 
@@ -58,15 +81,15 @@ A receiver accepts a leave message only from the stored `session`, and only with
 
 ## Late join
 
-When the client accepts the first message of an unknown `clientId`, it answers with one full publish. The answer comes after a random delay of up to 500 ms. A known `clientId` with another `session` gets the same answer. The full publish carries the cursor, `user`, and `context`. As a result, the peer that joined sees this client before the next heartbeat.
+When the client accepts the first message of an unknown `clientId`, it answers with one full publish. A known `clientId` with another `session` gets the same answer. The full publish carries the cursor, `user`, and `context`. As a result, the peer that joined sees this client before the next heartbeat.
 
-One delay covers every peer that joins in this time. The random delay spreads the answers of the clients in a full room. A leave message or an event gets no answer.
+The answer comes after a random delay of up to 500 ms. One delay covers every peer that joins in this time, and the random delay spreads the answers of the clients in a full room. A leave message or an event gets no answer.
 
 ## After a reconnect
 
 When the status changes to `connected` from `reconnecting` or `disconnected`, the client marks every peer unconfirmed. A peer can leave during the outage, and its leave message never reaches this client.
 
-Any accepted message confirms a peer. If an unconfirmed peer sends no message within `2 * heartbeatIntervalMs + 5 s`, the next sweep (a periodic check of the store) removes it and reports a `leave`. With the default `heartbeatIntervalMs`, this time is 25 seconds. If the stale timeout comes first, the stale timeout applies.
+Any accepted message confirms a peer. If an unconfirmed peer sends no message within `2 * heartbeatIntervalMs + 5 s`, the next sweep removes it and reports a `leave`. A sweep is a periodic check of the store. With the default `heartbeatIntervalMs`, this time is 25 seconds. If the stale timeout comes first, the stale timeout applies.
 
 <Callout type="warn">
   If peers use a longer `heartbeatIntervalMs` than this client, they disappear after a reconnect until their
@@ -114,23 +137,15 @@ function receive(decoded: unknown) {
 }
 ```
 
-The store has no timer of its own. If you use the store without a client, call `sweep()` on a timer. Without the sweep, no peer goes stale or idle.
+The store has no timer of its own. Without a `sweep()` call on a timer, no peer goes stale or idle.
 
 `ingest` does not check a message. Before you call `ingest`, do the steps that the client does:
 
-- Pass the decoded value through `validatePresence`.
-- Drop the echoes of your own `clientId`.
-- Keep event messages out of the store. An event message has a `null` cursor, so `ingest` stores it as a peer without a cursor.
+1. Pass the decoded value through `validatePresence`.
+2. Drop the echoes of your own `clientId`.
+3. Keep event messages out of the store. An event message has a `null` cursor, so `ingest` stores it as a peer without a cursor.
 
-The constructor takes `RemotePresenceStoreOptions`. Omit a field to keep its default:
-
-| Option             | Default                      | Effect                                                                        |
-| ------------------ | ---------------------------- | ----------------------------------------------------------------------------- |
-| `maxRemoteClients` | `DEFAULT_MAX_REMOTE_CLIENTS` | The largest number of peers in the store.                                     |
-| `staleTimeoutMs`   | `DEFAULT_STALE_TIMEOUT_MS`   | The time without a message before `sweep` removes a peer. No minimum.         |
-| `idleAfterMs`      | `DEFAULT_IDLE_AFTER_MS`      | The time without a change before `sweep` marks a peer idle.                   |
-| `now`              | `Date.now`                   | Returns the current time in milliseconds.                                     |
-| `onDropNewClient`  | none                         | Runs each time the store drops a message from a new peer, because it is full. |
+The constructor takes [`RemotePresenceStoreOptions`](/docs/core/api/client#remotepresencestore). Its `staleTimeoutMs` has no minimum, unlike the client option. `onDropNewClient` runs each time the full store drops a message from a new peer.
 
 The store has these methods:
 
@@ -149,6 +164,17 @@ The store has these methods:
 
 ## Related
 
-- [Presence client](/docs/core/presence-client)
-- [Validation](/docs/core/validation)
-- [Security](/docs/get-started/guides/security)
+<Cards>
+  <Card icon={<Radio />} title="Presence client" href="/docs/core/presence-client">
+    The client that owns the store.
+  </Card>
+  <Card icon={<ShieldCheck />} title="Validation" href="/docs/core/validation">
+    The checks before a message reaches the store.
+  </Card>
+  <Card icon={<Shield />} title="Security" href="/docs/get-started/guides/security">
+    The risks that the store limits cover.
+  </Card>
+  <Card icon={<Code />} title="Client API" href="/docs/core/api/client">
+    The types of the store options.
+  </Card>
+</Cards>

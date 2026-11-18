@@ -5,7 +5,7 @@ This relay is for demos and local development. Read the production notes before 
 This example is a room-broadcast relay on the [`ws`](https://github.com/websockets/ws) package over `node:http`. A peer is another client in the same room. The relay forwards each message to the peers of the sender. The client needs no custom transport. It uses `createWebSocketTransport` from `@anchor-presence/dom`, as for `apps/server`.
 
 - `server.ts` exports `createNodeWsRelay(port)`. It returns a promise of `{ url, close }`.
-- `relay.ts` is the entry file (`bun run dev:relay`).
+- `relay.ts` is the entry file. It runs on Bun (`bun run dev:relay`) and on Node 22.18 or later (`bun run dev:relay:node`).
 
 ## Run it
 
@@ -16,7 +16,9 @@ cd examples/node-ws
 bun run dev:relay
 ```
 
-The relay listens on <http://localhost:8789>. To use another port, give the port as the first argument. To connect `apps/demo`, open it with `?backend=node-ws`.
+To start the relay on Node, run `bun run dev:relay:node` or `node relay.ts`. Node runs the TypeScript files directly, with type stripping. For this reason, the imports use `.ts` extensions.
+
+The relay listens on <http://localhost:8789>. To use another port, give the port as the first argument or set `PORT`. To connect `apps/demo`, open it with `?backend=node-ws`.
 
 ## Run the integration test
 

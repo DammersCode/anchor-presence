@@ -1,28 +1,33 @@
 ---
 title: UI context
-description: Opaque context, visibility policies, dialog mismatch handling, and the receiver-UI rule.
+description: Send app state with the cursor, and show or hide remote cursors with a visibility policy.
+icon: eye
 ---
 
-UI context is application state, such as an open dialog, that a sender attaches to its cursor. A peer is another client in the same room. A visibility policy on the receiver reads the context of each peer to show or hide its cursor. Anchor Presence never changes the UI state of the receiver.
+import { Eye, ScanEye, ShieldCheck, Waypoints } from "lucide-react";
 
-## Opaque context
+UI context is app state that a sender attaches to its cursor, for example the open dialog or the route. A visibility policy on the receiver reads that context and shows or hides the cursor. Use context when the anchor alone cannot tell whether a cursor makes sense on the receiver. Anchor Presence never changes the UI state of the receiver.
 
-`CursorPresence` carries an optional `context` field. `@anchor-presence/core` gives this field no meaning. It checks the size of the context, 8 KiB of JSON at most. If the client has a local context, it also checks the shape of each remote context. See [Remote user and context](/docs/core/validation#remote-user-and-context) for the shape check.
+## Set the context
 
-Set context on the client:
+Call `setContext` on the client:
 
 ```ts
 client.setContext({ route: "/settings", dialog: "invite" });
 ```
 
-The client sends each change to context one time. Full publishes (reconnect and heartbeat) include the current context. A missing field means "unchanged since the previous same-session message". An explicit `null` clears it. On the receiver, context reaches two places: the visibility policy input, and the `context` field on each `ResolvedCursor`.
+In React, use the [`useLocalContext`](/docs/react/local-context) hook. On the receiver, the context reaches the visibility policy and the `context` field of each `ResolvedCursor`.
 
-Use context for the state that a receiver needs to decide how to show a cursor. Examples are the route, the open dialog, and the active tab. See [Security](/docs/get-started/guides/security) for validation limits and rendering rules.
+## What the client sends
 
-<Callout type="warn">
-  If you put private data in context, every receiver in the room gets it. The client sends context on each
-  change and on each full publish.
-</Callout>
+The `context` field of `CursorPresence` is opaque: `@anchor-presence/core` gives it no meaning.
+
+- The client sends a changed context once. Later messages leave the field out, which means "unchanged".
+- Reconnect and heartbeat messages carry the current context, so a late peer gets it.
+- `setContext(undefined)` sends `null`, which clears the context on every peer.
+- The receiver drops a context above 8 KiB of JSON. If the receiver has a local context, it also checks the shape of each remote context. See [Remote user and context](/docs/core/validation#remote-user-and-context).
+
+<Callout type="warn">If you put private data in context, every peer in the room gets it.</Callout>
 
 ## Visibility policies
 
@@ -35,23 +40,17 @@ type VisibilityPolicy<TContext = unknown, TUser = unknown> = (input: {
 }) => "show" | "hide";
 ```
 
-`ResolutionTier` is `"anchor" | "viewport" | "hidden"`.
+`ResolutionTier` is `"anchor" | "viewport" | "hidden"`. The default policy hides only the `hidden` tier. `pointVisible` is `false` when a scroll container clips the point. See [Occlusion and scroll](/docs/dom/occlusion-and-scroll).
 
-The default policy shows cursors at the `anchor` and `viewport` tiers, and hides cursors at the `hidden` tier. See [The default policy](/docs/dom/visibility-policy#the-default-policy).
-
-Pass a custom policy through `DomBindingOptions.resolution.visibilityPolicy` (`@anchor-presence/dom`) or `bindingOptions.resolution.visibilityPolicy` on `LiveCursorProvider` (`@anchor-presence/react`). A custom policy can read `presence.context` to apply application-specific rules on top of geometric resolution.
-
-A policy can also read `resolution.pointVisible` to hide a cursor clipped by a scroll container. See [Occlusion and scroll](/docs/dom/occlusion-and-scroll) for how the resolver computes it and where the check falls short.
+Pass a custom policy in `resolution.visibilityPolicy` of the binding options. In React, pass it in `bindingOptions` of `LiveCursorProvider`. [Visibility policy](/docs/dom/visibility-policy) has the full reference.
 
 ## Dialog mismatch handling
 
-Anchor fallback covers most context mismatches. For example, the cursor of a sender sits inside the anchor `settings.dialog.invite`. That dialog is closed on the receiver, so the anchor is absent from its DOM. The fallback chain then moves to a parent anchor, for example `settings`, or to the viewport.
-
-A cursor at the wrong place misleads the receiver. Some cases therefore need an explicit policy instead of geometric fallback. Three approaches work:
+The cursor of a sender can sit inside the anchor `settings.dialog.invite`. If that dialog is closed on the receiver, the fallback chain moves to a parent anchor, for example `settings`. A cursor at that place can mislead the receiver. Pick one of three approaches:
 
 - **Hide the cursor.** If `presence.context?.dialog` names a dialog that is closed on the receiver, return `"hide"`.
-- **Fall back to the dialog trigger anchor.** Register the button that opens the dialog under a stable anchor ID. When the dialog anchor is absent, the fallback chain lands on the trigger button.
-- **Show a passive presence indicator.** Do not hide the cursor. Render a muted version for the `hidden` tier, with `tier` and `context` from the resolved cursor.
+- **Fall back to the dialog trigger.** Give the button that opens the dialog a stable anchor ID. Then the fallback chain lands on that button.
+- **Show a muted cursor.** Keep the cursor, and render a muted version from the `tier` and `context` of the resolved cursor.
 
 This policy hides the cursor of a sender whose open dialog differs from the dialog of the receiver:
 
@@ -63,19 +62,27 @@ const dialogAwarePolicy: VisibilityPolicy<{ dialog?: string }> = ({ presence, re
 };
 ```
 
-The client must have the same context type as the policy, for example `createPresenceClient<{ dialog?: string }>`. When the open dialog of the receiver changes, call `binding.invalidate()`, so that the policy runs again. See [Run the policy again after a state change](/docs/dom/visibility-policy#run-the-policy-again-after-a-state-change).
+The client needs the same context type as the policy, for example `createPresenceClient<{ dialog?: string }>`. The binding cannot see the open dialog of the receiver. When it changes, call `binding.invalidate()` to run the policy again. See [Run the policy again after a state change](/docs/dom/visibility-policy#run-the-policy-again-after-a-state-change).
 
-## The "never change receiver UI state" rule
+## Never change the receiver UI
 
-Anchor Presence never changes what the receiver's UI shows. Resolving a remote cursor position must not force a route change, open or close a dialog, expand a sidebar, or scroll the page.
+A remote cursor only gives information. It must not change a route, open or close a dialog, expand a sidebar, or scroll the page of the receiver. If a cursor points into UI that is closed on the receiver, fall back or hide the cursor.
 
-This rule keeps the receiving user in full control of their own screen. A remote cursor only gives information. A resolved position can land inside UI that is closed on the receiver. Then the correct response is fallback or hide. Never force that UI open to match the sender.
-
-Do not change local UI state, such as dialogs, routes, or sidebar toggles, as a reaction to `useRemoteCursors()` or `useRemotePresence()`. Use `context` for display decisions only.
+Do not change local UI state as a reaction to `useRemoteCursors()` or `useRemotePresence()`. Use `context` to decide how to show a cursor, nothing more. [Follow mode](/docs/get-started/guides/follow-mode) is the one exception: the user asks to follow a peer, so a scroll is the expected result.
 
 ## Related
 
-- [Fallback chain](/docs/get-started/concepts/fallback-chain)
-- [Visibility policy](/docs/dom/visibility-policy)
-- [Occlusion and scroll](/docs/dom/occlusion-and-scroll)
-- [Security](/docs/get-started/guides/security)
+<Cards>
+  <Card icon={<Waypoints />} title="Fallback chain" href="/docs/get-started/concepts/fallback-chain">
+    The tiers that a policy reads.
+  </Card>
+  <Card icon={<Eye />} title="Visibility policy" href="/docs/dom/visibility-policy">
+    The full policy reference.
+  </Card>
+  <Card icon={<ScanEye />} title="Occlusion and scroll" href="/docs/dom/occlusion-and-scroll">
+    How `pointVisible` works, and its limits.
+  </Card>
+  <Card icon={<ShieldCheck />} title="Security" href="/docs/get-started/guides/security">
+    Render remote context as text.
+  </Card>
+</Cards>

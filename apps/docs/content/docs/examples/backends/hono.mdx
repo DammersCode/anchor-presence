@@ -1,9 +1,12 @@
 ---
 title: Hono
-description: A room-broadcast relay built on Hono's upgradeWebSocket helper for Bun.
+description: A room-broadcast relay built on the upgradeWebSocket helper of Hono for Bun.
+icon: flame
 ---
 
-You want a relay built on a small router with routes and middleware instead of raw `Bun.serve`. This example uses [Hono](https://hono.dev)'s `hono/bun` adapter. The adapter connects `upgradeWebSocket` and a `websocket` handler directly to `Bun.serve`.
+import { Cable, FileCheck, Hexagon, Zap } from "lucide-react";
+
+You want a relay with routes and middleware instead of raw `Bun.serve`. This example uses the `hono/bun` adapter of [Hono](https://hono.dev). The adapter connects `upgradeWebSocket` and a `websocket` handler to `Bun.serve`. The relay keeps each room as a `Set` of sockets, as the [Node.js (ws)](/docs/examples/backends/node-ws) relay does.
 
 ## Install
 
@@ -13,33 +16,46 @@ Install the packages with Bun:
 bun add @anchor-presence/core @anchor-presence/dom hono
 ```
 
-## Client
+## Code
 
-The client needs no custom transport. It connects with the native `createWebSocketTransport`:
+The client connects with `createWebSocketTransport`. The server file exports a factory, and the entry file starts it:
 
-```tsx
-import { createPresenceClient } from "@anchor-presence/core";
-import { createWebSocketTransport } from "@anchor-presence/dom";
+<Tabs items={["Client", "Server", "Entry file"]}>
+  <Tab value="Client">
+    The client needs no custom transport:
 
-const transport = createWebSocketTransport({ port: 8790, path: "/?room=main" });
-const client = createPresenceClient({ transport });
-```
+    ```tsx
+    import { createPresenceClient } from "@anchor-presence/core";
+    import { createWebSocketTransport } from "@anchor-presence/dom";
 
-## Server
+    const transport = createWebSocketTransport({ port: 8790, path: "/?room=main" });
+    const client = createPresenceClient({ transport });
+    ```
 
-The server file exports a factory that starts the relay:
+  </Tab>
+  <Tab value="Server">
+    The factory imports the [shared guard helpers](/docs/examples/backends#shared-guard-helpers):
 
 <CodeFromSource repo="examples/hono/server.ts" lang="ts" />
 
-The server imports the shared guard helpers. See [Shared guard helpers](/docs/examples/backends#shared-guard-helpers).
-
-## Run it
-
-The entry file calls the factory once and logs the URL:
+  </Tab>
+  <Tab value="Entry file">
+    The entry file calls the factory once and logs the URL:
 
 <CodeFromSource repo="examples/hono/relay.ts" lang="ts" />
 
-The example runs Hono on Bun through `hono/bun`. For a Hono app on Node, use `@hono/node-ws` for the WebSocket upgrade. Start the entry file with Bun:
+  </Tab>
+</Tabs>
+
+<Callout type="warn">
+  If you change the server, key room state on `ws.raw`, not on the `WSContext` object. Hono gives each
+  WebSocket event (`onOpen`, `onMessage`, `onClose`) a new `WSContext` wrapper around the same Bun socket. A
+  membership check on the wrapper never matches across events.
+</Callout>
+
+## Run it
+
+The example runs Hono on Bun. For a Hono app on Node.js, use `@hono/node-ws` for the WebSocket upgrade. Start the entry file with Bun:
 
 ```sh
 bun relay.ts
@@ -49,23 +65,46 @@ The relay listens on `http://localhost:8790`. To use a different port, give the 
 
 ## Behavior notes
 
-- **Room name validation.** The relay reads the room from the `room` query parameter. `parseRoom` caps room names at 256 characters and restricts them to `[A-Za-z0-9_-]`. A missing name is `main`. An invalid name closes the socket with code `4007`.
-- **Upgrade path.** The relay accepts the upgrade only at `/`. It answers any other path with HTTP `404`.
-- **Max payload size.** `MAX_MESSAGE_BYTES` (default 32 KiB) drops an oversized message instead of closing the connection. The `maxPayloadLength` option of Bun is a hard limit at four times that size, or at least 1 MiB. Above it, Bun closes the connection.
-- **Per-connection rate limit.** A token bucket (a counter that refills at a fixed rate) limits inbound messages per socket (`RATE_CAPACITY`, default 80, and `RATE_REFILL_PER_SECOND`, default 40).
-- **Origin allowlist.** `RELAY_ALLOWED_ORIGINS` is a comma-separated list of allowed origins. Leave it empty for local development. The relay then accepts every origin.
-- **Connection check.** Pass an `authCheck` function to check each connection. Without it, set `RELAY_AUTH_TOKEN`. The relay then compares the [room token](/docs/dom/websocket-transport#room-token) of each connection with that value.
-- **Identity binding.** If `authCheck` returns `{ clientId, user }`, the relay writes that identity into every JSON frame of the connection. See [Identity binding](/docs/examples/backends#identity-binding).
-- **Room cleanup.** The relay drops a room's entry once its last socket closes.
-- **Connection caps.** `RELAY_MAX_ROOM_SOCKETS` (default 64) limits one room. `RELAY_MAX_TOTAL_SOCKETS` (default 10,000) limits the process. Above either cap, the relay closes the new socket with code `4001` (room full) or `4002` (server full).
-- **Dead connections.** `RELAY_IDLE_TIMEOUT_SECONDS` (default 60) sets Bun's `idleTimeout`, and `sendPings` is on. If a socket sends nothing for that time, Bun sends a ping. If no pong comes back, Bun closes the socket.
-- **Slow receivers.** `WSContext.raw` exposes the underlying Bun socket's `getBufferedAmount()`. The relay skips sends above `RELAY_SLOW_PEER_SOFT_BYTES` (default 1 MiB). It closes the connection with code `4003` above `RELAY_SLOW_PEER_HARD_BYTES` (default 8 MiB).
+Each setting is an environment variable. The factory options `maxMessageBytes`, `rateCapacity`, `rateRefillPerSecond`, `maxRoomSockets`, `maxSockets`, `idleTimeoutSeconds`, `slowPeerSoftBytes`, `slowPeerHardBytes`, `slowPeerResumeBytes`, `allowedOrigins` and `authCheck` override them.
 
-<Callout type="warn">
-  If you change the server, key room state on `ws.raw`, not on the `WSContext` object. Hono gives each
-  WebSocket event (`onOpen`, `onMessage`, `onClose`) a new `WSContext` wrapper around the same Bun socket. A
-  membership check on the wrapper therefore never matches across events.
-</Callout>
+### What the relay does
+
+| Topic            | Behavior                                                                                                                         |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Room             | Reads `room` from the query. A missing value is `main`. An invalid name closes the socket with code `4007`.                      |
+| Upgrade path     | Accepts the upgrade only at `/`. Any other path gets HTTP `404`.                                                                 |
+| Fan-out          | Sends to every other open socket in the room `Set`.                                                                              |
+| Payload          | Forwards each frame unchanged. Decodes a frame only for identity binding.                                                        |
+| Dead connections | Sets Bun's `idleTimeout` to `RELAY_IDLE_TIMEOUT_SECONDS` (60) with `sendPings`. Bun closes a socket that does not answer a ping. |
+| Room cleanup     | Drops the room entry when its last socket closes.                                                                                |
+
+### Limits
+
+The rate limit is a token bucket: a socket can send a burst of 80 messages, then 40 messages per second.
+
+| Limit               | Setting (default)                                                 | Above the limit                                                                 |
+| ------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| Message size        | `MAX_MESSAGE_BYTES` (32 KiB)                                      | Drops the message. The socket stays open.                                       |
+| Hard frame size     | Bun's `maxPayloadLength`: 4 × `MAX_MESSAGE_BYTES`, at least 1 MiB | Bun closes the connection.                                                      |
+| Message rate        | `RATE_CAPACITY` (80) and `RATE_REFILL_PER_SECOND` (40)            | Drops the message. The socket stays open.                                       |
+| Sockets in one room | `RELAY_MAX_ROOM_SOCKETS` (64)                                     | Closes the new socket with code `4001`.                                         |
+| Sockets in total    | `RELAY_MAX_TOTAL_SOCKETS` (10,000)                                | Closes the new socket with code `4002`.                                         |
+| Slow receiver, soft | `RELAY_SLOW_PEER_SOFT_BYTES` (1 MiB)                              | Skips sends until the buffer is below `RELAY_SLOW_PEER_RESUME_BYTES` (512 KiB). |
+| Slow receiver, hard | `RELAY_SLOW_PEER_HARD_BYTES` (8 MiB)                              | Closes the receiver with code `4003`.                                           |
+
+The relay reads the send buffer of a receiver from `getBufferedAmount()` of the Bun socket in `ws.raw`.
+
+### Auth
+
+| Check            | Setting                                                                              | On refusal                                        |
+| ---------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------- |
+| Origin           | `RELAY_ALLOWED_ORIGINS`, comma-separated. Empty allows every origin.                 | Upgrades, then closes with code `4004`.           |
+| Room token       | `RELAY_AUTH_TOKEN`. Compares the `token` query parameter. Empty turns the check off. | Closes with code `4006`.                          |
+| `authCheck` hook | Factory option. Replaces the room token check.                                       | Closes with code `4006` on `false` or an error.   |
+| Identity binding | `authCheck` returns `{ clientId, user }`.                                            | Drops a frame that is not a JSON object.          |
+| Check order      | Origin, then room name, then the hook.                                               | The hook never runs for a refused origin or room. |
+
+See [Identity binding](/docs/examples/backends#identity-binding) for the demo identity mode.
 
 <Callout type="warn">
   If you expose this relay outside local development, set `RELAY_ALLOWED_ORIGINS` and `RELAY_AUTH_TOKEN`. Also
@@ -75,6 +114,17 @@ The relay listens on `http://localhost:8790`. To use a different port, give the 
 
 ## Related
 
-- [Bun](/docs/examples/backends/bun-native)
-- [Node.js (ws)](/docs/examples/backends/node-ws)
-- [Elysia](/docs/examples/backends/elysia)
+<Cards>
+  <Card icon={<Zap />} title="Bun" href="/docs/examples/backends/bun-native">
+    The same relay on Bun topics, with no dependency.
+  </Card>
+  <Card icon={<Hexagon />} title="Node.js (ws)" href="/docs/examples/backends/node-ws">
+    The same room loop on Node.js.
+  </Card>
+  <Card icon={<FileCheck />} title="Relay contract" href="/docs/examples/backends/relay-contract">
+    The rules, the close codes, and the conformance suite.
+  </Card>
+  <Card icon={<Cable />} title="WebSocket transport" href="/docs/dom/websocket-transport">
+    The client transport: reconnect, backoff, and room tokens.
+  </Card>
+</Cards>

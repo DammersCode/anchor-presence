@@ -1,9 +1,12 @@
 ---
 title: Binding
-description: createDomBinding, its lifecycle, how to draw cursors without React, and how to mark the layout dirty with invalidate.
+description: createDomBinding, its options, how to draw cursors without React, invalidate, and dispose.
+icon: link
 ---
 
-`createDomBinding(client, options?)` creates the DOM side of one presence client. It returns a `DomBinding`: an object with a snapshot of resolved cursors, a `subscribe` method, and a `dispose` method. A resolved cursor is the position of one remote cursor in the pixels of your viewport.
+import { Anchor, Code, Crosshair } from "lucide-react";
+
+`createDomBinding(client, options?)` creates the DOM side of one presence client. It returns a `DomBinding`: an object with a snapshot of resolved cursors, a `subscribe` method, and a `dispose` method. A resolved cursor is the position of one remote cursor in the pixels of your viewport. Create one binding for each client. `@anchor-presence/react` creates it for you.
 
 ## Create a binding
 
@@ -23,30 +26,34 @@ binding.subscribe(() => {
 });
 ```
 
-The client is live when its status is `connecting` or `connected`. A peer is another client in the same room. The binding runs its geometry scheduler only while the client is live and at least one peer has a cursor. In all other cases the scheduler stops, so an empty room costs no frame work.
+The binding runs its geometry scheduler only while two conditions are true:
+
+- The client is live: its status is `connecting` or `connected`.
+- At least one peer has a cursor. A peer is another client in the same room.
+
+In all other cases the scheduler stops, so an empty room costs no frame work.
 
 ## Options
 
-`maxAnchors` caps the fallback chain that the pointer source sends. The default is `4`. The binding clamps an integer outside `1` to `8` into this range. `anchorAttribute` sets the attribute that marks an anchor element. The default is `data-anchor`. See [Anchor registration](/docs/dom/anchor-registration).
+| Option            | Default       | Effect                                                                                                                                                                             |
+| ----------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `anchorAttribute` | `data-anchor` | The attribute that marks an anchor element. See [Anchor registration](/docs/dom/anchor-registration).                                                                              |
+| `maxAnchors`      | `4`           | The length of the fallback chain that the binding sends. The binding clamps an integer outside `1` to `8` into this range.                                                         |
+| `capturePointer`  | `true`        | Sends the local pointer as a cursor. With `false`, the client shows remote cursors and sends no cursor. `context` and `user` still go to peers.                                    |
+| `captureFocus`    | `false`       | Sends a cursor at the center of the focused element, for keyboard users. Ignored when `capturePointer` is `false`. See [Keyboard focus](/docs/dom/pointer-capture#keyboard-focus). |
+| `resolution`      | see below     | How remote cursors turn into screen positions. See [Resolution](/docs/dom/resolution) and [Motion](/docs/dom/motion).                                                              |
+| `environment`     | the browser   | The DOM and timing hosts: `root`, `window`, `raf`, `caf`, `ResizeObserverCtor`, `MutationObserverCtor`.                                                                            |
+
+Each `environment` field defaults to the matching browser global. A test can replace one host with a fake and keep the others. See [Binding API](/docs/dom/api/binding) for the full types.
 
 `createDomBinding` throws a `TypeError` in these cases:
 
 - `anchorAttribute` is not letters and digits in groups split by single hyphens, with a letter first. For example, `data-anchor` and `anchor` pass, and `data_anchor` and `1-anchor` fail.
 - `maxAnchors` is not an integer, for example `2.5` or `NaN`.
 
-`capturePointer` turns the local pointer source on or off. The default is `true`. Set it to `false` for a client that shows remote cursors and sends no local cursor. One example is a mobile viewer. `context` and `user` still go to peers.
-
-`captureFocus` publishes a cursor at the center of the focused element, for keyboard users. The default is `false`. When `capturePointer` is `false`, the binding ignores `captureFocus`. See [Pointer capture](/docs/dom/pointer-capture#keyboard-focus).
-
-`resolution` sets how remote cursors turn into screen positions. See [Resolution](/docs/dom/resolution) and [Motion](/docs/dom/motion).
-
-`environment` replaces the DOM and timing hosts that the binding uses: `root`, `window`, `raf`, `caf`, `ResizeObserverCtor`, and `MutationObserverCtor`. Each field defaults to the matching browser global. A test can replace one host with a fake and keep the others.
-
-See [Binding API](/docs/dom/api/binding) for the full option and return types.
-
 ## Draw cursors without React
 
-`@anchor-presence/react` draws the cursors for you. Without React, subscribe to the binding and update one element for each cursor. Set `CURSOR_MARKER_ATTRIBUTE` on the root element of each cursor. The binding then ignores the DOM changes inside your cursors and does not measure the layout again for them.
+Subscribe to the binding and update one element for each cursor. Set `CURSOR_MARKER_ATTRIBUTE` on the root element of each cursor. The binding then ignores the DOM changes inside your cursors and does not measure the layout again for them.
 
 This function draws each visible cursor as a `div` inside `layer`, and returns the unsubscribe function:
 
@@ -84,16 +91,16 @@ function drawCursors(binding: DomBinding, layer: HTMLElement): () => void {
 
 ## invalidate
 
-`binding.invalidate(reason?)` marks the layout dirty. On the next frame, the binding measures every active anchor again and resolves the cursors again.
+`binding.invalidate(reason?)` marks the layout dirty. On the next frame, the binding measures every active anchor again and resolves the cursors again. An active anchor is an anchor that a remote cursor uses.
 
-The binding reacts to these layout signals:
+While the scheduler runs, the binding reacts to these layout signals:
 
-- A resize or a scroll.
-- A `ResizeObserver` entry.
-- A DOM change under the anchor attribute.
+- A window resize, or a scroll of the document or of any element.
+- A size change of an active anchor or of the document element.
+- A DOM change anywhere in the document body, outside the cursor elements.
 - A CSS transition or animation on an active anchor.
 
-Call `invalidate` after a layout change that none of these signals can see. One example is a scroll from code on an element with `overflow: hidden` and no `scroll` event. Another example is a font that loads after the first paint and changes the text size:
+Call `invalidate` after a layout change that none of these signals can see. One example is a web font that loads after the first paint and moves an anchor without a change to its size:
 
 ```ts
 document.fonts.ready.then(() => {
@@ -101,17 +108,17 @@ document.fonts.ready.then(() => {
 });
 ```
 
-`reason` is for your own logging. The binding does not read it.
+The binding does not read `reason`. It is for your own code.
 
 If state that your `visibilityPolicy` reads changes, also call `invalidate`. See [Run the policy again after a state change](/docs/dom/visibility-policy#run-the-policy-again-after-a-state-change).
 
 ## Connection status
 
-While the client status is `reconnecting` or `disconnected`, the binding hides every remote cursor. The snapshot is empty during that time. The remote presences stay in the client store. When the status returns to `connected`, the binding resolves the cursors again and shows them. The `connecting` status does not hide cursors.
+While the client status is `reconnecting` or `disconnected`, the binding hides every remote cursor, and the snapshot is empty. The remote presences stay in the client store. When the status returns to `connected`, the binding resolves the cursors again and shows them. The `connecting` status does not hide cursors.
 
 ## Page hide
 
-On the `pagehide` event of the window, the binding calls `client.leave()`. Peers then remove this client at once, so a closed tab does not leave a cursor behind. If the page stays open, the next publish or heartbeat announces the client again.
+On the `pagehide` event of the window, the binding calls `client.leave()`. Peers then remove this client at once, so a closed tab does not leave a cursor behind. If the page stays open, for example after a return from the back-forward cache, the next publish or heartbeat announces the client again.
 
 ## Errors in a policy or interpolator
 
@@ -119,16 +126,12 @@ If a `visibilityPolicy` or an interpolator throws, the binding keeps the last sn
 
 ## Dispose
 
-`binding.dispose()` does these steps in order:
+`binding.dispose()` stops the binding. When the surface that owns the binding unmounts, call it one time. `client.dispose()` also calls it. `dispose` does these steps in order:
 
-1. It clears the local cursor on the client, unless you pass `keepLocalCursor: true`.
+1. It clears the local cursor on the client, unless you pass `keepLocalCursor: true`. As a result, a client that stays connected leaves no cursor on its peers.
 2. It stops the scheduler and removes every listener.
 3. It sends one final empty snapshot, so subscribers can remove every cursor.
 4. It clears the subscriber list.
-
-When the surface that owns the binding unmounts, call `dispose` one time.
-
-Because `dispose` clears the local cursor, a client that stays connected after the binding stops leaves no cursor on its peers.
 
 If you replace the binding and keep the client, pass `keepLocalCursor: true`. Peers then keep the local cursor while the new binding starts:
 
@@ -139,6 +142,14 @@ const nextBinding = createDomBinding(client, { resolution: { hitTest: true } });
 
 ## Related
 
-- [Anchor registration](/docs/dom/anchor-registration)
-- [Resolution](/docs/dom/resolution)
-- [Binding API](/docs/dom/api/binding)
+<Cards>
+  <Card icon={<Anchor />} title="Anchor registration" href="/docs/dom/anchor-registration">
+    Mark the elements that cursors attach to.
+  </Card>
+  <Card icon={<Crosshair />} title="Resolution" href="/docs/dom/resolution">
+    How the binding computes each cursor position.
+  </Card>
+  <Card icon={<Code />} title="Binding API" href="/docs/dom/api/binding">
+    Every option and method, with its type.
+  </Card>
+</Cards>

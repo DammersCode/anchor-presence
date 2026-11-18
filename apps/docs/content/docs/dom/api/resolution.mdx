@@ -1,11 +1,12 @@
 ---
 title: Resolution types
-description: ResolvedCursor, ResolutionTier, and VisibilityPolicy.
+description: ResolvedCursor, ResolutionTier, VisibilityPolicy, and CURSOR_MARKER_ATTRIBUTE.
+icon: braces
 ---
 
-The resolution result has the types below. See [Resolution](/docs/dom/resolution) and [Visibility policy](/docs/dom/visibility-policy) for the guides.
+import { Code, Crosshair, Eye } from "lucide-react";
 
-Import the types from `@anchor-presence/dom`:
+This page lists the types of the resolution result. Use it to look up a field. The [Resolution](/docs/dom/resolution) and [Visibility policy](/docs/dom/visibility-policy) guides explain the behavior.
 
 ```ts
 import type { ResolvedCursor, ResolutionTier, VisibilityPolicy } from "@anchor-presence/dom";
@@ -19,7 +20,7 @@ A `ResolvedCursor` is one resolved remote cursor, in the viewport pixels of the 
 
 ## ResolutionTier
 
-`ResolutionTier` is a union of three string values: `"anchor"`, `"viewport"`, `"hidden"`. See [Resolution](/docs/dom/resolution) for what each tier means.
+`ResolutionTier` is `"anchor" | "viewport" | "hidden"`. See [The three tiers](/docs/dom/resolution#the-three-tiers).
 
 ## VisibilityPolicy
 
@@ -29,10 +30,18 @@ A `VisibilityPolicy` is a function that decides whether one resolved cursor rend
 
 ## CURSOR_MARKER_ATTRIBUTE
 
-`CURSOR_MARKER_ATTRIBUTE` is the string `"data-anchor-presence-cursor"`. The binding ignores the DOM changes inside an element with this attribute. A renderer that draws cursors sets it on the root element of each cursor. `@anchor-presence/react` sets it for you. See [Draw cursors without React](/docs/dom/binding#draw-cursors-without-react).
+`CURSOR_MARKER_ATTRIBUTE` is the string `"data-anchor-presence-cursor"`. The binding ignores the DOM changes inside an element with this attribute. A renderer sets it on the root element of each cursor. `@anchor-presence/react` sets it for you. See [Draw cursors without React](/docs/dom/binding#draw-cursors-without-react).
 
 ## Related
 
-- [Resolution](/docs/dom/resolution)
-- [Visibility policy](/docs/dom/visibility-policy)
-- [Binding API](/docs/dom/api/binding)
+<Cards>
+  <Card icon={<Crosshair />} title="Resolution" href="/docs/dom/resolution">
+    The guide to the tiers and the result fields.
+  </Card>
+  <Card icon={<Eye />} title="Visibility policy" href="/docs/dom/visibility-policy">
+    The guide to policies.
+  </Card>
+  <Card icon={<Code />} title="Binding API" href="/docs/dom/api/binding">
+    The options of `createDomBinding`.
+  </Card>
+</Cards>

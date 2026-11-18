@@ -29,6 +29,7 @@ describe("@anchor-presence/core public runtime API", () => {
       "jsonCodec",
       "linearInterpolator",
       "noneInterpolator",
+      "reportListenerError",
       "validatePresence",
       "warnOnce",
     ]);

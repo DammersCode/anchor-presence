@@ -1,17 +1,14 @@
 ---
 title: Connection status
-description: Read the client's connection status with useCursorStatus.
+description: Read the connection status of the client with useCursorStatus, and the close reasons with subscribeClose.
+icon: wifi
 ---
 
-`useCursorStatus` returns the connection status of the client from the nearest [LiveCursorProvider](/docs/react/live-cursor-provider). Use it to show a reconnecting banner or to disable presence-dependent UI while the transport is down.
+import { Braces, Cable, Gauge } from "lucide-react";
+
+`useCursorStatus` returns the connection status of the client from the nearest provider. Use it to show a reconnect banner, or to disable UI that needs presence while the connection is down.
 
 ## Usage
-
-The hook takes no arguments:
-
-```ts
-function useCursorStatus(): ConnectionStatus;
-```
 
 This component shows the status while the client is not connected:
 
@@ -25,15 +22,26 @@ function ConnectionBanner() {
 }
 ```
 
-`ConnectionStatus` is one of `"connecting"`, `"connected"`, `"reconnecting"`, or `"disconnected"`. The hook returns `"disconnected"` on the server, and after the hook runs with no provider above it. It rerenders only when the status changes.
+## Status values
+
+The status is one of `"connecting"`, `"connected"`, `"reconnecting"`, or `"disconnected"`. The hook rerenders only when the status changes.
+
+The hook returns `"disconnected"` on the server, without a provider, and before the provider `factory` runs.
+
+<Callout type="warn">
+  If a banner renders on the first paint, it shows `"disconnected"` for a short time, before the client
+  exists. Show the banner only after the status was `"connected"` one time.
+</Callout>
 
 ## Cursors during an outage
 
-While the status is `reconnecting` or `disconnected`, the binding hides every remote cursor. `useRemoteCursors` returns an empty list, and `CursorLayer` renders no cursors. When the status returns to `connected`, the cursors come back. A banner from `useCursorStatus` tells the user why the cursors are gone.
+While the status is `"reconnecting"` or `"disconnected"`, the binding hides every remote cursor. `useRemoteCursors` then returns an empty list, and `CursorLayer` renders no cursors. When the status returns to `"connected"`, the cursors come back. A banner tells the user why the cursors are gone.
 
 ## Close reasons
 
-`client.subscribeClose(listener)` runs the listener each time the connection closes, with the close `code`, the `reason`, and `willReconnect`. The WebSocket transport reports these values. A transport without `subscribeClose` never runs the listener. This component shows an error when the relay rejects the [room token](/docs/dom/websocket-transport#room-token) with code `4006`:
+`client.subscribeClose(listener)` calls the listener each time the connection closes. The listener receives the close `code`, the `reason`, and `willReconnect`. The WebSocket transport reports these values. A transport without `subscribeClose` never calls the listener.
+
+This component shows an error when the relay rejects the [room token](/docs/dom/websocket-transport#room-token) with code `4006`:
 
 ```tsx
 import { useEffect, useState } from "react";
@@ -58,6 +66,14 @@ function TokenError() {
 
 ## Related
 
-- [WebSocket transport](/docs/dom/websocket-transport#close-reasons)
-- [Rerenders](/docs/react/rerenders)
-- [Hooks API](/docs/react/api/hooks)
+<Cards>
+  <Card icon={<Cable />} title="WebSocket transport" href="/docs/dom/websocket-transport#close-reasons">
+    Close codes and the reconnect rules.
+  </Card>
+  <Card icon={<Gauge />} title="Rerenders" href="/docs/react/rerenders">
+    Which hook rerenders when.
+  </Card>
+  <Card icon={<Braces />} title="Hooks API" href="/docs/react/api/hooks#usecursorstatus">
+    The signature of useCursorStatus.
+  </Card>
+</Cards>

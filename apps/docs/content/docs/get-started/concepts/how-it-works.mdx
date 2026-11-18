@@ -1,77 +1,64 @@
 ---
 title: How it works
-description: The three package layers, the sender-to-receiver flow, and the invariants.
+description: The three package layers, the path of one pointer move, and the 10 invariants.
+icon: blocks
 ---
 
-Anchor Presence shows remote cursors at the correct semantic position. It does not use a canvas. It works even when two clients have different layouts.
+import { Anchor, Gauge, Scaling, Waypoints } from "lucide-react";
 
-This central invariant gives the library its design:
+Anchor Presence turns a pointer move into an element ID and a point inside that element. Each receiver places the cursor against its own layout. Read this page to know which package does what, and which rules the library never breaks. The [Introduction](/docs/get-started/introduction#the-fix) defines the terms anchor, position, receiver, fallback chain, peer, and relay.
+
+The central rule of the library is:
 
 > A remote cursor represents a semantic DOM location, not an absolute screen coordinate.
 
-These terms appear on this page:
-
-- An **anchor** is an element with a `data-anchor` attribute. The attribute value is the anchor ID.
-- A **position** is a point inside an anchor, as a fraction from 0 to 1 of its width and of its height.
-- The **receiver layout** is the layout of the browser that shows a remote cursor.
-- The **fallback chain** is the anchor, its parent anchors, and a viewport position, in this order. The receiver uses the first entry that it can find.
-- A **relay** is a server that forwards each message to every other client in a room.
-
 ## Package layers
 
-The system has three packages. Each package adds one layer, and the dependency direction is one-way. `@anchor-presence/react` depends on `@anchor-presence/dom`, and `@anchor-presence/dom` depends on `@anchor-presence/core`:
+Each package adds one layer, and the dependency direction is one-way:
 
 ```mermaid
 flowchart TB
     accTitle: Package layers
     accDescr: @anchor-presence/react depends on @anchor-presence/dom, which depends on @anchor-presence/core.
-    react["@anchor-presence/react<br/>provider component, hooks, SSR safety"]
+    react["@anchor-presence/react<br/>provider component, hooks, cursor components"]
     dom["@anchor-presence/dom<br/>anchor registry, pointer capture, layout measurement, resolver"]
     core["@anchor-presence/core<br/>protocol types, validation, presence store, client"]
 
     react --> dom --> core
 ```
 
-- `@anchor-presence/core` has zero dependencies and needs no DOM. If `document` exists, it reads `document` to send a pending update when the page becomes visible again. It runs in Node.js, Bun, workers, and browsers. It owns the protocol, validation, sequencing, the remote presence store, and the client that sends and receives presence.
-- `@anchor-presence/dom` depends only on `@anchor-presence/core`. It owns every browser API call, the anchor registry, pointer capture, the layout measurement once per animation frame, and visibility policies.
-- `@anchor-presence/react` is an adapter only. It keeps no cursor state of its own. It subscribes to `@anchor-presence/core` and `@anchor-presence/dom` stores with `useSyncExternalStore`, and declares anchors through the binding's anchor attribute, with no separate registration helper of its own.
+- `@anchor-presence/core` has no dependencies and needs no DOM. It runs in Node.js, Bun, workers, and browsers. It owns the protocol, validation, message order, the store of remote presence, and the client. If a `document` exists, the client listens for `visibilitychange` to send a pending update when the page shows again.
+- `@anchor-presence/dom` depends only on `@anchor-presence/core`. It owns every browser API call: the anchor registry, pointer capture, layout measurement once per animation frame, and visibility policies.
+- `@anchor-presence/react` is an adapter only. It keeps no cursor state of its own. It reads the stores of the other two packages with `useSyncExternalStore`.
 
-## Sender to receiver flow
+## Path of one pointer move
 
-A local pointer move never reaches the receiver as a raw pixel. The sender encodes a semantic position, and the receiver resolves it against its own layout. This diagram shows the path of one move:
+A pointer move never reaches the receiver as a raw pixel. The sender sends an anchor ID and a position, and the receiver measures its own anchors:
 
 ```mermaid
 sequenceDiagram
-    accTitle: Sender to receiver flow
+    accTitle: Path of one pointer move
     accDescr: The sender encodes a pointer move as a fallback chain and sends the bytes to the relay. The relay forwards them to the room. The receiver decodes them and resolves the cursor against its own layout.
     participant S as Sender browser
     participant R as Relay
     participant V as Receiver browser
 
     Note over S: pointermove on an element
-    S->>S: DOM binding builds the<br/>fallback chain + normalized u/v
+    S->>S: DOM binding builds the<br/>fallback chain + u/v
     S->>S: core client encodes,<br/>rate-limited publish
     S->>R: bytes over the transport
     Note over R: forwards to the room,<br/>never reads the payload
     R->>V: bytes to the other clients
-    V->>V: core client decodes,<br/>checks, stores
+    V->>V: core client decodes,<br/>validates, stores
     V->>V: DOM binding resolves<br/>against its own layout
     Note over V: cursor renders at<br/>ResolvedCursor x, y
 ```
 
-The sender never measures the receiver's DOM. The sender sends a semantic anchor ID and a normalized position inside it. The receiver measures its own anchors and turns that data into pixels.
-
-## Read the remote state
-
-The receiver's client stores every accepted remote presence. It exposes two read APIs.
-
-`getRemoteSnapshot()` returns the raw snapshot, including each presence's `sequence`. Its identity changes on every accepted message. Use it for tests and diagnostics.
-
-`getRemotePresence()` returns a stable snapshot. Each entry is a `RemotePresence` without `sequence`. Its identity changes only when an observable field changes. The React adapter reads this stable snapshot. A remote cursor move therefore rerenders only the consumers that need it.
+The receiver keeps the latest presence of each peer. [Remote presence](/docs/core/remote-presence) explains the two read methods of the client and when to use each.
 
 ## The 10 invariants
 
-The invariants have numbers, so that other pages can refer to them:
+An invariant is a rule that holds for every message. Other pages refer to these numbers:
 
 1. The sender never uses its screen coordinates as the main position. The main position is an anchor and a point inside it.
 2. The layout of the receiver decides where a cursor appears.
@@ -84,13 +71,23 @@ The invariants have numbers, so that other pages can refer to them:
 9. The consumer controls rendering. No cursor component is required. `@anchor-presence/react` has optional cursor components.
 10. All cursor state lives in `@anchor-presence/core` and `@anchor-presence/dom`. An adapter for another framework, such as Svelte, Vue, or Solid, uses both packages without a change.
 
-## Why receiver layout is authoritative
+## Why the receiver layout decides
 
-The receiver resolves each cursor against its own DOM. Local scrolling and resizing therefore cost no network traffic: the binding measures the same anchor again and moves the cursor (invariant 7). See [Anchors](/docs/get-started/concepts/anchors) for the coordinate math, and [Responsive layouts](/docs/get-started/concepts/responsive-layouts) for a worked example across two different layouts.
+The receiver resolves each cursor against its own DOM. As a result, local scrolling and resizing cause no network traffic. The binding measures the same anchor again and moves the cursor (invariant 7).
 
 ## Related
 
-- [Anchors](/docs/get-started/concepts/anchors)
-- [Fallback chain](/docs/get-started/concepts/fallback-chain)
-- [Responsive layouts](/docs/get-started/concepts/responsive-layouts)
-- [Performance](/docs/get-started/guides/performance)
+<Cards>
+  <Card icon={<Anchor />} title="Anchors" href="/docs/get-started/concepts/anchors">
+    Anchor IDs and the u/v position.
+  </Card>
+  <Card icon={<Waypoints />} title="Fallback chain" href="/docs/get-started/concepts/fallback-chain">
+    The order of the fallback steps.
+  </Card>
+  <Card icon={<Scaling />} title="Responsive layouts" href="/docs/get-started/concepts/responsive-layouts">
+    A worked example across two layouts.
+  </Card>
+  <Card icon={<Gauge />} title="Performance" href="/docs/get-started/guides/performance">
+    What the layout measurement costs.
+  </Card>
+</Cards>

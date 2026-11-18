@@ -4,14 +4,16 @@ import { LiveCursorProvider } from "./provider.js";
 import type { LiveCursorProviderProps } from "./provider.js";
 import { useCursorBinding } from "./hooks/use-cursor-binding.js";
 import { useCursorClient } from "./hooks/use-cursor-client.js";
-import { useLocalContext } from "./hooks/use-cursor-context.js";
+import { useLocalContext } from "./hooks/use-local-context.js";
 import { createEventChannel } from "@anchor-presence/core";
+import { useEffect, useRef } from "react";
 import type { EventChannel, EventMap, PeerChange, TypedRemoteEvent } from "@anchor-presence/core";
-import { useEffect, useMemo, useRef } from "react";
+
 import { useLiveCursorContext } from "./hooks/use-cursor-client.js";
 import { useLocalUser } from "./hooks/use-local-user.js";
 import { usePeerChanges } from "./hooks/use-peer-changes.js";
-import { useRemotePresence } from "./hooks/use-cursor-presence.js";
+import { useSendEvent } from "./hooks/use-send-event.js";
+import { useRemotePresence } from "./hooks/use-remote-presence.js";
 import { useCursorStatus } from "./hooks/use-cursor-status.js";
 import { useRemoteCursors, useRemoteCursorsSelector } from "./hooks/use-remote-cursors.js";
 import { useRemoteUsers } from "./hooks/use-remote-users.js";
@@ -44,13 +46,7 @@ export function createPresenceHooks<
         [client],
       );
     },
-    useSendEvent: (): EventChannel<TEvents>["send"] => {
-      const { client } = useLiveCursorContext<TContext, TUser>();
-      return useMemo(
-        () => (client === null ? () => false : createEventChannel<TEvents>(client).send),
-        [client],
-      );
-    },
+    useSendEvent: (): EventChannel<TEvents>["send"] => useSendEvent<TEvents>(),
     useLocalUser: () => useLocalUser<TUser>(),
     usePeerChanges: (listener: (change: PeerChange<TContext, TUser>) => void) =>
       usePeerChanges<TContext, TUser>(listener),

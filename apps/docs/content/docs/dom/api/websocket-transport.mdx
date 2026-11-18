@@ -1,11 +1,12 @@
 ---
 title: WebSocket transport API
 description: createWebSocketTransport, WebSocketTransport, WebSocketTransportOptions, WebSocketCtor, WebSocketLike, and TransportClose.
+icon: plug-zap
 ---
 
-`createWebSocketTransport` and its options have the types below. See [WebSocket transport](/docs/dom/websocket-transport) for the guide.
+import { Cable, RadioTower } from "lucide-react";
 
-Import the function and its types from `@anchor-presence/dom`:
+This page lists `createWebSocketTransport` and its types. Use it to look up an option. The [WebSocket transport](/docs/dom/websocket-transport) guide explains the behavior.
 
 ```ts
 import { createWebSocketTransport } from "@anchor-presence/dom";
@@ -14,9 +15,9 @@ import type { WebSocketTransport, WebSocketTransportOptions } from "@anchor-pres
 
 ## createWebSocketTransport
 
-`createWebSocketTransport(options?)` returns a `WebSocketTransport`: a `LiveCursorTransport` from `@anchor-presence/core` whose `connect` and `disconnect` methods are always present, not optional. The transport also implements `subscribeClose`.
+`createWebSocketTransport(options?)` returns a `WebSocketTransport`. If `options.url` is missing and `window` does not exist, it throws a `TypeError`.
 
-If `options.url` is missing and `window` does not exist, `createWebSocketTransport` throws a `TypeError`.
+`WebSocketTransport` is a `LiveCursorTransport` from `@anchor-presence/core` whose `connect` and `disconnect` methods are required. The type keeps `subscribeStatus`, `getStatus`, `subscribeClose`, and `bufferedBytes` optional, although the returned object always has them.
 
 ## WebSocketTransportOptions
 
@@ -24,7 +25,7 @@ If `options.url` is missing and `window` does not exist, `createWebSocketTranspo
 
 ## WebSocketCtor
 
-`WebSocketCtor` is the type of the `WebSocketCtor` option: `new (url: string) => WebSocketLike`. The option replaces the WebSocket constructor of the transport. Its default is `globalThis.WebSocket`. Without a global `WebSocket` and without this option, the status stays `connecting`. A test can pass a fake `WebSocketLike` and use no network.
+`WebSocketCtor` is the type of the `WebSocketCtor` option: `new (url: string) => WebSocketLike`. The option replaces the WebSocket constructor of the transport. Its default is `globalThis.WebSocket`. A test can pass a fake `WebSocketLike` and use no network.
 
 The browser `WebSocket` constructor fits `WebSocketCtor` without a cast:
 
@@ -41,7 +42,7 @@ const transport = createWebSocketTransport({
 
 <AutoTypeTable path="../../packages/dom/src/transport.ts" name="WebSocketLike" />
 
-`readyState` `1` means that the socket is open.
+`readyState` `0` means that the socket is connecting, and `1` means that it is open. The transport sets `binaryType` to `"arraybuffer"` and delivers only `ArrayBuffer` messages.
 
 ## TransportClose
 
@@ -51,5 +52,11 @@ const transport = createWebSocketTransport({
 
 ## Related
 
-- [WebSocket transport](/docs/dom/websocket-transport)
-- [Transports](/docs/core/transports)
+<Cards>
+  <Card icon={<RadioTower />} title="WebSocket transport" href="/docs/dom/websocket-transport">
+    The guide to the transport.
+  </Card>
+  <Card icon={<Cable />} title="Transports" href="/docs/core/transports">
+    The transport contract.
+  </Card>
+</Cards>

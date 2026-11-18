@@ -1,9 +1,12 @@
 ---
 title: Off-screen hints
 description: Show an arrow at the window edge for each remote cursor outside the window.
+icon: locate-fixed
 ---
 
-A remote cursor can point at a part of the page that the local user scrolled away from. A peer is another client in the same room. The cursor of the peer then sits outside the window, and the local user does not know that the peer is there. An off-screen hint is an arrow at the window edge. It sits at the nearest edge point and points at the remote cursor. The recipe computes the hint from the `x` and `y` fields of `ResolvedCursor`.
+import { Crosshair, Footprints, Gauge, MousePointer, Palette } from "lucide-react";
+
+A remote cursor can point at a part of the page that the local user scrolled away from. The cursor of the peer then sits outside the window, and the local user does not know that the peer is there. An off-screen hint is an arrow at the window edge. It sits at the nearest edge point and points at the remote cursor. The recipe computes the hint from the `x` and `y` fields of `ResolvedCursor`.
 
 ## Clamp the point to the edge
 
@@ -90,8 +93,20 @@ export function HintsApp({ client }: { client: PresenceClient }) {
 
 ## Related
 
-- [Remote cursors](/docs/react/remote-cursors)
-- [Resolution](/docs/dom/resolution)
-- [Custom cursors](/docs/react/custom-cursors)
-- [Rerenders](/docs/react/rerenders)
-- [Follow mode](/docs/get-started/guides/follow-mode)
+<Cards>
+  <Card icon={<MousePointer />} title="Remote cursors" href="/docs/react/remote-cursors">
+    `useRemoteCursors` and `useRemoteCursorsSelector`.
+  </Card>
+  <Card icon={<Crosshair />} title="Resolution" href="/docs/dom/resolution">
+    The fields of `ResolvedCursor`.
+  </Card>
+  <Card icon={<Palette />} title="Custom cursors" href="/docs/react/custom-cursors">
+    Draw your own cursor component.
+  </Card>
+  <Card icon={<Gauge />} title="Rerenders" href="/docs/react/rerenders">
+    Keep rerenders low in a large room.
+  </Card>
+  <Card icon={<Footprints />} title="Follow mode" href="/docs/get-started/guides/follow-mode">
+    Scroll to the cursor of one peer.
+  </Card>
+</Cards>

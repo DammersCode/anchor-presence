@@ -1,7 +1,10 @@
 ---
 title: Table and cards
 description: A cursor on a table cell lands on the same field when the row turns into a card.
+icon: table-properties
 ---
+
+import { AppWindow, BookOpen, LayoutGrid, ListTree } from "lucide-react";
 
 A list can show as a table on a wide screen and as a stack of cards on a narrow screen. The fields of one record move to different places. In this demo, the wide pane shows invoices as table rows. The narrow pane shows each invoice as a card. A cursor on the status cell of a row lands on the status pill of the same card.
 
@@ -29,8 +32,24 @@ The `field` helper builds every anchor ID from the invoice ID and the field name
 
 ## Related
 
-- [Anchor IDs](/docs/get-started/concepts/anchors#anchor-ids): how to name anchors, so that they stay stable across layouts.
-- [How the chain works](/docs/get-started/concepts/fallback-chain#how-the-chain-works): why a cursor between two fields lands on the record.
-- [The three tiers](/docs/dom/resolution#the-three-tiers): the tiers that the status bar shows.
-- [Responsive grid](/docs/examples/responsive-grid): cards that move and change size.
-- [Anchors and fallbacks](/docs/examples/anchors-and-fallbacks): fields that exist in only one layout.
+<Cards>
+  <Card icon={<BookOpen />} title="Anchor IDs" href="/docs/get-started/concepts/anchors#anchor-ids">
+    How to name anchors, so that they stay stable across layouts.
+  </Card>
+  <Card
+    icon={<BookOpen />}
+    title="How the chain works"
+    href="/docs/get-started/concepts/fallback-chain#how-the-chain-works"
+  >
+    Why a cursor between two fields lands on the record.
+  </Card>
+  <Card icon={<AppWindow />} title="The three tiers" href="/docs/dom/resolution#the-three-tiers">
+    The tiers that the status bar shows.
+  </Card>
+  <Card icon={<LayoutGrid />} title="Responsive grid" href="/docs/examples/responsive-grid">
+    Cards that move and change size.
+  </Card>
+  <Card icon={<ListTree />} title="Anchors and fallbacks" href="/docs/examples/anchors-and-fallbacks">
+    Fields that exist in only one layout.
+  </Card>
+</Cards>

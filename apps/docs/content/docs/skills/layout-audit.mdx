@@ -1,7 +1,10 @@
 ---
 title: Layout audit skill
 description: The agent skill that scores a running app for cursor-jump risk between layouts and proposes fixes.
+icon: scan-search
 ---
+
+import { BookOpen, LayoutGrid, Plug, Ruler } from "lucide-react";
 
 The layout audit skill measures how far a remote cursor can jump when the layout of your app changes. Examples are a sidebar that collapses, a table that becomes cards, and a breakpoint that reflows a grid. To use it, install the skill and ask your agent to audit your layouts. The agent opens your running app in a real browser. It gives back a score for each view pair, with concrete fixes.
 
@@ -41,13 +44,32 @@ If a pair scores moderate or high, the agent proposes fixes with the file and li
 
 ## How it works
 
-1. **Scan.** The agent finds every `data-anchor` in your code and the routes that render them. It also finds your breakpoints and the toggles that change which anchors show or where they sit.
-2. **Propose a matrix.** It builds views from routes, viewport widths, and states. The widths are a base set plus your breakpoints. The states are the default state plus one state for each toggle. Before it measures, it shows you the number of pairs.
-3. **Check prerequisites.** It checks that the app URL answers and that Playwright is installed.
-4. **Measure.** It opens each view in a real browser, records the anchor boxes, and scores every pair.
-5. **Report.** It asks which format you prefer. Then it shows the results or writes them to a file.
-6. **Propose fixes.** For each pair that scores moderate or high, it matches the worst sub-scores to a fix. It cites the file and line.
-7. **Apply and measure again.** It applies only the fixes that you pick. Then it measures again and shows a before-and-after table.
+<Steps>
+  <Step>
+    **Scan.** The agent finds every `data-anchor` in your code and the routes that render them. It also finds
+    your breakpoints and the toggles that change which anchors show or where they sit.
+  </Step>
+  <Step>
+    **Propose a matrix.** It builds views from routes, viewport widths, and states. The widths are a base set
+    plus your breakpoints. The states are the default state plus one state for each toggle. Before it
+    measures, it shows you the number of pairs.
+  </Step>
+  <Step>**Check prerequisites.** It checks that the app URL answers and that Playwright is installed.</Step>
+  <Step>
+    **Measure.** It opens each view in a real browser, records the anchor boxes, and scores every pair.
+  </Step>
+  <Step>
+    **Report.** It asks which format you prefer. Then it shows the results or writes them to a file.
+  </Step>
+  <Step>
+    **Propose fixes.** For each pair that scores moderate or high, it matches the worst sub-scores to a fix.
+    It cites the file and line.
+  </Step>
+  <Step>
+    **Apply and measure again.** It applies only the fixes that you pick. Then it measures again and shows a
+    before-and-after table.
+  </Step>
+</Steps>
 
 ## Output formats
 
@@ -84,15 +106,23 @@ See [Scoring a view pair](https://github.com/DammersCode/anchor-presence/blob/ma
 
 ## Common questions
 
-**Does it need my app in production?** No. Point it at any running instance, including `localhost`. Nothing it measures leaves your machine.
-
-**What if I have no Playwright installed?** The skill detects this and gives you the exact install command for your package manager. It asks before it installs anything.
-
-**Can I run this in CI?** Yes. Run `measure.mjs` with `--fail-above <score>`. If any view pair scores above that value, the script exits with code 1. If the script cannot measure a view, it also exits with code 1. As a result, a pipeline fails the build on a regression or on an app that did not start.
-
-**Does it fix things automatically?** No. It proposes fixes for each pair and applies only the ones that you pick, one round per run.
-
-**What counts as one view?** One route, at one viewport width, in one UI state. For example, the orders page at 768 px with the sidebar collapsed.
+<Accordions type="multiple">
+<Accordion title="Does it need my app in production?">
+No. Point it at any running instance, including `localhost`. Nothing it measures leaves your machine.
+</Accordion>
+<Accordion title="What if I have no Playwright installed?">
+The skill detects this and gives you the exact install command for your package manager. It asks before it installs anything.
+</Accordion>
+<Accordion title="Can I run this in CI?">
+Yes. Run `measure.mjs` with `--fail-above <score>`. If any view pair scores above that value, the script exits with code 1. If the script cannot measure a view, it also exits with code 1. As a result, a pipeline fails the build on a regression or on an app that did not start.
+</Accordion>
+<Accordion title="Does it fix things automatically?">
+No. It proposes fixes for each pair and applies only the ones that you pick, one round per run.
+</Accordion>
+<Accordion title="What counts as one view?">
+One route, at one viewport width, in one UI state. For example, the orders page at 768 px with the sidebar collapsed.
+</Accordion>
+</Accordions>
 
 ## It works if
 
@@ -103,6 +133,17 @@ See [Scoring a view pair](https://github.com/DammersCode/anchor-presence/blob/ma
 
 ## Related
 
-- [Integration skill](/docs/skills/integration): run it first to place anchors. Then the audit skill measures the anchors that it placed.
-- [Layout design for presence](/docs/get-started/guides/layout-design): the layout rules behind every sub-score, with the fix that applies to each.
-- [Responsive layouts](/docs/get-started/concepts/responsive-layouts): how the resolver behaves across breakpoints.
+<Cards>
+  <Card icon={<Plug />} title="Integration skill" href="/docs/skills/integration">
+    Run it first to place anchors. Then the audit measures them.
+  </Card>
+  <Card icon={<Ruler />} title="Layout design for presence" href="/docs/get-started/guides/layout-design">
+    The layout rule behind every sub-score, with its fix.
+  </Card>
+  <Card icon={<BookOpen />} title="Responsive layouts" href="/docs/get-started/concepts/responsive-layouts">
+    How the resolver behaves across breakpoints.
+  </Card>
+  <Card icon={<LayoutGrid />} title="Responsive grid" href="/docs/examples/responsive-grid">
+    A live demo of cards that move between breakpoints.
+  </Card>
+</Cards>

@@ -4,7 +4,7 @@ import net from "node:net";
 import { randomBytes, randomUUID } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { closePeerAboveHardLimit, slowPeerAction } from "../index";
+import { closePeerAboveHardLimit } from "../index";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 
@@ -379,20 +379,6 @@ describe("reference relay hardening", () => {
     expect(delivered).toBe(10);
     stalled.socket.destroy();
   }, 20_000);
-
-  it("classifies slow-peer actions with skip hysteresis", () => {
-    expect(slowPeerAction(0, false, 64, 192, 32)).toBe("send");
-    expect(slowPeerAction(64, false, 64, 192, 32)).toBe("send");
-    expect(slowPeerAction(65, false, 64, 192, 32)).toBe("skip");
-    expect(slowPeerAction(128, true, 64, 192, 32)).toBe("skip");
-    expect(slowPeerAction(192, true, 64, 192, 32)).toBe("skip");
-    expect(slowPeerAction(31, true, 64, 192, 32)).toBe("send");
-    expect(slowPeerAction(32, true, 64, 192, 32)).toBe("skip");
-    expect(slowPeerAction(0, true, 64, 192, 32)).toBe("send");
-    expect(slowPeerAction(193, false, 64, 192, 32)).toBe("close");
-    expect(slowPeerAction(193, true, 64, 192, 32)).toBe("close");
-    expect(slowPeerAction(4096, true, 64, 192, 32)).toBe("close");
-  });
 
   it("limits burst messages per socket and refills over time", async () => {
     const room = randomUUID();

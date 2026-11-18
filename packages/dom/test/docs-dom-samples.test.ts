@@ -1,8 +1,14 @@
 import { afterEach, describe, expect, expectTypeOf, it, vi } from "vitest";
 import { createInMemoryPair, createPresenceClient } from "@anchor-presence/core";
 import type { TransportClose } from "@anchor-presence/core";
-import { CURSOR_MARKER_ATTRIBUTE, createDomBinding, createWebSocketTransport } from "../src/index";
+import {
+  CURSOR_MARKER_ATTRIBUTE,
+  createBroadcastChannelTransport,
+  createDomBinding,
+  createWebSocketTransport,
+} from "../src/index";
 import type {
+  ResolvedCursor,
   CafLike,
   DomBinding,
   MutationObserverCtor,
@@ -278,5 +284,74 @@ describe("binding api docs: host types", () => {
     expectTypeOf(cancelAnimationFrame).toMatchTypeOf<CafLike>();
     expectTypeOf(MutationObserver).toMatchTypeOf<MutationObserverCtor>();
     expectTypeOf<typeof ResizeObserver>().toMatchTypeOf<ResizeObserverCtor>();
+  });
+});
+
+describe("dom docs samples: pages without a guide test", () => {
+  it("pointer-capture.mdx: captureFocus publishes a cursor for the focused element", () => {
+    const { a } = createInMemoryPair();
+    const client = createPresenceClient({ transport: a });
+    const setLocalCursor = vi.spyOn(client, "setLocalCursor");
+    const button = document.createElement("button");
+    button.getBoundingClientRect = () => new DOMRect(10, 10, 20, 20);
+    document.body.append(button);
+
+    // Copied from apps/docs/content/docs/dom/pointer-capture.mdx.
+    const binding = createDomBinding(client, { captureFocus: true });
+
+    button.dispatchEvent(new FocusEvent("focusin", { bubbles: true }));
+    expect(setLocalCursor.mock.calls.at(-1)?.[0]?.viewport).toBeDefined();
+    binding.dispose();
+    client.dispose();
+    button.remove();
+  });
+
+  it("resolution.mdx: the tier sample reads each cursor of the snapshot", () => {
+    const { a } = createInMemoryPair();
+    const client = createPresenceClient({ transport: a });
+    const binding = createDomBinding(client);
+    const debug = vi.spyOn(console, "debug").mockImplementation(() => {});
+
+    // Copied from apps/docs/content/docs/dom/resolution.mdx.
+    for (const cursor of binding.getSnapshot()) {
+      if (cursor.tier === "viewport") console.debug(`${cursor.clientId} has no shared anchor`);
+    }
+
+    expect(debug).not.toHaveBeenCalled();
+    binding.dispose();
+    client.dispose();
+  });
+
+  it("build-a-framework-adapter.mdx: observeCursors writes the first and each later snapshot", () => {
+    // Copied from apps/docs/content/docs/core/build-a-framework-adapter.mdx (The bridge).
+    function observeCursors(binding: DomBinding, write: (cursors: ResolvedCursor[]) => void): () => void {
+      write(binding.getSnapshot());
+      return binding.subscribe(() => write(binding.getSnapshot()));
+    }
+
+    const { a } = createInMemoryPair();
+    const client = createPresenceClient({ transport: a });
+    const binding = createDomBinding(client);
+    const writes: ResolvedCursor[][] = [];
+    const stop = observeCursors(binding, (cursors) => writes.push(cursors));
+    binding.invalidate();
+    stop();
+    expect(writes).toEqual([[]]);
+    binding.dispose();
+    client.dispose();
+  });
+
+  it("broadcast-channel-transport.mdx: two clients on one channel see each other", async () => {
+    vi.useFakeTimers();
+    // Copied from apps/docs/content/docs/dom/broadcast-channel-transport.mdx (Usage).
+    const client = createPresenceClient({ transport: createBroadcastChannelTransport("presence-demo") });
+
+    const peer = createPresenceClient({ transport: createBroadcastChannelTransport("presence-demo") });
+    peer.setLocalCursor({ anchors: [], viewport: { u: 0.5, v: 0.5 } });
+    await vi.advanceTimersByTimeAsync(100);
+    vi.useRealTimers();
+    await vi.waitFor(() => expect(client.getRemotePresence()).toHaveLength(1));
+    client.dispose();
+    peer.dispose();
   });
 });

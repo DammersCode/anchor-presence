@@ -87,7 +87,7 @@ function createEventAllowance(
       if (total.tokens < 1) return false;
       let bucket = buckets.get(clientId);
       if (bucket === undefined) {
-        if (buckets.size >= maxSenders) buckets.clear();
+        if (buckets.size >= maxSenders) buckets.delete(buckets.keys().next().value as string);
         bucket = { tokens: burst, at: now };
         buckets.set(clientId, bucket);
       }
@@ -165,11 +165,12 @@ function warnDropped(
 export function wireInbound<TContext, TUser>(state: PresenceClientState<TContext, TUser>): void {
   let warnedUnparsed = false;
   const warnedInbound = new Set<string>();
-  const dropInbound = (reason: string): void => {
+  const dropInbound = (reason: string, hint = "", error?: unknown): void => {
     if (!state.devMode || warnedInbound.has(reason)) return;
     warnedInbound.add(reason);
     console.warn(
-      `[anchor-presence] dropped an inbound message: ${reason}. A codec mismatch between peers causes this.`,
+      `[anchor-presence] dropped an inbound message: ${reason}.${hint}`,
+      ...(error === undefined ? [] : [error]),
     );
   };
   const warnedDropped = { user: false, context: false };
@@ -184,7 +185,7 @@ export function wireInbound<TContext, TUser>(state: PresenceClientState<TContext
       const decoded = state.codec.decode(data);
       const presence = validatePresence<TContext, TUser>(decoded, state.validationLimits);
       if (presence === null) {
-        dropInbound("it failed to decode or validate");
+        dropInbound("it failed to decode or validate", " A codec mismatch between peers causes this.");
         return;
       }
       if (presence.clientId === state.clientId) {
@@ -223,8 +224,8 @@ export function wireInbound<TContext, TUser>(state: PresenceClientState<TContext
       }
       const known = state.store.has(presence.clientId, presence.session);
       if (state.store.ingest(presence) && !known && presence.leave !== true) state.onNewPeer();
-    } catch {
-      dropInbound("the codec or a subscriber threw");
+    } catch (error) {
+      dropInbound("the codec or a subscriber threw", "", error);
     }
   });
   state.teardowns.push(unsubscribeTransport);

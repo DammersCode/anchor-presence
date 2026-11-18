@@ -17,7 +17,7 @@ import {
   type AuthIdentity,
   tokenAuthCheck,
   type AuthCheck,
-} from "../_shared/relay-guard";
+} from "../_shared/relay-guard.ts";
 
 export type NodeWsRelayOptions = {
   maxMessageBytes?: number;
@@ -42,10 +42,12 @@ type SocketState = {
   rateLimiter: RateLimiter;
   skipped: boolean;
   alive: boolean;
+  socket: Duplex;
 };
 
 const SLOW_PEER_CODE = 4003;
 const REFUSED_LINGER_MS = 1000;
+const CLOSE_TIMEOUT_MS = 2000;
 
 /** Creates a relay on Node's `ws` package. Rooms are plain `Set<WebSocket>` maps, closed and swept on disconnect. */
 export function createNodeWsRelay(port: number, options: NodeWsRelayOptions = {}) {
@@ -143,11 +145,18 @@ export function createNodeWsRelay(port: number, options: NodeWsRelayOptions = {}
       return;
     }
     wss.handleUpgrade(req, socket, head, (ws) => {
-      wss.emit("connection", ws, room, auth === true ? undefined : auth);
+      wss.emit("connection", ws, room, auth === true ? undefined : auth, socket);
     });
   };
 
-  wss.on("connection", (ws: WebSocket, room: string, identity: AuthIdentity | undefined) => {
+  // corked sockets flush once per event-loop turn: one write per receiver instead of one per frame
+  const corked = new Set<Duplex>();
+  const uncorkAll = () => {
+    for (const socket of corked) socket.uncork();
+    corked.clear();
+  };
+
+  wss.on("connection", (ws: WebSocket, room: string, identity: AuthIdentity | undefined, socket: Duplex) => {
     const socketState: SocketState = {
       room,
       identity,
@@ -155,6 +164,7 @@ export function createNodeWsRelay(port: number, options: NodeWsRelayOptions = {}
       rateLimiter: new RateLimiter(rateCapacity, rateRefillPerSecond),
       skipped: false,
       alive: true,
+      socket,
     };
     state.set(ws, socketState);
     const sockets = rooms.get(room) ?? new Set<WebSocket>();
@@ -204,6 +214,11 @@ export function createNodeWsRelay(port: number, options: NodeWsRelayOptions = {}
         }
         peerState.skipped = action === "skip";
         if (action === "skip") continue;
+        if (!corked.has(peerState.socket)) {
+          if (corked.size === 0) setImmediate(uncorkAll);
+          peerState.socket.cork();
+          corked.add(peerState.socket);
+        }
         peer.send(outgoing, { binary: outgoingBinary });
       }
     });
@@ -230,7 +245,6 @@ export function createNodeWsRelay(port: number, options: NodeWsRelayOptions = {}
     },
     (idleTimeoutSeconds * 1000) / 2,
   );
-  wss.on("close", () => clearInterval(heartbeat));
 
   return new Promise<{ url: string; close: () => Promise<void> }>((resolve) => {
     httpServer.listen(port, () => {
@@ -238,13 +252,23 @@ export function createNodeWsRelay(port: number, options: NodeWsRelayOptions = {}
       const actualPort = typeof address === "object" && address ? address.port : port;
       resolve({
         url: `http://localhost:${actualPort}`,
-        close: () =>
-          new Promise<void>((resolveClose) => {
-            wss.close(() => {
-              httpServer.close(() => resolveClose());
-            });
-            for (const client of wss.clients) client.terminate();
-          }),
+        close: async () => {
+          clearInterval(heartbeat);
+          for (const client of wss.clients) client.terminate();
+          httpServer.closeAllConnections?.();
+          let timer: ReturnType<typeof setTimeout> | undefined;
+          // a close callback that never fires must not hang close(): never wait longer than the timer
+          await Promise.race([
+            Promise.all([
+              new Promise<void>((done) => wss.close(() => done())),
+              new Promise<void>((done) => httpServer.close(() => done())),
+            ]),
+            new Promise<void>((done) => {
+              timer = setTimeout(done, CLOSE_TIMEOUT_MS);
+            }),
+          ]);
+          clearTimeout(timer);
+        },
       });
     });
   });

@@ -1,19 +1,20 @@
 ---
 title: Client API
-description: createPresenceClient, its options, PresenceClient, createEventChannel, createEventParser, RemotePresenceStore, isDevMode, and the client constants.
+description: createPresenceClient, its options, PresenceClient, createEventChannel, createEventParser, RemotePresenceStore, isDevMode, warnOnce, reportListenerError, and the client constants.
+icon: code
 ---
 
-`@anchor-presence/core` exports every name below.
+import { FileCode, Radio, Users } from "lucide-react";
 
-## createPresenceClient
-
-Import `createPresenceClient` from `@anchor-presence/core`:
+This page lists the client exports of `@anchor-presence/core` with their types. Use it to look up an option or a method. The guides explain the behavior.
 
 ```ts
 import { createPresenceClient } from "@anchor-presence/core";
 ```
 
-`createPresenceClient(options)` builds a `PresenceClient`. See [Presence client](/docs/core/presence-client) for the lifecycle, the publish rate, and the heartbeat.
+## createPresenceClient
+
+`createPresenceClient(options)` builds a `PresenceClient`. It throws a `TypeError` when a numeric option is not a finite number. See [Presence client](/docs/core/presence-client).
 
 <AutoTypeTable path="../../packages/core/src/internal/types.ts" name="PresenceClientOptions" />
 
@@ -23,16 +24,17 @@ import { createPresenceClient } from "@anchor-presence/core";
 
 <AutoTypeTable path="../../packages/core/src/internal/types.ts" name="PresenceClient" />
 
-These guides describe the methods in detail:
+These guides describe the methods:
 
-- [Events](/docs/core/presence-client#events) for `sendEvent`, `subscribeEvents`, `parseEvent`, and `eventRateLimit`.
-- [Leave the room](/docs/core/presence-client#leave-the-room) for `leave`.
-- [Close reasons](/docs/core/presence-client#close-reasons) for `subscribeClose`.
-- [Peer changes](/docs/core/remote-presence#peer-changes) for `subscribePeers`.
-- [Read remote presence](/docs/core/remote-presence#read-remote-presence) for `getRemotePresence`, `getRemoteSnapshot`, and `subscribeRemote`.
-- [Lifecycle](/docs/core/presence-client#lifecycle) for `setLocalCursor`, `setContext`, `setUser`, `subscribeContext`, `subscribeUser`, `registerTeardown`, and `dispose`.
-- [Status](/docs/core/presence-client#status) for `getStatus`, `subscribeStatus`, and `hasActiveCursors`.
-- [Remote user and context](/docs/core/validation#remote-user-and-context) for `parseUser` and `parseContext`.
+| Methods                                                                                                                                | Guide                                                                   |
+| -------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `setLocalCursor`, `setContext`, `setUser`, `getContext`, `getUser`, `subscribeContext`, `subscribeUser`, `registerTeardown`, `dispose` | [Lifecycle](/docs/core/presence-client#lifecycle)                       |
+| `getStatus`, `subscribeStatus`, `hasActiveCursors`                                                                                     | [Status](/docs/core/presence-client#status)                             |
+| `sendEvent`, `subscribeEvents`                                                                                                         | [Events](/docs/core/presence-client#events)                             |
+| `leave`                                                                                                                                | [Leave the room](/docs/core/presence-client#leave-the-room)             |
+| `subscribeClose`                                                                                                                       | [Close reasons](/docs/core/presence-client#close-reasons)               |
+| `getRemotePresence`, `getRemoteSnapshot`, `subscribeRemote`                                                                            | [Read remote presence](/docs/core/remote-presence#read-remote-presence) |
+| `subscribePeers`                                                                                                                       | [Peer changes](/docs/core/remote-presence#peer-changes)                 |
 
 ## createEventChannel
 
@@ -58,7 +60,7 @@ function createEventChannel<TEvents extends object>(
 ): EventChannel<TEvents>;
 ```
 
-An `EventMap` maps each event type to the type of its `data`. `TypedRemoteEvent<TEvents>` is a union with one member per event type. The channel does not check remote data. See [Typed events](/docs/core/presence-client#typed-events).
+An `EventMap` maps each event type to the type of its `data`. `TypedRemoteEvent<TEvents>` is a union with one member for each event type. The channel does not check remote data. See [Typed events](/docs/core/presence-client#typed-events).
 
 ## createEventParser
 
@@ -75,7 +77,7 @@ function createEventParser<TEvents extends EventMap>(
 ): (event: RemoteEvent) => TypedRemoteEvent<TEvents> | undefined;
 ```
 
-`createEventParser` returns a function for the `parseEvent` option of `createPresenceClient`. Each parser receives the remote `data` and returns the checked data, or `undefined` to drop the event. `null` is legal only for an event whose data type includes `undefined`. The returned function drops an event in these cases:
+`createEventParser` returns a function for the `parseEvent` option. `null` is legal only for an event whose data type includes `undefined`. The returned function drops an event in these cases:
 
 - `parsers` has no entry for its `type`.
 - Its parser returns `undefined`.
@@ -85,7 +87,7 @@ See [Typed events](/docs/core/presence-client#typed-events) for a sample.
 
 ## AdaptivePublishOptions
 
-`AdaptivePublishOptions` is the shape of the `adaptivePublish` option. See [Presence client](/docs/core/presence-client#publish-rate) for the watermark behavior.
+`AdaptivePublishOptions` is the shape of the `adaptivePublish` option. See [Publish rate](/docs/core/presence-client#publish-rate).
 
 <AutoTypeTable path="../../packages/core/src/internal/types.ts" name="AdaptivePublishOptions" />
 
@@ -97,13 +99,21 @@ See [Typed events](/docs/core/presence-client#typed-events) for a sample.
 
 ## RemotePresenceStore
 
-`RemotePresenceStore` is the store that holds the presence of each peer (another client in the same room). See [Use the store without a client](/docs/core/remote-presence#use-the-store-without-a-client) for the methods and the rules.
+`RemotePresenceStore` is the store that holds the presence of each peer. Its constructor takes `RemotePresenceStoreOptions`. See [Use the store without a client](/docs/core/remote-presence#use-the-store-without-a-client) for the methods and the rules.
 
 <AutoTypeTable path="../../packages/core/src/store.ts" name="RemotePresenceStoreOptions" />
 
 ## isDevMode
 
-`isDevMode()` returns whether the code runs in development mode. See [Development mode](/docs/core/presence-client#development-mode).
+`isDevMode()` returns whether the code runs in development mode. See [Development mode](/docs/core/presence-client#development-mode) for the rules.
+
+## warnOnce
+
+`warnOnce(key, message)` writes `[anchor-presence] <message>` with `console.warn`. It writes only in development mode, and only one time for each `key` in the page or process. The packages use it for their own warnings. A key that you pass shares this set with the keys of the packages.
+
+## reportListenerError
+
+`reportListenerError(error)` writes `error` with `console.error` in development mode, and does nothing in production. The packages call it when a listener of your code throws, so that one listener cannot stop the others.
 
 ## Constants
 
@@ -129,6 +139,14 @@ import {
 
 ## Related
 
-- [Presence client](/docs/core/presence-client)
-- [Remote presence](/docs/core/remote-presence)
-- [Protocol types](/docs/core/api/protocol)
+<Cards>
+  <Card icon={<Radio />} title="Presence client" href="/docs/core/presence-client">
+    The guide to the client.
+  </Card>
+  <Card icon={<Users />} title="Remote presence" href="/docs/core/remote-presence">
+    The guide to the store.
+  </Card>
+  <Card icon={<FileCode />} title="Protocol types" href="/docs/core/api/protocol">
+    The message types that the client sends and receives.
+  </Card>
+</Cards>

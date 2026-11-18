@@ -1,13 +1,21 @@
 ---
 title: Quick start
 description: See live cursors in two browser tabs with no backend, then connect a relay.
+icon: rocket
 ---
 
-Run live cursors in two steps. First, connect two tabs of one browser with no backend. Then connect two browsers through a relay. A relay is a server that forwards each message to every other client in a room.
+import { Anchor, Cable, FlaskConical, MousePointer, Server, Workflow } from "lucide-react";
+
+This page takes you from an empty React app to live cursors in two steps. First, you connect two tabs of one browser with no server. Then you connect two browsers through a relay. Install the packages first. See [Installation](/docs/get-started/installation).
 
 ## Try it in two tabs
 
-`createBroadcastChannelTransport` from `@anchor-presence/dom` connects the tabs and iframes of one origin, with no server. Pass the provider a `factory` that creates the transport and the client. Mark one element with `data-anchor`:
+<Steps>
+<Step>
+
+### Create the client and the provider
+
+`createBroadcastChannelTransport` connects the tabs of one browser, with no server. The `factory` prop of the provider creates the client. One element carries `data-anchor`:
 
 ```tsx
 import { createPresenceClient } from "@anchor-presence/core";
@@ -29,13 +37,34 @@ export function App() {
 }
 ```
 
-Open your app in two tabs of the same browser. Move the pointer in one tab. A cursor with a guest name appears in the other tab. `CursorLayer` shows `user.name` as the label. It gives each client one color from a palette of 8 colors.
+</Step>
+<Step>
 
-The provider runs the factory once per mount, in a browser-only effect, and disposes the client on unmount. Create the client in the factory, not at module scope. A module-scope client also runs on the server, and every request then shares it. See [SSR and Strict Mode](/docs/react/ssr-and-strict-mode).
+### Open two tabs
+
+Open your app in two tabs of the same browser. Move the pointer over the button in one tab. A cursor with a guest name appears in the other tab.
+
+</Step>
+</Steps>
+
+`CursorLayer` shows `user.name` as the label. It gives each client one of 8 colors.
+
+<Callout type="warn">
+  If you create the client at module scope, the server also runs that code, and all requests share one client.
+  Create the client in `factory`. The provider runs `factory` in the browser only, once per mount, and
+  disposes the client on unmount. See [SSR and Strict Mode](/docs/react/ssr-and-strict-mode).
+</Callout>
 
 ## Connect a relay
 
-A `BroadcastChannel` never leaves the browser. To connect two browsers or two devices, run a relay and use `createWebSocketTransport`. Start the [Bun relay](/docs/examples/backends/bun-native) from a clone of the repository:
+A `BroadcastChannel` never leaves the browser. To connect two browsers or two devices, use a relay and `createWebSocketTransport`.
+
+<Steps>
+<Step>
+
+### Start a relay
+
+Start the [Bun relay](/docs/examples/backends/bun-native) from a clone of the repository. It listens on port 8788:
 
 ```sh
 bun install
@@ -43,7 +72,12 @@ cd examples/bun-native
 bun run dev:relay
 ```
 
-The relay listens on port 8788. Change only the transport in `createClient`:
+</Step>
+<Step>
+
+### Change the transport
+
+Change only the transport in `createClient`:
 
 ```tsx
 import { createPresenceClient } from "@anchor-presence/core";
@@ -55,23 +89,43 @@ function createClient() {
 }
 ```
 
-The client connects the transport by default. `room` is a key of the relay that groups clients, not part of the protocol. Every relay in [Backends](/docs/examples/backends) uses its own port, so set `port` to the port of the relay that you run. Any bidirectional byte channel that implements the transport interface works in place of `createWebSocketTransport`. See [Transports](/docs/core/transports).
+The client connects the transport when you create it. `room` is a query parameter that the relay reads to group clients. It is not part of the protocol. Each relay in [Backends](/docs/examples/backends) uses its own port, so set `port` to the port of your relay.
 
-## See it move
+</Step>
+<Step>
 
-Open your app in two browser windows. Move the pointer in one window. The cursor appears in the second window. It stays on the same element, even at a different window size:
+### Open two windows
+
+Open your app in two browser windows of different widths. Move the pointer in one window. The cursor stays on the same element in the other window:
 
 <Demo />
 
+</Step>
+</Steps>
+
 ## Without React
 
-`@anchor-presence/core` and `@anchor-presence/dom` work with no React in the tree. Subscribe to the resolved cursors of the binding, and render them yourself with plain DOM updates or another framework. See [Binding](/docs/dom/binding) for the subscribe method. To connect the binding to the reactivity of a framework, see [Build a framework adapter](/docs/core/build-a-framework-adapter).
+`@anchor-presence/core` and `@anchor-presence/dom` work with no React. `createDomBinding` gives the resolved cursors, and you render them with plain DOM code or another framework. See [Draw cursors without React](/docs/dom/binding#draw-cursors-without-react). To connect the binding to another framework, see [Build a framework adapter](/docs/core/build-a-framework-adapter).
 
 ## Related
 
-- [Frameworks](/docs/get-started/frameworks)
-- [Anchors](/docs/get-started/concepts/anchors)
-- [Fallback chain](/docs/get-started/concepts/fallback-chain)
-- [SSR and Strict Mode](/docs/react/ssr-and-strict-mode)
-- [Transports](/docs/core/transports)
-- [Examples](/docs/examples/basics)
+<Cards>
+  <Card icon={<Workflow />} title="Frameworks" href="/docs/get-started/frameworks">
+    Put the provider in Next.js, TanStack, React Router, Remix, or Astro.
+  </Card>
+  <Card icon={<Anchor />} title="Anchors" href="/docs/get-started/concepts/anchors">
+    Choose anchor IDs for your elements.
+  </Card>
+  <Card icon={<Cable />} title="Transports" href="/docs/core/transports">
+    Use Socket.IO, SignalR, or your own channel.
+  </Card>
+  <Card icon={<Server />} title="Backends" href="/docs/examples/backends">
+    Relays for Bun, Node.js, and other servers.
+  </Card>
+  <Card icon={<MousePointer />} title="Custom cursors" href="/docs/react/custom-cursors">
+    Draw your own cursor component.
+  </Card>
+  <Card icon={<FlaskConical />} title="Examples" href="/docs/examples/basics">
+    Live demos of different layouts.
+  </Card>
+</Cards>

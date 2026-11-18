@@ -1,4 +1,5 @@
 import type { CursorPosition, CursorPresence, PeerChange, RemotePresence } from "./protocol.js";
+import { reportListenerError } from "./internal/dev-warnings.js";
 
 /** Default maximum number of remote clients in one `RemotePresenceStore`. */
 export const DEFAULT_MAX_REMOTE_CLIENTS = 64;
@@ -23,7 +24,7 @@ export type RemotePresenceStoreOptions = {
   /** Returns the current time in milliseconds. Default `Date.now`. */
   now?: () => number;
   /** Runs when the store drops a new client because the store is full. */
-  onDropNewClient?: () => void;
+  onDropNewClient?: (clientId: string) => void;
 };
 
 type Entry<TContext, TUser> = {
@@ -44,7 +45,7 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
   private readonly staleTimeoutMs: number;
   private readonly idleAfterMs: number;
   private readonly now: () => number;
-  private readonly onDropNewClient: (() => void) | undefined;
+  private readonly onDropNewClient: ((clientId: string) => void) | undefined;
 
   private readonly entries = new Map<string, Entry<TContext, TUser>>();
   private readonly listeners = new Set<() => void>();
@@ -81,7 +82,7 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
     if (existing === undefined) {
       if (presence.leave === true) return false;
       if (this.entries.size >= this.maxRemoteClients) {
-        this.onDropNewClient?.();
+        this.onDropNewClient?.(presence.clientId);
         return false;
       }
       const normalized = this.normalizePresence(presence);
@@ -122,7 +123,7 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
     // a returning clientId with a new session counts as changed when its user differs by value
     const profileChanged = sameSession
       ? !Object.is(previous.user, nextPresence.user) || !Object.is(previous.context, nextPresence.context)
-      : !jsonEqual(previous.user, nextPresence.user);
+      : !jsonEqual(previous.user, nextPresence.user) || !jsonEqual(previous.context, nextPresence.context);
     if (!sameObservedPresence(previous, nextPresence)) {
       existing.changedAt = existing.lastSeenAt;
       existing.idle = false;
@@ -282,8 +283,8 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
     for (const listener of this.peerListeners) {
       try {
         listener(change);
-      } catch {
-        // one throwing subscriber must not starve the rest
+      } catch (error) {
+        reportListenerError(error);
       }
     }
   }
@@ -293,8 +294,8 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
     for (const listener of this.listeners) {
       try {
         listener();
-      } catch {
-        // one throwing subscriber must not starve the rest
+      } catch (error) {
+        reportListenerError(error);
       }
     }
   }

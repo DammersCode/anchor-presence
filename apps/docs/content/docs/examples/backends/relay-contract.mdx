@@ -1,7 +1,10 @@
 ---
 title: Relay contract
 description: What every relay must do, the close codes, and the conformance suite that checks it.
+icon: file-check
 ---
+
+import { Cable, Server, ShieldCheck } from "lucide-react";
 
 A relay forwards bytes between the clients of one room. A peer is another client in the same room. A relay must obey these rules so that `createWebSocketTransport` works with it.
 
@@ -98,6 +101,14 @@ In the demo identity mode, the room token names the user. Make `authCheck` retur
 
 ## Related
 
-- [Overview](/docs/examples/backends)
-- [WebSocket transport](/docs/dom/websocket-transport)
-- [Security](/docs/get-started/guides/security)
+<Cards>
+  <Card icon={<Server />} title="Backends" href="/docs/examples/backends">
+    Pick a tested relay for your server.
+  </Card>
+  <Card icon={<Cable />} title="WebSocket transport" href="/docs/dom/websocket-transport">
+    The client side of the contract: reconnect and `shouldReconnect`.
+  </Card>
+  <Card icon={<ShieldCheck />} title="Security" href="/docs/get-started/guides/security">
+    Why a relay without identity binding trusts every `clientId`.
+  </Card>
+</Cards>

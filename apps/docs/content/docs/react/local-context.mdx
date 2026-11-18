@@ -1,44 +1,14 @@
 ---
 title: Local context and user
-description: Read and set the local UI context value and the local user value that travel with your cursor.
+description: Read and set the local context value and the local user value that travel with your cursor.
+icon: user-pen
 ---
 
-`useLocalContext` reads the local context value and gives a setter that sends it to peers. A peer is another client in the same room. Context carries small facts about what a user is doing, such as the panel they have open. See [UI context](/docs/get-started/concepts/ui-context) for what context is for.
+import { Braces, Compass, Users } from "lucide-react";
+
+Your client sends two values to each peer (another client in the same room) together with the cursor. The `user` value says who you are, for example a name and a color. The context value carries small facts about what you do, for example the panel that you have open. `useLocalUser` and `useLocalContext` read these values and give a setter for each. For what context is for, see [UI context](/docs/get-started/concepts/ui-context).
 
 ## Usage
-
-The hook has this signature:
-
-```ts
-function useLocalContext<TContext = unknown>(): [TContext | undefined, (next: TContext | undefined) => void];
-```
-
-This component sets the context while its dialog is open:
-
-```tsx
-import { useEffect } from "react";
-import { useLocalContext } from "@anchor-presence/react";
-
-function SettingsDialog({ open }: { open: boolean }) {
-  const [, setContext] = useLocalContext();
-  useEffect(() => {
-    setContext({ dialog: open ? "settings" : undefined });
-  }, [open, setContext]);
-  return open ? <DialogBody /> : null;
-}
-```
-
-The setter calls `client.setContext()`, which sends the value to peers and updates every component that reads context through this hook. A direct `client.setContext()` call outside the hook updates these components too.
-
-On the server, and with no provider above it, the hook returns `undefined` and a no-op setter.
-
-## Local user
-
-`useLocalUser` reads the local `user` value and gives a setter that sends it to peers. The hook has this signature:
-
-```ts
-function useLocalUser<TUser = unknown>(): [TUser | undefined, (next: TUser | undefined) => void];
-```
 
 This component lets a user change the name that peers see:
 
@@ -59,12 +29,47 @@ function NameField() {
 }
 ```
 
-The setter calls `client.setUser()`, which sends the value to peers. Each `setUser` call that changes the value rerenders the component. A direct `client.setUser()` call outside the hook rerenders it too. A call changes the value when its value is another reference than the current value.
+## Local user
 
-During server rendering, the hook returns `undefined`. Without a client, the setter does nothing.
+- The setter calls `client.setUser()`, which sends the value to peers.
+- The hook rerenders when the value changes. A change is a value with another reference than the current value. A direct `client.setUser()` call also rerenders the hook.
+- On the server, the hook returns `undefined`. Without a client, the setter does nothing.
+
+The default label of `CursorLayer` is the `name` field of this value. See [Defaults](/docs/react/cursor-layer#defaults).
+
+## Local context
+
+This component sets the context while its dialog is open:
+
+```tsx
+import { useEffect } from "react";
+import { useLocalContext } from "@anchor-presence/react";
+
+function SettingsDialog({ open }: { open: boolean }) {
+  const [, setContext] = useLocalContext();
+  useEffect(() => {
+    setContext({ dialog: open ? "settings" : undefined });
+  }, [open, setContext]);
+  return open ? <DialogBody /> : null;
+}
+```
+
+- The setter calls `client.setContext()`, which sends the value to peers.
+- The hook rerenders when the value changes. A direct `client.setContext()` call also rerenders the hook.
+- On the server, and without a client, the hook returns `undefined` and a setter that does nothing.
+
+Both setters keep their identity while the client stays the same. You can list them in effect dependencies.
 
 ## Related
 
-- [UI context](/docs/get-started/concepts/ui-context)
-- [Remote users](/docs/react/remote-users)
-- [Hooks API](/docs/react/api/hooks)
+<Cards>
+  <Card icon={<Compass />} title="UI context" href="/docs/get-started/concepts/ui-context">
+    What context is for and how peers use it.
+  </Card>
+  <Card icon={<Users />} title="Remote users" href="/docs/react/remote-users">
+    Read the user values of the peers.
+  </Card>
+  <Card icon={<Braces />} title="Hooks API" href="/docs/react/api/hooks#uselocaluser">
+    The signatures of useLocalUser and useLocalContext.
+  </Card>
+</Cards>

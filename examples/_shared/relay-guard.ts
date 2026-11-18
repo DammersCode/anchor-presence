@@ -61,13 +61,14 @@ export function slowPeerAction(
 
 /** Token-bucket rate limiter for one connection's inbound messages. */
 export class RateLimiter {
+  private readonly capacity: number;
+  private readonly refillPerSecond: number;
   private tokens: number;
   private lastRefill = Date.now();
 
-  constructor(
-    private readonly capacity: number,
-    private readonly refillPerSecond: number,
-  ) {
+  constructor(capacity: number, refillPerSecond: number) {
+    this.capacity = capacity;
+    this.refillPerSecond = refillPerSecond;
     this.tokens = capacity;
   }
 
@@ -89,13 +90,15 @@ export type AdmitResult = "ok" | "server full" | "room full";
 
 /** Counts open sockets per process and per room; admits a new socket only while both are below their cap. */
 export class ConnectionLimits {
+  private readonly maxSockets: number;
+  private readonly maxRoomSockets: number;
   private total = 0;
   private readonly roomSizes = new Map<string, number>();
 
-  constructor(
-    private readonly maxSockets: number,
-    private readonly maxRoomSockets: number,
-  ) {}
+  constructor(maxSockets: number, maxRoomSockets: number) {
+    this.maxSockets = maxSockets;
+    this.maxRoomSockets = maxRoomSockets;
+  }
 
   /** Takes a slot in `room` on "ok". Call `release(room)` once when that socket closes. */
   admit(room: string): AdmitResult {

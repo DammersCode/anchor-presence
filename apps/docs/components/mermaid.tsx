@@ -64,6 +64,7 @@ export function Mermaid({ chart }: { chart: string }) {
         themeVariables: readThemeVariables(),
         flowchart: { useMaxWidth: false, wrappingWidth: 260 },
         sequence: { useMaxWidth: false, mirrorActors: false },
+        state: { useMaxWidth: false },
       });
       const { svg: rendered } = await mermaid.render(`mermaid-${id}`, chart);
       if (!cancelled) setSvg(rendered);

@@ -160,6 +160,8 @@ function PublishPage({ page, pageRef }: { page: string; pageRef: { current: stri
 
 This step applies when the user asked for a who-is-online list. `useRemoteUsers()` returns one entry per remote tab with `clientId`, `user`, `session`, and `idle`. Render `user.name` as text.
 
+**Done when** the list shows one row per remote tab, with names as text.
+
 ### 8. Verify with two clients
 
 Run the project's typecheck and build. Then run two clients in the same room with different viewport widths, for example two Playwright browser contexts at 1440 px and 900 px. Move the pointer over an anchored element in the wide one.

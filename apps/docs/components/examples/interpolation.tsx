@@ -4,6 +4,7 @@ import { linearInterpolator, noneInterpolator } from "@anchor-presence/core";
 import type { Interpolator, InterpolatorFactory, PresenceClient } from "@anchor-presence/core";
 import { CursorLayer, LiveCursorProvider, useRemoteCursors } from "@anchor-presence/react";
 import { useEffect, useState, type ReactNode } from "react";
+import { safeColor } from "./safe-color";
 
 type User = { name: string; color: string };
 
@@ -109,7 +110,7 @@ function MotionTrail() {
           cx={point.x}
           cy={point.y}
           r={2.5}
-          fill={cursor?.user?.color ?? "#4f46e5"}
+          fill={safeColor(cursor?.user?.color, "#4f46e5")}
           opacity={(index + 1) / trail.length / 2}
         />
       ))}
@@ -165,7 +166,7 @@ export function InterpolationScene({ client, layout, children }: Props) {
       <MotionTrail />
       <CursorLayer<unknown, User>
         getLabel={(cursor) => cursor.user?.name ?? null}
-        getColor={(cursor) => cursor.user?.color ?? "#4f46e5"}
+        getColor={(cursor) => safeColor(cursor.user?.color, "#4f46e5")}
       />
       {children}
     </LiveCursorProvider>

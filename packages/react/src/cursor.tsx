@@ -16,11 +16,20 @@ const DEFAULT_PALETTE = [
   "#4b5563",
 ];
 
+const graphemeSegmenter =
+  typeof Intl.Segmenter === "function" ? new Intl.Segmenter(undefined, { granularity: "grapheme" }) : null;
+
+function truncateLabel(name: string): string {
+  const units =
+    graphemeSegmenter === null
+      ? Array.from(name)
+      : Array.from(graphemeSegmenter.segment(name), (part) => part.segment);
+  return units.slice(0, MAX_DEFAULT_LABEL_LENGTH).join("");
+}
+
 function defaultLabel(cursor: ResolvedCursor): string | null {
   const name = (cursor.user as { name?: unknown } | undefined)?.name;
-  return typeof name === "string" && name !== ""
-    ? Array.from(name).slice(0, MAX_DEFAULT_LABEL_LENGTH).join("")
-    : null;
+  return typeof name === "string" && name !== "" ? truncateLabel(name) : null;
 }
 
 function defaultColor(cursor: ResolvedCursor): string {

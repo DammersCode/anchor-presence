@@ -63,7 +63,7 @@ A transport with no `connect` method needs no call in either mode. A `connect()`
 
 `client.subscribeContext(listener)` calls `listener` on each `setContext` call that changes the value. `client.subscribeUser(listener)` does the same for `setUser`. A call changes the value when `value` is another reference than the current value. The listener receives no argument, so read the value with `getContext()` or `getUser()`. Both methods return a function that removes the listener. The [`useLocalContext`](/docs/react/local-context) and [`useLocalUser`](/docs/react/local-context#local-user) hooks use them.
 
-`client.dispose()` stops the client. It sends a leave message, if the client is connected, and stops every timer. Then it calls `transport.disconnect()` when the transport has one. A disposed client ignores every later call. Create a new client instead.
+`client.dispose()` stops the client. It sends a leave message, if the client is connected, and stops every timer. Then it calls `transport.disconnect()` when the transport has one. `client.dispose()` also sends a final `"disconnected"` to the `subscribeStatus` listeners, also when the transport has no `subscribeStatus`. A disposed client ignores every later call. Create a new client instead.
 
 `client.registerTeardown(fn)` adds a function that `dispose` runs. It returns a function that removes `fn`. If the client is already disposed, `fn` runs at once. The DOM binding uses it, so that `client.dispose()` also stops the binding.
 
@@ -179,7 +179,7 @@ The client reads development mode one time, at creation. In development mode, it
     - The store is full and drops a new peer. The client warns one time.
     - The client drops an inbound message because it is too large, does not decode or validate, or a subscriber throws. The client warns one time for each reason.
     - Another client uses the same `clientId`. The page warns one time, for all clients together.
-    - `staleTimeoutMs` is at most twice `heartbeatIntervalMs`, so a quiet peer expires between two heartbeats. The page warns one time, for all clients together.
+    - `staleTimeoutMs` is at most twice `heartbeatIntervalMs`, also when `staleTimeoutMs` has its default value, so a quiet peer expires between two heartbeats. The page warns one time, for all clients together.
     - The codec cannot encode the `user` or `context`. The client encodes again without `context`, then without `user`, then without both, and sends the first message that encodes. The page warns one time.
     - A message fails to encode or to send for another reason. The client warns one time.
     - A `subscribeContext`, `subscribeUser`, `subscribeRemote`, or `subscribePeers` listener throws. The client writes the error with `console.error` and calls the other listeners. A throwing `subscribeEvents` or `subscribeStatus` listener gives no output.

@@ -68,7 +68,7 @@ An inner scroll container can clip an anchor that is still measurable. The resol
 
 ## Cursor drifts
 
-A cursor can slowly move away from its element when a container moves without a signal that the scheduler watches. One example is a `style.transform` write in your own `requestAnimationFrame` loop, with no CSS transition. After such a change, call `invalidate()` on the binding:
+A cursor can slowly move away from its element when a container moves without a signal that the scheduler watches. One example is a rule that you add with `CSSStyleSheet.insertRule()`: it changes layout and writes no attribute. After such a change, call `invalidate()` on the binding:
 
 ```ts
 binding.invalidate("custom-layout-change");

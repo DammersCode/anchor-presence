@@ -6,7 +6,7 @@ icon: braces
 
 import { Braces, Plug, Users, Zap } from "lucide-react";
 
-`createPresenceHooks<TContext, TUser, TEvents>()` returns the provider and every hook with your types fixed. A hook from the result takes no type parameter, so a call with a wrong type does not compile. Use it in every app that has a known shape for its context, user, or event values. `TEvents` is optional.
+`createPresenceHooks<TContext, TUser, TEvents>()` returns the provider and every hook with your types fixed. Apart from `useRemoteCursorsSelector`, a hook from the result takes no type parameter, so a call with a wrong type does not compile. Use it in every app that has a known shape for its context, user, or event values. `TEvents` is optional.
 
 ## Usage
 

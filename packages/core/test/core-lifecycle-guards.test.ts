@@ -12,6 +12,7 @@ it("binary: refuses a viewport coordinate above the float32 range", () => {
     cursor: { anchors: [], viewport: { u: 1e39, v: 0.5 } },
   };
   expect(() => binaryCodec.encode(message)).toThrow("invalid viewport");
+  expect(() => binaryCodec.encode(message)).toThrow(TypeError);
 });
 
 afterEach(() => {
@@ -40,6 +41,25 @@ describe("development warnings", () => {
     const { a } = createInMemoryPair();
     const client = createPresenceClient({ transport: a, heartbeatIntervalMs: 5000, staleTimeoutMs: 10_000 });
     expect(warn.mock.calls.flat().join(" ")).toMatch(/staleTimeoutMs \(10000\) is at most twice/u);
+    client.dispose();
+  });
+});
+
+describe("dev warnings", () => {
+  it("names a transport send failure in the warning and retries on a bounded backoff", () => {
+    vi.useFakeTimers();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const send = vi.fn(() => {
+      throw new Error("boom");
+    });
+    const client = createPresenceClient({
+      transport: { send, subscribe: () => () => {} },
+      publishIntervalMs: 16,
+    });
+    client.setLocalCursor({ anchors: [], viewport: { u: 0.5, v: 0.5 } });
+    vi.advanceTimersByTime(1000);
+    expect(warn.mock.calls.flat().join(" ")).toMatch(/transport send failure can also cause this/u);
+    expect(send.mock.calls.length).toBeLessThan(10);
     client.dispose();
   });
 });

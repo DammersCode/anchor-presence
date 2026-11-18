@@ -115,7 +115,7 @@ function encodeMessage(message: CursorPresence): Uint8Array {
       const id = encoder.encode(anchor.id);
       if (id.byteLength > 0xffff) throw new Error("binaryCodec: anchor id too large");
       if (!Number.isFinite(Math.fround(anchor.u)) || !Number.isFinite(Math.fround(anchor.v)))
-        throw new Error("binaryCodec: invalid anchor");
+        throw new TypeError("binaryCodec: invalid anchor");
       anchorParts.push({ id, u: anchor.u, v: anchor.v });
       cursorSize += 2 + id.byteLength + 8;
     }

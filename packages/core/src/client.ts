@@ -113,10 +113,11 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     options.staleTimeoutMs === undefined ? undefined : Math.max(MIN_STALE_TIMEOUT_MS, options.staleTimeoutMs);
   const idleAfterMs = options.idleAfterMs === undefined ? undefined : Math.max(0, options.idleAfterMs);
 
-  if (isDevMode() && staleTimeoutMs !== undefined && staleTimeoutMs <= heartbeatIntervalMs * 2) {
+  const effectiveStaleTimeoutMs = staleTimeoutMs ?? DEFAULT_STALE_TIMEOUT_MS;
+  if (isDevMode() && effectiveStaleTimeoutMs <= heartbeatIntervalMs * 2) {
     warnOnce(
       "stale-vs-heartbeat",
-      `staleTimeoutMs (${options.staleTimeoutMs}) is at most twice heartbeatIntervalMs (${heartbeatIntervalMs}), so a quiet peer expires between heartbeats. Raise staleTimeoutMs or lower heartbeatIntervalMs.`,
+      `staleTimeoutMs (${effectiveStaleTimeoutMs}) is at most twice heartbeatIntervalMs (${heartbeatIntervalMs}), so a quiet peer expires between heartbeats. Raise staleTimeoutMs or lower heartbeatIntervalMs.`,
     );
   }
 

@@ -24,11 +24,13 @@ The preview gives the scene a `client` on a `BroadcastChannel` transport, so the
 
 ## Behavior notes
 
+Try it: Move your pointer over a button or a line of text in one pane.
+
 - `data-anchor` on each button: `post.save`, `post.preview`, and `post.publish`.
 - The draft tag, the title, and the summary are anchors too: `post.tag`, `post.title`, `post.summary`. A point on the text resolves to that text.
 - `data-anchor="post"` on the card. A point in a gap resolves to the card, not to the viewport.
 - The status bar under each pane shows the tier and the anchor of the remote cursor.
-- Move your pointer over a button or a line of text in one pane. The other pane shows your cursor on the same element, at a different position.
+- The other pane shows your cursor on the same element, at a different position.
 - The buttons change size when the pane shrinks. The demo shows this worst case on purpose. For the layout rule, see [Keep item sizes and shapes alike](/docs/get-started/guides/layout-design#keep-item-sizes-and-shapes-alike).
 
 ## Related

@@ -258,4 +258,23 @@ describe("createSignalRTransport", () => {
     await transport.connect?.();
     expect(transport.getStatus?.()).toBe("connected");
   });
+
+  it("ignores shared-connection callbacks after a stopConnection:false disconnect", async () => {
+    const fake = createFakeConnection();
+    const transport = createSignalRTransport(fake.connection, { stopConnection: false });
+    await transport.disconnect?.();
+    fake.fireReconnecting();
+    fake.fireReconnected();
+    fake.fireClose();
+    expect(transport.getStatus?.()).toBe("disconnected");
+  });
+
+  it("waits for a shared connection that is still connecting", async () => {
+    const fake = createFakeConnection(HubConnectionState.Connecting);
+    const transport = createSignalRTransport(fake.connection);
+    const done = transport.connect?.();
+    setTimeout(() => fake.setState(HubConnectionState.Connected), 80);
+    await done;
+    expect(transport.getStatus?.()).toBe("connected");
+  });
 });

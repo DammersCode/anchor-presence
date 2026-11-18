@@ -43,7 +43,7 @@ function TierBadge({ clientId }: { clientId: string }) {
 | [useCursorClient](/docs/react/api/hooks#usecursorclient)                      | the client or the binding of the provider changes                                                   |
 | [useCursorBinding](/docs/react/api/hooks#usecursorbinding)                    | the client or the binding of the provider changes                                                   |
 
-A peer that turns idle or expires also changes the values that hooks return, so hooks can rerender in a room with no inbound messages. Every hook also rerenders when the client or the binding of the provider changes.
+A peer that turns idle or expires also changes the values that hooks return, so hooks can rerender in a room with no inbound messages. When a factory finishes creating its client, every hook rerenders once.
 
 ## CursorLayer rerenders
 

@@ -124,7 +124,7 @@ export function createPublishLoop<TContext, TUser>(state: PresenceClientState<TC
       if (state.devMode && !warnedSendFailure) {
         warnedSendFailure = true;
         console.warn(
-          "[anchor-presence] a message failed to encode or send; check that `user` and `context` are plain JSON values.",
+          "[anchor-presence] a message failed to encode or send. Check that `user` and `context` are plain JSON values; a transport send failure can also cause this.",
           error,
         );
       }

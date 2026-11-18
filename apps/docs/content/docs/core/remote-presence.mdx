@@ -1,6 +1,6 @@
 ---
 title: Remote presence
-description: RemotePresenceStore, the stale timeout, the idle stage, peer changes, leave messages, late join, reconnect expiry, and maxRemoteClients.
+description: RemotePresenceStore, the stale timeout, the idle state, peer changes, leave messages, late join, reconnect expiry, and maxRemoteClients.
 icon: users
 ---
 
@@ -45,7 +45,7 @@ The store removes a peer when it accepts no message from that peer for `staleTim
 
 The store sets `idle: true` on the `RemotePresence` of a peer whose presence did not change for `idleAfterMs`. The store measures this time from the last change, not from the last message. The default is `DEFAULT_IDLE_AFTER_MS`, `15000` milliseconds. `idleAfterMs` always stays below `staleTimeoutMs`. If you pass a larger value, the store clamps it to `staleTimeoutMs - 1`.
 
-Heartbeats do not end the idle stage, because they repeat the same state. A peer that changes nothing goes idle while its heartbeats keep arriving. Any change in cursor, user, context, or pointer ends it. Use `idle` to dim a cursor that stopped moving. `staleTimeoutMs` decides when the cursor disappears.
+Heartbeats do not end the idle state, because they repeat the same state. A peer that changes nothing goes idle while its heartbeats keep arriving. Any change in cursor, user, context, or pointer type ends it. A change of another pointer field does not. Use `idle` to dim a cursor that stopped moving. `staleTimeoutMs` decides when the cursor disappears.
 
 ## Peer changes
 

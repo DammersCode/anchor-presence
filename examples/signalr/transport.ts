@@ -14,6 +14,9 @@ export const EVENT_RECEIVED = "PresenceReceived";
 export const EVENT_REFUSED = "Refused";
 export const METHOD_SEND = "OnPresence";
 
+const CONNECTING_POLL_MS = 50;
+const CONNECTING_POLL_LIMIT = 200;
+
 // Core's default JSON codec, re-exported so the transport and the presence client
 // share one encoding.
 export { jsonCodec };
@@ -68,6 +71,8 @@ export function createSignalRTransport(
   const statusListeners = new Set<(status: ConnectionStatus) => void>();
   const dataListeners = new Set<(data: Uint8Array) => void>();
   let status: ConnectionStatus = mapStatus(connection.state);
+  // a shared connection (stopConnection: false) keeps firing callbacks after this transport disconnects
+  let active = true;
 
   const setStatus = (next: ConnectionStatus): void => {
     if (next === status) return;
@@ -109,11 +114,15 @@ export function createSignalRTransport(
   registerHandlers();
 
   connection.onreconnecting((error) => {
+    if (!active) return;
     emitClose(error, true);
     setStatus("reconnecting");
   });
-  connection.onreconnected(() => setStatus("connected"));
+  connection.onreconnected(() => {
+    if (active) setStatus("connected");
+  });
   connection.onclose((error) => {
+    if (!active) return;
     emitClose(error, false);
     setStatus("disconnected");
   });
@@ -121,7 +130,17 @@ export function createSignalRTransport(
   return {
     connect: async () => {
       registerHandlers();
-      // Idempotent: a fresh connection reports Disconnected; starting or connected, skip.
+      active = true;
+      // a shared connection that is still starting: wait for it instead of returning early
+      for (
+        let tries = 0;
+        connection.state === HubConnectionState.Connecting && tries < CONNECTING_POLL_LIMIT;
+        tries++
+      ) {
+        setStatus("connecting");
+        await new Promise((resolve) => setTimeout(resolve, CONNECTING_POLL_MS));
+      }
+      // Idempotent: a fresh connection reports Disconnected; connected or reconnecting, skip.
       if (connection.state !== HubConnectionState.Disconnected) {
         setStatus(mapStatus(connection.state));
         return;
@@ -141,6 +160,7 @@ export function createSignalRTransport(
       connection.off(EVENT_RECEIVED, onReceived);
       handlersRegistered = false;
       if (stopConnection) return connection.stop();
+      active = false;
       setStatus("disconnected");
       return Promise.resolve();
     },

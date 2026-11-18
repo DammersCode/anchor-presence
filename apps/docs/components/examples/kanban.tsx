@@ -5,6 +5,7 @@ import type { VisibilityPolicy } from "@anchor-presence/dom";
 import { CursorLayer, LiveCursorProvider, useRemoteCursors } from "@anchor-presence/react";
 import { Plus, X } from "lucide-react";
 import { useRef, type ReactNode, type RefObject } from "react";
+import { safeColor } from "./safe-color";
 
 type User = { name: string; color: string };
 
@@ -83,7 +84,7 @@ function OutOfViewHint({ boardRef }: { boardRef: RefObject<HTMLDivElement | null
       type="button"
       onClick={reveal}
       className={`absolute top-1/2 z-10 flex -translate-y-1/2 items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium whitespace-nowrap text-white shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fd-ring ${right ? "right-2" : "left-2"}`}
-      style={{ backgroundColor: clipped.user?.color ?? "#4f46e5" }}
+      style={{ backgroundColor: safeColor(clipped.user?.color, "#4f46e5") }}
     >
       {clipped.user?.name ?? "the cursor"} {right ? "→" : "←"}
     </button>
@@ -148,7 +149,7 @@ export function KanbanScene({ client, layout, children }: Props) {
       </div>
       <CursorLayer<unknown, User>
         getLabel={(cursor) => cursor.user?.name ?? null}
-        getColor={(cursor) => cursor.user?.color ?? "#4f46e5"}
+        getColor={(cursor) => safeColor(cursor.user?.color, "#4f46e5")}
       />
       {children}
     </LiveCursorProvider>

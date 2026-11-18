@@ -470,6 +470,22 @@ describe("createWebSocketTransport", () => {
     expect(FakeWebSocket.instances).toHaveLength(1);
   });
 
+  it("treats a throwing shouldReconnect as no reconnect and still settles the status", () => {
+    vi.useFakeTimers();
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const transport = make({
+      shouldReconnect: () => {
+        throw new Error("bad predicate");
+      },
+    });
+    void transport.connect?.();
+    FakeWebSocket.fire(lastSocket(), "open");
+    FakeWebSocket.fire(lastSocket(), "close");
+    expect(transport.getStatus()).toBe("disconnected");
+    vi.advanceTimersByTime(60_000);
+    expect(FakeWebSocket.instances).toHaveLength(1);
+  });
+
   it("lets shouldReconnect veto a reconnect for custom close codes", () => {
     vi.useFakeTimers();
     const transport = make({ shouldReconnect: (close) => close.code !== 4401 });

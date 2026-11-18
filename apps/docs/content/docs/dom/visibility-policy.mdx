@@ -35,6 +35,8 @@ Each time the resolver resolves the cursors, it calls the policy once for each p
 - `presence`: the full presence of the peer, with its `context` and `user`.
 - `resolution`: the `tier`, the winning `anchorId`, and `pointVisible`.
 
+The resolver reuses one input object for every call. Read it in the call. Do not keep it, and do not change it or its `resolution`.
+
 The first type parameter of `VisibilityPolicy` is the context type, and the second is the user type. Pass the policy through `resolution.visibilityPolicy`. The client must have the same context type as the policy:
 
 ```ts

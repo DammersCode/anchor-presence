@@ -24,10 +24,12 @@ The scene gets `layout` as a prop, so that the two panes can show different layo
 
 ## Behavior notes
 
+Try it: Move your pointer into a gap between two cards.
+
 - Every card has an anchor ID from its data, for example `metrics.revenue` and `metrics.churn`. The grid position is not part of the ID.
 - Each day of the chart is an anchor inside the chart anchor: `metrics.traffic.fri`. A cursor on Friday lands on Friday, also when the chart has a different size.
 - The `u` and `v` values are relative to the card. A cursor near the right edge of a wide card stays near the right edge of the narrow card.
-- Move your pointer into a gap between two cards. The cursor resolves to the grid anchor `metrics`, so it stays in the grid.
+- A cursor in a gap between two cards resolves to the grid anchor `metrics`, so it stays in the grid.
 - The cards change size when the pane shrinks. The demo shows this worst case on purpose. For the layout rule, see [Keep item sizes and shapes alike](/docs/get-started/guides/layout-design#keep-item-sizes-and-shapes-alike).
 
 ## Related

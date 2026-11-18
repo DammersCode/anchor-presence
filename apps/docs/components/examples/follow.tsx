@@ -12,6 +12,7 @@ import type { ResolvedCursor } from "@anchor-presence/react";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { MIRA } from "./_preview/scenes";
 import { LongPage } from "./long-page";
+import { safeColor } from "./safe-color";
 
 type User = { name: string; color: string };
 
@@ -150,7 +151,7 @@ export function FollowScene({ client, layout, children }: Props) {
       <LongPage layout={layout} header={layout === "narrow" ? <FollowBanner /> : null} />
       <CursorLayer<unknown, User>
         getLabel={(cursor) => cursor.user?.name ?? null}
-        getColor={(cursor) => cursor.user?.color ?? MIRA.color}
+        getColor={(cursor) => safeColor(cursor.user?.color, MIRA.color)}
       />
       {children}
     </LiveCursorProvider>

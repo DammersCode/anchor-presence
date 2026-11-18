@@ -3,24 +3,35 @@ title: Interpolation
 description: The Interpolator interface, linearInterpolator, and noneInterpolator.
 ---
 
-An `Interpolator` eases a remote cursor's position toward its latest target, instead of snapping on every message. `@anchor-presence/dom` creates one interpolator per remote client through an `InterpolatorFactory`.
+An `Interpolator` eases the position of a remote cursor toward its last target, so the cursor does not jump on every message. `@anchor-presence/dom` creates one interpolator for each peer through an `InterpolatorFactory`.
 
 ## The Interpolator interface
+
+`@anchor-presence/core` exports `Interpolator` and `InterpolatorFactory` with these shapes:
 
 ```ts
 interface Interpolator {
   target(x: number, y: number, timestampMs: number): void;
   shift(dx: number, dy: number): void;
   sample(timestampMs: number): { x: number; y: number; settled: boolean };
+  sampleInto?(out: { x: number; y: number; settled: boolean }, timestampMs: number): void;
   reset?(): void;
 }
 
 type InterpolatorFactory = () => Interpolator;
 ```
 
-`target` sets a new position to ease toward, starting from the current eased position. `shift` moves the current position and the target by a delta, without restarting the ease. A scroll or layout shift uses `shift` so an in-flight ease continues from the new place. `sample` returns the eased position at a timestamp, with `settled: true` once the position reaches its target. `reset` clears the ease state, so the next `target` call snaps instead of easing from a stale position.
+The methods do these jobs:
+
+- `target` sets a new position to ease toward. The ease starts from the current eased position.
+- `shift` moves the current position and the target by a delta, and does not restart the ease. The DOM binding calls `shift` when a local scroll or layout change moves the cursor and no new message arrived. A running ease then continues from the new place.
+- `sample` returns the eased position at a timestamp. `settled` is `true` when the position reaches its target.
+- `sampleInto` writes the same result into `out` and creates no object. It is optional. When an interpolator has `sampleInto`, the DOM binding calls it on each frame instead of `sample`.
+- `reset` clears the ease state. The next `target` call then jumps to the new position and does not ease from an old one. The DOM binding calls `reset` when a cursor becomes hidden.
 
 ## linearInterpolator
+
+`linearInterpolator(durationMs?)` returns an `Interpolator`:
 
 ```ts
 import { linearInterpolator } from "@anchor-presence/core";
@@ -28,7 +39,9 @@ import { linearInterpolator } from "@anchor-presence/core";
 const interpolator = linearInterpolator(80);
 ```
 
-`linearInterpolator(durationMs?)` eases linearly over a fixed duration, `80` milliseconds by default. The first `target` call ever received snaps, since there is no previous position to ease from. Pass a factory that calls `linearInterpolator` with your chosen duration where an `InterpolatorFactory` is expected:
+The interpolator eases linearly over a fixed duration, `80` milliseconds by default. The first `target` call jumps to the position, because there is no previous position to ease from.
+
+`linearInterpolator` itself also fits `InterpolatorFactory`, with the default duration. For another duration, pass a factory that calls `linearInterpolator`:
 
 ```ts
 const factory = () => linearInterpolator(120);
@@ -36,11 +49,13 @@ const factory = () => linearInterpolator(120);
 
 ## noneInterpolator
 
+`noneInterpolator` is an `InterpolatorFactory`. Import it from `@anchor-presence/core`:
+
 ```ts
 import { noneInterpolator } from "@anchor-presence/core";
 ```
 
-`noneInterpolator` applies no easing. `sample` always returns the latest target, always `settled: true`. Use it when you render remote cursors at a high message rate and do not need smoothing between updates.
+An interpolator from `noneInterpolator` applies no easing. `sample` always returns the last target, with `settled: true`. If peers send messages at a high rate and you need no smoothing between updates, use it. The DOM binding uses it by default when the operating system asks for reduced motion.
 
 ## Related
 

@@ -41,7 +41,7 @@ Every subscriber reads an array of `ResolvedCursor` values from `binding.getSnap
 
 ### idle
 
-`idle` is `true` when the sending client has not changed its presence for a while. The core store marks a remote presence idle after `idleAfterMs` (see `RemotePresenceStoreOptions` in `@anchor-presence/core`). The binding copies that flag onto the resolved cursor unchanged: it runs no timer of its own for idle detection. A renderer can use `idle` to fade a cursor or hide its label without hiding the cursor itself.
+`idle` is `true` when the presence of the sending client did not change for `idleAfterMs`. The core store sets this flag. See [Idle stage](/docs/core/remote-presence#idle-stage). The binding copies the flag onto the resolved cursor unchanged. It runs no idle timer of its own. A renderer can use `idle` to fade a cursor or hide its label without hiding the cursor itself.
 
 ## Result identity
 

@@ -7,21 +7,11 @@ A dashboard grid changes its column count at each breakpoint. Cards move to new 
 
 <ExamplePreview scene="responsive-grid" />
 
-<Callout type="warn">
-  As the pane shrinks, the elements in this layout move or change size. That is on purpose in this example. It
-  shows the worst case, so the cursor movement is easy to see. In an app, a short pointer move on one screen
-  becomes a long jump on the other. Keep element sizes fixed and let the page scroll. See the [Kanban
-  example](/docs/examples/kanban).
-</Callout>
-
-## What's in the demo
-
-- Every card has an anchor ID from its data, for example `metrics.revenue` and `metrics.churn`. The grid position is not part of the ID.
-- Each day of the chart is an anchor inside the chart anchor: `metrics.traffic.fri`. A cursor on Friday lands on Friday, also when the chart has a different size.
-- The `u` and `v` values are relative to the card. A cursor near the right edge of a wide card stays near the right edge of the narrow card.
-- Move your pointer into a gap between two cards. The cursor resolves to the grid anchor `metrics`, so it stays in the grid.
-
 ## Code
+
+Install the packages:
+
+<InstallCommand />
 
 The scene of this demo:
 
@@ -29,13 +19,18 @@ The scene of this demo:
 
 The scene gets `layout` as a prop, so that the two panes can show different layouts on one page. In your app, your breakpoints select the layout. The anchor IDs stay the same in all layouts.
 
-## Behavior reference
+## Behavior notes
+
+- Every card has an anchor ID from its data, for example `metrics.revenue` and `metrics.churn`. The grid position is not part of the ID.
+- Each day of the chart is an anchor inside the chart anchor: `metrics.traffic.fri`. A cursor on Friday lands on Friday, also when the chart has a different size.
+- The `u` and `v` values are relative to the card. A cursor near the right edge of a wide card stays near the right edge of the narrow card.
+- Move your pointer into a gap between two cards. The cursor resolves to the grid anchor `metrics`, so it stays in the grid.
+- The cards change size when the pane shrinks. The demo shows this worst case on purpose. For the layout rule, see [Keep item sizes and shapes alike](/docs/get-started/guides/layout-design#keep-item-sizes-and-shapes-alike).
+
+## Related
 
 - [How wrapping and breakpoints resolve](/docs/get-started/concepts/responsive-layouts#how-wrapping-and-breakpoints-resolve): why the cursor follows a card to its new row.
 - [How element-size differences resolve](/docs/get-started/concepts/responsive-layouts#how-element-size-differences-resolve): how `u` and `v` scale with the card size.
 - [Normalized u/v coordinates](/docs/get-started/concepts/anchors#normalized-uv-coordinates): the position inside an anchor.
-
-## Related
-
 - [Table and cards](/docs/examples/table-and-cards): one record as a table row and as a card.
 - [Basics](/docs/examples/basics): the smallest setup.

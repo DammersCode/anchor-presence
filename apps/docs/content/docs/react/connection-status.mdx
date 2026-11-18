@@ -7,9 +7,13 @@ description: Read the client's connection status with useCursorStatus.
 
 ## Usage
 
+The hook takes no arguments:
+
 ```ts
 function useCursorStatus(): ConnectionStatus;
 ```
+
+This component shows the status while the client is not connected:
 
 ```tsx
 import { useCursorStatus } from "@anchor-presence/react";
@@ -29,7 +33,7 @@ While the status is `reconnecting` or `disconnected`, the binding hides every re
 
 ## Close reasons
 
-`client.subscribeClose(listener)` runs the listener each time the connection closes, with the close `code`, the `reason`, and `willReconnect`. The WebSocket transport reports these values. A transport without `subscribeClose` never runs the listener. This component shows an error when the relay rejects the room token with code `4006`:
+`client.subscribeClose(listener)` runs the listener each time the connection closes, with the close `code`, the `reason`, and `willReconnect`. The WebSocket transport reports these values. A transport without `subscribeClose` never runs the listener. This component shows an error when the relay rejects the [room token](/docs/dom/websocket-transport#room-token) with code `4006`:
 
 ```tsx
 import { useEffect, useState } from "react";
@@ -55,6 +59,5 @@ function TokenError() {
 ## Related
 
 - [WebSocket transport](/docs/dom/websocket-transport#close-reasons)
-
 - [Rerenders](/docs/react/rerenders)
 - [Hooks API](/docs/react/api/hooks)

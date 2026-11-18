@@ -12,7 +12,7 @@ type Props = {
   children?: ReactNode;
 };
 
-// Short timeouts show idle and leave in seconds. A heartbeat above idleAfterMs would mark still users idle.
+// Short timeouts show idle and leave in seconds. Idle counts from the last change, so a still user turns idle while heartbeats continue.
 export const presenceTimeouts = { heartbeatMs: 1500, idleAfterMs: 2500, staleTimeoutMs: 8000 };
 
 const COLUMNS = [

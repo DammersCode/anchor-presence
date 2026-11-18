@@ -3,7 +3,7 @@ title: Overview
 description: What @anchor-presence/core does, and why it has no DOM and no framework.
 ---
 
-`@anchor-presence/core` is the protocol layer. It validates and stores remote presence, orchestrates outbound publishing, and defines the interfaces every transport and codec implements.
+`@anchor-presence/core` is the protocol layer. It checks and stores the presence of peers, publishes the local presence, and defines the interfaces that every transport and codec implements. A peer is another client in the same room.
 
 `@anchor-presence/core` has zero runtime dependencies and no DOM globals. It runs in Node.js, Bun, workers, and browsers. See [How it works](/docs/get-started/concepts/how-it-works) for how it fits under `@anchor-presence/dom` and `@anchor-presence/react`.
 
@@ -17,9 +17,9 @@ description: What @anchor-presence/core does, and why it has no DOM and no frame
 ## What core owns
 
 - The wire protocol types (`CursorPresence`, `AnchorPoint`, `RemotePresence`, and related types).
-- `validatePresence`, the boundary that turns an untrusted decoded value into a `CursorPresence` or `null`.
-- `RemotePresenceStore`, which holds every accepted remote presence with stale-entry expiry.
-- `createPresenceClient`, which orchestrates publishing, heartbeats, and the transport and codec interfaces.
+- `validatePresence`, which turns an untrusted decoded value into a `CursorPresence` or `null`.
+- `RemotePresenceStore`, which holds the presence of each peer and removes stale peers.
+- `createPresenceClient`, which runs publishing and heartbeats over a transport and a codec.
 - The `LiveCursorTransport` and `CursorCodec` interfaces, plus `createInMemoryPair`, `jsonCodec`, and `binaryCodec`.
 - The `Interpolator` interface, plus `linearInterpolator` and `noneInterpolator`.
 

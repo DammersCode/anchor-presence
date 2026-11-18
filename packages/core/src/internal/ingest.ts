@@ -11,7 +11,7 @@ function isPlainRecord(value: unknown): value is Record<string, unknown> {
  * A key of the sample must have the sample's type, or the whole value is dropped.
  * A key the sample lacks, such as an optional field, stays when its value is a string, number, boolean or `null`, and is removed when it is an object or array.
  * A `null` sample or an empty array says nothing about the type, so it accepts a string, number, boolean or `null` and never an object or array.
- * An empty object keeps no keys.
+ * An empty object sample accepts the same extra keys as any other sample.
  */
 function isScalar(value: unknown): boolean {
   return (

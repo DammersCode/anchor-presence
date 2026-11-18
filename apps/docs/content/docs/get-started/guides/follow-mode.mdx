@@ -139,7 +139,7 @@ export function FollowApp({ client }: { client: PresenceClient<unknown, User> })
 - **Scroll position.** `scrollIntoView` centers the anchor element, not the point. If the anchor is taller than the window, the point can stay off-screen. The page scrolls again when the leader moves to another anchor, or after the point was on-screen once.
 - **Viewport tier.** If the leader's cursor resolves through the viewport tier, `anchorId` is `null`. The page does not scroll then.
 - **Stop on scroll.** `scrollIntoView` fires `scroll` events, so the recipe does not listen for `scroll`. It stops on `wheel`, on `touchmove` and on the scroll keys. A drag on the scrollbar fires none of these events. For this case, the controls show the stop button.
-- **Stop on leave.** `subscribePeers` reports a `leave` when the leader sends a leave message, or when the store removes the leader after the stale timeout. A leader without a cursor is not a leave, so follow mode continues.
+- **Stop on leave.** `subscribePeers` reports a `leave` in two cases. The leader sends a leave message, or the store removes the leader after the stale timeout. A leader without a cursor is not a leave, so follow mode continues.
 - **Anchor attribute.** `findAnchor` reads `data-anchor`. If you set `anchorAttribute` in the binding options, read that attribute instead.
 
 ## Related

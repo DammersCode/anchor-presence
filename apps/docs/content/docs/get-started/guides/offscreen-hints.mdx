@@ -27,7 +27,7 @@ export function edgeHint(cursor: ResolvedCursor, width: number, height: number, 
 
 The clamp keeps each coordinate between `inset` and the window size minus `inset`. A point above the window keeps its `x` and gets `y = inset`. A point past a corner gets both coordinates clamped. The angle is `Math.atan2(dy, dx)` from the hint to the real point. An angle of `0` points right, and `Math.PI` points left.
 
-For example, in an 800 × 600 window with an inset of 16, a cursor at (-200, 300) gives a hint at (16, 300) with an angle of `Math.PI`.
+For example, take an 800 × 600 window and an inset of 16. A cursor at (-200, 300) then gives a hint at (16, 300) with an angle of `Math.PI`.
 
 ## Render the hints
 

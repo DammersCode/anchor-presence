@@ -3,9 +3,11 @@ title: Hooks API
 description: Signature and return type for every hook in @anchor-presence/react.
 ---
 
-Every hook `@anchor-presence/react` exports, with its signature and return type. See each hook's own page for prose, render cost, and examples.
+`@anchor-presence/react` exports the hooks below, with these signatures and return types. See the page of each hook for prose, render cost, and examples.
 
 ## useRemoteCursors
+
+`useRemoteCursors` has this signature:
 
 ```ts
 function useRemoteCursors<TContext = unknown, TUser = unknown>(): ResolvedCursor<TContext, TUser>[];
@@ -15,16 +17,20 @@ See [Remote cursors](/docs/react/remote-cursors).
 
 ## useRemoteCursorsSelector
 
+`useRemoteCursorsSelector` has this signature, and `isEqual` defaults to `Object.is`:
+
 ```ts
 function useRemoteCursorsSelector<TSelected, TContext = unknown, TUser = unknown>(
   select: (cursors: ResolvedCursor<TContext, TUser>[]) => TSelected,
-  isEqual?: (a: TSelected, b: TSelected) => boolean, // default Object.is
+  isEqual?: (a: TSelected, b: TSelected) => boolean,
 ): TSelected;
 ```
 
 See [Remote cursors](/docs/react/remote-cursors).
 
 ## useRemoteUsers
+
+`useRemoteUsers` has this signature:
 
 ```ts
 function useRemoteUsers<TUser = unknown>(): RemoteUser<TUser>[];
@@ -36,6 +42,8 @@ See [Remote users](/docs/react/remote-users).
 
 ## useCursorPresence
 
+`useCursorPresence` has this signature:
+
 ```ts
 function useCursorPresence<TContext = unknown, TUser = unknown>(): RemotePresence<TContext, TUser>[];
 ```
@@ -43,6 +51,8 @@ function useCursorPresence<TContext = unknown, TUser = unknown>(): RemotePresenc
 See [Cursor presence](/docs/react/cursor-presence).
 
 ## useCursorContext
+
+`useCursorContext` has this signature:
 
 ```ts
 function useCursorContext<TContext = unknown>(): [TContext | undefined, (next: TContext | undefined) => void];
@@ -52,29 +62,37 @@ See [Cursor context](/docs/react/cursor-context).
 
 ## useCursorStatus
 
+`useCursorStatus` has this signature:
+
 ```ts
 function useCursorStatus(): ConnectionStatus;
 ```
 
-Returns one of `"connecting"`, `"connected"`, `"reconnecting"`, `"disconnected"`. See [Connection status](/docs/react/connection-status).
+It returns one of `"connecting"`, `"connected"`, `"reconnecting"`, or `"disconnected"`. See [Connection status](/docs/react/connection-status).
 
 ## useCursorClient
+
+`useCursorClient` has this signature:
 
 ```ts
 function useCursorClient<TContext = unknown, TUser = unknown>(): PresenceClient<TContext, TUser> | null;
 ```
 
-Returns the client of the nearest `LiveCursorProvider`, or `null` outside a provider or during server rendering.
+It returns the client of the nearest `LiveCursorProvider`. Outside a provider and during server rendering, it returns `null`.
 
 ## useCursorEvents
+
+`useCursorEvents` has this signature:
 
 ```ts
 function useCursorEvents(listener: (event: RemoteEvent) => void): void;
 ```
 
-Calls `listener` for each event that a remote peer sends with `client.sendEvent`. `RemoteEvent` has a `type`, an optional `data`, and the `clientId` of the sender. See [Cursor events](/docs/react/cursor-events).
+It calls `listener` for each event that a peer sends with `client.sendEvent`. `RemoteEvent` has a `type`, an optional `data`, and the `clientId` of the sender. See [Cursor events](/docs/react/cursor-events).
 
 ## createPresenceHooks
+
+`createPresenceHooks` returns a provider and hooks with your types fixed:
 
 ```ts
 function createPresenceHooks<TContext = unknown, TUser = unknown>(): {

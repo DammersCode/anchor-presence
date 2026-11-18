@@ -1,9 +1,11 @@
 ---
 title: WebSocket transport API
-description: createWebSocketTransport, WebSocketTransport, WebSocketTransportOptions, WebSocketCtor, and TransportClose.
+description: createWebSocketTransport, WebSocketTransport, WebSocketTransportOptions, WebSocketCtor, WebSocketLike, and TransportClose.
 ---
 
-Full type reference for `createWebSocketTransport`. See [WebSocket transport](/docs/dom/websocket-transport) for the guide.
+`createWebSocketTransport` and its options have the types below. See [WebSocket transport](/docs/dom/websocket-transport) for the guide.
+
+Import the function and its types from `@anchor-presence/dom`:
 
 ```ts
 import { createWebSocketTransport } from "@anchor-presence/dom";
@@ -22,9 +24,9 @@ If `options.url` is missing and `window` does not exist, `createWebSocketTranspo
 
 ## WebSocketCtor
 
-`WebSocketCtor` overrides the WebSocket constructor the transport uses, and defaults to `globalThis.WebSocket`. A test can supply a fake `WebSocketLike` implementation without touching the real network stack.
+`WebSocketCtor` is the type of the `WebSocketCtor` option: `new (url: string) => WebSocketLike`. The option replaces the WebSocket constructor of the transport. Its default is `globalThis.WebSocket`. A test can pass a fake `WebSocketLike` and use no network.
 
-The platform `WebSocket` constructor fits `WebSocketCtor` without a cast:
+The browser `WebSocket` constructor fits `WebSocketCtor` without a cast:
 
 ```ts
 const transport = createWebSocketTransport({
@@ -32,6 +34,14 @@ const transport = createWebSocketTransport({
   WebSocketCtor: WebSocket,
 });
 ```
+
+## WebSocketLike
+
+`WebSocketLike` is the part of the browser `WebSocket` that the transport uses. A fake socket for a test must have these members:
+
+<AutoTypeTable path="../../packages/dom/src/transport.ts" name="WebSocketLike" />
+
+`readyState` `1` means that the socket is open.
 
 ## TransportClose
 

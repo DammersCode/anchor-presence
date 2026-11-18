@@ -3,7 +3,9 @@ title: Resolution types
 description: ResolvedCursor, ResolutionTier, and VisibilityPolicy.
 ---
 
-Full type reference for the resolution result types. See [Resolution](/docs/dom/resolution) and [Visibility policy](/docs/dom/visibility-policy) for the guides.
+The resolution result has the types below. See [Resolution](/docs/dom/resolution) and [Visibility policy](/docs/dom/visibility-policy) for the guides.
+
+Import the types from `@anchor-presence/dom`:
 
 ```ts
 import type { ResolvedCursor, ResolutionTier, VisibilityPolicy } from "@anchor-presence/dom";
@@ -25,7 +27,9 @@ A function that decides whether one resolved cursor renders:
 
 <AutoTypeTable path="../../packages/dom/src/resolver.ts" name="VisibilityPolicy" />
 
-`CURSOR_MARKER_ATTRIBUTE`, exported from `@anchor-presence/dom`, is the attribute the binding's own scheduler looks for to skip a renderer's own cursor mutations when watching for layout changes. A renderer that draws cursors sets this attribute on each cursor root; `@anchor-presence/react` does this for you.
+## CURSOR_MARKER_ATTRIBUTE
+
+`CURSOR_MARKER_ATTRIBUTE` is the string `"data-anchor-presence-cursor"`. The binding ignores the DOM changes inside an element with this attribute. A renderer that draws cursors sets it on the root element of each cursor. `@anchor-presence/react` sets it for you. See [Draw cursors without React](/docs/dom/binding#draw-cursors-without-react).
 
 ## Related
 

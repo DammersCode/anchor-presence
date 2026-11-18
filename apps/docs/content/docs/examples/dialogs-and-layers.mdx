@@ -7,7 +7,19 @@ A dialog covers the layout behind it, but a remote cursor can belong to either l
 
 <ExamplePreview scene="dialogs" />
 
-## What's in the demo
+## Code
+
+Install the packages:
+
+<InstallCommand />
+
+The scene of this demo:
+
+<CodeFromSource docs="components/examples/dialogs.tsx" lang="tsx" />
+
+Both panes pass the same policy through `resolution.visibilityPolicy`. The policy compares the sender's `context` and the resolved `anchorId` with the dialog state of its own pane. The binding reads `bindingOptions` once at creation. For this reason, the policy reads the dialog state through a ref.
+
+## Behavior notes
 
 - The wide pane runs a team board with an invite dialog. The narrow pane renders the board without the dialog.
 - Mira opens the dialog with the context `{ dialog: "invite" }` and points at an anchor inside it. She closes it with the context `{ dialog: null }`. Theo stays on a card behind the dialog.
@@ -16,22 +28,11 @@ A dialog covers the layout behind it, but a remote cursor can belong to either l
 - A cursor inside the dialog paints above the dialog, because the cursor's z-index beats the dialog's.
 - The Invite button opens the dialog and its close button closes it. It stays open while Mira or you have it open.
 
-## Code
-
-The scene of this demo:
-
-<CodeFromSource docs="components/examples/dialogs.tsx" lang="tsx" />
-
-Both panes pass the same policy through `resolution.visibilityPolicy`. The policy reads the sender's `context` and the resolved `anchorId` against the pane's own dialog state, which it reads through a ref, because the binding reads `bindingOptions` once at creation.
-
-## Behavior reference
+## Related
 
 - [Dialog mismatch handling](/docs/get-started/concepts/ui-context#dialog-mismatch-handling): the hide rule this demo applies.
 - [Writing a custom policy](/docs/dom/visibility-policy#writing-a-custom-policy): the policy shape and its inputs.
 - [CursorLayer](/docs/react/cursor-layer#extra-props-on-the-root): the z-index default and the `zIndex` prop.
-
-## Related
-
 - [UI context](/docs/get-started/concepts/ui-context)
 - [Visibility policy](/docs/dom/visibility-policy)
 - [Occlusion and scroll containers](/docs/examples/occlusion-and-scroll-containers)

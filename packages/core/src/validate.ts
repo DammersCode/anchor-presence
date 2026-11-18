@@ -174,7 +174,8 @@ function validateEvent(input: unknown, limits: ResolvedLimits): PresenceEvent | 
 
 /**
  * Returns a validated `CursorPresence` from one decoded message, or `null`.
- * The function enforces every wire limit and never throws.
+ * The function enforces the limits of the decoded message and never throws.
+ * The client checks `maxMessageBytes` on the wire bytes before it decodes.
  * It clamps anchor and viewport values into the `0` to `1` range.
  * @param input The decoded message, from a codec.
  * @param limits Optional limits. The defaults fill the fields you omit.

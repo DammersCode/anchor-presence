@@ -1,8 +1,17 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, expectTypeOf, it, vi } from "vitest";
 import { createInMemoryPair, createPresenceClient } from "@anchor-presence/core";
 import type { TransportClose } from "@anchor-presence/core";
-import { createDomBinding, createWebSocketTransport } from "../src/index";
-import type { WebSocketLike } from "../src/index";
+import { CURSOR_MARKER_ATTRIBUTE, createDomBinding, createWebSocketTransport } from "../src/index";
+import type {
+  CafLike,
+  DomBinding,
+  MutationObserverCtor,
+  MutationObserverLike,
+  RafLike,
+  ResizeObserverCtor,
+  ResizeObserverLike,
+  WebSocketLike,
+} from "../src/index";
 
 class FakeSocket implements WebSocketLike {
   static instances: FakeSocket[] = [];
@@ -106,5 +115,167 @@ describe("dom docs samples", () => {
     void transport.connect();
     expect(FakeSocket.instances[0]?.url).toBe("wss://relay.example.com/?room=main");
     void transport.disconnect();
+  });
+});
+
+function rafQueue() {
+  const queue = new Map<number, (timestampMs: number) => void>();
+  let next = 1;
+  const raf: RafLike = (callback) => {
+    queue.set(next, callback);
+    return next++;
+  };
+  const caf: CafLike = (handle) => {
+    queue.delete(handle);
+  };
+  const flush = () => {
+    const pending = [...queue.values()];
+    queue.clear();
+    for (const callback of pending) callback(0);
+  };
+  return { raf, caf, flush };
+}
+
+describe("binding docs", () => {
+  it("binding.mdx: the create sample renders each visible cursor", () => {
+    vi.useFakeTimers();
+    const { a, b } = createInMemoryPair();
+    const myTransport = a;
+    const rendered: string[] = [];
+    const renderCursor = (clientId: string, x: number, y: number) => rendered.push(`${clientId}@${x},${y}`);
+    const { raf, caf, flush } = rafQueue();
+
+    // Copied from apps/docs/content/docs/dom/binding.mdx (Create a binding), plus a frame stub.
+    const client = createPresenceClient({ transport: myTransport });
+    const binding = createDomBinding(client, { environment: { raf, caf } });
+
+    binding.subscribe(() => {
+      for (const cursor of binding.getSnapshot()) {
+        if (cursor.visible) renderCursor(cursor.clientId, cursor.x, cursor.y);
+      }
+    });
+
+    const peer = createPresenceClient({ transport: b });
+    peer.updateLocalCursor({ anchors: [], viewport: { u: 0.5, v: 0.5 } });
+    vi.advanceTimersByTime(100);
+    flush();
+    expect(rendered.at(-1)?.startsWith(`${peer.clientId}@`)).toBe(true);
+    binding.dispose();
+    client.dispose();
+    peer.dispose();
+  });
+
+  it("binding.mdx: throws a TypeError for a bad anchorAttribute or a non-integer maxAnchors", () => {
+    const { a } = createInMemoryPair();
+    const client = createPresenceClient({ transport: a });
+    expect(() => createDomBinding(client, { anchorAttribute: "data_anchor" })).toThrow(TypeError);
+    expect(() => createDomBinding(client, { anchorAttribute: "1-anchor" })).toThrow(TypeError);
+    expect(() => createDomBinding(client, { maxAnchors: 2.5 })).toThrow(TypeError);
+    expect(() => createDomBinding(client, { maxAnchors: Number.NaN })).toThrow(TypeError);
+    createDomBinding(client, { anchorAttribute: "anchor", maxAnchors: 20 }).dispose();
+    client.dispose();
+  });
+
+  it("binding.mdx: drawCursors keeps one marked element per visible cursor", () => {
+    vi.useFakeTimers();
+    const { a, b } = createInMemoryPair();
+    const { raf, caf, flush } = rafQueue();
+    const client = createPresenceClient({ transport: a });
+    const domBinding = createDomBinding(client, { environment: { raf, caf } });
+
+    // Copied from apps/docs/content/docs/dom/binding.mdx (Draw cursors without React).
+    function drawCursors(binding: DomBinding, layer: HTMLElement): () => void {
+      const elements = new Map<string, HTMLElement>();
+      return binding.subscribe(() => {
+        const shown = new Set<string>();
+        for (const cursor of binding.getSnapshot()) {
+          if (!cursor.visible) continue;
+          shown.add(cursor.clientId);
+          let element = elements.get(cursor.clientId);
+          if (element === undefined) {
+            element = document.createElement("div");
+            element.setAttribute(CURSOR_MARKER_ATTRIBUTE, "");
+            element.className = "remote-cursor";
+            layer.append(element);
+            elements.set(cursor.clientId, element);
+          }
+          element.style.transform = `translate(${cursor.x}px, ${cursor.y}px)`;
+        }
+        for (const [clientId, element] of elements) {
+          if (shown.has(clientId)) continue;
+          element.remove();
+          elements.delete(clientId);
+        }
+      });
+    }
+
+    const layer = document.createElement("div");
+    document.body.append(layer);
+    const stop = drawCursors(domBinding, layer);
+    const peer = createPresenceClient({ transport: b });
+    peer.updateLocalCursor({ anchors: [], viewport: { u: 0.5, v: 0.5 } });
+    vi.advanceTimersByTime(100);
+    flush();
+    expect(layer.children).toHaveLength(1);
+    expect(layer.firstElementChild?.hasAttribute(CURSOR_MARKER_ATTRIBUTE)).toBe(true);
+
+    domBinding.dispose();
+    expect(layer.children).toHaveLength(0);
+    stop();
+    layer.remove();
+    client.dispose();
+    peer.dispose();
+  });
+
+  it("binding.mdx: the invalidate sample marks the layout dirty after the fonts load", async () => {
+    const { a } = createInMemoryPair();
+    const client = createPresenceClient({ transport: a });
+    const binding = createDomBinding(client);
+    const invalidate = vi.spyOn(binding, "invalidate");
+    const document = { fonts: { ready: Promise.resolve() } };
+
+    // Copied from apps/docs/content/docs/dom/binding.mdx (invalidate).
+    await document.fonts.ready.then(() => {
+      binding.invalidate("fonts-loaded");
+    });
+
+    expect(invalidate).toHaveBeenCalledWith("fonts-loaded");
+    binding.dispose();
+    client.dispose();
+  });
+});
+
+describe("binding api docs: host types", () => {
+  // Copied from apps/docs/content/docs/dom/api/binding.mdx (Host types).
+  type DocRafLike = (callback: (timestampMs: number) => void) => number;
+  type DocCafLike = (handle: number) => void;
+
+  type DocResizeObserverLike = {
+    observe(target: Element): void;
+    unobserve(target: Element): void;
+    disconnect(): void;
+  };
+  type DocResizeObserverCtor = new (callback: () => void) => DocResizeObserverLike;
+
+  type DocMutationObserverLike = {
+    observe(target: Node, options: MutationObserverInit): void;
+    unobserve?(target: Node): void;
+    disconnect(): void;
+  };
+  type DocMutationObserverCtor = new (
+    callback: (records?: MutationRecord[]) => void,
+  ) => DocMutationObserverLike;
+
+  it("matches the exported host types, and the browser globals fit them", () => {
+    expectTypeOf<DocRafLike>().toEqualTypeOf<RafLike>();
+    expectTypeOf<DocCafLike>().toEqualTypeOf<CafLike>();
+    expectTypeOf<DocResizeObserverLike>().toEqualTypeOf<ResizeObserverLike>();
+    expectTypeOf<DocResizeObserverCtor>().toEqualTypeOf<ResizeObserverCtor>();
+    expectTypeOf<DocMutationObserverLike>().toEqualTypeOf<MutationObserverLike>();
+    expectTypeOf<DocMutationObserverCtor>().toEqualTypeOf<MutationObserverCtor>();
+    expectTypeOf(requestAnimationFrame).toMatchTypeOf<RafLike>();
+    expectTypeOf(cancelAnimationFrame).toMatchTypeOf<CafLike>();
+    expectTypeOf(MutationObserver).toMatchTypeOf<MutationObserverCtor>();
+    expectTypeOf<typeof ResizeObserver>().toMatchTypeOf<ResizeObserverCtor>();
   });
 });

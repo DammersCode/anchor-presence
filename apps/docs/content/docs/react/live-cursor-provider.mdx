@@ -7,6 +7,8 @@ description: Share a presence client and its DOM binding with the tree below.
 
 ## Props
 
+The samples on this page use these imports:
+
 ```tsx
 import { createPresenceClient, linearInterpolator, noneInterpolator } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
@@ -14,15 +16,17 @@ import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
 import type { LiveCursorProviderProps } from "@anchor-presence/react";
 ```
 
-| Prop             | Type                                      | Default                   |
-| ---------------- | ----------------------------------------- | ------------------------- |
-| `factory`        | `() => PresenceClient<TContext, TUser>`   | none                      |
-| `client`         | `PresenceClient<TContext, TUser> \| null` | none; wins over `factory` |
-| `binding`        | `DomBinding`                              | the provider creates one  |
-| `bindingOptions` | `DomBindingOptions`                       | none                      |
-| `clientKey`      | `unknown`                                 | none                      |
-| `bindingKey`     | `unknown`                                 | none                      |
-| `children`       | `ReactNode`                               | none                      |
+The provider takes these props:
+
+| Prop             | Type                                      | Default                    |
+| ---------------- | ----------------------------------------- | -------------------------- |
+| `factory`        | `() => PresenceClient<TContext, TUser>`   | none                       |
+| `client`         | `PresenceClient<TContext, TUser> \| null` | none (wins over `factory`) |
+| `binding`        | `DomBinding`                              | the provider creates one   |
+| `bindingOptions` | `DomBindingOptions`                       | none                       |
+| `clientKey`      | `unknown`                                 | none                       |
+| `bindingKey`     | `unknown`                                 | none                       |
+| `children`       | `ReactNode`                               | none                       |
 
 Create the client through `factory`, or pass a client you own:
 
@@ -39,13 +43,11 @@ Create the client through `factory`, or pass a client you own:
 
 ## Client ownership
 
-The provider runs `factory` once per mount, in an effect, and only in the browser. It runs `factory` again each time `clientKey` changes. It disposes the client it created on unmount. A `client` you pass stays yours: the provider never disposes it. When both `factory` and `client` are set, `client` wins and the factory never runs. Pass `client={null}` to provide no client. The factory does not run.
-
-For the full rules, read [Creating the client](/docs/react/client-creation).
+The provider disposes a client that `factory` created. It never disposes a `client` that you pass. For when the factory runs and which prop wins, read [Creating the client](/docs/react/client-creation).
 
 ## The binding the provider creates
 
-When you omit `binding`, the provider creates a `DomBinding` for the client with `createDomBinding(client, bindingOptions)`. It disposes that binding when the client changes, when `bindingKey` changes, or when the provider unmounts. Pass your own `binding` only when you created it yourself, for example to share one binding across two providers.
+When you omit `binding`, the provider creates a `DomBinding` for the client with `createDomBinding(client, bindingOptions)`. It disposes that binding when the client changes, when `bindingKey` changes, or when the provider unmounts. If you created a binding yourself, for example to share one binding across two providers, pass it as `binding`. The provider then creates no binding and never disposes yours.
 
 `bindingOptions` configures the binding the provider creates. The provider reads `bindingOptions` only when it creates the binding. A later change to the `bindingOptions` object does not recreate the binding.
 

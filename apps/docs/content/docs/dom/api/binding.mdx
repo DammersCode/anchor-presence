@@ -1,19 +1,24 @@
 ---
 title: Binding API
-description: createDomBinding, DomBinding, DomBindingOptions, ResolutionOptions, and EnvironmentOptions.
+description: createDomBinding, DomBinding, DomBindingOptions, ResolutionOptions, EnvironmentOptions, and the host types.
 ---
 
-Full type reference for `createDomBinding` and the options it accepts. See [Binding](/docs/dom/binding) for the guide.
+`createDomBinding` and its options have the types below. See [Binding](/docs/dom/binding) for the guide.
 
 ## createDomBinding
 
+Import `createDomBinding` from `@anchor-presence/dom`:
+
 ```ts
 import { createDomBinding } from "@anchor-presence/dom";
-
-const binding = createDomBinding(client, options?);
 ```
 
 `createDomBinding(client, options?)` creates the DOM side of one client and returns a `DomBinding`.
+
+`createDomBinding` throws a `TypeError` in these cases:
+
+- `anchorAttribute` does not match the name rule. See [Options](/docs/dom/binding#options).
+- `maxAnchors` is not an integer.
 
 ## DomBinding
 
@@ -33,9 +38,34 @@ const binding = createDomBinding(client, options?);
 
 ## EnvironmentOptions
 
-`environment` on `DomBindingOptions` supplies the DOM and timing hosts the binding runs against, each defaulting to the matching browser global:
+`environment` on `DomBindingOptions` supplies the DOM and timing hosts that the binding uses. Each field defaults to the matching browser global:
 
 <AutoTypeTable path="../../packages/dom/src/binding.ts" name="EnvironmentOptions" />
+
+## Host types
+
+`@anchor-presence/dom` exports the types of the `environment` fields. A fake host for a test must fit these shapes:
+
+```ts
+type RafLike = (callback: (timestampMs: number) => void) => number;
+type CafLike = (handle: number) => void;
+
+type ResizeObserverLike = {
+  observe(target: Element): void;
+  unobserve(target: Element): void;
+  disconnect(): void;
+};
+type ResizeObserverCtor = new (callback: () => void) => ResizeObserverLike;
+
+type MutationObserverLike = {
+  observe(target: Node, options: MutationObserverInit): void;
+  unobserve?(target: Node): void;
+  disconnect(): void;
+};
+type MutationObserverCtor = new (callback: (records?: MutationRecord[]) => void) => MutationObserverLike;
+```
+
+The browser `requestAnimationFrame`, `cancelAnimationFrame`, `ResizeObserver`, and `MutationObserver` fit these types.
 
 ## Related
 

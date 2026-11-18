@@ -3,7 +3,7 @@ title: Protocol types
 description: CursorPresence, leave and event messages, PresenceEvent, PeerChange, RemotePresence, and the protocol constants.
 ---
 
-Every name on this page is exported from `packages/core/src/index.ts`. These types describe the wire protocol that `@anchor-presence/core` validates, stores, and sends.
+`@anchor-presence/core` exports every name below. These types describe the wire protocol that the client checks, stores, and sends.
 
 ## CursorPresence
 
@@ -20,7 +20,7 @@ Both codecs carry the two fields:
 - `jsonCodec` writes `leave` and `event` as JSON fields.
 - `binaryCodec` writes a leave message with cursor tag `2`. It writes an event message with cursor tag `3`, followed by the event `type`. The event `data` uses the slot of `user`.
 
-A relay that validates messages must pass `leave` and `event` through. If a relay drops these fields, a client that left stays until the stale timeout. An event then arrives as a message that clears the cursor of the sender.
+A relay that checks messages must pass `leave` and `event` through. If a relay drops these fields, a client that left stays until the stale timeout. Each event then arrives as a message that clears the cursor of the sender.
 
 ## PresenceEvent
 
@@ -32,7 +32,7 @@ A one-shot event, as `client.sendEvent` sends it.
 
 ## PeerChange
 
-A remote client that joined, left, or changed its `user` or `context`. `client.subscribePeers` gives a `PeerChange` to its listener. See [Peer changes](/docs/core/remote-presence#peer-changes).
+A peer that joined, left, or changed its `user` or `context`. `client.subscribePeers` gives a `PeerChange` to its listener. See [Peer changes](/docs/core/remote-presence#peer-changes).
 
 <AutoTypeTable path="../../packages/core/src/protocol.ts" name="PeerChange" />
 
@@ -50,7 +50,7 @@ The cursor position inside one presence message: an anchor chain plus an optiona
 
 ## RemotePresence
 
-A remote presence without the `sequence` field, with `idle` added. The stable snapshot behind `client.getRemotePresence()`. `idle` is `true` when the presence has not changed for `idleAfterMs`, even while heartbeats arrive. See [How it works](/docs/get-started/concepts/how-it-works) for how this differs from the raw snapshot.
+A remote presence without the `sequence` field, and with an `idle` field. `client.getRemotePresence()` returns an array of this type. `idle` is `true` when the presence did not change for `idleAfterMs`, even while heartbeats arrive. See [How it works](/docs/get-started/concepts/how-it-works) for how this differs from the raw snapshot.
 
 <AutoTypeTable path="../../packages/core/src/protocol.ts" name="RemotePresence" />
 
@@ -64,6 +64,8 @@ Optional pointer info attached to a presence message.
 
 ## ConnectionStatus
 
+Import `ConnectionStatus` from `@anchor-presence/core`:
+
 ```ts
 import type { ConnectionStatus } from "@anchor-presence/core";
 ```
@@ -71,6 +73,8 @@ import type { ConnectionStatus } from "@anchor-presence/core";
 `ConnectionStatus` is `"connecting" | "connected" | "reconnecting" | "disconnected"`. See [Transports](/docs/core/transports) for how a transport reports it.
 
 ## Protocol constants
+
+Import the protocol constants from `@anchor-presence/core`:
 
 ```ts
 import {
@@ -86,7 +90,7 @@ import {
 } from "@anchor-presence/core";
 ```
 
-The `DEFAULT_` constants are the defaults behind `ValidationLimits`. See [Validation](/docs/core/validation) for the field each one bounds, and [Security](/docs/get-started/guides/security) for the rule each limit enforces.
+The `DEFAULT_` constants are the defaults of `ValidationLimits`. See [ValidationLimits](/docs/core/validation#validationlimits) for the field, the value, and the result of each limit.
 
 `MAX_EVENT_TYPE_LENGTH` is `64`, the maximum length of an event `type`. `ValidationLimits` cannot change it.
 

@@ -3,7 +3,7 @@ title: UI context
 description: Opaque context, visibility policies, dialog mismatch handling, and the receiver-UI rule.
 ---
 
-This page explains opaque context, visibility policies, dialog mismatch handling, and the rule that Anchor Presence never changes receiver UI state.
+UI context is application state, such as an open dialog, that a sender attaches to its cursor. A visibility policy on the receiver reads it to show or hide the cursor. Anchor Presence never changes the UI state of the receiver.
 
 ## Opaque context
 
@@ -15,7 +15,7 @@ Set context on the client:
 client.setContext({ route: "/settings", dialog: "invite" });
 ```
 
-A change to context is sent once, and full publishes (reconnect and heartbeat) include the current context. A missing field means "unchanged since the previous same-session message". An explicit `null` clears it. On the receiver, context reaches two places: the visibility policy input, and the `context` field on each `ResolvedCursor`.
+The client sends a change to context once. Full publishes (reconnect and heartbeat) include the current context. A missing field means "unchanged since the previous same-session message". An explicit `null` clears it. On the receiver, context reaches two places: the visibility policy input, and the `context` field on each `ResolvedCursor`.
 
 Use context for information the receiver needs to decide how to show a cursor: current route, open dialog, active tab, or similar semantic state. Do not use context for anything that must stay private. It reaches every receiver in the room when it changes and on full publishes. See [Security](/docs/get-started/guides/security) for validation limits and rendering rules.
 
@@ -43,13 +43,15 @@ A policy can also read `resolution.pointVisible` to hide a cursor clipped by a s
 
 ## Dialog mismatch handling
 
-Anchor fallback usually covers a context mismatch by itself. If a sender's cursor sits inside an anchor named `settings.dialog.invite` and the receiver has not opened that dialog, the anchor is absent from the receiver's DOM. The fallback chain falls through to a parent anchor, for example `settings`, or to the viewport.
+Anchor fallback covers most context mismatches. For example, a sender's cursor sits inside the anchor `settings.dialog.invite`. The receiver has not opened that dialog, so the anchor is absent from its DOM. The fallback chain then moves to a parent anchor, for example `settings`, or to the viewport.
 
-Some cases need an explicit policy instead of geometric fallback, because showing a cursor at the wrong place misleads the receiver. Three example policies:
+A cursor at the wrong place misleads the receiver. Some cases therefore need an explicit policy instead of geometric fallback. These are three possible approaches:
 
-1. **Hide the cursor.** If `presence.context?.dialog` names a dialog the receiver has not opened, return `"hide"`.
-2. **Fall back to the dialog trigger anchor.** Register the button that opens the dialog under a stable anchor ID. When the dialog anchor is absent, the fallback chain naturally lands on the trigger button.
-3. **Show a passive presence indicator.** Instead of hiding the cursor outright, render a muted version for the `hidden` tier, using `tier` and `context` from the resolved cursor.
+- **Hide the cursor.** If `presence.context?.dialog` names a dialog that the receiver has not opened, return `"hide"`.
+- **Fall back to the dialog trigger anchor.** Register the button that opens the dialog under a stable anchor ID. When the dialog anchor is absent, the fallback chain lands on the trigger button.
+- **Show a passive presence indicator.** Do not hide the cursor. Render a muted version for the `hidden` tier, with `tier` and `context` from the resolved cursor.
+
+This policy hides the cursor of a sender whose open dialog differs from the dialog of the receiver:
 
 ```ts
 const dialogAwarePolicy: VisibilityPolicy<{ dialog?: string }> = ({ presence, resolution }) => {
@@ -63,7 +65,7 @@ const dialogAwarePolicy: VisibilityPolicy<{ dialog?: string }> = ({ presence, re
 
 Anchor Presence never changes what the receiver's UI shows. Resolving a remote cursor position must not force a route change, open or close a dialog, expand a sidebar, or scroll the page.
 
-This rule keeps a receiving user in full control of their own screen. A remote cursor is informational only. If a resolved position lands inside UI the receiver has not opened, the correct response is fallback or hide, never forcing that UI open to match the sender.
+This rule keeps the receiving user in full control of their own screen. A remote cursor only gives information. A resolved position can land inside UI that the receiver has not opened. Then the correct response is fallback or hide. Never force that UI open to match the sender.
 
 Do not write code that reacts to `useRemoteCursors()` or `useCursorPresence()` output by mutating local UI state, such as dialogs, routes, or sidebar toggles. Use `context` for display decisions only.
 

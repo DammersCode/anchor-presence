@@ -3,25 +3,15 @@ title: Table and cards
 description: A cursor on a table cell lands on the same field when the row turns into a card.
 ---
 
-A list often shows as a table on a wide screen and as a stack of cards on a narrow screen. The fields of one record move to different places. In this demo, the wide pane shows invoices as table rows. The narrow pane shows each invoice as a card. A cursor on the status cell of a row lands on the status pill of the same card.
+A list can show as a table on a wide screen and as a stack of cards on a narrow screen. The fields of one record move to different places. In this demo, the wide pane shows invoices as table rows. The narrow pane shows each invoice as a card. A cursor on the status cell of a row lands on the status pill of the same card.
 
 <ExamplePreview scene="table-and-cards" />
 
-<Callout type="warn">
-  As the pane shrinks, the elements in this layout move or change size. That is on purpose in this example. It
-  shows the worst case, so the cursor movement is easy to see. In an app, a short pointer move on one screen
-  becomes a long jump on the other. Keep element sizes fixed and let the page scroll. See the [Kanban
-  example](/docs/examples/kanban).
-</Callout>
-
-## What's in the demo
-
-- Each field has the same anchor ID in the table and in the card, for example `invoices.row:INV-2043.status`.
-- Each row and each card has the anchor `invoices.row:<id>`. A cursor between two fields resolves to the record.
-- The action buttons have their own anchors. A cursor on "Remind" in the table lands on "Remind" in the card.
-- Move your pointer down the amount column in the wide pane. In the narrow pane, the cursor moves to the second line of each card.
-
 ## Code
+
+Install the packages:
+
+<InstallCommand />
 
 The scene of this demo:
 
@@ -29,13 +19,18 @@ The scene of this demo:
 
 The `field` helper builds every anchor ID from the invoice ID and the field name. As a result, the table and the cards cannot use different IDs for the same field.
 
-## Behavior reference
+## Behavior notes
+
+- Each field has the same anchor ID in the table and in the card, for example `invoices.row:INV-2043.status`.
+- Each row and each card has the anchor `invoices.row:<id>`. A cursor between two fields resolves to the record.
+- The action buttons have their own anchors. A cursor on "Remind" in the table lands on "Remind" in the card.
+- Move your pointer down the amount column in the wide pane. In the narrow pane, the cursor moves to the second line of each card.
+- The fields move and change size when the pane shrinks. The demo shows this worst case on purpose. For the layout rule, see [Keep item sizes and shapes alike](/docs/get-started/guides/layout-design#keep-item-sizes-and-shapes-alike).
+
+## Related
 
 - [Anchor IDs](/docs/get-started/concepts/anchors#anchor-ids): how to name anchors, so that they stay stable across layouts.
 - [Fallback chains](/docs/get-started/concepts/fallback-chain#fallback-chains): why a cursor between two fields lands on the record.
 - [The three tiers](/docs/dom/resolution#the-three-tiers): the tiers that the status bar shows.
-
-## Related
-
 - [Responsive grid](/docs/examples/responsive-grid): cards that move and change size.
 - [Anchors and fallbacks](/docs/examples/anchors-and-fallbacks): fields that exist in only one layout.

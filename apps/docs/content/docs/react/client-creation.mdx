@@ -9,6 +9,8 @@ Three paths create the client for a React app. Pick one path and use it everywhe
 
 Pass `LiveCursorProvider` a `factory`. The provider runs it once per mount, in an effect, and disposes the client it created on unmount. It also runs the factory again each time `clientKey` changes. It runs the factory only in the browser, so server renders and React Strict Mode's double-invoke never create two clients.
 
+This app creates the client in the factory:
+
 ```tsx
 import { createPresenceClient } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
@@ -41,6 +43,8 @@ To connect to another room, change `clientKey`. The provider disposes the old cl
 
 Pass the `client` prop. The provider never disposes a client you pass. You own its lifecycle. This path fits an app that creates the client in its own setup code and shares it through props or a context.
 
+This app passes a client that it created:
+
 ```tsx
 const client = createPresenceClient({ transport: myTransport });
 
@@ -49,11 +53,11 @@ const client = createPresenceClient({ transport: myTransport });
 </LiveCursorProvider>;
 ```
 
-When both `factory` and `client` are set, `client` wins, the factory never runs, and `clientKey` has no effect. Pass `client={null}` to provide no client, for example during server rendering.
+If you set both `factory` and `client`, `client` wins, the factory never runs, and `clientKey` has no effect. Pass `client={null}` to provide no client, for example during server rendering.
 
 ## Manual control
 
-Create the client anywhere with `createPresenceClient` from `@anchor-presence/core`. The client connects the transport by default. Pass `autoConnect: false` and call `transport.connect()` yourself when you need that control. Call `client.dispose()` when you no longer need it. `dispose` is final: create a new client instead of reusing it.
+Create the client anywhere with `createPresenceClient` from `@anchor-presence/core`. The client connects the transport by default. To connect the transport yourself, pass `autoConnect: false` and call `transport.connect()`. To stop the client, call `client.dispose()`. `dispose` is final: create a fresh client instead of reusing a disposed one.
 
 ## Related
 

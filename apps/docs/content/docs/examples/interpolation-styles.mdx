@@ -3,34 +3,35 @@ title: Interpolation styles
 description: Compare no easing, linear easing, and a custom spring on the same cursor updates.
 ---
 
-A remote cursor arrives as a series of positions. An interpolator decides how the cursor moves between them. The library ships `noneInterpolator` and `linearInterpolator`. A spring is application code on the public `Interpolator` interface. In this demo, the remote cursor jumps between four far-apart targets. The wide pane shows each update with no easing. In the narrow pane, you select the interpolator.
+A remote cursor arrives as a series of positions. An interpolator decides how the cursor moves between them. The library ships `noneInterpolator` and `linearInterpolator`, and a spring is application code on the public `Interpolator` interface. In this demo, the remote cursor jumps between four far-apart targets. The wide pane shows each update with no easing. In the narrow pane, you select the interpolator.
 
 <ExamplePreview scene="interpolation" />
 
-## What's in the demo
+## Code
+
+Install the packages:
+
+<InstallCommand />
+
+The scene of this demo, with the spring:
+
+<CodeFromSource docs="components/examples/interpolation.tsx" lang="tsx" />
+
+The provider reads `bindingOptions` once, when it creates the binding. The `key` on the provider changes with the selected style, so a style change mounts a fresh binding. The remote state lives in the client, not in the binding, so the remount keeps every cursor.
+
+`target` keeps the velocity of the spring, so a target change during a glide curves the path. `sample` must return `settled: true` at the end. If it never does, the animation frame loop never stops for that cursor.
+
+## Behavior notes
 
 - The dots behind the cursor show its last path. With `none`, the cursor jumps. With `linear`, it moves in a straight line. With the spring, it overshoots the target a little and comes back.
 - Select an interpolator in the narrow pane. The next jump uses it.
 - The tour sends only one update per target, so all motion in the narrow pane comes from the interpolator.
 - If your system asks for reduced motion, the narrow pane starts with `none`.
 
-## Code
-
-The scene of this demo, with the spring:
-
-<CodeFromSource docs="components/examples/interpolation.tsx" lang="tsx" />
-
-The provider reads `bindingOptions` once, when it creates the binding. The `key` on the provider changes with the selected style, so a new style mounts a new binding. The remote state lives in the client, not in the binding, so the remount keeps every cursor.
-
-`target` keeps the velocity of the spring, so a new target during a glide curves the path. `sample` must return `settled: true` at the end. If it never does, the animation frame loop never stops for that cursor.
-
-## Behavior reference
+## Related
 
 - [The Interpolator interface](/docs/core/interpolation#the-interpolator-interface): `target`, `shift`, `sample`, and `reset`.
 - [Choosing a custom interpolator](/docs/dom/motion#choosing-a-custom-interpolator): where to pass the factory.
 - [When motion restarts instead of easing](/docs/dom/motion#when-motion-restarts-instead-of-easing): the cases that snap the cursor.
-
-## Related
-
 - [Custom cursor rendering](/docs/examples/custom-cursor-rendering): change how a cursor looks, not how it moves.
 - [Performance](/docs/get-started/guides/performance)

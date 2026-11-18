@@ -3,7 +3,7 @@ title: Quick start
 description: Run live cursors with no backend, then connect a real relay.
 ---
 
-This page runs live cursors two ways: first with no backend, using an in-process transport, then with a real relay between two browser tabs.
+Run live cursors in two steps. First, mount the library with no backend, on an in-process transport. Then connect two browser tabs through a real relay.
 
 ## Try it with no backend
 
@@ -30,11 +30,11 @@ function App() {
 }
 ```
 
-This client only talks to itself: `transport.a`'s messages go to `transport.b`'s listeners, and nothing else holds `transport.b`. It is enough to render the tree and check that anchors, the provider, and `CursorLayer` compile and mount. It is also how the docs site tests every sample on this page.
+`createInMemoryPair` returns two transports, `a` and `b`. The client sends on `a`, and its messages go to the listeners of `b`. Nothing listens on `b`, so no remote cursor appears. The sample only shows that the anchors, the provider, and `CursorLayer` compile and mount.
 
 ## Connect two real clients
 
-Real live cursors need two clients, one per browser tab, talking over a shared transport. Pass the provider a `factory`. It runs the factory once, in a mount effect. Then React Strict Mode's double-invoke in development creates only one client:
+Real live cursors need two clients, one per browser tab, on a shared transport. Pass the provider a `factory`. The provider runs the factory once per mount, in a mount effect. In development, React Strict Mode runs each effect twice. The provider disposes the first client before it creates the second, so only one client stays connected:
 
 ```tsx
 import { createPresenceClient } from "@anchor-presence/core";
@@ -70,7 +70,7 @@ Open your app in two browser windows. Move the pointer in one window. A live cur
 
 ## Without React
 
-`@anchor-presence/core` and `@anchor-presence/dom` work with no React in the tree. Subscribe to the binding's resolved cursors directly and render them yourself in plain DOM updates or another framework. See [Binding](/docs/dom/binding) for the subscribe method, and [Build a framework adapter](/docs/core/build-a-framework-adapter) if you want to connect the binding to a framework's own reactivity.
+`@anchor-presence/core` and `@anchor-presence/dom` work with no React in the tree. Subscribe to the resolved cursors of the binding, and render them yourself with plain DOM updates or another framework. See [Binding](/docs/dom/binding) for the subscribe method. To connect the binding to the reactivity of a framework, see [Build a framework adapter](/docs/core/build-a-framework-adapter).
 
 ## Related
 

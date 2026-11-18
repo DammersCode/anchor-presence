@@ -14,7 +14,7 @@ On `pointermove`, `pointerdown`, and `pointerover`, the binding reads the event 
 
 The chain uses a cached rectangle from the current scheduler frame when one is available, and falls back to a live `getBoundingClientRect()` call otherwise. The cache is at most one frame old.
 
-The binding also reports the pointer type, one of `mouse`, `pen`, or `touch`, taken from the event's `pointerType`. A pointer type the client does not recognize is omitted.
+The binding also reports the pointer type, one of `mouse`, `pen`, or `touch`, taken from the event's `pointerType`. The binding omits a pointer type that it does not recognize.
 
 ## When the cursor clears
 

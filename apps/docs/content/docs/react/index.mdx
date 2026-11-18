@@ -39,7 +39,7 @@ function App() {
 }
 ```
 
-The provider runs `factory` once, in a mount effect, and again each time `clientKey` changes. Until it has run, the provider renders its children with no cursors, so the tree stays safe during that gap and during server rendering. See [Quick start](/docs/get-started/quick-start) for the full walkthrough, including the anchor markup.
+Until the factory has run, the provider renders its children with no cursors. The tree stays safe during that gap and during server rendering. For when the factory runs, see [Creating the client](/docs/react/client-creation). See [Quick start](/docs/get-started/quick-start) for the full walkthrough, including the anchor markup.
 
 ## Related
 

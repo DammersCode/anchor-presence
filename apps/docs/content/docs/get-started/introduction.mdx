@@ -7,7 +7,7 @@ Anchor Presence is a live-cursor layer for web apps. It shows where your teammat
 
 ## The problem
 
-A remote cursor is usually a screen coordinate. Two clients rarely show the same layout: a sidebar can be collapsed on one screen and open on another, and a table can wrap to one column on a narrow screen. A pixel coordinate from one screen can land on the wrong element, or on no element at all, on another screen.
+A typical remote cursor is a screen coordinate. Two clients rarely show the same layout. A sidebar can be collapsed on one screen and open on another. A table can wrap to one column on a narrow screen. A pixel coordinate from one screen can land on the wrong element, or on no element at all, on another screen.
 
 ## The fix
 
@@ -25,13 +25,14 @@ The library has three packages. Each adds one layer, and the dependency directio
 
 ## How the docs are organized
 
-The sidebar's section switcher splits the docs into five sections:
+The section switcher in the sidebar splits the docs into six sections:
 
 - [Get started](/docs/get-started/introduction): setup and cross-cutting guides, such as performance and security.
 - [Core](/docs/core): `@anchor-presence/core`, the protocol, codecs, and client.
 - [DOM](/docs/dom): `@anchor-presence/dom`, the browser binding, anchors, and pointer capture.
 - [React](/docs/react): `@anchor-presence/react`, the provider, hooks, and cursor components.
 - [Examples](/docs/examples/basics): live demos and backend relays.
+- [Skills](/docs/skills): agent skills that install Anchor Presence and audit layouts.
 
 ## Guarantees
 

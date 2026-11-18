@@ -7,7 +7,7 @@ An anchor inside a scrollable panel can be measurable, with a real size and posi
 
 ## How the check works
 
-For an `anchor` tier resolution, the resolver walks the DOM ancestors of the winning anchor, up to the document element. It looks for an ancestor whose computed `overflow`, `overflow-x`, or `overflow-y` is not `visible`. Each such ancestor clips the anchor's visible rectangle to its own bounds, using an intersection of rectangles.
+For an `anchor` tier resolution, the resolver walks the DOM ancestors of the winning anchor, up to the document element. It looks for an ancestor whose computed `overflow`, `overflow-x`, or `overflow-y` is not `visible`. Each such ancestor clips the visible rectangle of the anchor to the bounds of the ancestor. The clip is an intersection of the two rectangles.
 
 The resolver sets `pointVisible` to `false` when the resolved `x`/`y` position falls outside the clipped rectangle. `pointVisible` is always `true` for the `viewport` tier, and always `false` for the `hidden` tier.
 
@@ -15,11 +15,11 @@ The resolver sets `pointVisible` to `false` when the resolved `x`/`y` position f
 
 The check is a simplified walk, not a full containing-block or stacking-context computation:
 
-- It does not compute CSS containing blocks. An absolutely or fixed-positioned anchor that visually escapes a clipping ancestor is still treated as clipped, because the ancestor walk does not know about `position`.
+- It does not compute CSS containing blocks. An absolutely or fixed-positioned anchor can visually escape a clipping ancestor. The ancestor walk does not know about `position`, so it still treats that anchor as clipped.
 - It does not detect an overlay covering the point from above. A cursor can report `pointVisible: true` while a modal or dropdown visually covers that pixel.
 
 <Callout type="warn">
-  If an overlay can cover the resolved point and the extra cost is acceptable, pass `resolution: { hitTest: true }`. The resolver then confirms the point with `document.elementFromPoint`, including a walk into open shadow roots, instead of the ancestor-clipping estimate alone.
+  If an overlay can cover the resolved point and the extra cost is acceptable, pass `resolution: { hitTest: true }`. The resolver then checks the point with `document.elementFromPoint`, including a walk into open shadow roots, instead of the ancestor-clipping estimate alone.
 </Callout>
 
 ## Using pointVisible

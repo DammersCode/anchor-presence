@@ -7,7 +7,7 @@ A `VisibilityPolicy` decides whether a resolved cursor renders. The resolver cal
 
 ## The default policy
 
-`createDomBinding` uses `defaultVisibilityPolicy` unless `resolution.visibilityPolicy` overrides it:
+If you do not set `resolution.visibilityPolicy`, `createDomBinding` uses `defaultVisibilityPolicy`:
 
 ```ts
 const defaultVisibilityPolicy: VisibilityPolicy = ({ resolution }) =>
@@ -18,7 +18,7 @@ The default policy hides a cursor only when nothing resolved. It shows an `ancho
 
 ## Writing a custom policy
 
-A policy receives the full presence, including `context` and `user`, and the resolution result:
+A policy receives the full presence, including `context` and `user`, and the resolution result. The first type parameter of `VisibilityPolicy` is the context type. This policy hides the cursors of staff users:
 
 ```ts
 import type { VisibilityPolicy } from "@anchor-presence/dom";
@@ -27,11 +27,15 @@ const hideStaffCursors: VisibilityPolicy<{ role: string }> = ({ presence }) =>
   presence.context?.role === "staff" ? "hide" : "show";
 ```
 
-The sender sets `context`, and nothing authenticates it. A policy hides a cursor on the receiver; it does not enforce a permission. See [Security](/docs/get-started/guides/security).
+The sender sets `context`, and nothing authenticates it. A policy hides a cursor on the receiver. It does not enforce a permission. See [Security](/docs/get-started/guides/security).
 
-Pass it through `resolution.visibilityPolicy`:
+Pass the policy through `resolution.visibilityPolicy`. The client must have the same context type as the policy:
 
 ```ts
+import { createPresenceClient } from "@anchor-presence/core";
+import { createDomBinding } from "@anchor-presence/dom";
+
+const client = createPresenceClient<{ role: string }>({ transport });
 const binding = createDomBinding(client, {
   resolution: { visibilityPolicy: hideStaffCursors },
 });

@@ -3,7 +3,7 @@ title: SSR and Strict Mode
 description: How to create a client safely under server rendering and React Strict Mode.
 ---
 
-No package accesses the DOM at module load time. This page states the one rule that keeps a client safe under server rendering and React Strict Mode. Create the client inside the provider `factory`, or in an effect. Never create it at module scope in code that also runs on the server.
+Create the client inside the provider `factory`, or in an effect. Never create it at module scope in code that also runs on the server. This rule keeps a client safe under server rendering and React Strict Mode. No package accesses the DOM at module load time.
 
 ## Use the provider factory
 
@@ -28,9 +28,7 @@ function App() {
 }
 ```
 
-The factory runs once per mount. Until it has run, the provider renders its children with a `null` client, and every hook returns its server-safe value. Server renders never run the factory. In development, Strict Mode's double-invoke runs the factory, disposes the first client, and runs it again, so the page ends with one live client.
-
-The factory owns the transport: create it, then create the client. The client connects the transport by default. `client.dispose()` calls `transport.disconnect()`.
+Until the factory has run, the provider renders its children with a `null` client, and every hook returns its server-safe value. Server renders never run the factory. Create the transport inside the factory, because `client.dispose()` calls `transport.disconnect()`.
 
 ## Why Strict Mode matters here
 
@@ -40,8 +38,8 @@ The provider creates the client in an effect with a cleanup. The first mount cre
 
 ## Two supported SSR patterns
 
-1. Create the client only in browser-only code, for example inside the provider `factory` or a plain `useEffect`. Pass `client={null}` until it exists.
-2. Pass `client={null}` for the duration of server rendering, and swap in a real client after hydration.
+- Create the client only in browser-only code, for example inside the provider `factory` or a plain `useEffect`. Pass `client={null}` until it exists.
+- Pass `client={null}` for the duration of server rendering, and swap in a real client after hydration.
 
 Every hook has a server-safe snapshot: `useRemoteCursors` and `useCursorPresence` return `[]`, `useCursorStatus` returns `"disconnected"`, `useCursorClient` returns `null`, and `useCursorContext` returns `[undefined, setContext]`. `renderToString` works for a tree using every hook with `client={null}`:
 

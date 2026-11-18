@@ -7,9 +7,13 @@ description: Read the remote user values with useRemoteUsers, one entry per clie
 
 ## Usage
 
+The hook has this signature:
+
 ```ts
 function useRemoteUsers<TUser = unknown>(): RemoteUser<TUser>[];
 ```
+
+This component lists the remote users and dims the idle ones:
 
 ```tsx
 import { useRemoteUsers } from "@anchor-presence/react";
@@ -32,16 +36,16 @@ function PresenceList() {
 
 Each `RemoteUser` entry has:
 
-| Field      | Type                 | Meaning                                                                                         |
-| ---------- | -------------------- | ----------------------------------------------------------------------------------------------- |
-| `clientId` | `string`             | the remote client that sent the user value                                                      |
-| `user`     | `TUser \| undefined` | the user value, or `undefined` when none was sent                                               |
-| `session`  | `string`             | the session ID of the client                                                                    |
-| `idle`     | `boolean`            | `true` when the presence of the client did not change for a while, even while heartbeats arrive |
+| Field      | Type                 | Meaning                                                                                               |
+| ---------- | -------------------- | ----------------------------------------------------------------------------------------------------- |
+| `clientId` | `string`             | the remote client that sent the user value                                                            |
+| `user`     | `TUser \| undefined` | the user value, or `undefined` when the client sent none                                              |
+| `session`  | `string`             | the session ID of the client                                                                          |
+| `idle`     | `boolean`            | `true` when the presence of the client did not change for `idleAfterMs`, even while heartbeats arrive |
 
 ## User shape
 
-The client checks each remote `user` against the local `user` value that you pass to `createPresenceClient`. A key of the local value must have the same type. An optional key that the local value lacks stays only as a string, number, boolean or `null`. If a remote value does not fit that shape, the client drops it, and the entry keeps the previous `user` value. A client with no local `user` has no shape to compare with. In that case, pass `parseUser` to `createPresenceClient`. See [Check the shape of remote values](/docs/get-started/guides/security#check-the-shape-of-remote-values).
+The client checks each remote `user` against the shape of the local `user` value. If a remote value does not fit that shape, the client drops it, and the entry keeps the previous `user` value. For the rules and for `parseUser`, see [Remote user and context](/docs/core/validation#remote-user-and-context).
 
 ## Render cost
 

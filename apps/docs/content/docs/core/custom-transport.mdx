@@ -3,13 +3,15 @@ title: Custom transport
 description: Write a transport for BroadcastChannel or a managed real-time service.
 ---
 
-Write your own transport when your app already has a byte channel, such as `BroadcastChannel`, or when you use a managed real-time service. A transport only moves bytes. It never validates or interprets them.
+If your app already has a byte channel, such as `BroadcastChannel`, write your own transport. Do the same for a managed real-time service. A transport only moves bytes. It never checks or reads them.
 
-Already on Socket.IO or SignalR? Use the shipped [Socket.IO](/docs/examples/backends/socketio) or [SignalR](/docs/examples/backends/signalr) example instead of writing a transport.
+If your app uses Socket.IO or SignalR, use the [Socket.IO](/docs/examples/backends/socketio) or [SignalR](/docs/examples/backends/signalr) example. You do not need to write a transport.
 
 ## BroadcastChannel sketch
 
-`BroadcastChannel` sends messages between browsing contexts (tabs, iframes, workers) on the same origin. It never crosses a network, so it fits demos and same-origin multi-tab apps, not real presence over the internet.
+`BroadcastChannel` sends messages between browsing contexts (tabs, iframes, workers) on the same origin. It never crosses a network. As a result, it fits demos and multi-tab apps on one origin, not presence over the internet.
+
+This transport wraps one `BroadcastChannel`:
 
 ```ts
 import type { ConnectionStatus, LiveCursorTransport } from "@anchor-presence/core";
@@ -18,11 +20,9 @@ function createBroadcastChannelTransport(channelName: string): LiveCursorTranspo
   const channel = new BroadcastChannel(channelName);
   const statusListeners = new Set<(status: ConnectionStatus) => void>();
 
-  channel.onmessage = null; // set per subscriber below
-
   return {
     connect() {
-      // BroadcastChannel has no handshake; it is open as soon as it is constructed
+      // a BroadcastChannel has no handshake and is open from construction
       for (const listener of statusListeners) listener("connected");
     },
     disconnect() {
@@ -48,15 +48,19 @@ function createBroadcastChannelTransport(channelName: string): LiveCursorTranspo
 }
 ```
 
-`BroadcastChannel` delivers structured-cloned values, so it can carry a `Uint8Array` directly, with no base64 step.
+`BroadcastChannel` delivers structured-cloned values. As a result, it can carry a `Uint8Array` directly, with no base64 step.
 
 ## Managed real-time services
 
-A managed service, such as a hosted pub/sub or a serverless WebSocket gateway, usually exposes its own SDK with a `send` method and a message event. Wrap that SDK the same way. Forward `send` calls to the SDK. Forward the SDK's message event to `subscribe` listeners. Map the SDK's own connection events to `ConnectionStatus`.
+A managed service is a hosted pub/sub or a serverless WebSocket gateway. Its SDK has a `send` method and a message event. Wrap that SDK in the same way:
+
+- Forward `send` calls to the SDK.
+- Forward the message event of the SDK to the `subscribe` listeners.
+- Map the connection events of the SDK to `ConnectionStatus`.
 
 <Callout type="warn">
-  If the SDK delivers text or JSON instead of bytes, encode and decode at the transport boundary so the codec
-  still receives a `Uint8Array` from `send` and gives one to the SDK.
+  If the SDK delivers text or JSON instead of bytes, convert at the transport boundary. Each `subscribe`
+  listener must receive a `Uint8Array`. Otherwise the codec cannot decode the messages.
 </Callout>
 
 ## Close reasons
@@ -81,11 +85,18 @@ function onSocketClose(event: CloseEvent, willReconnect: boolean) {
 }
 ```
 
-Return `subscribeClose` on the transport object. Set `willReconnect` to `true` only when the transport schedules another attempt. `client.subscribeClose` then receives each close. See [Close reasons](/docs/core/transports#close-reasons).
+Return `subscribeClose` on the transport object. When the transport schedules another attempt, set `willReconnect` to `true`. Otherwise, set it to `false`. `client.subscribeClose` then receives each close. See [Close reasons](/docs/core/transports#close-reasons).
 
-## Testing a custom transport
+## Test a custom transport
 
-Run your transport through the same message shapes `createInMemoryPair` produces: a connect, a send while connected, a send while disconnected, and a status change with no active subscriber. See [In-memory transport](/docs/core/in-memory-transport) for a transport that already satisfies the full contract, as a reference implementation.
+Do a test of your transport with these cases:
+
+- A connect.
+- A send while the transport is connected.
+- A send while the transport is disconnected.
+- A status change with no active subscriber.
+
+`createInMemoryPair` satisfies the full contract. Use it as a reference implementation. See [In-memory transport](/docs/core/in-memory-transport).
 
 ## Related
 

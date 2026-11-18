@@ -7,13 +7,11 @@ An anchor inside a scroll container can exist, with a real size and position, wh
 
 <ExamplePreview scene="scroll" />
 
-## What's in the demo
-
-- When the remote cursor is on thread 8, the narrow pane cannot show that thread without a scroll. The visibility policy hides the cursor, and the status bar shows "out of view".
-- A button at the top or bottom edge of the list shows where the cursor is. Select the button to scroll the thread into view. Then the cursor appears on the thread.
-- Scroll the narrow list with your pointer or your keyboard. The cursor appears when its thread comes into view.
-
 ## Code
+
+Install the packages:
+
+<InstallCommand />
 
 The scene of this demo:
 
@@ -21,14 +19,17 @@ The scene of this demo:
 
 `clippedPointPolicy` hides a cursor when its point is outside the visible part of the anchor. The hint button reads the same cursor from `useRemoteCursors`. A hidden cursor keeps its `anchorId` and its `pointVisible` value, so the hint knows the thread.
 
-## Behavior reference
+## Behavior notes
+
+- When the remote cursor is on thread 8, the narrow pane cannot show that thread without a scroll. The visibility policy hides the cursor, and the status bar shows "out of view".
+- A button at the top or bottom edge of the list shows where the cursor is. Select the button to scroll the thread into view. Then the cursor appears on the thread.
+- Scroll the narrow list with your pointer or your keyboard. The cursor appears when its thread comes into view.
+
+## Related
 
 - [How the check works](/docs/dom/occlusion-and-scroll#how-the-check-works): how the resolver finds a clipped point.
 - [Using pointVisible](/docs/dom/occlusion-and-scroll#using-pointvisible): the field that the policy and the hint read.
 - [Writing a custom policy](/docs/dom/visibility-policy#writing-a-custom-policy): the `VisibilityPolicy` contract.
 - [useRemoteCursors](/docs/react/remote-cursors#useremotecursors): all resolved cursors, visible or not.
-
-## Related
-
 - [Anchors and fallbacks](/docs/examples/anchors-and-fallbacks): an anchor that does not exist on the receiver.
 - [Troubleshooting: cursor floats over empty space](/docs/get-started/guides/troubleshooting#cursor-floats-over-empty-space)

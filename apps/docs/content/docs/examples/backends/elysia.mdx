@@ -7,11 +7,15 @@ You want a relay built on [Elysia](https://elysiajs.com)'s route-based API inste
 
 ## Install
 
+Install the packages with Bun:
+
 ```sh
 bun add @anchor-presence/core @anchor-presence/dom elysia @elysia/eden
 ```
 
 ## Server
+
+The server file exports a factory that starts the relay:
 
 <CodeFromSource repo="examples/elysia/server.ts" lang="ts" />
 
@@ -23,7 +27,7 @@ The client builds its socket with Eden, Elysia's end-to-end type safety layer. E
 
 <CodeFromSource repo="examples/elysia/client.ts" lang="ts" />
 
-The `edenSocket` function hands the transport a fresh Eden socket for each connection. The transport ignores the url it builds, because Eden builds the url from the treaty base and the typed query.
+The `edenSocket` function hands the transport a fresh Eden socket for each connection. The transport ignores the URL that it builds, because Eden builds the URL from the treaty base and the typed query.
 
 ## Run it
 
@@ -39,21 +43,23 @@ bun relay.ts
 
 The relay listens on `http://localhost:8791`. To use a different port, give the port as the first argument.
 
-## Production notes
+## Behavior notes
 
 - **Query validation.** The relay validates the `room` and `token` query parameters against its schema before the upgrade. A parameter with the wrong type fails the upgrade with a 422 validation error.
 - **Room name validation.** `parseRoom` caps room names at 256 characters and restricts them to `[A-Za-z0-9_-]`. A missing name is `main`. An invalid name closes the socket with code `4007`.
 - **Max payload size.** `MAX_MESSAGE_BYTES` (default 32 KiB) drops an oversized message instead of closing the connection.
 - **Per-connection rate limit.** A token bucket limits inbound messages per socket (`RATE_CAPACITY`, `RATE_REFILL_PER_SECOND`).
-- **Origin allowlist.** `RELAY_ALLOWED_ORIGINS` is a comma-separated list of allowed origins. Leave it empty for local development. Every origin is accepted then.
-- **Auth hook placeholder.** Pass an `authCheck` function, or set `RELAY_AUTH_TOKEN` for a plain shared-token check.
+- **Origin allowlist.** `RELAY_ALLOWED_ORIGINS` is a comma-separated list of allowed origins. Leave it empty for local development. The relay then accepts every origin.
+- **Connection check.** Pass an `authCheck` function to check each connection. Without it, set `RELAY_AUTH_TOKEN`. The relay then compares the [room token](/docs/dom/websocket-transport#room-token) of each connection with that value.
 - **Room cleanup.** The relay drops a room's entry once its last socket closes.
 - **Connection caps.** `RELAY_MAX_ROOM_SOCKETS` (default 128) limits one room. `RELAY_MAX_TOTAL_SOCKETS` (default 10,000) limits the process. Above either cap, the relay closes the new socket with code `4001` (room full) or `4002` (server full).
 - **Dead connections.** `RELAY_IDLE_TIMEOUT_SECONDS` (default 60) sets Bun's `idleTimeout`, and `sendPings` is on. If a socket sends nothing for that time, Bun sends a ping. If no pong comes back, Bun closes the socket.
-
 - **Slow receivers.** `RELAY_SLOW_PEER_HARD_BYTES` (default 8 MiB) sets Bun's `backpressureLimit`, and `closeOnBackpressureLimit` is on. Bun closes a receiver whose send buffer passes that size. Bun's pub-sub does not expose each receiver's buffer, so this relay cannot skip a slow receiver before it closes it, as the `ws` relay does.
 
-Set `RELAY_ALLOWED_ORIGINS` and `RELAY_AUTH_TOKEN` before you expose this relay past local development. Put a TLS-terminating proxy in front of it.
+<Callout type="warn">
+  If you expose this relay outside local development, set `RELAY_ALLOWED_ORIGINS` and `RELAY_AUTH_TOKEN`, and
+  put a TLS-terminating proxy in front of it. Without them, any page and any visitor can join a room.
+</Callout>
 
 ## Related
 

@@ -3,7 +3,7 @@ title: Responsive layouts
 description: How wrapping, breakpoints, sidebar state, and element-size differences resolve.
 ---
 
-Anchor Presence resolves cursor positions correctly across different layouts. This page explains how wrapping, breakpoints, sidebar state, and element-size differences resolve, with a worked example.
+Anchor Presence places a cursor on the same element when two clients show different layouts. Wrapping, breakpoints, sidebar state, and element-size differences all resolve through the anchor and its normalized position.
 
 ## The problem with pixel coordinates
 
@@ -43,9 +43,9 @@ A responsive layout often wraps or reflows content at a breakpoint. As long as t
 
 ## How sidebar state resolves
 
-A collapsed sidebar and an open sidebar are different layouts on the same page. If both states register the same anchor IDs for the same semantic locations, for example `nav.dashboard`, a cursor over that item resolves correctly in either state.
+A collapsed sidebar and an open sidebar are different layouts on the same page. Both states can register the same anchor IDs for the same semantic locations, for example `nav.dashboard`. Then a cursor over that item resolves correctly in either state.
 
-If the collapsed sidebar hides an item entirely, with no matching DOM element, the fallback chain moves to the next anchor, for example the sidebar container itself.
+The collapsed sidebar can hide an item and remove its DOM element. Then the fallback chain moves to the next anchor, for example the sidebar container.
 
 ## How element-size differences resolve
 

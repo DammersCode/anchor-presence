@@ -7,24 +7,31 @@ description: Read the resolved remote cursor positions with useRemoteCursors and
 
 ## useRemoteCursors
 
+The hook has this signature:
+
 ```ts
 function useRemoteCursors<TContext = unknown, TUser = unknown>(): ResolvedCursor<TContext, TUser>[];
 ```
+
+The list also contains the hidden cursors. This component counts the visible ones:
 
 ```tsx
 import { useRemoteCursors } from "@anchor-presence/react";
 
 function CursorCount() {
   const cursors = useRemoteCursors();
-  return <span>{cursors.length} cursors visible</span>;
+  const visibleCount = cursors.filter((cursor) => cursor.visible).length;
+  return <span>{visibleCount} cursors visible</span>;
 }
 ```
 
 Each entry is `{ clientId, x, y, visible, pointVisible, anchorId, tier, idle, context?, user? }`. `x` and `y` are pixels in the receiver's own viewport. Position an element with these values using `position: fixed`.
 
-The hook rerenders its component on every new resolved-cursor snapshot. While cursors move, that is every animation frame. Use `useRemoteCursorsSelector` when your component needs less than the full list.
+The hook rerenders its component on every new resolved-cursor snapshot. While cursors move, that is every animation frame. If your component needs less than the full list, use `useRemoteCursorsSelector`.
 
 ## useRemoteCursorsSelector
+
+The hook has this signature:
 
 ```ts
 function useRemoteCursorsSelector<TSelected, TContext = unknown, TUser = unknown>(

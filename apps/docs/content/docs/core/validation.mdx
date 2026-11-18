@@ -3,36 +3,62 @@ title: Validation
 description: validatePresence, ValidationLimits, the shape check for remote user and context, and the boundary between a codec and the store.
 ---
 
-`validatePresence` turns an untrusted decoded value into a `CursorPresence` or `null`. Every codec's `decode` output passes through it before the value reaches the store.
+`validatePresence` turns an untrusted decoded value into a `CursorPresence` or `null`. The client passes the output of every codec `decode` through it before the value reaches the store.
 
 ## The validation boundary
 
+The client runs these steps on each inbound message, in this order:
+
+1. It drops the message when its byte length is more than `maxMessageBytes`.
+2. It decodes the bytes with the codec.
+3. It calls `validatePresence` on the decoded value. A `null` result drops the message.
+4. It drops an echo of its own message.
+5. It sends an event message to the event listeners. An event message stops at this step.
+6. It checks `user` and `context` with `parseUser` and `parseContext`, or with the shape check when no parser is set.
+7. It gives the message to the store.
+
+A codec does not check limits. Its job is to turn bytes into a value and back, without a throw. `validatePresence` checks a decoded value against the protocol limits. It clamps anchor and viewport coordinates into `0` to `1`, and it never throws.
+
+`validatePresence` does not read `maxMessageBytes`. Only the client checks the byte length of a message, before it decodes the message.
+
+## Use validatePresence directly
+
+`createPresenceClient` calls `validatePresence` for you on every inbound message. If you process presence data outside a `PresenceClient`, call `validatePresence` yourself. One example is a relay that inspects messages.
+
+This relay function drops an oversized frame first, then checks the decoded value:
+
 ```ts
-const decoded = codec.decode(bytes); // unknown
-const presence = validatePresence(decoded); // CursorPresence | null
-if (presence === null) return; // dropped
-```
+import { DEFAULT_MAX_MESSAGE_BYTES, jsonCodec, validatePresence } from "@anchor-presence/core";
 
-A codec never needs to write validation logic of its own. Its only job is turning bytes into a value and back, safely. `validatePresence` is the one place that checks a decoded value against the protocol's limits, clamps anchor and viewport coordinates into `0` to `1`, and never throws.
-
-## Using validatePresence directly
-
-`createPresenceClient` calls `validatePresence` for you on every inbound message. Call it directly only when you process presence data outside a `PresenceClient`, such as on a relay that inspects messages.
-
-```ts
-import { validatePresence } from "@anchor-presence/core";
-
-const presence = validatePresence(decoded);
-if (presence !== null) {
-  // presence is a well-formed CursorPresence
+function inspect(frame: Uint8Array) {
+  if (frame.byteLength > DEFAULT_MAX_MESSAGE_BYTES) return null;
+  return validatePresence(jsonCodec.decode(frame));
 }
 ```
 
+`inspect` returns a well-formed `CursorPresence`, or `null` for a message to drop.
+
+<Callout type="warn">
+  If a relay calls `validatePresence`, cap the frame size before the decode. `validatePresence` ignores
+  `maxMessageBytes` and accepts an oversized message.
+</Callout>
+
 ## ValidationLimits
 
-`ValidationLimits` overrides one or more of the default limits. Omit a field to keep its default. See [Security](/docs/get-started/guides/security) for the full limits table and the rule each field enforces.
+`ValidationLimits` overrides one or more default limits. Omit a field to keep its default. Each default is an exported `DEFAULT_` constant with the same name in upper case, for example `DEFAULT_MAX_ANCHORS`.
 
-Pass limits directly to `validatePresence`, or through `validationLimits` on `createPresenceClient`:
+| Field               | Default      | Limit                                                    | Result when a message breaks the limit                       |
+| ------------------- | ------------ | -------------------------------------------------------- | ------------------------------------------------------------ |
+| `maxClientIdLength` | `128`        | Length of `clientId`                                     | Drops the message.                                           |
+| `maxSessionLength`  | `64`         | Length of `session`                                      | Drops the message.                                           |
+| `maxSequence`       | `2147483647` | Largest `sequence`. A `sequence` is an integer from `0`. | Drops the message.                                           |
+| `maxAnchors`        | `8`          | Number of anchors in one cursor                          | Keeps the first `maxAnchors` anchors.                        |
+| `maxAnchorIdLength` | `256`        | Length of an anchor `id`                                 | Drops that anchor only.                                      |
+| `maxFieldBytes`     | `8192`       | JSON size in bytes of `user`, `context`, or event `data` | Drops the `user` or `context` field. Drops an event message. |
+| `maxFieldDepth`     | `8`          | Nesting depth of `user`, `context`, or event `data`      | Drops the `user` or `context` field. Drops an event message. |
+| `maxMessageBytes`   | `32768`      | Byte length of one encoded message                       | The client drops the message. `validatePresence` ignores it. |
+
+Pass the limits as the second argument of `validatePresence`, or through `validationLimits` on `createPresenceClient`:
 
 ```ts
 const client = createPresenceClient({
@@ -41,11 +67,13 @@ const client = createPresenceClient({
 });
 ```
 
+See [Security](/docs/get-started/guides/security) for the risk that each limit covers.
+
 ## Remote user and context
 
 `validatePresence` checks the size and depth of `user` and `context`, not their shape. The client adds a shape check for each remote value.
 
-Without a parser, a remote value must have the shape of the local value. Only the keys of the local value stay. A client with this local `user` accepts a remote `user` whose `name` and `color` are strings:
+Without a parser, the shape check compares a remote value with the local value of the same field. A client with this local `user` accepts a remote `user` whose `name` and `color` are strings:
 
 ```ts
 const client = createPresenceClient({
@@ -54,13 +82,14 @@ const client = createPresenceClient({
 });
 ```
 
-The shape check uses these rules:
+The shape check uses these rules. When a part of the remote value does not fit, the client drops the whole field.
 
-- A key of the local object must have the type of the local value, or the client drops the whole field. A remote object can omit a key.
-- A key that the local object lacks, for example an optional field, stays when its value is a string, a number, a boolean or `null`. The client removes it when the value is an object or an array.
-- An array must be an array. Each item must have the shape of the first local item. An empty local array accepts an array of strings, numbers, booleans or `null`.
+- A key of the local object must have the type of the local value. A remote object can omit a key.
+- An extra key is a key that the local object does not have. An extra key stays when its value is a string, a number, a boolean, or `null`. The check removes an extra key that holds an object or an array. This rule also applies to an empty local object.
+- The check removes a `__proto__` key at every level.
+- An array must be an array. Each item must have the shape of the first local item. An empty local array accepts an array of strings, numbers, booleans, or `null` values.
 - A string, a number, or a boolean must have the type of the local value.
-- A local `null` accepts a string, a number, a boolean or `null`, and never an object or an array.
+- A local `null` or `undefined` value accepts a string, a number, a boolean, or `null`, and never an object or an array.
 
 The client reads the local value for each message, so `setUser` and `setContext` change the shape.
 
@@ -83,11 +112,11 @@ A dropped field does not clear the stored value. The receiver keeps the previous
   parser, the client accepts the remote value as it is, and a malformed value reaches your render.
 </Callout>
 
-In development, the client warns once in the console when a remote `user` or `context` arrives and no check applies. See [Security](/docs/get-started/guides/security#check-the-shape-of-remote-values) for the render risk.
+In [development mode](/docs/core/presence-client#development-mode), the client warns one time in the console when a remote `user` or `context` arrives and no check applies. See [Security](/docs/get-started/guides/security#check-the-shape-of-remote-values) for the render risk.
 
 ## Events and leave messages
 
-An event message has a `null` cursor and an `event` field. `validatePresence` drops the whole message when the event `type` is not a string of 1 to `MAX_EVENT_TYPE_LENGTH` characters. It also drops the message when the event `data` is above `maxFieldBytes` or `maxFieldDepth`. A dropped event never reaches the store as a message that clears the cursor.
+An event message has a `null` cursor and an `event` field. `validatePresence` drops the whole message when the event `type` is not a string of 1 to `MAX_EVENT_TYPE_LENGTH` characters. It also drops the message when the event `data` breaks `maxFieldBytes` or `maxFieldDepth`. A dropped event never reaches the store as a message that clears the cursor.
 
 `validatePresence` keeps `leave: true` only on a message with a `null` cursor.
 

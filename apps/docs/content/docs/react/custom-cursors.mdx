@@ -11,7 +11,7 @@ description: Replace the cursor content CursorLayer renders, or style the built-
 
 ```tsx
 <CursorLayer
-  renderCursor={({ cursor, label, color }) => (
+  renderCursor={({ label, color }) => (
     <MyCursorGlyph color={color}>
       <span>{label}</span>
     </MyCursorGlyph>
@@ -23,11 +23,11 @@ description: Replace the cursor content CursorLayer renders, or style the built-
 
 ## DefaultCursor
 
-`DefaultCursor` is the shape `CursorLayer` renders when you pass no `renderCursor`. It has no Tailwind dependency and no external stylesheet. Three CSS variables control its look:
+`DefaultCursor` is the shape `CursorLayer` renders when you pass no `renderCursor`. It has no Tailwind dependency and no external stylesheet. Three CSS variables control its look: `--anchor-presence-cursor-color`, `--anchor-presence-cursor-size`, and `--anchor-presence-cursor-label-color`. This renderer makes the arrow larger:
 
 ```tsx
 <CursorLayer
-  renderCursor={({ cursor, label, color }) => (
+  renderCursor={({ label, color }) => (
     <DefaultCursor label={label} color={color} style={{ "--anchor-presence-cursor-size": "28px" }} />
   )}
 />
@@ -49,7 +49,7 @@ A cursor's root always carries these attributes, so you can select and test it w
 
 ## Idle cursors
 
-A remote client counts as idle when it sends no update for a while. `CursorLayer` sets the root's opacity to `0.4` for an idle cursor's default style, and adds the `data-anchor-presence-idle` attribute so you can style it yourself:
+A remote client is idle when its presence does not change for `idleAfterMs`. See [Idle stage](/docs/core/remote-presence#idle-stage). For an idle cursor, `CursorLayer` sets the root's opacity to `0.4`. It also adds the `data-anchor-presence-idle` attribute, so that you can style the cursor yourself:
 
 ```css
 [data-anchor-presence-idle] {
@@ -59,12 +59,9 @@ A remote client counts as idle when it sends no update for a while. `CursorLayer
 
 Read [Remote users](/docs/react/remote-users) to show idle state next to a user's name, not only on the cursor.
 
-## Forced colors and reduced motion
-
-`DefaultCursor` sets `forced-color-adjust: none`, so its arrow and label keep their own colors under Windows forced-colors mode instead of flattening to system colors. `CursorLayer` skips the opacity transition on a cursor's root when the operating system prefers reduced motion.
-
 ## Related
 
+- [CursorLayer accessibility](/docs/react/cursor-layer#accessibility): forced colors and reduced motion.
 - [CursorLayer](/docs/react/cursor-layer)
 - [Remote users](/docs/react/remote-users)
 - [Components API](/docs/react/api/components)

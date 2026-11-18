@@ -12,7 +12,7 @@ export type RemoteUser<TUser = unknown> = {
   user: TUser | undefined;
   /** The session ID of the client. */
   session: string;
-  /** `true` when the client sent no update for a while. */
+  /** `true` when the presence of the client has not changed for `idleAfterMs`. */
   idle: boolean;
 };
 

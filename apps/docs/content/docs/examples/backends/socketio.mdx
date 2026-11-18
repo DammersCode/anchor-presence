@@ -9,11 +9,13 @@ description: A tested Socket.IO transport and its matching relay.
 
 ## Server
 
-A minimal room-broadcast relay. It joins each socket to a room from its query string and forwards `"presence"` events to the other sockets in that room, without inspecting the payload:
+The server is a minimal room-broadcast relay. It joins each socket to the room from its query string. It forwards `"presence"` events to the other sockets in that room and never reads the payload:
 
 <CodeFromSource repo="examples/socketio/server.ts" lang="ts" />
 
 ## Client transport
+
+`createSocketIoTransport` wraps a Socket.IO client socket as a `LiveCursorTransport`:
 
 <CodeFromSource repo="examples/socketio/transport.ts" lang="ts" />
 
@@ -31,7 +33,7 @@ const client = createPresenceClient({ transport: createSocketIoTransport(socket)
 ## Behavior notes
 
 - `subscribeStatus` replays the current status to every new subscriber, so a component that mounts after the socket already connected still learns it can send.
-- The relay is deliberately dumb: it never parses `"presence"` payloads, so `validatePresence()` on the receiving client is still the only thing standing between the wire and the store. See [Security](/docs/get-started/guides/security).
+- The relay never parses `"presence"` payloads. The validation in the receiving client is the only check between the wire and the store. See [Security](/docs/get-started/guides/security).
 - The relay limits one room with `RELAY_MAX_ROOM_SOCKETS` (default 128) and the process with `RELAY_MAX_TOTAL_SOCKETS` (default 10,000). Above either cap, it disconnects the new socket.
 - Socket.IO closes dead connections with its own heartbeat. The `pingInterval` and `pingTimeout` server options control it.
 - An integration test in `examples/socketio/socketio.test.ts` starts a real Socket.IO server on an ephemeral port and connects two clients. It checks that a cursor update sent from one reaches the other through `getRemoteSnapshot()`.

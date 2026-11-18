@@ -92,7 +92,7 @@ const readRepoFile = (file: string) =>
   readFileSync(join(process.cwd(), file), "utf8").replaceAll("\r\n", "\n");
 
 function sampleBodies(markdown: string): string[] {
-  return [...markdown.matchAll(/```tsx\n([\s\S]*?)```/g)].map(([, body = ""]) =>
+  return [...markdown.matchAll(/```tsx\n([\s\S]*?)```/gu)].map(([, body = ""]) =>
     body
       .split("\n")
       .filter((line) => !line.startsWith("import ") && line !== '"use client";')

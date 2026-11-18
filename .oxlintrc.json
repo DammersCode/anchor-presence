@@ -75,7 +75,25 @@
         "vitest/require-mock-type-parameters": "off",
         "react/globals": "off",
         "unicorn/consistent-function-scoping": "off",
-        "typescript/prefer-optional-chain": "off"
+        "typescript/prefer-optional-chain": "off",
+        "vitest/no-conditional-in-test": "off",
+        "eslint/no-await-in-loop": "off",
+        "eslint/no-promise-executor-return": "off",
+        "import/max-dependencies": "off",
+        "unicorn/no-useless-undefined": "off"
+      }
+    },
+    {
+      "files": ["scripts/**"],
+      "rules": {
+        "eslint/no-await-in-loop": "off",
+        "eslint/no-promise-executor-return": "off"
+      }
+    },
+    {
+      "files": ["packages/core/src/client.ts", "packages/react/src/typed-hooks.ts"],
+      "rules": {
+        "import/max-dependencies": "off"
       }
     }
   ]

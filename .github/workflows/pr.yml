@@ -1,6 +1,6 @@
 name: PR checks
 
-# Fast checks only. The slow suites (e2e, docs build, .NET hub, bench) run once on main, never twice.
+# Fast checks only, as parallel jobs. The slow suites (e2e, docs build, .NET hub, bench) run once on main, never twice.
 on:
   pull_request:
     paths-ignore: ["plans/**"]
@@ -13,48 +13,71 @@ concurrency:
 permissions:
   contents: read
 
+# Only listed maintainers burn Actions minutes: add a login to the fromJSON list of each job to let another user's PRs run checks.
 jobs:
-  checks:
-    name: Build, typecheck, lint, and unit tests
+  types:
+    name: Typecheck and package checks
     runs-on: ubuntu-24.04
     timeout-minutes: 10
-    # Only listed maintainers burn Actions minutes; add a login to let another user's PRs run checks.
     if: >-
       github.event_name != 'pull_request' ||
       contains(fromJSON('["DammersCode"]'), github.event.pull_request.user.login)
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 22
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version-file: package.json
-      - uses: actions/cache@v6
-        with:
-          path: ~/.bun/install/cache
-          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
-          restore-keys: ${{ runner.os }}-bun-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-      - name: Build packages
-        run: bun run build
+      - uses: ./.github/actions/setup
       - name: Typecheck
         run: bun run typecheck
+      - name: Check package exports and unused code
+        run: bun run check:package && bun run check:unused
+
+  lint:
+    name: Format and lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    if: >-
+      github.event_name != 'pull_request' ||
+      contains(fromJSON('["DammersCode"]'), github.event.pull_request.user.login)
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
       - name: Check formatting
         run: bun run format:check
       - name: Lint
         run: bun run lint
-      - name: Check package exports and unused code
-        run: bun run check:package && bun run check:unused
+
+  test:
+    name: Unit tests (shard ${{ matrix.shard }} of 3)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    if: >-
+      github.event_name != 'pull_request' ||
+      contains(fromJSON('["DammersCode"]'), github.event.pull_request.user.login)
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
       # No .NET on this runner, so the real SignalR hub test skips itself; main runs it.
       - name: Unit tests
-        run: bun run test
+        run: bunx vitest run --shard=${{ matrix.shard }}/3
+
+  informational:
+    name: Bun runtime smoke and dependency audit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    if: >-
+      github.event_name != 'pull_request' ||
+      contains(fromJSON('["DammersCode"]'), github.event.pull_request.user.login)
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
       # Informational until it is proven stable on Linux; the timeout ends a hang the script's own watchdog misses.
-      - name: Relays under the Bun runtime (informational)
+      - name: Relays under the Bun runtime
         continue-on-error: true
         timeout-minutes: 3
         run: timeout -k 5 90 bun scripts/runtime-smoke.ts
+      # Fails on a new high advisory. GHSA-fc5q-39xc-vjpf (picomatch, dev tooling) has no fixed version yet; drop the flag when one exists.
       - name: Dependency audit
-        continue-on-error: true
-        run: bun run audit
+        run: bun audit --audit-level=high --ignore=GHSA-fc5q-39xc-vjpf

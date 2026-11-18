@@ -48,11 +48,11 @@ export function createEventParser<TEvents extends object>(
   parsers: EventParsers<TEvents>,
 ): (event: RemoteEvent) => TypedRemoteEvent<TEvents> | undefined {
   return (event) => {
-    if (!Object.hasOwn(parsers, event.type)) return undefined;
+    if (!Object.hasOwn(parsers, event.type)) return;
     const parser = (parsers as Record<string, ((data: unknown) => unknown) | null>)[event.type];
     const data = parser === null ? event.data : parser?.(event.data);
-    if (data === undefined && parser !== null) return undefined;
-    if (parser === null && data !== undefined) return undefined;
+    if (data === undefined && parser !== null) return;
+    if (parser === null && data !== undefined) return;
     return { clientId: event.clientId, type: event.type, data } as TypedRemoteEvent<TEvents>;
   };
 }

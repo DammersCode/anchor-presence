@@ -10,6 +10,10 @@ Install the packages before you write any code. A React app needs all three pack
 
 ## Install
 
+<Callout type="warn">
+  If the install command returns a 404, the packages are not published to npm. Build them from the repository: run `bun install` and `bun run build`, then add each package from its folder with `bun add file:<path>/packages/core`, or install the tarball that `bun pm pack` writes.
+</Callout>
+
 Pick the tab that matches your app. Each tab installs only the packages that the app uses:
 
 <Tabs items={["React app", "DOM app without React", "Server or tests"]}>

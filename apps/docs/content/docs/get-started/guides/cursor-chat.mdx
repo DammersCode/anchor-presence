@@ -10,6 +10,12 @@ Users on one page want to say a few words without a separate chat panel. Cursor 
 
 Each peer receives the event through `useCursorEvents` and shows the text as the label of the remote cursor of the sender. After 5 seconds, the bubble disappears on both sides.
 
+The demo runs this recipe in both panes:
+
+<ExamplePreview scene="chat" />
+
+When Mira sends a message, the label of her cursor shows the text and moves with her cursor for 5 seconds.
+
 The repository has a demo app with live reactions and a one-line chat. Both use one-shot events, and the app shows each message in a small box for 3 seconds. The [demo README](https://github.com/DammersCode/anchor-presence/tree/main/apps/demo) lists all steps. To run the demo, clone the repository and run these commands from its root:
 
 ```sh

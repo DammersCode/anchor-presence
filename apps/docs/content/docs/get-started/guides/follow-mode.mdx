@@ -8,9 +8,11 @@ import { Crosshair, Gauge, LocateFixed, MousePointer, Users } from "lucide-react
 
 In a long page, a user wants to see what another user looks at. Follow mode makes one client, the follower, track the cursor of a peer, the leader. When the leader's cursor leaves the follower's window, the follower's page scrolls the leader's anchor into view. Follow mode stops when the follower scrolls, when the follower presses Escape, or when the leader leaves the room. The recipe uses only public APIs: `useRemoteCursorsSelector`, `ResolvedCursor`, `element.scrollIntoView` and `client.subscribePeers`.
 
-The demo does not run follow mode. It shows the case that follow mode handles. In the narrow pane, the remote cursor moves to a thread outside the short scroll list, and the cursor hides. A button at the edge of the list scrolls that thread into view. Follow mode does the same scroll without a click. Watch the narrow pane:
+The demo runs this recipe in the narrow pane:
 
-<ExamplePreview scene="scroll" />
+<ExamplePreview scene="follow" />
+
+When Mira moves to a section outside the narrow pane, that pane scrolls to the section and shows a "Following Mira" banner. A mouse wheel scroll or Escape in that pane stops follow mode.
 
 ## Find the target
 

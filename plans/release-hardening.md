@@ -35,6 +35,7 @@ jobs:
     timeout-minutes: 30
     permissions:
       actions: read
+      checks: read
     steps:
       # Checks run once on main; the release waits for that run instead of repeating it.
       # npm version pushes the commit and the tag together, so the run can still be in progress here.
@@ -114,6 +115,6 @@ A job-level `permissions` block replaces the top-level one, so every job lists a
 
 - `--frozen-lockfile` was verified with Bun 1.4.4 only; CI pins Bun 1.3.14.
 - A clean `bun install --frozen-lockfile --ignore-scripts` on an empty runner, then `bun run build`, is not yet run.
-- `gh run list` and `gh run watch` with only `actions: read` in the `gate` job are untested.
+- `gh run watch` needs `checks: read` as well as `actions: read`; the `gate` job grants both. No release run has proven this step yet.
 - A first release must confirm that the `npm-release` environment name in the npm trusted publisher matches the job, otherwise `npm publish` fails with a 404 on the OIDC exchange.
 - Dependabot or Renovate should bump the pinned SHAs; without a bot they go stale.

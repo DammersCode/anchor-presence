@@ -24,6 +24,8 @@ Install the three packages:
 bun add @anchor-presence/react @anchor-presence/dom @anchor-presence/core
 ```
 
+If the command returns a 404, the packages are not published to npm. Build them from this repository with `bun install` and `bun run build`, then add each one with `bun add file:<path>/packages/core` (and `dom`, `react`).
+
 Pass the provider a `factory` that creates the transport and the client. Mark one element with `data-anchor`. Then render the provider and the cursor layer:
 
 ```tsx

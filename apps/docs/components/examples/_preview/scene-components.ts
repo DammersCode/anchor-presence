@@ -1,9 +1,12 @@
 import type { PresenceClient, PresenceClientOptions } from "@anchor-presence/core";
 import type { ComponentType, ReactNode } from "react";
 import { BasicsScene } from "../basics";
+import { ChatScene } from "../chat";
 import { CustomCursorsScene } from "../custom-cursors";
 import { DialogsScene } from "../dialogs";
+import { EdgeArrowsScene } from "../edge-arrows";
 import { FallbacksScene } from "../fallbacks";
+import { FollowScene } from "../follow";
 import { InterpolationScene } from "../interpolation";
 import { KanbanScene } from "../kanban";
 import { PresenceScene, presenceTimeouts } from "../presence";
@@ -35,4 +38,7 @@ export const SCENE_COMPONENTS: Record<SceneName, SceneEntry> = {
   presence: { Scene: PresenceScene, clientOptions: presenceTimeouts },
   "custom-cursors": { Scene: CustomCursorsScene },
   interpolation: { Scene: InterpolationScene },
+  follow: { Scene: FollowScene },
+  "edge-arrows": { Scene: EdgeArrowsScene },
+  chat: { Scene: ChatScene },
 };

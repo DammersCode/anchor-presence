@@ -8,9 +8,11 @@ import { Crosshair, Footprints, Gauge, MousePointer, Palette } from "lucide-reac
 
 A remote cursor can point at a part of the page that the local user scrolled away from. The cursor of the peer then sits outside the window, and the local user does not know that the peer is there. An off-screen hint is an arrow at the window edge. It sits at the nearest edge point and points at the remote cursor. The recipe computes the hint from the `x` and `y` fields of `ResolvedCursor`.
 
-The demo does not draw edge arrows. It shows the same idea in a scroll list. In the narrow pane, the remote cursor moves to a thread outside the list, and the cursor hides. A button at the top or bottom edge of the list then shows where the cursor is. Watch the narrow pane:
+The demo runs this recipe in the narrow pane:
 
-<ExamplePreview scene="scroll" />
+<ExamplePreview scene="edge-arrows" />
+
+When Mira or Theo points at a section outside the narrow pane, an arrow at the top or bottom edge of that pane points at the cursor.
 
 ## Clamp the point to the edge
 

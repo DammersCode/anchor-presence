@@ -52,7 +52,7 @@ async function bundleSizes(): Promise<void> {
       external: ["@anchor-presence/*", "react", "react-dom", "react/jsx-runtime"],
     });
     const output = result.outputs[0];
-    if (!result.success || output === undefined)
+    if (result.success !== true || output === undefined)
       throw new Error(`bundle failed for ${name}: run bun run build`);
     metrics.set(`bundle ${name} gzip (KB)`, gzipSync(Buffer.from(await output.text())).length / 1024);
   }

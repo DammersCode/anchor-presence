@@ -202,7 +202,9 @@ export function bindIdentity(
       ...(parsed as Record<string, unknown>),
       clientId: `${identity.clientId}~${connectionId}`,
     };
-    if (identity.user !== undefined) message.user = identity.user;
+    // a bound connection never shows a user the peer chose
+    if (identity.user === undefined) delete message.user;
+    else message.user = identity.user;
     return identityEncoder.encode(JSON.stringify(message));
   } catch {
     return null;

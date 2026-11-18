@@ -14,7 +14,10 @@ export type SceneName =
   | "scroll"
   | "presence"
   | "custom-cursors"
-  | "interpolation";
+  | "interpolation"
+  | "follow"
+  | "edge-arrows"
+  | "chat";
 
 type PaneCaption = { label: string; detail: string };
 
@@ -232,6 +235,71 @@ export const SCENES: Record<SceneName, SceneMeta> = {
           { kind: "point", anchor: "field.target:c", dwellMs: 1500 },
           { kind: "point", anchor: "field.target:b", dwellMs: 1500 },
           { kind: "point", anchor: "field.target:d", dwellMs: 1500 },
+        ],
+      },
+    ],
+  },
+  follow: {
+    panes: {
+      wide: { label: "Wide", detail: "Mira's view, every section visible" },
+      narrow: { label: "Narrow", detail: "long page, follows Mira" },
+    },
+    tour: [
+      {
+        user: MIRA,
+        steps: [
+          { kind: "point", anchor: "doc.section:2", u: 0.5, v: 0.5 },
+          { kind: "point", anchor: "doc.section:7", u: 0.4, v: 0.5, dwellMs: 2600 },
+          { kind: "point", anchor: "doc.section:4", u: 0.6, v: 0.5, dwellMs: 2600 },
+          { kind: "point", anchor: "doc.section:8", u: 0.5, v: 0.5, dwellMs: 2600 },
+          { kind: "leave", ms: 3000 },
+        ],
+      },
+    ],
+  },
+  "edge-arrows": {
+    panes: {
+      wide: { label: "Wide", detail: "every section visible" },
+      narrow: { label: "Narrow", detail: "long page, arrows at the edge" },
+    },
+    tour: [
+      {
+        user: MIRA,
+        steps: [
+          { kind: "point", anchor: "doc.section:6", u: 0.3, v: 0.5, dwellMs: 2200 },
+          { kind: "point", anchor: "doc.section:1", u: 0.6, v: 0.5 },
+          { kind: "point", anchor: "doc.section:8", u: 0.7, v: 0.5, dwellMs: 2200 },
+          { kind: "point", anchor: "doc.section:3", u: 0.3, v: 0.5, dwellMs: 2200 },
+        ],
+      },
+      {
+        user: THEO,
+        delayMs: 700,
+        steps: [
+          { kind: "point", anchor: "doc.section:5", u: 0.6, v: 0.5, dwellMs: 2600 },
+          { kind: "point", anchor: "doc.section:2", u: 0.4, v: 0.5, dwellMs: 2600 },
+          { kind: "point", anchor: "doc.section:7", u: 0.8, v: 0.5, dwellMs: 2600 },
+        ],
+      },
+    ],
+  },
+  chat: {
+    panes: {
+      wide: { label: "Wide", detail: "Mira chats as she moves" },
+      narrow: { label: "Narrow", detail: "press / to reply" },
+    },
+    tour: [
+      {
+        user: MIRA,
+        steps: [
+          { kind: "point", anchor: "doc.section:1", u: 0.5, v: 0.5, dwellMs: 600 },
+          { kind: "event", type: "chat", data: { text: "Can we cut this?" }, dwellMs: 900 },
+          { kind: "point", anchor: "doc.section:4", u: 0.5, v: 0.5, dwellMs: 1000 },
+          { kind: "point", anchor: "doc.section:6", u: 0.4, v: 0.5, dwellMs: 3200 },
+          { kind: "point", anchor: "doc.section:3", u: 0.5, v: 0.5, dwellMs: 600 },
+          { kind: "event", type: "chat", data: { text: "Budget looks right" }, dwellMs: 900 },
+          { kind: "point", anchor: "doc.section:7", u: 0.4, v: 0.5, dwellMs: 1000 },
+          { kind: "point", anchor: "doc.section:8", u: 0.6, v: 0.5, dwellMs: 3200 },
         ],
       },
     ],

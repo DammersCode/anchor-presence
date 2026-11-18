@@ -27,7 +27,7 @@ function fitShape(sample: unknown, value: unknown): unknown {
   if (sample === null || sample === undefined) return isScalar(value) ? value : undefined;
   if (Array.isArray(sample)) {
     if (!Array.isArray(value)) return undefined;
-    if (sample.length === 0) return value.every(isScalar) ? value : undefined;
+    if (sample.length === 0) return value.every((item) => isScalar(item)) ? value : undefined;
     const fitted = value.map((item) => fitShape(sample[0], item));
     return fitted.includes(undefined) ? undefined : fitted;
   }
@@ -53,7 +53,7 @@ function fitShape(sample: unknown, value: unknown): unknown {
 // Without a parser, a remote value must look like the local one. A client with no local value has no shape to check against.
 function parserFor(explicit: ((value: unknown) => unknown) | undefined, sample: unknown) {
   if (explicit !== undefined) return explicit;
-  if (sample === undefined) return undefined;
+  if (sample === undefined) return;
   return (value: unknown) => {
     const fitted = fitShape(sample, value);
     if (fitted !== undefined && countKeys(fitted) < countKeys(value)) {

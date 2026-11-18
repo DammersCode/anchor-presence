@@ -4,7 +4,7 @@ description: What the binding sends on pointer and focus activity, and when it c
 icon: pointer
 ---
 
-import { Anchor, BookOpen, Link } from "lucide-react";
+import { Anchor, BookOpen, Link, Play } from "lucide-react";
 
 Pointer capture is the part of the binding that turns local pointer events into the local cursor. The binding listens on the document and calls `client.setLocalCursor` on each relevant event. It is on by default. Set `capturePointer: false` for a client that only shows remote cursors.
 
@@ -66,7 +66,7 @@ A touch pointer fires the same `pointermove`, `pointerdown`, and `pointerover` e
 
 ## Browser coverage
 
-CI runs the browser tests of pointer and focus capture in Chromium. Firefox and WebKit run the same tests locally before each merge to `main`. The touch test runs in Chromium only, and a unit test covers the `isPrimary` rule.
+CI runs the browser tests of pointer and focus capture in Chromium, with Playwright. Firefox and WebKit are not part of CI. The touch test runs in Chromium only, and a unit test covers the `isPrimary` rule.
 
 ## Related
 
@@ -79,5 +79,8 @@ CI runs the browser tests of pointer and focus capture in Chromium. Firefox and 
   </Card>
   <Card icon={<BookOpen />} title="Fallback chain" href="/docs/get-started/concepts/fallback-chain">
     Why the chain has more than one anchor.
+  </Card>
+  <Card icon={<Play />} title="Basics example" href="/docs/examples/basics">
+    A live demo of one cursor in two layouts.
   </Card>
 </Cards>

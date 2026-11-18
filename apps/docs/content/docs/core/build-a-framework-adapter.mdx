@@ -29,10 +29,16 @@ Each layer depends only on the layers below it:
 
 <Mermaid
   chart={`flowchart TD
-  adapter["adapter: provider, hooks, SSR guard"] --> dom["@anchor-presence/dom: anchor registry, pointer capture, scheduler, resolver"]
-  dom --> core["@anchor-presence/core: protocol types, validation, store, client"]
+  adapter["your adapter"] --> dom["@anchor-presence/dom"]
+  dom --> core["@anchor-presence/core"]
   adapter --> core`}
 />
+
+| Layer                   | Contents                                                    |
+| ----------------------- | ----------------------------------------------------------- |
+| Adapter                 | Provider, hooks, SSR guard                                  |
+| `@anchor-presence/dom`  | Anchor registry, pointer capture, frame scheduler, resolver |
+| `@anchor-presence/core` | Protocol types, validation, store, client                   |
 
 An adapter holds no protocol state of its own ([invariant 5](/docs/get-started/concepts/how-it-works#the-10-invariants)). Every value that it exposes comes from a `PresenceClient` or a `DomBinding`.
 
@@ -61,6 +67,36 @@ An adapter holds no protocol state of its own ([invariant 5](/docs/get-started/c
     A binding that outlives its scope leaks the pointer listener and the observers of the scheduler.
   </Step>
 </Steps>
+
+This sample does steps 2, 4, and 5 for the remote presence and the status of a client. `Framework` models the three primitives of Solid or Vue, so the sample needs no framework import:
+
+```ts
+import type { ConnectionStatus, PresenceClient, RemotePresence } from "@anchor-presence/core";
+
+interface Framework {
+  isServer: boolean;
+  createSignal<T>(value: T): [read: () => T, write: (value: T) => void];
+  onCleanup(fn: () => void): void;
+}
+
+function createPresenceSignals(framework: Framework, client: PresenceClient) {
+  const [presence, setPresence] = framework.createSignal<RemotePresence[]>([]);
+  const [status, setStatus] = framework.createSignal<ConnectionStatus>("disconnected");
+  if (framework.isServer) return { presence, status };
+
+  setPresence(client.getRemotePresence());
+  setStatus(client.getStatus());
+  const stopPresence = client.subscribeRemote(() => setPresence(client.getRemotePresence()));
+  const stopStatus = client.subscribeStatus(setStatus);
+  framework.onCleanup(() => {
+    stopPresence();
+    stopStatus();
+  });
+  return { presence, status };
+}
+```
+
+Call `createPresenceSignals` inside the owner scope, so that `onCleanup` runs when the scope ends. In Solid, `isServer` comes from `solid-js/web`. In Vue, use `typeof window === "undefined"`, build the signal pair from a `shallowRef`, and use `onUnmounted`.
 
 <Callout type="warn">
   If the adapter keeps cursors, status, or presence in a framework store, the copy can drift from the client.
@@ -94,7 +130,7 @@ An adapter package exports again the types of the lower packages that its own pu
 
 ## Package boundaries
 
-No third-party framework code lives inside `@anchor-presence/core` or `@anchor-presence/dom`. A `@anchor-presence/solid` or `@anchor-presence/vue` package depends on these two packages only. It has its own test that pins its exports, and it never imports the internals of another adapter. The [package table](/docs/get-started/introduction#packages) shows the dependencies of each package.
+No third-party framework code lives inside `@anchor-presence/core` or `@anchor-presence/dom`. A `@anchor-presence/solid` or `@anchor-presence/vue` package depends on these two packages only. It never imports the internals of another adapter. The [package table](/docs/get-started/introduction#packages) shows the dependencies of each package.
 
 ## Related
 

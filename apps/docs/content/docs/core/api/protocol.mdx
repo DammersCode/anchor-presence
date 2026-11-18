@@ -105,9 +105,21 @@ import {
 } from "@anchor-presence/core";
 ```
 
-The `DEFAULT_` constants are the defaults of `ValidationLimits`. See [ValidationLimits](/docs/core/validation#validationlimits) for the value of each limit.
+The `DEFAULT_` constants are the defaults of `ValidationLimits`. See [ValidationLimits](/docs/core/validation#validationlimits) for what each limit checks.
 
-`MAX_EVENT_TYPE_LENGTH` is `64`, the maximum length of an event `type`. `ValidationLimits` cannot change it.
+| Constant                       | Value        |
+| ------------------------------ | ------------ |
+| `DEFAULT_MAX_CLIENT_ID_LENGTH` | `128`        |
+| `DEFAULT_MAX_SESSION_LENGTH`   | `64`         |
+| `DEFAULT_MAX_SEQUENCE`         | `2147483647` |
+| `DEFAULT_MAX_ANCHORS`          | `8`          |
+| `DEFAULT_MAX_ANCHOR_ID_LENGTH` | `256`        |
+| `DEFAULT_MAX_FIELD_BYTES`      | `8192`       |
+| `DEFAULT_MAX_FIELD_DEPTH`      | `8`          |
+| `DEFAULT_MAX_MESSAGE_BYTES`    | `32768`      |
+| `MAX_EVENT_TYPE_LENGTH`        | `64`         |
+
+`MAX_EVENT_TYPE_LENGTH` is the maximum length of an event `type`. `ValidationLimits` cannot change it.
 
 ## Related
 

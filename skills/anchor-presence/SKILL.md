@@ -90,14 +90,14 @@ Read [anchors.md](anchors.md), then add `data-anchor` to the elements users poin
 
 ### 6. Scope cursors with context and a policy
 
-This step applies when one anchor ID can appear in different app states (pages, tabs, open dialogs). Publish the state as **context** and hide cursors from other states with a visibility **policy**. Extend `PresenceRoot` from step 4 with `bindingOptions` and a `PublishPage` child:
+This step applies when one anchor ID can appear in different app states (pages, tabs, open dialogs). Publish the state as **context** and hide cursors from other states with a visibility **policy**. Extend `PresenceRoot` from step 4 with `bindingOptions` and a `PublishPage` child. The binding runs the policy only when it resolves the cursors again. For this reason, `PublishPage` calls `binding.invalidate()` after each page change:
 
 ```tsx
 "use client";
 import { useEffect, useRef } from "react";
 import { createPresenceClient } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
-import { CursorLayer, LiveCursorProvider, useLocalContext } from "@anchor-presence/react";
+import { CursorLayer, LiveCursorProvider, useCursorBinding, useLocalContext } from "@anchor-presence/react";
 
 export function PresenceRoot({
   room,
@@ -112,9 +112,6 @@ export function PresenceRoot({
 }) {
   // The provider reads bindingOptions once, so the policy reads the page through a ref.
   const pageRef = useRef(currentPage);
-  useEffect(() => {
-    pageRef.current = currentPage;
-  }, [currentPage]);
 
   return (
     <LiveCursorProvider<{ page: string }, { name: string }>
@@ -134,17 +131,22 @@ export function PresenceRoot({
         },
       }}
     >
-      <PublishPage page={currentPage} />
+      <PublishPage page={currentPage} pageRef={pageRef} />
       {children}
       <CursorLayer<{ page: string }, { name: string }> getLabel={(cursor) => cursor.user?.name ?? null} />
     </LiveCursorProvider>
   );
 }
 
-// useLocalContext works only below the provider.
-function PublishPage({ page }: { page: string }) {
+// useLocalContext and useCursorBinding work only below the provider.
+function PublishPage({ page, pageRef }: { page: string; pageRef: { current: string } }) {
   const [, setContext] = useLocalContext<{ page: string }>();
+  const binding = useCursorBinding();
   useEffect(() => setContext({ page }), [page, setContext]);
+  useEffect(() => {
+    pageRef.current = page;
+    binding?.invalidate("page-changed");
+  }, [page, pageRef, binding]);
   return null;
 }
 ```

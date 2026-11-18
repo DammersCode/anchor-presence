@@ -398,20 +398,40 @@ describe("protocol docs: constants", () => {
   it("fixes the event type length at 64", () => {
     expect(MAX_EVENT_TYPE_LENGTH).toBe(64);
   });
+
+  it("matches the protocol.mdx constant table", () => {
+    expect([
+      DEFAULT_MAX_CLIENT_ID_LENGTH,
+      DEFAULT_MAX_SESSION_LENGTH,
+      DEFAULT_MAX_SEQUENCE,
+      DEFAULT_MAX_ANCHORS,
+      DEFAULT_MAX_ANCHOR_ID_LENGTH,
+      DEFAULT_MAX_FIELD_BYTES,
+      DEFAULT_MAX_FIELD_DEPTH,
+      DEFAULT_MAX_MESSAGE_BYTES,
+    ]).toEqual([128, 64, 2147483647, 8, 256, 8192, 8, 32768]);
+  });
 });
 
 describe("parseEvent doc sample", () => {
-  it("builds a client with a parseEvent that checks the data", () => {
-    const { a: transport } = createInMemoryPair();
+  it("keeps the first emoji of a reaction, with its skin tone", () => {
+    const { a: myTransport, b } = createInMemoryPair();
     const client = createPresenceClient({
-      transport,
+      transport: myTransport,
       parseEvent: (event) => {
         if (event.type !== "reaction") return undefined;
         const emoji = (event.data as { emoji?: unknown } | undefined)?.emoji;
-        return typeof emoji === "string" ? { ...event, data: { emoji: emoji.slice(0, 2) } } : undefined;
+        if (typeof emoji !== "string") return undefined;
+        const first = new Intl.Segmenter().segment(emoji).containing(0);
+        return first ? { ...event, data: { emoji: first.segment } } : undefined;
       },
     });
-    expect(client.getRemotePresence()).toEqual([]);
+    const received: unknown[] = [];
+    client.subscribeEvents((event) => received.push(event.data));
+    const peer = createPresenceClient({ transport: b, clientId: "peer" });
+    peer.sendEvent("reaction", { emoji: "\u{1F44D}\u{1F3FD}\u{1F389}" });
+    expect(received).toEqual([{ emoji: "\u{1F44D}\u{1F3FD}" }]);
+    peer.dispose();
     client.dispose();
   });
 });
@@ -761,8 +781,11 @@ describe("custom transport docs: BroadcastChannel sketch", () => {
         connect() {
           if (channel !== null) return;
           channel = new BroadcastChannel(channelName);
-          channel.addEventListener("message", (event: MessageEvent<Uint8Array>) => {
-            for (const listener of listeners) listener(event.data);
+          channel.addEventListener("message", (event: MessageEvent<unknown>) => {
+            if (!ArrayBuffer.isView(event.data)) return;
+            const { buffer, byteOffset, byteLength } = event.data;
+            const bytes = new Uint8Array(buffer, byteOffset, byteLength);
+            for (const listener of listeners) listener(bytes);
           });
           // a BroadcastChannel has no handshake, so it is connected at once
           setStatus("connected");

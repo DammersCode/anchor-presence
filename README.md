@@ -178,7 +178,7 @@ Anchor Presence has these capabilities:
 | ---------- | ------------------------------------------------------------------------------------------------------------------- |
 | `anchor`   | The exact element, or a registered parent, exists on the receiver. Use this as the default. Most cursors land here. |
 | `viewport` | No anchor in the fallback chain resolved. Use it to keep a cursor visible on a page with no matching anchors.       |
-| `hidden`   | Nothing resolved, or a visibility policy chose to hide the cursor.                                                  |
+| `hidden`   | No anchor and no viewport fallback resolved. A policy `"hide"` keeps the tier and sets `visible` to `false`.        |
 
 **Visibility policy outcome.** What to return from a custom `VisibilityPolicy`:
 
@@ -207,10 +207,10 @@ Run these commands from the root of the repository:
 ```sh
 bun install                  # install workspace dependencies
 bun run build                # build every package (tsc --build)
-bun run typecheck             # typecheck the packages, tests, demo, docs, and examples
-bun run lint                  # oxlint, type-aware
-bun run test                  # unit tests (vitest)
-bun run test:browser          # cross-layout browser tests (playwright)
+bun run typecheck            # typecheck the packages, tests, demo, docs, and examples
+bun run lint                 # oxlint, type-aware
+bun run test                 # unit tests (vitest)
+bun run test:browser         # cross-layout browser tests (playwright)
 ```
 
 Unit tests run through Vitest. Cross-layout tests run through Playwright against Chromium, Firefox, and WebKit.

@@ -130,12 +130,12 @@ if (typeof Bun !== "undefined" && import.meta.main) {
           ws.close(ORIGIN_REJECTED_CODE, "origin not allowed");
           return;
         }
-        if (!ws.data.authOk) {
-          ws.close(AUTH_REJECTED_CODE, "invalid token");
-          return;
-        }
         if (ws.data.roomInvalid) {
           ws.close(INVALID_ROOM_CODE, "invalid room");
+          return;
+        }
+        if (!ws.data.authOk) {
+          ws.close(AUTH_REJECTED_CODE, "invalid token");
           return;
         }
         if (totalSockets >= MAX_TOTAL_SOCKETS) {

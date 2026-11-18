@@ -24,6 +24,33 @@ function statusText(state: TourState | "loading", guide: string): string {
   }
 }
 
+function PaneSkeleton({ className = "" }: { className?: string }) {
+  return (
+    <div
+      aria-hidden="true"
+      className={`${PANE_HEIGHT} flex items-center justify-center rounded-lg border border-fd-border bg-fd-muted text-xs text-fd-muted-foreground motion-safe:animate-pulse ${className}`}
+    >
+      Loading the preview
+    </div>
+  );
+}
+
+function PaneFrame({ title, src }: { title: string; src: string }) {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <div className="relative">
+      <iframe
+        title={title}
+        src={src}
+        loading="lazy"
+        onLoad={() => setLoaded(true)}
+        className={`block ${PANE_HEIGHT} w-full rounded-lg border border-fd-border bg-fd-card`}
+      />
+      {loaded ? null : <PaneSkeleton className="absolute inset-0" />}
+    </div>
+  );
+}
+
 /** Two panes of one scene in two layouts, linked by a presence channel, with a guided tour. */
 export function ExamplePreview({ scene }: { scene: SceneName }) {
   const meta = SCENES[scene];
@@ -103,13 +130,12 @@ export function ExamplePreview({ scene }: { scene: SceneName }) {
                 <span className="truncate text-fd-muted-foreground">{caption.detail}</span>
               </p>
               {channel === null ? (
-                <div className={`${PANE_HEIGHT} rounded-lg border border-fd-border bg-fd-card`} />
+                <PaneSkeleton />
               ) : (
-                <iframe
+                <PaneFrame
+                  key={channel}
                   title={`${caption.label} layout: ${caption.detail}`}
                   src={`/demo-frame/${scene}/${layout}?channel=${encodeURIComponent(channel)}`}
-                  loading="lazy"
-                  className={`block ${PANE_HEIGHT} w-full rounded-lg border border-fd-border bg-fd-card`}
                 />
               )}
             </div>

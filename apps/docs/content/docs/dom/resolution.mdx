@@ -24,7 +24,7 @@ Every resolved cursor carries a `tier`. The resolver tries the tiers in this ord
   chart={`flowchart TD
   start["remote presence"] --> hasCursor{"cursor is null?"}
   hasCursor -- yes --> hidden["tier: hidden"]
-  hasCursor -- no --> anchor{"an anchor of the chain is connected and has a size?"}
+  hasCursor -- no --> anchor{"anchor of the chain resolves?"}
   anchor -- yes --> anchorTier["tier: anchor, anchorId set"]
   anchor -- no --> viewport{"viewport position present?"}
   viewport -- yes --> viewportTier["tier: viewport"]
@@ -38,6 +38,10 @@ Every resolved cursor carries a `tier`. The resolver tries the tiers in this ord
 | `hidden`   | Nothing resolved. The cursor has no valid position.                 |
 
 The resolver walks the fallback chain of the sender in order. It uses the first anchor that is connected to the DOM and has a width and height greater than zero on the receiver. See [Fallback chain](/docs/get-started/concepts/fallback-chain) for how the sender builds the chain.
+
+In this demo, the narrow pane shows 4 of 8 orders and no refund buttons. When the button or the row of a cursor does not exist there, the cursor moves to the row or to the table. Watch the narrow pane:
+
+<ExamplePreview scene="fallbacks" />
 
 ## Viewport coordinates
 

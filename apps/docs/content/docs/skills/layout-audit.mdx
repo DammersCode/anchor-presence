@@ -84,13 +84,15 @@ If a pair scores moderate or high, the agent proposes fixes with the file and li
 
 Each sub-score goes from 0 to 100. It is 0 at or below the first value, 100 at or above the second, and linear in between:
 
-| Sub-score | Weight | What it measures                                                         | 0 at        | 100 at       |
-| --------- | :----: | ------------------------------------------------------------------------ | ----------- | ------------ |
-| Jump      |  35%   | How far apart two neighboring anchors land in the other view (90th pct.) | 40 px       | 240 px       |
-| Gap       |  25%   | Share of a container where the pointer has no anchored parent            | 5%          | 40%          |
-| Depth     |  15%   | How many levels an anchor falls back in the other view                   | 0           | the viewport |
-| Aspect    |  15%   | How much an anchor's width-to-height ratio changes (90th pct.)           | 1.3 × ratio | 3 × ratio    |
-| Parity    |  10%   | Share of anchor IDs that exist in one view only                          | 0%          | 100%         |
+| Sub-score | Weight | What it measures                                                         | 0 at        | 100 at                          |
+| --------- | :----: | ------------------------------------------------------------------------ | ----------- | ------------------------------- |
+| Jump      |  35%   | How far apart two neighboring anchors land in the other view (90th pct.) | 40 px       | 240 px                          |
+| Gap       |  25%   | Share of a container where the pointer has no anchored parent            | 5%          | 40%                             |
+| Depth     |  15%   | How many levels an anchor falls back in the other view                   | 0           | `maxAnchors` levels (default 4) |
+| Aspect    |  15%   | How much an anchor's width-to-height ratio changes (90th pct.)           | 1.3 × ratio | 3 × ratio                       |
+| Parity    |  10%   | Share of anchor IDs that exist in one view only                          | 0%          | 100%                            |
+
+`maxAnchors` is the audit config value for the length of the anchor chain that the app's binding sends. At depth `maxAnchors`, the anchor falls back to the viewport.
 
 By default, Jump measures in CSS pixels. You can set `"jumpScale": "viewport"` in the audit config. Then Jump measures each jump as a percent of the viewport width of the receiving client. The range is 3.125% to 18.75%. These values equal 40 px and 240 px on a 1280 px screen. As a result, the same jump scores higher on a phone than on a desktop.
 

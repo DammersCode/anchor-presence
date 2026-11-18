@@ -118,13 +118,14 @@ function OnlineBar() {
 ```tsx
 type MyContext = { pageId: string };
 type MyUser = { name: string; color?: string };
+declare function MyCursorGlyph(props: { color: string; children: React.ReactNode }): React.JSX.Element;
 
 <CursorLayer<MyContext, MyUser>
   getLabel={(cursor) => cursor.user?.name ?? "Guest"}
   getColor={(cursor) => cursor.user?.color ?? "#6b7280"}
   filterCursor={(cursor) => cursor.tier !== "viewport"}
-  getCursorProps={(cursor) => ({ className: "my-cursor" })}
-  renderCursor={({ cursor, label, color }) => <MyCursorGlyph color={color}>{label}</MyCursorGlyph>}
+  getCursorProps={() => ({ className: "my-cursor" })}
+  renderCursor={({ label, color }) => <MyCursorGlyph color={color}>{label}</MyCursorGlyph>}
   zIndex={1000}
 />;
 ```

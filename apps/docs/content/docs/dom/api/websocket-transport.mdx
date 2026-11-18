@@ -19,6 +19,8 @@ import type { WebSocketTransport, WebSocketTransportOptions } from "@anchor-pres
 
 `WebSocketTransport` is a `LiveCursorTransport` from `@anchor-presence/core` whose `connect` and `disconnect` methods are required. The type keeps `subscribeStatus`, `getStatus`, `subscribeClose`, and `bufferedBytes` optional, although the returned object always has them.
 
+A `subscribeClose` listener receives a [`TransportClose`](/docs/core/api/transports-and-codecs#transportclose) from `@anchor-presence/core`.
+
 ## WebSocketTransportOptions
 
 <AutoTypeTable path="../../packages/dom/src/transport.ts" name="WebSocketTransportOptions" />
@@ -43,10 +45,6 @@ const transport = createWebSocketTransport({
 <AutoTypeTable path="../../packages/dom/src/transport.ts" name="WebSocketLike" />
 
 `readyState` `0` means that the socket is connecting, and `1` means that it is open. The transport sets `binaryType` to `"arraybuffer"` and delivers only `ArrayBuffer` messages.
-
-## TransportClose
-
-`subscribeClose` listeners receive a `TransportClose` from `@anchor-presence/core`. See [TransportClose](/docs/core/api/transports-and-codecs#transportclose) for its fields.
 
 ## Related
 

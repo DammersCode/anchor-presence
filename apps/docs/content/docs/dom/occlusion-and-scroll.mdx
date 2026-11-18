@@ -21,6 +21,10 @@ const clippedPointPolicy: VisibilityPolicy = ({ resolution }) =>
 
 A portal overlay can need to skip the clip check for one anchor. For this case, write a policy that skips the `pointVisible` test for the ID of that anchor.
 
+This demo uses `clippedPointPolicy`. The narrow pane shows the threads of an inbox in a short scroll list. When the cursor points at a thread outside the visible part of the list, the narrow pane hides the cursor. Watch the narrow pane:
+
+<ExamplePreview scene="scroll" />
+
 ## How the check works
 
 For an `anchor` tier resolution, the resolver walks the DOM ancestors of the winning anchor, up to the document element. It looks for an ancestor whose computed `overflow`, `overflow-x`, or `overflow-y` is not `visible`. Each such ancestor clips the visible rectangle of the anchor to its own client area, without borders and scrollbars. The clip is the intersection of the two rectangles.

@@ -33,18 +33,11 @@ function inspect(frame: Uint8Array) {
 The client runs these steps on each inbound message, in this order:
 
 <Mermaid
-  chart={`flowchart TD
-  bytes["bytes from the transport"] --> size{"larger than maxMessageBytes?"}
-  size -- yes --> drop["drop"]
-  size -- no --> decode["codec.decode"]
-  decode --> validate{"validatePresence returns null?"}
-  validate -- yes --> drop
-  validate -- no --> echo{"own clientId?"}
-  echo -- yes --> drop
-  echo -- no --> event{"event message?"}
-  event -- yes --> listeners["rate limit, parseEvent, event listeners"]
-  event -- no --> shape["parseUser and parseContext, or the shape check"]
-  shape --> store["RemotePresenceStore"]`}
+  chart={`flowchart LR
+  bytes["bytes"] --> checks["steps 1 to 4"]
+  checks -->|fails| drop["drop"]
+  checks -->|step 5| listeners["event listeners"]
+  checks -->|steps 6 and 7| store["store"]`}
 />
 
 1. The client drops the message when its byte length is more than `maxMessageBytes`.

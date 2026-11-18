@@ -5,6 +5,7 @@ import type { CursorPresence } from "../src/protocol";
 import { validatePresence } from "../src/validate";
 
 // Reproduce a failure with FUZZ_SEED=<seed>; raise FUZZ_RUNS for a longer local run.
+// Long runs on Node 24 can fail from a V8 JSON.parse cache bug with one-character escaped keys; Bun does not.
 const SEED = Number(process.env.FUZZ_SEED ?? 0x5eed);
 const RUNS = Number(process.env.FUZZ_RUNS ?? 2000);
 

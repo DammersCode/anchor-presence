@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { RateLimiter, safeAuthCheck } from "./relay-guard";
+import { bindIdentity, RateLimiter, safeAuthCheck } from "./relay-guard";
 
 describe("RateLimiter", () => {
   it("keeps refilling after the clock steps back", () => {
@@ -23,5 +23,21 @@ describe("safeAuthCheck", () => {
 
   it("admits a plain identity", async () => {
     expect(await safeAuthCheck(() => ({ clientId: "alice" }))(request)).toEqual({ clientId: "alice" });
+  });
+});
+
+describe("bindIdentity", () => {
+  const frame = JSON.stringify({ version: 1, clientId: "x", user: { name: "CEO" } });
+
+  it("removes a user the peer chose when the identity carries none", () => {
+    const out = bindIdentity(frame, { clientId: "mallory" }, "c1");
+    const parsed = JSON.parse(new TextDecoder().decode(out ?? new Uint8Array()));
+    expect(parsed.clientId).toBe("mallory~c1");
+    expect(parsed.user).toBeUndefined();
+  });
+
+  it("writes the user of the identity", () => {
+    const out = bindIdentity(frame, { clientId: "mallory", user: { name: "Mallory" } }, "c1");
+    expect(JSON.parse(new TextDecoder().decode(out ?? new Uint8Array())).user).toEqual({ name: "Mallory" });
   });
 });

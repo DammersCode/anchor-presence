@@ -47,10 +47,11 @@
     "react-router": "^8.5.1",
     "tinybench": "^6.2.0",
     "typescript": "^7.0.2",
-    "vitest": "^5.0.0"
+    "vitest": "^5.0.3"
   },
   "overrides": {
-    "lodash-es": "4.18.1"
+    "lodash-es": "4.18.1",
+    "katex": "^0.18.2"
   },
   "engines": {
     "node": ">=22"

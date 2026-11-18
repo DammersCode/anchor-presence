@@ -4,6 +4,7 @@
 
 ### Breaking
 
+- Example relays: with identity binding, a frame never carries a `user` that the peer chose. The relay writes the `user` of the identity, or removes the field when the identity has none.
 - `@anchor-presence/core`: the default clock is monotonic (`performance.now()`), so a wall-clock step no longer leaves ghost peers or mutes event senders. Pass `now` to use another clock.
 - `@anchor-presence/core`: `binaryCodec.encode` throws for a coordinate outside the float32 range and for an event message that carries a cursor. The client drops such a message.
 - `@anchor-presence/dom`: `createWebSocketTransport` throws a `TypeError` for a `path` that does not start with `/` or `?`.

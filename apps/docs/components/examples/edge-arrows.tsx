@@ -5,7 +5,9 @@ import { CursorLayer, LiveCursorProvider, useRemoteCursors } from "@anchor-prese
 import type { ResolvedCursor } from "@anchor-presence/react";
 import type { ReactNode } from "react";
 import { LongPage } from "./long-page";
-import { safeColor } from "./safe-color";
+
+const safeColor = (color: string | undefined, fallback: string) =>
+  color !== undefined && /^#[0-9a-f]{6}$/iu.test(color) ? color : fallback;
 
 type User = { name: string; color: string };
 

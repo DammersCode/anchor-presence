@@ -34,14 +34,14 @@ function TierBadge({ clientId }: { clientId: string }) {
 | [useRemoteCursorsSelector](/docs/react/remote-cursors#select-a-smaller-value) | its `select` output changes under `isEqual`                                                         |
 | [useRemoteUsers](/docs/react/remote-users)                                    | a peer joins or leaves, or the `user`, `session`, or `idle` field of a peer changes                 |
 | [useRemotePresence](/docs/react/remote-presence)                              | a peer joins or leaves, or its `cursor`, `context`, `user`, `pointer`, `session`, or `idle` changes |
-| [useSendEvent](/docs/react/cursor-events)                                     | the client or the binding of the provider changes                                                   |
+| [useSendEvent](/docs/react/cursor-events)                                     | the provider value changes (client, binding, or the pending flag)                                   |
 | [useCursorStatus](/docs/react/connection-status)                              | the connection status changes                                                                       |
 | [useLocalContext](/docs/react/local-context#local-context)                    | the local context value changes                                                                     |
 | [useLocalUser](/docs/react/local-context#local-user)                          | the local user value changes                                                                        |
 | [usePeerChanges](/docs/react/remote-users#peer-changes)                       | never by itself: it calls its listener and returns nothing                                          |
 | [useCursorEvents](/docs/react/cursor-events)                                  | never by itself: it calls its listener and returns nothing                                          |
-| [useCursorClient](/docs/react/api/hooks#usecursorclient)                      | the client or the binding of the provider changes                                                   |
-| [useCursorBinding](/docs/react/api/hooks#usecursorbinding)                    | the client or the binding of the provider changes                                                   |
+| [useCursorClient](/docs/react/api/hooks#usecursorclient)                      | the provider value changes (client, binding, or the pending flag)                                   |
+| [useCursorBinding](/docs/react/api/hooks#usecursorbinding)                    | the provider value changes (client, binding, or the pending flag)                                   |
 
 A peer that turns idle or expires also changes the values that hooks return, so hooks can rerender in a room with no inbound messages. When a factory finishes creating its client, every hook rerenders once.
 

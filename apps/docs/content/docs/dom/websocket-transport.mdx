@@ -102,7 +102,7 @@ While a connection is connecting or open, a second `connect()` call has no effec
 
 ## Stop reconnecting
 
-`shouldReconnect` decides after each close whether the transport tries again. It receives the close `code` and `reason`, and returns `false` to stop. This rule also stops on `4001`, the code that the reference relay and the example relays send for a full room:
+The transport asks `shouldReconnect` after every close and after every failed connection attempt, and it tries again only if the answer is `true`. It receives the close `code` and `reason`, and returns `false` to stop. This rule also stops on `4001`, the code that the reference relay and the example relays send for a full room:
 
 ```ts
 const NO_RETRY_CODES = [1008, 4001, 4004, 4006, 4007];

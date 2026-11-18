@@ -1,4 +1,6 @@
 // Type-checked copies of the recipes in apps/docs/content/docs/get-started/guides (cursor-chat, follow-mode, offscreen-hints).
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { act, useCallback, useEffect, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { createRoot } from "react-dom/client";
@@ -7,6 +9,7 @@ import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   CursorLayer,
+  DefaultCursor,
   LiveCursorProvider,
   useCursorClient,
   useCursorEvents,
@@ -16,6 +19,7 @@ import {
   useRemoteUsers,
 } from "../src/index";
 import type { PeerChange, PresenceClient, RemoteEvent, ResolvedCursor } from "../src/index";
+import { missingLines } from "./doc-source";
 import { makeFakeBinding, makeFakeClient } from "./test-utils";
 
 // cursor-chat.mdx
@@ -69,7 +73,14 @@ type User = { name: string };
 
 function ChatCursorLayer() {
   const messages = useRemoteChat();
-  return <CursorLayer<unknown, User> getLabel={(cursor) => messages[cursor.clientId] ?? cursor.user?.name} />;
+  return (
+    <CursorLayer<unknown, User>
+      getLabel={(cursor) => messages[cursor.clientId] ?? cursor.user?.name}
+      renderCursor={({ label, color }) => (
+        <DefaultCursor label={label} color={color} labelStyle={{ maxWidth: "24rem", whiteSpace: "normal" }} />
+      )}
+    />
+  );
 }
 
 function isTextField(target: EventTarget | null): boolean {
@@ -515,5 +526,25 @@ describe("off-screen hint recipe", () => {
     expect(container.querySelector('[data-edge-hint="above"]')?.getAttribute("style")).toContain(
       "translate(92px, 8px)",
     );
+  });
+});
+
+describe("recipe sources", () => {
+  const pages = ["cursor-chat", "follow-mode", "offscreen-hints"];
+  const blocks = pages.flatMap((page) => {
+    const path = join(process.cwd(), `apps/docs/content/docs/get-started/guides/${page}.mdx`);
+    return [...readFileSync(path, "utf8").matchAll(/```tsx\r?\n([\s\S]*?)```/gu)].map(
+      ([, body = ""]) => body,
+    );
+  });
+
+  it("match the copies in this file", () => {
+    const missing = blocks.flatMap((block) =>
+      missingLines(
+        "docs-recipes-samples.test.tsx",
+        block.replaceAll("export ", "").replaceAll(/^import [^;]*;\n/gmu, ""),
+      ),
+    );
+    expect(missing).toEqual([]);
   });
 });

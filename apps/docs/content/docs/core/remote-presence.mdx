@@ -41,11 +41,11 @@ A peer joins on its first accepted message. It goes idle when its presence stops
 
 The store removes a peer when it accepts no message from that peer for `staleTimeoutMs`. The default is `DEFAULT_STALE_TIMEOUT_MS`, `70000` milliseconds. Set `staleTimeoutMs` on `createPresenceClient` to change it. The client enforces a minimum of `1000` milliseconds.
 
-## Idle stage
+## Idle state
 
 The store sets `idle: true` on the `RemotePresence` of a peer whose presence did not change for `idleAfterMs`. The store measures this time from the last change, not from the last message. The default is `DEFAULT_IDLE_AFTER_MS`, `15000` milliseconds. `idleAfterMs` always stays below `staleTimeoutMs`. If you pass a larger value, the store clamps it to `staleTimeoutMs - 1`.
 
-Heartbeats do not end the idle state, because they repeat the same state. A peer that changes nothing goes idle while its heartbeats keep arriving. Any change in cursor, user, context, or pointer type ends it. A change of another pointer field does not. Use `idle` to dim a cursor that stopped moving. `staleTimeoutMs` decides when the cursor disappears.
+Heartbeats do not end the idle state, because they repeat the same state. A peer that changes nothing goes idle while its heartbeats keep arriving. Any change in cursor, user, context, or pointer type ends it. Use `idle` to dim a cursor that stopped moving. `staleTimeoutMs` decides when the cursor disappears.
 
 ## Peer changes
 
@@ -84,7 +84,7 @@ A receiver accepts a leave message only from the stored `session`, and only with
 
 When the client accepts the first message of an unknown `clientId`, it answers with one full publish. A known `clientId` with another `session` gets the same answer. The full publish carries the cursor, `user`, and `context`. As a result, the peer that joined sees this client before the next heartbeat.
 
-The answer comes after a random delay of up to 500 ms. One delay covers every peer that joins in this time, and the random delay spreads the answers of the clients in a full room. A leave message or an event gets no answer.
+The answer waits a random delay of up to 500 ms, then goes out on the next publish tick. One delay covers every peer that joins in this time, and the random delay spreads the answers of the clients in a full room. A leave message or an event gets no answer.
 
 ## After a reconnect
 

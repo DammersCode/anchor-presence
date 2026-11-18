@@ -77,7 +77,7 @@ Returns `"connecting"`, `"connected"`, `"reconnecting"`, or `"disconnected"`. Gu
 function useCursorClient<TContext = unknown, TUser = unknown>(): PresenceClient<TContext, TUser> | null;
 ```
 
-Returns the client of the nearest provider, or `null` without one. On the server, it returns the `client` prop of the provider. A provider with only a `factory` has no client on the server, so the hook returns `null`. Guide: [Close reasons](/docs/react/connection-status#close-reasons).
+Returns the client of the nearest provider, or `null` without one. On the server, it returns the `client` prop of the provider. A provider with only a `factory` has no client on the server, so the hook returns `null`. Guide: [Client creation](/docs/react/client-creation).
 
 ## useCursorBinding
 

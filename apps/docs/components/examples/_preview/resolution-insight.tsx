@@ -3,7 +3,9 @@
 import { useCursorClient, useRemoteCursors, type ResolvedCursor } from "@anchor-presence/react";
 import { useLayoutEffect, useMemo, useRef } from "react";
 import type { TourUser } from "./tour";
-import { safeColor } from "../safe-color";
+
+const safeColor = (color: string | undefined, fallback: string) =>
+  color !== undefined && /^#[0-9a-f]{6}$/iu.test(color) ? color : fallback;
 
 type Cursor = ResolvedCursor<unknown, TourUser>;
 

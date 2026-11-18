@@ -47,8 +47,12 @@ const INSTALL_COMMAND = /<InstallCommand(?: packages="([^"]+)")? \/>/g;
 const MERMAID = /<Mermaid\s+chart="([\s\S]*?)"\s*\/>/g;
 const WARN_CALLOUT = /<Callout type="warn">\s*([\s\S]*?)\s*<\/Callout>/g;
 const LUCIDE_IMPORT = /^import \{[^}]*\} from "lucide-react";\n/gm;
-const CARD =
-  /<Card\b(?:"[^"]*"|\{[^}]*\}|[^>])*?title="([^"]+)"(?:"[^"]*"|\{[^}]*\}|[^>])*?href="([^"]+)"(?:"[^"]*"|\{[^}]*\}|[^>])*>\s*([\s\S]*?)\s*<\/Card>/g;
+// The catch-all excludes quotes, braces and "/" so each character has one match path (no backtracking blowup).
+const CARD_ATTRIBUTES = String.raw`(?:"[^"]*"|\{[^}]*\}|[^>"{/])*?`;
+const CARD = new RegExp(
+  String.raw`^[ \t]*<Card\b${CARD_ATTRIBUTES}title="([^"]+)"${CARD_ATTRIBUTES}href="([^"]+)"${CARD_ATTRIBUTES}(?:/>|>\s*([\s\S]*?)\s*</Card>)`,
+  "gm",
+);
 const STEP_BODY = /(<Step>)([\s\S]*?)(<\/Step>)/g;
 const TAB_BODY = /(<Tab value="[^"]+">)([\s\S]*?)(<\/Tab>)/g;
 const TAB = /<Tab value="([^"]+)">/g;
@@ -97,13 +101,15 @@ async function inlineComponents(markdown: string): Promise<string> {
       const code = kind === "repo" ? readExampleSource(file) : readDocsSource(file);
       return `${FENCE}${lang}\n${code.trimEnd()}\n${FENCE}`;
     })
-    .replace(MERMAID, (_tag, chart: string) => `${FENCE}mermaid\n${unescapeMdxAttribute(chart)}\n${FENCE}`)
+    .replace(
+      MERMAID,
+      (_tag, chart: string) =>
+        `${FENCE}mermaid\n${unescapeMdxAttribute(chart).replace(/^`|`$/gu, "")}\n${FENCE}`,
+    )
     .replace(WARN_CALLOUT, (_tag, body: string) => warningQuote(body))
     .replace(LUCIDE_IMPORT, "")
-    .replace(
-      CARD,
-      (_tag, title: string, href: string, body: string) =>
-        `- [${title}](${href}): ${body.replaceAll("\n", " ")}`,
+    .replace(CARD, (_tag, title: string, href: string, body: string | undefined) =>
+      body === undefined ? `- [${title}](${href})` : `- [${title}](${href}): ${body.replaceAll("\n", " ")}`,
     )
     .replace(STEP_BODY, dedentBody)
     .replace(TAB_BODY, dedentBody)

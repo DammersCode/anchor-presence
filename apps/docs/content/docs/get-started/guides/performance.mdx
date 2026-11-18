@@ -50,7 +50,7 @@ A `ResizeObserver` alone cannot see an element that moves without a size change.
 
 ### When to call invalidate() yourself
 
-Some layout changes trigger none of the signals. One example is a rule that you add with `CSSStyleSheet.insertRule()`: it changes layout and writes no attribute. Another example is a layout that a canvas drives. After such a change, call `binding.invalidate()`. Do not call it on every render: the call is cheap, but it adds nothing. See [invalidate](/docs/dom/binding#invalidate).
+Some layout changes trigger none of the signals. One example is a rule from `insertRule()` that moves an anchor without resizing it: it changes layout and writes no attribute. Another example is a layout that a canvas drives. After such a change, call `binding.invalidate()`. Do not call it on every render: the call is cheap, but it adds nothing. See [invalidate](/docs/dom/binding#invalidate).
 
 ## Idle behavior
 

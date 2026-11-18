@@ -589,6 +589,79 @@ describe("createWebSocketTransport", () => {
     expect(closes).toEqual([{ reason: "connection attempt failed", willReconnect: true }]);
   });
 
+  it("stops retrying a rejecting token function when shouldReconnect returns false", async () => {
+    vi.useFakeTimers();
+    const reasons: unknown[] = [];
+    const transport = make({
+      token: () => Promise.reject(new Error("expired")),
+      shouldReconnect: (close) => {
+        reasons.push((close as { reason?: string }).reason);
+        return false;
+      },
+      baseBackoffMs: 100,
+    });
+    const closes: unknown[] = [];
+    transport.subscribeClose?.((close) => closes.push(close));
+    void transport.connect();
+    await vi.advanceTimersByTimeAsync(60_000);
+
+    expect(reasons).toEqual(["connection attempt failed"]);
+    expect(closes).toEqual([{ reason: "connection attempt failed", willReconnect: false }]);
+    expect(transport.getStatus()).toBe("disconnected");
+  });
+
+  it("keeps retrying a rejecting token function when shouldReconnect returns true", async () => {
+    vi.useFakeTimers();
+    let calls = 0;
+    const transport = make({
+      token: () => {
+        calls += 1;
+        return Promise.reject(new Error("expired"));
+      },
+      shouldReconnect: () => true,
+      baseBackoffMs: 100,
+      random: () => 1,
+    });
+    void transport.connect();
+    await vi.advanceTimersByTimeAsync(250);
+
+    expect(calls).toBeGreaterThan(1);
+    expect(transport.getStatus()).toBe("reconnecting");
+  });
+
+  const throwingCtor = vi.fn(() => {
+    throw new Error("blocked");
+  }) as unknown as WebSocketCtor;
+
+  it("stops retrying a throwing WebSocketCtor when shouldReconnect returns false", () => {
+    vi.useFakeTimers();
+    const transport = createWebSocketTransport({
+      url: TEST_URL,
+      WebSocketCtor: throwingCtor,
+      shouldReconnect: () => false,
+      baseBackoffMs: 100,
+    });
+    void transport.connect();
+    vi.advanceTimersByTime(60_000);
+
+    expect(throwingCtor).toHaveBeenCalledTimes(1);
+    expect(transport.getStatus()).toBe("disconnected");
+  });
+
+  it("keeps retrying a throwing WebSocketCtor when shouldReconnect is unset", () => {
+    vi.useFakeTimers();
+    const transport = createWebSocketTransport({
+      url: TEST_URL,
+      WebSocketCtor: throwingCtor,
+      baseBackoffMs: 100,
+      random: () => 1,
+    });
+    void transport.connect();
+    vi.advanceTimersByTime(250);
+
+    expect(vi.mocked(throwingCtor).mock.calls.length).toBeGreaterThan(1);
+  });
+
   it("keeps reconnecting when a close listener throws", () => {
     vi.useFakeTimers();
     const transport = make({ baseBackoffMs: 100, random: () => 1 });

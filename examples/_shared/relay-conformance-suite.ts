@@ -2,6 +2,7 @@
 // Call defineRelayConformance(name, start) from a vitest file. `start(env)` runs your relay with these
 // environment variables and returns its ws:// base URL and a stop function:
 // MAX_MESSAGE_BYTES, RELAY_AUTH_TOKEN, RATE_CAPACITY, RATE_REFILL_PER_SECOND.
+import { connect as netConnect } from "node:net";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { closeCode, opened } from "./relay-test-helpers";
 
@@ -97,6 +98,42 @@ export function defineRelayConformance(
       const { baseUrl } = relay();
       expect(await closeCode(new WebSocket(`${baseUrl}/?room=team%2Fa`))).toBe(4007);
       expect(await closeCode(new WebSocket(`${baseUrl}/?room=${"x".repeat(300)}`))).toBe(4007);
+    });
+  });
+
+  describe(`relay hostile input conformance: ${name}`, () => {
+    const relay = useRelay(start, {});
+
+    it("survives malformed request lines, a reset during the handshake and an oversized header", async () => {
+      const { baseUrl } = relay();
+      const port = Number(new URL(baseUrl.replace(/^ws/u, "http")).port);
+      const send = (raw: string, reset: boolean) =>
+        new Promise<void>((resolve) => {
+          const socket = netConnect(port, "127.0.0.1", () => {
+            socket.write(raw);
+            setTimeout(() => {
+              if (reset) socket.resetAndDestroy();
+              else socket.destroy();
+              resolve();
+            }, 30);
+          });
+          socket.on("error", () => resolve());
+        });
+      const upgradeHeaders =
+        "Host: x\r\nConnection: Upgrade\r\nUpgrade: websocket\r\nSec-WebSocket-Version: 13\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n";
+
+      await send("GET http://[ HTTP/1.1\r\n" + upgradeHeaders + "\r\n", false);
+      await send("GET /%zz?room=%ff&token=%e0 HTTP/1.1\r\n" + upgradeHeaders + "\r\n", false);
+      await send(
+        "GET /?room=a HTTP/1.1\r\n" + upgradeHeaders + "X-Pad: " + "x".repeat(70_000) + "\r\n\r\n",
+        true,
+      );
+      await send("GET /?room=a HTTP/1.1\r\n" + upgradeHeaders + "\r\n", true);
+      await send("garbage\u0001\u0002 \r\n\r\n", false);
+
+      const fine = await connect(baseUrl, "survivor");
+      expect(fine.socket.readyState).toBe(WebSocket.OPEN);
+      fine.socket.close();
     });
   });
 

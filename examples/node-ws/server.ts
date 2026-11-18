@@ -80,7 +80,12 @@ export function createNodeWsRelay(port: number, options: NodeWsRelayOptions = {}
     wss.handleUpgrade(req, socket, head, (ws) => ws.close(code, reason));
   };
 
-  httpServer.on("upgrade", async (req, socket, head) => {
+  httpServer.on("upgrade", (req, socket, head) => {
+    // an async listener that throws is an unhandled rejection and ends the process: any failure refuses the socket
+    handleUpgrade(req, socket, head).catch(() => socket.destroy());
+  });
+
+  const handleUpgrade = async (req: IncomingMessage, socket: Duplex, head: Buffer): Promise<void> => {
     // Node removes its own socket error listener before it emits `upgrade`: without this one, a reset during an async hook kills the process
     socket.on("error", () => socket.destroy());
     const url = new URL(req.url ?? "/", "http://localhost");
@@ -129,7 +134,7 @@ export function createNodeWsRelay(port: number, options: NodeWsRelayOptions = {}
     wss.handleUpgrade(req, socket, head, (ws) => {
       wss.emit("connection", ws, room, auth === true ? undefined : auth);
     });
-  });
+  };
 
   wss.on("connection", (ws: WebSocket, room: string, identity: AuthIdentity | undefined) => {
     const socketState: SocketState = {

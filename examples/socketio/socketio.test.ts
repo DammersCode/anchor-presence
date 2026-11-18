@@ -165,6 +165,30 @@ describe("Socket.IO transport integration", () => {
     }
   });
 
+  it("drops frames above the per-socket rate and keeps the socket open", async () => {
+    const limited = await createSocketIoRelay(0, { rateCapacity: 5, rateRefillPerSecond: 1 });
+    try {
+      const sender = io(limited.url, { query: { room: "rate" }, transports: ["websocket"] });
+      const peer = io(limited.url, { query: { room: "rate" }, transports: ["websocket"] });
+      sockets.push(sender, peer);
+      const received: unknown[] = [];
+      peer.on("presence", (data) => received.push(data));
+      await vi.waitFor(() => expect(sender.connected && peer.connected).toBe(true), {
+        timeout: 5000,
+        interval: 25,
+      });
+
+      for (let index = 0; index < 40; index += 1) sender.emit("presence", new Uint8Array([index]));
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      expect(received.length).toBeGreaterThan(0);
+      expect(received.length).toBeLessThan(15);
+      expect(sender.connected).toBe(true);
+    } finally {
+      await limited.close();
+    }
+  });
+
   it("ends disconnected when the relay refuses the token", async () => {
     const strict = await createSocketIoRelay(0, { authCheck: () => false });
     try {

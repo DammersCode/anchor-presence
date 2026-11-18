@@ -81,13 +81,18 @@ export function createHonoRelay(port: number, options: HonoRelayOptions = {}) {
       const room = parsedRoom ?? "main";
       const connectionId = newConnectionId();
       const origin = c.req.header("origin") ?? "";
-      const authOk = await authCheck({
-        token: c.req.query("token") ?? "",
-        room,
-        origin,
-        headers: c.req.header(),
-      });
+      // origin and room are checked before the hook runs, so a refused request never drives an expensive hook
+      const preChecked = originAllowed(allowedOrigins, origin) && parsedRoom !== null;
+      const authOk = preChecked
+        ? await authCheck({
+            token: c.req.query("token") ?? "",
+            room,
+            origin,
+            headers: c.req.header(),
+          })
+        : false;
       const rateLimiter = new RateLimiter(rateCapacity, rateRefillPerSecond);
+      let admitted = false;
 
       return {
         onOpen(_evt, ws) {
@@ -96,12 +101,12 @@ export function createHonoRelay(port: number, options: HonoRelayOptions = {}) {
             ws.close(ORIGIN_REJECTED_CODE, "origin not allowed");
             return;
           }
-          if (!authOk) {
-            ws.close(AUTH_REJECTED_CODE, "invalid token");
-            return;
-          }
           if (parsedRoom === null) {
             ws.close(INVALID_ROOM_CODE, "invalid room");
+            return;
+          }
+          if (!authOk) {
+            ws.close(AUTH_REJECTED_CODE, "invalid token");
             return;
           }
           const admission = limits.admit(room);
@@ -112,8 +117,10 @@ export function createHonoRelay(port: number, options: HonoRelayOptions = {}) {
           const sockets = rooms.get(room) ?? new Set<RoomEntry>();
           sockets.add({ ws, raw });
           rooms.set(room, sockets);
+          admitted = true;
         },
         onMessage(evt, ws) {
+          if (!admitted) return;
           const sockets = rooms.get(room);
           if (!sockets) return;
           if (!rateLimiter.tryConsume()) return;

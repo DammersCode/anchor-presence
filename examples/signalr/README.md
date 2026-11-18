@@ -82,7 +82,7 @@ bunx vitest run --project signalr-example
 
 They cover data delivery, the drop of a send while the hub is not connected, the status mapping and the close reasons.
 
-`signalr-hub.test.ts`, in the same project, starts the real hub with `dotnet run`. It checks the relay in one room, the isolation between rooms, and the drop of an oversized frame. If `dotnet` is not on `PATH`, the test skips. As a result, `bun run test` passes on a machine without the .NET SDK.
+`signalr-hub.test.ts`, in the same project, builds the real hub and runs the compiled DLL. It checks the relay in one room, the isolation between rooms, and the drop of an oversized frame. If `dotnet` is not on `PATH`, the test skips. As a result, `bun run test` passes on a machine without the .NET SDK.
 
 The `main.yml` workflow installs .NET, so the hub test runs on every push to `main`.
 

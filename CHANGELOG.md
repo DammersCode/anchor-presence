@@ -4,6 +4,7 @@
 
 ### Breaking
 
+- Example relays: the node-ws relay survives any request that fails inside the upgrade handler, such as a malformed request target. Bun and Hono check origin and room before they call `authCheck`. Receivers drop an identity with a `clientId` above 100 characters.
 - Example relays: node-ws and Bun answer a path other than `/` with 404. Rooms come from the `room` query parameter. The node-ws relay no longer exits when a client resets the connection while an async `authCheck` runs.
 - `@anchor-presence/core`: the default shape check accepts a remote `null` for any key, and the dev console warns once when it drops a remote `user` or `context`.
 - `@anchor-presence/core`: a remote `user` or `context` must have the shape of the local value, or the client drops it. A key the local value lacks, such as an optional field, stays only as a string, number, boolean or `null`. Pass `parseUser` or `parseContext` to replace the check, for example when the client has no local value.

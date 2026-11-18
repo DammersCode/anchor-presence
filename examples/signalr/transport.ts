@@ -52,9 +52,9 @@ export function mapStatus(state: HubConnectionState): ConnectionStatus {
  * `LiveCursorTransport` over a `@microsoft/signalr` `HubConnection`.
  *
  * - `connect` calls `connection.start()`; a no-op while already starting or connected.
- * - `send` drops the payload while the hub is not `connected`, otherwise UTF-8-decodes
- *   the JSON bytes and forwards them as the single hub-method argument.
- * - `subscribe` fans out `PresenceReceived` payloads, re-encoded to bytes.
+ * - `send` drops the payload while the hub is not `connected`, otherwise base64-encodes
+ *   the bytes and forwards them as the single hub-method argument.
+ * - `subscribe` fans out `PresenceReceived` payloads, base64-decoded to bytes.
  * - `subscribeStatus` maps `onclose` / `onreconnecting` / `onreconnected` onto
  *   core's `ConnectionStatus` and replays the current status to a new listener.
  *

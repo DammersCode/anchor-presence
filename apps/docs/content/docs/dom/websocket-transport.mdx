@@ -35,6 +35,7 @@ The transport moves through these statuses:
 
 <Mermaid
   chart={`stateDiagram-v2
+  accTitle: WebSocket transport states
   [*] --> connecting
   connecting --> connected: socket opens
   connected --> reconnecting: close, retry allowed

@@ -99,6 +99,7 @@ export function defineRelayConformance(
       const { baseUrl } = relay();
       expect(await closeCode(new WebSocket(`${baseUrl}/?room=team%2Fa`))).toBe(4007);
       expect(await closeCode(new WebSocket(`${baseUrl}/?room=${"x".repeat(300)}`))).toBe(4007);
+      expect(await closeCode(new WebSocket(`${baseUrl}/?room=a&room=b`))).toBe(4007);
     });
   });
 
@@ -163,6 +164,7 @@ export function defineRelayConformance(
       const { baseUrl } = relay();
       expect(await closeCode(new WebSocket(`${baseUrl}/?room=auth`))).toBe(4006);
       expect(await closeCode(new WebSocket(`${baseUrl}/?room=auth&token=nope`))).toBe(4006);
+      expect(await closeCode(new WebSocket(`${baseUrl}/?room=auth&token=secret&token=secret`))).toBe(4006);
 
       const admitted = await connect(baseUrl, "auth", "&token=secret");
       expect(admitted.socket.readyState).toBe(WebSocket.OPEN);

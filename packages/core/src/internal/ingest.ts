@@ -208,7 +208,10 @@ export function wireInbound<TContext, TUser>(state: PresenceClientState<TContext
       const decoded = state.codec.decode(data);
       const presence = validatePresence<TContext, TUser>(decoded, state.validationLimits);
       if (presence === null) {
-        dropInbound("it failed to decode or validate", " A codec mismatch between peers causes this.");
+        dropInbound(
+          "it failed to decode or validate",
+          " A codec mismatch between peers, or a value over a validationLimits bound, causes this.",
+        );
         return;
       }
       if (presence.clientId === state.clientId) {

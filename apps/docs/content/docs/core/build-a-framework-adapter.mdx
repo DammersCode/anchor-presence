@@ -29,6 +29,7 @@ Each layer depends only on the layers below it:
 
 <Mermaid
   chart={`flowchart TD
+  accTitle: Package layers
   adapter["your adapter"] --> dom["@anchor-presence/dom"]
   dom --> core["@anchor-presence/core"]
   adapter --> core`}

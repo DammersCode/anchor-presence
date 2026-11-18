@@ -39,7 +39,7 @@ export function LiveReactions({ localName }: { localName: string }) {
 
   usePeerChanges((change) => {
     if (change.type === "update") return;
-    const name = users.find((user) => user.clientId === change.clientId)?.user?.name ?? "Someone";
+    const name = change.user?.name ?? "Someone";
     show(name, change.type === "join" ? "joined" : "left");
   });
 

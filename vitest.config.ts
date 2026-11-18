@@ -8,6 +8,7 @@ export default defineConfig({
           name: "core",
           environment: "node",
           include: ["packages/core/test/**/*.test.ts"],
+          setupFiles: ["test/quiet-library-warnings.ts"],
         },
       },
       {
@@ -15,6 +16,7 @@ export default defineConfig({
           name: "dom",
           environment: "jsdom",
           include: ["packages/dom/test/**/*.test.ts"],
+          setupFiles: ["test/quiet-library-warnings.ts"],
         },
       },
       {
@@ -22,6 +24,7 @@ export default defineConfig({
           name: "react",
           environment: "jsdom",
           include: ["packages/react/test/**/*.test.{ts,tsx}"],
+          setupFiles: ["test/quiet-library-warnings.ts", "packages/react/test/setup.ts"],
         },
       },
       {
@@ -36,6 +39,7 @@ export default defineConfig({
           name: "server",
           environment: "node",
           include: ["apps/server/test/**/*.test.ts"],
+          setupFiles: ["test/quiet-library-warnings.ts"],
         },
       },
       {
@@ -95,6 +99,7 @@ export default defineConfig({
           name: "elysia-example",
           environment: "node",
           include: ["examples/elysia/**/*.test.ts"],
+          setupFiles: ["test/quiet-library-warnings.ts"],
         },
       },
       {

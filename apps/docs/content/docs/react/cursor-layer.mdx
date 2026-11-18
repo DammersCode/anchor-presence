@@ -49,15 +49,18 @@ This preview shows `CursorLayer` in two layouts, with the label and the color fr
 ```tsx
 type MyUser = { name: string; color?: string };
 
+const safeColor = (color?: string) => (color && /^#[0-9a-f]{6}$/i.test(color) ? color : "#6b7280");
+
 <CursorLayer<unknown, MyUser>
   getLabel={(cursor) => cursor.user?.name ?? "Guest"}
-  getColor={(cursor) => cursor.user?.color ?? "#6b7280"}
+  getColor={(cursor) => safeColor(cursor.user?.color)}
 />;
 ```
 
 <Callout type="warn">
   If you render remote `user` data, treat it as text, never as HTML. Another client sends this data, and it
-  can hold any value. See [Security](/docs/get-started/guides/security).
+  can hold any value. Check a remote color or URL against an allowlist before you use it. See
+  [Security](/docs/get-started/guides/security).
 </Callout>
 
 ## Filter cursors

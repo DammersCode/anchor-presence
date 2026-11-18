@@ -1,3 +1,4 @@
+import type { ComponentProps } from "react";
 import type { MDXComponents } from "mdx/types";
 import defaultMdxComponents from "fumadocs-ui/mdx";
 import { Tab, Tabs } from "fumadocs-ui/components/tabs";
@@ -14,6 +15,16 @@ import { Mermaid } from "@/components/mermaid";
 export function getMDXComponents(components?: MDXComponents) {
   return {
     ...defaultMdxComponents,
+    table: (props: ComponentProps<"table">) => (
+      <div
+        role="region"
+        aria-label="Table"
+        tabIndex={0}
+        className="relative overflow-auto prose-no-margin my-6"
+      >
+        <table {...props} />
+      </div>
+    ),
     AutoTypeTable,
     InstallCommand,
     Demo,

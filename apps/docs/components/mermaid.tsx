@@ -59,6 +59,7 @@ export function Mermaid({ chart }: { chart: string }) {
       const { default: mermaid } = await import("mermaid");
       mermaid.initialize({
         startOnLoad: false,
+        layout: "dagre",
         theme: "base",
         fontFamily: "var(--font-sans, ui-sans-serif)",
         themeVariables: readThemeVariables(),
@@ -89,7 +90,7 @@ export function Mermaid({ chart }: { chart: string }) {
     <div
       tabIndex={0}
       role="region"
-      aria-label="Diagram"
+      aria-label={/^\s*accTitle:\s*(.+)$/m.exec(chart)?.[1]?.trim() ?? "Diagram"}
       className="my-6 min-h-32 overflow-x-auto rounded-lg border border-fd-border bg-fd-card p-4"
     >
       {svg ? (

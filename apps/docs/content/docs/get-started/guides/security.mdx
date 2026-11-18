@@ -71,10 +71,13 @@ const client = createPresenceClient<unknown, { name: string; avatar?: string }>(
   parseUser: (value) => {
     const { name, avatar } = value as { name?: unknown; avatar?: unknown };
     if (typeof name !== "string") return undefined;
-    return typeof avatar === "string" ? { name, avatar } : { name };
+    const safeAvatar = typeof avatar === "string" && avatar.startsWith("https://") ? avatar : undefined;
+    return safeAvatar === undefined ? { name } : { name, avatar: safeAvatar };
   },
 });
 ```
+
+Check every URL and CSS value from a peer before you use it. A peer can send a `javascript:` URL, or a string that breaks out of a CSS value. Allow only `https://` URLs. Allow only colors that match a fixed pattern, such as `/^#[0-9a-f]{6}$/i`, or that are in a list you own.
 
 In development mode, the client warns when no check applies to a remote value, and when the shape check drops a value.
 

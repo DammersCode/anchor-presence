@@ -25,7 +25,7 @@ export type RemotePresenceStoreOptions = {
   /** Returns the current time in milliseconds. Default: `performance.now()`, or `Date.now()` without `performance`. */
   now?: () => number;
   /** Runs when the store drops a new client because the store is full. */
-  onDropNewClient?: (clientId: string) => void;
+  onRemoteClientRejected?: (info: { clientId: string }) => void;
 };
 
 type Entry<TContext, TUser> = {
@@ -39,14 +39,14 @@ type Entry<TContext, TUser> = {
 /**
  * Store for the remote presences one client receives.
  * The store drops a same-session message when its sequence is not higher than the stored value.
- * When the store is full, it drops a new `clientId` and calls `onDropNewClient`.
+ * When the store is full, it drops a new `clientId` and calls `onRemoteClientRejected`.
  */
 export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
   private readonly maxRemoteClients: number;
   private readonly staleTimeoutMs: number;
   private readonly idleAfterMs: number;
   private readonly now: () => number;
-  private readonly onDropNewClient: ((clientId: string) => void) | undefined;
+  private readonly onRemoteClientRejected: ((info: { clientId: string }) => void) | undefined;
 
   private readonly entries = new Map<string, Entry<TContext, TUser>>();
   private readonly listeners = new Set<() => void>();
@@ -68,7 +68,7 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
     // idleAfterMs must stay below staleTimeoutMs: idle is an earlier stage, not a replacement
     this.idleAfterMs = Math.min(options.idleAfterMs ?? DEFAULT_IDLE_AFTER_MS, this.staleTimeoutMs - 1);
     this.now = options.now ?? defaultNow;
-    this.onDropNewClient = options.onDropNewClient;
+    this.onRemoteClientRejected = options.onRemoteClientRejected;
   }
 
   /**
@@ -83,7 +83,7 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
     if (existing === undefined) {
       if (presence.leave === true) return false;
       if (this.entries.size >= this.maxRemoteClients) {
-        this.onDropNewClient?.(presence.clientId);
+        this.onRemoteClientRejected?.({ clientId: presence.clientId });
         return false;
       }
       const normalized = this.normalizePresence(presence);

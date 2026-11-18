@@ -11,6 +11,7 @@ import {
   bindIdentity,
   newConnectionId,
   parseRoom,
+  parseToken,
   type AuthIdentity,
   safeAuthCheck,
   tokenAuthCheck,
@@ -57,22 +58,26 @@ export function createSocketIoRelay(port: number, options: SocketIoRelayOptions 
 
   io.use(async (socket, next) => {
     const { query, headers } = socket.handshake;
-    const room = parseRoom(String(query.room ?? ""));
+    const room = parseRoom(query.room);
     if (room === null) {
       next(Object.assign(new Error("invalid room"), { data: { code: INVALID_ROOM_CODE } }));
       return;
     }
-    const ok = await authCheck({
-      token: String(query.token ?? ""),
-      room,
-      origin: headers.origin ?? "",
-      headers: Object.fromEntries(
-        Object.entries(headers).map(([name, value]) => [
-          name,
-          Array.isArray(value) ? value.join(", ") : value,
-        ]),
-      ),
-    });
+    const token = parseToken(query.token);
+    const ok =
+      token === null
+        ? false
+        : await authCheck({
+            token,
+            room,
+            origin: headers.origin ?? "",
+            headers: Object.fromEntries(
+              Object.entries(headers).map(([name, value]) => [
+                name,
+                Array.isArray(value) ? value.join(", ") : value,
+              ]),
+            ),
+          });
     if (!ok) {
       next(Object.assign(new Error("invalid token"), { data: { code: 4006 } }));
       return;
@@ -88,7 +93,7 @@ export function createSocketIoRelay(port: number, options: SocketIoRelayOptions 
   };
 
   io.on("connection", (socket: Socket) => {
-    const parsedRoom = parseRoom(String(socket.handshake.query.room ?? ""));
+    const parsedRoom = parseRoom(socket.handshake.query.room);
     if (parsedRoom === null) {
       refuse(socket, INVALID_ROOM_CODE, "invalid room");
       return;

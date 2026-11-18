@@ -4,13 +4,15 @@ using Microsoft.AspNetCore.SignalR;
 // Dumb relay: forwards PresenceReceived to the caller's room group, never parses the payload.
 public partial class PresenceHub : Hub
 {
-    [GeneratedRegex("^[A-Za-z0-9_-]{1,256}$")]
+    [GeneratedRegex("^[A-Za-z0-9_-]{1,256}\\z")]
     private static partial Regex RoomNamePattern();
 
     // A missing room is "main". A name with other characters is null: refuse the connection, never merge it into "main".
     private static string? RoomFor(HttpContext? context)
     {
-        var candidate = context?.Request.Query["room"].ToString();
+        var values = context?.Request.Query["room"];
+        if (values is { Count: > 1 }) return null;
+        var candidate = values?.ToString();
         if (string.IsNullOrEmpty(candidate)) return "main";
         return RoomNamePattern().IsMatch(candidate) ? candidate : null;
     }

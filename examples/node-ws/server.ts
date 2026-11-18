@@ -11,6 +11,7 @@ import {
   INVALID_ROOM_CODE,
   newConnectionId,
   parseRoom,
+  parseToken,
   slowPeerAction,
   safeAuthCheck,
   bindIdentity,
@@ -111,7 +112,7 @@ export function createNodeWsRelay(port: number, options: NodeWsRelayOptions = {}
       refuse(req, socket, head, 4004, "origin not allowed");
       return;
     }
-    const room = parseRoom(url.searchParams.get("room"));
+    const room = parseRoom(url.searchParams.getAll("room"));
     if (room === null) {
       refuse(req, socket, head, INVALID_ROOM_CODE, "invalid room");
       return;
@@ -122,12 +123,8 @@ export function createNodeWsRelay(port: number, options: NodeWsRelayOptions = {}
         Array.isArray(value) ? value.join(", ") : value,
       ]),
     );
-    const auth = await authCheck({
-      token: url.searchParams.get("token") ?? "",
-      room,
-      origin,
-      headers,
-    });
+    const token = parseToken(url.searchParams.getAll("token"));
+    const auth = token === null ? false : await authCheck({ token, room, origin, headers });
     if (socket.destroyed) return;
     if (auth === false) {
       refuse(req, socket, head, 4006, "invalid token");

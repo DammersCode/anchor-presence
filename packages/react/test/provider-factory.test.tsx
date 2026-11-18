@@ -77,6 +77,7 @@ describe("LiveCursorProvider factory", () => {
 
     act(() => {
       root.render(
+        // @ts-expect-error the types forbid factory with client; the runtime still lets client win
         <LiveCursorProvider factory={factory} client={fake.client}>
           <div />
         </LiveCursorProvider>,
@@ -99,6 +100,7 @@ describe("LiveCursorProvider factory", () => {
 
     act(() => {
       root.render(
+        // @ts-expect-error the types forbid factory with client; the runtime still lets client win
         <LiveCursorProvider factory={factory} client={null}>
           <Comp />
         </LiveCursorProvider>,

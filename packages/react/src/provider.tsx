@@ -10,29 +10,40 @@ import type { LiveCursorContextValue } from "./context.js";
 /**
  * Props for `LiveCursorProvider`.
  */
-export type LiveCursorProviderProps<TContext = unknown, TUser = unknown> = {
-  /**
-   * Creates the client the provider owns.
-   * The provider runs it once per mount, in an effect, and disposes the client on unmount.
-   * Omit it when you pass `client`.
-   */
-  factory?: () => PresenceClient<TContext, TUser>;
-  /**
-   * A client you own; the provider never disposes it.
-   * `null` provides no client. Wins over `factory` when both are set.
-   */
-  client?: PresenceClient<TContext, TUser> | null;
-  /** A binding you created. Omit to let the provider create one. */
-  binding?: DomBinding<TContext, TUser>;
-  /** Options for the binding the provider creates. */
-  bindingOptions?: DomBindingOptions<TContext, TUser>;
-  /** Change this value to dispose the client `factory` made and create a new one, for example to join another room. */
-  clientKey?: unknown;
-  /** Change this value to rebuild the binding with the current `bindingOptions`. The client stays connected. */
-  bindingKey?: unknown;
-  /** The tree below the provider. */
-  children?: ReactNode;
-};
+export type LiveCursorProviderProps<TContext = unknown, TUser = unknown> = (
+  | {
+      /** A client you own; the provider never disposes it. `null` provides no client. */
+      client: PresenceClient<TContext, TUser> | null;
+      factory?: never;
+    }
+  | {
+      /**
+       * Creates the client the provider owns.
+       * The provider runs it once per mount, in an effect, and disposes the client on unmount.
+       */
+      factory: () => PresenceClient<TContext, TUser>;
+      client?: never;
+    }
+) &
+  (
+    | {
+        /** A binding you created. Omit to let the provider create one. */
+        binding?: DomBinding<TContext, TUser>;
+        bindingOptions?: never;
+      }
+    | {
+        binding?: never;
+        /** Options for the binding the provider creates. */
+        bindingOptions?: DomBindingOptions<TContext, TUser>;
+      }
+  ) & {
+    /** Change this value to dispose the client `factory` made and create a new one, for example to join another room. */
+    clientKey?: unknown;
+    /** Change this value to rebuild the binding with the current `bindingOptions`. The client stays connected. */
+    bindingKey?: unknown;
+    /** The tree below the provider. */
+    children?: ReactNode;
+  };
 
 function isBrowser(): boolean {
   return typeof window !== "undefined" && typeof document !== "undefined";

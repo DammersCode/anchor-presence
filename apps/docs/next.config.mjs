@@ -6,6 +6,19 @@ const withMDX = createMDX();
 const config = {
   reactStrictMode: true,
   devIndicators: false,
+  poweredByHeader: false,
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "Content-Security-Policy", value: "frame-ancestors 'self'" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+        ],
+      },
+    ];
+  },
   // fumadocs LLMs integration: /docs/<page>.md serves the page as raw markdown for AI agents.
   async redirects() {
     return [

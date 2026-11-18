@@ -19,6 +19,8 @@ export function Avatar({ name, colorClass = "bg-indigo-600", className, ...props
         className,
       )}
       title={name}
+      role="img"
+      aria-label={name}
       {...props}
     >
       {initials(name)}

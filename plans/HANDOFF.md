@@ -142,7 +142,8 @@ Final structure: five tabs (`get-started`, `core`, `dom`, `react`, `examples`), 
 
 1. Owner: import the repo in Vercel (Root Directory `apps/docs`).
 2. Owner decides when to publish: `npm version` pushes the commit and a `v*` tag; `release.yml` waits for a green `main.yml` run on that SHA.
-3. Future backends: `plans/backends/`. Future framework adapters (Solid, Vue): `plans/adapters/framework-adapters.md`.
+3. Owner naming decision before the first publish (DX-08): the API still mixes `Cursor` and `Presence` names (for example `LiveCursorProvider`, `useCursorStatus`, `createPresenceClient`). Pick one scheme; a rename after publish is breaking.
+4. Future backends: `plans/backends/`. Future framework adapters (Solid, Vue): `plans/adapters/framework-adapters.md`.
 
 ## How to resume
 

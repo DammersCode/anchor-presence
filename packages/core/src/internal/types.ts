@@ -52,7 +52,7 @@ export type PresenceClientOptions<TContext = unknown, TUser = unknown> = {
   clientId?: string;
   /** Publish interval, in milliseconds. Default `DEFAULT_PUBLISH_INTERVAL_MS`. */
   publishIntervalMs?: number;
-  /** Time before a remote client counts as stale, in milliseconds. Minimum `1000`. */
+  /** Time before a remote client counts as stale, in milliseconds. Default `DEFAULT_STALE_TIMEOUT_MS`, minimum `1000`. */
   staleTimeoutMs?: number;
   /** Time before a remote client counts as idle, in milliseconds. Default `DEFAULT_IDLE_AFTER_MS`, clamped below `staleTimeoutMs`. */
   idleAfterMs?: number;

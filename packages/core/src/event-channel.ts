@@ -34,23 +34,25 @@ export function createEventChannel<TEvents extends object>(
   };
 }
 
-/** One data parser per event type. A parser returns the checked data, or `undefined` to drop the event. */
-export type EventParsers<TEvents extends object> = {
-  [K in keyof TEvents & string]: (data: unknown) => TEvents[K] | undefined;
+/** One data parser per event type. A parser returns the checked data, or `undefined` to drop the event. Use `null` for an event without data. */
+export type EventParsers<TEvents extends EventMap> = {
+  [K in keyof TEvents & string]:
+    ((data: unknown) => TEvents[K] | undefined) | (undefined extends TEvents[K] ? null : never);
 };
 
 /**
  * Builds a `parseEvent` option from one data parser per event type.
- * The client drops an event with an unknown type or data that its parser rejects.
+ * The client drops an event with an unknown type, data that its parser rejects, or data where the parser is `null`.
  */
-export function createEventParser<TEvents extends object>(
+export function createEventParser<TEvents extends EventMap>(
   parsers: EventParsers<TEvents>,
 ): (event: RemoteEvent) => TypedRemoteEvent<TEvents> | undefined {
   return (event) => {
     if (!Object.hasOwn(parsers, event.type)) return undefined;
-    const data = (parsers as Record<string, (data: unknown) => unknown>)[event.type]?.(event.data);
-    return data === undefined && event.data !== undefined
-      ? undefined
-      : ({ clientId: event.clientId, type: event.type, data } as TypedRemoteEvent<TEvents>);
+    const parser = (parsers as Record<string, ((data: unknown) => unknown) | null>)[event.type];
+    const data = parser === null ? event.data : parser?.(event.data);
+    if (data === undefined && parser !== null) return undefined;
+    if (parser === null && data !== undefined) return undefined;
+    return { clientId: event.clientId, type: event.type, data } as TypedRemoteEvent<TEvents>;
   };
 }

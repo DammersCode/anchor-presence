@@ -3,7 +3,7 @@ title: Cursor context
 description: Read and set the local UI context value that travels with your cursor.
 ---
 
-`useCursorContext` reads the local context value and gives a setter that sends it to remote peers. Context carries small facts about what a user is doing, such as the panel they have open. See [UI context](/docs/get-started/concepts/ui-context) for what context is for.
+`useCursorContext` reads the local context value and gives a setter that sends it to peers. A peer is another client in the same room. Context carries small facts about what a user is doing, such as the panel they have open. See [UI context](/docs/get-started/concepts/ui-context) for what context is for.
 
 ## Usage
 
@@ -28,7 +28,7 @@ function SettingsDialog({ open }: { open: boolean }) {
 }
 ```
 
-The setter calls `client.setContext()`, which sends the value to remote peers and updates every component that reads context through this hook. A direct `client.setContext()` call outside the hook updates these components too.
+The setter calls `client.setContext()`, which sends the value to peers and updates every component that reads context through this hook. A direct `client.setContext()` call outside the hook updates these components too.
 
 On the server, and with no provider above it, the hook returns `undefined` and a no-op setter.
 

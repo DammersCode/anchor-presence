@@ -2,15 +2,15 @@
 
 ## Supported versions
 
-The 0.1.x release line is currently supported with security fixes.
+The 0.1.x release line gets security fixes.
 
 ## Reporting a vulnerability
 
-Please report security issues privately through GitHub Security Advisories:
+Report a security issue privately through GitHub Security Advisories:
 
 https://github.com/DammersCode/anchor-presence/security/advisories/new
 
-Do not open a public issue for security reports.
+Do not open a public issue for a security report.
 
 ## Scope
 
@@ -22,7 +22,7 @@ In scope:
 
 Out of scope:
 
-- The demo relay server in `apps/server` (for local development and demos only)
-- The example applications under `examples/`
+- The reference relay in `apps/server`, which is for local development and demos only
+- The example relays and transports under `examples/`
 
-See [Security](https://anchor-presence.vercel.app/docs/guides/security) for details on the library's security model.
+See [Security](https://anchor-presence.vercel.app/docs/get-started/guides/security) for the security model of the library.

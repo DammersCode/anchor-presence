@@ -1,27 +1,29 @@
 # Socket.IO transport example
 
-Demo only. Read the security notes below before you run this beyond local development.
+This relay is for demos and local development. Read the production notes before you run it anywhere else.
 
-This example adds a Socket.IO transport to the demo. It has three parts:
+This example adds a Socket.IO transport to the demo. A peer is another client in the same room. The example has three parts:
 
-- `transport.ts`: wraps a Socket.IO client socket as a `LiveCursorTransport`.
-- `server.ts` / `relay.ts`: a Socket.IO server. It relays `"presence"` events to the other sockets in a room.
-- `apps/demo`: the shared demo client. Pass `?backend=socketio` to make it connect through this transport instead of a plain WebSocket.
+- `transport.ts` wraps a Socket.IO client socket as a `LiveCursorTransport`.
+- `server.ts` and `relay.ts` are a Socket.IO server. It relays `"presence"` events to the peers of the sender.
+- `apps/demo` is the shared demo client. Open it with `?backend=socketio` to connect through this transport.
 
-Only the backend changes. The client builds its presence client over `createSocketIoTransport` instead of a plain WebSocket. The UI still uses the same `@anchor-presence/react` hooks, so the cursor behavior is unchanged.
+Only the backend changes. The client creates its presence client over `createSocketIoTransport` instead of a plain WebSocket. The UI uses the same `@anchor-presence/react` hooks, so the cursors behave the same way.
 
 ## Start the relay
 
-The repository root needs `bun install` once. Then:
+Run `bun install` once in the repository root. Then start the relay:
 
 ```sh
 cd examples/socketio
 bun run dev:relay
 ```
 
-The relay listens on <http://localhost:5001>. It needs no further setup.
+The relay listens on <http://localhost:5001>. It needs no other setup.
 
 ## Start the client
+
+Start the demo with the Socket.IO backend:
 
 ```sh
 cd apps/demo
@@ -30,21 +32,23 @@ bun run dev -- --open "/?backend=socketio"
 
 The client serves at <http://localhost:5173/>. Open that address in two browser windows, both with `?backend=socketio`.
 
-If you want multiple room lanes, add `&room=<name>` to both addresses. The default room is `main`. Add `&name=<name>` to change the cursor label.
+To use a room other than `main`, add `&room=<name>` to both addresses. To change the cursor label, add `&name=<name>`.
 
 ## What the demo shows
 
-Move the pointer in one window and the other window draws the same cursor on the same element, even at a different width. See the [root README](../../README.md) for the core idea.
+Move the pointer in one window. The other window draws the same cursor on the same element, also at a different width. See the [root README](../../README.md) for the core idea.
 
 ## Run the integration tests
 
-The test in `socketio.test.ts` starts a real relay on an ephemeral port. It connects two Socket.IO clients, sends a cursor update from one, and checks that the other client receives it through `getRemoteSnapshot()`. Run it from the repository root:
+The test in `socketio.test.ts` starts a real relay on a free port. It connects two Socket.IO clients and sends a cursor update from one. It checks that the other client receives it through `getRemoteSnapshot()`. Run it from the repository root:
 
 ```sh
 bunx vitest run --project socketio-example
 ```
 
 ## Use the transport in your app
+
+Create the presence client over a Socket.IO socket:
 
 ```ts
 import { createPresenceClient } from "@anchor-presence/core";
@@ -57,26 +61,38 @@ const client = createPresenceClient({
 });
 ```
 
-## Production notes (security baseline)
+## Close reasons
 
-| Control                                 | Status                                                                                                                                                            |
-| --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Room name validation (length + charset) | Yes — `sanitizeRoomName` caps at 256 chars and restricts to `[A-Za-z0-9_-]`, falling back to `"main"`.                                                            |
-| Max payload size                        | Yes — Socket.IO's `maxHttpBufferSize` rejects an oversized frame at the engine level. `messageByteLength` also gates the size check applied before fan-out.       |
-| Per-connection rate limit               | Yes — token bucket, `RATE_CAPACITY` / `RATE_REFILL_PER_SECOND`.                                                                                                   |
-| Origin allowlist                        | Yes — `RELAY_ALLOWED_ORIGINS`, comma-separated. Empty (default) allows every origin (Socket.IO's CORS `"*"`), for local dev.                                      |
-| Auth hook placeholder                   | Yes — `authCheck` option, or `RELAY_AUTH_TOKEN` env var for a plain shared-token check, enforced in an `io.use` middleware before the connection completes.       |
-| Room cleanup on close                   | Yes — `disconnect` releases the socket's slot in `ConnectionLimits`. Socket.IO leaves the room automatically.                                                     |
-| Per-room / total connection caps        | Yes — `RELAY_MAX_ROOM_SOCKETS` (default 128) caps one room, `RELAY_MAX_TOTAL_SOCKETS` (default 10,000) caps the process. A rejected socket is disconnected.       |
-| Dead-connection detection               | Yes — Socket.IO's own heartbeat (`pingInterval`, `pingTimeout`).                                                                                                  |
-| Backpressure on slow consumers          | **No.** Socket.IO does not expose a per-socket buffered-amount the way raw `ws` or Bun's `ServerWebSocket` do, so this example applies no slow-peer backpressure. |
+Socket.IO has no close codes. Before the relay disconnects a socket, it sends a `refused` event with a code and a reason. The transport reports the code through `subscribeClose`:
 
-Set `RELAY_ALLOWED_ORIGINS` and `RELAY_AUTH_TOKEN` before exposing this beyond local development, and put it behind a TLS-terminating proxy.
+- `4001`: the room is full.
+- `4002`: the server is full.
+- `4006`: the room token is missing or wrong. This code comes in the `connect_error` data, because the `io.use` middleware refuses the handshake.
+- `4007`: the room name is not valid.
+
+After any of these codes, the Socket.IO client does not reconnect, so `willReconnect` is `false`. An origin outside the allowlist fails the handshake with no code.
+
+## Production notes
+
+| Control                   | Status                                                                                                                                                                                                      |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Room name check           | Yes. `parseRoom` accepts up to 256 characters of `[A-Za-z0-9_-]`. A missing name is `main`. The relay refuses an invalid name with code `4007`.                                                             |
+| Max payload size          | Yes. The `maxHttpBufferSize` of Socket.IO refuses an oversized frame in the engine. `messageByteLength` also drops a message above `MAX_MESSAGE_BYTES` before the relay forwards it.                        |
+| Rate limit per connection | Yes. A token bucket with `RATE_CAPACITY` and `RATE_REFILL_PER_SECOND`.                                                                                                                                      |
+| Origin allowlist          | Yes. `RELAY_ALLOWED_ORIGINS` is a comma-separated list. An empty list (the default) accepts every origin (the Socket.IO CORS value `"*"`). `allowRequest` also checks the WebSocket upgrade.                |
+| Auth hook                 | Yes. Pass an `authCheck` option, or set `RELAY_AUTH_TOKEN` for a shared room token. An `io.use` middleware runs the check before the connection completes. A refusal has code `4006`.                       |
+| Identity binding          | Yes. If `authCheck` returns `{ clientId, user }`, the relay writes that identity into every JSON frame. `clientId` gets the suffix `~<connection>`. In this mode, the relay drops a frame that is not JSON. |
+| Room cleanup on close     | Yes. `disconnect` releases the slot of the socket in `ConnectionLimits`. Socket.IO removes the socket from the room.                                                                                        |
+| Connection caps           | Yes. `RELAY_MAX_ROOM_SOCKETS` (default 128) limits one room. `RELAY_MAX_TOTAL_SOCKETS` (default 10,000) limits the process. The relay refuses a socket above a cap with code `4001` or `4002`.              |
+| Dead connections          | Yes. The heartbeat of Socket.IO (`pingInterval`, `pingTimeout`).                                                                                                                                            |
+| Slow receivers            | **No.** Socket.IO does not expose the buffered amount of a socket, as `ws` and the `ServerWebSocket` of Bun do. For this reason, the relay cannot skip or close a slow receiver.                            |
+
+Before you expose the relay outside local development, set `RELAY_ALLOWED_ORIGINS` and `RELAY_AUTH_TOKEN`. Put a TLS-terminating proxy in front of it.
 
 ## Room routing
 
-The relay reads the room name from the handshake query of the client (`?room=main`). If your app picks rooms a different way, for example from an authenticated session, change the room lookup in `createSocketIoRelay` in `server.ts`.
+The relay reads the room from the `room` query parameter of the handshake (`?room=main`). Your app can pick rooms in a different way, for example from an authenticated session. In that case, change the room lookup in `createSocketIoRelay` in `server.ts`.
 
 ## Binary payloads
 
-Socket.IO delivers binary data as `ArrayBuffer` in browsers and as `Buffer` in Node. `transport.ts` normalizes both to `Uint8Array` before it calls the presence client.
+Socket.IO delivers binary data as `ArrayBuffer` in browsers and as `Buffer` in Node. `transport.ts` converts both to `Uint8Array` before it calls the presence client.

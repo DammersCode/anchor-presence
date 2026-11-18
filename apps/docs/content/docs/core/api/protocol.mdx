@@ -32,7 +32,7 @@ A one-shot event, as `client.sendEvent` sends it.
 
 ## PeerChange
 
-A peer that joined, left, or changed its `user` or `context`. `client.subscribePeers` gives a `PeerChange` to its listener. See [Peer changes](/docs/core/remote-presence#peer-changes).
+A peer is another client in the same room. A `PeerChange` reports a peer that joined, left, or changed its `user` or `context`. `client.subscribePeers` gives a `PeerChange` to its listener. See [Peer changes](/docs/core/remote-presence#peer-changes).
 
 <AutoTypeTable path="../../packages/core/src/protocol.ts" name="PeerChange" />
 
@@ -44,7 +44,7 @@ One anchor point in a cursor position. See [Anchors](/docs/get-started/concepts/
 
 ## CursorPosition
 
-The cursor position inside one presence message: an anchor chain plus an optional viewport fallback.
+The cursor position inside one presence message: a fallback chain of anchors plus an optional viewport fallback.
 
 <AutoTypeTable path="../../packages/core/src/protocol.ts" name="CursorPosition" />
 

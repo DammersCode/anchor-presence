@@ -55,9 +55,9 @@ const client = createPresenceClient({ transport: myTransport });
 
 If you set both `factory` and `client`, `client` wins, the factory never runs, and `clientKey` has no effect. Pass `client={null}` to provide no client, for example during server rendering.
 
-## Manual control
+## Connect and stop a client that you own
 
-Create the client anywhere with `createPresenceClient` from `@anchor-presence/core`. The client connects the transport by default. To connect the transport yourself, pass `autoConnect: false` and call `transport.connect()`. To stop the client, call `client.dispose()`. `dispose` is final: create a fresh client instead of reusing a disposed one.
+A client that you pass with the `client` prop connects the transport by default. To connect the transport yourself, pass `autoConnect: false` to `createPresenceClient` and call `transport.connect()`. To stop the client, call `client.dispose()`. After `dispose`, you cannot use the client again. Create a new client and pass it to the provider.
 
 ## Related
 

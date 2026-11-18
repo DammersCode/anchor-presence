@@ -15,22 +15,23 @@ Each layer depends only on the layers below it:
 @anchor-presence/core    protocol types, validation, presence store, client
 ```
 
-An adapter depends on `@anchor-presence/dom` and `@anchor-presence/core`, never the other way around. It holds no protocol state of its own (Invariant 5 in [How it works](/docs/get-started/concepts/how-it-works)). Every value it exposes comes from a `PresenceClient` or a `DomBinding`, not from logic in the adapter.
+An adapter depends on `@anchor-presence/dom` and `@anchor-presence/core`, never the other way around. It holds no protocol state of its own ([invariant 5](/docs/get-started/concepts/how-it-works#the-10-invariants)). Every value it exposes comes from a `PresenceClient` or a `DomBinding`, not from logic in the adapter.
 
 ## What the React adapter does
 
-`LiveCursorProvider` (`packages/react/src/provider.tsx`) is the one stateful part of the adapter:
+`LiveCursorProvider` is the one stateful part of the adapter:
 
 - It creates the client from a `factory` prop in a mount effect, and disposes it on unmount. The factory runs again each time the `clientKey` prop changes. The provider also accepts a `client` prop for a client that the app owns. It never disposes that client.
-- When no `binding` prop is passed, it creates one `DomBinding` with `createDomBinding(client, bindingOptions)` in an effect. The cleanup of that effect calls `binding.dispose()`.
+- If you pass no `binding` prop, it creates one `DomBinding` with `createDomBinding(client, bindingOptions)` in an effect. The cleanup of that effect calls `binding.dispose()`.
 - It creates a new binding when the `client` or the `bindingKey` prop changes. A `bindingOptions` change alone does not create a new binding. The effect reads the last options through a ref, so a new options object never causes a rebuild.
 - Outside the browser (`typeof window === "undefined"`), it creates no client from `factory` and no binding. As a result, server rendering never touches `@anchor-presence/dom`.
 - It exposes `{ client, binding }` through `LiveCursorContext`, so the hooks below it can read both without props.
 
-Every hook in `packages/react/src/hooks/` reads that context and subscribes with `useSyncExternalStore`:
+Every hook of the adapter reads that context. The hooks that read changing data subscribe with `useSyncExternalStore`:
 
 - `useRemoteCursors` subscribes to `binding.subscribe` and reads `binding.getSnapshot()`. Without a binding, it returns an empty array. This case includes server rendering.
 - `useCursorClient`, `useCursorStatus`, `useCursorPresence`, and `useCursorContext` read from `client`, never from component state.
+- `useCursorBinding` returns `binding`, so a component can call `binding.invalidate()`.
 
 No hook stores cursor data in framework state. Every render reads the last snapshot from `@anchor-presence/core` or `@anchor-presence/dom`.
 
@@ -38,12 +39,12 @@ No hook stores cursor data in framework state. Every render reads the last snaps
 
 The same shape works for any framework with a primitive that a subscription can update, such as Solid signals or a Vue `ref`. The adapter has these parts:
 
-- **A root that owns the binding.** A Solid `createRoot` scope or the `setup()` of a Vue component creates the `DomBinding` with `createDomBinding(client, options)`. It does this when a `client` is available, like the effect of the provider.
+- **A root that owns the binding.** A Solid `createRoot` scope or the `setup()` of a Vue component owns the `DomBinding`. When a `client` is available, it calls `createDomBinding(client, options)`, like the effect of the provider.
 - **Dispose on cleanup.** Solid `onCleanup` or Vue `onUnmounted` calls `binding.dispose()`, at the same point as the effect cleanup in React. A binding that outlives its scope leaks the pointer listener and the observers of the geometry scheduler.
-- **Client and binding as reactive values.** Expose `client` and `binding` as a Solid signal pair or a Vue `ref`, not as state that the adapter owns. The adapter makes the state of the client and the binding observable. It does not copy that state.
-- **A bridge from `subscribe` and `getSnapshot`.** In Solid, update a `createSignal` from the `binding.subscribe` callback. In Vue, call `binding.subscribe` inside `onMounted`, write into a `shallowRef` on each notification, and unsubscribe in `onUnmounted`. Neither framework has `useSyncExternalStore`. This subscribe-and-write pattern does the same job.
-- **No engine state in the adapter.** A Solid or Vue store for cursors, status, or presence copies what the `PresenceClient` and the `DomBinding` already hold. That copy can drift. Read the client and the binding on every reactive update instead.
-- **An SSR guard.** When there is no `window`, skip the binding creation. The React provider does the same check in `isBrowser()`.
+- **Client and binding as reactive values.** Expose `client` and `binding` as a Solid signal pair or a Vue `ref`. They are not state that the adapter owns. The adapter makes the state of the client and the binding observable. It does not copy that state.
+- **A bridge from `subscribe` and `getSnapshot`.** In Solid, update a `createSignal` from the `binding.subscribe` callback. In Vue, call `binding.subscribe` inside `onMounted`. Write into a `shallowRef` on each notification. Unsubscribe in `onUnmounted`. Neither framework has `useSyncExternalStore`. This subscribe-and-write pattern does the same job.
+- **No engine state in the adapter.** A Solid or Vue store for cursors, status, or presence copies data. The `PresenceClient` and the `DomBinding` already hold that data. That copy can drift. Read the client and the binding on every reactive update instead.
+- **An SSR guard.** If there is no `window`, do not create the binding. The React provider does the same check.
 
 ## Public APIs an adapter uses
 
@@ -66,7 +67,7 @@ An adapter package exports again the types of `@anchor-presence/core` and `@anch
 
 ## Naming and package boundaries
 
-An adapter obeys the same rule as `@anchor-presence/react`: no third-party framework code lives inside `@anchor-presence/core` or `@anchor-presence/dom`. A `@anchor-presence/solid` or `@anchor-presence/vue` package depends on `@anchor-presence/core` and `@anchor-presence/dom` only. It has its own `test/public-api.test.ts` that pins its exports. It never imports the internals of another adapter. The [package table](/docs/get-started/introduction#packages) shows the dependencies that each package can have.
+An adapter obeys the same rule as `@anchor-presence/react`: no third-party framework code lives inside `@anchor-presence/core` or `@anchor-presence/dom`. A `@anchor-presence/solid` or `@anchor-presence/vue` package depends on `@anchor-presence/core` and `@anchor-presence/dom` only. It has its own test that pins its exports. It never imports the internals of another adapter. The [package table](/docs/get-started/introduction#packages) shows the dependencies that each package can have.
 
 ## Related
 

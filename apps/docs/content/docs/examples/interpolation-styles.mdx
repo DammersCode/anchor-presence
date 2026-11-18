@@ -13,11 +13,11 @@ Install the packages:
 
 <InstallCommand />
 
-The scene of this demo, with the spring:
+This file renders the scene of the demo, with the spring:
 
 <CodeFromSource docs="components/examples/interpolation.tsx" lang="tsx" />
 
-The provider reads `bindingOptions` once, when it creates the binding. The `key` on the provider changes with the selected style, so a style change mounts a fresh binding. The remote state lives in the client, not in the binding, so the remount keeps every cursor.
+The provider reads `bindingOptions` once, when it creates the binding. The demo sets the React `key` of the provider to the selected style, so a style change mounts a new provider and a new binding. The remote state lives in the client, not in the binding, so the remount keeps every cursor. In your app, change `bindingKey` instead. It rebuilds the binding and keeps the tree below the provider. See [Rebuild the binding](/docs/react/live-cursor-provider#rebuild-the-binding).
 
 `target` keeps the velocity of the spring, so a target change during a glide curves the path. `sample` must return `settled: true` at the end. If it never does, the animation frame loop never stops for that cursor.
 
@@ -31,7 +31,7 @@ The provider reads `bindingOptions` once, when it creates the binding. The `key`
 ## Related
 
 - [The Interpolator interface](/docs/core/interpolation#the-interpolator-interface): `target`, `shift`, `sample`, and `reset`.
-- [Choosing a custom interpolator](/docs/dom/motion#choosing-a-custom-interpolator): where to pass the factory.
+- [Choose a custom interpolator](/docs/dom/motion#choose-a-custom-interpolator): where to pass the factory.
 - [When motion restarts instead of easing](/docs/dom/motion#when-motion-restarts-instead-of-easing): the cases that snap the cursor.
 - [Custom cursor rendering](/docs/examples/custom-cursor-rendering): change how a cursor looks, not how it moves.
 - [Performance](/docs/get-started/guides/performance)

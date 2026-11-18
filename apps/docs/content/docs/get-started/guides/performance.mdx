@@ -37,15 +37,7 @@ The scheduler listens for these signals while at least one remote cursor is acti
 
 ### When to call invalidate() yourself
 
-The built-in signals cover ordinary DOM mutation, resize, scroll, and animation. Some programmatic layout changes are invisible to them, for example an instant CSS Custom Highlight or a canvas-driven layout shift. After such a change, call the binding's `invalidate()`:
-
-```ts
-const binding = createDomBinding(client);
-// after a programmatic layout change
-binding.invalidate("manual-layout-shift");
-```
-
-`invalidate` marks the layout dirty. The binding resolves the cursors again on the next frame.
+The built-in signals cover ordinary DOM mutation, resize, scroll, and animation. Some programmatic layout changes are invisible to them, for example a canvas-driven layout shift. After such a change, call `binding.invalidate()`. See [invalidate](/docs/dom/binding#invalidate) for the rules.
 
 ## Idle behavior
 
@@ -90,7 +82,7 @@ Horizontal scale and authentication of identity are server concerns, not transpo
 
 ## Capacity planning
 
-A typical cursor message with 4 anchors is 292 bytes with `jsonCodec` and 144 bytes with `binaryCodec`.
+A cursor message with 4 anchors is 292 bytes with `jsonCodec` and 144 bytes with `binaryCodec`. That message has two-letter anchor IDs, coordinates with one decimal place, and a small `user`. Real pointer coordinates have more decimal places, so a JSON message is larger. Measure your own messages before you plan with these numbers.
 
 While the pointer moves, a client publishes at most once every `publishIntervalMs` (`DEFAULT_PUBLISH_INTERVAL_MS`, 50 ms). That is up to 20 messages per second per moving client. A stationary pointer sends no cursor messages. The one exception is a heartbeat every `heartbeatMs` (`DEFAULT_HEARTBEAT_MS`, 10 seconds). The heartbeat carries every field, so a client that joins late gets the current values.
 
@@ -130,12 +122,7 @@ The load test starts the reference relay. It opens N native WebSocket clients in
 
 The test measures delivery against the rate that the clients sent, not against the nominal 20 Hz. On a busy machine, timers can run below the nominal rate, so this comparison is fair. The test also measures latency percentiles and the CPU and memory of the relay process.
 
-<Callout type="warn">
-  If you plan capacity from the 100 and 200 rows, read them as the limit of this test setup. They are not a
-  limit of the relay. All clients run in one load-generator process on the same machine. At 100 clients, that
-  process also uses a full CPU core. The slow-receiver and rate-limit protections of the relay did not
-  trigger: every socket stayed open, and messages queued.
-</Callout>
+The 100 and 200 rows show the limit of this test setup, not a limit of the relay. All clients run in one load-generator process on the same machine. At 100 clients, that process also uses a full CPU core. The slow-receiver and rate-limit protections of the relay did not trigger: every socket stayed open, and messages queued.
 
 | Clients | Sent (msg/s) | Delivered (msg/s) | Delivery ratio | Latency p50 | Latency p99 | Relay CPU | Relay RSS |
 | ------- | ------------ | ----------------- | -------------- | ----------- | ----------- | --------- | --------- |

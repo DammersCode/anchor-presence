@@ -52,7 +52,7 @@ Cursor moves, pointer changes, and events never produce a change. A heartbeat th
 
 ## Leave messages
 
-A client sends a leave message when you call `client.leave()` or `client.dispose()`. See [Leaving](/docs/core/presence-client#leaving). Receivers remove the client at once. They do not wait for `staleTimeoutMs`.
+A client sends a leave message when you call `client.leave()` or `client.dispose()`. See [Leave the room](/docs/core/presence-client#leave-the-room). Receivers remove the client at once. They do not wait for `staleTimeoutMs`.
 
 A receiver accepts a leave message only from the stored `session`, and only with a higher `sequence`. A leave message for an unknown `clientId` changes nothing.
 

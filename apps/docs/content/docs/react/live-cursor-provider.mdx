@@ -53,7 +53,7 @@ When you omit `binding`, the provider creates a `DomBinding` for the client with
 
 ## Rebuild the binding
 
-To apply a new `bindingOptions` value, change `bindingKey`. The provider then disposes the binding and creates a new one with the current `bindingOptions`. The client stays connected, and peers keep the local cursor. This example switches the interpolator:
+To apply a new `bindingOptions` value, change `bindingKey`. The provider then disposes the binding and creates a new one with the current `bindingOptions`. The client stays connected. A peer is another client in the same room. Peers keep the local cursor. This example switches the interpolator:
 
 ```tsx
 function Workspace({ smooth }: { smooth: boolean }) {

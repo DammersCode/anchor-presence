@@ -28,7 +28,7 @@ function App() {
 }
 ```
 
-Until the factory has run, the provider renders its children with a `null` client, and every hook returns its server-safe value. Server renders never run the factory. Create the transport inside the factory, because `client.dispose()` calls `transport.disconnect()`.
+Before the factory runs, the provider renders its children with a `null` client, and every hook returns its server-safe value. Server renders never run the factory. Create the transport inside the factory, because `client.dispose()` calls `transport.disconnect()`.
 
 ## Why Strict Mode matters here
 
@@ -41,7 +41,7 @@ The provider creates the client in an effect with a cleanup. The first mount cre
 - Create the client only in browser-only code, for example inside the provider `factory` or a plain `useEffect`. Pass `client={null}` until it exists.
 - Pass `client={null}` for the duration of server rendering, and swap in a real client after hydration.
 
-Every hook has a server-safe snapshot: `useRemoteCursors` and `useCursorPresence` return `[]`, `useCursorStatus` returns `"disconnected"`, `useCursorClient` returns `null`, and `useCursorContext` returns `[undefined, setContext]`. `renderToString` works for a tree using every hook with `client={null}`:
+Every hook that reads changing data has a server-safe snapshot: `useRemoteCursors` and `useCursorPresence` return `[]`, and `useCursorStatus` returns `"disconnected"`. `useCursorContext` returns `[undefined, setContext]`. `useCursorClient` and `useCursorBinding` read the context, not a snapshot. With `client={null}` and no `binding` prop, both return `null`. `renderToString` works with `client={null}` for a tree that uses every hook:
 
 ```tsx
 <LiveCursorProvider client={null}>

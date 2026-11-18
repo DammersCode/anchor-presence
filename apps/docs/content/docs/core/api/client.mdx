@@ -26,7 +26,7 @@ The value `createPresenceClient` returns.
 These guides describe the methods in detail:
 
 - [Events](/docs/core/presence-client#events) for `sendEvent` and `subscribeEvents`.
-- [Leaving](/docs/core/presence-client#leaving) for `leave`.
+- [Leave the room](/docs/core/presence-client#leave-the-room) for `leave`.
 - [Close reasons](/docs/core/presence-client#close-reasons) for `subscribeClose`.
 - [Peer changes](/docs/core/remote-presence#peer-changes) for `subscribePeers`.
 - [Read remote presence](/docs/core/remote-presence#read-remote-presence) for `getRemotePresence`, `getRemoteSnapshot`, and `subscribeRemote`.
@@ -48,7 +48,7 @@ The shape of the `scheduler` option. A test can pass fake timers through it.
 
 ## RemotePresenceStore
 
-The store that holds the presence of each peer. See [Use the store without a client](/docs/core/remote-presence#use-the-store-without-a-client) for the methods and the rules.
+The store that holds the presence of each peer. A peer is another client in the same room. See [Use the store without a client](/docs/core/remote-presence#use-the-store-without-a-client) for the methods and the rules.
 
 <AutoTypeTable path="../../packages/core/src/store.ts" name="RemotePresenceStoreOptions" />
 

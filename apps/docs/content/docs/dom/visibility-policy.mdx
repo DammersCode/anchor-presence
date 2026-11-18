@@ -1,22 +1,22 @@
 ---
 title: Visibility policy
-description: VisibilityPolicy, the default policy, and how to write a custom one.
+description: VisibilityPolicy, the default policy, how to write a custom one, and when to run it again.
 ---
 
-A `VisibilityPolicy` decides whether a resolved cursor renders. The resolver calls it once per remote client, per frame, after it computes the tier and the point's occlusion state.
+A `VisibilityPolicy` decides whether a resolved cursor renders. A peer is another client in the same room. Each time the resolver resolves the cursors, it calls the policy once per peer. It calls the policy after it computes the tier and the occlusion state of the point.
 
 ## The default policy
 
-If you do not set `resolution.visibilityPolicy`, `createDomBinding` uses `defaultVisibilityPolicy`:
+If you do not set `resolution.visibilityPolicy`, `createDomBinding` uses a default policy with this logic:
 
 ```ts
 const defaultVisibilityPolicy: VisibilityPolicy = ({ resolution }) =>
   resolution.tier === "hidden" ? "hide" : "show";
 ```
 
-The default policy hides a cursor only when nothing resolved. It shows an `anchor` or `viewport` tier cursor even when the point sits in a clipped, scrolled-away region. See [Occlusion and scroll](/docs/dom/occlusion-and-scroll) for a policy that also hides a clipped point.
+`@anchor-presence/dom` does not export the default policy. The default policy hides a cursor only when nothing resolved. It shows an `anchor` or `viewport` tier cursor even when the point sits in a clipped, scrolled-away region. See [Occlusion and scroll](/docs/dom/occlusion-and-scroll) for a policy that also hides a clipped point.
 
-## Writing a custom policy
+## Write a custom policy
 
 A policy receives the full presence, including `context` and `user`, and the resolution result. The first type parameter of `VisibilityPolicy` is the context type. This policy hides the cursors of staff users:
 
@@ -43,10 +43,50 @@ const binding = createDomBinding(client, {
 
 ## What the policy can decide
 
-The policy runs after tier resolution. It can act on the resolution tier, the winning anchor ID, or whether the point sits in a visible region (`pointVisible`). It can also read the sender's `context` and `user` values. A common use is hiding cursors for a role, a permission, or a UI mode the receiver's own state defines. See [UI context](/docs/get-started/concepts/ui-context).
+The policy runs after tier resolution. It can act on the resolution tier, the winning anchor ID, or whether the point sits in a visible region (`pointVisible`). It can also read the `context` and `user` values of the sender. One use is to hide cursors for a role, a permission, or a UI mode that the state of the receiver defines. See [UI context](/docs/get-started/concepts/ui-context).
+
+## Run the policy again after a state change
+
+A policy can read state that is not part of the presence, for example the dialog that the receiver has open. The binding runs the policy only when it resolves the cursors again. If that state changes while no cursor moves, each cursor keeps its old visibility. For this reason, call `binding.invalidate()` after each change of the state that the policy reads.
+
+This policy reads a variable, and the setter of the variable calls `invalidate`:
+
+```ts
+let openDialog: string | null = null;
+
+const dialogPolicy: VisibilityPolicy<{ dialog?: string }> = ({ presence, resolution }) => {
+  const senderDialog = presence.context?.dialog;
+  if (typeof senderDialog === "string" && senderDialog !== openDialog) return "hide";
+  return resolution.tier === "hidden" ? "hide" : "show";
+};
+
+function setOpenDialog(next: string | null) {
+  openDialog = next;
+  binding.invalidate("dialog-changed");
+}
+```
+
+In React, `useCursorBinding` returns the binding of the nearest `LiveCursorProvider`. This component writes the open dialog into the variable of the policy. Then it calls `invalidate`:
+
+```tsx
+import { useEffect } from "react";
+import { useCursorBinding } from "@anchor-presence/react";
+
+function SyncOpenDialog({ dialog }: { dialog: string | null }) {
+  const cursorBinding = useCursorBinding();
+  useEffect(() => {
+    openDialog = dialog;
+    cursorBinding?.invalidate("dialog-changed");
+  }, [cursorBinding, dialog]);
+  return null;
+}
+```
+
+See [invalidate](/docs/dom/binding#invalidate) for what an `invalidate` call does.
 
 ## Related
 
 - [Resolution](/docs/dom/resolution)
 - [Occlusion and scroll](/docs/dom/occlusion-and-scroll)
 - [Resolution types](/docs/dom/api/resolution)
+- [Hooks API](/docs/react/api/hooks#usecursorbinding)

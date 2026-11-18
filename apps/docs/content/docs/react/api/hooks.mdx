@@ -78,7 +78,17 @@ It returns one of `"connecting"`, `"connected"`, `"reconnecting"`, or `"disconne
 function useCursorClient<TContext = unknown, TUser = unknown>(): PresenceClient<TContext, TUser> | null;
 ```
 
-It returns the client of the nearest `LiveCursorProvider`. Outside a provider and during server rendering, it returns `null`.
+It returns the client of the nearest `LiveCursorProvider`. Outside a provider, it returns `null`. During server rendering, it returns the `client` prop of the provider. A provider with a `factory` and no `client` prop has no client on the server, so the hook returns `null`.
+
+## useCursorBinding
+
+`useCursorBinding` has this signature:
+
+```ts
+function useCursorBinding<TContext = unknown, TUser = unknown>(): DomBinding<TContext, TUser> | null;
+```
+
+It returns the DOM binding of the nearest `LiveCursorProvider`. Before the provider creates the binding, and outside a provider, it returns `null`. During server rendering, it returns the `binding` prop of the provider, or `null` without that prop. If state that a `visibilityPolicy` reads changes, call `binding.invalidate()`. See [Run the policy again after a state change](/docs/dom/visibility-policy#run-the-policy-again-after-a-state-change).
 
 ## useCursorEvents
 
@@ -88,7 +98,7 @@ It returns the client of the nearest `LiveCursorProvider`. Outside a provider an
 function useCursorEvents(listener: (event: RemoteEvent) => void): void;
 ```
 
-It calls `listener` for each event that a peer sends with `client.sendEvent`. `RemoteEvent` has a `type`, an optional `data`, and the `clientId` of the sender. See [Cursor events](/docs/react/cursor-events).
+A peer is another client in the same room. `useCursorEvents` calls `listener` for each event that a peer sends with `client.sendEvent`. `RemoteEvent` has a `type`, an optional `data`, and the `clientId` of the sender. See [Cursor events](/docs/react/cursor-events).
 
 ## createPresenceHooks
 
@@ -97,6 +107,7 @@ It calls `listener` for each event that a peer sends with `client.sendEvent`. `R
 ```ts
 function createPresenceHooks<TContext = unknown, TUser = unknown>(): {
   LiveCursorProvider: (props: LiveCursorProviderProps<TContext, TUser>) => ReactNode;
+  useCursorBinding: () => DomBinding<TContext, TUser> | null;
   useCursorClient: () => PresenceClient<TContext, TUser> | null;
   useCursorContext: () => [TContext | undefined, (next: TContext | undefined) => void];
   useCursorEvents: (listener: (event: RemoteEvent) => void) => void;

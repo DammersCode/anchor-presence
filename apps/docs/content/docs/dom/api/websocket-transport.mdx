@@ -24,7 +24,7 @@ If `options.url` is missing and `window` does not exist, `createWebSocketTranspo
 
 ## WebSocketCtor
 
-`WebSocketCtor` is the type of the `WebSocketCtor` option: `new (url: string) => WebSocketLike`. The option replaces the WebSocket constructor of the transport. Its default is `globalThis.WebSocket`. A test can pass a fake `WebSocketLike` and use no network.
+`WebSocketCtor` is the type of the `WebSocketCtor` option: `new (url: string) => WebSocketLike`. The option replaces the WebSocket constructor of the transport. Its default is `globalThis.WebSocket`. Without a global `WebSocket` and without this option, the status stays `connecting`. A test can pass a fake `WebSocketLike` and use no network.
 
 The browser `WebSocket` constructor fits `WebSocketCtor` without a cast:
 

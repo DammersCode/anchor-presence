@@ -3,7 +3,7 @@ title: Off-screen hints
 description: Show an arrow at the window edge for each remote cursor outside the window.
 ---
 
-A remote cursor can point at a part of the page that the local user scrolled away from. The cursor then sits outside the window, and the local user does not know that the peer is there. An off-screen hint is an arrow at the window edge. It sits at the nearest edge point and points at the remote cursor. The recipe computes the hint from the `x` and `y` fields of `ResolvedCursor`.
+A remote cursor can point at a part of the page that the local user scrolled away from. A peer is another client in the same room. The cursor of the peer then sits outside the window, and the local user does not know that the peer is there. An off-screen hint is an arrow at the window edge. It sits at the nearest edge point and points at the remote cursor. The recipe computes the hint from the `x` and `y` fields of `ResolvedCursor`.
 
 ## Clamp the point to the edge
 
@@ -83,7 +83,7 @@ export function HintsApp({ client }: { client: PresenceClient }) {
 
 - **Window size.** The recipe uses `window.innerWidth` and `window.innerHeight`. The resolver uses the same size for viewport coordinates. On a resize, the binding resolves the cursors again, so the hints move.
 - **`pointVisible`.** `pointVisible` is `false` when a scroll container inside the page clips the point. It stays `true` for a point outside the window, and it is always `true` on the viewport tier. For this reason, the recipe compares `x` and `y` with the window size. A clipped point inside the window gets no hint.
-- **Hidden tier.** A cursor on the `hidden` tier has `x` and `y` at `0`. The recipe skips it, and it also skips a cursor with `visible: false`.
+- **Hidden tier.** A cursor on the `hidden` tier has no useful position. Its `x` and `y` are `0`, or the last position before it went hidden. The recipe skips it, and it also skips a cursor with `visible: false`.
 - **Inset.** The arrow is 16 pixels wide. An inset of 16 keeps the full arrow inside the window.
 - **Rerenders.** `useRemoteCursors` rerenders the component on every cursor snapshot. For a room with many peers, select only the off-screen cursors with `useRemoteCursorsSelector`.
 - **Server rendering.** On the server, `useRemoteCursors` returns an empty list, so the component never reads `window` there.

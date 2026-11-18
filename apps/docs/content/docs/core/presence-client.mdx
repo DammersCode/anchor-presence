@@ -36,7 +36,7 @@ Call `client.updateLocalCursor(cursor, pointer?)` to set the local cursor positi
 
 Call `client.setContext(value)` and `client.setUser(value)` to set the values that the client sends to peers. Both accept `undefined` to clear the value. Read the current local values with `getContext()` and `getUser()`. `client.subscribeContext(listener)` calls `listener` on each `setContext` call that changes the value. The [`useCursorContext`](/docs/react/cursor-context) hook uses it.
 
-When the client has no more use, call `client.dispose()`. `dispose` sends a best-effort leave message and stops every timer. It also calls `transport.disconnect()` when the transport has one. You cannot use a client after `dispose`. Create a new client instead:
+If you no longer need the client, call `client.dispose()`. `dispose` sends a best-effort leave message and stops every timer. It also calls `transport.disconnect()` when the transport has one. You cannot use a client after `dispose`. Create a new client instead:
 
 ```ts
 client.dispose();
@@ -98,7 +98,7 @@ const client = createPresenceClient({
 });
 ```
 
-## Leaving
+## Leave the room
 
 Call `client.leave()` to tell peers that this client left. Receivers remove the client at once and report a `leave` [peer change](/docs/core/remote-presence#peer-changes). You can still use the client. Its next publish or heartbeat sends the full state, and peers add the client again.
 
@@ -120,7 +120,9 @@ The client gives the listener to the optional `subscribeClose` method of the tra
 
 ## Publish rate
 
-The client publishes the local cursor every `publishIntervalMs`, `50` by default (`DEFAULT_PUBLISH_INTERVAL_MS`). A publish sends a message only when the cursor, context, or user changed since the last send.
+The client publishes the local cursor every `publishIntervalMs`, `50` by default (`DEFAULT_PUBLISH_INTERVAL_MS`). A publish sends a message when a send is pending. An `updateLocalCursor`, `setContext`, or `setUser` call makes a send pending, and so do a reconnect and a new peer. The client does not compare the values, so a call with an equal value also sends a message.
+
+If a send fails while the status is `connected`, the client tries again after 50 ms. Each failure doubles the delay, up to 2 s. If a publish is pending when the page becomes visible again, the client sends it at once.
 
 Pass `adaptivePublish` to lower the publish rate while the transport holds many buffered bytes:
 
@@ -176,7 +178,12 @@ const client = createPresenceClient({
 
 ## Development mode
 
-`isDevMode()` returns whether the code runs in development mode. It returns `false` when `import.meta.env.DEV` is `false`. In all other cases, it returns `false` only when `process.env.NODE_ENV` is `"production"`. If the check throws, it returns `true`.
+`isDevMode()` returns whether the code runs in development mode. It applies these rules in order:
+
+1. If `import.meta.env.DEV` is `false`, it returns `false`.
+2. If `process.env.NODE_ENV` is `"production"`, it returns `false`.
+3. If one of these reads throws, it returns `true`.
+4. In all other cases, it returns `true`.
 
 Call `isDevMode` to show your own debug output only in development:
 
@@ -190,6 +197,7 @@ The client calls `isDevMode` one time, at creation. In development mode, the cli
 
 - An outbound `context`, `user`, or whole message breaks the size limit. The client checks at creation and on each `setContext` or `setUser` call that changes the value. It warns on each check that finds a value over the limit. A receiver drops an oversized field or message without a warning.
 - A remote `user` or `context` arrives and no check applies. The client warns one time.
+- The shape check drops a remote `user` or `context`. The warning names `parseUser` or `parseContext`. The client warns one time for `user` and one time for `context`.
 - The store is full and drops a new peer. The client warns one time.
 
 ## Related

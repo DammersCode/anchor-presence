@@ -73,7 +73,7 @@ See [Security](/docs/get-started/guides/security) for the risk that each limit c
 
 `validatePresence` checks the size and depth of `user` and `context`, not their shape. The client adds a shape check for each remote value.
 
-Without a parser, the shape check compares a remote value with the local value of the same field. A client with this local `user` accepts a remote `user` whose `name` and `color` are strings:
+Without a parser, the shape check compares a remote value with the local value of the same field. A client with this local `user` accepts a remote `user` whose `name` and `color` are strings or `null`:
 
 ```ts
 const client = createPresenceClient({
@@ -84,11 +84,12 @@ const client = createPresenceClient({
 
 The shape check uses these rules. When a part of the remote value does not fit, the client drops the whole field.
 
-- A key of the local object must have the type of the local value. A remote object can omit a key.
+- A remote `null` always fits, at every level. For example, a key with a local string value accepts a remote `null`. As a result, a key typed `T | null` stays valid.
+- A key of the local object must have the type of the local value, or be `null`. A remote object can omit a key.
 - An extra key is a key that the local object does not have. An extra key stays when its value is a string, a number, a boolean, or `null`. The check removes an extra key that holds an object or an array. This rule also applies to an empty local object.
 - The check removes a `__proto__` key at every level.
-- An array must be an array. Each item must have the shape of the first local item. An empty local array accepts an array of strings, numbers, booleans, or `null` values.
-- A string, a number, or a boolean must have the type of the local value.
+- An array must be an array. Each item must have the shape of the first local item, or be `null`. An empty local array accepts an array of strings, numbers, booleans, or `null` values.
+- A string, a number, or a boolean must have the type of the local value, or be `null`.
 - A local `null` or `undefined` value accepts a string, a number, a boolean, or `null`, and never an object or an array.
 
 The client reads the local value for each message, so `setUser` and `setContext` change the shape.
@@ -105,14 +106,19 @@ const viewer = createPresenceClient<{ page: string }>({
 });
 ```
 
-A dropped field does not clear the stored value. The receiver keeps the previous value of the same session. A `null` value clears the field, and no check runs on it.
+A dropped field does not clear the stored value. The receiver keeps the previous value of the same session. A `null` field value clears the field, and no check runs on it.
 
 <Callout type="warn">
   If a client has no local `user` or `context`, pass `parseUser` or `parseContext`. Without a local value or a
   parser, the client accepts the remote value as it is, and a malformed value reaches your render.
 </Callout>
 
-In [development mode](/docs/core/presence-client#development-mode), the client warns one time in the console when a remote `user` or `context` arrives and no check applies. See [Security](/docs/get-started/guides/security#check-the-shape-of-remote-values) for the render risk.
+In [development mode](/docs/core/presence-client#development-mode), the client writes two console warnings:
+
+- A remote `user` or `context` arrives and no check applies. The client warns one time.
+- The shape check drops a remote `user` or `context`. The warning names `parseUser` or `parseContext`, the option that accepts other shapes. The client warns one time for `user` and one time for `context`.
+
+See [Security](/docs/get-started/guides/security#check-the-shape-of-remote-values) for the render risk.
 
 ## Events and leave messages
 

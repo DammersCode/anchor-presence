@@ -3,7 +3,7 @@ title: Security
 description: Validation limits, why anchor IDs never touch selectors, and the rendering rule for untrusted data.
 ---
 
-All inbound presence data is untrusted. The client drops data above the validation limits, anchor IDs never reach a selector, and your app must render `user` and `context` as text.
+All inbound presence data is untrusted. A peer is another client in the same room. The client drops data above the validation limits, anchor IDs never reach a selector, and your app must render `user` and `context` as text.
 
 ## Validation limits
 
@@ -61,7 +61,7 @@ This sample shows the correct and the wrong way to render a remote name:
 
 Validation checks the size and depth of `user` and `context`, not their shape. A peer can send `{ name: {} }` where you expect a string. React throws when it renders that object as a child.
 
-For this reason, the client compares each remote value with your own local value. If you pass `user: { name: "Ada" }` to `createPresenceClient`, a remote `user` must be an object whose `name` is a string. Your local value can lack a key, for example an optional field. The client keeps such a key only when its value is a string, a number, a boolean or `null`. The client drops a field that does not fit, so the receiver keeps the previous value.
+For this reason, the client compares each remote value with your own local value. If you pass `user: { name: "Ada" }` to `createPresenceClient`, a remote `user` must be an object whose `name` is a string or `null`. A remote `null` fits every key, so your render code must accept `null` in every field. A key that your local value lacks stays only when it holds a string, a number, a boolean, or `null`. The client drops a field that does not fit, so the receiver keeps the previous value. [Remote user and context](/docs/core/validation#remote-user-and-context) lists every rule of the shape check.
 
 A client with no local `user` or `context` has no shape to compare with. To check the value yourself, pass `parseUser` or `parseContext`. Return `undefined` to drop the value:
 
@@ -76,7 +76,7 @@ const client = createPresenceClient<unknown, { name: string; avatar?: string }>(
 });
 ```
 
-In development, the client warns once when a remote value arrives and no check applies.
+In [development mode](/docs/core/presence-client#development-mode), the client warns one time when a remote value arrives and no check applies. It also warns one time when the shape check drops a remote `user` or `context`. That warning names `parseUser` or `parseContext`.
 
 ## Identity is not authenticated
 

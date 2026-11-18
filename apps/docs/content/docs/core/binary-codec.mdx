@@ -23,7 +23,7 @@ The layout is little-endian. The fields come in this order:
 4. `sequence`: a `u32`.
 5. Cursor tag: `0` for a `null` cursor, `1` for a cursor, `2` for a leave message, `3` for an event.
 6. For tag `3` only: a `u16` byte length of the event type, then the UTF-8 event type.
-7. For tag `1` only: a `u8` anchor count, then each anchor as a `u16` id length, the UTF-8 id, an `f32` `u`, and an `f32` `v`.
+7. For tag `1` only: a `u8` anchor count. Then each anchor: a `u16` id length, the UTF-8 id, an `f32` `u`, and an `f32` `v`.
 8. For tag `1` only: a viewport tag, `0` absent or `1` present. A present viewport adds an `f32` `u` and an `f32` `v`.
 9. Pointer tag: `0` absent, `1` present without a type, `2` `mouse`, `3` `pen`, `4` `touch`.
 10. `context` tag: `0` absent, `1` explicit `null`, or `2` JSON. Tag `2` adds a `u32` byte length and the UTF-8 JSON.

@@ -47,7 +47,7 @@ const jsonCodec: CursorCodec = {
 
 ## Choose a codec
 
-`binaryCodec` sends about half the bytes of `jsonCodec`. A typical message with 4 anchors is 144 bytes with `binaryCodec` and 292 bytes with `jsonCodec`. `jsonCodec` writes readable JSON, so the network tab of the browser shows each message. See [Binary codec](/docs/core/binary-codec) for the wire layout and the encode limits.
+`binaryCodec` sends about half the bytes of `jsonCodec`. A message with 4 anchors is 144 bytes with `binaryCodec` and 292 bytes with `jsonCodec`. That message has two-letter anchor IDs, coordinates with one decimal place, and a `user` with a name and a color. Coordinates with more decimal places make the JSON message longer. The binary message keeps its size, because each coordinate is an `f32`. `jsonCodec` writes readable JSON, so the network tab of the browser shows each message. See [Binary codec](/docs/core/binary-codec) for the wire layout and the encode limits.
 
 ## Same codec per room
 

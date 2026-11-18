@@ -27,15 +27,15 @@ The binding sends a `null` cursor position, which hides the local cursor on ever
 
 ## When the page hides
 
-On `pagehide`, the binding calls `client.leave()` instead of sending a `null` cursor. Peers remove the whole client at once, not only its cursor. See [Page hide](/docs/dom/binding#page-hide).
+On `pagehide`, the binding calls `client.leave()` instead of sending a `null` cursor. A peer is another client in the same room. Peers remove the whole client at once, not only its cursor. See [Page hide](/docs/dom/binding#page-hide).
 
 ## Keyboard focus
 
 By default, the binding ignores keyboard focus. Pass `captureFocus: true` in the binding options to publish a cursor for keyboard users. On `focusin`, the binding publishes a cursor at the center of the focused element. On `focusout`, it clears the cursor when focus leaves the document. The cursor carries no pointer type, because a focus event has none. An element with no non-zero rectangle publishes no cursor.
 
-## Event choice
+## Event listeners
 
-The binding listens on `pointerover` instead of `pointerenter`, because `pointerenter` does not bubble to the document when the target is a plain element. `pointerover` bubbles, so one document-level listener covers every element without attaching a listener per anchor.
+The binding listens for `pointerover` on the document. `pointerover` bubbles, so one listener on the document covers every element. The binding adds no listener to each anchor.
 
 ## Touch behavior
 

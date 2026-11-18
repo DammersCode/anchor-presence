@@ -1,36 +1,50 @@
 # Relay server
 
-A reference room-broadcast relay for the demo. It is not a production service: it exists so the quick start and `apps/demo` have a real WebSocket endpoint to connect to.
+This is the reference room-broadcast relay. It is not a production service. It gives the quick start and `apps/demo` a real WebSocket endpoint. A peer is another client in the same room. The relay forwards every inbound message to the peers of the sender.
 
 ## Run
+
+Start the relay from this folder:
 
 ```sh
 cd apps/server
 bun run dev
 ```
 
-The relay listens on port `8787` by default and upgrades WebSocket connections at `/`. It groups sockets into rooms by the `room` query parameter (`?room=main`) or the URL path, and forwards every inbound message to the other sockets in the same room.
+The relay listens on port `8787`.
 
 ## Environment variables
 
-| Variable                       | Default          | Meaning                                                                                                                 |
-| ------------------------------ | ---------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `PORT`                         | `8787`           | The port the relay listens on.                                                                                          |
-| `RELAY_ALLOWED_ORIGINS`        | unset (no check) | Comma-separated list of allowed `Origin` header values. When unset, every origin is accepted.                           |
-| `RELAY_AUTH_TOKEN`             | unset (no check) | When set, every upgrade must carry a matching `token` query parameter, or the relay closes the socket with code `4006`. |
-| `MAX_MESSAGE_BYTES`            | `32768`          | Maximum size of one inbound message, in bytes. Oversized messages are dropped.                                          |
-| `RATE_CAPACITY`                | `40`             | Token-bucket capacity for the per-socket rate limit.                                                                    |
-| `RATE_REFILL_PER_SECOND`       | `20`             | Tokens added to each socket's bucket per second.                                                                        |
-| `RELAY_MAX_ROOM_SOCKETS`       | `128`            | Maximum sockets in one room. Beyond this, new sockets are refused with code `4001`.                                     |
-| `RELAY_MAX_TOTAL_SOCKETS`      | `10000`          | Maximum sockets across all rooms. Beyond this, new sockets are refused with code `4002`.                                |
-| `RELAY_SLOW_PEER_SOFT_BYTES`   | `1048576`        | Buffered-bytes threshold above which the relay starts skipping sends to a slow peer.                                    |
-| `RELAY_SLOW_PEER_HARD_BYTES`   | `8388608`        | Buffered-bytes threshold above which the relay closes a slow peer with code `4003`.                                     |
-| `RELAY_SLOW_PEER_RESUME_BYTES` | `524288`         | Buffered-bytes threshold below which the relay resumes sending to a previously skipped peer.                            |
+| Variable                       | Default          | Meaning                                                                                                                                             |
+| ------------------------------ | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PORT`                         | `8787`           | The port of the relay.                                                                                                                              |
+| `RELAY_ALLOWED_ORIGINS`        | unset (no check) | A comma-separated list of allowed `Origin` header values. If it is unset, the relay accepts every origin. A foreign origin closes with code `4004`. |
+| `RELAY_AUTH_TOKEN`             | unset (no check) | If it is set, every upgrade must carry a matching `token` query parameter, the room token. Otherwise, the relay closes the socket with code `4006`. |
+| `MAX_MESSAGE_BYTES`            | `32768`          | The maximum size of one inbound message, in bytes. The relay drops a larger message.                                                                |
+| `RATE_CAPACITY`                | `40`             | The token-bucket capacity of the rate limit per socket.                                                                                             |
+| `RATE_REFILL_PER_SECOND`       | `20`             | The tokens that the relay adds to the bucket of each socket per second.                                                                             |
+| `RELAY_MAX_ROOM_SOCKETS`       | `128`            | The maximum sockets in one room. Above it, the relay closes a new socket with code `4001`.                                                          |
+| `RELAY_MAX_TOTAL_SOCKETS`      | `10000`          | The maximum sockets in all rooms. Above it, the relay closes a new socket with code `4002`.                                                         |
+| `RELAY_SLOW_PEER_SOFT_BYTES`   | `1048576`        | Above this buffered size, the relay skips sends to a slow peer.                                                                                     |
+| `RELAY_SLOW_PEER_HARD_BYTES`   | `8388608`        | Above this buffered size, the relay closes a slow peer with code `4003`.                                                                            |
+| `RELAY_SLOW_PEER_RESUME_BYTES` | `524288`         | Below this buffered size, the relay sends to a skipped peer again.                                                                                  |
+
+The relay pings every socket every 30 seconds. It closes a socket with no pong for 60 seconds with code `4005`.
 
 ## Room names
 
-The relay reads the room from the `room` query parameter or the first path segment. A missing name is `main`. A name with other characters than letters, digits, `_` and `-`, or above 256 characters, closes the socket with code `4007`.
+The relay reads the room from the `room` query parameter (`/?room=main`). If the parameter is empty or missing, the relay reads the room from the URL path. It uses the full path without its leading and trailing slashes, so `/room-42` is the room `room-42`. A missing name is `main`.
+
+A room name has letters, digits, `_` and `-`, up to 256 characters. The relay closes a socket with any other name with code `4007`. For this reason, a path with a second `/`, such as `/team/room-42`, closes with `4007`.
+
+The example relays under `examples/` read the room from the `room` query parameter only.
+
+## Identity
+
+The relay has no `authCheck` hook and binds no identity. Any client in a room can claim any `clientId`. The relay checks only the shared room token of `RELAY_AUTH_TOKEN`. For identity binding, use an example relay with an `authCheck` hook.
 
 ## Defaults are open
 
-Out of the box, with no environment variables set, the relay accepts connections from any origin and requires no token. It does not terminate TLS itself, and it tracks no per-IP connection cap — only the per-room and total-socket caps above. Set `RELAY_ALLOWED_ORIGINS` and `RELAY_AUTH_TOKEN` before exposing the relay beyond local development, and put it behind a TLS-terminating proxy.
+By default, the relay accepts connections from every origin and needs no room token. It does not terminate TLS. It has no connection cap per IP, only the caps per room and in total.
+
+Before you expose the relay outside local development, set `RELAY_ALLOWED_ORIGINS` and `RELAY_AUTH_TOKEN`. Put a TLS-terminating proxy in front of it.

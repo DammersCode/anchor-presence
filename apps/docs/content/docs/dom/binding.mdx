@@ -23,7 +23,7 @@ binding.subscribe(() => {
 });
 ```
 
-The client is live when its status is `connecting` or `connected`. The binding runs its geometry scheduler only while the client is live and at least one peer has a cursor. In all other cases the scheduler stops, so an empty room costs no frame work.
+The client is live when its status is `connecting` or `connected`. A peer is another client in the same room. The binding runs its geometry scheduler only while the client is live and at least one peer has a cursor. In all other cases the scheduler stops, so an empty room costs no frame work.
 
 ## Options
 
@@ -102,6 +102,8 @@ document.fonts.ready.then(() => {
 
 `reason` is for your own logging. The binding does not read it.
 
+If state that your `visibilityPolicy` reads changes, also call `invalidate`. See [Run the policy again after a state change](/docs/dom/visibility-policy#run-the-policy-again-after-a-state-change).
+
 ## Connection status
 
 While the client status is `reconnecting` or `disconnected`, the binding hides every remote cursor. The snapshot is empty during that time. The remote presences stay in the client store. When the status returns to `connected`, the binding resolves the cursors again and shows them. The `connecting` status does not hide cursors.
@@ -116,9 +118,16 @@ If a `visibilityPolicy` or an interpolator throws, the binding keeps the last sn
 
 ## Dispose
 
-`binding.dispose()` stops the scheduler, removes every listener, and clears the subscriber list. First it sends one final empty snapshot, so subscribers can remove every cursor. When the surface that owns the binding unmounts, call `dispose` one time.
+`binding.dispose()` does these steps in order:
 
-`dispose` also clears the local cursor on the client. As a result, a client that stays connected after the binding stops leaves no cursor on its peers.
+1. It clears the local cursor on the client, unless you pass `keepLocalCursor: true`.
+2. It stops the scheduler and removes every listener.
+3. It sends one final empty snapshot, so subscribers can remove every cursor.
+4. It clears the subscriber list.
+
+When the surface that owns the binding unmounts, call `dispose` one time.
+
+Because `dispose` clears the local cursor, a client that stays connected after the binding stops leaves no cursor on its peers.
 
 If you replace the binding and keep the client, pass `keepLocalCursor: true`. Peers then keep the local cursor while the new binding starts:
 

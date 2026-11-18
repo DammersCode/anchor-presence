@@ -3,7 +3,7 @@ title: Resolution
 description: How the resolver turns a remote presence into a ResolvedCursor in receiver viewport pixels.
 ---
 
-Resolution is the process that turns one remote client's presence into a screen position on the receiver. The binding runs this process for every remote client on every frame it is active.
+Resolution is the process that turns the presence of one peer into a screen position on the receiver. A peer is another client in the same room. The binding runs this process for every peer on every frame that it is active.
 
 ## The three tiers
 
@@ -45,7 +45,7 @@ Every subscriber reads an array of `ResolvedCursor` values from `binding.getSnap
 
 ## Result identity
 
-The resolver reuses the same `ResolvedCursor` object, and the same result array, across frames when nothing about a cursor changed. The compared fields are position, visibility, tier, anchor, context, user, and idle state. A renderer keyed on object identity, such as `React.memo`, avoids rework on a frame where nothing moved.
+The resolver reuses the same `ResolvedCursor` object, and the same result array, across frames when nothing about a cursor changed. The compared fields are position, visibility, tier, anchor, context, user, and idle stage. A renderer keyed on object identity, such as `React.memo`, avoids rework on a frame where nothing moved.
 
 ## Related
 

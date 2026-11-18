@@ -3,7 +3,7 @@ title: Cursor events
 description: Send one-shot events such as reactions with client.sendEvent, and receive them with useCursorEvents.
 ---
 
-`useCursorEvents` calls a listener for each one-shot event that a remote peer sends. An event has a `type` and an optional `data` value, for example a reaction or a ping. The client never stores an event and never resends it. A peer that is not connected at that time never receives the event.
+`useCursorEvents` calls a listener for each one-shot event that a peer sends. A peer is another client in the same room. An event has a `type` and an optional `data` value, for example a reaction or a ping. The client never stores an event and never resends it. A peer that is not connected at that time never receives the event.
 
 ## Send and receive
 

@@ -22,7 +22,7 @@ Four layout differences cause jumps:
 
 Give each container of anchors its own anchor: the sidebar, the toolbar, the list, the table. A pointer in the space between two child anchors then resolves against the container.
 
-Do, with a container anchor:
+This markup gives the links a container anchor, which is correct:
 
 ```tsx
 <nav data-anchor="nav">
@@ -31,7 +31,7 @@ Do, with a container anchor:
 </nav>
 ```
 
-Avoid, with no anchored parent for the gap between the links:
+This markup has no anchored parent for the gap between the links, which causes jumps:
 
 ```tsx
 <nav>
@@ -44,13 +44,13 @@ Avoid, with no anchored parent for the gap between the links:
 
 Change the number of columns, not the order or the axis. A row that wraps keeps most neighbors on one line. A row that turns into a column moves every neighbor to another side.
 
-Do, a row that wraps on a narrow screen:
+This row wraps on a narrow screen, which is correct:
 
 ```tsx
 <div className="flex flex-wrap justify-end gap-2">{buttons}</div>
 ```
 
-Avoid, a row that turns into a column on a narrow screen:
+This row turns into a column on a narrow screen, which causes jumps:
 
 ```tsx
 <div className={wide ? "flex justify-end gap-2" : "flex flex-col gap-2"}>{buttons}</div>
@@ -62,13 +62,13 @@ When a table becomes cards, keep adjacent cells adjacent inside the card, in the
 
 The receiver applies the relative position of the sender to its own box. A button can be 80 pixels wide on one screen and 250 pixels wide on the other. A point near its edge then lands far from its label. When a layout stacks items, keep their intrinsic width. Give icon-only items a square box.
 
-Do, stacked buttons at their own width:
+These stacked buttons keep their own width, which is correct:
 
 ```tsx
 <div className="flex flex-col items-end gap-2">{buttons}</div>
 ```
 
-Avoid, stacked buttons stretched to the full width:
+These stacked buttons stretch to the full width, which causes jumps:
 
 ```tsx
 <div className="flex flex-col gap-2">{buttons}</div>

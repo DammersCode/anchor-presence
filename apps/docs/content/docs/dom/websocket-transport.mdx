@@ -19,6 +19,13 @@ const client = createPresenceClient({ transport });
 
 `connect()` and `disconnect()` are always present on the returned transport, unlike the optional methods on the base `LiveCursorTransport` contract. See [Transports](/docs/core/transports) for that contract.
 
+The transport uses `globalThis.WebSocket` by default. If there is no global `WebSocket`, for example on an older Node.js, pass `WebSocketCtor`.
+
+<Callout type="warn">
+  If there is no global `WebSocket` and no `WebSocketCtor`, the transport never opens a socket. Its status
+  stays `connecting`, with no warning and no close.
+</Callout>
+
 ## The default URL
 
 When you omit `url`, the transport builds one from `host` (default `window.location.hostname`), `port` (default `8787`), and `path` (default `/`). The protocol is `wss:` when the page loads over `https:`, and `ws:` otherwise.
@@ -46,7 +53,7 @@ If the function throws or rejects, the transport reports a close with no code an
 
 `reconnect` defaults to `true`. When a connection drops and your own `disconnect()` call did not cause it, the transport schedules a reconnect with exponential backoff:
 
-- The delay doubles on each attempt, starting from `baseBackoffMs` (default `500`), and caps at `maxBackoffMs` (default `8000`).
+- The first delay is `baseBackoffMs` (default `500`). The delay doubles on each attempt, up to `maxBackoffMs` (default `8000`).
 - The transport waits a random time between 50% and 100% of that delay. Many clients that reconnect at the same time then do not retry in lockstep.
 - The backoff resets only after a connection stays open for `stableAfterMs` (default `5000`). A relay that accepts a connection and then closes it therefore sees growing delays, not a retry loop.
 - A close with code `1008` (policy), `4004` (origin) or `4006` (room token) stops the reconnect, and the status becomes `disconnected`.

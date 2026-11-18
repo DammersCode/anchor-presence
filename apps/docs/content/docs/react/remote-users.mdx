@@ -3,7 +3,7 @@ title: Remote users
 description: Read the remote user values with useRemoteUsers, one entry per client.
 ---
 
-`useRemoteUsers` returns one entry per remote client, with the client's `user` value, its session, and whether it is idle. Use it for a presence list or an avatar stack, where you need one row per person, not one row per cursor frame.
+A peer is another client in the same room. `useRemoteUsers` returns one entry per peer, with the `user` value of the peer, its session, and whether it is idle. Use it for a presence list or an avatar stack. These lists need one row per person, not one row per cursor frame.
 
 ## Usage
 
@@ -36,20 +36,20 @@ function PresenceList() {
 
 Each `RemoteUser` entry has:
 
-| Field      | Type                 | Meaning                                                                                               |
-| ---------- | -------------------- | ----------------------------------------------------------------------------------------------------- |
-| `clientId` | `string`             | the remote client that sent the user value                                                            |
-| `user`     | `TUser \| undefined` | the user value, or `undefined` when the client sent none                                              |
-| `session`  | `string`             | the session ID of the client                                                                          |
-| `idle`     | `boolean`            | `true` when the presence of the client did not change for `idleAfterMs`, even while heartbeats arrive |
+| Field      | Type                 | Meaning                                                                                             |
+| ---------- | -------------------- | --------------------------------------------------------------------------------------------------- |
+| `clientId` | `string`             | the peer that sent the user value                                                                   |
+| `user`     | `TUser \| undefined` | the user value, or `undefined` when the peer sent none                                              |
+| `session`  | `string`             | the session ID of the peer                                                                          |
+| `idle`     | `boolean`            | `true` when the presence of the peer did not change for `idleAfterMs`, even while heartbeats arrive |
 
 ## User shape
 
-The client checks each remote `user` against the shape of the local `user` value. If a remote value does not fit that shape, the client drops it, and the entry keeps the previous `user` value. For the rules and for `parseUser`, see [Remote user and context](/docs/core/validation#remote-user-and-context).
+The client checks each remote `user` against the shape of the local `user` value. A `null` inside a remote `user` fits every key, so render each field with a `null` fallback. If a remote value does not fit the shape, the client drops it, and the entry keeps the previous `user` value. In development mode, the client then warns one time and names `parseUser`. For the rules and for `parseUser`, see [Remote user and context](/docs/core/validation#remote-user-and-context).
 
 ## Render cost
 
-The hook rerenders only when the set of remote clients changes, or when one entry's `user`, `session`, or `idle` field changes. A remote cursor moving across the screen does not rerender this hook, because position is not part of `RemoteUser`.
+The hook rerenders only when the set of peers changes, or when one entry's `user`, `session`, or `idle` field changes. A remote cursor moving across the screen does not rerender this hook, because position is not part of `RemoteUser`.
 
 The returned list, and each unchanged entry inside it, keep the same object identity across renders. A `React.memo` row component keyed by `clientId` skips rendering for every user whose fields did not change.
 

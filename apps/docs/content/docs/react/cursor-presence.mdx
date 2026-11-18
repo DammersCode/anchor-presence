@@ -25,11 +25,12 @@ function PointerTypeBadge() {
 }
 ```
 
-Each entry is a `RemotePresence` without its `sequence` field, plus `idle`. The hook rerenders only when a remote client's `cursor`, `context`, `user`, `pointer`, `session`, `idle` state, or membership changes. A message that only advances `sequence` does not rerender it.
+Each entry is a `RemotePresence` without its `sequence` field, plus `idle`. A peer is another client in the same room. The hook rerenders only when the `cursor`, `context`, `user`, `pointer`, `session`, `idle` flag, or membership of a peer changes. A message that only advances `sequence` does not rerender it.
 
 <Callout type="warn">
-  To place an element on screen, use `useRemoteCursors`, not `useCursorPresence`. `useCursorPresence` returns
-  positions in sender coordinates, not in receiver-viewport pixels.
+  If you place an element on screen with `useCursorPresence`, the element lands in the wrong place.
+  `useCursorPresence` returns positions in sender coordinates, not in receiver-viewport pixels. Use
+  `useRemoteCursors` instead.
 </Callout>
 
 ## Related

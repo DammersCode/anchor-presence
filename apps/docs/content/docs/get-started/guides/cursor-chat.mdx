@@ -3,7 +3,7 @@ title: Cursor chat
 description: Type a short message next to your cursor and show it next to your cursor on every peer's screen.
 ---
 
-Peers on one page often want to say a few words without a separate chat panel. Cursor chat puts a short text bubble next to the cursor. The local user presses `/`, types a message and presses Enter. The client sends the text as a one-shot event with `client.sendEvent("chat", { text })`. Each peer receives the event through `useCursorEvents` and shows the text as the label of the sender's remote cursor. After 5 seconds, the bubble disappears on both sides.
+Users on one page often want to say a few words without a separate chat panel. Cursor chat puts a short text bubble next to the cursor. The local user presses `/`, types a message and presses Enter. The client sends the text as a one-shot event with `client.sendEvent("chat", { text })`. A peer is another client in the same room. Each peer receives the event through `useCursorEvents` and shows the text as the label of the sender's remote cursor. After 5 seconds, the bubble disappears on both sides.
 
 ## Read and cap the text
 
@@ -31,7 +31,7 @@ export function readChatText(data: unknown): string | null {
 
 ## Show remote messages
 
-The next part keeps the last message of each remote client and removes it after `CHAT_HIDE_MS`:
+The next part keeps the last message of each peer and removes it after `CHAT_HIDE_MS`:
 
 ```tsx
 export function useRemoteChat(): Record<string, string> {

@@ -3,7 +3,7 @@ title: Hono
 description: A room-broadcast relay built on Hono's upgradeWebSocket helper for Bun.
 ---
 
-You want a relay built on a small, framework-shaped router instead of raw `Bun.serve`. This example uses [Hono](https://hono.dev)'s `hono/bun` adapter, which wires `upgradeWebSocket` and a `websocket` handler straight into `Bun.serve`.
+You want a relay built on a small, framework-shaped router instead of raw `Bun.serve`. This example uses [Hono](https://hono.dev)'s `hono/bun` adapter. The adapter connects `upgradeWebSocket` and a `websocket` handler directly to `Bun.serve`.
 
 ## Install
 
@@ -12,14 +12,6 @@ Install the packages with Bun:
 ```sh
 bun add @anchor-presence/core @anchor-presence/dom hono
 ```
-
-## Server
-
-The server file exports a factory that starts the relay:
-
-<CodeFromSource repo="examples/hono/server.ts" lang="ts" />
-
-The server imports the shared guard helpers. See [Shared guard helpers](/docs/examples/backends#shared-guard-helpers).
 
 ## Client
 
@@ -32,6 +24,14 @@ import { createWebSocketTransport } from "@anchor-presence/dom";
 const transport = createWebSocketTransport({ port: 8790, path: "/?room=main" });
 const client = createPresenceClient({ transport });
 ```
+
+## Server
+
+The server file exports a factory that starts the relay:
+
+<CodeFromSource repo="examples/hono/server.ts" lang="ts" />
+
+The server imports the shared guard helpers. See [Shared guard helpers](/docs/examples/backends#shared-guard-helpers).
 
 ## Run it
 
@@ -49,15 +49,17 @@ The relay listens on `http://localhost:8790`. To use a different port, give the 
 
 ## Behavior notes
 
-- **Room name validation.** `parseRoom` caps room names at 256 characters and restricts them to `[A-Za-z0-9_-]`. A missing name is `main`. An invalid name closes the socket with code `4007`.
+- **Room name validation.** The relay reads the room from the `room` query parameter. `parseRoom` caps room names at 256 characters and restricts them to `[A-Za-z0-9_-]`. A missing name is `main`. An invalid name closes the socket with code `4007`.
+- **Upgrade path.** The relay accepts the upgrade only at `/`. It answers any other path with HTTP `404`.
 - **Max payload size.** `MAX_MESSAGE_BYTES` (default 32 KiB) drops an oversized message instead of closing the connection.
 - **Per-connection rate limit.** A token bucket limits inbound messages per socket (`RATE_CAPACITY`, `RATE_REFILL_PER_SECOND`).
 - **Origin allowlist.** `RELAY_ALLOWED_ORIGINS` is a comma-separated list of allowed origins. Leave it empty for local development. The relay then accepts every origin.
 - **Connection check.** Pass an `authCheck` function to check each connection. Without it, set `RELAY_AUTH_TOKEN`. The relay then compares the [room token](/docs/dom/websocket-transport#room-token) of each connection with that value.
+- **Identity binding.** If `authCheck` returns `{ clientId, user }`, the relay writes that identity into every JSON frame of the connection. See [Identity binding](/docs/examples/backends#identity-binding).
 - **Room cleanup.** The relay drops a room's entry once its last socket closes.
 - **Connection caps.** `RELAY_MAX_ROOM_SOCKETS` (default 128) limits one room. `RELAY_MAX_TOTAL_SOCKETS` (default 10,000) limits the process. Above either cap, the relay closes the new socket with code `4001` (room full) or `4002` (server full).
 - **Dead connections.** `RELAY_IDLE_TIMEOUT_SECONDS` (default 60) sets Bun's `idleTimeout`, and `sendPings` is on. If a socket sends nothing for that time, Bun sends a ping. If no pong comes back, Bun closes the socket.
-- **Backpressure on slow consumers.** `WSContext.raw` exposes the underlying Bun socket's `getBufferedAmount()`. The relay skips sends above a soft watermark and closes above a hard one.
+- **Slow receivers.** `WSContext.raw` exposes the underlying Bun socket's `getBufferedAmount()`. The relay skips sends above `RELAY_SLOW_PEER_SOFT_BYTES` (default 1 MiB). It closes the connection with code `4003` above `RELAY_SLOW_PEER_HARD_BYTES` (default 8 MiB).
 
 <Callout type="warn">
   If you change the server, key room state on `ws.raw`, not on the `WSContext` object. Hono gives each

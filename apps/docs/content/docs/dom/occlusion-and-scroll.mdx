@@ -18,11 +18,9 @@ The check is a simplified walk, not a full containing-block or stacking-context 
 - It does not compute CSS containing blocks. An absolutely or fixed-positioned anchor can visually escape a clipping ancestor. The ancestor walk does not know about `position`, so it still treats that anchor as clipped.
 - It does not detect an overlay covering the point from above. A cursor can report `pointVisible: true` while a modal or dropdown visually covers that pixel.
 
-<Callout type="warn">
-  If an overlay can cover the resolved point and the extra cost is acceptable, pass `resolution: { hitTest: true }`. The resolver then checks the point with `document.elementFromPoint`, including a walk into open shadow roots, instead of the ancestor-clipping estimate alone.
-</Callout>
+If an overlay can cover the resolved point, pass `resolution: { hitTest: true }`. The resolver then checks the point with `document.elementFromPoint`, and it also looks into open shadow roots. This check replaces the estimate from the ancestor walk, and it costs more time per frame.
 
-## Using pointVisible
+## Use pointVisible
 
 `pointVisible` is a field on the resolution passed to a `VisibilityPolicy`, and on every `ResolvedCursor`. The default visibility policy ignores it. A policy that hides a clipped cursor checks it directly:
 

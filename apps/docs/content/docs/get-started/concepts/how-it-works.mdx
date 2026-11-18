@@ -11,7 +11,7 @@ The central invariant:
 
 ## Package layers
 
-The system has three packages. Each package adds one layer, and the dependency direction is one-way: `@anchor-presence/react` depends on `@anchor-presence/dom`, and `@anchor-presence/dom` depends on `@anchor-presence/core`.
+The system has three packages. Each package adds one layer, and the dependency direction is one-way. `@anchor-presence/react` depends on `@anchor-presence/dom`, and `@anchor-presence/dom` depends on `@anchor-presence/core`:
 
 ```mermaid
 flowchart TB
@@ -30,23 +30,23 @@ flowchart TB
 
 ## Sender to receiver flow
 
-A local pointer move never reaches the receiver as a raw pixel. The sender encodes a semantic position, and the receiver resolves it against its own layout.
+A local pointer move never reaches the receiver as a raw pixel. The sender encodes a semantic position, and the receiver resolves it against its own layout. This diagram shows the path of one move:
 
 ```mermaid
 sequenceDiagram
     accTitle: Sender to receiver flow
-    accDescr: The sender encodes a pointer move as an anchor chain and sends the bytes to the relay. The relay forwards them to the room. The receiver decodes them and resolves the cursor against its own layout.
+    accDescr: The sender encodes a pointer move as a fallback chain and sends the bytes to the relay. The relay forwards them to the room. The receiver decodes them and resolves the cursor against its own layout.
     participant S as Sender browser
     participant R as Relay
     participant V as Receiver browser
 
     Note over S: pointermove on an element
-    S->>S: DOM binding builds the<br/>anchor chain + normalized u/v
+    S->>S: DOM binding builds the<br/>fallback chain + normalized u/v
     S->>S: core client encodes,<br/>rate-limited publish
     S->>R: bytes over the transport
     Note over R: forwards to the room,<br/>never reads the payload
     R->>V: bytes to the other clients
-    V->>V: core client decodes,<br/>validates, stores
+    V->>V: core client decodes,<br/>checks, stores
     V->>V: DOM binding resolves<br/>against its own layout
     Note over V: cursor renders at<br/>ResolvedCursor x, y
 ```

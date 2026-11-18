@@ -51,7 +51,19 @@ import { LiveCursorContext, type LiveCursorContextValue } from "@anchor-presence
 
 <AutoTypeTable path="../../packages/react/src/context.ts" name="LiveCursorContextValue" />
 
-Outside a provider, both fields are `null`. During server rendering, `binding` is `null`. The hooks read this context for you. No hook returns the `DomBinding`, so read the context to get it. For example, `useContext(LiveCursorContext).binding?.invalidate()` marks the layout dirty from a component.
+Outside a provider, both fields are `null`. During server rendering, `binding` is `null`. The hooks read this context for you. To get the `DomBinding`, call [`useCursorBinding`](/docs/react/api/hooks#usecursorbinding).
+
+This component reads the context directly and shows a line when the client and the binding exist:
+
+```tsx
+import { useContext } from "react";
+import { LiveCursorContext } from "@anchor-presence/react";
+
+function PresenceReady() {
+  const { client, binding } = useContext(LiveCursorContext);
+  return client !== null && binding !== null ? <p>Presence is ready.</p> : null;
+}
+```
 
 ## Related
 

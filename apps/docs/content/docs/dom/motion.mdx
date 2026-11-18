@@ -14,7 +14,7 @@ The binding eases a remote cursor from its last resolved position to its new one
 
 The reduced-motion check reads `environment.window`, or the global `window` when you omit it. The check runs once, so a preference change after the binding starts does not switch the interpolator on an existing binding.
 
-## Choosing a custom interpolator
+## Choose a custom interpolator
 
 Pass `resolution.interpolatorFactory` to use a different easing style, for example a spring:
 
@@ -28,9 +28,9 @@ const binding = createDomBinding(client, {
 
 Write a factory against the public `Interpolator` interface. See [Interpolation](/docs/core/interpolation) for the interface and the settled-flag rule.
 
-## Why interpolation lives here, not in `@anchor-presence/core`
+## Where easing runs
 
-`@anchor-presence/core` defines the `Interpolator` interface and ships `linearInterpolator` and `noneInterpolator`, but it never calls them: `@anchor-presence/core` has no frame clock. The binding is what samples an interpolator on every scheduled frame and feeds its output into `ResolvedCursor.x`/`y`. A framework-free consumer of `@anchor-presence/core` alone sees only raw presence data, with no easing.
+`@anchor-presence/core` defines the `Interpolator` interface and exports `linearInterpolator` and `noneInterpolator`. Core never calls them, because it has no frame clock. The binding samples the interpolator on each scheduled frame and writes the result into `ResolvedCursor.x` and `ResolvedCursor.y`. Code that uses only `@anchor-presence/core` reads raw presence data, with no easing.
 
 ## When motion restarts instead of easing
 

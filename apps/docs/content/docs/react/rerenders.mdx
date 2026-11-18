@@ -3,23 +3,24 @@ title: Rerenders
 description: Which hook rerenders when, so you can pick the smallest one for each component.
 ---
 
-Each hook in `@anchor-presence/react` rerenders its component only when the value it returns changes. Pick the hook that returns the smallest value your component needs, so an unrelated update does not rerender it.
+A peer is another client in the same room. Each hook in `@anchor-presence/react` rerenders its component only when the value it returns changes. Pick the hook that returns the smallest value your component needs, so an unrelated update does not rerender it.
 
 ## Rerender rules
 
-| Hook                                                     | Rerenders when                                                                                        |
-| -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| [useRemoteCursors](/docs/react/remote-cursors)           | on every resolved-cursor snapshot, which is every frame while cursors move                            |
-| [useRemoteCursorsSelector](/docs/react/remote-cursors)   | only when its `select` output changes under `isEqual`                                                 |
-| [useRemoteUsers](/docs/react/remote-users)               | only when the set of remote clients, or one client's `user`, `session`, or `idle` field, changes      |
-| [useCursorPresence](/docs/react/cursor-presence)         | only when a client's `cursor`, `context`, `user`, `pointer`, `session`, `idle`, or membership changes |
-| [useCursorStatus](/docs/react/connection-status)         | only when the connection status changes                                                               |
-| [useCursorContext](/docs/react/cursor-context)           | only when the local context value changes                                                             |
-| [useCursorClient](/docs/react/api/hooks#usecursorclient) | only when the provider's client instance changes                                                      |
+| Hook                                                       | Rerenders when                                                                                           |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| [useRemoteCursors](/docs/react/remote-cursors)             | on every resolved-cursor snapshot, which is every frame while cursors move                               |
+| [useRemoteCursorsSelector](/docs/react/remote-cursors)     | only when its `select` output changes under `isEqual`                                                    |
+| [useRemoteUsers](/docs/react/remote-users)                 | only when the set of peers, or the `user`, `session`, or `idle` field of one peer, changes               |
+| [useCursorPresence](/docs/react/cursor-presence)           | only when the `cursor`, `context`, `user`, `pointer`, `session`, `idle`, or membership of a peer changes |
+| [useCursorStatus](/docs/react/connection-status)           | only when the connection status changes                                                                  |
+| [useCursorContext](/docs/react/cursor-context)             | only when the local context value changes                                                                |
+| [useCursorClient](/docs/react/api/hooks#usecursorclient)   | when the provider's client or binding instance changes                                                   |
+| [useCursorBinding](/docs/react/api/hooks#usecursorbinding) | when the provider's client or binding instance changes                                                   |
 
 An idle room, with no inbound messages, costs nothing: none of these hooks rerender.
 
-## Choosing the smallest hook
+## Choose the smallest hook
 
 A component that renders one cursor's position needs `useRemoteCursors`, or better, a `useRemoteCursorsSelector` that picks out one client. A component that renders a name list needs `useRemoteUsers`, not `useRemoteCursors`, because a presence list does not care where the cursor sits on screen.
 

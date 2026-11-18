@@ -74,7 +74,7 @@ export type PresenceClientOptions<TContext = unknown, TUser = unknown> = {
   context?: TContext;
   /** Returns a new random ID. The client uses it for `clientId` and `session`. */
   idFactory?: () => string;
-  /** Returns the current time in milliseconds. Default: a monotonic clock. */
+  /** Returns the current time in milliseconds. Default: `performance.now()`, or `Date.now()` without `performance`. */
   now?: () => number;
   /**
    * Limits for inbound events. `burst` and `perSecond` apply to each sender, `totalPerSecond` to all senders together.

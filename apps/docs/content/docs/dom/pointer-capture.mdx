@@ -53,10 +53,7 @@ By default, the binding ignores keyboard focus. With `captureFocus: true`, the b
 - On `focusout`, it clears the cursor when focus leaves the document.
 - If the focused element has a zero-size rectangle, it sends no cursor.
 
-<Callout type="warn">
-  If the user used a mouse before, peers show the focus cursor with the mouse pointer type. A focus cursor
-  sends no pointer type of its own.
-</Callout>
+<Callout type="warn">A focus cursor clears the pointer type, so peers show it with no type.</Callout>
 
 ## Event listeners
 

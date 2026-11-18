@@ -46,7 +46,7 @@ If you omit `binding`, the provider creates one with `createDomBinding(client, b
 
 If you pass `binding`, the provider creates no binding and never disposes yours. Use this to share one binding across two providers. The provider then ignores `bindingOptions`.
 
-The provider reads `bindingOptions` only when it creates the binding. A later change to the `bindingOptions` object has no effect.
+The provider reads `bindingOptions` only when it creates the binding. A later change to the `bindingOptions` object has no effect until `bindingKey` or the client changes.
 
 ## Rebuild the binding
 

@@ -179,7 +179,7 @@ The client reads development mode one time, at creation. In development mode, it
     - The client drops an inbound message because it is too large, does not decode or validate, or a subscriber throws. The client warns one time for each reason.
     - Another client uses the same `clientId`. The page warns one time, for all clients together.
     - `staleTimeoutMs` is at most twice `heartbeatIntervalMs`, so a quiet peer expires between two heartbeats. The page warns one time, for all clients together.
-    - The codec cannot encode the `user` or `context`. The client sends the cursor without them, and the page warns one time.
+    - The codec cannot encode the `user` or `context`. The client encodes again without `context`, then without `user`, then without both, and sends the first message that encodes. The page warns one time.
     - A message fails to encode or to send for another reason. The client warns one time.
     - A `subscribeContext`, `subscribeUser`, `subscribeRemote`, or `subscribePeers` listener throws. The client writes the error with `console.error` and calls the other listeners. A throwing `subscribeEvents` listener gives no output.
 

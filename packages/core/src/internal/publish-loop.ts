@@ -80,7 +80,7 @@ export function createPublishLoop<TContext, TUser>(state: PresenceClientState<TC
       if (message.context === undefined && message.user === undefined) throw error;
       warnOnce(
         "unencodable-profile",
-        "`user` or `context` could not be encoded, so the client sends the cursor without them. Use plain JSON values.",
+        "`user` or `context` could not be encoded, so the client sends the cursor without the failing field. Use plain JSON values.",
       );
       return encodeWithoutFailingField(message);
     }

@@ -10,6 +10,7 @@ import {
   LiveCursorProvider,
   useCursorClient,
   useCursorEvents,
+  usePeerChanges,
   useRemoteCursors,
   useRemoteCursorsSelector,
   useRemoteUsers,
@@ -172,9 +173,11 @@ function useFollowMode(): {
   follow: (clientId: string) => void;
   stop: () => void;
 } {
-  const client = useCursorClient();
   const [leaderId, setLeaderId] = useState<string | null>(null);
   const stop = useCallback(() => setLeaderId(null), []);
+  usePeerChanges((change) => {
+    if (change.type === "leave" && change.clientId === leaderId) stop();
+  });
 
   const selectTarget = useCallback(
     (cursors: ResolvedCursor[]) => {
@@ -198,16 +201,12 @@ function useFollowMode(): {
     window.addEventListener("wheel", stop, { passive: true });
     window.addEventListener("touchmove", stop, { passive: true });
     window.addEventListener("keydown", onKeyDown);
-    const unsubscribe = client?.subscribePeers((change) => {
-      if (change.type === "leave" && change.clientId === leaderId) stop();
-    });
     return () => {
       window.removeEventListener("wheel", stop);
       window.removeEventListener("touchmove", stop);
       window.removeEventListener("keydown", onKeyDown);
-      unsubscribe?.();
     };
-  }, [client, leaderId, stop]);
+  }, [leaderId, stop]);
 
   return { leaderId, follow: setLeaderId, stop };
 }
@@ -471,7 +470,7 @@ describe("follow mode recipe", () => {
       for (const listener of peerListeners) listener({ type: "leave", clientId: "leader" });
     });
     expect(followButton().textContent).toBe("Follow Ada");
-    expect(peerListeners.size).toBe(0);
+    expect(peerListeners.size).toBe(1);
     anchor.remove();
   });
 

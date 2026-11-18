@@ -8,7 +8,7 @@ import { EMPTY_PRESENCE, useLiveCursorContext } from "./use-cursor-client.js";
 export type RemoteUser<TUser = unknown> = {
   /** The client that sent the user value. */
   clientId: string;
-  /** The user value, or `undefined` when the sender sent none. */
+  /** The user value, or `undefined` when the sender sent none or sent `null`. */
   user: TUser | undefined;
   /** The session ID of the client. */
   session: string;

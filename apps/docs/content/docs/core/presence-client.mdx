@@ -36,7 +36,7 @@ Call `client.updateLocalCursor(cursor, pointer?)` to set the local cursor positi
 
 Call `client.setContext(value)` and `client.setUser(value)` to set the values that the client sends to peers. Both accept `undefined` to clear the value. Read the current local values with `getContext()` and `getUser()`.
 
-`client.subscribeContext(listener)` calls `listener` on each `setContext` call that changes the value. `client.subscribeUser(listener)` does the same for `setUser`. A call changes the value when `next` is another reference than the current value. The listener receives no argument, so read the value with `getContext()` or `getUser()`. Both methods return a function that removes the listener. The [`useCursorContext`](/docs/react/cursor-context) and [`useLocalUser`](/docs/react/cursor-context#local-user) hooks use them.
+`client.subscribeContext(listener)` calls `listener` on each `setContext` call that changes the value. `client.subscribeUser(listener)` does the same for `setUser`. A call changes the value when `value` is another reference than the current value. The listener receives no argument, so read the value with `getContext()` or `getUser()`. Both methods return a function that removes the listener. The [`useCursorContext`](/docs/react/cursor-context) and [`useLocalUser`](/docs/react/cursor-context#local-user) hooks use them.
 
 To stop the client, call `client.dispose()`. `dispose` sends a best-effort leave message and stops every timer. It also calls `transport.disconnect()` when the transport has one. You cannot use a client after `dispose`. Create a new client instead:
 
@@ -241,8 +241,7 @@ const client = createPresenceClient({
 
 1. If `import.meta.env.DEV` is `false`, it returns `false`.
 2. If `process.env.NODE_ENV` is `"production"`, it returns `false`.
-3. If one of these reads throws, it returns `true`.
-4. In all other cases, it returns `true`.
+3. In all other cases, it returns `true`. This includes a read that throws.
 
 Call `isDevMode` to show your own debug output only in development:
 

@@ -102,7 +102,7 @@ The transport does not replay a past close to a new listener. A close after your
 
 ## Buffered bytes
 
-`transport.bufferedBytes()` returns the underlying socket's `bufferedAmount`, or `0` when no socket is open. Presence is lossy by design: `send()` drops a message silently when the socket is not open, rather than queueing it.
+`transport.bufferedBytes()` returns the underlying socket's `bufferedAmount`, or `0` when no socket is open. Presence is lossy by design. If the socket is not open, `send()` drops the message without a warning and does not queue it.
 
 ## Related
 

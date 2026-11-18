@@ -17,7 +17,12 @@ This file renders the scene of the demo:
 
 <CodeFromSource docs="components/examples/fallbacks.tsx" lang="tsx" />
 
-Give a row a stable ID from its own data, never from its render index. An index-based ID points to a different order when the list has a different sort or filter on each client.
+Give a row a stable ID from its own data.
+
+<Callout type="warn">
+  If a row ID comes from the render index, the ID points to a different row when the clients sort or filter
+  the list differently.
+</Callout>
 
 ## Behavior notes
 

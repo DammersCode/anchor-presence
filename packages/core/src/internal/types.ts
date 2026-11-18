@@ -155,7 +155,7 @@ export interface PresenceClient<TContext = unknown, TUser = unknown> {
   getContext(): TContext | undefined;
   /**
    * Adds a listener for local context changes.
-   * The client calls the listener on every `setContext`.
+   * The client calls the listener on every `setContext` that changes the value.
    * @returns A function that removes the listener.
    */
   subscribeContext(listener: () => void): () => void;

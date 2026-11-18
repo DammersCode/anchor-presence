@@ -39,6 +39,7 @@ function CursorLayerSample() {
       getColor={(cursor: ResolvedCursor<MyContext, MyUser>) => cursor.user?.color ?? "#6b7280"}
       filterCursor={(cursor: ResolvedCursor<MyContext, MyUser>) => cursor.tier !== "viewport"}
       getCursorProps={() => ({ className: "my-cursor" })}
+      zIndex={1000}
     />
   );
 }

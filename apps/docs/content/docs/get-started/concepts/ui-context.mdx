@@ -39,7 +39,7 @@ type VisibilityPolicy<TContext = unknown, TUser = unknown> = (input: {
 
 The default policy shows cursors at the `anchor` and `viewport` tiers, and hides cursors at the `hidden` tier. See [The default policy](/docs/dom/visibility-policy#the-default-policy).
 
-Pass a custom policy through `DomBindingOptions.resolution.visibilityPolicy` (`@anchor-presence/dom`) or `bindingOptions.resolution.visibilityPolicy` on `LiveCursorProvider` (`@anchor-presence/react`). A custom policy can inspect `presence.context` to apply application-specific rules on top of geometric resolution.
+Pass a custom policy through `DomBindingOptions.resolution.visibilityPolicy` (`@anchor-presence/dom`) or `bindingOptions.resolution.visibilityPolicy` on `LiveCursorProvider` (`@anchor-presence/react`). A custom policy can read `presence.context` to apply application-specific rules on top of geometric resolution.
 
 A policy can also read `resolution.pointVisible` to hide a cursor clipped by a scroll container. See [Occlusion and scroll](/docs/dom/occlusion-and-scroll) for how the resolver computes it and where the check falls short.
 

@@ -33,7 +33,7 @@ The cursor lands 72 pixels from the button's left edge on the receiver. That is 
 
 ## How wrapping and breakpoints resolve
 
-A responsive layout often wraps or reflows content at a breakpoint. As long as the target element keeps its registered anchor ID, resolution works without a code change:
+A responsive layout can wrap or reflow content at a breakpoint. As long as the target element keeps its registered anchor ID, resolution works without a code change:
 
 - The element can move to a new pixel position. The receiver re-measures it every frame the geometry scheduler runs.
 - The element can change size. The `u`/`v` proportion still applies.

@@ -43,7 +43,7 @@ Create the client through `factory`, or pass a client that you own:
 
 ## Client ownership
 
-The provider disposes a client that `factory` created. It never disposes a `client` that you pass. For when the factory runs and which prop wins, read [Creating the client](/docs/react/client-creation).
+The provider disposes a client that `factory` created. It never disposes a `client` that you pass. For when the factory runs and which prop wins, read [Create the client](/docs/react/client-creation).
 
 ## The binding that the provider creates
 
@@ -53,7 +53,7 @@ When you omit `binding`, the provider creates a `DomBinding` for the client with
 
 ## Rebuild the binding
 
-To apply a new `bindingOptions` value, change `bindingKey`. The provider then disposes the binding and creates a new one with the current `bindingOptions`. The client stays connected, so each peer keeps the local cursor. A peer is another client in the same room.
+To apply a new `bindingOptions` value, change `bindingKey`. The provider then disposes the binding and creates a new one with the current `bindingOptions`. The client stays connected, so each peer (another client in the same room) keeps the local cursor.
 
 This example switches the interpolator:
 
@@ -106,7 +106,7 @@ Pass `client={null}` for server rendering or the gap before hydration. The provi
 
 ## Related
 
-- [Creating the client](/docs/react/client-creation)
+- [Create the client](/docs/react/client-creation)
 - [SSR and Strict Mode](/docs/react/ssr-and-strict-mode)
 - [Components API](/docs/react/api/components)
 - [Binding](/docs/dom/binding)

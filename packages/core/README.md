@@ -21,7 +21,7 @@ client.subscribeRemote(() => {
 });
 ```
 
-`getRemoteSnapshot()` returns the raw list, including `sequence`, and changes identity on every accepted message. `getRemotePresence()` returns the stable snapshot, which excludes `sequence` and holds identity until an observable field changes.
+`getRemoteSnapshot()` returns the raw snapshot, including `sequence`, and changes identity on every accepted message. `getRemotePresence()` returns the stable snapshot, which excludes `sequence` and holds identity until an observable field changes.
 
 The client calls `transport.connect()` for you by default. To connect at a time that you choose, pass `autoConnect: false` and call `transport.connect()` yourself.
 

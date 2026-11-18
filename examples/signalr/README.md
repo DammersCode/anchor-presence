@@ -12,7 +12,7 @@ Only the backend changes. The client creates its presence client over `createSig
 
 `createSignalRTransport` takes a `HubConnection` that you build with the `HubConnectionBuilder` of `@microsoft/signalr`. It adds the wire handlers and maps `HubConnectionState` to the `ConnectionStatus` of core. Its `connect()` calls `connection.start()`, and its `disconnect()` calls `connection.stop()`.
 
-If your app uses [`use-signalr`](https://www.npmjs.com/package/@dammers/use-signalr-react) for its other hubs, read the "Already using use-signalr?" section of the SignalR docs page. It creates the transport on the connection of that provider.
+If your app uses [`use-signalr`](https://www.npmjs.com/package/@dammers/use-signalr-react) for its other hubs, read the [Share a use-signalr connection](https://anchor-presence.vercel.app/docs/examples/backends/signalr#share-a-use-signalr-connection) section of the SignalR docs page. It creates the transport on the connection of that provider.
 
 ## Prerequisites
 

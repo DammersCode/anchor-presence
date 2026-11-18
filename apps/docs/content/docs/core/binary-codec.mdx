@@ -35,7 +35,7 @@ The `context` and `user` values stay JSON inside the binary frame. The cursor fi
 
 ## Coordinate precision
 
-`binaryCodec` stores the anchor and viewport `u` and `v` values as 32-bit floats. A decoded coordinate keeps about 7 significant digits, so it can differ a little from the sent value. For a coordinate from `0` to `1`, the difference is less than `1e-7`. This difference is much less than one pixel.
+`binaryCodec` stores the anchor and viewport `u` and `v` values as 32-bit floats. A decoded coordinate keeps about 7 significant digits, so it can differ from the sent value. For a coordinate from `0` to `1`, the difference is less than `1e-7`. This difference is much less than one pixel.
 
 ## Encode limits
 

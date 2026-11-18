@@ -22,7 +22,7 @@ export function createElysiaClient(baseUrl: string, room: string, token?: string
     url: baseUrl.replace(/^http/u, "ws"),
     WebSocketCtor: edenSocket,
   });
+  // the client connects the transport itself
   const client = createPresenceClient({ transport });
-  transport.connect();
   return { client, transport };
 }

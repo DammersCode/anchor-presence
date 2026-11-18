@@ -13,7 +13,7 @@ Three separate causes produce the same symptom.
 
 **A visibility policy hides it.** A custom `VisibilityPolicy` can return `"hide"` for a tier that otherwise shows. Check the policy in `bindingOptions.resolution.visibilityPolicy` or `DomBindingOptions.resolution.visibilityPolicy`. The default policy hides only the `hidden` tier. Anything else that hides an `anchor` or `viewport` tier cursor is application logic. See [UI context](/docs/get-started/concepts/ui-context).
 
-**The presence is idle or stale.** A peer is another client in the same room, and it is idle when its presence did not change for `idleAfterMs` (default 15000 ms). A heartbeat that changes nothing does not end idle. `CursorLayer` dims the cursor of an idle peer. The client clamps `idleAfterMs` below `staleTimeoutMs`.
+**The presence is idle or stale.** A peer (another client in the same room) is idle when its presence did not change for `idleAfterMs` (default 15000 ms). A heartbeat that changes nothing does not end idle. `CursorLayer` dims the cursor of an idle peer. The store clamps `idleAfterMs` below `staleTimeoutMs`.
 
 The store removes a client after `staleTimeoutMs` (default 70000 ms) with no message. A sender on a background tab still sends a heartbeat every `heartbeatMs` (default 10000 ms). A browser can slow the timers of a hidden tab to one run per minute, so a long background period can still expire the entry. Make sure that the sender tab is not fully suspended, and that the transport is connected on both sides.
 
@@ -43,7 +43,7 @@ After a programmatic layout change that the built-in signals do not cover, call 
 binding.invalidate("custom-layout-change");
 ```
 
-See [invalidate](/docs/dom/binding#invalidate) for the full signal list.
+See [Invalidation signals](/docs/get-started/guides/performance#invalidation-signals) for the full signal list.
 
 ## Cursor jumps between two elements
 

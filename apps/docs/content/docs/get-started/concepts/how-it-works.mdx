@@ -3,7 +3,7 @@ title: How it works
 description: The three package layers, the sender-to-receiver flow, and the invariants.
 ---
 
-Anchor Presence shows remote user cursors at the correct semantic position. It does not use a canvas. It works even when two clients have different layouts.
+Anchor Presence shows remote cursors at the correct semantic position. It does not use a canvas. It works even when two clients have different layouts.
 
 This central invariant gives the library its design:
 
@@ -57,7 +57,7 @@ The sender never measures the receiver's DOM. The sender sends a semantic anchor
 
 The receiver's client stores every accepted remote presence. It exposes two read APIs.
 
-`getRemoteSnapshot()` returns the raw store, including each presence's `sequence`. Its identity changes on every accepted message. Use it for tests and diagnostics.
+`getRemoteSnapshot()` returns the raw snapshot, including each presence's `sequence`. Its identity changes on every accepted message. Use it for tests and diagnostics.
 
 `getRemotePresence()` returns a stable snapshot. Each entry is a `RemotePresence` without `sequence`. Its identity changes only when an observable field changes. The React adapter reads this stable snapshot. A remote cursor move therefore rerenders only the consumers that need it.
 

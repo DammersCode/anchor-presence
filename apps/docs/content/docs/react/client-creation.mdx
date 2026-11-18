@@ -1,5 +1,5 @@
 ---
-title: Creating the client
+title: Create the client
 description: Create a presence client with the provider factory, the client prop, or createPresenceClient.
 ---
 
@@ -7,7 +7,7 @@ Three paths create the client for a React app. Pick one path and use it everywhe
 
 ## The provider factory (standard)
 
-Pass `LiveCursorProvider` a `factory`. The provider runs it once per mount, in an effect, and disposes the client it created on unmount. It also runs the factory again each time `clientKey` changes. It runs the factory only in the browser, so a server render creates no client. In development, React Strict Mode mounts the provider two times. The provider then creates two clients in sequence and disposes the first, so one live client remains.
+Pass `LiveCursorProvider` a `factory`. The provider runs it once per mount, in an effect, and disposes the client that it created on unmount. It also runs the factory again each time `clientKey` changes. It runs the factory only in the browser, so a server render creates no client. In development, React Strict Mode mounts the provider two times. The provider then creates two clients in sequence and disposes the first, so one live client remains.
 
 This app creates the client in the factory:
 

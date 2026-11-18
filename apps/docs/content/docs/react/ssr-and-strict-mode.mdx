@@ -38,8 +38,8 @@ The provider creates the client in an effect with a cleanup. The first mount cre
 
 ## Two supported SSR patterns
 
-- Create the client only in browser-only code, for example inside the provider `factory` or a plain `useEffect`. Pass `client={null}` until it exists.
-- Pass `client={null}` during server rendering, and pass a real client after hydration.
+- Pass a `factory` to the provider. The provider runs it only in the browser, so a server render creates no client.
+- Create your own client in a `useEffect`. Pass `client={null}` until the effect creates the client.
 
 Every hook that reads changing data has a server-safe snapshot: `useRemoteCursors` and `useCursorPresence` return `[]`, and `useCursorStatus` returns `"disconnected"`. `useCursorContext` returns `[undefined, setContext]`, and `useLocalUser` returns `[undefined, setUser]`. `useCursorClient` and `useCursorBinding` read the context, not a snapshot. With `client={null}` and no `binding` prop, both return `null`. `renderToString` works with `client={null}` for a tree that uses every hook:
 
@@ -51,6 +51,6 @@ Every hook that reads changing data has a server-safe snapshot: `useRemoteCursor
 
 ## Related
 
-- [Creating the client](/docs/react/client-creation)
+- [Create the client](/docs/react/client-creation)
 - [LiveCursorProvider](/docs/react/live-cursor-provider)
 - [Quick start](/docs/get-started/quick-start)

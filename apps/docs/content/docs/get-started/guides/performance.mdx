@@ -93,7 +93,7 @@ While the pointer moves, a client publishes at most once every `publishIntervalM
 
 Before you commit to a capacity plan, calculate both numbers again for your own anchor count, codec, and room size.
 
-**Checklist:**
+These changes lower the load of a room:
 
 - For a smaller wire size, pick `binaryCodec` instead of the default `jsonCodec`. See [Codecs](/docs/core/codecs).
 - Split a large room into smaller rooms. A room of half the size has about a quarter of the outbound traffic.

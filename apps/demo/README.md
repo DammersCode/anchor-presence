@@ -57,4 +57,4 @@ bun run --cwd examples/elysia dev:relay
 bun run --cwd apps/demo dev
 ```
 
-Then open `http://localhost:5173/?backend=elysia` in two windows.
+Then open `http://localhost:5173/?backend=elysia&room=demo` in two windows. The same `room` value puts both windows in one room.

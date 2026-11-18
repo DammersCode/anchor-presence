@@ -76,7 +76,7 @@ In this mode, the [room token](/docs/dom/websocket-transport#room-token) names t
 
 <Callout type="warn">
   If you use the demo identity mode in production, any client can claim any name. The relay trusts the room
-  token as the user name. Verify the room token in your own `authCheck`, for example as a JWT, and return the
+  token as the user name. Check the room token in your own `authCheck`, for example as a JWT, and return the
   verified user.
 </Callout>
 

@@ -105,8 +105,7 @@ export type DomBinding<TContext = unknown, TUser = unknown> = {
    */
   subscribe(listener: () => void): () => void;
   /**
-   * Stops the binding and clears its listeners.
-   * The binding sends one final empty snapshot before it stops.
+   * Stops the binding, then sends one final empty snapshot to its listeners and clears them.
    * It also clears the local cursor on the client, unless you pass `keepLocalCursor`, for example when you rebuild the binding.
    */
   dispose(options?: { keepLocalCursor?: boolean }): void;

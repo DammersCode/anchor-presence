@@ -12,7 +12,7 @@ description: What @anchor-presence/core does, and why it has no DOM and no frame
 `@anchor-presence/core` never imports a DOM library, React, or any transport or codec library. This split has two effects:
 
 - A test or a server process can create a `PresenceClient` and exercise the protocol with no browser and no framework.
-- A framework adapter, such as `@anchor-presence/react`, holds no protocol state of its own. It only subscribes to the client `@anchor-presence/core` already runs.
+- A framework adapter, such as `@anchor-presence/react`, holds no protocol state of its own. It only subscribes to the client that `@anchor-presence/core` runs.
 
 ## What core owns
 

@@ -66,7 +66,7 @@ One delay covers every peer that joins in this time. The random delay spreads th
 
 When the status changes to `connected` from `reconnecting` or `disconnected`, the client marks every peer unconfirmed. A peer can leave during the outage, and its leave message never reaches this client.
 
-Any accepted message confirms a peer. If an unconfirmed peer sends no message within `2 * heartbeatMs + 5 s`, the next sweep removes it and reports a `leave`. With the default `heartbeatMs`, this time is 25 seconds. If the stale timeout comes first, the stale timeout applies.
+Any accepted message confirms a peer. If an unconfirmed peer sends no message within `2 * heartbeatMs + 5 s`, the next sweep (a periodic check of the store) removes it and reports a `leave`. With the default `heartbeatMs`, this time is 25 seconds. If the stale timeout comes first, the stale timeout applies.
 
 <Callout type="warn">
   If peers use a longer `heartbeatMs` than this client, they disappear after a reconnect until their next
@@ -78,7 +78,7 @@ Any accepted message confirms a peer. If an unconfirmed peer sends no message wi
 `maxRemoteClients` caps the number of peers that the store tracks. The default is `64` (`DEFAULT_MAX_REMOTE_CLIENTS`). When the store is full, it drops each message from a new `clientId`. Known peers keep their updates.
 
 <Callout type="warn">
-  If a room can hold more than 64 tabs, raise `maxRemoteClients`. Otherwise the users above the cap never
+  If a room can hold more than 64 clients, raise `maxRemoteClients`. Otherwise the clients above the cap never
   appear. In a production build, nothing reports the drop unless you pass `onRemoteClientDrop`.
 </Callout>
 

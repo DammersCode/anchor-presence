@@ -13,7 +13,7 @@ The hook has this signature:
 function useRemoteUsers<TUser = unknown>(): RemoteUser<TUser>[];
 ```
 
-This component lists the remote users and dims the idle ones:
+This component lists the peers and dims the idle ones:
 
 ```tsx
 import { useRemoteUsers } from "@anchor-presence/react";
@@ -78,7 +78,7 @@ The hook keeps one subscription per client, so an inline listener does not subsc
 
 ## Render cost
 
-The hook rerenders only when the set of peers changes, or when one entry's `user`, `session`, or `idle` field changes. A remote cursor moving across the screen does not rerender this hook, because position is not part of `RemoteUser`.
+The hook rerenders only when the set of peers changes, or when one entry's `user`, `session`, or `idle` field changes. A remote cursor that moves across the screen does not rerender this hook, because position is not part of `RemoteUser`.
 
 The returned list, and each unchanged entry inside it, keep the same object identity across renders. A `React.memo` row component keyed by `clientId` skips rendering for every user whose fields did not change.
 

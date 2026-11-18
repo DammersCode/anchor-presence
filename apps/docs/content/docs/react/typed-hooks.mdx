@@ -3,7 +3,7 @@ title: Typed hooks
 description: Fix the context, user, and event types once with createPresenceHooks.
 ---
 
-`createPresenceHooks<TContext, TUser, TEvents>()` returns `LiveCursorProvider` and every hook with `TContext`, `TUser`, and `TEvents` fixed. A hook from the result takes no type parameter, so a call with a wrong type does not compile. `TEvents` is optional.
+`createPresenceHooks<TContext, TUser, TEvents>()` returns `LiveCursorProvider` and every hook with `TContext`, `TUser`, and `TEvents` fixed. A hook from the result takes no context, user, or event type parameter, so a call with a wrong type does not compile. `useRemoteCursorsSelector` still takes the `TSelected` type of its result. `TEvents` is optional.
 
 ## Create the hooks
 

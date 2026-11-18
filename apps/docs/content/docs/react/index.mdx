@@ -3,9 +3,11 @@ title: Overview
 description: What @anchor-presence/react provides and how to add it to a React app.
 ---
 
-`@anchor-presence/react` adapts a presence client to React. It provides one provider that creates and shares the client, and two optional components to render cursors. It holds no state of its own. A peer is another client in the same room. Every hook subscribes to the `@anchor-presence/core` client and the `@anchor-presence/dom` binding with `useSyncExternalStore`.
+`@anchor-presence/react` adapts a presence client to React. It provides one provider that creates and shares the client, and two optional components to render cursors. It holds no state of its own. Every hook subscribes to the `@anchor-presence/core` client and the `@anchor-presence/dom` binding with `useSyncExternalStore`.
 
 ## What you get
+
+A peer is another client in the same room. The package gives you these exports:
 
 | Export                                                   | Purpose                                                                                         |
 | -------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
@@ -39,11 +41,11 @@ function App() {
 }
 ```
 
-Before the factory runs, the provider renders its children with no cursors. The tree stays safe during that gap and during server rendering. For when the factory runs, see [Creating the client](/docs/react/client-creation). See [Quick start](/docs/get-started/quick-start) for the full walkthrough, including the anchor markup.
+Before the factory runs, the provider renders its children with no cursors. The tree stays safe during that gap and during server rendering. For when the factory runs, see [Create the client](/docs/react/client-creation). See [Quick start](/docs/get-started/quick-start) for the full walkthrough, including the anchor markup.
 
 ## Related
 
 - [LiveCursorProvider](/docs/react/live-cursor-provider)
-- [Creating the client](/docs/react/client-creation)
+- [Create the client](/docs/react/client-creation)
 - [SSR and Strict Mode](/docs/react/ssr-and-strict-mode)
 - [Quick start](/docs/get-started/quick-start)

@@ -13,7 +13,7 @@ The hook has this signature:
 function useCursorPresence<TContext = unknown, TUser = unknown>(): RemotePresence<TContext, TUser>[];
 ```
 
-This component counts the remote users with a touch pointer:
+This component counts the peers (other clients in the same room) that use a touch pointer:
 
 ```tsx
 import { useCursorPresence } from "@anchor-presence/react";
@@ -25,7 +25,7 @@ function PointerTypeBadge() {
 }
 ```
 
-Each entry is a `RemotePresence` without its `sequence` field, plus `idle`. A peer is another client in the same room. The hook rerenders only when the `cursor`, `context`, `user`, `pointer`, `session`, `idle` flag, or membership of a peer changes. A message that only advances `sequence` does not rerender it.
+Each entry is a `RemotePresence` without its `sequence` field, plus `idle`. The hook rerenders only when the `cursor`, `context`, `user`, `pointer`, `session`, `idle` flag, or membership of a peer changes. A message that only advances `sequence` does not rerender it.
 
 <Callout type="warn">
   If you place an element on screen with `useCursorPresence`, the element lands in the wrong place.

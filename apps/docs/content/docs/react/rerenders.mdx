@@ -3,9 +3,11 @@ title: Rerenders
 description: Which hook rerenders when, so you can pick the smallest one for each component.
 ---
 
-Each hook in `@anchor-presence/react` rerenders its component only when the value that it returns changes. Pick the hook that returns the smallest value that your component needs, so that an unrelated update does not rerender it. A peer is another client in the same room.
+Each hook in `@anchor-presence/react` rerenders its component only when the value that it returns changes. Pick the hook that returns the smallest value that your component needs. Then an unrelated update does not rerender it.
 
 ## Rerender rules
+
+A peer is another client in the same room. Each hook rerenders by these rules:
 
 | Hook                                                       | Rerenders when                                                                                           |
 | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |

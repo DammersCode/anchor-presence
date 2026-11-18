@@ -142,9 +142,9 @@ For a bigger jump, use `npm version minor` or `npm version major`. `npm version`
 2. The `version` hook syncs the version into every manifest and the lockfile, stages them, and creates the `v*` tag.
 3. `postversion` pushes the branch and the tag.
 
-The pushed `v*` tag starts `.github/workflows/release.yml`. The workflow verifies that the tag and the versions agree. Then it publishes each package with npm trusted publishing (OIDC, no token) and creates a GitHub release.
+The pushed `v*` tag starts `.github/workflows/release.yml`. The workflow checks that the tag and the versions agree. Then it publishes each package with npm trusted publishing (OIDC, no token) and creates a GitHub release.
 
-Configure trusted publishing one time for each package on npmjs.com: package settings → Publishing access → add a Trusted Publisher → GitHub, repository `DammersCode/anchor-presence`, workflow `release.yml`. The first version of a package cannot use OIDC. Publish it once by hand from an authenticated machine, in the order core, dom, react. First run `bun run build` and `node scripts/check-release.mjs`. Then publish each package:
+Configure trusted publishing one time for each package on npmjs.com. In the package settings, open Publishing access and add a Trusted Publisher. Select GitHub, the repository `DammersCode/anchor-presence`, and the workflow `release.yml`. The first version of a package cannot use OIDC. Publish it once by hand from an authenticated machine, in the order core, dom, react. First run `bun run build` and `node scripts/check-release.mjs`. Then publish each package:
 
 ```bash
 cd packages/core && npm publish --access public

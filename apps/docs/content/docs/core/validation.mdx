@@ -21,7 +21,7 @@ A codec does not check limits. Its job is to turn bytes into a value and back, w
 
 ## Use validatePresence directly
 
-`createPresenceClient` calls `validatePresence` for you on every inbound message. If you process presence data outside a `PresenceClient`, call `validatePresence` yourself. One example is a relay that inspects messages.
+`createPresenceClient` calls `validatePresence` for you on every inbound message. If you process presence data outside a `PresenceClient`, call `validatePresence` yourself. One example is a relay that checks messages.
 
 This relay function drops an oversized frame first, then checks the decoded value:
 
@@ -90,7 +90,7 @@ The shape check uses these rules. When a part of the remote value does not fit, 
 - The check removes a `__proto__` key at every level.
 - An array must be an array. Each item must have the shape of the first local item, or be `null`. An empty local array accepts an array of strings, numbers, booleans, or `null` values.
 - A string, a number, or a boolean must have the type of the local value, or be `null`.
-- A local `null` or `undefined` value accepts a string, a number, a boolean, or `null`, and never an object or an array.
+- A local `null` value, or a local `undefined` value inside an object, accepts a string, a number, a boolean, or `null`. It never accepts an object or an array. If the local `user` or `context` is `undefined`, no check runs (see the callout below).
 
 The client reads the local value for each message, so `setUser` and `setContext` change the shape.
 

@@ -9,7 +9,7 @@ A fallback chain lets a receiver place a cursor when the exact element is missin
 
 A fallback chain is the ordered list of anchors that a cursor position carries, most specific first, up to 8 entries.
 
-The sender starts at the pointer target. It adds each registered anchor between the target and the document root, the nearest anchor first. The binding caps the chain length at `maxAnchors`. See [Binding](/docs/dom/binding) for the default and its range.
+The sender starts at the pointer target. It adds each registered anchor between the target and the document root, the nearest anchor first. The binding caps the chain length at `maxAnchors`. The default is 4 anchors, and the protocol allows at most 8. See [Binding](/docs/dom/binding).
 
 The receiver walks the chain in order. It uses the first anchor that is connected to the DOM and has a non-zero size. If the exact element is missing on the receiver, the cursor moves to the next anchor in the chain. One example is a table row that does not exist in a shorter table.
 

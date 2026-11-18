@@ -45,7 +45,7 @@ function App() {
   return (
     <LiveCursorProvider
       factory={() => {
-        const transport = createWebSocketTransport({ path: "/?room=main" });
+        const transport = createWebSocketTransport({ port: 8788, path: "/?room=main" });
         return createPresenceClient({ transport, user: { name: "Alice" } });
       }}
     >
@@ -58,7 +58,7 @@ function App() {
 
 The client connects the transport by default. Before the mount effect runs, the provider renders its children with a `null` client, and every hook returns its server-safe value. See [SSR and Strict Mode](/docs/react/ssr-and-strict-mode) for the full rule.
 
-Copy a relay from [Backends](/docs/examples/backends) to pair with it. [Bun](/docs/examples/backends/bun-native) is the smallest runnable relay.
+The sample connects to port 8788, where the [Bun relay](/docs/examples/backends/bun-native) listens. It is the smallest runnable relay in [Backends](/docs/examples/backends). Every relay there uses its own port, so set `port` to the port of the relay that you run. Without `port`, the transport connects to 8787, the port of the reference relay in `apps/server`.
 
 `room` is a relay-side grouping key, not part of the protocol. Any bidirectional byte channel that implements the transport interface works in place of `createWebSocketTransport`. See [Transports](/docs/core/transports).
 

@@ -19,7 +19,11 @@ This file renders the scene of the demo:
 
 `CursorLayer` puts the root of each cursor at the cursor point. A renderer draws relative to that point. The crosshair moves its SVG up and to the left, so that the center of the crosshair is on the point.
 
-Pick cursor colors that reach WCAG AA contrast (4.5:1) against the label text. `cursor.user` is untrusted, also inside a custom renderer.
+Pick cursor colors that reach WCAG AA contrast (4.5:1) against the label text.
+
+<Callout type="warn">
+  If a custom renderer shows `cursor.user`, it shows untrusted network data. Render it as text, never as HTML.
+</Callout>
 
 ## Behavior notes
 

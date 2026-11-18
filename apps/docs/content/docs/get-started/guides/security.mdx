@@ -86,7 +86,7 @@ If your app must know who sent a message, bind the identity on your server. The 
 
 ## maxRemoteClients
 
-`maxRemoteClients` caps every allocation that network data causes: store entries, resolved cursors, and observed anchors. The default is 64. When the store is full, it drops new clients and calls `onRemoteClientRejected`.
+`maxRemoteClients` caps the store entries, resolved cursors, and observed anchors that network data causes. The default is 64. The [event rate limit](/docs/core/events#event-rate-limit) has a separate cap: it tracks at most 512 senders. When the store is full, it drops new clients and calls `onRemoteClientRejected`.
 
 A peer can fill every slot with new `clientId` values. Real clients then stay out until those entries expire after `staleTimeoutMs`. Set `maxRemoteClients` to the number of sessions that you expect at the same time. See [maxRemoteClients](/docs/core/remote-presence#maxremoteclients).
 

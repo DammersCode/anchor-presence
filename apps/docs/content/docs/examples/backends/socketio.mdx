@@ -95,7 +95,7 @@ Each setting is an environment variable. The factory options `maxMessageBytes`, 
 | ---------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | Room             | Reads `room` from the handshake query. A missing value is `main`. An invalid name gets a `connect_error` with code `4007`. |
 | Upgrade path     | The default Socket.IO path, `/socket.io/`.                                                                                 |
-| Fan-out          | `socket.to(room).emit` sends to every other socket in the Socket.IO room.                                                  |
+| Fan-out          | `socket.to("room:" + room).emit` sends to every other socket in the room. The prefix keeps a socket ID from naming a room. |
 | Payload          | Forwards each `"presence"` payload unchanged. Decodes a payload only for identity binding.                                 |
 | Dead connections | The Socket.IO heartbeat closes them. The `pingInterval` and `pingTimeout` server options control it.                       |
 | Room cleanup     | Releases the room slot when a socket disconnects. Socket.IO deletes an empty room.                                         |

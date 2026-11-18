@@ -1,4 +1,5 @@
 import type { CursorPosition, CursorPresence, PeerChange, RemotePresence } from "./protocol.js";
+import { defaultNow } from "./internal/clock.js";
 import { reportListenerError } from "./internal/dev-warnings.js";
 
 /** Default maximum number of remote clients in one `RemotePresenceStore`. */
@@ -21,7 +22,7 @@ export type RemotePresenceStoreOptions = {
   staleTimeoutMs?: number;
   /** Time before a client counts as idle, in milliseconds. Default `DEFAULT_IDLE_AFTER_MS`, clamped below `staleTimeoutMs`. */
   idleAfterMs?: number;
-  /** Returns the current time in milliseconds. Default `Date.now`. */
+  /** Returns the current time in milliseconds. Default: a monotonic clock. */
   now?: () => number;
   /** Runs when the store drops a new client because the store is full. */
   onDropNewClient?: (clientId: string) => void;
@@ -66,7 +67,7 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
     this.staleTimeoutMs = options.staleTimeoutMs ?? DEFAULT_STALE_TIMEOUT_MS;
     // idleAfterMs must stay below staleTimeoutMs: idle is an earlier stage, not a replacement
     this.idleAfterMs = Math.min(options.idleAfterMs ?? DEFAULT_IDLE_AFTER_MS, this.staleTimeoutMs - 1);
-    this.now = options.now ?? (() => Date.now());
+    this.now = options.now ?? defaultNow;
     this.onDropNewClient = options.onDropNewClient;
   }
 

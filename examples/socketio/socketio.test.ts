@@ -107,6 +107,30 @@ describe("Socket.IO transport integration", () => {
     expect(socket.connected).toBe(false);
   });
 
+  it("never delivers to a socket whose id another socket names as its room", async () => {
+    const victim = io(url, { query: { room: "home" }, transports: ["websocket"] });
+    sockets.push(victim);
+    await vi.waitFor(() => expect(victim.connected).toBe(true), { timeout: 5000, interval: 25 });
+    const victimId = victim.id ?? "";
+    const attacker = io(url, { query: { room: victimId }, transports: ["websocket"] });
+    const witness = io(url, { query: { room: victimId }, transports: ["websocket"] });
+    sockets.push(attacker, witness);
+    const victimSeen: unknown[] = [];
+    const witnessSeen: unknown[] = [];
+    victim.on("presence", (data) => victimSeen.push(data));
+    witness.on("presence", (data) => witnessSeen.push(data));
+    await vi.waitFor(() => expect(attacker.connected && witness.connected).toBe(true), {
+      timeout: 5000,
+      interval: 25,
+    });
+
+    attacker.emit("presence", new Uint8Array([1]));
+
+    await vi.waitFor(() => expect(witnessSeen).toHaveLength(1), { timeout: 5000, interval: 25 });
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(victimSeen).toHaveLength(0);
+  });
+
   it("rewrites clientId and user to the identity the auth hook returned, one clientId per connection", async () => {
     const bound = await createSocketIoRelay(0, {
       authCheck: ({ token }) => ({ clientId: `user-${token}`, user: { name: token } }),

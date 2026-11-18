@@ -154,8 +154,6 @@ export function createBunRelay(port: number, options: BunRelayOptions = {}) {
 
   return {
     url: `http://localhost:${server.port}`,
-    close: async () => {
-      server.stop(true);
-    },
+    close: () => server.stop(true),
   };
 }

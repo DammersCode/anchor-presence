@@ -84,7 +84,9 @@ const client = createPresenceClient({
 
 The receiver drops each event above a limit, and the sender still gets `true` for it. Each field is optional. A field that you omit keeps its default. The limits read the time from the `now` option.
 
-The total limit stops a peer that sends each event with another `clientId`. Each new `clientId` gets its own burst, but all events share the total limit.
+The total limit caps a peer that sends each event with another `clientId`. Each new `clientId` gets its own burst, but all events share the total limit.
+
+The total limit does not protect honest senders. A flood with many `clientId` values uses up the shared limit, so the receiver also drops events from honest peers. The rate limit per socket on the relay is the real control. See [Validation limits](/docs/get-started/guides/security#validation-limits).
 
 The receiver keeps a burst for at most 512 senders. When a new sender arrives after that, the receiver forgets the sender that it started to track first. That sender gets a full burst again on its next event.
 

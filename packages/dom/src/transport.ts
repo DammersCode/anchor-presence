@@ -61,11 +61,20 @@ export type WebSocketTransportOptions = {
 
 const NO_RETRY_CODES = new Set([1008, 4004, 4006, 4007]);
 const FIRST_APPLICATION_CLOSE_CODE = 4000;
+const FAILED_ATTEMPTS_BEFORE_WARNING = 4;
 const WS_CONNECTING = 0;
 const WS_OPEN = 1;
 
 function resolveUrl(options: WebSocketTransportOptions): string {
-  if (options.url !== undefined) return options.url;
+  if (options.url !== undefined) {
+    if (options.host !== undefined || options.port !== undefined || options.path !== undefined) {
+      warnOnce(
+        "url-overrides-parts",
+        "createWebSocketTransport ignores host, port and path when you pass url.",
+      );
+    }
+    return options.url;
+  }
   if (typeof window === "undefined") {
     throw new TypeError("createWebSocketTransport: pass `url` when `window` is not available");
   }
@@ -74,6 +83,9 @@ function resolveUrl(options: WebSocketTransportOptions): string {
   const host = options.host ?? location.hostname;
   const port = options.port ?? 8787;
   const path = options.path ?? "/";
+  if (!path.startsWith("/") && !path.startsWith("?")) {
+    throw new TypeError(`createWebSocketTransport: path must start with "/" or "?", got "${path}"`);
+  }
   return `${protocol}//${host}:${port}${path}`;
 }
 
@@ -168,6 +180,7 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
   }
 
   let openAttempt = 0;
+  let failedAttempts = 0;
 
   function open(): void {
     if (disposedByUser) return;
@@ -217,7 +230,10 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
       ws.binaryType = "arraybuffer";
       socket = ws;
 
+      let opened = false;
       ws.onopen = () => {
+        opened = true;
+        failedAttempts = 0;
         clearStableTimer();
         // a relay that accepts then rejects must not reset the backoff on every open
         stableTimer = setTimeout(() => {
@@ -241,6 +257,13 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
 
       ws.onclose = (event) => {
         clearStableTimer();
+        if (!opened) failedAttempts += 1;
+        if (failedAttempts === FAILED_ATTEMPTS_BEFORE_WARNING) {
+          warnOnce(
+            `relay-unreachable:${baseUrl}`,
+            `the connection to ${baseUrl} failed ${FAILED_ATTEMPTS_BEFORE_WARNING} times in a row. Check that a relay runs there and that the port and path are right.`,
+          );
+        }
         if (socket === ws) socket = null;
         if (disposedByUser) return;
         const willReconnect = reconnect && shouldReconnect(event);
@@ -250,7 +273,10 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
         emitClose(closeInfo);
         if (isDevMode() && (event.code ?? 0) >= FIRST_APPLICATION_CLOSE_CODE) {
           console.warn(
-            `[anchor-presence] the relay closed the connection with code ${event.code}${event.reason ? ` (${event.reason})` : ""}${willReconnect ? "; reconnecting" : ""}`,
+            "[anchor-presence] the relay closed the connection with code %d%s%s",
+            event.code,
+            event.reason ? ` (${event.reason})` : "",
+            willReconnect ? "; reconnecting" : "",
           );
         }
         if (willReconnect) scheduleReconnect();

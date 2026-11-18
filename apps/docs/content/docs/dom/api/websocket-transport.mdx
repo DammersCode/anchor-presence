@@ -15,7 +15,7 @@ import type { WebSocketTransport, WebSocketTransportOptions } from "@anchor-pres
 
 ## createWebSocketTransport
 
-`createWebSocketTransport(options?)` returns a `WebSocketTransport`. If `options.url` is missing and `window` does not exist, it throws a `TypeError`.
+`createWebSocketTransport(options?)` returns a `WebSocketTransport`. If `options.url` is missing, it throws a `TypeError` in two cases: `window` does not exist, or `options.path` does not start with `/` or `?`. See [The default URL](/docs/dom/websocket-transport#the-default-url).
 
 `WebSocketTransport` is a `LiveCursorTransport` from `@anchor-presence/core` whose `connect` and `disconnect` methods are required. The type keeps `subscribeStatus`, `getStatus`, `subscribeClose`, and `bufferedBytes` optional, although the returned object always has them.
 

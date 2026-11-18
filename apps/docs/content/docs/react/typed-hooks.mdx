@@ -109,13 +109,20 @@ const parseEvent = createEventParser<Events>({
 function App() {
   return (
     <LiveCursorProvider
-      factory={() => createPresenceClient({ transport: createWebSocketTransport(), parseEvent })}
+      factory={() =>
+        createPresenceClient({
+          transport: createWebSocketTransport({ port: 8788, path: "/?room=main" }),
+          parseEvent,
+        })
+      }
     >
       <Reactions />
     </LiveCursorProvider>
   );
 }
 ```
+
+The transport connects to the Bun relay of the [Quick start](/docs/get-started/quick-start#connect-a-relay), on port 8788.
 
 An event map can be a `type` or an `interface`. For the parser rules, see [Typed events](/docs/core/events#typed-events).
 

@@ -9,6 +9,8 @@ import type {
   SetTimeoutLike,
 } from "../scheduler.js";
 
+import { isShadowRoot } from "../dom-tree.js";
+
 const TRANSITION_START_EVENTS = ["transitionrun", "animationstart"] as const;
 const TRANSITION_END_EVENTS = [
   "transitionend",
@@ -24,11 +26,15 @@ const CANCEL_SAFETY_MARGIN_MS = 500;
 const MUTATION_OBSERVE_OPTIONS: MutationObserverInit = { childList: true, attributes: true, subtree: true };
 
 // document-level scroll/mutation signals stop at shadow boundaries; observe each anchor's roots directly
+function isElementNode(node: unknown): node is Element {
+  return typeof node === "object" && node !== null && (node as Node).nodeType === 1;
+}
+
 function collectShadowRoots(anchors: Iterable<Element>): Set<ShadowRoot> {
   const roots = new Set<ShadowRoot>();
   for (const el of anchors) {
     let root = el.getRootNode();
-    while (root instanceof ShadowRoot) {
+    while (isShadowRoot(root)) {
       roots.add(root);
       root = root.host.getRootNode();
     }
@@ -39,7 +45,7 @@ function collectShadowRoots(anchors: Iterable<Element>): Set<ShadowRoot> {
 // own cursor renders mutate the DOM every frame; reacting to them would defeat the interpolation-only reuse path
 function isCursorRootMutation(record: MutationRecord, markerAttribute: string): boolean {
   const target = record.target;
-  const element = target instanceof Element ? target : target.parentElement;
+  const element = target.nodeType === 1 ? (target as Element) : target.parentElement;
   return element !== null && element.closest(`[${markerAttribute}]`) !== null;
 }
 
@@ -205,11 +211,11 @@ export function createSignalHub(host: SignalHubHost): SignalHub {
     closeTransitionEntry(target, name ?? "");
 
     let windowMs: number;
-    if (isAnimation && target instanceof Element && isInfiniteIterationAnimation(target)) {
+    if (isAnimation && isElementNode(target) && isInfiniteIterationAnimation(target)) {
       // infinite-iteration animations get one short window instead of a tracked entry — spinners cannot pin the rAF loop
       windowMs = INFINITE_ANIMATION_WINDOW_MS;
     } else {
-      const timingMs = target instanceof Element ? readTimingMs(target, isAnimation) : 0;
+      const timingMs = isElementNode(target) ? readTimingMs(target, isAnimation) : 0;
       windowMs = Math.min(timingMs + CANCEL_SAFETY_MARGIN_MS, SAFETY_TIMEOUT_CAP_MS);
     }
 

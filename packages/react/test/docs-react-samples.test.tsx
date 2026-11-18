@@ -72,7 +72,10 @@ function Room({ room }: { room: string }) {
     <LiveCursorProvider
       clientKey={room}
       factory={() => {
-        const transport = createWebSocketTransport({ path: `/?room=${encodeURIComponent(room)}` });
+        const transport = createWebSocketTransport({
+          port: 8788,
+          path: `/?room=${encodeURIComponent(room)}`,
+        });
         return createPresenceClient({ transport });
       }}
     >

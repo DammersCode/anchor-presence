@@ -1,14 +1,14 @@
 ---
 title: Quick start
-description: See live cursors in two browser tabs with no backend, then connect a relay.
+description: See live cursors in two browser windows with no backend, then connect a relay.
 icon: rocket
 ---
 
 import { Anchor, Cable, FlaskConical, MousePointer, Server, Workflow } from "lucide-react";
 
-This page takes you from an empty React app to live cursors in two steps. First, you connect two tabs of one browser with no server. Then you connect two browsers through a relay. Install the packages first. See [Installation](/docs/get-started/installation).
+This page takes you from an empty React app to live cursors in two steps. First, you connect two windows of one browser with no server. Then you connect two browsers through a relay. Install the packages first. See [Installation](/docs/get-started/installation).
 
-## Try it in two tabs
+## Try it in two windows
 
 <Steps>
 <Step>
@@ -40,9 +40,11 @@ export function App() {
 </Step>
 <Step>
 
-### Open two tabs
+### Open two windows
 
-Open your app in two tabs of the same browser. Move the pointer over the button in one tab. A cursor with a guest name appears in the other tab.
+Open your app in two windows of the same browser, side by side. To get the second window, drag a tab out of the window. Move the pointer over the button in one window. A cursor with a guest name appears in the other window.
+
+When its window loses focus or the pointer leaves the page, the sender clears its cursor. For this reason, two tabs in one window never show each other a cursor.
 
 </Step>
 </Steps>

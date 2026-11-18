@@ -94,6 +94,37 @@ describe("attachPointerSource (spec §9)", () => {
     registry = createAnchorRegistry();
   });
 
+  it("runs the hit test of a captured pointer once per 50 ms", () => {
+    const el = document.createElement("div");
+    document.body.append(el);
+    mockRect(el, { left: 0, top: 0, width: 100, height: 100 });
+    registry.register("a", el);
+    el.hasPointerCapture = () => true;
+    const hit = vi.fn(() => el);
+    document.elementFromPoint = hit;
+    const { client, samples } = makeClient();
+    const handle = attachPointerSource(client, registry, { maxAnchors: 4 });
+
+    const move = (timeStamp: number) => {
+      const event = new Event("pointermove", { bubbles: true });
+      Object.defineProperties(event, {
+        clientX: { value: 5 },
+        clientY: { value: 5 },
+        pointerType: { value: "mouse" },
+        pointerId: { value: 1 },
+        timeStamp: { value: timeStamp },
+      });
+      el.dispatchEvent(event);
+    };
+    for (const at of [1000, 1010, 1020, 1030, 1040]) move(at);
+    expect(hit).toHaveBeenCalledTimes(1);
+    move(1100);
+    expect(hit).toHaveBeenCalledTimes(2);
+    expect(samples).toHaveLength(6);
+    handle.detach();
+    Reflect.deleteProperty(document, "elementFromPoint");
+  });
+
   it("ignores a second touch contact and keeps a synthetic mouse event", () => {
     const el = document.createElement("div");
     document.body.append(el);

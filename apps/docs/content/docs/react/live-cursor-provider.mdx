@@ -10,7 +10,7 @@ import { Component, Factory, Layers, Server } from "lucide-react";
 
 ## Usage
 
-This provider creates the client through `factory`:
+The samples on this page connect to the Bun relay of the [Quick start](/docs/get-started/quick-start#connect-a-relay), on port 8788. This provider creates the client through `factory`:
 
 ```tsx
 import { createPresenceClient } from "@anchor-presence/core";
@@ -21,7 +21,7 @@ function App() {
   return (
     <LiveCursorProvider
       factory={() => {
-        const transport = createWebSocketTransport({ path: "/?room=main" });
+        const transport = createWebSocketTransport({ port: 8788, path: "/?room=main" });
         return createPresenceClient({ transport });
       }}
     >
@@ -62,7 +62,9 @@ import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
 function Workspace({ smooth }: { smooth: boolean }) {
   return (
     <LiveCursorProvider
-      factory={() => createPresenceClient({ transport: createWebSocketTransport({ path: "/?room=main" }) })}
+      factory={() =>
+        createPresenceClient({ transport: createWebSocketTransport({ port: 8788, path: "/?room=main" }) })
+      }
       bindingKey={smooth}
       bindingOptions={{
         resolution: { interpolatorFactory: smooth ? linearInterpolator : noneInterpolator },
@@ -87,7 +89,10 @@ function Room({ room }: { room: string }) {
     <LiveCursorProvider
       clientKey={room}
       factory={() => {
-        const transport = createWebSocketTransport({ path: `/?room=${encodeURIComponent(room)}` });
+        const transport = createWebSocketTransport({
+          port: 8788,
+          path: `/?room=${encodeURIComponent(room)}`,
+        });
         return createPresenceClient({ transport });
       }}
     >

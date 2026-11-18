@@ -20,7 +20,7 @@ cd examples/hono
 bun run dev:relay
 ```
 
-The relay listens on <http://localhost:8790>. To use another port, give the port as the first argument. To connect `apps/demo`, open it with `?backend=hono`.
+The relay listens on `ws://localhost:8790/?room=main`. To use another port, give the port as the first argument. To connect `apps/demo`, open it with `?backend=hono`.
 
 ## Run the integration test
 

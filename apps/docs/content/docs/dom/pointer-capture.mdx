@@ -38,8 +38,10 @@ The binding sends a `null` cursor position, which hides the local cursor on ever
 
 - `pointerleave` on the document, when the pointer leaves the browser window.
 - `blur` on the window, when the tab or window loses focus.
-- `pointerup` or `pointercancel` of the last active touch pointer. The binding tracks every active touch pointer and clears only when the last one lifts. As a result, a touch cursor does not stay after the finger leaves the screen.
+- `pointerup` or `pointercancel` of the primary touch pointer. As a result, a touch cursor does not stay after the finger leaves the screen.
 - `binding.dispose()`, unless you pass `keepLocalCursor: true`. See [Dispose](/docs/dom/binding#dispose).
+
+A switch to another tab blurs the window, so two tabs in one window never show each other a cursor. To test on one computer, open the page in two windows side by side.
 
 On `pagehide`, the binding calls `client.leave()` instead. Each peer then removes the whole client at once, not only its cursor. See [Page hide](/docs/dom/binding#page-hide).
 
@@ -63,6 +65,8 @@ The binding adds its listeners to the document and the window, not to each ancho
 ## Touch behavior
 
 A touch pointer fires the same `pointermove`, `pointerdown`, and `pointerover` events as a mouse. The binding does not separate a touch scroll from a touch drag, and it has no option to ignore touch pointers.
+
+With the default `touch-action`, a second finger starts a pinch. The browser then sends `pointercancel` for both pointers, and the cursor clears. When the first finger lifts, the remaining finger does not take over the cursor, because its `isPrimary` is `false`. To keep one cursor on a canvas or a drawing surface, set `touch-action: none` on that element.
 
 ## Browser coverage
 

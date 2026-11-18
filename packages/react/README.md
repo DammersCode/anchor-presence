@@ -12,7 +12,7 @@ Install the adapter and the two packages that it uses:
 bun add @anchor-presence/react @anchor-presence/dom @anchor-presence/core
 ```
 
-This app creates the client in the provider `factory` and renders the remote cursors:
+The samples connect to the Bun relay of the [quick start](https://anchor-presence.vercel.app/docs/get-started/quick-start#connect-a-relay), on port 8788. This app creates the client in the provider `factory` and renders the remote cursors:
 
 ```tsx
 import { createPresenceClient } from "@anchor-presence/core";
@@ -27,7 +27,7 @@ function App() {
   return (
     <LiveCursorProvider
       factory={() => {
-        const transport = createWebSocketTransport({ path: "/?room=main" });
+        const transport = createWebSocketTransport({ port: 8788, path: "/?room=main" });
         return createPresenceClient({ transport });
       }}
     >

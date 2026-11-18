@@ -174,6 +174,7 @@ The client reads development mode one time, at creation. In development mode, it
     - An outbound `context`, `user`, or whole message breaks the size limit. The client checks at creation and on each `setContext` or `setUser` call that changes the value. It warns on each check that finds a value over the limit.
     - A remote `user` or `context` arrives and no check applies. The client warns one time.
     - The shape check drops a remote `user` or `context`. The warning names `parseUser` or `parseContext`. The client warns one time for `user` and one time for `context`.
+    - The shape check keeps a remote `user` or `context`, but drops a key that the local value does not have, for example a nested object. The page warns one time, for all clients together.
     - The store is full and drops a new peer. The client warns one time.
     - The client drops an inbound message because it is too large, does not decode or validate, or a subscriber throws. The client warns one time for each reason.
     - Another client uses the same `clientId`. The page warns one time, for all clients together.

@@ -101,7 +101,9 @@ export function createSocketIoRelay(port: number, options: SocketIoRelayOptions 
       refuse(socket, admission === "server full" ? 4002 : 4001, admission);
       return;
     }
-    socket.join(room);
+    // a prefix keeps a room apart from the room Socket.IO names after every socket's own id
+    const ioRoom = `room:${room}`;
+    socket.join(ioRoom);
 
     const rateLimiter = new RateLimiter(rateCapacity, rateRefillPerSecond);
     socket.on("presence", (data: unknown) => {
@@ -114,7 +116,7 @@ export function createSocketIoRelay(port: number, options: SocketIoRelayOptions 
         if (bound === null) return;
         outgoing = bound;
       }
-      socket.to(room).emit("presence", outgoing);
+      socket.to(ioRoom).emit("presence", outgoing);
     });
 
     socket.on("disconnect", () => {

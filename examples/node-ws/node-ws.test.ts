@@ -350,8 +350,8 @@ describe("node-ws relay entry file", () => {
         const url = await new Promise<string>((resolve, reject) => {
           child.once("exit", (code) => reject(new Error(`relay exited with ${code}`)));
           child.stdout.on("data", (chunk: Buffer) => {
-            const match = /listening on (\S+)/u.exec(chunk.toString());
-            if (match?.[1] !== undefined) resolve(match[1].replace(/^http/u, "ws"));
+            const match = /listening on (ws:\/\/[^/\s]+)\/\?room=main/u.exec(chunk.toString());
+            if (match?.[1] !== undefined) resolve(match[1]);
           });
         });
         const sender = new WebSocket(`${url}/?room=r`);

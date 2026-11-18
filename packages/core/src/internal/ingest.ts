@@ -41,7 +41,7 @@ function fitShape(sample: unknown, value: unknown): unknown {
         const part = fitShape(sample[key], value[key]);
         if (part === undefined) return undefined;
         fitted[key] = part;
-      } else if (isScalar(value[key])) {
+      } else if (isScalar(value[key]) && !(key in Object.prototype)) {
         fitted[key] = value[key];
       }
     }
@@ -53,7 +53,24 @@ function fitShape(sample: unknown, value: unknown): unknown {
 // Without a parser, a remote value must look like the local one. A client with no local value has no shape to check against.
 function parserFor(explicit: ((value: unknown) => unknown) | undefined, sample: unknown) {
   if (explicit !== undefined) return explicit;
-  return sample === undefined ? undefined : (value: unknown) => fitShape(sample, value);
+  if (sample === undefined) return undefined;
+  return (value: unknown) => {
+    const fitted = fitShape(sample, value);
+    if (fitted !== undefined && countKeys(fitted) < countKeys(value)) {
+      warnOnce(
+        "shape-key-dropped",
+        "the default shape check dropped a key that the local value does not have. Pass parseUser or parseContext to accept it.",
+      );
+    }
+    return fitted;
+  };
+}
+
+function countKeys(value: unknown): number {
+  if (!isPlainRecord(value)) return 0;
+  let total = 0;
+  for (const key of Object.keys(value)) total += 1 + countKeys(value[key]);
+  return total;
 }
 
 function hasUnparsedField<TContext, TUser>(
@@ -66,7 +83,7 @@ function hasUnparsedField<TContext, TUser>(
   );
 }
 
-// A peer that floods events gets dropped, per sender, so one client cannot starve the others.
+// Each sender has a bucket, and one total bucket caps all senders. Many rotating senders can drain the total.
 // A global bucket also caps all senders together, so a peer that rotates its clientId cannot get around the per-sender limit.
 function createEventAllowance(
   {
@@ -82,7 +99,10 @@ function createEventAllowance(
   return {
     tryConsume(clientId) {
       const now = readNow();
-      total.tokens = Math.min(totalPerSecond, total.tokens + ((now - total.at) / 1000) * totalPerSecond);
+      total.tokens = Math.min(
+        totalPerSecond,
+        total.tokens + (Math.max(0, now - total.at) / 1000) * totalPerSecond,
+      );
       total.at = now;
       if (total.tokens < 1) return false;
       let bucket = buckets.get(clientId);
@@ -91,7 +111,10 @@ function createEventAllowance(
         bucket = { tokens: burst, at: now };
         buckets.set(clientId, bucket);
       }
-      bucket.tokens = Math.min(burst, bucket.tokens + ((now - bucket.at) / 1000) * refillPerSecond);
+      bucket.tokens = Math.min(
+        burst,
+        bucket.tokens + (Math.max(0, now - bucket.at) / 1000) * refillPerSecond,
+      );
       bucket.at = now;
       if (bucket.tokens < 1) return false;
       bucket.tokens -= 1;

@@ -16,7 +16,7 @@ cd examples/bun-native
 bun run dev:relay
 ```
 
-The relay listens on <http://localhost:8788>. To use another port, give the port as the first argument. To connect `apps/demo`, open it with `?backend=bun-native`.
+The relay listens on `ws://localhost:8788/?room=main`. To use another port, give the port as the first argument. To connect `apps/demo`, open it with `?backend=bun-native`.
 
 ## Run the integration test
 

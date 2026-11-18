@@ -5,6 +5,11 @@ export function parentAcrossShadow(element: Element): Element | null {
   const parent = element.parentElement;
   if (parent !== null) return parent;
   const root = element.getRootNode();
-  if (root instanceof ShadowRoot) return root.host;
+  if (isShadowRoot(root)) return root.host;
   return null;
+}
+
+// nodeType instead of instanceof: a node of an iframe belongs to another realm
+export function isShadowRoot(node: Node): node is ShadowRoot {
+  return node.nodeType === 11 && "host" in node;
 }

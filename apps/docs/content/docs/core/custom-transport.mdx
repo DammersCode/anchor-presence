@@ -12,7 +12,7 @@ If your app uses Socket.IO or SignalR, use the [Socket.IO](/docs/examples/backen
 
 ## BroadcastChannel sketch
 
-`BroadcastChannel` sends messages between browsing contexts (tabs, iframes, workers) on the same origin. It never crosses a network. This sketch shows the parts of a transport on a small version of [`createBroadcastChannelTransport`](/docs/dom/broadcast-channel-transport), which `@anchor-presence/dom` ships:
+`BroadcastChannel` sends messages between browsing contexts (tabs, iframes, workers) on the same origin. It never crosses a network. This sketch shows the parts of a transport on a small version of [`createBroadcastChannelTransport`](/docs/dom/broadcast-channel-transport), which `@anchor-presence/dom` ships. The sketch posts raw bytes, so it does not work with the shipped transport, which wraps each message in an object with `from` and `data`:
 
 ```ts
 import type { ConnectionStatus, LiveCursorTransport } from "@anchor-presence/core";

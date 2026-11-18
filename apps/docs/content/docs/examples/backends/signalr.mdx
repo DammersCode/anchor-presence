@@ -125,9 +125,8 @@ function PresenceProvider({ children }: { children: ReactNode }) {
 The provider runs `factory` once per mount and once more for each new connection. It disposes the client on unmount. The empty `disconnect` keeps the shared connection open after the dispose. See [Create the client](/docs/react/client-creation) for the rules of `factory`.
 
 <Callout type="warn">
-  If the provider remounts on a shared connection, the old handlers stay on that connection. Each `factory`
-  run adds five handlers, and the transport never removes them. Each remount and each Strict Mode double run
-  leave one more set, which decodes each message and then drops it.
+  If the provider remounts on a shared connection, the `onclose`, `onreconnecting`, and `onreconnected`
+  callbacks of the old transport stay on that connection, because SignalR has no API to remove them.
 </Callout>
 
 ## Close reasons

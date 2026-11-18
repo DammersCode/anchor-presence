@@ -5,7 +5,7 @@ import { getContextStore } from "../context-store.js";
 /**
  * Reads the local context value and gives a setter.
  * The setter calls `client.setContext`, which sends the value to remote peers.
- * Returns `undefined` and a no-op setter on the server.
+ * Returns `undefined` and a no-op setter on the server, and a no-op setter while no client exists.
  */
 export function useLocalContext<TContext = unknown>(): [
   TContext | undefined,

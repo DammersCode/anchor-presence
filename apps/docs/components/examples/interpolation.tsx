@@ -126,10 +126,9 @@ export function InterpolationScene({ client, layout, children }: Props) {
   const [style, setStyle] = useState<Style>(() => (wide || prefersReducedMotion() ? "none" : "spring"));
 
   return (
-    // The provider reads bindingOptions once, so a new key remounts the binding with the new interpolator.
     <LiveCursorProvider
-      key={style}
       client={client}
+      bindingKey={style}
       bindingOptions={{ resolution: { interpolatorFactory: INTERPOLATORS[style] } }}
     >
       <div className="flex h-full flex-col gap-2 p-2.5">

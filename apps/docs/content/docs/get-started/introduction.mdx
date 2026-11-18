@@ -59,7 +59,7 @@ Anchor Presence sends an element ID and a point inside that element, not a scree
 - An **anchor** is an element with a `data-anchor` attribute, for example `<button data-anchor="nav.dashboard">`. The attribute value is the **anchor ID**.
 - The **position** is a point inside the anchor, as a fraction from 0 to 1 of its width (`u`) and of its height (`v`).
 - The **receiver** is the browser that shows a remote cursor. The receiver measures its own copy of the anchor and turns the position into pixels.
-- The **fallback chain** is the anchor, then its parent anchors, then a position in the browser window. If the receiver has no element for an entry, it tries the next entry.
+- The **fallback chain** is the anchor, then its parent anchors, then a position in the browser window, when the message carries one. If the receiver has no element for an entry, it tries the next entry.
 - A **peer** is another client in the same room.
 - A **relay** is a server that forwards each message to every other client in a room.
 

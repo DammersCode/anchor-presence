@@ -124,14 +124,12 @@ When `reconnect` is `false`, the transport never calls `shouldReconnect`.
 `transport.subscribeClose(listener)` runs the listener each time a connection closes. The listener receives a `TransportClose` object with the close `code`, the `reason`, and `willReconnect`. This listener shows the close when the transport stops:
 
 ```ts
-transport.subscribeClose?.((close) => {
+transport.subscribeClose((close) => {
   if (!close.willReconnect) {
     console.warn(`Relay closed the connection: ${close.code ?? "no code"} ${close.reason ?? ""}`);
   }
 });
 ```
-
-The `?.` is necessary because the `WebSocketTransport` type marks `subscribeClose` as optional, although the transport always has it.
 
 The transport does not replay a past close to a new listener. A close after your own `disconnect()` call does not run the listener. In development mode, the transport also logs each close with a code of `4000` or higher. `client.subscribeClose` receives the same closes.
 

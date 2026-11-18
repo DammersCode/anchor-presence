@@ -28,7 +28,7 @@ A pointer on the button sends the chain `orders.row:17.actions`, `orders.row:17`
 
 ## How the chain works
 
-The fallback chain is the ordered list of anchors that a cursor position carries, the most specific anchor first.
+The fallback chain is the anchor, then its parent anchors, then the window position when the message carries one. A cursor position stores the anchors in an ordered list, the most specific first.
 
 1. The sender starts at the element under the pointer.
 2. It adds each registered anchor between that element and the document root, the nearest anchor first.
@@ -38,7 +38,7 @@ The receiver walks the chain in order. It uses the first anchor that is connecte
 
 ## Viewport fallback
 
-Each cursor position also carries a `viewport` field. It is a `u`/`v` position across the full browser window: `pointerX / innerWidth` and `pointerY / innerHeight`. If no anchor in the chain resolves, the receiver uses this position. The cursor then stays visible, but it can land on another element.
+A cursor position can also carry a `viewport` field. It is a `u`/`v` position across the full browser window: `pointerX / innerWidth` and `pointerY / innerHeight`. If no anchor in the chain resolves, the receiver uses this position. The cursor then stays visible, but it can land on another element.
 
 ## Resolution tiers
 

@@ -1,6 +1,7 @@
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { LiveCursorProvider } from "../src/provider";
+import { useSendEvent } from "../src/hooks/use-send-event";
 import {
   useCursorClient,
   useCursorBinding,
@@ -27,9 +28,11 @@ function AllHooks() {
   const count = useRemoteCursorsSelector((all) => all.length);
   useCursorEvents(() => {});
   usePeerChanges(() => {});
+  const sent = useSendEvent()("ping", {});
   return (
     <div data-anchor="a">
       <span data-testid="extras">{`${binding === null ? "none" : "binding"}-${user === undefined ? "nouser" : "user"}-${users.length}-${count}`}</span>
+      <span data-testid="sent">{String(sent)}</span>
       <span data-testid="cursors">{cursors.length}</span>
       <span data-testid="presence">{presence.length}</span>
       <span data-testid="status">{status}</span>
@@ -58,6 +61,7 @@ describe("SSR safety", () => {
     expect(html).toContain("disconnected");
     expect(html).toContain("null");
     expect(html).toContain("none-nouser-0-0");
+    expect(html).toContain(">false<");
   });
 });
 

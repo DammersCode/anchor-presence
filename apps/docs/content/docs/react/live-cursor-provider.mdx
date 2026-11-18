@@ -36,7 +36,7 @@ function App() {
 
 The provider takes `factory`, `client`, `binding`, `bindingOptions`, `clientKey`, `bindingKey`, and `children`. For the type of each prop, see [Components API](/docs/react/api/components#livecursorprovider).
 
-Pass `factory` or `client`. If you pass both, `client` wins. For the difference between the two, read [Create the client](/docs/react/client-creation). The provider disposes a client that `factory` created. It never disposes a `client` that you pass.
+Pass `factory` or `client`. The types forbid passing both. In JavaScript, `client` wins. For the difference between the two, read [Create the client](/docs/react/client-creation). The provider disposes a client that `factory` created. It never disposes a `client` that you pass.
 
 To render without a client, for example on the server, pass `client={null}`. See [SSR and Strict Mode](/docs/react/ssr-and-strict-mode).
 
@@ -50,7 +50,7 @@ The provider reads `bindingOptions` only when it creates the binding. A later ch
 
 ## Rebuild the binding
 
-To apply a new `bindingOptions` value, change `bindingKey`. The provider disposes the binding and creates a new one with the current `bindingOptions`. The client stays connected, so each peer (another client in the same room) keeps your cursor.
+To apply a new `bindingOptions` value, change `bindingKey`. The provider disposes the binding and creates a new one with the current `bindingOptions`. The client stays connected, so each peer keeps your cursor.
 
 This example switches the interpolator:
 

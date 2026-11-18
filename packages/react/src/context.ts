@@ -6,7 +6,7 @@ import type { DomBinding } from "@anchor-presence/dom";
  * The value the context carries.
  */
 export type LiveCursorContextValue<TContext = unknown, TUser = unknown> = {
-  /** The presence client, or `null` when no provider is present. */
+  /** The presence client, or `null` when no provider is present or the client does not exist yet. */
   client: PresenceClient<TContext, TUser> | null;
   /** The DOM binding, or `null` when none exists. */
   binding: DomBinding<TContext, TUser> | null;

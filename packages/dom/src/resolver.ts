@@ -37,7 +37,7 @@ export type ResolvedCursor<TContext = unknown, TUser = unknown> = {
   context?: TContext;
   /** The remote user value, when the sender sent one. */
   user?: TUser;
-  /** `true` when the client sent no update for a while. */
+  /** `true` when the remote cursor has not changed for a while. */
   idle: boolean;
 };
 

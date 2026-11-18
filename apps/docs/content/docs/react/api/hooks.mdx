@@ -6,7 +6,7 @@ icon: braces
 
 import { Braces, Component, Gauge } from "lucide-react";
 
-This page lists the signature of every hook in `@anchor-presence/react`, and of `createPresenceHooks`. Use it to look up a type. For usage, render cost, and examples, read the guide page that each section links to. A peer is another client in the same room.
+This page lists the signature of every hook in `@anchor-presence/react`, and of `createPresenceHooks`. Use it to look up a type. For usage, render cost, and examples, read the guide page that each section links to.
 
 Every hook reads the nearest `LiveCursorProvider`. Without a provider, each hook returns its empty value, and in development mode one console warning appears. For the empty values, see [Server-safe values](/docs/react/ssr-and-strict-mode#server-safe-values).
 
@@ -16,7 +16,7 @@ Every hook reads the nearest `LiveCursorProvider`. Without a provider, each hook
 function useRemoteCursors<TContext = unknown, TUser = unknown>(): ResolvedCursor<TContext, TUser>[];
 ```
 
-Returns the resolved cursor of every peer, hidden cursors included. Guide: [Remote cursors](/docs/react/remote-cursors).
+Returns the resolved cursor of every peer, hidden cursors included. While the client reconnects or is disconnected, the list is empty. Guide: [Remote cursors](/docs/react/remote-cursors).
 
 ## useRemoteCursorsSelector
 
@@ -35,9 +35,7 @@ Returns `select` applied to the resolved cursors. `isEqual` defaults to `Object.
 function useRemoteUsers<TUser = unknown>(): RemoteUser<TUser>[];
 ```
 
-Returns one `RemoteUser` per peer:
-
-<AutoTypeTable path="../../packages/react/src/hooks/use-remote-users.ts" name="RemoteUser" />
+Returns one `RemoteUser` per peer. For its fields, see [RemoteUser fields](/docs/react/remote-users#remoteuser-fields).
 
 Guide: [Remote users](/docs/react/remote-users).
 

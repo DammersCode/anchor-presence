@@ -6,7 +6,7 @@ icon: layers
 
 import { AppWindow, Atom, BookOpen, EyeOff } from "lucide-react";
 
-A dialog covers the layout behind it, but a remote cursor can belong to either layer. Two cases need a rule. In the first case, the cursor of a peer (another client in the same room) is on a card behind your open dialog. In the second case, your cursor is inside a dialog that is closed for the peer. This demo runs that rule with a visibility policy. The cursor itself always paints above the dialog, because `CursorLayer` defaults to `z-index: 9999`.
+A dialog covers the layout behind it, but a remote cursor can belong to either layer. Two cases need a rule. In the first case, the cursor of a peer is on a card behind your open dialog. In the second case, your cursor is inside a dialog that is closed for the peer. This demo runs that rule with a visibility policy. The cursor itself always paints above the dialog, because `CursorLayer` defaults to `z-index: 9999`.
 
 <ExamplePreview scene="dialogs" />
 
@@ -16,11 +16,11 @@ Install the packages:
 
 <InstallCommand />
 
-This file renders the scene of the demo:
+This component is a self-contained version of the demo. It publishes a dialog context and hides cursors of the other layer:
 
-<CodeFromSource docs="components/examples/dialogs.tsx" lang="tsx" />
+<CodeFromSource docs="components/examples/_extracts/dialogs.tsx" lang="tsx" />
 
-Both panes pass the same policy through `resolution.visibilityPolicy`. The policy compares the sender's `context` and the resolved `anchorId` with the dialog state of its own pane. The binding reads `bindingOptions` once at creation. For this reason, the policy reads the dialog state through a ref.
+The demo passes the same policy to both panes through `resolution.visibilityPolicy`. The policy compares the sender's `context` and the resolved `anchorId` with the dialog state of its own pane. The binding reads `bindingOptions` once at creation. For this reason, the policy reads the dialog state through a ref.
 
 ## Behavior notes
 

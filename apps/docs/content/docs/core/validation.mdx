@@ -32,22 +32,25 @@ function inspect(frame: Uint8Array) {
 
 The client runs these steps on each inbound message, in this order:
 
-<Mermaid
-  chart={`flowchart TD
+<div role="region" aria-label="Incoming message checks diagram" tabIndex={0} className="overflow-x-auto">
+  <Mermaid
+    chart={`flowchart TD
   accTitle: Incoming message checks
   bytes["bytes"] --> checks["steps 1 to 4"]
   checks -->|fails| drop["drop"]
-  checks -->|step 5| listeners["event listeners"]
-  checks -->|steps 6 and 7| store["store"]`}
-/>
+  checks -->|steps 5 and 6| listeners["event listeners"]
+  checks -->|steps 7 and 8| store["store"]`}
+  />
+</div>
 
 1. The client drops the message when its byte length is more than `maxMessageBytes`.
 2. It decodes the bytes with the codec.
-3. It calls `validatePresence` on the decoded value. A `null` result drops the message.
+3. It calls `validatePresence` on the decoded value. A `null` result drops the message. The result is `null` when `version` is not `1`, when `cursor` is neither `null` nor an object, or when `cursor.anchors` is not an array.
 4. It drops an echo of its own message.
-5. It sends an event message to the event listeners. An event message stops at this step.
-6. It checks `user` and `context` with `parseUser` and `parseContext`, or with the shape check when no parser is set.
-7. It gives the message to the store.
+5. It applies the [event rate limit](/docs/core/events#event-rate-limit) to an event message. A message over the limit is dropped.
+6. It passes an event message that stays to `parseEvent`, when you set one, and then to the event listeners. An event message stops at this step.
+7. It checks `user` and `context` with `parseUser` and `parseContext`, or with the shape check when no parser is set.
+8. It gives the message to the store.
 
 A codec does not check limits. Its job is to turn bytes into a value and back, without a throw. `validatePresence` checks the decoded value against the protocol limits.
 

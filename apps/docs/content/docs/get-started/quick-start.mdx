@@ -91,7 +91,7 @@ function createClient() {
 }
 ```
 
-The client connects the transport when you create it. `room` is a query parameter that the relay reads to group clients. It is not part of the protocol. Each relay in [Backends](/docs/examples/backends) uses its own port, so set `port` to the port of your relay. Without `port`, the transport connects to port 8787, the port of the reference relay in `apps/server`. This page uses the Bun relay on port 8788.
+The client connects the transport when you create it. `room` is a query parameter that the relay reads to group clients. It is not part of the protocol. Each relay in [Backends](/docs/examples/backends) uses its own port, so set `port` to the port of your relay. Without `port`, the transport connects to port 8787, the port of the [reference relay](/docs/examples/backends/relay-contract). This page uses the Bun relay on port 8788.
 
 </Step>
 <Step>

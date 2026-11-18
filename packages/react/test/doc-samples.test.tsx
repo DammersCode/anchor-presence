@@ -39,11 +39,14 @@ function MyCursorGlyph(props: { color: string; children: React.ReactNode }): Rea
   return <span style={{ color: props.color }}>{props.children}</span>;
 }
 
+const safeColor = (color?: string) =>
+  color !== undefined && /^#[0-9a-f]{6}$/iu.test(color) ? color : "#6b7280";
+
 function CursorLayerSample() {
   return (
     <CursorLayer<MyContext, MyUser>
       getLabel={(cursor) => cursor.user?.name ?? "Guest"}
-      getColor={(cursor) => cursor.user?.color ?? "#6b7280"}
+      getColor={(cursor) => safeColor(cursor.user?.color)}
       filterCursor={(cursor) => cursor.tier !== "viewport"}
       getCursorProps={() => ({ className: "my-cursor" })}
       renderCursor={({ label, color }) => <MyCursorGlyph color={color}>{label}</MyCursorGlyph>}

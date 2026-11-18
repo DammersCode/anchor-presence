@@ -6,7 +6,7 @@ icon: zap
 
 import { Braces, Wifi, Zap } from "lucide-react";
 
-An event is a one-shot message to every peer (another client in the same room), for example a reaction or a ping. It has a `type` and an optional `data` value. `useCursorEvents` calls a listener for each event that a peer sends. Use events for things that happen one time. For state that a late peer must also see, use the [local user or context](/docs/react/local-context).
+An event is a one-shot message to every peer, for example a reaction or a ping. It has a `type` and an optional `data` value. `useCursorEvents` calls a listener for each event that a peer sends. Use events for things that happen one time. For state that a late peer must also see, use the [local user or context](/docs/react/local-context).
 
 ## Usage
 
@@ -71,7 +71,7 @@ function WaveButton() {
 - The listener receives a `RemoteEvent`: the `type`, the `data`, and the `clientId` of the sender.
 - `client.sendEvent(type, data?)` returns `false` when it sends nothing, for example while the client is not connected. See [Events](/docs/core/events) for every case.
 - The receiver limits the events of each sender and of all senders together. It drops the events above a limit. See [Event rate limit](/docs/core/events#event-rate-limit).
-- The hook subscribes one time per client. An inline listener does not subscribe again on each render, and the hook always calls the listener of the last render. The hook never rerenders its component.
+- The hook subscribes one time per client. An inline listener does not subscribe again on each render, and the hook always calls the listener of the last render. The hook returns nothing, so it adds no rerender of its own.
 
 ## Related
 

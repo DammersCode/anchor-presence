@@ -70,6 +70,7 @@ describe("LiveCursorProvider factory", () => {
   });
 
   it("lets a client prop win: the factory never runs and the client is not disposed", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     const fake = makeFakeClient();
     const disposeSpy = vi.spyOn(fake.client, "dispose");
     const factory = vi.fn(() => makeFakeClient().client);
@@ -87,6 +88,8 @@ describe("LiveCursorProvider factory", () => {
     expect(factory).not.toHaveBeenCalled();
     act(() => root.unmount());
     expect(disposeSpy).not.toHaveBeenCalled();
+    expect(warn.mock.calls.some(([text]) => String(text).includes("both `client` and `factory`"))).toBe(true);
+    warn.mockRestore();
   });
 
   it("an explicit client null skips the factory", () => {

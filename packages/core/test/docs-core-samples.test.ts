@@ -265,7 +265,7 @@ describe("remote presence docs", () => {
 });
 
 describe("validation docs: remote user and context", () => {
-  it("keeps the keys of the local value and drops a value with another shape", () => {
+  it("keeps optional scalar keys, removes object keys and drops a value with another shape", () => {
     const pair = createInMemoryPair();
     const myTransport = pair.a;
 
@@ -277,15 +277,15 @@ describe("validation docs: remote user and context", () => {
 
     const peer = createPresenceClient<unknown, unknown>({
       transport: pair.b,
-      user: { name: "Bo", color: "#0ea5e9", admin: true },
+      user: { name: "Bo", color: "#0ea5e9", admin: true, roles: { all: true } },
     });
     peer.updateLocalCursor(cursor);
     vi.advanceTimersByTime(50);
-    expect(client.getRemotePresence()[0]?.user).toEqual({ name: "Bo", color: "#0ea5e9" });
+    expect(client.getRemotePresence()[0]?.user).toEqual({ name: "Bo", color: "#0ea5e9", admin: true });
 
     peer.setUser({ name: 42 });
     vi.advanceTimersByTime(50);
-    expect(client.getRemotePresence()[0]?.user).toEqual({ name: "Bo", color: "#0ea5e9" });
+    expect(client.getRemotePresence()[0]?.user).toEqual({ name: "Bo", color: "#0ea5e9", admin: true });
     client.dispose();
     peer.dispose();
   });

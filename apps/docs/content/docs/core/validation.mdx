@@ -56,11 +56,11 @@ const client = createPresenceClient({
 
 The shape check uses these rules:
 
-- An object keeps only the keys of the local object. A remote object can omit a key.
-- A kept key with a value of another shape drops the whole field.
-- An array must be an array. Each item must have the shape of the first local item. An empty local array accepts any array.
+- A key of the local object must have the type of the local value, or the client drops the whole field. A remote object can omit a key.
+- A key that the local object lacks, for example an optional field, stays when its value is a string, a number, a boolean or `null`. The client removes it when the value is an object or an array.
+- An array must be an array. Each item must have the shape of the first local item. An empty local array accepts an array of strings, numbers, booleans or `null`.
 - A string, a number, or a boolean must have the type of the local value.
-- A local `null` accepts any value.
+- A local `null` accepts a string, a number, a boolean or `null`, and never an object or an array.
 
 The client reads the local value for each message, so `setUser` and `setContext` change the shape.
 

@@ -54,7 +54,7 @@ Render both fields as text: text nodes in plain DOM code, or framework text inte
 
 Validation checks the size and depth of `user` and `context`, not their shape. A peer can send `{ name: {} }` where you expect a string, and rendering that object as a React child throws.
 
-The client therefore checks each remote value against your own local value. If you pass `user: { name: "Ada" }` to `createPresenceClient`, a remote `user` must be an object whose `name` is a string. The client keeps only the keys of your local value and drops a field that does not fit, so the receiver keeps the previous value.
+The client therefore checks each remote value against your own local value. If you pass `user: { name: "Ada" }` to `createPresenceClient`, a remote `user` must be an object whose `name` is a string. A key that your local value lacks, such as an optional field, stays only when its value is a string, a number, a boolean or `null`. The client drops a field that does not fit, so the receiver keeps the previous value.
 
 A client with no local `user` or `context` has no shape to compare with. Pass `parseUser` or `parseContext` to check the value yourself. Return `undefined` to drop it:
 

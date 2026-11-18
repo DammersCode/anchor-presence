@@ -1474,7 +1474,7 @@ describe("default shape check for remote fields", () => {
       ),
     );
 
-  it("drops a remote user that does not have the shape of the local user, and strips extra keys", () => {
+  it("drops a remote user that does not have the shape of the local user, and removes extra object keys", () => {
     const { transport, emit } = makeTransport();
     const client = createPresenceClient<unknown, { name: string; tags: string[] }>({
       transport,
@@ -1485,14 +1485,14 @@ describe("default shape check for remote fields", () => {
     remote(emit, "bad-type", { name: {}, tags: ["a"] });
     remote(emit, "bad-array", { name: "B", tags: "nope" });
     remote(emit, "bad-item", { name: "B", tags: [1] });
-    remote(emit, "good", { name: "Bob", tags: ["a", "b"], extra: "ignored" });
+    remote(emit, "good", { name: "Bob", tags: ["a", "b"], extra: "kept", nested: { evil: true } });
 
     const users = Object.fromEntries(client.getRemotePresence().map((p) => [p.clientId, p.user]));
     expect(users).toEqual({
       "bad-type": undefined,
       "bad-array": undefined,
       "bad-item": undefined,
-      good: { name: "Bob", tags: ["a", "b"] },
+      good: { name: "Bob", tags: ["a", "b"], extra: "kept" },
     });
     client.dispose();
   });
@@ -1514,6 +1514,31 @@ describe("default shape check for remote fields", () => {
       "object-avatar": undefined,
       "object-tag": undefined,
       fine: { name: "B", avatar: "a.png", tags: ["x"] },
+    });
+    client.dispose();
+  });
+
+  it("keeps an optional context key that the local context lacks, as in a dialog flag", () => {
+    const { transport, emit } = makeTransport();
+    const client = createPresenceClient<{ page: string; dialog?: string }>({
+      transport,
+      idFactory,
+      context: { page: "dashboard" },
+    });
+    const send = (clientId: string, context: unknown) =>
+      emit(
+        new TextEncoder().encode(
+          JSON.stringify({ version: 1, clientId, session: "s", sequence: 0, cursor: null, context }),
+        ),
+      );
+
+    send("dialog", { page: "orders", dialog: "settings" });
+    send("object", { page: "orders", dialog: { evil: true } });
+
+    const contexts = Object.fromEntries(client.getRemotePresence().map((p) => [p.clientId, p.context]));
+    expect(contexts).toEqual({
+      dialog: { page: "orders", dialog: "settings" },
+      object: { page: "orders" },
     });
     client.dispose();
   });

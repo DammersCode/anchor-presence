@@ -41,7 +41,7 @@ Each `RemoteUser` entry has:
 
 ## User shape
 
-The client checks each remote `user` against the local `user` value that you pass to `createPresenceClient`. A remote value keeps only the keys of the local value. If a remote value does not fit that shape, the client drops it, and the entry keeps the previous `user` value. A client with no local `user` has no shape to compare with. In that case, pass `parseUser` to `createPresenceClient`. See [Check the shape of remote values](/docs/get-started/guides/security#check-the-shape-of-remote-values).
+The client checks each remote `user` against the local `user` value that you pass to `createPresenceClient`. A key of the local value must have the same type. An optional key that the local value lacks stays only as a string, number, boolean or `null`. If a remote value does not fit that shape, the client drops it, and the entry keeps the previous `user` value. A client with no local `user` has no shape to compare with. In that case, pass `parseUser` to `createPresenceClient`. See [Check the shape of remote values](/docs/get-started/guides/security#check-the-shape-of-remote-values).
 
 ## Render cost
 

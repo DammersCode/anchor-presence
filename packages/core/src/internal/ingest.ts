@@ -8,7 +8,8 @@ function isPlainRecord(value: unknown): value is Record<string, unknown> {
 
 /**
  * Returns `value` cut to the shape of `sample`, or `undefined` when it does not fit.
- * Objects keep only the keys of the sample, and each kept value must have the sample's type.
+ * A key of the sample must have the sample's type, or the whole value is dropped.
+ * A key the sample lacks, such as an optional field, stays when its value is a string, number, boolean or `null`, and is removed when it is an object or array.
  * A `null` sample or an empty array says nothing about the type, so it accepts a string, number, boolean or `null` and never an object or array.
  * An empty object keeps no keys.
  */
@@ -29,11 +30,14 @@ export function fitShape(sample: unknown, value: unknown): unknown {
   if (isPlainRecord(sample)) {
     if (!isPlainRecord(value)) return undefined;
     const fitted: Record<string, unknown> = {};
-    for (const key of Object.keys(sample)) {
-      if (!(key in value)) continue;
-      const part = fitShape(sample[key], value[key]);
-      if (part === undefined) return undefined;
-      fitted[key] = part;
+    for (const key of Object.keys(value)) {
+      if (key in sample) {
+        const part = fitShape(sample[key], value[key]);
+        if (part === undefined) return undefined;
+        fitted[key] = part;
+      } else if (isScalar(value[key])) {
+        fitted[key] = value[key];
+      }
     }
     return fitted;
   }

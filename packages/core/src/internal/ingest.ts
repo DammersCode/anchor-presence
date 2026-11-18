@@ -31,7 +31,9 @@ export function fitShape(sample: unknown, value: unknown): unknown {
     if (!isPlainRecord(value)) return undefined;
     const fitted: Record<string, unknown> = {};
     for (const key of Object.keys(value)) {
-      if (key in sample) {
+      // an own `__proto__` key (JSON.parse makes one) would set the prototype of `fitted` on assignment
+      if (key === "__proto__") continue;
+      if (Object.hasOwn(sample, key)) {
         const part = fitShape(sample[key], value[key]);
         if (part === undefined) return undefined;
         fitted[key] = part;

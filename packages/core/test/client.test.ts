@@ -1543,6 +1543,35 @@ describe("default shape check for remote fields", () => {
     client.dispose();
   });
 
+  it("ignores prototype and inherited keys in a remote value", () => {
+    const { transport, emit } = makeTransport();
+    const client = createPresenceClient<unknown, { name: string }>({
+      transport,
+      idFactory,
+      user: { name: "Ada" },
+    });
+    const raw = (clientId: string, user: string) =>
+      emit(
+        new TextEncoder().encode(
+          `{"version":1,"clientId":"${clientId}","session":"s","sequence":0,"cursor":null,"user":${user}}`,
+        ),
+      );
+
+    raw("proto", '{"name":"x","__proto__":{"admin":true}}');
+    raw("inherited", '{"name":"y","toString":"hijack","constructor":"c"}');
+
+    const users = new Map(
+      client.getRemotePresence().map((p) => [p.clientId, p.user as Record<string, unknown>]),
+    );
+    const proto = users.get("proto");
+    expect(proto).toEqual({ name: "x" });
+    expect(Object.getPrototypeOf(proto)).toBe(Object.prototype);
+    expect((proto as { admin?: unknown }).admin).toBeUndefined();
+    expect(users.get("inherited")).toMatchObject({ name: "y" });
+    expect(({} as { admin?: unknown }).admin).toBeUndefined();
+    client.dispose();
+  });
+
   it("lets an explicit parseUser replace the default check", () => {
     const { transport, emit } = makeTransport();
     const client = createPresenceClient<unknown, { name: string }>({

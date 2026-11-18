@@ -72,6 +72,22 @@ export function defineRelayConformance(
       for (const { socket } of [sender, peer, stranger]) socket.close();
     });
 
+    it("relays a text frame unchanged, even when it looks like JSON", async () => {
+      const { baseUrl } = relay();
+      const sender = await connect(baseUrl, "conf-text");
+      const peer = await connect(baseUrl, "conf-text");
+      const texts: unknown[] = [];
+      peer.socket.addEventListener("message", (event) => texts.push(event.data));
+      const frames = ['"hello"', "42", '{"a":1}' + " ".repeat(300), "hello"];
+
+      for (const frame of frames) sender.socket.send(frame);
+      await settle();
+
+      expect(texts).toEqual(frames);
+      sender.socket.close();
+      peer.socket.close();
+    });
+
     it.each(oversizedFrames)(
       "drops a %s frame above the size cap and keeps relaying",
       async (kind, makeFrame) => {

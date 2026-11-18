@@ -74,10 +74,11 @@ Socket.IO has no close codes. For this reason, the relay sends the code in one o
 | ------ | ----------------------------------- | ---------------------------------- |
 | `4001` | The room is full.                   | `refused` event, then a disconnect |
 | `4002` | The server is full.                 | `refused` event, then a disconnect |
+| `4004` | The origin is not allowed.          | `connect_error` with `data.code`   |
 | `4006` | The room token is missing or wrong. | `connect_error` with `data.code`   |
 | `4007` | The room name is not valid.         | `connect_error` with `data.code`   |
 
-A middleware error and a disconnect from the server both stop the Socket.IO client from retrying, so `willReconnect` is `false` for these codes. An origin outside the allowlist fails the handshake with no code. To show the reason to the user, subscribe to the close:
+A middleware error and a disconnect from the server both stop the Socket.IO client from retrying, so `willReconnect` is `false` for these codes. To show the reason to the user, subscribe to the close:
 
 ```ts
 client.subscribeClose((close) => {
@@ -110,7 +111,7 @@ The relay reads the limits, the defaults, and the codes on [Deploy a relay](/doc
 
 | Check            | Setting                                                                              | On refusal                                               |
 | ---------------- | ------------------------------------------------------------------------------------ | -------------------------------------------------------- |
-| Origin           | `RELAY_ALLOWED_ORIGINS`, comma-separated. Empty allows every origin.                 | `allowRequest` fails the handshake with no code.         |
+| Origin           | `RELAY_ALLOWED_ORIGINS`, comma-separated. Empty allows every origin.                 | `io.use` fails the handshake with code `4004`.           |
 | Room token       | `RELAY_AUTH_TOKEN`. Compares the `token` handshake query. Empty turns the check off. | `connect_error` with code `4006`.                        |
 | `authCheck` hook | Factory option. Replaces the room token check.                                       | `connect_error` with code `4006` on `false` or an error. |
 | Identity binding | `authCheck` returns `{ clientId, user }`.                                            | Drops a payload that is not a JSON object.               |

@@ -1,4 +1,5 @@
 // Elysia `.ws()` route on Bun, using Elysia's own topic pub-sub (same model as the Bun relay example).
+import type { ServerWebSocket } from "bun";
 import { Elysia, t } from "elysia";
 import {
   allowedOriginsFromEnv,
@@ -110,38 +111,36 @@ export function createElysiaRelay(port: number, options: ElysiaRelayOptions = {}
       });
       ws.subscribe(room);
     },
-    message(ws, message) {
-      const state = connectionState.get(ws.raw);
-      if (!state) return;
-      if (!state.rateLimiter.tryConsume()) return;
-
-      // Elysia parses a JSON text frame into an object, which has no byteLength; measure its text form
-      const payload =
-        message instanceof ArrayBuffer || ArrayBuffer.isView(message) || typeof message === "string"
-          ? message
-          : JSON.stringify(message);
-      if (messageByteLength(payload, maxMessageBytes) > maxMessageBytes) return;
-
-      let outgoing: string | ArrayBuffer | ArrayBufferView = payload;
-      if (state.identity !== undefined) {
-        const bound = bindIdentity(
-          typeof payload === "string" ? payload : new Uint8Array(payload as ArrayBuffer),
-          state.identity,
-          state.connectionId,
-        );
-        if (bound === null) return;
-        // Elysia serializes a plain Uint8Array as JSON text; a Buffer stays a binary frame
-        outgoing = Buffer.from(bound);
-      }
-      ws.publish(parseRoom(ws.data.query.room) ?? "main", outgoing);
-    },
     close(ws) {
       const room = parseRoom(ws.data.query.room) ?? "main";
       if (connectionState.delete(ws.raw)) limits.release(room);
     },
   });
 
-  app.listen(port);
+  // Elysia JSON-parses a text frame before any route hook runs, so the guard sits on the raw Bun handler
+  app.listen({
+    port,
+    websocket: {
+      message(ws: ServerWebSocket<{ query: { room?: string | string[] } }>, message: string | Buffer) {
+        const state = connectionState.get(ws);
+        if (!state) return;
+        if (!state.rateLimiter.tryConsume()) return;
+        if (messageByteLength(message, maxMessageBytes) > maxMessageBytes) return;
+
+        let outgoing: string | Uint8Array = message;
+        if (state.identity !== undefined) {
+          const bound = bindIdentity(
+            typeof message === "string" ? message : new Uint8Array(message),
+            state.identity,
+            state.connectionId,
+          );
+          if (bound === null) return;
+          outgoing = bound;
+        }
+        ws.publish(parseRoom(ws.data.query.room) ?? "main", outgoing);
+      },
+    },
+  });
 
   return {
     url: `http://localhost:${port}`,

@@ -264,6 +264,17 @@ describe("attachPointerSource (spec §9)", () => {
     handle.detach();
   });
 
+  it("ignores a window blur after the client is disposed", () => {
+    const { client, samples } = makeClient();
+    attachPointerSource(client, registry, { maxAnchors: 4 });
+    client.dispose();
+    const before = samples.length;
+
+    window.dispatchEvent(new Event("blur"));
+
+    expect(samples).toHaveLength(before);
+  });
+
   it("uses getCachedRect when it returns a hit, skipping getBoundingClientRect for that element", () => {
     const el = document.createElement("div");
     document.body.append(el);

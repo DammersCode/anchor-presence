@@ -52,17 +52,18 @@ export function createSocketIoRelay(port: number, options: SocketIoRelayOptions 
     // Empty allowlist (dev default) falls back to "*"; socket.io's cors option has no "allow everyone" sentinel.
     cors: { origin: allowedOrigins.length > 0 ? allowedOrigins : "*" },
     maxHttpBufferSize: Math.max(maxMessageBytes * 4, 1024 * 1024),
-    // cors only guards polling responses; a WebSocket upgrade needs its own origin check
-    allowRequest: (req, callback) => {
-      const allowlist = new Set(allowedOrigins);
-      callback(null, originAllowed(allowlist, req.headers.origin ?? ""));
-    },
   });
 
   const limits = new ConnectionLimits(maxSockets, maxRoomSockets);
+  const allowlist = new Set(allowedOrigins);
 
   io.use(async (socket, next) => {
     const { headers } = socket.handshake;
+    // a refusal here carries a code, so the client stops; an HTTP-level refusal would make it retry forever
+    if (!originAllowed(allowlist, headers.origin ?? "")) {
+      next(Object.assign(new Error("origin not allowed"), { data: { code: 4004 } }));
+      return;
+    }
     const room = parseRoom(rawQuery(socket, "room"));
     if (room === null) {
       next(Object.assign(new Error("invalid room"), { data: { code: INVALID_ROOM_CODE } }));

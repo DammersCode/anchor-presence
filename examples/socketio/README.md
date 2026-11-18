@@ -67,10 +67,11 @@ Socket.IO has no close codes. Before the relay disconnects a socket, it sends a 
 
 - `4001`: the room is full.
 - `4002`: the server is full.
+- `4004`: the origin is not in the allowlist. This code comes in the `connect_error` data.
 - `4006`: the room token is missing or wrong. This code comes in the `connect_error` data, because the `io.use` middleware refuses the handshake.
 - `4007`: the room name is not valid.
 
-After any of these codes, the Socket.IO client does not reconnect, so `willReconnect` is `false`. An origin outside the allowlist fails the handshake with no code.
+After any of these codes, the Socket.IO client does not reconnect, so `willReconnect` is `false`.
 
 ## Production notes
 
@@ -79,7 +80,7 @@ After any of these codes, the Socket.IO client does not reconnect, so `willRecon
 | Room name check           | Yes. `parseRoom` accepts up to 256 characters of `[A-Za-z0-9_-]`. A missing name is `main`. The relay refuses an invalid name with code `4007`.                                                                |
 | Max payload size          | Yes. The `maxHttpBufferSize` of Socket.IO closes the connection of a client that sends an oversized frame. `messageByteLength` drops a smaller message above `MAX_MESSAGE_BYTES` before the relay forwards it. |
 | Rate limit per connection | Yes. A token bucket with `RATE_CAPACITY` and `RATE_REFILL_PER_SECOND`.                                                                                                                                         |
-| Origin allowlist          | Yes. `RELAY_ALLOWED_ORIGINS` is a comma-separated list. An empty list (the default) accepts every origin (the Socket.IO CORS value `"*"`). `allowRequest` also checks the WebSocket upgrade.                   |
+| Origin allowlist          | Yes. `RELAY_ALLOWED_ORIGINS` is a comma-separated list. An empty list (the default) accepts every origin (the Socket.IO CORS value `"*"`). The `io.use` middleware checks it on every transport.               |
 | Auth hook                 | Yes. Pass an `authCheck` option, or set `RELAY_AUTH_TOKEN` for a shared room token. An `io.use` middleware runs the check before the connection completes. A refusal has code `4006`.                          |
 | Identity binding          | Yes. If `authCheck` returns `{ clientId, user }`, the relay writes that identity into every JSON frame. `clientId` gets the suffix `~<connection>`. In this mode, the relay drops a frame that is not JSON.    |
 | Room cleanup on close     | Yes. `disconnect` releases the slot of the socket in `ConnectionLimits`. Socket.IO removes the socket from the room.                                                                                           |

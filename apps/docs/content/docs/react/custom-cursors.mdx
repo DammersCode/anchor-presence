@@ -13,13 +13,24 @@ import { Component, MousePointer2, Users } from "lucide-react";
 `renderCursor` replaces only the content of the root. The samples on this page pass `renderCursor` inline for brevity. Declare it at module level, as in [Keep the callbacks stable](/docs/react/cursor-layer#keep-the-callbacks-stable):
 
 ```tsx
-<CursorLayer
-  renderCursor={({ label, color }) => (
-    <MyCursorGlyph color={color}>
-      <span>{label}</span>
-    </MyCursorGlyph>
-  )}
-/>
+import type { ReactNode } from "react";
+import { CursorLayer } from "@anchor-presence/react";
+
+function MyCursorGlyph({ color, children }: { color: string; children: ReactNode }) {
+  return <span data-color={color}>{children}</span>;
+}
+
+function GlyphLayer() {
+  return (
+    <CursorLayer
+      renderCursor={({ label, color }) => (
+        <MyCursorGlyph color={color}>
+          <span>{label}</span>
+        </MyCursorGlyph>
+      )}
+    />
+  );
+}
 ```
 
 `renderCursor` receives the resolved `cursor`, the `label` from `getLabel`, and the `color` from `getColor`. `CursorLayer` keeps control of the root position, transform, pointer events, `aria-hidden`, and data attributes.
@@ -33,11 +44,17 @@ This preview switches between several renderers:
 `DefaultCursor` needs no Tailwind and no external stylesheet. Three CSS variables control its look: `--anchor-presence-cursor-color`, `--anchor-presence-cursor-size`, and `--anchor-presence-cursor-label-color`. This renderer makes the arrow larger:
 
 ```tsx
-<CursorLayer
-  renderCursor={({ label, color }) => (
-    <DefaultCursor label={label} color={color} style={{ "--anchor-presence-cursor-size": "28px" }} />
-  )}
-/>
+import { CursorLayer, DefaultCursor } from "@anchor-presence/react";
+
+function LargeCursorLayer() {
+  return (
+    <CursorLayer
+      renderCursor={({ label, color }) => (
+        <DefaultCursor label={label} color={color} style={{ "--anchor-presence-cursor-size": "28px" }} />
+      )}
+    />
+  );
+}
 ```
 
 The `--anchor-presence-cursor-color` variable on `style` wins over the `color` prop. A `label` of `null` or `undefined` shows the arrow without a label. For every prop, see [DefaultCursor](/docs/react/api/components#defaultcursor).

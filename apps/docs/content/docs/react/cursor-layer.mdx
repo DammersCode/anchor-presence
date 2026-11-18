@@ -47,15 +47,21 @@ This preview shows `CursorLayer` in two layouts, with the label and the color fr
 `getLabel` and `getColor` run for each visible cursor. They replace the default label and the default color. The samples on this page pass inline callbacks for brevity. See [Keep the callbacks stable](#keep-the-callbacks-stable):
 
 ```tsx
+import { CursorLayer } from "@anchor-presence/react";
+
 type MyUser = { name: string; color?: string };
 
 const safeColor = (color?: string) =>
   color !== undefined && /^#[0-9a-f]{6}$/iu.test(color) ? color : "#6b7280";
 
-<CursorLayer<unknown, MyUser>
-  getLabel={(cursor) => cursor.user?.name ?? "Guest"}
-  getColor={(cursor) => safeColor(cursor.user?.color)}
-/>;
+function LabeledLayer() {
+  return (
+    <CursorLayer<unknown, MyUser>
+      getLabel={(cursor) => cursor.user?.name ?? "Guest"}
+      getColor={(cursor) => safeColor(cursor.user?.color)}
+    />
+  );
+}
 ```
 
 <Callout type="warn">

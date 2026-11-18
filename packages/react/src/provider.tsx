@@ -93,6 +93,11 @@ export function LiveCursorProvider<TContext = unknown, TUser = unknown>(
     // oxlint-disable-next-line react/refs -- one-shot creation path
     const create = factoryRef.current;
     if (create === undefined) return;
+    if (typeof create !== "function") {
+      throw new TypeError(
+        "LiveCursorProvider: factory must be a function that returns a client; pass a client with the client prop",
+      );
+    }
     if (!isBrowser()) return;
 
     const created = create();

@@ -46,9 +46,10 @@ export type SpawnedRelay = { port: number; stop: () => Promise<void> };
 export async function spawnBunRelay(
   example: string,
   env: Record<string, string> = {},
+  entry = "relay.ts",
 ): Promise<SpawnedRelay> {
   const port = await freePort();
-  const child = spawn("bun", ["run", "--cwd", `examples/${example}`, "relay.ts", String(port)], {
+  const child = spawn("bun", ["run", "--cwd", `examples/${example}`, entry, String(port)], {
     cwd: repoRoot,
     env: { ...process.env, ...env },
     stdio: "ignore",

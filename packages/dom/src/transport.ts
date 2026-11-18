@@ -115,10 +115,22 @@ function withToken(url: string, token: string): string {
  */
 export function createWebSocketTransport(options: WebSocketTransportOptions = {}): WebSocketTransport {
   const baseUrl = resolveUrl(options);
+  let failedAttempts = 0;
   const tokenSource = options.token;
   const reconnect = options.reconnect ?? true;
   const baseBackoffMs = options.baseBackoffMs ?? 500;
   const maxBackoffMs = options.maxBackoffMs ?? 8_000;
+  for (const [name, value] of [
+    ["baseBackoffMs", baseBackoffMs],
+    ["maxBackoffMs", maxBackoffMs],
+  ] as const) {
+    if (!Number.isFinite(value) || value <= 0) {
+      throw new TypeError(`createWebSocketTransport: ${name} must be a positive finite number, got ${value}`);
+    }
+  }
+  if (maxBackoffMs < baseBackoffMs) {
+    throw new TypeError("createWebSocketTransport: maxBackoffMs must be at least baseBackoffMs");
+  }
   const random = options.random ?? Math.random;
   const stableAfterMs = options.stableAfterMs ?? 5_000;
   const shouldReconnect =
@@ -194,7 +206,18 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
     }
   }
 
+  function recordFailedAttempt(): void {
+    failedAttempts += 1;
+    if (failedAttempts === FAILED_ATTEMPTS_BEFORE_WARNING) {
+      warnOnce(
+        `relay-unreachable:${baseUrl}`,
+        `the connection to ${baseUrl} failed ${FAILED_ATTEMPTS_BEFORE_WARNING} times in a row. Check that a relay runs there and that the port and path are right.`,
+      );
+    }
+  }
+
   function failConnect(): void {
+    recordFailedAttempt();
     // no socket opened: a token function or the constructor failed, so the app still learns why
     const reason = "connection attempt failed";
     const willReconnect = reconnect && decideReconnect({ reason });
@@ -204,7 +227,6 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
   }
 
   let openAttempt = 0;
-  let failedAttempts = 0;
 
   function open(): void {
     if (disposedByUser) return;
@@ -281,13 +303,7 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
 
       ws.onclose = (event) => {
         clearStableTimer();
-        if (!opened) failedAttempts += 1;
-        if (failedAttempts === FAILED_ATTEMPTS_BEFORE_WARNING) {
-          warnOnce(
-            `relay-unreachable:${baseUrl}`,
-            `the connection to ${baseUrl} failed ${FAILED_ATTEMPTS_BEFORE_WARNING} times in a row. Check that a relay runs there and that the port and path are right.`,
-          );
-        }
+        if (!opened) recordFailedAttempt();
         if (socket === ws) socket = null;
         if (disposedByUser) return;
         const willReconnect = reconnect && decideReconnect(event);

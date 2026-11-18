@@ -186,6 +186,32 @@ describe("WebSocket transport warnings", () => {
     );
   });
 
+  it("warns after 4 attempts whose WebSocket constructor throws", () => {
+    vi.useFakeTimers();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const ThrowingSocket = vi.fn(() => {
+      throw new SyntaxError("bad url");
+    });
+    const transport = createWebSocketTransport({
+      url: "localhost:8787",
+      WebSocketCtor: ThrowingSocket as unknown as WebSocketCtor,
+      random: () => 0,
+    });
+    void transport.connect();
+    vi.advanceTimersByTime(60_000);
+    void transport.disconnect();
+    expect(warn.mock.calls.flat().join(" ")).toMatch(/failed 4 times in a row/u);
+  });
+
+  it.each([
+    [{ baseBackoffMs: Number.NaN }, /baseBackoffMs must be a positive finite number/u],
+    [{ baseBackoffMs: 0 }, /baseBackoffMs must be a positive finite number/u],
+    [{ maxBackoffMs: Number.POSITIVE_INFINITY }, /maxBackoffMs must be a positive finite number/u],
+    [{ baseBackoffMs: 1000, maxBackoffMs: 500 }, /maxBackoffMs must be at least baseBackoffMs/u],
+  ])("rejects the backoff options %j", (options, message) => {
+    expect(() => createWebSocketTransport({ url: "ws://relay.test/", ...options })).toThrow(message);
+  });
+
   it("warns that url overrides port and path", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     createWebSocketTransport({ url: "ws://relay.test/", port: 1234, path: "/x" });

@@ -70,6 +70,9 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
   if (options?.transport === undefined || options.transport === null) {
     throw new TypeError("createPresenceClient: options.transport is required");
   }
+  if (typeof options.transport.subscribe !== "function") {
+    throw new TypeError("createPresenceClient: transport.subscribe must be a function");
+  }
   const {
     transport,
     codec = jsonCodec,
@@ -90,6 +93,11 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     "adaptivePublish.lowWatermarkBytes": options.adaptivePublish?.lowWatermarkBytes,
     "adaptivePublish.slowPublishIntervalMs": options.adaptivePublish?.slowPublishIntervalMs,
   });
+  if (maxRemoteClients !== undefined && !(Number.isInteger(maxRemoteClients) && maxRemoteClients >= 1)) {
+    throw new TypeError(
+      `createPresenceClient: maxRemoteClients must be an integer of at least 1, got ${String(maxRemoteClients)}`,
+    );
+  }
 
   const publishIntervalMs = Math.max(
     MIN_TIMER_INTERVAL_MS,

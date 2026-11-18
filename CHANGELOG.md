@@ -96,6 +96,10 @@
 
 ### Changed
 
+- `@anchor-presence/dom`: `createWebSocketTransport` throws a `TypeError` for a `baseBackoffMs` or `maxBackoffMs` that is not a positive finite number, and when `maxBackoffMs` is below `baseBackoffMs`. A failed connection attempt that throws before a socket exists (a URL without a scheme, a rejecting `token` function) counts toward the dev warning after 4 failures in a row.
+- `@anchor-presence/core`: `createPresenceClient` throws a `TypeError` for a transport without `subscribe`, and for a `maxRemoteClients` that is not an integer of at least 1.
+- `@anchor-presence/react`: `LiveCursorProvider` throws a `TypeError` when `factory` is not a function, for example a client object. Pass a client with the `client` prop.
+- Example relays: the Elysia relay checks size and rate on the raw frame, so a text frame reaches peers unchanged. Hono and Bun do not call the auth hook for a request without an `Upgrade` header. The Socket.IO relay refuses an origin outside the allowlist with code `4004` in `connect_error`, so the client stops retrying.
 - `@anchor-presence/dom`: a failed connection attempt (a rejecting `token` function or a throwing `WebSocketCtor`) asks `shouldReconnect` like a close does. A `false` answer stops the retries.
 - `@anchor-presence/dom`: `connect()` during the reconnect backoff cancels the pending timer, so it no longer opens a second socket. `WebSocketTransport` types `subscribeStatus`, `getStatus`, `subscribeClose` and `bufferedBytes` as required.
 - `@anchor-presence/core`: the `clientId` length check uses `validationLimits.maxClientIdLength`. `createPresenceClient` throws a `TypeError` when `idFactory` returns a session of 0 or more than 64 characters.

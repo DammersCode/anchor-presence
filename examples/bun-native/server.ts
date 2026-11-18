@@ -77,6 +77,8 @@ export function createBunRelay(port: number, options: BunRelayOptions = {}) {
       }
       if (url.pathname !== "/")
         return new Response("Not found: rooms come from the room query parameter", { status: 404 });
+      if (req.headers.get("upgrade")?.toLowerCase() !== "websocket")
+        return new Response("WebSocket relay: upgrade required", { status: 426 });
       const parsedRoom = parseRoom(url.searchParams.getAll("room"));
       const room = parsedRoom ?? "main";
       const origin = req.headers.get("origin") ?? "";

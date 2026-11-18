@@ -61,6 +61,11 @@ export function createHonoRelay(port: number, options: HonoRelayOptions = {}) {
 
   app.get(
     "/",
+    // a plain GET must not reach the events factory below: it runs the auth hook before any upgrade check
+    (c, next) =>
+      c.req.header("upgrade")?.toLowerCase() === "websocket"
+        ? next()
+        : c.text("WebSocket relay: upgrade required", 426),
     upgradeWebSocket(async (c) => {
       const parsedRoom = parseRoom(c.req.queries("room"));
       const room = parsedRoom ?? "main";

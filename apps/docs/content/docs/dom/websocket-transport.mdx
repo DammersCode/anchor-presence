@@ -102,7 +102,7 @@ While a connection is connecting or open, a second `connect()` call has no effec
 
 ## Stop reconnecting
 
-The transport asks `shouldReconnect` after every close and after every failed connection attempt, and it tries again only if the answer is `true`. It receives the close `code` and `reason`, and returns `false` to stop. This rule also stops on `4001`, the code that the reference relay and the example relays send for a full room:
+The transport asks `shouldReconnect` after every close and after every failed connection attempt, and it tries again only if the answer is `true`. It receives the close `code` and `reason`, and returns `false` to stop. The sample below also stops on `4001`, the code that the reference relay and the example relays send for a full room:
 
 ```ts
 const NO_RETRY_CODES = [1008, 4001, 4004, 4006, 4007];
@@ -133,6 +133,8 @@ transport.subscribeClose((close) => {
   }
 });
 ```
+
+Code `1006` means an abnormal close: the socket ended without a close frame. The cause is usually the network or a relay that is down.
 
 The transport does not replay a past close to a new listener. A close after your own `disconnect()` call does not run the listener. In development mode, the transport also logs each close with a code of `4000` or higher. `client.subscribeClose` receives the same closes.
 

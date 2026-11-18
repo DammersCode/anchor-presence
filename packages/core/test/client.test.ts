@@ -1659,6 +1659,22 @@ describe("numeric option validation", () => {
   });
 });
 
+describe("option shape validation", () => {
+  it.each([0, -1, 1.5])("rejects maxRemoteClients %s", (value) => {
+    const { a } = createInMemoryPair();
+    expect(() => createPresenceClient({ transport: a, maxRemoteClients: value })).toThrow(
+      /maxRemoteClients must be an integer of at least 1/u,
+    );
+  });
+
+  it("rejects a transport without subscribe", () => {
+    const transport = { send: () => {}, connect: () => {}, disconnect: () => {} };
+    expect(() => createPresenceClient({ transport: transport as unknown as LiveCursorTransport })).toThrow(
+      "createPresenceClient: transport.subscribe must be a function",
+    );
+  });
+});
+
 describe("inbound drop warnings", () => {
   it("warns once in dev mode when a message fails to decode", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});

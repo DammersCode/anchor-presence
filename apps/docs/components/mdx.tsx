@@ -14,12 +14,13 @@ import { Mermaid } from "@/components/mermaid";
 import { SceneNote } from "@/components/scene-note";
 
 export function getMDXComponents(components?: MDXComponents) {
+  let tableCount = 0;
   return {
     ...defaultMdxComponents,
     table: (props: ComponentProps<"table">) => (
       <div
         role="region"
-        aria-label="Table"
+        aria-label={`Table ${++tableCount}`}
         tabIndex={0}
         className="relative overflow-auto prose-no-margin my-6"
       >

@@ -175,6 +175,27 @@ describe("LiveCursorProvider factory", () => {
     expect(live).toHaveLength(0);
   });
 
+  it("throws a clear TypeError when factory is a client object", () => {
+    const { client } = makeFakeClient();
+    const root = createRoot(container);
+    const errors: unknown[] = [];
+    const listener = (event: ErrorEvent) => {
+      errors.push(event.error);
+      event.preventDefault();
+    };
+    window.addEventListener("error", listener);
+    try {
+      act(() => {
+        root.render(<LiveCursorProvider factory={client as never} />);
+      });
+    } catch (error) {
+      errors.push(error);
+    } finally {
+      window.removeEventListener("error", listener);
+    }
+    expect(String(errors[0])).toMatch(/factory must be a function that returns a client/u);
+  });
+
   it("server renders run no factory and provide a null client", () => {
     const factory = vi.fn(() => makeFakeClient().client);
     const seen: (PresenceClient | null)[] = [];

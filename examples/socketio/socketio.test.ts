@@ -50,11 +50,12 @@ describe("Socket.IO transport integration", () => {
         reconnection: false,
       });
       sockets.push(evil);
-      const outcome = await new Promise<string>((resolve) => {
+      const outcome = await new Promise<string | number | undefined>((resolve) => {
         evil.on("connect", () => resolve("connected"));
-        evil.on("connect_error", () => resolve("refused"));
+        evil.on("connect_error", (error: Error & { data?: { code?: number } }) => resolve(error.data?.code));
       });
-      expect(outcome).toBe("refused");
+      expect(outcome).toBe(4004);
+      expect(evil.active).toBe(false);
     } finally {
       await guarded.close();
     }

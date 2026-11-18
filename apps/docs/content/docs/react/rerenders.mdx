@@ -46,7 +46,7 @@ A peer is another client in the same room.
 
 In an idle room with no inbound messages, no hook rerenders.
 
-## CursorLayer
+## CursorLayer rerenders
 
 `CursorLayer` follows the same rule. It reads the cursors through `useRemoteCursorsSelector`, so a cursor that `filterCursor` removes causes no render. Each cursor row is memoized, so a row renders again only when its resolved values change. This works only with stable callbacks. See [Keep the callbacks stable](/docs/react/cursor-layer#keep-the-callbacks-stable).
 

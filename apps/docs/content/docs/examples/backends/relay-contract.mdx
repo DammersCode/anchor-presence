@@ -45,7 +45,7 @@ These relays have an `authCheck` hook and bind the identity that it returns:
 
 The relay adds a suffix per connection to `clientId`, in the form `<clientId>~<connection>`, so two tabs of one user stay two clients. Identity binding works with `jsonCodec` only. The relay drops a frame that is not a JSON object, for example a `binaryCodec` frame.
 
-Every relay with a hook checks the origin and the room name before it calls `authCheck`. A connection from a refused origin or with an invalid room name never runs the hook.
+Every relay checks a connection in the same order: first the origin, then the room name, then the room token or the `authCheck` hook. A connection from a refused origin or with an invalid room name never runs the hook. If a connection fails more than one check, it gets the code of the first failed check.
 
 The reference relay and the SignalR hub have no `authCheck` hook and bind no identity. The reference relay checks only a shared room token. See [Identity binding](/docs/examples/backends#identity-binding) for the demo identity mode.
 
@@ -65,9 +65,14 @@ The reference relay closes a socket with one of these codes:
 
 The column "The transport reconnects" applies to `createWebSocketTransport` with its default `shouldReconnect`. To change which codes stop the reconnect, pass `shouldReconnect` to `createWebSocketTransport`.
 
-The Bun, Node.js (ws), Hono and Elysia relays use `4001`, `4002`, `4004`, `4006` and `4007` with the same meaning. Only the reference relay and the Node.js (ws) relay use `4003`. The Bun, Hono and Elysia relays never send `4003`. On these relays, Bun closes a slow receiver at its `backpressureLimit`. Socket.IO and SignalR have no WebSocket close codes. Their relays send the code in a `refused` message before they disconnect, and their transports report it through `subscribeClose`:
+The Bun, Node.js (ws), Hono and Elysia relays use `4001`, `4002`, `4004`, `4006` and `4007` with the same meaning. Only the reference relay and the Node.js (ws) relay use `4003`:
 
-- The Socket.IO relay sends `4001`, `4002` and `4007` in a `refused` event, and `4006` in the `connect_error` data. The Socket.IO client does not reconnect after any of them. See [Socket.IO](/docs/examples/backends/socketio#close-reasons).
+- The Node.js (ws) relay closes a receiver with `4003` above `RELAY_SLOW_PEER_HARD_BYTES`.
+- The reference relay closes a receiver with `4003` above `RELAY_SLOW_PEER_HARD_BYTES`. Bun drops frames above `RELAY_SLOW_PEER_SOFT_BYTES`, so the buffer reaches the hard limit only when `RELAY_SLOW_PEER_HARD_BYTES` is below `RELAY_SLOW_PEER_SOFT_BYTES` plus `MAX_MESSAGE_BYTES`. With the default limits, `4003` never occurs, and a stalled receiver ends with `4005` after the liveness timeout of 60 seconds.
+
+The Bun, Hono and Elysia relays never send `4003`. On these relays, Bun closes a slow receiver at its `backpressureLimit`. Socket.IO and SignalR have no WebSocket close codes. Their relays send the code in a message, and their transports report it through `subscribeClose`:
+
+- The Socket.IO relay sends `4007` and `4006` in the `connect_error` data of a refused handshake. It sends `4001` and `4002` in a `refused` event before it disconnects. The Socket.IO client does not reconnect after any of them. See [Socket.IO](/docs/examples/backends/socketio#close-reasons).
 - The SignalR hub sends only `4007`, in a `Refused` message. See [SignalR](/docs/examples/backends/signalr#close-reasons).
 
 ## Check your relay

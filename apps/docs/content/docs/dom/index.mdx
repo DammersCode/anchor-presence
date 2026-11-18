@@ -75,13 +75,13 @@ binding.subscribe(() => {
 `createDomBinding` does four jobs:
 
 <Mermaid
-  chart={`flowchart LR
-  page["page: data-anchor elements"] -->|registers| registry["anchor registry"]
-  pointer["local pointer events"] -->|local cursor| client["PresenceClient"]
-  registry -->|nearest anchors| pointer
-  client -->|remote presence| resolver["resolver, once per frame"]
-  registry -->|anchor rectangles| resolver
-  resolver -->|positions| snapshot["ResolvedCursor[] snapshot"]`}
+  chart={`flowchart TD
+  page["data-anchor elements"] -->|register| registry["anchor registry"]
+  registry -->|nearest anchors| pointer["pointer capture"]
+  pointer -->|local cursor| client["PresenceClient"]
+  client -->|remote presence| resolver["resolver"]
+  registry -->|rectangles| resolver
+  resolver -->|once per frame| snapshot["ResolvedCursor[]"]`}
 />
 
 - It watches the page for elements with an anchor attribute and registers them.

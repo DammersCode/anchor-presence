@@ -32,8 +32,11 @@ function createBroadcastChannelTransport(channelName: string): LiveCursorTranspo
     connect() {
       if (channel !== null) return;
       channel = new BroadcastChannel(channelName);
-      channel.addEventListener("message", (event: MessageEvent<Uint8Array>) => {
-        for (const listener of listeners) listener(event.data);
+      channel.addEventListener("message", (event: MessageEvent<unknown>) => {
+        if (!ArrayBuffer.isView(event.data)) return;
+        const { buffer, byteOffset, byteLength } = event.data;
+        const bytes = new Uint8Array(buffer, byteOffset, byteLength);
+        for (const listener of listeners) listener(bytes);
       });
       // a BroadcastChannel has no handshake, so it is connected at once
       setStatus("connected");
@@ -62,7 +65,7 @@ function createBroadcastChannelTransport(channelName: string): LiveCursorTranspo
 }
 ```
 
-The sketch keeps the current status in `status`. `connect` and `disconnect` set it and call each status listener. A new `subscribeStatus` listener receives the current status at once.
+The sketch keeps the current status in `status`. `connect` and `disconnect` set it and call each status listener. A new `subscribeStatus` listener receives the current status at once. The `message` listener ignores a value that is not a typed array, because any script of the origin can post to the channel.
 
 `BroadcastChannel` delivers structured-cloned values, that is, copies that the browser makes of each posted value. A `Uint8Array` arrives as a `Uint8Array`, so it needs no base64 step.
 

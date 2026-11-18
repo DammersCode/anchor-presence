@@ -32,17 +32,21 @@ function App() {
   );
 }
 
-// packages/react/README.md CursorLayer sample, verbatim aside from the type annotation
-type MyUser = { name: string; color?: string };
+// packages/react/README.md CursorLayer sample; the README declares MyCursorGlyph, the test defines it
 type MyContext = { pageId: string };
+type MyUser = { name: string; color?: string };
+function MyCursorGlyph(props: { color: string; children: React.ReactNode }): React.JSX.Element {
+  return <span style={{ color: props.color }}>{props.children}</span>;
+}
 
 function CursorLayerSample() {
   return (
     <CursorLayer<MyContext, MyUser>
-      getLabel={(cursor: ResolvedCursor<MyContext, MyUser>) => cursor.user?.name ?? "Guest"}
-      getColor={(cursor: ResolvedCursor<MyContext, MyUser>) => cursor.user?.color ?? "#6b7280"}
-      filterCursor={(cursor: ResolvedCursor<MyContext, MyUser>) => cursor.tier !== "viewport"}
+      getLabel={(cursor) => cursor.user?.name ?? "Guest"}
+      getColor={(cursor) => cursor.user?.color ?? "#6b7280"}
+      filterCursor={(cursor) => cursor.tier !== "viewport"}
       getCursorProps={() => ({ className: "my-cursor" })}
+      renderCursor={({ label, color }) => <MyCursorGlyph color={color}>{label}</MyCursorGlyph>}
       zIndex={1000}
     />
   );

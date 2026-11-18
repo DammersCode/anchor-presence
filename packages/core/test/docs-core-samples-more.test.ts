@@ -1,7 +1,9 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { describe, expect, expectTypeOf, it } from "vitest";
+import { describe, expect, expectTypeOf, it, vi } from "vitest";
 import {
+  createInMemoryPair,
+  createPresenceClient,
   binaryCodec,
   jsonCodec,
   linearInterpolator,
@@ -11,6 +13,8 @@ import {
   type Interpolator as ExportedInterpolator,
   type InterpolatorFactory as ExportedInterpolatorFactory,
   type LiveCursorTransport,
+  type PresenceClient,
+  type RemotePresence,
 } from "@anchor-presence/core";
 
 // Verbatim copies of doc samples; the last test checks each copy against its .mdx source.
@@ -30,8 +34,11 @@ function createBroadcastChannelTransport(channelName: string): LiveCursorTranspo
     connect() {
       if (channel !== null) return;
       channel = new BroadcastChannel(channelName);
-      channel.addEventListener("message", (event: MessageEvent<Uint8Array>) => {
-        for (const listener of listeners) listener(event.data);
+      channel.addEventListener("message", (event: MessageEvent<unknown>) => {
+        if (!ArrayBuffer.isView(event.data)) return;
+        const { buffer, byteOffset, byteLength } = event.data;
+        const bytes = new Uint8Array(buffer, byteOffset, byteLength);
+        for (const listener of listeners) listener(bytes);
       });
       // a BroadcastChannel has no handshake, so it is connected at once
       setStatus("connected");
@@ -58,6 +65,28 @@ function createBroadcastChannelTransport(channelName: string): LiveCursorTranspo
       return status;
     },
   };
+}
+
+interface Framework {
+  isServer: boolean;
+  createSignal<T>(value: T): [read: () => T, write: (value: T) => void];
+  onCleanup(fn: () => void): void;
+}
+
+function createPresenceSignals(framework: Framework, client: PresenceClient) {
+  const [presence, setPresence] = framework.createSignal<RemotePresence[]>([]);
+  const [status, setStatus] = framework.createSignal<ConnectionStatus>("disconnected");
+  if (framework.isServer) return { presence, status };
+
+  setPresence(client.getRemotePresence());
+  setStatus(client.getStatus());
+  const stopPresence = client.subscribeRemote(() => setPresence(client.getRemotePresence()));
+  const stopStatus = client.subscribeStatus(setStatus);
+  framework.onCleanup(() => {
+    stopPresence();
+    stopStatus();
+  });
+  return { presence, status };
 }
 
 interface Interpolator {
@@ -93,7 +122,7 @@ function docSample(page: string, marker: string): string {
   return block;
 }
 
-const presence: CursorPresence = {
+const samplePresence: CursorPresence = {
   version: 1,
   clientId: "a",
   session: "s",
@@ -136,7 +165,8 @@ describe("codecs.mdx: CursorCodec listing", () => {
   it("equals the exported type, and both codecs round-trip through it", () => {
     expectTypeOf<CursorCodec>().toEqualTypeOf<ExportedCursorCodec>();
     const codecs: CursorCodec[] = [jsonCodec, binaryCodec];
-    for (const codec of codecs) expect(codec.decode(codec.encode(presence))).toMatchObject(presence);
+    for (const codec of codecs)
+      expect(codec.decode(codec.encode(samplePresence))).toMatchObject(samplePresence);
   });
 });
 
@@ -163,6 +193,51 @@ describe("codecs.mdx and performance.mdx: wire sizes", () => {
   });
 });
 
+describe("build-a-framework-adapter.mdx: signal bridge", () => {
+  function fakeFramework(isServer: boolean) {
+    const cleanups: (() => void)[] = [];
+    const framework: Framework = {
+      isServer,
+      createSignal<T>(value: T): [() => T, (next: T) => void] {
+        let current = value;
+        return [() => current, (next) => (current = next)];
+      },
+      onCleanup: (fn) => cleanups.push(fn),
+    };
+    return { framework, cleanup: () => cleanups.forEach((fn) => fn()) };
+  }
+
+  it("follows the client until cleanup", () => {
+    vi.useFakeTimers();
+    const { a, b } = createInMemoryPair();
+    const client = createPresenceClient({ transport: a, clientId: "A" });
+    const peer = createPresenceClient({ transport: b, clientId: "B" });
+    const { framework, cleanup } = fakeFramework(false);
+    const { presence, status } = createPresenceSignals(framework, client);
+    expect(status()).toBe("connected");
+
+    peer.setLocalCursor({ anchors: [{ id: "doc", u: 0.5, v: 0.5 }] });
+    vi.advanceTimersByTime(100);
+    expect(presence().map((peerPresence) => peerPresence.clientId)).toEqual(["B"]);
+
+    cleanup();
+    peer.dispose();
+    vi.advanceTimersByTime(100);
+    expect([client.getRemotePresence().length, presence().length]).toEqual([0, 1]);
+    client.dispose();
+    vi.useRealTimers();
+  });
+
+  it("subscribes to nothing on the server", () => {
+    const { a } = createInMemoryPair();
+    const client = createPresenceClient({ transport: a });
+    const subscribeRemote = vi.spyOn(client, "subscribeRemote");
+    const { presence, status } = createPresenceSignals(fakeFramework(true).framework, client);
+    expect([presence(), status(), subscribeRemote.mock.calls.length]).toEqual([[], "disconnected", 0]);
+    client.dispose();
+  });
+});
+
 describe("doc sample sources", () => {
   it("match the copies in this file", () => {
     const source = readRepoFile("packages/core/test/docs-core-samples-more.test.ts")
@@ -173,6 +248,7 @@ describe("doc sample sources", () => {
       docSample("core/custom-transport.mdx", "function createBroadcastChannelTransport"),
       docSample("core/interpolation.mdx", "interface Interpolator"),
       docSample("core/codecs.mdx", "interface CursorCodec"),
+      docSample("core/build-a-framework-adapter.mdx", "function createPresenceSignals"),
     ];
     for (const sample of samples) expect(source).toContain(sample);
   });

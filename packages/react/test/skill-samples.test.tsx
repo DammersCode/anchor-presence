@@ -1,10 +1,12 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { useEffect, useRef } from "react";
+import { act, useEffect, useRef } from "react";
+import { createRoot } from "react-dom/client";
 import { describe, expect, it } from "vitest";
 import { createPresenceClient } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
-import { CursorLayer, LiveCursorProvider, useLocalContext } from "../src/index";
+import { CursorLayer, LiveCursorProvider, useCursorBinding, useLocalContext } from "../src/index";
+import { makeFakeBinding, makeFakeClient } from "./test-utils";
 
 // Verbatim copies of the tsx samples in skills/anchor-presence/SKILL.md; the test below keeps them in sync.
 
@@ -45,9 +47,6 @@ function ScopedPresenceRoot({
 }) {
   // The provider reads bindingOptions once, so the policy reads the page through a ref.
   const pageRef = useRef(currentPage);
-  useEffect(() => {
-    pageRef.current = currentPage;
-  }, [currentPage]);
 
   return (
     <LiveCursorProvider<{ page: string }, { name: string }>
@@ -67,17 +66,22 @@ function ScopedPresenceRoot({
         },
       }}
     >
-      <PublishPage page={currentPage} />
+      <PublishPage page={currentPage} pageRef={pageRef} />
       {children}
       <CursorLayer<{ page: string }, { name: string }> getLabel={(cursor) => cursor.user?.name ?? null} />
     </LiveCursorProvider>
   );
 }
 
-// useLocalContext works only below the provider.
-function PublishPage({ page }: { page: string }) {
+// useLocalContext and useCursorBinding work only below the provider.
+function PublishPage({ page, pageRef }: { page: string; pageRef: { current: string } }) {
   const [, setContext] = useLocalContext<{ page: string }>();
+  const binding = useCursorBinding();
   useEffect(() => setContext({ page }), [page, setContext]);
+  useEffect(() => {
+    pageRef.current = page;
+    binding?.invalidate("page-changed");
+  }, [page, pageRef, binding]);
   return null;
 }
 
@@ -107,5 +111,31 @@ describe("skills/anchor-presence/SKILL.md samples", () => {
       scopedSample.replace("export function PresenceRoot(", "function ScopedPresenceRoot("),
     );
     expect(ScopedPresenceRoot).toBeTypeOf("function");
+  });
+
+  it("step 6: PublishPage invalidates the binding after it updates the page ref", () => {
+    const { client } = makeFakeClient();
+    const { binding } = makeFakeBinding();
+    const pageRef = { current: "home" };
+    const pagesAtInvalidate: string[] = [];
+    binding.invalidate = () => pagesAtInvalidate.push(pageRef.current);
+    const container = document.createElement("div");
+    document.body.append(container);
+    const root = createRoot(container);
+    const render = (page: string) =>
+      act(() =>
+        root.render(
+          <LiveCursorProvider client={client} binding={binding}>
+            <PublishPage page={page} pageRef={pageRef} />
+          </LiveCursorProvider>,
+        ),
+      );
+
+    render("home");
+    render("settings");
+    expect(pagesAtInvalidate.at(-1)).toBe("settings");
+    expect(pagesAtInvalidate).toContain("home");
+    act(() => root.unmount());
+    container.remove();
   });
 });

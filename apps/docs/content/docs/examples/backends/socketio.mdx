@@ -68,16 +68,16 @@ The relay listens on `http://localhost:5001`. To use a different port, give the 
 
 ## Close reasons
 
-Socket.IO has no close codes. For this reason, the relay sends a `refused` event with a code and a reason before it disconnects a socket. The transport reports that code through `subscribeClose`:
+Socket.IO has no close codes. For this reason, the relay sends the code in one of two ways. The `io.use` middleware checks the handshake: first the room name, then the `authCheck` hook. If a check fails, the client gets a `connect_error` with the code in `error.data.code`. After the handshake, the relay sends a `refused` event with a code and a reason, and then it disconnects the socket. The transport reports the code of both ways through `subscribeClose`:
 
 | Code   | Meaning                             | How the relay sends it             |
 | ------ | ----------------------------------- | ---------------------------------- |
 | `4001` | The room is full.                   | `refused` event, then a disconnect |
 | `4002` | The server is full.                 | `refused` event, then a disconnect |
 | `4006` | The room token is missing or wrong. | `connect_error` with `data.code`   |
-| `4007` | The room name is not valid.         | `refused` event, then a disconnect |
+| `4007` | The room name is not valid.         | `connect_error` with `data.code`   |
 
-A disconnect from the server stops the Socket.IO client from retrying, so `willReconnect` is `false` for these codes. An origin outside the allowlist fails the handshake with no code. To show the reason to the user, subscribe to the close:
+A middleware error and a disconnect from the server both stop the Socket.IO client from retrying, so `willReconnect` is `false` for these codes. An origin outside the allowlist fails the handshake with no code. To show the reason to the user, subscribe to the close:
 
 ```ts
 client.subscribeClose((close) => {
@@ -93,7 +93,7 @@ Each setting is an environment variable. The factory options `maxMessageBytes`, 
 
 | Topic            | Behavior                                                                                                                   |
 | ---------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| Room             | Reads `room` from the handshake query. A missing value is `main`. An invalid name gets a `refused` event with code `4007`. |
+| Room             | Reads `room` from the handshake query. A missing value is `main`. An invalid name gets a `connect_error` with code `4007`. |
 | Upgrade path     | The default Socket.IO path, `/socket.io/`.                                                                                 |
 | Fan-out          | `socket.to(room).emit` sends to every other socket in the Socket.IO room.                                                  |
 | Payload          | Forwards each `"presence"` payload unchanged. Decodes a payload only for identity binding.                                 |
@@ -104,16 +104,14 @@ Each setting is an environment variable. The factory options `maxMessageBytes`, 
 
 The rate limit is a token bucket: a socket can send a burst of 80 messages, then 40 messages per second.
 
-| Limit               | Setting (default)                                      | Above the limit                                     |
-| ------------------- | ------------------------------------------------------ | --------------------------------------------------- |
-| Message size        | `MAX_MESSAGE_BYTES` (32 KiB)                           | The `"presence"` handler drops the payload.         |
-| Hard frame size     | `maxHttpBufferSize`, equal to `MAX_MESSAGE_BYTES`      | Socket.IO closes the connection.                    |
-| Message rate        | `RATE_CAPACITY` (80) and `RATE_REFILL_PER_SECOND` (40) | Drops the message. The socket stays open.           |
-| Sockets in one room | `RELAY_MAX_ROOM_SOCKETS` (64)                          | Sends `refused` with code `4001`, then disconnects. |
-| Sockets in total    | `RELAY_MAX_TOTAL_SOCKETS` (10,000)                     | Sends `refused` with code `4002`, then disconnects. |
-| Slow receiver       | None                                                   | The relay does not check the send buffer.           |
-
-The message size limit and the hard frame size are equal. As a result, a message above 32 KiB closes the connection, and the relay does not drop it.
+| Limit               | Setting (default)                                            | Above the limit                                                    |
+| ------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------ |
+| Message size        | `MAX_MESSAGE_BYTES` (32 KiB)                                 | The `"presence"` handler drops the payload. The socket stays open. |
+| Hard frame size     | `maxHttpBufferSize`: 4 × `MAX_MESSAGE_BYTES`, at least 1 MiB | Socket.IO closes the connection.                                   |
+| Message rate        | `RATE_CAPACITY` (80) and `RATE_REFILL_PER_SECOND` (40)       | Drops the message. The socket stays open.                          |
+| Sockets in one room | `RELAY_MAX_ROOM_SOCKETS` (64)                                | Sends `refused` with code `4001`, then disconnects.                |
+| Sockets in total    | `RELAY_MAX_TOTAL_SOCKETS` (10,000)                           | Sends `refused` with code `4002`, then disconnects.                |
+| Slow receiver       | None                                                         | The relay does not check the send buffer.                          |
 
 ### Auth
 

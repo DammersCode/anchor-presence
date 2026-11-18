@@ -108,7 +108,7 @@ Until the factory runs, the provider renders its children with no cursors. For t
 
 - The package has no state store of its own. The hooks read the client from `@anchor-presence/core` and the binding from `@anchor-presence/dom`.
 - The package entry starts with `"use client"`. In a framework with React Server Components, its exports are Client Components. See [Frameworks](/docs/get-started/frameworks).
-- The peer dependency is `react` 18 or later. CI runs the test suite on React 19. On React 18.3, every test passes except the router tests, which need React 19.
+- The peer range is `>=18`. CI runs the tests on React 19.
 - In development mode, the provider and the hooks write console warnings for setup errors. See [Development warnings](/docs/get-started/guides/troubleshooting#development-warnings).
 
 ## Related

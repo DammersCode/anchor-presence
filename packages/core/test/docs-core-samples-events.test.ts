@@ -122,7 +122,7 @@ describe("presence-client.mdx: create a client", () => {
 describe("events.mdx: typed events", () => {
   it("sends typed events, and the parser drops data that does not fit the map", () => {
     const { a, b } = createInMemoryPair();
-    const transport = a;
+    const myTransport = a;
     const showReaction = vi.fn<(clientId: string, emoji: string) => void>();
     const peer = createPresenceClient({ transport: b, clientId: "B" });
     const peerEvents: RemoteEvent[] = [];
@@ -138,7 +138,7 @@ describe("events.mdx: typed events", () => {
       ping: null,
     });
 
-    const client = createPresenceClient({ transport, parseEvent });
+    const client = createPresenceClient({ transport: myTransport, parseEvent });
     const events = createEventChannel<Events>(client);
 
     events.send("reaction", { emoji: "tada" });

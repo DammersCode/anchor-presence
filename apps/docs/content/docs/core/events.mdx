@@ -52,14 +52,18 @@ The `parseEvent` option checks events. It receives each remote event and returns
 
 ```ts
 const client = createPresenceClient({
-  transport,
+  transport: myTransport,
   parseEvent: (event) => {
     if (event.type !== "reaction") return undefined;
     const emoji = (event.data as { emoji?: unknown } | undefined)?.emoji;
-    return typeof emoji === "string" ? { ...event, data: { emoji: emoji.slice(0, 2) } } : undefined;
+    if (typeof emoji !== "string") return undefined;
+    const first = new Intl.Segmenter().segment(emoji).containing(0);
+    return first ? { ...event, data: { emoji: first.segment } } : undefined;
   },
 });
 ```
+
+`Intl.Segmenter` splits the string into the characters that a user sees. The parser keeps only the first one, so an emoji with a skin tone stays whole.
 
 ## Event rate limit
 
@@ -117,7 +121,7 @@ const parseEvent = createEventParser<Events>({
   ping: null,
 });
 
-const client = createPresenceClient({ transport, parseEvent });
+const client = createPresenceClient({ transport: myTransport, parseEvent });
 const events = createEventChannel<Events>(client);
 
 events.send("reaction", { emoji: "tada" });

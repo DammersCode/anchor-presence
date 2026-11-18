@@ -33,7 +33,7 @@ function NameField() {
 
 - The setter calls `client.setUser()`, which sends the value to peers.
 - The hook rerenders when the value changes. A change is a value with another reference than the current value. A direct `client.setUser()` call also rerenders the hook.
-- On the server, the hook returns `undefined`. Without a client, the setter does nothing.
+- On the server, and without a client, the hook returns `undefined` and a setter that does nothing.
 
 The default label of `CursorLayer` is the `name` field of this value. See [Defaults](/docs/react/cursor-layer#defaults).
 

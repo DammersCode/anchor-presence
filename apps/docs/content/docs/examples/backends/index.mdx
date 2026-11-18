@@ -1,5 +1,5 @@
 ---
-title: Overview
+title: Pick a relay
 description: Pick a relay for your server, and learn what every relay does, checks, and limits.
 icon: server
 ---
@@ -20,7 +20,7 @@ import {
 
 Live cursors need a relay: a server that forwards each message to the peers of the sender. A peer is another client in the same room. `@anchor-presence/core` imports no transport library, so any channel that implements `LiveCursorTransport` works. This section has one tested relay for each common backend.
 
-## Pick a relay
+## Relays by backend
 
 <Cards>
   <Card icon={<Zap />} title="Bun" href="/docs/examples/backends/bun-native">

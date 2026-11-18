@@ -30,7 +30,7 @@ Owner decisions:
 | [028 Layout audit skill](028-layout-audit-skill.md)                                     | `dev`               | main tree                       | done                     |
 | Skills docs tab                                                                         | `dev`               | main tree                       | done                     |
 
-| [043 Production-ready API and docs](043-production-ready-api.md) | `crew/round-N` | main tree | in progress: rounds 1 merged, round 2 open. Docs menu and Vercel filter done. Gaps tracked in [research/gap-ledger.md](research/gap-ledger.md). |
+| [043 Production-ready API and docs](043-production-ready-api.md) | `crew/round-5` | main tree | done after 9 scoring rounds, stop rule fired on a plateau: no open P1 or P2 row. API 8.0, backend 7.4, docs accuracy 8, completeness 9, readability 8. Open work: P3 rows in [research/gap-ledger.md](research/gap-ledger.md) and [research/docs-ledger.md](research/docs-ledger.md), and the two large docs rows C6-G10 (backend page structure) and C3-G12 (drift tests). |
 
 Owner decisions for 043 (2026-11-17): unlimited budget, stop on a stall, breaking changes welcome, the repo is private so pushes and merges to `main` are allowed, one push and one merge per round. CREW runs the loop (`.crew/pattern.md`, mode 3).
 

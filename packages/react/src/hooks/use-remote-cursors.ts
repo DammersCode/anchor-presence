@@ -51,12 +51,7 @@ export function useRemoteCursorsSelector<TSelected, TContext = unknown, TUser = 
     const cursors =
       binding !== null ? binding.getSnapshot() : (EMPTY_CURSORS as ResolvedCursor<TContext, TUser>[]);
     const lastInput = lastInputRef.current;
-    if (
-      lastInput !== null &&
-      lastInput.cursors === cursors &&
-      lastInput.select === select &&
-      lastInput.isEqual === isEqual
-    ) {
+    if (lastInput?.cursors === cursors && lastInput.select === select && lastInput.isEqual === isEqual) {
       return lastInput.value;
     }
 

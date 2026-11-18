@@ -46,7 +46,7 @@ describe("dom docs samples", () => {
     const peerCursor = () =>
       peer.getRemoteSnapshot().find((p) => p.clientId === client.clientId)?.cursor ?? null;
 
-    client.updateLocalCursor({ anchors: [], viewport: { u: 0.5, v: 0.5 } });
+    client.setLocalCursor({ anchors: [], viewport: { u: 0.5, v: 0.5 } });
     vi.advanceTimersByTime(1000);
     expect(peerCursor()).not.toBeNull();
 
@@ -156,7 +156,7 @@ describe("binding docs", () => {
     });
 
     const peer = createPresenceClient({ transport: b });
-    peer.updateLocalCursor({ anchors: [], viewport: { u: 0.5, v: 0.5 } });
+    peer.setLocalCursor({ anchors: [], viewport: { u: 0.5, v: 0.5 } });
     vi.advanceTimersByTime(100);
     flush();
     expect(rendered.at(-1)?.startsWith(`${peer.clientId}@`)).toBe(true);
@@ -213,7 +213,7 @@ describe("binding docs", () => {
     document.body.append(layer);
     const stop = drawCursors(domBinding, layer);
     const peer = createPresenceClient({ transport: b });
-    peer.updateLocalCursor({ anchors: [], viewport: { u: 0.5, v: 0.5 } });
+    peer.setLocalCursor({ anchors: [], viewport: { u: 0.5, v: 0.5 } });
     vi.advanceTimersByTime(100);
     flush();
     expect(layer.children).toHaveLength(1);

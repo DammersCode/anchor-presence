@@ -132,7 +132,7 @@ describeIfDotnet("SignalR hub integration (real .NET server)", () => {
     const clientA = await connectClient("room-1");
     const clientB = await connectClient("room-1");
 
-    clientA.updateLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
+    clientA.setLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
 
     await vi.waitFor(
       () => {
@@ -149,7 +149,7 @@ describeIfDotnet("SignalR hub integration (real .NET server)", () => {
     const sender = await connectClient("room-a");
     const otherRoom = await connectClient("room-b");
 
-    sender.updateLocalCursor({ anchors: [{ id: "a", u: 0.1, v: 0.1 }] });
+    sender.setLocalCursor({ anchors: [{ id: "a", u: 0.1, v: 0.1 }] });
 
     await new Promise((resolve) => setTimeout(resolve, 500));
     expect(otherRoom.getRemoteSnapshot()).toHaveLength(0);
@@ -160,7 +160,7 @@ describeIfDotnet("SignalR hub integration (real .NET server)", () => {
     const receiver = await connectClient("room-oversized");
 
     // MaximumReceiveMessageSize is 32 KiB; this payload is well over that.
-    sender.updateLocalCursor({ anchors: [{ id: "a".repeat(64 * 1024), u: 0.1, v: 0.1 }] });
+    sender.setLocalCursor({ anchors: [{ id: "a".repeat(64 * 1024), u: 0.1, v: 0.1 }] });
     await new Promise((resolve) => setTimeout(resolve, 500));
 
     expect(receiver.getRemoteSnapshot()).toHaveLength(0);

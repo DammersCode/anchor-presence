@@ -105,7 +105,7 @@ export function startTour(options: {
       transport,
       user,
       clientId: `tour-${user.name}`,
-      heartbeatMs: 3_600_000,
+      heartbeatIntervalMs: 3_600_000,
     });
     clients.add(client);
     return client;
@@ -148,13 +148,13 @@ export function startTour(options: {
                 if (disposed) return;
                 const t = easeInOut(elapsed / GLIDE_MS);
                 const point = { x: start.x + (end.x - start.x) * t, y: start.y + (end.y - start.y) * t };
-                client.updateLocalCursor(
+                client.setLocalCursor(
                   positionFrom(document.elementFromPoint(point.x, point.y), point),
                   MOUSE,
                 );
               }
             }
-            client.updateLocalCursor(positionFrom(target, end), MOUSE);
+            client.setLocalCursor(positionFrom(target, end), MOUSE);
             at = end;
             await sleep(step.dwellMs ?? DEFAULT_DWELL_MS);
             break;

@@ -14,9 +14,9 @@ A peer is another client in the same room. Each hook rerenders by these rules:
 | [useRemoteCursors](/docs/react/remote-cursors)             | on every resolved-cursor snapshot, which is every frame while cursors move                               |
 | [useRemoteCursorsSelector](/docs/react/remote-cursors)     | only when its `select` output changes under `isEqual`                                                    |
 | [useRemoteUsers](/docs/react/remote-users)                 | only when the set of peers, or the `user`, `session`, or `idle` field of one peer, changes               |
-| [useCursorPresence](/docs/react/cursor-presence)           | only when the `cursor`, `context`, `user`, `pointer`, `session`, `idle`, or membership of a peer changes |
+| [useRemotePresence](/docs/react/cursor-presence)           | only when the `cursor`, `context`, `user`, `pointer`, `session`, `idle`, or membership of a peer changes |
 | [useCursorStatus](/docs/react/connection-status)           | only when the connection status changes                                                                  |
-| [useCursorContext](/docs/react/cursor-context)             | only when the local context value changes                                                                |
+| [useLocalContext](/docs/react/cursor-context)              | only when the local context value changes                                                                |
 | [useLocalUser](/docs/react/cursor-context#local-user)      | only when the local user value changes                                                                   |
 | [usePeerChanges](/docs/react/remote-users#peer-changes)    | never: it calls its listener and returns nothing                                                         |
 | [useCursorEvents](/docs/react/cursor-events)               | never: it calls its listener and returns nothing                                                         |

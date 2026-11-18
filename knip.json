@@ -1,0 +1,18 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "workspaces": {
+    "packages/core": {
+      "entry": ["test/**/*.test.ts", "bench/**/*.ts"],
+      "project": ["src/**/*.ts"]
+    },
+    "packages/dom": {
+      "entry": ["test/**/*.test.ts"],
+      "project": ["src/**/*.ts"]
+    },
+    "packages/react": {
+      "entry": ["test/**/*.test.{ts,tsx}"],
+      "project": ["src/**/*.{ts,tsx}"]
+    }
+  },
+  "ignoreWorkspaces": ["apps/*", "examples/*"]
+}

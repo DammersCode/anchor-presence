@@ -52,7 +52,7 @@ function makeClient(): {
   const client = {
     clientId: "local",
     session: "s1",
-    updateLocalCursor: (cursor: CursorPosition | null, pointer?: PointerInfo) => {
+    setLocalCursor: (cursor: CursorPosition | null, pointer?: PointerInfo) => {
       samples.push(cursor);
       pointers.push(pointer);
     },
@@ -294,7 +294,7 @@ describe("attachPointerSource (spec §9)", () => {
     handle.detach();
   });
 
-  it("C-4: passes the event's pointerType to updateLocalCursor; unknown or missing types pass undefined", () => {
+  it("C-4: passes the event's pointerType to setLocalCursor; unknown or missing types pass undefined", () => {
     const el = document.createElement("div");
     document.body.append(el);
     mockRect(el, { left: 0, top: 0, width: 100, height: 100 });

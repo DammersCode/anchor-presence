@@ -12,14 +12,14 @@ describe("@anchor-presence/react public runtime API", () => {
       "createPresenceHooks",
       "useCursorBinding",
       "useCursorClient",
-      "useCursorContext",
       "useCursorEvents",
-      "useCursorPresence",
       "useCursorStatus",
+      "useLocalContext",
       "useLocalUser",
       "usePeerChanges",
       "useRemoteCursors",
       "useRemoteCursorsSelector",
+      "useRemotePresence",
       "useRemoteUsers",
     ]);
   });

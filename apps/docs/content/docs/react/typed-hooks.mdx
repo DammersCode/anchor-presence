@@ -20,7 +20,7 @@ export type Events = { reaction: { emoji: string }; ping: undefined };
 export const {
   LiveCursorProvider,
   useCursorClient,
-  useCursorContext,
+  useLocalContext,
   useCursorEvents,
   useLocalUser,
   useRemoteCursors,
@@ -90,7 +90,7 @@ function Reactions() {
 
 ## What the result contains
 
-The result has `LiveCursorProvider`, `useCursorBinding`, `useCursorClient`, `useCursorContext`, `useCursorPresence`, `useLocalUser`, `useRemoteCursors`, `useRemoteCursorsSelector`, and `useRemoteUsers`, each with your context and user types. `useCursorEvents` and `useSendEvent` have your event types. `useCursorStatus` and `usePeerChanges` have no type parameters. Without `TEvents`, an event has any `type` and `data` of the type `unknown`.
+The result has `LiveCursorProvider`, `useCursorBinding`, `useCursorClient`, `useLocalContext`, `useRemotePresence`, `useLocalUser`, `useRemoteCursors`, `useRemoteCursorsSelector`, and `useRemoteUsers`, each with your context and user types. `useCursorEvents` and `useSendEvent` have your event types. `useCursorStatus` and `usePeerChanges` have no type parameters. Without `TEvents`, an event has any `type` and `data` of the type `unknown`.
 
 `CursorLayer` and `DefaultCursor` are not in the result. Import them from `@anchor-presence/react`.
 

@@ -96,7 +96,7 @@ describe("client events", () => {
 
   it("returns false for an event above the field limits and leaves the cursor alone", () => {
     const { sender, receiver } = pair();
-    sender.updateLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
+    sender.setLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
     vi.advanceTimersByTime(100);
 
     expect(sender.sendEvent("big", "x".repeat(9000))).toBe(false);
@@ -184,10 +184,10 @@ describe("peer changes", () => {
     expect(changes).toEqual([
       { type: "join", clientId: "a" },
       { type: "join", clientId: "b" },
-      { type: "update", clientId: "b" },
-      { type: "update", clientId: "a" },
-      { type: "leave", clientId: "a" },
-      { type: "leave", clientId: "b" },
+      { type: "update", clientId: "b", user: { name: "New" } },
+      { type: "update", clientId: "a", user: { name: "Ada" } },
+      { type: "leave", clientId: "a", user: { name: "Ada" } },
+      { type: "leave", clientId: "b", user: { name: "New" } },
     ]);
   });
 });

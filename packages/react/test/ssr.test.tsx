@@ -3,20 +3,33 @@ import { describe, expect, it } from "vitest";
 import { LiveCursorProvider } from "../src/provider";
 import {
   useCursorClient,
-  useCursorContext,
-  useCursorPresence,
+  useCursorBinding,
+  useLocalContext,
+  useCursorEvents,
+  useRemotePresence,
+  useLocalUser,
+  usePeerChanges,
+  useRemoteCursorsSelector,
+  useRemoteUsers,
   useCursorStatus,
   useRemoteCursors,
 } from "../src/hooks";
 
 function AllHooks() {
   const cursors = useRemoteCursors();
-  const presence = useCursorPresence();
+  const presence = useRemotePresence();
   const status = useCursorStatus();
   const client = useCursorClient();
-  const [context] = useCursorContext();
+  const [context] = useLocalContext();
+  const binding = useCursorBinding();
+  const [user] = useLocalUser();
+  const users = useRemoteUsers();
+  const count = useRemoteCursorsSelector((all) => all.length);
+  useCursorEvents(() => {});
+  usePeerChanges(() => {});
   return (
     <div data-anchor="a">
+      <span data-testid="extras">{`${binding === null ? "none" : "binding"}-${user === undefined ? "nouser" : "user"}-${users.length}-${count}`}</span>
       <span data-testid="cursors">{cursors.length}</span>
       <span data-testid="presence">{presence.length}</span>
       <span data-testid="status">{status}</span>
@@ -44,5 +57,6 @@ describe("SSR safety", () => {
     );
     expect(html).toContain("disconnected");
     expect(html).toContain("null");
+    expect(html).toContain("none-nouser-0-0");
   });
 });

@@ -84,7 +84,7 @@ Horizontal scale and authentication of identity are server concerns, not transpo
 
 A cursor message with 4 anchors is 292 bytes with `jsonCodec` and 144 bytes with `binaryCodec`. That message has two-letter anchor IDs, coordinates with one decimal place, and a small `user`. Real pointer coordinates have more decimal places, so a JSON message is larger. Measure your own messages before you plan with these numbers.
 
-While the pointer moves, a client publishes at most once every `publishIntervalMs` (`DEFAULT_PUBLISH_INTERVAL_MS`, 50 ms). That is up to 20 messages per second per moving client. A stationary pointer sends no cursor messages. The one exception is a heartbeat every `heartbeatMs` (`DEFAULT_HEARTBEAT_MS`, 10 seconds). The heartbeat carries every field, so a client that joins late gets the current values.
+While the pointer moves, a client publishes at most once every `publishIntervalMs` (`DEFAULT_PUBLISH_INTERVAL_MS`, 50 ms). That is up to 20 messages per second per moving client. A stationary pointer sends no cursor messages. The one exception is a heartbeat every `heartbeatIntervalMs` (`DEFAULT_HEARTBEAT_INTERVAL_MS`, 10 seconds). The heartbeat carries every field, so a client that joins late gets the current values.
 
 **Worked example.** A room has 50 clients on `binaryCodec`. 10 of them move their pointer at the same time:
 

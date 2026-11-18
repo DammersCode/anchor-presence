@@ -230,7 +230,7 @@ describe("useRemoteUsers", () => {
     expect(container.querySelector("[data-testid=count]")?.textContent).toBe("0");
 
     act(() => {
-      clientB.updateLocalCursor({ anchors: [] });
+      clientB.setLocalCursor({ anchors: [] });
       vi.advanceTimersByTime(50);
     });
 

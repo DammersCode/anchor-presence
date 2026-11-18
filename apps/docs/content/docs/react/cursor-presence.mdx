@@ -1,25 +1,25 @@
 ---
 title: Cursor presence
-description: Read the raw remote presence list with useCursorPresence, before geometry resolution.
+description: Read the raw remote presence list with useRemotePresence, before geometry resolution.
 ---
 
-`useCursorPresence` returns the raw remote presence list, the same data that the DOM binding resolves into cursors. Use it only for a field that resolution does not carry, such as `pointer.type`. For rendering, use [Remote cursors](/docs/react/remote-cursors).
+`useRemotePresence` returns the raw remote presence list, the same data that the DOM binding resolves into cursors. Use it only for a field that resolution does not carry, such as `pointer.type`. For rendering, use [Remote cursors](/docs/react/remote-cursors).
 
 ## Usage
 
 The hook has this signature:
 
 ```ts
-function useCursorPresence<TContext = unknown, TUser = unknown>(): RemotePresence<TContext, TUser>[];
+function useRemotePresence<TContext = unknown, TUser = unknown>(): RemotePresence<TContext, TUser>[];
 ```
 
 This component counts the peers (other clients in the same room) that use a touch pointer:
 
 ```tsx
-import { useCursorPresence } from "@anchor-presence/react";
+import { useRemotePresence } from "@anchor-presence/react";
 
 function PointerTypeBadge() {
-  const presence = useCursorPresence();
+  const presence = useRemotePresence();
   const touchCount = presence.filter((p) => p.pointer?.type === "touch").length;
   return <span>{touchCount} touch users</span>;
 }
@@ -28,8 +28,8 @@ function PointerTypeBadge() {
 Each entry is a `RemotePresence` without its `sequence` field, plus `idle`. The hook rerenders only when the `cursor`, `context`, `user`, `pointer`, `session`, `idle` flag, or membership of a peer changes. A message that only advances `sequence` does not rerender it.
 
 <Callout type="warn">
-  If you place an element on screen with `useCursorPresence`, the element lands in the wrong place.
-  `useCursorPresence` returns positions in sender coordinates, not in receiver-viewport pixels. Use
+  If you place an element on screen with `useRemotePresence`, the element lands in the wrong place.
+  `useRemotePresence` returns positions in sender coordinates, not in receiver-viewport pixels. Use
   `useRemoteCursors` instead.
 </Callout>
 

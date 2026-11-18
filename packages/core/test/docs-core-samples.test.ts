@@ -3,7 +3,7 @@ import {
   binaryCodec,
   createInMemoryPair,
   createPresenceClient,
-  DEFAULT_HEARTBEAT_MS,
+  DEFAULT_HEARTBEAT_INTERVAL_MS,
   DEFAULT_IDLE_AFTER_MS,
   DEFAULT_MAX_ANCHOR_ID_LENGTH,
   DEFAULT_MAX_ANCHORS,
@@ -120,13 +120,13 @@ describe("presence client docs: leave and close", () => {
     const { a: client, b: peer } = connectedPair();
     const changes: PeerChange["type"][] = [];
     peer.subscribePeers((change) => changes.push(change.type));
-    client.updateLocalCursor(cursor);
+    client.setLocalCursor(cursor);
     vi.advanceTimersByTime(50);
 
     client.leave();
     expect(peer.getRemotePresence()).toEqual([]);
 
-    client.updateLocalCursor(cursor);
+    client.setLocalCursor(cursor);
     vi.advanceTimersByTime(50);
     expect(changes).toEqual(["join", "leave", "join"]);
     expect(peer.getRemotePresence()).toHaveLength(1);
@@ -136,7 +136,7 @@ describe("presence client docs: leave and close", () => {
 
   it("announces a client again on the next heartbeat after leave", () => {
     const { a: client, b: peer } = connectedPair();
-    client.updateLocalCursor(cursor);
+    client.setLocalCursor(cursor);
     vi.advanceTimersByTime(50);
     client.leave();
     expect(peer.getRemotePresence()).toEqual([]);
@@ -148,7 +148,7 @@ describe("presence client docs: leave and close", () => {
 
   it("sends no leave while not connected", () => {
     const { pair, a: client, b: peer } = connectedPair();
-    client.updateLocalCursor(cursor);
+    client.setLocalCursor(cursor);
     vi.advanceTimersByTime(50);
     void pair.a.disconnect();
     client.leave();
@@ -231,9 +231,9 @@ describe("remote presence docs", () => {
       if (change.type === "join") showToast(`${change.clientId} joined`);
     });
 
-    peer.updateLocalCursor(cursor);
+    peer.setLocalCursor(cursor);
     vi.advanceTimersByTime(50);
-    peer.updateLocalCursor({ anchors: [{ id: "doc", u: 0.1, v: 0.1 }] });
+    peer.setLocalCursor({ anchors: [{ id: "doc", u: 0.1, v: 0.1 }] });
     vi.advanceTimersByTime(50);
     peer.setUser({ name: "Bob" });
     vi.advanceTimersByTime(50);
@@ -248,10 +248,10 @@ describe("remote presence docs", () => {
   it("answers a new peer with one full publish within 500 ms", () => {
     const pair = createInMemoryPair();
     const early = createPresenceClient({ transport: pair.a, user: { name: "Ada" } });
-    early.updateLocalCursor(cursor);
+    early.setLocalCursor(cursor);
     vi.advanceTimersByTime(50);
     const late = createPresenceClient({ transport: pair.b, user: { name: "Bo" } });
-    late.updateLocalCursor(cursor);
+    late.setLocalCursor(cursor);
     vi.advanceTimersByTime(50);
     expect(late.getRemotePresence()).toEqual([]);
     vi.advanceTimersByTime(550);
@@ -260,11 +260,11 @@ describe("remote presence docs", () => {
     late.dispose();
   });
 
-  it("removes peers no heartbeat confirms within 2 * heartbeatMs + 5 s after a reconnect", () => {
+  it("removes peers no heartbeat confirms within 2 * heartbeatIntervalMs + 5 s after a reconnect", () => {
     const pair = createInMemoryPair();
-    const client = createPresenceClient({ transport: pair.a, heartbeatMs: 1000 });
+    const client = createPresenceClient({ transport: pair.a, heartbeatIntervalMs: 1000 });
     const peer = createPresenceClient({ transport: pair.b });
-    peer.updateLocalCursor(cursor);
+    peer.setLocalCursor(cursor);
     vi.advanceTimersByTime(50);
     void pair.b.disconnect();
     peer.dispose();
@@ -279,7 +279,7 @@ describe("remote presence docs", () => {
 
   it("marks a still peer idle while its heartbeats keep arriving", () => {
     const { a: client, b: peer } = connectedPair();
-    peer.updateLocalCursor(cursor);
+    peer.setLocalCursor(cursor);
     vi.advanceTimersByTime(50);
     vi.advanceTimersByTime(25_000);
     expect(client.getRemotePresence()).toMatchObject([{ clientId: peer.clientId, idle: true }]);
@@ -303,7 +303,7 @@ describe("validation docs: remote user and context", () => {
       transport: pair.b,
       user: { name: "Bo", color: "#0ea5e9", admin: true, roles: { all: true } },
     });
-    peer.updateLocalCursor(cursor);
+    peer.setLocalCursor(cursor);
     vi.advanceTimersByTime(50);
     expect(client.getRemotePresence()[0]?.user).toEqual({ name: "Bo", color: "#0ea5e9", admin: true });
 
@@ -328,7 +328,7 @@ describe("validation docs: remote user and context", () => {
     });
 
     const peer = createPresenceClient<unknown, unknown>({ transport: pair.b, context: { page: "/docs" } });
-    peer.updateLocalCursor(cursor);
+    peer.setLocalCursor(cursor);
     vi.advanceTimersByTime(50);
     expect(viewer.getRemotePresence()[0]?.context).toEqual({ page: "/docs" });
 
@@ -509,7 +509,7 @@ describe("remote presence docs: store and samples", () => {
     const client = createPresenceClient({
       transport: myTransport,
       maxRemoteClients: 200,
-      onRemoteClientDrop: () => reportMetric("presence.remote_client_dropped"),
+      onRemoteClientDropped: () => reportMetric("presence.remote_client_dropped"),
     });
 
     // Copied from apps/docs/content/docs/core/remote-presence.mdx (Read remote presence).
@@ -637,7 +637,7 @@ describe("presence client docs: setup samples", () => {
   it("lists the client and store constants", () => {
     expect([
       DEFAULT_PUBLISH_INTERVAL_MS,
-      DEFAULT_HEARTBEAT_MS,
+      DEFAULT_HEARTBEAT_INTERVAL_MS,
       DEFAULT_STALE_TIMEOUT_MS,
       DEFAULT_IDLE_AFTER_MS,
       DEFAULT_MAX_REMOTE_CLIENTS,
@@ -794,7 +794,7 @@ describe("in-memory transport docs", () => {
     const clientA = createPresenceClient({ transport: a, user: { name: "Alice" } });
     const clientB = createPresenceClient({ transport: b, user: { name: "Bob" } });
 
-    clientA.updateLocalCursor(cursor);
+    clientA.setLocalCursor(cursor);
     vi.advanceTimersByTime(50);
     expect(clientB.getRemotePresence()[0]?.user).toEqual({ name: "Alice" });
     clientA.dispose();

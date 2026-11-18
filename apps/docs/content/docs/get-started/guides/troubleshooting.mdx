@@ -15,7 +15,7 @@ Three separate causes produce the same symptom.
 
 **The presence is idle or stale.** A peer (another client in the same room) is idle when its presence did not change for `idleAfterMs` (default 15000 ms). A heartbeat that changes nothing does not end idle. `CursorLayer` dims the cursor of an idle peer. The store clamps `idleAfterMs` below `staleTimeoutMs`.
 
-The store removes a client after `staleTimeoutMs` (default 70000 ms) with no message. A sender on a background tab still sends a heartbeat every `heartbeatMs` (default 10000 ms). A browser can slow the timers of a hidden tab to one run per minute, so a long background period can still expire the entry. Make sure that the sender tab is not fully suspended, and that the transport is connected on both sides.
+The store removes a client after `staleTimeoutMs` (default 70000 ms) with no message. A sender on a background tab still sends a heartbeat every `heartbeatIntervalMs` (default 10000 ms). A browser can slow the timers of a hidden tab to one run per minute, so a long background period can still expire the entry. Make sure that the sender tab is not fully suspended, and that the transport is connected on both sides.
 
 ## Cursor is outside the window
 

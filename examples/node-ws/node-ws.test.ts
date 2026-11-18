@@ -43,7 +43,7 @@ describe("node-ws relay integration", () => {
     await vi.waitFor(() => expect(clientA.getStatus()).toBe("connected"), { timeout: 5000, interval: 25 });
     await vi.waitFor(() => expect(clientB.getStatus()).toBe("connected"), { timeout: 5000, interval: 25 });
 
-    clientA.updateLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
+    clientA.setLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
 
     await vi.waitFor(
       () => {
@@ -63,7 +63,7 @@ describe("node-ws relay integration", () => {
     await vi.waitFor(() => expect(sender.getStatus()).toBe("connected"), { timeout: 5000, interval: 25 });
     await vi.waitFor(() => expect(otherRoom.getStatus()).toBe("connected"), { timeout: 5000, interval: 25 });
 
-    sender.updateLocalCursor({ anchors: [{ id: "a", u: 0.1, v: 0.1 }] });
+    sender.setLocalCursor({ anchors: [{ id: "a", u: 0.1, v: 0.1 }] });
 
     await new Promise((resolve) => setTimeout(resolve, 300));
     expect(otherRoom.getRemoteSnapshot()).toHaveLength(0);
@@ -80,7 +80,7 @@ describe("node-ws relay integration", () => {
     clients.splice(clients.indexOf(clientB), 1);
 
     await new Promise((resolve) => setTimeout(resolve, 200));
-    clientA.updateLocalCursor({ anchors: [{ id: "a", u: 0.2, v: 0.2 }] });
+    clientA.setLocalCursor({ anchors: [{ id: "a", u: 0.2, v: 0.2 }] });
     await new Promise((resolve) => setTimeout(resolve, 200));
 
     expect(clientA.getStatus()).toBe("connected");
@@ -93,7 +93,7 @@ describe("node-ws relay integration", () => {
     await vi.waitFor(() => expect(sender.getStatus()).toBe("connected"), { timeout: 5000, interval: 25 });
     await vi.waitFor(() => expect(receiver.getStatus()).toBe("connected"), { timeout: 5000, interval: 25 });
 
-    sender.updateLocalCursor({ anchors: [{ id: "a".repeat(2000), u: 0.1, v: 0.1 }] });
+    sender.setLocalCursor({ anchors: [{ id: "a".repeat(2000), u: 0.1, v: 0.1 }] });
     await new Promise((resolve) => setTimeout(resolve, 300));
 
     expect(receiver.getRemoteSnapshot()).toHaveLength(0);

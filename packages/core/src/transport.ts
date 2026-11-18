@@ -1,7 +1,5 @@
 import type { ConnectionStatus } from "./protocol.js";
 
-export type { ConnectionStatus } from "./protocol.js";
-
 /** Why a connection closed, as the transport reports it. */
 export type TransportClose = {
   /** The close code the relay sent, for example `4006` for a rejected token. */

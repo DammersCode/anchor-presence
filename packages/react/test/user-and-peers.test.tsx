@@ -29,7 +29,7 @@ describe("useLocalUser, usePeerChanges and the typed event hooks", () => {
       userListeners.add(listener);
       return () => userListeners.delete(listener);
     };
-    const peerListeners = new Set<(change: PeerChange) => void>();
+    const peerListeners = new Set<(change: PeerChange<unknown, { name: string }>) => void>();
     client.subscribePeers = (listener) => {
       peerListeners.add(listener);
       return () => peerListeners.delete(listener);

@@ -32,7 +32,7 @@ export type Events = { reaction: { emoji: string }; ping: undefined };
 export const {
   LiveCursorProvider,
   useCursorClient,
-  useCursorContext,
+  useLocalContext,
   useCursorEvents,
   useLocalUser: useTypedLocalUser,
   useRemoteCursors,
@@ -84,7 +84,9 @@ declare namespace Listing {
   function useLocalUser<TUser = unknown>(): [TUser | undefined, (next: TUser | undefined) => void];
 
   // oxlint-disable-next-line eslint/no-shadow -- the listing keeps the exported name
-  function usePeerChanges(listener: (change: PeerChange) => void): void;
+  function usePeerChanges<TContext = unknown, TUser = unknown>(
+    listener: (change: PeerChange<TContext, TUser>) => void,
+  ): void;
 }
 
 let container: HTMLDivElement;
@@ -156,7 +158,7 @@ describe("remote-users.mdx: peer changes", () => {
     expect(container.textContent).toBe("");
 
     act(() => {
-      peer.updateLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
+      peer.setLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
       vi.advanceTimersByTime(1000);
     });
     expect(container.querySelector('[role="status"]')?.textContent).toBe("peer joined");

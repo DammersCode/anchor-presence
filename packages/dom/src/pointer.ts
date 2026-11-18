@@ -94,21 +94,21 @@ export function attachPointerSource(
     if (target === null) return;
     if (event.pointerType === "touch") activeTouchPointers.add(event.pointerId);
     const position = buildCursorPosition(event.clientX, event.clientY, chainFor(target), win, getCachedRect);
-    client.updateLocalCursor(position, POINTER_INFO[event.pointerType]);
+    client.setLocalCursor(position, POINTER_INFO[event.pointerType]);
   }
 
   function onPointerEnd(event: PointerEvent): void {
     if (event.pointerType !== "touch") return;
     activeTouchPointers.delete(event.pointerId);
-    if (activeTouchPointers.size === 0) client.updateLocalCursor(null);
+    if (activeTouchPointers.size === 0) client.setLocalCursor(null);
   }
 
   function onDocumentPointerLeave(): void {
-    client.updateLocalCursor(null);
+    client.setLocalCursor(null);
   }
 
   function onWindowBlur(): void {
-    client.updateLocalCursor(null);
+    client.setLocalCursor(null);
   }
 
   function onFocusIn(event: FocusEvent): void {
@@ -123,12 +123,12 @@ export function attachPointerSource(
       win,
       getCachedRect,
     );
-    client.updateLocalCursor(position);
+    client.setLocalCursor(position);
   }
 
   function onFocusOut(): void {
     const active = doc.activeElement;
-    if (active === null || active === doc.body) client.updateLocalCursor(null);
+    if (active === null || active === doc.body) client.setLocalCursor(null);
   }
 
   doc.addEventListener("pointermove", onPointerEvent);

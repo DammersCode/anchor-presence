@@ -30,7 +30,7 @@ An adapter depends on `@anchor-presence/dom` and `@anchor-presence/core`, never 
 Every hook of the adapter reads that context. The hooks that read changing data subscribe with `useSyncExternalStore`:
 
 - `useRemoteCursors` subscribes to `binding.subscribe` and reads `binding.getSnapshot()`. Without a binding, it returns an empty array. This case includes server rendering.
-- `useCursorClient`, `useCursorStatus`, `useCursorPresence`, and `useCursorContext` read from `client`, never from component state.
+- `useCursorClient`, `useCursorStatus`, `useRemotePresence`, and `useLocalContext` read from `client`, never from component state.
 - `useCursorBinding` returns `binding`, so a component can call `binding.invalidate()`.
 
 No hook stores cursor data in framework state. Every render reads the last snapshot from `@anchor-presence/core` or `@anchor-presence/dom`.

@@ -11,8 +11,6 @@ import type { AutoRegisterOptions } from "./auto-register.js";
 import { RemoteResolver } from "./resolver.js";
 import type { ResolvedCursor, VisibilityPolicy } from "./resolver.js";
 
-export type { ResolvedCursor, ResolutionTier, VisibilityPolicy } from "./resolver.js";
-
 /**
  * How remote cursors turn into screen positions.
  */
@@ -79,10 +77,10 @@ export type DomBindingOptions<TContext = unknown, TUser = unknown> = {
    * When `false` the client stays presence-only: context and user still flow, no local cursor.
    * Default `true`.
    */
-  localCursorCapture?: boolean;
+  capturePointer?: boolean;
   /**
    * Publish a cursor at the focused element's center on focus changes.
-   * Ignored when `localCursorCapture` is `false`. Default `false`.
+   * Ignored when `capturePointer` is `false`. Default `false`.
    */
   captureFocus?: boolean;
 };
@@ -212,7 +210,7 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
   });
 
   const pointerHandle =
-    options.localCursorCapture !== false
+    options.capturePointer !== false
       ? attachPointerSource(client, registry, {
           maxAnchors,
           root: environment.root,
@@ -233,7 +231,7 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
     if (disposed) return;
     disposed = true;
     // a consumer-owned client stays alive: do not leave the last cursor on peers
-    if (disposeOptions?.keepLocalCursor !== true) client.updateLocalCursor(null);
+    if (disposeOptions?.keepLocalCursor !== true) client.setLocalCursor(null);
     pageWindow?.removeEventListener("pagehide", leaveOnPageHide);
     unregisterTeardown?.();
     autoHandle?.dispose();

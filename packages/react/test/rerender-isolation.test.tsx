@@ -5,7 +5,7 @@ import { createPresenceClient, jsonCodec } from "@anchor-presence/core";
 import type { CursorPresence, LiveCursorTransport } from "@anchor-presence/core";
 import type { ResolvedCursor } from "@anchor-presence/dom";
 import { LiveCursorProvider } from "../src/provider";
-import { useCursorPresence, useRemoteCursors } from "../src/hooks";
+import { useRemotePresence, useRemoteCursors } from "../src/hooks";
 import { makeFakeBinding, makeFakeClient } from "./test-utils";
 
 describe("rerender isolation", () => {
@@ -131,7 +131,7 @@ describe("rerender isolation: presence store (stable snapshot)", () => {
 
   function PresenceReader() {
     presenceRenderCount += 1;
-    const presence = useCursorPresence();
+    const presence = useRemotePresence();
     return <div>{presence.length}</div>;
   }
 

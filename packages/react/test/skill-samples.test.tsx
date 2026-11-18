@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { describe, expect, it } from "vitest";
 import { createPresenceClient, type PresenceClient } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
-import { CursorLayer, LiveCursorProvider, useCursorContext } from "../src/index";
+import { CursorLayer, LiveCursorProvider, useLocalContext } from "../src/index";
 
 // Verbatim copies of the tsx samples in skills/anchor-presence/SKILL.md; the test below keeps them in sync.
 
@@ -63,9 +63,9 @@ function PresenceScope({
   );
 }
 
-// useCursorContext works only below the provider.
+// useLocalContext works only below the provider.
 function PublishPage({ page }: { page: string }) {
-  const [, setContext] = useCursorContext<{ page: string }>();
+  const [, setContext] = useLocalContext<{ page: string }>();
   useEffect(() => setContext({ page }), [page, setContext]);
   return null;
 }

@@ -47,7 +47,7 @@ type DomBindingOptions = {
   maxAnchors?: number;
   resolution?: ResolutionOptions;
   environment?: EnvironmentOptions;
-  localCursorCapture?: boolean;
+  capturePointer?: boolean;
   captureFocus?: boolean;
 };
 ```
@@ -58,7 +58,7 @@ The `resolution` group (`ResolutionOptions`) controls how remote cursors turn in
 
 The `environment` group (`EnvironmentOptions`) supplies the DOM and timing hosts: `root`, `window`, `raf`, `caf`, `ResizeObserverCtor`, and `MutationObserverCtor`. Each field defaults to the ambient browser global. Tests can replace one host without touching the others.
 
-`localCursorCapture` defaults to `true`. If it is `false`, the local pointer publishes no cursor, and context and user still reach peers (other clients in the same room). `captureFocus` defaults to `false`. If it is `true` and local capture is on, a focus change publishes a cursor at the center of the focused element.
+`capturePointer` defaults to `true`. If it is `false`, the local pointer publishes no cursor, and context and user still reach peers (other clients in the same room). `captureFocus` defaults to `false`. If it is `true` and local capture is on, a focus change publishes a cursor at the center of the focused element.
 
 ### Anchor attributes
 

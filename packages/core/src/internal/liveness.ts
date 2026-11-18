@@ -14,7 +14,7 @@ export function startLiveness<TContext, TUser>(
     state.heartbeatTimer = state.scheduler.setTimeout(() => {
       publish.sendHeartbeat();
       scheduleHeartbeat();
-    }, state.heartbeatMs);
+    }, state.heartbeatIntervalMs);
   }
   scheduleHeartbeat();
 

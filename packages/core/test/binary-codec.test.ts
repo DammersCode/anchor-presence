@@ -308,7 +308,7 @@ describe("binaryCodec", () => {
     void b.connect();
 
     sender.setContext({ big: 10n });
-    sender.updateLocalCursor({ anchors: [] });
+    sender.setLocalCursor({ anchors: [] });
     // the encode error is swallowed inside send(): no uncaught throw, nothing on the wire
     expect(() => vi.advanceTimersByTime(10)).not.toThrow();
     expect(receiver.getRemoteSnapshot()).toHaveLength(0);

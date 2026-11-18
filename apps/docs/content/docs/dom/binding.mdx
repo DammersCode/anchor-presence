@@ -34,9 +34,9 @@ The client is live when its status is `connecting` or `connected`. A peer is ano
 - `anchorAttribute` is not letters and digits in groups split by single hyphens, with a letter first. For example, `data-anchor` and `anchor` pass, and `data_anchor` and `1-anchor` fail.
 - `maxAnchors` is not an integer, for example `2.5` or `NaN`.
 
-`localCursorCapture` turns the local pointer source on or off. The default is `true`. Set it to `false` for a client that shows remote cursors and sends no local cursor. One example is a mobile viewer. `context` and `user` still go to peers.
+`capturePointer` turns the local pointer source on or off. The default is `true`. Set it to `false` for a client that shows remote cursors and sends no local cursor. One example is a mobile viewer. `context` and `user` still go to peers.
 
-`captureFocus` publishes a cursor at the center of the focused element, for keyboard users. The default is `false`. When `localCursorCapture` is `false`, the binding ignores `captureFocus`. See [Pointer capture](/docs/dom/pointer-capture#keyboard-focus).
+`captureFocus` publishes a cursor at the center of the focused element, for keyboard users. The default is `false`. When `capturePointer` is `false`, the binding ignores `captureFocus`. See [Pointer capture](/docs/dom/pointer-capture#keyboard-focus).
 
 `resolution` sets how remote cursors turn into screen positions. See [Resolution](/docs/dom/resolution) and [Motion](/docs/dom/motion).
 

@@ -9,8 +9,8 @@ import {
   CursorLayer,
   DefaultCursor,
   LiveCursorProvider,
-  useCursorContext,
-  useCursorPresence,
+  useLocalContext,
+  useRemotePresence,
   useRemoteCursors,
   useRemoteCursorsSelector,
   useRemoteUsers,
@@ -27,7 +27,7 @@ function MyCursorGlyph({ color, children }: { color: string; children: ReactNode
 
 // cursor-context.mdx: Usage
 function SettingsDialog({ open }: { open: boolean }) {
-  const [, setContext] = useCursorContext();
+  const [, setContext] = useLocalContext();
   useEffect(() => {
     setContext({ dialog: open ? "settings" : undefined });
   }, [open, setContext]);
@@ -35,13 +35,13 @@ function SettingsDialog({ open }: { open: boolean }) {
 }
 
 function ContextReader() {
-  const [context] = useCursorContext<{ dialog?: string }>();
+  const [context] = useLocalContext<{ dialog?: string }>();
   return <output>{String(context?.dialog)}</output>;
 }
 
 // cursor-presence.mdx: Usage
 function PointerTypeBadge() {
-  const presence = useCursorPresence();
+  const presence = useRemotePresence();
   const touchCount = presence.filter((p) => p.pointer?.type === "touch").length;
   return <span>{touchCount} touch users</span>;
 }

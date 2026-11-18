@@ -34,7 +34,14 @@ export type PresenceEvent = { type: string; data?: unknown };
  * A remote client that joined or left the store, or changed its `user` or `context`.
  * Cursor moves never produce a change.
  */
-export type PeerChange = { type: "join" | "leave" | "update"; clientId: string };
+export type PeerChange<TContext = unknown, TUser = unknown> = {
+  type: "join" | "leave" | "update";
+  clientId: string;
+  /** The client's `user` after the change, or its last `user` for a leave. */
+  user?: TUser;
+  /** The client's `context` after the change, or its last `context` for a leave. */
+  context?: TContext;
+};
 
 /** A `PresenceEvent` received from a remote client. */
 export type RemoteEvent = PresenceEvent & { clientId: string };

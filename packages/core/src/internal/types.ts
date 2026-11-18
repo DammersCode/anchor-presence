@@ -13,7 +13,7 @@ import type { LiveCursorTransport, TransportClose } from "../transport.js";
 import type { ValidationLimits } from "../validate.js";
 
 /** Handle for one scheduled timer. */
-export type TimerHandle = ReturnType<typeof setTimeout>;
+type TimerHandle = ReturnType<typeof setTimeout>;
 
 /**
  * Timer functions the client uses for its schedules.
@@ -56,12 +56,12 @@ export type PresenceClientOptions<TContext = unknown, TUser = unknown> = {
   staleTimeoutMs?: number;
   /** Time before a remote client counts as idle, in milliseconds. Default `DEFAULT_IDLE_AFTER_MS`, clamped below `staleTimeoutMs`. */
   idleAfterMs?: number;
-  /** Heartbeat interval, in milliseconds. Default `DEFAULT_HEARTBEAT_MS`. */
-  heartbeatMs?: number;
+  /** Heartbeat interval, in milliseconds. Default `DEFAULT_HEARTBEAT_INTERVAL_MS`. */
+  heartbeatIntervalMs?: number;
   /** Maximum remote clients in the store. Default `DEFAULT_MAX_REMOTE_CLIENTS`. */
   maxRemoteClients?: number;
   /** Runs when the store drops a new `clientId` because the store is full. */
-  onRemoteClientDrop?: () => void;
+  onRemoteClientDropped?: () => void;
   /** The user value the client sends to remote peers. */
   user?: TUser;
   /** Checks the `user` of each remote message. Return `undefined` or throw to drop the field. Default: the value must have the shape of the local `user`. */
@@ -112,7 +112,7 @@ export interface PresenceClient<TContext = unknown, TUser = unknown> {
    * @param cursor The new position, or `null` to clear it.
    * @param pointer Optional pointer info to send with the cursor.
    */
-  updateLocalCursor(cursor: CursorPosition | null, pointer?: PointerInfo): void;
+  setLocalCursor(cursor: CursorPosition | null, pointer?: PointerInfo): void;
   /**
    * Adds a listener for connection closes, with the close code and reason.
    * A transport without `subscribeClose` never calls it.
@@ -145,7 +145,7 @@ export interface PresenceClient<TContext = unknown, TUser = unknown> {
    * Adds a listener for remote clients that join or leave, or change their `user` or `context`.
    * @returns A function that removes the listener.
    */
-  subscribePeers(listener: (change: PeerChange) => void): () => void;
+  subscribePeers(listener: (change: PeerChange<TContext, TUser>) => void): () => void;
   /**
    * Sets the context value the client sends to remote peers.
    * `undefined` clears the value.
@@ -224,7 +224,7 @@ export type PresenceClientState<TContext, TUser> = {
   highWatermarkBytes: number;
   lowWatermarkBytes: number;
   adaptivePublish: boolean;
-  heartbeatMs: number;
+  heartbeatIntervalMs: number;
   sweepIntervalMs: number;
   maxFieldBytes: number;
   maxMessageBytes: number;

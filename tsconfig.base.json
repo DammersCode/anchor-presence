@@ -12,6 +12,13 @@
     "declarationMap": false,
     "sourceMap": false,
     "composite": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    "noUncheckedSideEffectImports": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "useUnknownInCatchVariables": true
   }
 }

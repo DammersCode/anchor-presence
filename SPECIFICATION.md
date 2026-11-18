@@ -121,7 +121,7 @@ Wall clocks are not used for ordering. Two live tabs that share a `clientId` hav
 
 ### 4.4 Presence expiry
 
-The store records `lastSeenAt` (local receive time) per remote client. A sweep removes clients not seen for `staleTimeoutMs` (default 70 000 ms). Sender emits a heartbeat (repeat of last state) every `heartbeatMs` (default 10 000 ms) while connected. The stale default sits above 60 s because browsers clamp hidden-tab timers to one minute; a backgrounded sender therefore stays present instead of flickering out. `cursor: null` hides the cursor immediately. A duplicate `clientId` replaces the previous entry (last write wins, per sequencing rule 1).
+The store records `lastSeenAt` (local receive time) per remote client. A sweep removes clients not seen for `staleTimeoutMs` (default 70 000 ms). Sender emits a heartbeat (repeat of last state) every `heartbeatIntervalMs` (default 10 000 ms) while connected. The stale default sits above 60 s because browsers clamp hidden-tab timers to one minute; a backgrounded sender therefore stays present instead of flickering out. `cursor: null` hides the cursor immediately. A duplicate `clientId` replaces the previous entry (last write wins, per sequencing rule 1).
 
 ## 5. Transport Abstraction
 
@@ -168,9 +168,9 @@ pointer samples (from dom)         inbound bytes (from transport)
   codec.encode → transport.send      remote presence store → subscribers
 ```
 
-Options: `transport`, `codec` (default json), `clientId` (default: random UUID via injected `idFactory`), `publishIntervalMs` (default 50), `staleTimeoutMs`, `heartbeatMs`, `maxRemoteClients`, `user`, `context` setter, `adaptivePublish`. The client generates its `session` value at creation from the same `idFactory`. `clientId` identifies a client instance; applications attach user identity via the `user` field, not the `clientId`. The client clamps `publishIntervalMs` and `heartbeatMs` to at least 1 ms and `staleTimeoutMs` to at least 1000 ms. Outside production (`NODE_ENV !== "production"`), the client warns on `console` when the outbound `context` or `user` exceeds `maxFieldBytes` or the encoded message exceeds `maxMessageBytes`; the check runs when `context`/`user` changes, not per message.
+Options: `transport`, `codec` (default json), `clientId` (default: random UUID via injected `idFactory`), `publishIntervalMs` (default 50), `staleTimeoutMs`, `heartbeatIntervalMs`, `maxRemoteClients`, `user`, `context` setter, `adaptivePublish`. The client generates its `session` value at creation from the same `idFactory`. `clientId` identifies a client instance; applications attach user identity via the `user` field, not the `clientId`. The client clamps `publishIntervalMs` and `heartbeatIntervalMs` to at least 1 ms and `staleTimeoutMs` to at least 1000 ms. Outside production (`NODE_ENV !== "production"`), the client warns on `console` when the outbound `context` or `user` exceeds `maxFieldBytes` or the encoded message exceeds `maxMessageBytes`; the check runs when `context`/`user` changes, not per message.
 
-`updateLocalCursor(cursor, pointer?)` records the latest local cursor; the optional second argument (`{ type?: "mouse" | "pen" | "touch" }`) is kept until replaced and sent as the `pointer` wire field. `getContext()` and `getUser()` return the current outbound values; `setContext()` and `setUser()` replace them and trigger a publish, as does every transition into `"connected"` (so a reconnect republishes the latest state without waiting for a pointer move). A failed send re-arms the publish timer.
+`setLocalCursor(cursor, pointer?)` records the latest local cursor; the optional second argument (`{ type?: "mouse" | "pen" | "touch" }`) is kept until replaced and sent as the `pointer` wire field. `getContext()` and `getUser()` return the current outbound values; `setContext()` and `setUser()` replace them and trigger a publish, as does every transition into `"connected"` (so a reconnect republishes the latest state without waiting for a pointer move). A failed send re-arms the publish timer.
 
 The client ignores inbound messages whose `clientId` equals its own, so broadcast relays that loop messages back are safe. The stale sweep runs on a client-owned timer at `staleTimeoutMs / 2`.
 
@@ -370,10 +370,10 @@ Hooks:
 | `useRemoteUsers()`                           | one entry per remote client: `clientId`, `user`, and `session` |
 | `useRemoteCursors()`                         | `ResolvedCursor[]` snapshot (useSyncExternalStore)             |
 | `useRemoteCursorsSelector(select, isEqual?)` | a value derived from the snapshot, recomputed per frame        |
-| `useCursorPresence()`                        | raw remote `CursorPresence[]`                                  |
+| `useRemotePresence()`                        | raw remote `CursorPresence[]`                                  |
 | `useCursorStatus()`                          | `ConnectionStatus`                                             |
 | `useCursorClient()`                          | the client instance                                            |
-| `useCursorContext()`                         | `[context, setContext]`                                        |
+| `useLocalContext()`                          | `[context, setContext]`                                        |
 
 Anchors are declared in the DOM with the binding's anchor attribute. Cursor movement updates flow only to components using `useRemoteCursors`; the provider never rerenders the app tree per cursor frame.
 

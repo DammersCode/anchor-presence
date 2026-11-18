@@ -41,7 +41,7 @@ The provider creates the client in an effect with a cleanup. The first mount cre
 - Pass a `factory` to the provider. The provider runs it only in the browser, so a server render creates no client.
 - Create your own client in a `useEffect`. Pass `client={null}` until the effect creates the client.
 
-Every hook that reads changing data has a server-safe snapshot: `useRemoteCursors` and `useCursorPresence` return `[]`, and `useCursorStatus` returns `"disconnected"`. `useCursorContext` returns `[undefined, setContext]`, and `useLocalUser` returns `[undefined, setUser]`. `useCursorClient` and `useCursorBinding` read the context, not a snapshot. With `client={null}` and no `binding` prop, both return `null`. `renderToString` works with `client={null}` for a tree that uses every hook:
+Every hook that reads changing data has a server-safe snapshot: `useRemoteCursors` and `useRemotePresence` return `[]`, and `useCursorStatus` returns `"disconnected"`. `useLocalContext` returns `[undefined, setContext]`, and `useLocalUser` returns `[undefined, setUser]`. `useCursorClient` and `useCursorBinding` read the context, not a snapshot. With `client={null}` and no `binding` prop, both return `null`. `renderToString` works with `client={null}` for a tree that uses every hook:
 
 ```tsx
 <LiveCursorProvider client={null}>

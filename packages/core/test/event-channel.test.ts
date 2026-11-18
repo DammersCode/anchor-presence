@@ -136,7 +136,7 @@ describe("createEventParser", () => {
       typeof (data as { emoji?: unknown } | undefined)?.emoji === "string"
         ? (data as { emoji: string })
         : undefined,
-    ping: () => undefined,
+    ping: null,
   });
 
   it("passes checked events and drops unknown types and bad data", () => {
@@ -147,6 +147,8 @@ describe("createEventParser", () => {
     });
     expect(parse({ clientId: "A", type: "ping" })).toEqual({ clientId: "A", type: "ping", data: undefined });
     expect(parse({ clientId: "A", type: "reaction", data: { emoji: 3 } })).toBeUndefined();
+    expect(parse({ clientId: "A", type: "reaction" })).toBeUndefined();
+    expect(parse({ clientId: "A", type: "ping", data: 1 })).toBeUndefined();
     expect(parse({ clientId: "A", type: "toString" })).toBeUndefined();
     expect(parse({ clientId: "A", type: "other" })).toBeUndefined();
   });

@@ -1,7 +1,10 @@
 ---
 title: Presence list
 description: A "who is online" bar from useRemoteUsers, with users who join, go idle, and leave.
+icon: users
 ---
+
+import { Atom, Brush, Cpu, ShieldCheck } from "lucide-react";
 
 A presence list shows who is in the room, independent of where their cursor is. `useRemoteUsers` gives you that list, and it does not rerender when a cursor moves. In this demo, three users work on a roadmap board. The wide pane shows their names in the bar. The narrow pane shows only their avatars.
 
@@ -39,9 +42,23 @@ The demo uses short timeouts, so that you see the idle and leave steps in second
 
 ## Related
 
-- [Idle stage](/docs/core/remote-presence#idle-stage): when another client is idle.
-- [Stale timeout](/docs/core/remote-presence#stale-timeout): when the store removes another client.
-- [useRemoteUsers](/docs/react/remote-users): the hook and its render cost.
-- [Idle cursors](/docs/react/custom-cursors#idle-cursors): how `CursorLayer` shows an idle cursor.
-- [Custom cursor rendering](/docs/examples/custom-cursor-rendering): the same user data in your own cursor.
-- [Security](/docs/get-started/guides/security)
+<Cards>
+  <Card icon={<Cpu />} title="Idle stage" href="/docs/core/remote-presence#idle-stage">
+    When another client is idle.
+  </Card>
+  <Card icon={<Cpu />} title="Stale timeout" href="/docs/core/remote-presence#stale-timeout">
+    When the store removes another client.
+  </Card>
+  <Card icon={<Atom />} title="useRemoteUsers" href="/docs/react/remote-users">
+    The hook and its render cost.
+  </Card>
+  <Card icon={<Atom />} title="Idle cursors" href="/docs/react/custom-cursors#idle-cursors">
+    How `CursorLayer` shows an idle cursor.
+  </Card>
+  <Card icon={<Brush />} title="Custom cursor rendering" href="/docs/examples/custom-cursor-rendering">
+    The same user data in your own cursor.
+  </Card>
+  <Card icon={<ShieldCheck />} title="Security" href="/docs/get-started/guides/security">
+    Why `user` and `context` are untrusted, and how to render them.
+  </Card>
+</Cards>

@@ -1,27 +1,18 @@
 ---
 title: Responsive layouts
-description: How wrapping, breakpoints, sidebar state, and element-size differences resolve.
+description: How a cursor stays on the same element across wrapping, breakpoints, sidebar states, and element sizes.
+icon: scaling
 ---
 
-Anchor Presence places a cursor on the same element when two clients show different layouts. Wrapping, breakpoints, sidebar state, and element-size differences all resolve through the anchor and its normalized position.
+import { Anchor, FlaskConical, LayoutDashboard, Waypoints } from "lucide-react";
 
-## The problem with pixel coordinates
-
-Two clients rarely render the same layout at the same time. A raw pixel coordinate from the sender means nothing on a receiver with a different layout. It can land on the wrong element, or on no element at all. See [The problem](/docs/get-started/introduction#the-problem) for examples.
-
-## The fix: normalized position inside a named anchor
-
-The sender never sends a pixel coordinate as the primary signal. It sends an anchor ID (which named element the pointer was over) and a normalized `u`/`v` position inside that anchor's own rectangle.
-
-The receiver measures its own copy of the same anchor and computes a pixel position from the same `u`/`v` proportion. See [Anchors](/docs/get-started/concepts/anchors) for the exact formulas.
+Two clients rarely show the same layout at the same time. This page shows how the anchor and its `u`/`v` position keep a cursor on the same element when the layouts differ. You need no code for this. You only keep the anchor IDs the same in every layout.
 
 ## Worked example
 
-A sender's screen shows a button anchored as `orders.row:17.actions` at 160 pixels wide and 48 pixels tall. The pointer sits at `u = 0.75`, 75% across the button.
+On the sender, the button `orders.row:17.actions` is 160 pixels wide. The pointer is at `u = 0.75`, so 75% across the button.
 
-The receiver's screen shows a narrower layout. The same button, same anchor ID, measures 96 pixels wide and 36 pixels tall.
-
-The receiver computes:
+On the receiver, the layout is narrower. The same button is 96 pixels wide. The receiver computes:
 
 ```text
 x = rect.left + rect.width * u
@@ -29,32 +20,43 @@ x = rect.left + rect.width * u
   = rect.left + 72
 ```
 
-The cursor lands 72 pixels from the button's left edge on the receiver. That is also 75% across the button's own width. The cursor tracks the same semantic spot on the button, not the same pixel offset. The same logic applies to `v` and the button's height, for any element-size difference: sidebar width, column count, font-size scaling, or zoom level.
+The cursor lands 72 pixels from the left edge of the button. That is also 75% across the button. The cursor keeps the same spot on the button, not the same pixel offset. The same math applies to `v` and the height of the button.
 
 ## How wrapping and breakpoints resolve
 
-A responsive layout can wrap or reflow content at a breakpoint. As long as the target element keeps its registered anchor ID, resolution works without a code change:
+A layout can wrap or reflow at a breakpoint. If the element keeps its anchor ID, the cursor follows it:
 
-- The element can move to a new pixel position. The receiver re-measures it every frame the geometry scheduler runs.
-- The element can change size. The `u`/`v` proportion still applies.
-- The element can move between a one-column and a three-column layout. The anchor ID does not change, so the fallback chain still finds it.
+- The element moves to another pixel position. The receiver measures it again on the next frame.
+- The element changes size. The `u`/`v` fraction still applies.
+- The element moves from a one-column to a three-column layout. The anchor ID stays the same, so the fallback chain still finds it.
 
 ## How sidebar state resolves
 
-A collapsed sidebar and an open sidebar are different layouts on the same page. Both states can register the same anchor IDs for the same semantic locations, for example `nav.dashboard`. Then a cursor over that item resolves correctly in either state.
+A collapsed sidebar and an open sidebar are two layouts of one page. Give each item the same anchor ID in both states, for example `nav.dashboard`. Then a cursor over that item lands on it in either state.
 
-The collapsed sidebar can hide an item and remove its DOM element. Then the fallback chain moves to the next anchor, for example the sidebar container.
+A collapsed sidebar can remove an item from the DOM. The fallback chain then moves to the next anchor, for example the sidebar container.
 
 ## How element-size differences resolve
 
-Two clients can render the identical anchor at different sizes because of font configuration, zoom, container queries, or a different viewport. Because `u`/`v` are proportions of the anchor's own rectangle, not absolute pixels, this size difference never causes a visible drift.
+Font settings, zoom, container queries, and the window size can give one anchor a different size on each client. The `u`/`v` position is a fraction of the size of the anchor, so the cursor does not drift.
 
 ## When no anchor matches
 
-If none of the anchors in the fallback chain exist on the receiver, resolution falls through to the viewport fallback, then to `hidden`. One example is a different page or component tree. See [Fallback chain](/docs/get-started/concepts/fallback-chain).
+If no anchor of the chain exists on the receiver, the cursor uses the viewport position. One example is a receiver on another page. If the viewport position is also missing, the cursor is hidden. See [Fallback chain](/docs/get-started/concepts/fallback-chain).
 
 ## Related
 
-- [Anchors](/docs/get-started/concepts/anchors)
-- [Fallback chain](/docs/get-started/concepts/fallback-chain)
-- [Basics example](/docs/examples/basics)
+<Cards>
+  <Card icon={<LayoutDashboard />} title="Layout design" href="/docs/get-started/guides/layout-design">
+    Rules that keep cursors steady between elements.
+  </Card>
+  <Card icon={<Anchor />} title="Anchors" href="/docs/get-started/concepts/anchors">
+    The u/v formula on the sender.
+  </Card>
+  <Card icon={<Waypoints />} title="Fallback chain" href="/docs/get-started/concepts/fallback-chain">
+    The order of the fallback steps.
+  </Card>
+  <Card icon={<FlaskConical />} title="Basics example" href="/docs/examples/basics">
+    Two layouts side by side, live.
+  </Card>
+</Cards>

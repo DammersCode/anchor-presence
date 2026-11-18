@@ -8,11 +8,17 @@ import type { PresenceClientState } from "./types.js";
 export function isDevMode(): boolean {
   try {
     if (import.meta.env?.DEV === false) return false;
-    const env = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env;
-    return env?.NODE_ENV !== "production";
+    // the literal `process.env.NODE_ENV` is what bundlers replace at build time
+    // oxlint-disable-next-line typescript/prefer-optional-chain -- an optional chain hides the literal from bundler replacement
+    return !(typeof process !== "undefined" && process.env.NODE_ENV === "production");
   } catch {
     return true;
   }
+}
+
+/** Prints an error that an app callback threw. The client keeps running; production builds stay silent. */
+export function reportListenerError(error: unknown): void {
+  if (isDevMode()) console.error("[anchor-presence] a listener threw; the client ignores the error", error);
 }
 
 const warnedKeys = new Set<string>();

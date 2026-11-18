@@ -1,7 +1,10 @@
 ---
 title: Integration skill
 description: The agent skill that adds anchor-presence live cursors to a React app, or fixes a broken integration.
+icon: plug
 ---
+
+import { LifeBuoy, Rocket, Ruler, ScanSearch } from "lucide-react";
 
 The integration skill teaches a coding agent to add Anchor Presence to your app. It also teaches the agent to fix live cursors that misbehave. To use it, install the skill. Then ask your agent to add live cursors or to fix a cursor problem. The skill gives the agent all the remaining steps.
 
@@ -43,23 +46,58 @@ Everything else comes from your code. If you ask for a who-is-online list, the s
 
 ## How it works
 
-1. **Survey.** The agent reads the project to find its package manager, React version, framework, and existing real-time channel. It also finds where the display name of the user comes from.
-2. **Pick a transport.** It matches your setup to a transport and relay, for example a Socket.IO server or a plain WebSocket relay on Bun.
-3. **Install.** It runs the install command for your package manager. If the relay needs dependencies, it installs them too.
-4. **Add the client.** It adds `LiveCursorProvider` with a `factory` prop, and `CursorLayer`, to a client component.
-5. **Mark anchors.** It adds `data-anchor` to navigation items, cards, table rows, dialog controls, and every other element that a user points at. It also gives each anchor a parent anchor.
-6. **Scope with context.** If the app has several pages, tabs, or dialogs, the agent publishes the current state as context. Context is a value that describes the app state of a user, for example the open page. Then the agent hides the cursors of users in a different state.
-7. **Check.** It runs the typecheck and the build of the project. Then it runs two clients at different viewport widths. It checks that a cursor lands on the same element in both.
+<Steps>
+  <Step>
+    **Survey.** The agent reads the project to find its package manager, React version, framework, and
+    existing real-time channel. It also finds where the display name of the user comes from.
+  </Step>
+  <Step>
+    **Pick a transport.** It matches your setup to a transport and relay, for example a Socket.IO server or a
+    plain WebSocket relay on Bun.
+  </Step>
+  <Step>
+    **Install.** It runs the install command for your package manager. If the relay needs dependencies, it
+    installs them too.
+  </Step>
+  <Step>
+    **Add the client.** It adds `LiveCursorProvider` with a `factory` prop, and `CursorLayer`, to a client
+    component.
+  </Step>
+  <Step>
+    **Mark anchors.** It adds `data-anchor` to navigation items, cards, table rows, dialog controls, and every
+    other element that a user points at. It also gives each anchor a parent anchor.
+  </Step>
+  <Step>
+    **Scope with context.** If the app has several pages, tabs, or dialogs, the agent publishes the current
+    state as context. Context is a value that describes the app state of a user, for example the open page.
+    Then the agent hides the cursors of users in a different state.
+  </Step>
+  <Step>
+    **Check.** It runs the typecheck and the build of the project. Then it runs two clients at different
+    viewport widths. It checks that a cursor lands on the same element in both.
+  </Step>
+</Steps>
 
 ## Common questions
 
-**Does it touch my server code?** Yes. If your project has no real-time channel, the agent adds a small relay in the location that you choose. If the project has a channel, the agent adds one presence event or route to it.
-
-**Will it read or send my data?** The skill reads your code and fetches these docs as Markdown. The library sends no screen coordinates. Each message holds an anchor ID and a normalized offset, and your own channel carries it.
-
-**What if my project has no React yet?** The skill assumes React 18 or later. For a DOM app without React, use `@anchor-presence/dom` directly. See [DOM](/docs/dom).
-
-**Can it fix a cursor that jumps instead of gliding?** Yes, but first read about [reduced motion](/docs/dom/motion). If a user has that system setting, a jumping cursor is the intended behavior.
+<Accordions type="multiple">
+  <Accordion title="Does it touch my server code?">
+    Yes. If your project has no real-time channel, the agent adds a small relay in the location that you
+    choose. If the project has a channel, the agent adds one presence event or route to it.
+  </Accordion>
+  <Accordion title="Will it read or send my data?">
+    The skill reads your code and fetches these docs as Markdown. The library sends no screen coordinates.
+    Each message holds an anchor ID and a normalized offset, and your own channel carries it.
+  </Accordion>
+  <Accordion title="What if my project has no React yet?">
+    The skill assumes React 18 or later. For a DOM app without React, use `@anchor-presence/dom` directly. See
+    [DOM](/docs/dom).
+  </Accordion>
+  <Accordion title="Can it fix a cursor that jumps instead of gliding?">
+    Yes, but first read about [reduced motion](/docs/dom/motion). If a user has that system setting, a jumping
+    cursor is the intended behavior.
+  </Accordion>
+</Accordions>
 
 ## It works if
 
@@ -70,7 +108,17 @@ Everything else comes from your code. If you ask for a who-is-online list, the s
 
 ## Related
 
-- [Layout audit skill](/docs/skills/layout-audit): run it after this skill adds anchors. It finds cursor jumps between layouts before you ship.
-- [Quick start](/docs/get-started/quick-start): the same steps, written for a human who does them by hand.
-- [Troubleshooting](/docs/get-started/guides/troubleshooting): the same fixes that the skill applies to a broken integration, written for a human.
-- [Layout design for presence](/docs/get-started/guides/layout-design): the rules behind anchor placement.
+<Cards>
+  <Card icon={<ScanSearch />} title="Layout audit skill" href="/docs/skills/layout-audit">
+    Run it after this skill adds anchors. It finds cursor jumps between layouts before you ship.
+  </Card>
+  <Card icon={<Rocket />} title="Quick start" href="/docs/get-started/quick-start">
+    The same steps, for a human who does them by hand.
+  </Card>
+  <Card icon={<LifeBuoy />} title="Troubleshooting" href="/docs/get-started/guides/troubleshooting">
+    The fixes that the skill applies to a broken integration.
+  </Card>
+  <Card icon={<Ruler />} title="Layout design for presence" href="/docs/get-started/guides/layout-design">
+    The rules behind anchor placement.
+  </Card>
+</Cards>

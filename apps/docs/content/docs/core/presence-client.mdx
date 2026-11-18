@@ -1,48 +1,67 @@
 ---
 title: Presence client
-description: createPresenceClient, its lifecycle, events, typed events, the event rate limit, leave, close reasons, status, publish rate, heartbeat, IDs, and development mode.
+description: createPresenceClient, its lifecycle, events, leave, close reasons, status, publish rate, heartbeat, IDs, and development mode.
+icon: radio
 ---
 
-`createPresenceClient` builds a `PresenceClient`. A peer is another client in the same room. The client checks and stores the presence of each peer. It publishes your local cursor on a timer. It also sends heartbeats, so that peers keep a client that changes nothing.
+import { Cable, Code, ShieldCheck, Users } from "lucide-react";
+
+`createPresenceClient` builds a `PresenceClient`. The client publishes your local cursor on a timer, and it checks and stores the presence of each peer. A peer is another client in the same room. Create one client for each connection to a room.
 
 ## Create a client
 
-Pass a transport to `createPresenceClient`:
+This sample creates a client, publishes a cursor, reads the peers, and stops the client:
 
 ```ts
 import { createPresenceClient } from "@anchor-presence/core";
 
-const client = createPresenceClient({ transport: myTransport });
+const client = createPresenceClient({ transport: myTransport, user: { name: "Ada" } });
+
+client.setLocalCursor({ anchors: [{ id: "doc", u: 0.5, v: 0.5 }] });
+const unsubscribe = client.subscribeRemote(() => console.log(client.getRemotePresence()));
+
+client.dispose();
 ```
 
-`transport` is the only required option. See [Transports](/docs/core/transports) for the transport contract, and [Codecs](/docs/core/codecs) for the `codec` option.
+`transport` is the only required option. See [Transports](/docs/core/transports) for the transport contract, and [Codecs](/docs/core/codecs) for the `codec` option. [`PresenceClientOptions`](/docs/core/api/client#createpresenceclient) lists every option with its default.
+
+`createPresenceClient` throws a `TypeError` when one of these options is not a finite number: `publishIntervalMs`, `heartbeatIntervalMs`, `staleTimeoutMs`, `idleAfterMs`, `maxRemoteClients`, or a field of `adaptivePublish`.
 
 ## Connect the transport
 
-By default, the client calls `transport.connect()` for you. It makes this call one time, during creation. It subscribes to the messages and status of the transport first, so it misses no inbound message or status change.
+The `autoConnect` option decides who calls `transport.connect()`:
 
-If you want to make the call yourself, pass `autoConnect: false`. Then call `connect()` before or right after you create the client:
+<Tabs items={["autoConnect: true (default)", "autoConnect: false"]}>
+  <Tab value="autoConnect: true (default)">
+    The client calls `transport.connect()` one time, during creation. It subscribes to the messages and the status of the transport first, so it misses no inbound message and no status change.
+  </Tab>
+  <Tab value="autoConnect: false">
+    You call `connect()` yourself, before or right after you create the client:
 
 ```ts
 const client = createPresenceClient({ transport: myTransport, autoConnect: false });
 myTransport.connect();
 ```
 
+  </Tab>
+</Tabs>
+
 A transport with no `connect` method needs no call in either mode. A `connect()` call that throws or rejects never escapes client creation. The transport reports the failure through its own status. `dispose()` calls `transport.disconnect()` in both modes.
 
 ## Lifecycle
 
-Call `client.setLocalCursor(cursor, pointer?)` to set the local cursor position. A `null` cursor clears it for peers. The client batches updates. It sends the last value on its next publish tick, not on every call.
+`client.setLocalCursor(cursor, pointer?)` sets the local cursor position. A `null` cursor clears it for peers. The client does not send on each call. It sends the last value on its next publish tick.
 
-Call `client.setContext(value)` and `client.setUser(value)` to set the values that the client sends to peers. Both accept `undefined` to clear the value. Read the current local values with `getContext()` and `getUser()`.
+<Callout type="warn">
+  If you omit `pointer`, the client keeps the pointer type of the previous call. To send a cursor without a
+  pointer type, pass `{}` as `pointer`.
+</Callout>
+
+`client.setContext(value)` and `client.setUser(value)` set the values that the client sends to peers. `undefined` clears a value. `getContext()` and `getUser()` return the current local values.
 
 `client.subscribeContext(listener)` calls `listener` on each `setContext` call that changes the value. `client.subscribeUser(listener)` does the same for `setUser`. A call changes the value when `value` is another reference than the current value. The listener receives no argument, so read the value with `getContext()` or `getUser()`. Both methods return a function that removes the listener. The [`useLocalContext`](/docs/react/local-context) and [`useLocalUser`](/docs/react/local-context#local-user) hooks use them.
 
-To stop the client, call `client.dispose()`. `dispose` sends a best-effort leave message and stops every timer. It also calls `transport.disconnect()` when the transport has one. You cannot use a client after `dispose`. Create a new client instead:
-
-```ts
-client.dispose();
-```
+`client.dispose()` stops the client. It sends a leave message, if the client is connected, and stops every timer. Then it calls `transport.disconnect()` when the transport has one. A disposed client ignores every later call. Create a new client instead.
 
 `client.registerTeardown(fn)` adds a function that `dispose` runs. It returns a function that removes `fn`. If the client is already disposed, `fn` runs at once. The DOM binding uses it, so that `client.dispose()` also stops the binding.
 
@@ -54,7 +73,7 @@ client.dispose();
 
 ## Events
 
-An event is a one-shot message to every peer, for example a reaction or a ping. Call `client.sendEvent(type, data?)` to send one. Call `client.subscribeEvents(listener)` to receive the events of peers:
+An event is a one-shot message to every peer, for example a reaction or a ping. `client.sendEvent(type, data?)` sends one. `client.subscribeEvents(listener)` receives the events of peers:
 
 ```ts
 const unsubscribe = client.subscribeEvents((event) => {
@@ -67,9 +86,9 @@ client.sendEvent("reaction", { emoji: "tada" });
 
 The listener receives a `RemoteEvent`: the `type`, the optional `data`, and the `clientId` of the sender. A client never receives its own events.
 
-The client never stores an event and never sends it again. A peer that is not connected when you send the event never receives it. A peer that joins later never receives it either. An event does not add the sender to the remote presence, and it does not end the idle stage.
+The client never stores an event and never sends it again. A peer that is not connected at that time never receives the event. A peer that joins later never receives it either. An event does not add the sender to the remote presence, and it does not end the idle stage of the sender.
 
-`type` is a string of 1 to `MAX_EVENT_TYPE_LENGTH` (`64`) characters. `data` is optional JSON. It must stay within the `maxFieldBytes` and `maxFieldDepth` limits of `validationLimits`.
+`type` is a string of 1 to `MAX_EVENT_TYPE_LENGTH` (`64`) characters. `data` is optional JSON within the `maxFieldBytes` and `maxFieldDepth` limits of [`validationLimits`](/docs/core/validation#validationlimits).
 
 `sendEvent` returns `false` in these cases:
 
@@ -86,7 +105,7 @@ In all other cases, `sendEvent` gives the message to the transport and returns `
   a peer can send any JSON within the field limits.
 </Callout>
 
-To check events, pass `parseEvent`. It receives each remote event and returns the event to deliver, or `undefined` to drop it. A parser that throws drops the event:
+The `parseEvent` option checks events. It receives each remote event and returns the event to deliver, or `undefined` to drop it. A parser that throws drops the event:
 
 ```ts
 const client = createPresenceClient({
@@ -101,7 +120,7 @@ const client = createPresenceClient({
 
 ### Event rate limit
 
-Each receiver limits the events that it accepts. Pass `eventRateLimit` to change the limits:
+Each receiver limits the events that it accepts. The `eventRateLimit` option changes the limits:
 
 ```ts
 const client = createPresenceClient({
@@ -116,9 +135,9 @@ const client = createPresenceClient({
 | `perSecond`      | `10`    | The number of events per second that refill the burst of one sender. |
 | `totalPerSecond` | `100`   | The number of events per second from all senders together.           |
 
-The receiver drops each event above a limit, and the sender still gets `true` for it. Each field is optional. A field that you omit keeps its default.
+The receiver drops each event above a limit, and the sender still gets `true` for it. Each field is optional. A field that you omit keeps its default. The limits read the time from the `now` option.
 
-The total limit stops a peer that sends each event with another `clientId`. Each new `clientId` gets its own burst, but all events share the total limit. The receiver keeps a burst for at most 512 senders. When a new sender arrives after that, the receiver resets the burst of every sender. The limits read the time from the `now` option.
+The total limit stops a peer that sends each event with another `clientId`. Each new `clientId` gets its own burst, but all events share the total limit. The receiver keeps a burst for at most 512 senders. When a new sender arrives after that, the receiver resets the burst of every sender.
 
 ### Typed events
 
@@ -132,7 +151,7 @@ The total limit stops a peer that sends each event with another `clientId`. Each
   you write, and it does not check remote data. Pass a `parseEvent` that checks the same `EventMap`.
 </Callout>
 
-`createEventParser<TEvents>(parsers)` builds this `parseEvent` from one parser per event type. `parsers` is an `EventParsers<TEvents>` object:
+`createEventParser<TEvents>(parsers)` builds this `parseEvent` from one parser for each event type. `parsers` is an `EventParsers<TEvents>` object:
 
 - A parser receives the remote `data` and returns the checked data, or `undefined` to drop the event.
 - For an event without data, use `null` in place of a parser. The client then drops the event if it carries data.
@@ -165,13 +184,13 @@ const unsubscribe = events.subscribe((event) => {
 
 ## Leave the room
 
-Call `client.leave()` to tell peers that this client left. Receivers remove the client at once and report a `leave` [peer change](/docs/core/remote-presence#peer-changes). You can still use the client. Its next publish or heartbeat sends the full state, and peers add the client again.
+`client.leave()` tells peers that this client left. Receivers remove the client at once and report a `leave` [peer change](/docs/core/remote-presence#peer-changes). The client stays usable. Its next publish or heartbeat sends the full state, and peers add the client again.
 
 If the client is not connected, `leave()` sends nothing. `dispose()` sends the same leave message before it stops the client. The DOM binding calls `leave()` on the `pagehide` event, so a closed tab disappears from peers at once. See [Page hide](/docs/dom/binding#page-hide).
 
 ## Close reasons
 
-Call `client.subscribeClose(listener)` to learn why a connection closed:
+`client.subscribeClose(listener)` reports why a connection closed:
 
 ```ts
 client.subscribeClose((close) => {
@@ -181,15 +200,20 @@ client.subscribeClose((close) => {
 
 The listener receives a `TransportClose` with the close `code`, the close `reason`, and `willReconnect`. `willReconnect` is `true` when the transport schedules another connection attempt. `subscribeClose` returns a function that removes the listener.
 
-The client gives the listener to the optional `subscribeClose` method of the transport. If the transport has no `subscribeClose`, the listener never runs. `createWebSocketTransport` reports each close. See [Transports](/docs/core/transports#close-reasons) for the transport side.
+The client gives the listener to the optional `subscribeClose` method of the transport. If the transport has no `subscribeClose`, the listener never runs. `createWebSocketTransport` reports each close. See [Close reasons](/docs/core/transports#close-reasons) for the transport side.
 
 ## Publish rate
 
-The client publishes the local cursor every `publishIntervalMs`, `50` by default (`DEFAULT_PUBLISH_INTERVAL_MS`). A publish sends a message when a send is pending. Each `setLocalCursor` call makes a send pending, and so do a reconnect and a new peer. A `setContext` or `setUser` call makes a send pending only when its value is another reference than the current value. The client does not compare the content, so a new object with equal content also sends a message.
+The client publishes the local cursor every `publishIntervalMs`, `50` by default (`DEFAULT_PUBLISH_INTERVAL_MS`). A publish tick sends a message only when a send is pending. These actions make a send pending:
+
+- A `setLocalCursor` call.
+- A reconnect.
+- A new peer. See [Late join](/docs/core/remote-presence#late-join).
+- A `setContext` or `setUser` call with another reference than the current value. The client does not compare the content, so a new object with equal content also sends a message.
 
 If a send fails while the status is `connected`, the client tries again after 50 ms. Each failure doubles the delay, up to 2 s. If a publish is pending when the page becomes visible again, the client sends it at once.
 
-Pass `adaptivePublish` to lower the publish rate while the transport holds many buffered bytes:
+The `adaptivePublish` option lowers the publish rate while the transport holds many buffered bytes:
 
 ```ts
 const client = createPresenceClient({
@@ -198,19 +222,25 @@ const client = createPresenceClient({
 });
 ```
 
-`highWatermarkBytes` turns on the slower rate. Its default is 64 KiB. `lowWatermarkBytes` turns the slower rate off again, and defaults to half of `highWatermarkBytes`. `slowPublishIntervalMs` sets the slower rate, and defaults to `max(publishIntervalMs * 4, 100)`. The client reads buffered bytes through the optional `bufferedBytes()` method of the transport. Without it, `adaptivePublish` has no effect.
+| Field                   | Default                           | Effect                                     |
+| ----------------------- | --------------------------------- | ------------------------------------------ |
+| `highWatermarkBytes`    | `64 * 1024`                       | Buffered bytes that turn on the slow rate. |
+| `lowWatermarkBytes`     | half of `highWatermarkBytes`      | Buffered bytes that turn it off again.     |
+| `slowPublishIntervalMs` | `max(publishIntervalMs * 4, 100)` | The publish interval at the slow rate.     |
+
+The client reads buffered bytes through the optional `bufferedBytes()` method of the transport. Without that method, `adaptivePublish` has no effect.
 
 ## Heartbeat
 
-The client sends a full-state heartbeat every `heartbeatIntervalMs`, `10000` by default (`DEFAULT_HEARTBEAT_INTERVAL_MS`). It sends the heartbeat even when nothing changed. As a result, the stale timeout of a peer does not remove a client that changes nothing. See [Remote presence](/docs/core/remote-presence#stale-timeout) for the stale timeout.
+A heartbeat is a full-state message that the client sends every `heartbeatIntervalMs`, `10000` by default (`DEFAULT_HEARTBEAT_INTERVAL_MS`). The client sends it even when nothing changed. As a result, the [stale timeout](/docs/core/remote-presence#stale-timeout) of a peer does not remove a client that changes nothing.
 
 ## IDs
 
-Every client has a `clientId` and a `session`. Pass `clientId` to keep one ID for a client instance. The client creates a `session` for each client and never uses it again.
+Every client has a `clientId` and a `session`. Pass `clientId` to keep one ID for a client instance. The client creates a new `session` for each client and never uses it again.
 
 Both IDs come from `idFactory`. The default `idFactory` returns 12 URL-safe characters with 72 random bits from `crypto.getRandomValues`. If `crypto.getRandomValues` is missing, it builds the ID from the time and `Math.random`.
 
-Pass `idFactory` to use other IDs:
+This client uses UUIDs:
 
 ```ts
 const client = createPresenceClient({
@@ -229,24 +259,6 @@ const client = createPresenceClient({
   default limits allow 128 characters for `clientId` and 64 for `session`.
 </Callout>
 
-## Other options
-
-| Option                  | Default                       | Effect                                                                                                              |
-| ----------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `clientId`              | an ID from `idFactory`        | A stable ID for this client instance.                                                                               |
-| `staleTimeoutMs`        | `DEFAULT_STALE_TIMEOUT_MS`    | Goes to the `RemotePresenceStore` of the client. Minimum `1000`.                                                    |
-| `idleAfterMs`           | `DEFAULT_IDLE_AFTER_MS`       | Goes to the store. See [Remote presence](/docs/core/remote-presence#idle-stage).                                    |
-| `maxRemoteClients`      | `DEFAULT_MAX_REMOTE_CLIENTS`  | Goes to the store.                                                                                                  |
-| `onRemoteClientDropped` | none                          | Runs when the store drops a new `clientId` because the store is full.                                               |
-| `validationLimits`      | the protocol defaults         | Limits for inbound messages. See [Validation](/docs/core/validation#validationlimits).                              |
-| `idFactory`             | 12 random URL-safe characters | Returns a random ID. The client uses it for `clientId` and `session`.                                               |
-| `parseUser`             | the shape check               | Checks the `user` of each remote message. See [Validation](/docs/core/validation#remote-user-and-context).          |
-| `parseContext`          | the shape check               | Checks the `context` of each remote message. See [Validation](/docs/core/validation#remote-user-and-context).       |
-| `parseEvent`            | deliver as is                 | Checks, rewrites, or drops each remote event.                                                                       |
-| `eventRateLimit`        | `20`, `10`, `100`             | Limits the inbound events. See [Event rate limit](#event-rate-limit).                                               |
-| `now`                   | `Date.now`                    | Returns the current time in milliseconds. The store and the event rate limit read it. A test can pass a fake clock. |
-| `scheduler`             | the global timers             | Timer functions for the schedules of the client. A test can pass fake timers.                                       |
-
 ## Development mode
 
 `isDevMode()` returns whether the code runs in development mode. It applies these rules in order:
@@ -255,7 +267,7 @@ const client = createPresenceClient({
 2. If `process.env.NODE_ENV` is `"production"`, it returns `false`.
 3. In all other cases, it returns `true`. This includes a read that throws.
 
-Call `isDevMode` to show your own debug output only in development:
+This sample shows debug output only in development:
 
 ```ts
 import { isDevMode } from "@anchor-presence/core";
@@ -263,22 +275,41 @@ import { isDevMode } from "@anchor-presence/core";
 if (isDevMode()) console.debug("[presence] debug overlay on");
 ```
 
-The client calls `isDevMode` one time, at creation. In development mode, the client writes these console warnings:
+The client reads development mode one time, at creation. In development mode, it writes console warnings that start with `[anchor-presence]`. A receiver drops a bad message or field without a warning in production.
 
-- An outbound `context`, `user`, or whole message breaks the size limit. The client checks at creation and on each `setContext` or `setUser` call that changes the value. It warns on each check that finds a value over the limit. A receiver drops an oversized field or message without a warning.
-- A remote `user` or `context` arrives and no check applies. The client warns one time.
-- The shape check drops a remote `user` or `context`. The warning names `parseUser` or `parseContext`. The client warns one time for `user` and one time for `context`.
-- The store is full and drops a new peer. The client warns one time.
-- The client drops an inbound message because it is too large, does not decode or validate, or a subscriber throws. The client warns one time for each reason.
-- Another client uses the same `clientId`. The client warns one time.
-- `staleTimeoutMs` is at most twice `heartbeatIntervalMs`, so a quiet peer expires between two heartbeats. The client warns one time.
-- A message fails to encode or to send. The client warns one time.
+<Accordions>
+  <Accordion title="Warnings of the client">
+
+    - An outbound `context`, `user`, or whole message breaks the size limit. The client checks at creation and on each `setContext` or `setUser` call that changes the value. It warns on each check that finds a value over the limit.
+    - A remote `user` or `context` arrives and no check applies. The client warns one time.
+    - The shape check drops a remote `user` or `context`. The warning names `parseUser` or `parseContext`. The client warns one time for `user` and one time for `context`.
+    - The store is full and drops a new peer. The client warns one time.
+    - The client drops an inbound message because it is too large, does not decode or validate, or a subscriber throws. The client warns one time for each reason.
+    - Another client uses the same `clientId`. The page warns one time, for all clients together.
+    - `staleTimeoutMs` is at most twice `heartbeatIntervalMs`, so a quiet peer expires between two heartbeats. The page warns one time, for all clients together.
+    - The codec cannot encode the `user` or `context`. The client sends the cursor without them, and the page warns one time.
+    - A message fails to encode or to send for another reason. The client warns one time.
+    - A `subscribeContext`, `subscribeUser`, `subscribeRemote`, or `subscribePeers` listener throws. The client writes the error with `console.error` and calls the other listeners. A throwing `subscribeEvents` listener gives no output.
+
+  </Accordion>
+
+  </Accordions>
 
 See [Troubleshooting](/docs/get-started/guides/troubleshooting#development-warnings) for the warnings of the other packages.
 
 ## Related
 
-- [Remote presence](/docs/core/remote-presence)
-- [Validation](/docs/core/validation)
-- [Transports](/docs/core/transports)
-- [Client API](/docs/core/api/client)
+<Cards>
+  <Card icon={<Users />} title="Remote presence" href="/docs/core/remote-presence">
+    Read the peers that the client stores.
+  </Card>
+  <Card icon={<ShieldCheck />} title="Validation" href="/docs/core/validation">
+    The checks on each inbound message.
+  </Card>
+  <Card icon={<Cable />} title="Transports" href="/docs/core/transports">
+    The contract that the `transport` option fits.
+  </Card>
+  <Card icon={<Code />} title="Client API" href="/docs/core/api/client">
+    Every option and method, with its type.
+  </Card>
+</Cards>

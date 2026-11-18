@@ -1,24 +1,21 @@
 ---
 title: Binding API
 description: createDomBinding, DomBinding, DomBindingOptions, ResolutionOptions, EnvironmentOptions, and the host types.
+icon: code
 ---
 
-`createDomBinding` and its options have the types below. See [Binding](/docs/dom/binding) for the guide.
+import { Braces, Link } from "lucide-react";
 
-## createDomBinding
-
-Import `createDomBinding` from `@anchor-presence/dom`:
+This page lists `createDomBinding` and its option types. Use it to look up a field. The [Binding](/docs/dom/binding) guide explains the behavior.
 
 ```ts
 import { createDomBinding } from "@anchor-presence/dom";
+import type { DomBinding, DomBindingOptions } from "@anchor-presence/dom";
 ```
 
-`createDomBinding(client, options?)` creates the DOM side of one client and returns a `DomBinding`.
+## createDomBinding
 
-`createDomBinding` throws a `TypeError` in these cases:
-
-- `anchorAttribute` does not match the name rule. See [Options](/docs/dom/binding#options).
-- `maxAnchors` is not an integer.
+`createDomBinding(client, options?)` creates the DOM side of one client and returns a `DomBinding`. It throws a `TypeError` for a bad `anchorAttribute` or a `maxAnchors` that is not an integer. See [Options](/docs/dom/binding#options).
 
 ## DomBinding
 
@@ -69,5 +66,11 @@ The browser `requestAnimationFrame`, `cancelAnimationFrame`, `ResizeObserver`, a
 
 ## Related
 
-- [Binding](/docs/dom/binding)
-- [Resolution types](/docs/dom/api/resolution)
+<Cards>
+  <Card icon={<Link />} title="Binding" href="/docs/dom/binding">
+    The guide to the binding.
+  </Card>
+  <Card icon={<Braces />} title="Resolution types" href="/docs/dom/api/resolution">
+    The types of the resolved cursors.
+  </Card>
+</Cards>

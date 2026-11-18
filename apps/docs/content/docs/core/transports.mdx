@@ -1,19 +1,40 @@
 ---
 title: Transports
 description: The LiveCursorTransport contract, connect and disconnect ownership, connection status, and close reasons.
+icon: cable
 ---
 
-A transport is the byte channel between a presence client and the network. `@anchor-presence/core` imports no transport library. You supply a transport that implements `LiveCursorTransport`.
+import { AppWindow, MemoryStick, Plug, RadioTower, Server } from "lucide-react";
+
+A transport is the byte channel between a presence client and the network. `@anchor-presence/core` imports no transport library. You give the client an object that implements `LiveCursorTransport`. Read this page before you write a transport. It also explains the connection status and the close reasons.
+
+## Use a transport
+
+Pass a transport instance to `createPresenceClient`:
+
+```ts
+import { createPresenceClient } from "@anchor-presence/core";
+
+const client = createPresenceClient({ transport: myTransport });
+```
 
 These transports ship in the packages:
 
-| Transport                                      | Package                 | Connects                                  |
-| ---------------------------------------------- | ----------------------- | ----------------------------------------- |
-| `createWebSocketTransport(options?)`           | `@anchor-presence/dom`  | Clients through a WebSocket relay         |
-| `createBroadcastChannelTransport(channelName)` | `@anchor-presence/dom`  | Tabs and iframes of one origin, no server |
-| `createInMemoryPair()`                         | `@anchor-presence/core` | Two transports in one process, for tests  |
-
-A `BroadcastChannel` transport ignores its own messages. As a result, two clients in one tab need two transports. After `disconnect()`, it closes its channel, so create one transport for each client.
+<Cards>
+  <Card icon={<RadioTower />} title="createWebSocketTransport" href="/docs/dom/websocket-transport">
+    `@anchor-presence/dom`. Connects clients through a WebSocket relay.
+  </Card>
+  <Card
+    icon={<AppWindow />}
+    title="createBroadcastChannelTransport"
+    href="/docs/dom/broadcast-channel-transport"
+  >
+    `@anchor-presence/dom`. Connects tabs and iframes of one origin, with no server.
+  </Card>
+  <Card icon={<MemoryStick />} title="createInMemoryPair" href="/docs/core/in-memory-transport">
+    `@anchor-presence/core`. Connects two transports in one process, for tests.
+  </Card>
+</Cards>
 
 ## The LiveCursorTransport interface
 
@@ -36,49 +57,50 @@ type ConnectionStatus = "connecting" | "connected" | "reconnecting" | "disconnec
 type TransportClose = { code?: number; reason?: string; willReconnect: boolean };
 ```
 
-Pass a transport instance to `createPresenceClient`:
+Only `send` and `subscribe` are required:
 
-```ts
-import { createPresenceClient } from "@anchor-presence/core";
-
-const client = createPresenceClient({ transport: myTransport });
-```
+- `send` receives encoded bytes. The client calls `codec.encode()` before it calls `send`. The client catches each throw and each rejection from `send`, because presence is lossy by design. A lost message does not stop the client.
+- `subscribe` delivers encoded bytes from the wire. The client then calls `codec.decode()` and `validatePresence()` on them.
 
 ## Connect and disconnect ownership
 
-`connect` and `disconnect` are optional. By default, the client calls `connect()` for you, one time, during creation. If you pass `autoConnect: false`, call `connect()` yourself after you build the transport. You can call it before or after you pass the transport to `createPresenceClient`. See [Presence client](/docs/core/presence-client#connect-the-transport) for both modes.
+`connect` and `disconnect` are optional. By default, the client calls `connect()` one time, during creation. With `autoConnect: false`, you call `connect()` yourself, before or after you pass the transport to `createPresenceClient`. See [Connect the transport](/docs/core/presence-client#connect-the-transport).
 
 `client.dispose()` calls `transport.disconnect()` when the transport has one, in both modes. A throwing `disconnect` does not stop the other cleanup of `dispose`.
 
-`send` receives encoded bytes. The client calls `codec.encode()` before it calls `send`. The client catches each throw and each rejection from `send`, because presence is lossy by design. A lost message does not stop the client.
-
-`subscribe` receives encoded bytes from the wire. After your listener receives the bytes, the client calls `codec.decode()` and `validatePresence()`.
-
 ## Connection status
 
-`subscribeStatus` and `getStatus` are optional. When a transport omits `subscribeStatus`, the client reports a constant `"connected"` status and never reads `getStatus`.
+`subscribeStatus` and `getStatus` are optional. The client reads them with these rules:
+
+- Without `subscribeStatus`, the client reports a constant `"connected"` status. It never reads `getStatus` in this case.
+- With `subscribeStatus`, the client reads `getStatus()` one time, at creation, for its first status. Without `getStatus`, the client starts at `"connecting"` until the first status callback arrives.
 
 Replay the current status to every new subscriber inside `subscribeStatus`. Without a replay, a client that subscribes after the connection opened never learns that it can send.
 
-If the transport has `subscribeStatus`, the client reads `getStatus()` one time, at creation, for its first status. Without `getStatus`, the client starts at `"connecting"` until the first status callback arrives.
+When the status changes to `connected` from `reconnecting` or `disconnected`, the client publishes its full state again. It also expires each peer that no message confirms. A peer is another client in the same room. See [After a reconnect](/docs/core/remote-presence#after-a-reconnect).
 
-When the status changes to `connected` from `reconnecting` or `disconnected`, the client publishes its full state again. It also expires each peer (another client in the same room) that no message confirms. See [After a reconnect](/docs/core/remote-presence#after-a-reconnect).
-
-`bufferedBytes` is optional. It reports the number of bytes in the send queue of the transport. The client uses it only for the opt-in `adaptivePublish` option on [Presence client](/docs/core/presence-client#publish-rate).
+`bufferedBytes` is optional. It reports the number of bytes in the send queue of the transport. The client uses it only for the `adaptivePublish` option. See [Publish rate](/docs/core/presence-client#publish-rate).
 
 ## Close reasons
 
 `subscribeClose` is optional. A transport that implements it calls each listener each time a connection closes, with a `TransportClose`:
 
-- `code` is the close code, for example `4006` for a rejected token.
+- `code` is the close code, for example `4006` for a rejected room token.
 - `reason` is the close reason text, when the relay sent one.
 - `willReconnect` is `true` when the transport schedules another attempt.
 
-`client.subscribeClose(listener)` forwards the listener to this method. If the transport omits `subscribeClose`, the client never calls the listener. `createWebSocketTransport` implements it. See [Custom transport](/docs/core/custom-transport#close-reasons) for a sketch.
+`client.subscribeClose(listener)` forwards the listener to this method. If the transport has no `subscribeClose`, the client never calls the listener. See [Custom transport](/docs/core/custom-transport#close-reasons) for a sketch.
 
 ## Related
 
-- [In-memory transport](/docs/core/in-memory-transport)
-- [Custom transport](/docs/core/custom-transport)
-- [WebSocket transport](/docs/dom/websocket-transport)
-- [Backends](/docs/examples/backends)
+<Cards>
+  <Card icon={<Plug />} title="Custom transport" href="/docs/core/custom-transport">
+    Write a transport for your own byte channel.
+  </Card>
+  <Card icon={<RadioTower />} title="WebSocket transport" href="/docs/dom/websocket-transport">
+    The transport for a WebSocket relay.
+  </Card>
+  <Card icon={<Server />} title="Backends" href="/docs/examples/backends">
+    Relays and transports for other servers.
+  </Card>
+</Cards>

@@ -1,3 +1,4 @@
+import { reportListenerError, warnOnce } from "@anchor-presence/core";
 import type { ConnectionStatus, LiveCursorTransport } from "@anchor-presence/core";
 
 /** A transport that connects and disconnects on demand. */
@@ -6,38 +7,70 @@ export type BroadcastChannelTransport = LiveCursorTransport & {
   disconnect(): void;
 };
 
+function toBytes(value: unknown): Uint8Array | null {
+  if (!ArrayBuffer.isView(value)) return null;
+  return new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
+}
+
 /**
  * Creates a `LiveCursorTransport` over `BroadcastChannel`. It links tabs and iframes of one origin, with no server.
  * Each transport ignores its own messages, so two clients in one tab need two transports.
+ * Any script of the same origin can post on the channel, so keep the default shape check on.
  */
 export function createBroadcastChannelTransport(channelName: string): BroadcastChannelTransport {
-  const channel = new BroadcastChannel(channelName);
   const selfId = Math.random().toString(36).slice(2);
   const listeners = new Set<(data: Uint8Array) => void>();
   const statusListeners = new Set<(status: ConnectionStatus) => void>();
+  let channel: BroadcastChannel | null = null;
   let status: ConnectionStatus = "disconnected";
 
   const setStatus = (next: ConnectionStatus): void => {
     status = next;
-    for (const listener of statusListeners) listener(next);
+    for (const listener of statusListeners) {
+      try {
+        listener(next);
+      } catch (error) {
+        reportListenerError(error);
+      }
+    }
   };
 
-  channel.addEventListener("message", (event: MessageEvent<{ from: string; data: Uint8Array }>) => {
-    if (event.data.from === selfId || !ArrayBuffer.isView(event.data.data)) return;
-    for (const listener of listeners) listener(event.data.data);
-  });
+  const onMessage = (event: MessageEvent<unknown>): void => {
+    const message = event.data as { from?: unknown; data?: unknown } | null;
+    if (typeof message !== "object" || message === null || message.from === selfId) return;
+    const bytes = toBytes(message.data);
+    if (bytes === null) return;
+    for (const listener of listeners) {
+      try {
+        listener(bytes);
+      } catch (error) {
+        reportListenerError(error);
+      }
+    }
+  };
 
   return {
     connect() {
+      if (channel !== null) return;
+      channel = new BroadcastChannel(channelName);
+      channel.addEventListener("message", onMessage);
       setStatus("connected");
     },
     disconnect() {
-      channel.close();
+      channel?.close();
+      channel = null;
       setStatus("disconnected");
     },
     send(data) {
+      if (channel === null) {
+        warnOnce(
+          "broadcast-send-while-disconnected",
+          "a BroadcastChannel transport dropped a message because it is not connected.",
+        );
+        return;
+      }
       // oxlint-disable-next-line unicorn/require-post-message-target-origin -- BroadcastChannel has no target origin
-      if (status === "connected") channel.postMessage({ from: selfId, data });
+      channel.postMessage({ from: selfId, data });
     },
     subscribe(listener) {
       listeners.add(listener);

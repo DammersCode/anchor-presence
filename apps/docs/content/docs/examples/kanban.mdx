@@ -1,7 +1,10 @@
 ---
 title: Kanban board
 description: A board of fixed-size cards that scrolls when the pane shrinks, so cursors stay on their cards.
+icon: kanban
 ---
+
+import { AppWindow, LayoutGrid, Ruler, TableProperties } from "lucide-react";
 
 When the pane shrinks, this layout keeps every card and column at the same size and position. The board scrolls instead of squishing the columns. In this demo, both panes show the same five-column board. The wide pane fits three columns. The narrow pane shows two. The board scrolls to the rest.
 
@@ -28,8 +31,28 @@ Both panes render the same markup. Each column is `w-36` and `flex-none`, so a c
 
 ## Related
 
-- [Keep item sizes and shapes alike](/docs/get-started/guides/layout-design#keep-item-sizes-and-shapes-alike): the layout rule that this demo follows.
-- [Write a custom policy](/docs/dom/visibility-policy#write-a-custom-policy): the policy that hides a cursor over a scrolled-out card.
-- [Use pointVisible](/docs/dom/occlusion-and-scroll#use-pointvisible): the field that the edge button reads.
-- [Responsive grid](/docs/examples/responsive-grid): cards that move and change size.
-- [Table and cards](/docs/examples/table-and-cards): a table that becomes cards.
+<Cards>
+  <Card
+    icon={<Ruler />}
+    title="Keep item sizes and shapes alike"
+    href="/docs/get-started/guides/layout-design#keep-item-sizes-and-shapes-alike"
+  >
+    The layout rule that this demo follows.
+  </Card>
+  <Card
+    icon={<AppWindow />}
+    title="Write a custom policy"
+    href="/docs/dom/visibility-policy#write-a-custom-policy"
+  >
+    The policy that hides a cursor over a scrolled-out card.
+  </Card>
+  <Card icon={<AppWindow />} title="Use pointVisible" href="/docs/dom/occlusion-and-scroll#use-pointvisible">
+    The field that the edge button reads.
+  </Card>
+  <Card icon={<LayoutGrid />} title="Responsive grid" href="/docs/examples/responsive-grid">
+    Cards that move and change size.
+  </Card>
+  <Card icon={<TableProperties />} title="Table and cards" href="/docs/examples/table-and-cards">
+    A table that becomes cards.
+  </Card>
+</Cards>

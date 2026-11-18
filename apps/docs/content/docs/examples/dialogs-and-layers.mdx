@@ -1,7 +1,10 @@
 ---
 title: Dialogs and layers
 description: A cursor belongs to the layer its anchor sits in. A visibility policy decides what shows while a dialog is open.
+icon: layers
 ---
+
+import { AppWindow, Atom, BookOpen, EyeOff } from "lucide-react";
 
 A dialog covers the layout behind it, but a remote cursor can belong to either layer. Two cases need a rule. In the first case, the cursor of a peer (another client in the same room) is on a card behind your open dialog. In the second case, your cursor is inside a dialog that is closed for the peer. This demo runs that rule with a visibility policy. The cursor itself always paints above the dialog, because `CursorLayer` defaults to `z-index: 9999`.
 
@@ -30,9 +33,29 @@ Both panes pass the same policy through `resolution.visibilityPolicy`. The polic
 
 ## Related
 
-- [Dialog mismatch handling](/docs/get-started/concepts/ui-context#dialog-mismatch-handling): the hide rule this demo applies.
-- [Write a custom policy](/docs/dom/visibility-policy#write-a-custom-policy): the policy shape and its inputs.
-- [CursorLayer](/docs/react/cursor-layer#extra-props-on-the-root): the z-index default and the `zIndex` prop.
-- [UI context](/docs/get-started/concepts/ui-context)
-- [Visibility policy](/docs/dom/visibility-policy)
-- [Occlusion and scroll containers](/docs/examples/occlusion-and-scroll-containers)
+<Cards>
+  <Card
+    icon={<BookOpen />}
+    title="Dialog mismatch handling"
+    href="/docs/get-started/concepts/ui-context#dialog-mismatch-handling"
+  >
+    The hide rule this demo applies.
+  </Card>
+  <Card
+    icon={<AppWindow />}
+    title="Write a custom policy"
+    href="/docs/dom/visibility-policy#write-a-custom-policy"
+  >
+    The policy shape and its inputs.
+  </Card>
+  <Card icon={<Atom />} title="CursorLayer" href="/docs/react/cursor-layer#extra-props-on-the-root">
+    The z-index default and the `zIndex` prop.
+  </Card>
+  <Card
+    icon={<EyeOff />}
+    title="Occlusion and scroll containers"
+    href="/docs/examples/occlusion-and-scroll-containers"
+  >
+    A cursor whose anchor is scrolled out of view.
+  </Card>
+</Cards>

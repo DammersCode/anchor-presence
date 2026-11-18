@@ -1,28 +1,16 @@
 ---
 title: Occlusion and scroll
-description: How the resolver detects a resolved point clipped by a scroll container, and pointVisible.
+description: How the resolver detects a point that a scroll container clips, pointVisible, and the hitTest option.
+icon: layers
 ---
 
-An anchor inside a scrollable panel can be measurable, with a real size and position. At the same time, the panel's own scrolling can clip the resolved point out of view. The resolver detects this case and reports it through `pointVisible`, separate from the visibility policy's `show`/`hide` decision.
+import { Crosshair, Eye, Play } from "lucide-react";
 
-## How the check works
-
-For an `anchor` tier resolution, the resolver walks the DOM ancestors of the winning anchor, up to the document element. It looks for an ancestor whose computed `overflow`, `overflow-x`, or `overflow-y` is not `visible`. Each such ancestor clips the visible rectangle of the anchor to the bounds of the ancestor. The clip is an intersection of the two rectangles.
-
-The resolver sets `pointVisible` to `false` when the resolved `x`/`y` position falls outside the clipped rectangle. `pointVisible` is always `true` for the `viewport` tier, and always `false` for the `hidden` tier.
-
-## What this model does not do
-
-The check is a simplified walk, not a full containing-block or stacking-context computation:
-
-- It does not compute CSS containing blocks. An absolutely or fixed-positioned anchor can visually escape a clipping ancestor. The ancestor walk does not know about `position`, so it still treats that anchor as clipped.
-- It does not detect an overlay that covers the point from above. A cursor can report `pointVisible: true` while a modal or dropdown visually covers that pixel.
-
-If an overlay can cover the resolved point, pass `resolution: { hitTest: true }`. The resolver then checks the point with `document.elementFromPoint`, and it also looks into open shadow roots. This check runs only when the ancestor walk reports a visible point. It can hide a covered cursor, but it cannot show an anchor that the walk treats as clipped. It costs more time per frame.
+An anchor inside a scrollable panel can have a real size and position while the panel clips the resolved point out of view. The resolver detects this case and reports it in `pointVisible`. `pointVisible` is separate from the `show`/`hide` decision of the visibility policy. Read it in a policy to hide a cursor that the user cannot see.
 
 ## Use pointVisible
 
-`pointVisible` is a field on the resolution passed to a `VisibilityPolicy`, and on every `ResolvedCursor`. The default visibility policy ignores it. A policy that hides a clipped cursor checks it directly:
+`pointVisible` is a field of the resolution that a `VisibilityPolicy` receives, and of every `ResolvedCursor`. The default visibility policy ignores it. This policy hides a clipped cursor:
 
 ```ts
 import type { VisibilityPolicy } from "@anchor-presence/dom";
@@ -31,10 +19,46 @@ const clippedPointPolicy: VisibilityPolicy = ({ resolution }) =>
   !resolution.pointVisible || resolution.tier === "hidden" ? "hide" : "show";
 ```
 
-A portal-rendered overlay can need to ignore the clipping check for one anchor. For this case, write a policy that skips the `pointVisible` test for the ID of that anchor.
+A portal overlay can need to skip the clip check for one anchor. For this case, write a policy that skips the `pointVisible` test for the ID of that anchor.
+
+## How the check works
+
+For an `anchor` tier resolution, the resolver walks the DOM ancestors of the winning anchor, up to the document element. It looks for an ancestor whose computed `overflow`, `overflow-x`, or `overflow-y` is not `visible`. Each such ancestor clips the visible rectangle of the anchor to its own client area, without borders and scrollbars. The clip is the intersection of the two rectangles.
+
+The resolver sets `pointVisible` to `false` when the resolved `x`/`y` position falls outside the clipped rectangle. `pointVisible` is always `true` for the `viewport` tier, and always `false` for the `hidden` tier.
+
+## Limits of the check
+
+The check is a simple ancestor walk. It has these limits:
+
+- It does not compute CSS containing blocks. An anchor with `position: absolute` or `position: fixed` can visually escape a clipping ancestor. The walk does not read `position`, so it still treats that anchor as clipped.
+- It stops below the document element. A point that the window scroll moves out of view keeps `pointVisible: true`.
+- It does not detect an overlay that covers the point. A cursor can report `pointVisible: true` while a modal or a dropdown covers that pixel.
+
+## Hit test for overlays
+
+If an overlay can cover the resolved point, pass `resolution: { hitTest: true }`. The resolver then checks the point with `document.elementFromPoint`, and it also looks into open shadow roots. The point is visible when the element at the point is the anchor or is inside it.
+
+The hit test has these rules:
+
+- It runs only when the ancestor walk reports a visible point. It can hide a covered cursor, but it cannot show an anchor that the walk treats as clipped.
+- It treats a point outside the window as visible.
+- It adds at least one `elementFromPoint` call on each frame for each `anchor` tier cursor that passes the walk. Each open shadow root at the point adds one more call.
 
 ## Related
 
-- [Occlusion and scroll containers example](/docs/examples/occlusion-and-scroll-containers)
-- [Visibility policy](/docs/dom/visibility-policy)
-- [Resolution](/docs/dom/resolution)
+<Cards>
+  <Card
+    icon={<Play />}
+    title="Occlusion and scroll containers example"
+    href="/docs/examples/occlusion-and-scroll-containers"
+  >
+    A live demo of clipped and covered cursors.
+  </Card>
+  <Card icon={<Eye />} title="Visibility policy" href="/docs/dom/visibility-policy">
+    Write the policy that reads `pointVisible`.
+  </Card>
+  <Card icon={<Crosshair />} title="Resolution" href="/docs/dom/resolution">
+    The tiers that the check runs on.
+  </Card>
+</Cards>

@@ -1,11 +1,14 @@
 ---
 title: Cursor events
-description: Send one-shot events such as reactions with client.sendEvent, receive them with useCursorEvents, and give them types.
+description: Send one-shot events such as reactions with client.sendEvent, and receive them with useCursorEvents.
+icon: zap
 ---
 
-`useCursorEvents` calls a listener for each one-shot event that a peer sends. A peer is another client in the same room. An event has a `type` and an optional `data` value, for example a reaction or a ping. The client never stores an event and never resends it. A peer that is not connected at that time never receives the event.
+import { Braces, Wifi, Zap } from "lucide-react";
 
-## Send and receive
+An event is a one-shot message to every peer (another client in the same room), for example a reaction or a ping. It has a `type` and an optional `data` value. `useCursorEvents` calls a listener for each event that a peer sends. Use events for things that happen one time. For state that a late peer must also see, use the [local user or context](/docs/react/local-context).
+
+## Usage
 
 This component sends a reaction with `client.sendEvent` and shows the last reaction from a peer:
 
@@ -34,22 +37,31 @@ function Reactions() {
 }
 ```
 
-`event.data` has the type `unknown`, because a peer can send any value. Check the type of `event.data` before you use it. To check every event in one place, pass `parseEvent` to `createPresenceClient`. A `parseEvent` that returns `undefined` or throws drops the event. See [Events](/docs/core/presence-client#events).
+## Check the data
 
-## Typed events
+`event.data` has the type `unknown`, because a peer can send any value. Check its type before you use it. To check every event in one place, pass `parseEvent` to `createPresenceClient`. If `parseEvent` returns `undefined` or throws, the client drops the event. See [Events](/docs/core/presence-client#events).
 
-To give events a type, pass an event map as the third type parameter of `createPresenceHooks`. The `useCursorEvents` hook of the result then receives typed events, and its `useSendEvent` hook sends only the events of the map. See [Typed events](/docs/react/typed-hooks#typed-events).
+To give events types, use [typed events](/docs/react/typed-hooks#typed-events). The typed hooks also include `useSendEvent`, which sends only the events of your event map.
 
-## Behavior notes
+## Behavior
 
-- `client.sendEvent(type, data?)` returns `false` when it sends nothing, for example when the client is not connected or the event breaks the field limits. See [Events](/docs/core/presence-client#events) for every case.
+- The client never stores an event and never sends it again. A peer that is not connected at that time never receives it.
 - A client never receives its own events.
 - The listener receives a `RemoteEvent`: the `type`, the `data`, and the `clientId` of the sender.
-- The hook keeps one subscription per client. An inline listener does not subscribe again on each render. The hook always calls the listener from the last render.
-- The receiver limits the events of each sender and the events of all senders together. It drops the events above a limit. For the numbers, see [Event rate limit](/docs/core/presence-client#event-rate-limit).
+- `client.sendEvent(type, data?)` returns `false` when it sends nothing, for example while the client is not connected. See [Events](/docs/core/presence-client#events) for every case.
+- The receiver limits the events of each sender and of all senders together. It drops the events above a limit. See [Event rate limit](/docs/core/presence-client#event-rate-limit).
+- The hook subscribes one time per client. An inline listener does not subscribe again on each render, and the hook always calls the listener of the last render. The hook never rerenders its component.
 
 ## Related
 
-- [Hooks API](/docs/react/api/hooks)
-- [Typed hooks](/docs/react/typed-hooks)
-- [Connection status](/docs/react/connection-status)
+<Cards>
+  <Card icon={<Braces />} title="Typed hooks" href="/docs/react/typed-hooks#typed-events">
+    Give events types and send them with useSendEvent.
+  </Card>
+  <Card icon={<Zap />} title="Events in the client" href="/docs/core/presence-client#events">
+    Field limits, rate limits, and parseEvent.
+  </Card>
+  <Card icon={<Wifi />} title="Connection status" href="/docs/react/connection-status">
+    Know when sendEvent can reach peers.
+  </Card>
+</Cards>

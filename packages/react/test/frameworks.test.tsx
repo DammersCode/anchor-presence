@@ -101,6 +101,7 @@ describe("TanStack Router (also the router of TanStack Start)", () => {
       );
     });
     expect(errors).toEqual([]);
+    expect(created.count).toBeGreaterThanOrEqual(1);
   });
 
   it("keeps one client across a navigation", async () => {
@@ -113,6 +114,7 @@ describe("TanStack Router (also the router of TanStack Start)", () => {
     const root = createRoot(container);
     act(() => root.render(<RouterProvider router={router} />));
     const countAfterMount = created.count;
+    expect(countAfterMount).toBe(1);
     await act(async () => {
       await router.navigate({ to: "/other" });
     });
@@ -167,6 +169,7 @@ describe("React Router (also the router of Remix)", () => {
     const root = createRoot(container);
     act(() => root.render(<ReactRouterProvider router={router} />));
     const countAfterMount = created.count;
+    expect(countAfterMount).toBe(1);
     await act(async () => {
       await router.navigate("/other");
     });

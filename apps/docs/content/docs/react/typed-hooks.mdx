@@ -1,13 +1,16 @@
 ---
 title: Typed hooks
-description: Fix the context, user, and event types once with createPresenceHooks.
+description: Fix the context, user, and event types one time with createPresenceHooks.
+icon: braces
 ---
 
-`createPresenceHooks<TContext, TUser, TEvents>()` returns `LiveCursorProvider` and every hook with `TContext`, `TUser`, and `TEvents` fixed. A hook from the result takes no context, user, or event type parameter, so a call with a wrong type does not compile. `useRemoteCursorsSelector` still takes the `TSelected` type of its result. `TEvents` is optional.
+import { Braces, Plug, Users, Zap } from "lucide-react";
 
-## Create the hooks
+`createPresenceHooks<TContext, TUser, TEvents>()` returns the provider and every hook with your types fixed. A hook from the result takes no type parameter, so a call with a wrong type does not compile. Use it in every app that has a known shape for its context, user, or event values. `TEvents` is optional.
 
-Call `createPresenceHooks` once, at module level, and export the result:
+## Usage
+
+Call `createPresenceHooks` one time, at module level, and export the result:
 
 ```ts
 // presence.ts
@@ -29,9 +32,7 @@ export const {
 } = createPresenceHooks<Context, User, Events>();
 ```
 
-## Use the hooks
-
-Import the provider and the hooks from your module, not from `@anchor-presence/react`:
+Then import the provider and the hooks from your module, not from `@anchor-presence/react`:
 
 ```tsx
 import { useRemoteUsers } from "./presence";
@@ -48,7 +49,7 @@ function PresenceList() {
 }
 ```
 
-`entry.user` has the type `User | undefined`. A field that `User` does not have, for example `entry.user?.age`, is a type error. A type argument such as `useRemoteUsers<OtherUser>()` is also a type error.
+`entry.user` has the type `User | undefined`. A field that `User` does not have, for example `entry.user?.age`, is a type error. A type argument, for example `useRemoteUsers<OtherUser>()`, is also a type error.
 
 ## Typed events
 
@@ -57,7 +58,7 @@ function PresenceList() {
 - `useSendEvent()` returns a function that sends one event. A misspelled type or a `data` value of the wrong type does not compile. The function returns the result of `client.sendEvent`. Without a client, it sends nothing and returns `false`. It keeps its identity while the client stays the same.
 - `useCursorEvents(listener)` calls `listener` with a typed event. A check of `event.type` narrows `event.data` to the type of that event.
 
-A peer is another client in the same room. This component sends a reaction and shows the last reaction from a peer:
+This component sends a reaction and shows the last reaction from a peer (another client in the same room):
 
 ```tsx
 import { useState } from "react";
@@ -82,12 +83,14 @@ function Reactions() {
 }
 ```
 
+## Check remote events
+
 <Callout type="warn">
   If a peer sends data of another type, `useCursorEvents` still delivers it. The types check only the code
   that you write. Pass the client a `parseEvent` that checks the same event map.
 </Callout>
 
-`createEventParser` from `@anchor-presence/core` builds this `parseEvent` from one parser per event type. An event without data gets `null`. Pass the result to `createPresenceClient` in the provider `factory`:
+`createEventParser` from `@anchor-presence/core` builds this `parseEvent` from one parser per event type. For an event without data, use `null` as the parser. Pass the result to `createPresenceClient` in the provider `factory`:
 
 ```tsx
 import { createEventParser, createPresenceClient } from "@anchor-presence/core";
@@ -113,17 +116,37 @@ function App() {
 }
 ```
 
-See [Typed events](/docs/core/presence-client#typed-events) for the parser rules.
+Declare the event map with `type`, not with `interface`. `createEventParser` rejects an `interface` at compile time, while `createPresenceHooks` accepts both. For the parser rules, see [Typed events](/docs/core/presence-client#typed-events).
 
 ## What the result contains
 
-The result has `LiveCursorProvider`, `useCursorBinding`, `useCursorClient`, `useLocalContext`, `useRemotePresence`, `useLocalUser`, `useRemoteCursors`, `useRemoteCursorsSelector`, and `useRemoteUsers`, each with your context and user types. `useCursorEvents` and `useSendEvent` have your event types. `useCursorStatus` and `usePeerChanges` have no type parameters. Without `TEvents`, an event has any `type` and `data` of the type `unknown`.
+| Name                                    | Types that the result fixes                                          |
+| --------------------------------------- | -------------------------------------------------------------------- |
+| `LiveCursorProvider`                    | context and user                                                     |
+| `useCursorClient`, `useCursorBinding`   | context and user                                                     |
+| `useRemoteCursors`, `useRemotePresence` | context and user                                                     |
+| `useRemoteCursorsSelector`              | context and user. It still takes the `TSelected` type of its result. |
+| `usePeerChanges`                        | context and user                                                     |
+| `useRemoteUsers`, `useLocalUser`        | user                                                                 |
+| `useLocalContext`                       | context                                                              |
+| `useCursorEvents`, `useSendEvent`       | events                                                               |
+| `useCursorStatus`                       | none                                                                 |
 
-`CursorLayer` and `DefaultCursor` are not in the result. Import them from `@anchor-presence/react`.
+Without `TEvents`, an event can have any `type`, and its `data` has the type `unknown`. `CursorLayer` and `DefaultCursor` are not in the result. Import them from `@anchor-presence/react`, and pass your types as type arguments, for example `<CursorLayer<Context, User> />`.
 
 ## Related
 
-- [Hooks API](/docs/react/api/hooks)
-- [LiveCursorProvider](/docs/react/live-cursor-provider)
-- [Remote users](/docs/react/remote-users)
-- [Cursor events](/docs/react/cursor-events)
+<Cards>
+  <Card icon={<Zap />} title="Cursor events" href="/docs/react/cursor-events">
+    Untyped events with client.sendEvent.
+  </Card>
+  <Card icon={<Users />} title="Remote users" href="/docs/react/remote-users">
+    The presence list that the typed hook reads.
+  </Card>
+  <Card icon={<Plug />} title="LiveCursorProvider" href="/docs/react/live-cursor-provider">
+    Every prop of the provider.
+  </Card>
+  <Card icon={<Braces />} title="Hooks API" href="/docs/react/api/hooks#createpresencehooks">
+    The full type of the result.
+  </Card>
+</Cards>

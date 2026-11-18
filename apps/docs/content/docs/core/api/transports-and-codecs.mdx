@@ -1,35 +1,31 @@
 ---
 title: Transport and codec API
 description: LiveCursorTransport, TransportClose, createInMemoryPair, InMemoryTransport, CursorCodec, and the shipped codecs.
+icon: arrow-left-right
 ---
 
-`@anchor-presence/core` exports every name below.
+import { Binary, Cable, MemoryStick } from "lucide-react";
+
+This page lists the transport and codec exports of `@anchor-presence/core` with their types. Use it to look up a member. The guides explain the behavior.
+
+```ts
+import { binaryCodec, createInMemoryPair, jsonCodec } from "@anchor-presence/core";
+import type { CursorCodec, LiveCursorTransport, TransportClose } from "@anchor-presence/core";
+```
 
 ## LiveCursorTransport
 
-`LiveCursorTransport` is the interface that every transport implements. See [Transports](/docs/core/transports) for the full contract.
+`LiveCursorTransport` is the interface that every transport implements. See [Transports](/docs/core/transports) for the contract.
 
 <AutoTypeTable path="../../packages/core/src/transport.ts" name="LiveCursorTransport" />
 
 ## TransportClose
 
-`TransportClose` is the value that a transport gives to `subscribeClose` listeners when a connection closes. See [Transports](/docs/core/transports#close-reasons).
-
-Import the type from `@anchor-presence/core`:
-
-```ts
-import type { TransportClose } from "@anchor-presence/core";
-```
+`TransportClose` is the value that a transport gives to its `subscribeClose` listeners when a connection closes. See [Close reasons](/docs/core/transports#close-reasons).
 
 <AutoTypeTable path="../../packages/core/src/transport.ts" name="TransportClose" />
 
 ## createInMemoryPair
-
-Import `createInMemoryPair` from `@anchor-presence/core`:
-
-```ts
-import { createInMemoryPair } from "@anchor-presence/core";
-```
 
 `createInMemoryPair(options?)` returns two transports wired to each other. See [In-memory transport](/docs/core/in-memory-transport).
 
@@ -41,25 +37,24 @@ import { createInMemoryPair } from "@anchor-presence/core";
 
 ## CursorCodec
 
-`CursorCodec` is the interface that every codec implements. See [Codecs](/docs/core/codecs) for the rules of the interface.
+`CursorCodec` is the interface that every codec implements. See [Codecs](/docs/core/codecs#cursorcodec) for the rules.
 
 <AutoTypeTable path="../../packages/core/src/codec.ts" name="CursorCodec" />
 
 ## jsonCodec and binaryCodec
 
-Import the two codecs from `@anchor-presence/core`:
-
-```ts
-import { jsonCodec, binaryCodec } from "@anchor-presence/core";
-```
-
-`jsonCodec` is the default codec. `binaryCodec` is a compact binary codec with a fixed layout. See [Codecs](/docs/core/codecs#choose-a-codec) to choose between them, and [Binary codec](/docs/core/binary-codec) for the wire layout.
-
-Both codecs carry leave messages and events. See [Leave and event messages](/docs/core/api/protocol#leave-and-event-messages).
+`jsonCodec` is the default codec. `binaryCodec` is a compact codec with a fixed binary layout. Both codecs carry leave messages and events. See [Choose a codec](/docs/core/codecs#choose-a-codec) and the [binary wire layout](/docs/core/binary-codec#wire-layout).
 
 ## Related
 
-- [Transports](/docs/core/transports)
-- [Custom transport](/docs/core/custom-transport)
-- [Codecs](/docs/core/codecs)
-- [Custom codec](/docs/core/custom-codec)
+<Cards>
+  <Card icon={<Cable />} title="Transports" href="/docs/core/transports">
+    The guide to the transport contract.
+  </Card>
+  <Card icon={<MemoryStick />} title="In-memory transport" href="/docs/core/in-memory-transport">
+    Two transports in one process.
+  </Card>
+  <Card icon={<Binary />} title="Codecs" href="/docs/core/codecs">
+    The guide to the codec contract.
+  </Card>
+</Cards>

@@ -1,22 +1,38 @@
 ---
 title: LiveCursorProvider
 description: Share a presence client and its DOM binding with the tree below.
+icon: plug
 ---
 
-`LiveCursorProvider` shares a `PresenceClient` and a `DomBinding` with every hook and component below it, through React context. Every app that uses `@anchor-presence/react` wraps its cursor-aware tree in one provider.
+import { Component, Factory, Layers, Server } from "lucide-react";
 
-## Props
+`LiveCursorProvider` shares a presence client and its DOM binding with every hook and component below it. The DOM binding is the object from `@anchor-presence/dom` that turns remote presence into screen positions. Every app that uses `@anchor-presence/react` wraps its cursor-aware tree in one provider.
 
-The samples on this page use these imports:
+## Usage
+
+This provider creates the client through `factory`:
 
 ```tsx
-import { createPresenceClient, linearInterpolator, noneInterpolator } from "@anchor-presence/core";
+import { createPresenceClient } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
 import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
-import type { LiveCursorProviderProps } from "@anchor-presence/react";
+
+function App() {
+  return (
+    <LiveCursorProvider
+      factory={() => {
+        const transport = createWebSocketTransport({ path: "/?room=main" });
+        return createPresenceClient({ transport });
+      }}
+    >
+      <Dashboard />
+      <CursorLayer />
+    </LiveCursorProvider>
+  );
+}
 ```
 
-The provider takes these props:
+## Props
 
 | Prop             | Type                                      | Default                    |
 | ---------------- | ----------------------------------------- | -------------------------- |
@@ -28,36 +44,27 @@ The provider takes these props:
 | `bindingKey`     | `unknown`                                 | none                       |
 | `children`       | `ReactNode`                               | none                       |
 
-Create the client through `factory`, or pass a client that you own:
+Pass `factory` or `client`. For the difference between the two, read [Create the client](/docs/react/client-creation). The provider disposes a client that `factory` created. It never disposes a `client` that you pass. To render without a client, for example on the server, pass `client={null}`. See [SSR and Strict Mode](/docs/react/ssr-and-strict-mode).
 
-```tsx
-<LiveCursorProvider
-  factory={() => {
-    const transport = createWebSocketTransport({ path: "/?room=main" });
-    return createPresenceClient({ transport });
-  }}
->
-  <Dashboard />
-</LiveCursorProvider>
-```
+## The binding
 
-## Client ownership
+If you omit `binding`, the provider creates one with `createDomBinding(client, bindingOptions)`. It disposes that binding when the client changes, when `bindingKey` changes, or when the provider unmounts.
 
-The provider disposes a client that `factory` created. It never disposes a `client` that you pass. For when the factory runs and which prop wins, read [Create the client](/docs/react/client-creation).
+If you pass `binding`, the provider creates no binding and never disposes yours. Use this to share one binding across two providers. The provider then ignores `bindingOptions`.
 
-## The binding that the provider creates
-
-When you omit `binding`, the provider creates a `DomBinding` for the client with `createDomBinding(client, bindingOptions)`. It disposes that binding when the client changes, when `bindingKey` changes, or when the provider unmounts. If you created a binding yourself, for example to share one binding across two providers, pass it as `binding`. The provider then creates no binding and never disposes yours.
-
-`bindingOptions` configures the binding that the provider creates. The provider reads `bindingOptions` only when it creates the binding. A later change to the `bindingOptions` object does not recreate the binding.
+The provider reads `bindingOptions` only when it creates the binding. A later change to the `bindingOptions` object has no effect.
 
 ## Rebuild the binding
 
-To apply a new `bindingOptions` value, change `bindingKey`. The provider then disposes the binding and creates a new one with the current `bindingOptions`. The client stays connected, so each peer (another client in the same room) keeps the local cursor.
+To apply a new `bindingOptions` value, change `bindingKey`. The provider disposes the binding and creates a new one with the current `bindingOptions`. The client stays connected, so each peer (another client in the same room) keeps your cursor.
 
 This example switches the interpolator:
 
 ```tsx
+import { createPresenceClient, linearInterpolator, noneInterpolator } from "@anchor-presence/core";
+import { createWebSocketTransport } from "@anchor-presence/dom";
+import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
+
 function Workspace({ smooth }: { smooth: boolean }) {
   return (
     <LiveCursorProvider
@@ -76,7 +83,9 @@ function Workspace({ smooth }: { smooth: boolean }) {
 
 ## Switch rooms
 
-To replace the client that `factory` made, change `clientKey`. The provider then disposes the old client and runs the current `factory` again. The tree below the provider does not remount. This example joins the room that the `room` prop names:
+To replace the client that `factory` made, change `clientKey`. The provider disposes the old client and runs the current `factory` again. The tree below the provider does not remount.
+
+This example joins the room that the `room` prop names:
 
 ```tsx
 function Room({ room }: { room: string }) {
@@ -100,13 +109,28 @@ function Room({ room }: { room: string }) {
   it and pass a new client.
 </Callout>
 
-## client={null}
+The provider ignores a new `factory` function until `clientKey` changes. An inline `factory` is safe for this reason.
 
-Pass `client={null}` for server rendering or the gap before hydration. The provider renders its children normally and the factory does not run. Every hook returns its server-safe value: see [SSR and Strict Mode](/docs/react/ssr-and-strict-mode).
+## Development warnings
+
+In development mode, the provider writes one console warning in each of these cases:
+
+- It gets neither `client` nor `factory`. It then renders without presence.
+- It gets both `binding` and `bindingOptions`. It then ignores `bindingOptions`.
 
 ## Related
 
-- [Create the client](/docs/react/client-creation)
-- [SSR and Strict Mode](/docs/react/ssr-and-strict-mode)
-- [Components API](/docs/react/api/components)
-- [Binding](/docs/dom/binding)
+<Cards>
+  <Card icon={<Factory />} title="Create the client" href="/docs/react/client-creation">
+    The factory path and the own-client path.
+  </Card>
+  <Card icon={<Server />} title="SSR and Strict Mode" href="/docs/react/ssr-and-strict-mode">
+    What the provider does on the server and in Strict Mode.
+  </Card>
+  <Card icon={<Component />} title="Components API" href="/docs/react/api/components">
+    Every prop with its type.
+  </Card>
+  <Card icon={<Layers />} title="Binding" href="/docs/dom/binding">
+    What the DOM binding does with remote presence.
+  </Card>
+</Cards>

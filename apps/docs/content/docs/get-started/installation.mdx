@@ -1,34 +1,69 @@
 ---
 title: Installation
-description: Install the three packages and check the requirements.
+description: Install the packages that your app needs, and check the requirements.
+icon: download
 ---
 
-Install the three packages with your package manager:
+import { Cable, Rocket, Workflow } from "lucide-react";
+
+Install the packages before you write any code. A React app needs all three packages. An app without React needs fewer.
+
+## Install
+
+Pick the tab that matches your app. Each tab installs only the packages that the app uses:
+
+<Tabs items={["React app", "DOM app without React", "Server or tests"]}>
+  <Tab value="React app">
+
+`@anchor-presence/react` depends on the other two packages:
 
 <InstallCommand />
+
+  </Tab>
+  <Tab value="DOM app without React">
+
+`@anchor-presence/dom` gives anchors, pointer capture, and cursor positions, with no React:
+
+<InstallCommand packages="@anchor-presence/core @anchor-presence/dom" />
+
+  </Tab>
+  <Tab value="Server or tests">
+
+`@anchor-presence/core` has no DOM and no dependencies. It runs in Node.js, Bun, workers, and browsers:
+
+<InstallCommand packages="@anchor-presence/core" />
+
+  </Tab>
+</Tabs>
 
 ## Requirements
 
 | Requirement   | Version                                                                                                           |
 | ------------- | ----------------------------------------------------------------------------------------------------------------- |
-| React         | 18 or later, only if you use `@anchor-presence/react`                                                             |
+| React         | 18 or later, only for `@anchor-presence/react`                                                                    |
 | TypeScript    | 5.9 or later                                                                                                      |
 | Browser       | Chrome, Edge, Firefox, and Safari with ES2022 support                                                             |
 | Module format | ESM only. `require()` works in Node.js 20.19 or later, and in 22.12 or later. Jest needs ESM mode or a transform. |
 
-## Which packages you need
-
-Add only the packages that your app uses:
-
-- React app: install all three. `@anchor-presence/react` depends on `@anchor-presence/dom` and `@anchor-presence/core`.
-- Framework-free DOM app: install `@anchor-presence/core` and `@anchor-presence/dom` for browser anchors, pointer capture, and cursor resolution with no React.
-- Server or test tooling: install `@anchor-presence/core` alone. It has no DOM and no framework dependency.
-
 ## A transport
 
-The library needs a bidirectional byte channel between clients: a WebSocket relay, Socket.IO, SignalR, or your own. `@anchor-presence/dom` ships a native WebSocket transport. See [Transports](/docs/core/transports) for the interface and every shipped example.
+A **transport** is the channel that carries the bytes between clients. The library needs one. `@anchor-presence/dom` ships two transports:
+
+- `createBroadcastChannelTransport` connects the tabs of one browser, with no server.
+- `createWebSocketTransport` connects any two browsers through a relay.
+
+To use Socket.IO, SignalR, or another library, write a small transport. See [Transports](/docs/core/transports) for the interface.
 
 ## Related
 
-- [Quick start](/docs/get-started/quick-start)
-- [Transports](/docs/core/transports)
+<Cards>
+  <Card icon={<Rocket />} title="Quick start" href="/docs/get-started/quick-start">
+    Show live cursors in two tabs.
+  </Card>
+  <Card icon={<Workflow />} title="Frameworks" href="/docs/get-started/frameworks">
+    Next.js, TanStack, React Router, Remix, Astro, and Vite.
+  </Card>
+  <Card icon={<Cable />} title="Transports" href="/docs/core/transports">
+    The transport interface and the shipped transports.
+  </Card>
+</Cards>

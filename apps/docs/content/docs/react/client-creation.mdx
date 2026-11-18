@@ -1,15 +1,19 @@
 ---
 title: Create the client
-description: Create a presence client with the provider factory, the client prop, or createPresenceClient.
+description: Let the provider create the client with factory, or pass a client that you own.
+icon: factory
 ---
 
-Three paths create the client for a React app. Pick one path and use it everywhere.
+import { Plug, Server, Wifi } from "lucide-react";
 
-## The provider factory (standard)
+The provider gets its presence client in one of two ways. Pass a `factory`, and the provider creates and disposes the client. Pass `client`, and you own the client. If your app already creates the client in its own setup code, pass `client`. Otherwise, use `factory`.
 
-Pass `LiveCursorProvider` a `factory`. The provider runs it once per mount, in an effect, and disposes the client that it created on unmount. It also runs the factory again each time `clientKey` changes. It runs the factory only in the browser, so a server render creates no client. In development, React Strict Mode mounts the provider two times. The provider then creates two clients in sequence and disposes the first, so one live client remains.
+## Usage
 
-This app creates the client in the factory:
+Pick one path and use it in the whole app:
+
+<Tabs items={["factory (standard)", "Your own client"]}>
+<Tab value="factory (standard)">
 
 ```tsx
 import { createPresenceClient } from "@anchor-presence/core";
@@ -30,37 +34,64 @@ function App() {
 }
 ```
 
-The factory owns the transport: create it, then create the client. The client connects the transport by default.
-
-<Callout type="warn">
-  If you create the transport at module scope, it connects once for the whole page. Create the transport
-  inside the factory function.
-</Callout>
-
-To connect to another room, change `clientKey`. The provider disposes the old client and creates a new one. See [Switch rooms](/docs/react/live-cursor-provider#switch-rooms).
-
-## Bring your own client
-
-Pass the `client` prop. The provider never disposes a client that you pass. You own its lifecycle. This path fits an app that creates the client in its own setup code and shares it through props or a context.
-
-This app passes a client that it created:
+</Tab>
+<Tab value="Your own client">
 
 ```tsx
-const client = createPresenceClient({ transport: myTransport });
+import { useEffect, useState } from "react";
+import { createPresenceClient, type PresenceClient } from "@anchor-presence/core";
+import { createWebSocketTransport } from "@anchor-presence/dom";
+import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
 
-<LiveCursorProvider client={client}>
-  <Dashboard />
-</LiveCursorProvider>;
+function OwnClientApp() {
+  const [client, setClient] = useState<PresenceClient | null>(null);
+  useEffect(() => {
+    const created = createPresenceClient({ transport: createWebSocketTransport({ path: "/?room=main" }) });
+    setClient(created);
+    return () => created.dispose();
+  }, []);
+  return (
+    <LiveCursorProvider client={client}>
+      <CursorLayer />
+    </LiveCursorProvider>
+  );
+}
 ```
 
-If you set both `factory` and `client`, `client` wins, the factory never runs, and `clientKey` has no effect. Pass `client={null}` to provide no client, for example during server rendering.
+</Tab>
+</Tabs>
 
-## Connect and stop a client that you own
+## The factory path
 
-A client that you pass with the `client` prop connects the transport by default. To connect the transport yourself, pass `autoConnect: false` to `createPresenceClient` and call `transport.connect()`. To stop the client, call `client.dispose()`. After `dispose`, you cannot use the client again. Create a new client and pass it to the provider.
+- The provider runs `factory` one time per mount, in an effect. A server render never runs it.
+- The provider runs `factory` again each time `clientKey` changes. See [Switch rooms](/docs/react/live-cursor-provider#switch-rooms).
+- The provider disposes the client on unmount and before each new `factory` run.
+- `client.dispose()` also disconnects the transport.
+
+<Callout type="warn">
+  If you create the WebSocket transport at module scope, the first `dispose` disconnects it for good. The next
+  client from `factory`, for example the second mount under Strict Mode, then never connects. Create the
+  transport inside `factory`.
+</Callout>
+
+## The own-client path
+
+- The provider never disposes a client that you pass. Call `client.dispose()` yourself.
+- After `dispose`, you cannot use the client again. Create a new client and pass it to the provider.
+- The client connects the transport when you create it. To connect later, pass `autoConnect: false` to `createPresenceClient`, then call `transport.connect()`.
+- Until your client exists, pass `client={null}`. Every hook then returns its empty value.
+- If you set both `factory` and `client`, `client` wins. The factory never runs, and `clientKey` has no effect.
 
 ## Related
 
-- [LiveCursorProvider](/docs/react/live-cursor-provider)
-- [SSR and Strict Mode](/docs/react/ssr-and-strict-mode)
-- [Quick start](/docs/get-started/quick-start)
+<Cards>
+  <Card icon={<Plug />} title="LiveCursorProvider" href="/docs/react/live-cursor-provider">
+    Every prop of the provider.
+  </Card>
+  <Card icon={<Server />} title="SSR and Strict Mode" href="/docs/react/ssr-and-strict-mode">
+    Why the client lives in an effect.
+  </Card>
+  <Card icon={<Wifi />} title="Presence client" href="/docs/core/presence-client">
+    Client options, lifecycle, and status.
+  </Card>
+</Cards>

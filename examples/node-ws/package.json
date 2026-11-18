@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev:relay": "bun relay.ts"
+    "dev:relay": "bun relay.ts",
+    "dev:relay:node": "node relay.ts"
   },
   "dependencies": {
     "@anchor-presence/core": "0.1.0",

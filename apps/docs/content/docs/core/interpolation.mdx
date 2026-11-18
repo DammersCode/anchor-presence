@@ -1,9 +1,24 @@
 ---
 title: Interpolation
 description: The Interpolator interface, linearInterpolator, and noneInterpolator.
+icon: spline
 ---
 
-An `Interpolator` eases the position of a remote cursor toward its last target, so the cursor does not jump on every message. A peer is another client in the same room. `@anchor-presence/dom` creates one interpolator for each peer through an `InterpolatorFactory`.
+import { Move, Radio } from "lucide-react";
+
+An `Interpolator` eases the position of a remote cursor toward its last target, so the cursor does not jump on every message. `@anchor-presence/dom` creates one interpolator for each peer through an `InterpolatorFactory`. A peer is another client in the same room. Write your own interpolator when you want another easing style, for example a spring.
+
+## Use an interpolator
+
+`linearInterpolator(durationMs?)` returns an `Interpolator`:
+
+```ts
+import { linearInterpolator } from "@anchor-presence/core";
+
+const interpolator = linearInterpolator(80);
+```
+
+Pass a factory to the DOM binding through `resolution.interpolatorFactory`. See [Motion](/docs/dom/motion#choose-a-custom-interpolator).
 
 ## The Interpolator interface
 
@@ -21,25 +36,24 @@ interface Interpolator {
 type InterpolatorFactory = () => Interpolator;
 ```
 
-The methods do these jobs:
+| Method       | Job                                                                                                                       |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| `target`     | Sets a new position to ease toward. The ease starts from the current eased position.                                      |
+| `shift`      | Moves the current position and the target by a delta, and does not restart the ease.                                      |
+| `sample`     | Returns the eased position at a timestamp. `settled` is `true` when the position reaches its target.                      |
+| `sampleInto` | Optional. Writes the same result into `out` and creates no object.                                                        |
+| `reset`      | Optional. Clears the ease state. The next `target` call then jumps to the new position and does not ease from an old one. |
 
-- `target` sets a new position to ease toward. The ease starts from the current eased position.
-- `shift` moves the current position and the target by a delta, and does not restart the ease. The DOM binding calls `shift` when a local scroll or layout change moves the cursor and no new message arrived. A running ease then continues from the new place.
-- `sample` returns the eased position at a timestamp. `settled` is `true` when the position reaches its target.
-- `sampleInto` writes the same result into `out` and creates no object. It is optional. When an interpolator has `sampleInto`, the DOM binding calls it on each frame instead of `sample`.
-- `reset` clears the ease state. The next `target` call then jumps to the new position and does not ease from an old one. The DOM binding calls `reset` when a cursor becomes hidden.
+The DOM binding calls these methods at fixed points:
+
+- It calls `shift` when a local scroll or layout change moves the cursor and no new message arrived. A running ease then continues from the new place.
+- It calls `sampleInto` on each frame when the interpolator has it, and `sample` otherwise.
+- It calls `reset` on each frame while the cursor has the `hidden` tier. A cursor that the visibility policy hides keeps its ease state.
+- It asks for another frame while `settled` is `false`. An interpolator that never settles keeps the frame loop running.
 
 ## linearInterpolator
 
-`linearInterpolator(durationMs?)` returns an `Interpolator`:
-
-```ts
-import { linearInterpolator } from "@anchor-presence/core";
-
-const interpolator = linearInterpolator(80);
-```
-
-The interpolator eases linearly over a fixed duration, `80` milliseconds by default. The first `target` call jumps to the position, because there is no previous position to ease from.
+The interpolator from `linearInterpolator` eases linearly over a fixed duration, `80` milliseconds by default. The first `target` call jumps to the position, because there is no previous position to ease from. A duration of `0` or less jumps on every `target` call.
 
 `linearInterpolator` itself also fits `InterpolatorFactory`, with the default duration. For another duration, pass a factory that calls `linearInterpolator`:
 
@@ -59,5 +73,11 @@ An interpolator from `noneInterpolator` applies no easing. `sample` always retur
 
 ## Related
 
-- [Motion](/docs/dom/motion)
-- [Presence client](/docs/core/presence-client)
+<Cards>
+  <Card icon={<Move />} title="Motion" href="/docs/dom/motion">
+    How the DOM binding picks and runs the interpolator.
+  </Card>
+  <Card icon={<Radio />} title="Presence client" href="/docs/core/presence-client">
+    The client that delivers the positions.
+  </Card>
+</Cards>

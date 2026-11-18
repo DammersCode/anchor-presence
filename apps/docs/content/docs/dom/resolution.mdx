@@ -1,55 +1,97 @@
 ---
 title: Resolution
 description: How the resolver turns a remote presence into a ResolvedCursor in receiver viewport pixels.
+icon: crosshair
 ---
 
-Resolution is the process that turns the presence of one peer into a screen position on the receiver. A peer is another client in the same room. The binding runs this process for every peer on every frame that it is active.
+import { BookOpen, Braces, Eye, Move } from "lucide-react";
+
+Resolution is the process that turns the presence of one peer into a screen position on the receiver. A peer is another client in the same room. The binding resolves every peer on each frame while it is active. Read this page to understand the `tier`, `x`, `y`, and `idle` fields of a `ResolvedCursor`.
+
+This sample logs each cursor that falls back to the viewport position:
+
+```ts
+for (const cursor of binding.getSnapshot()) {
+  if (cursor.tier === "viewport") console.debug(`${cursor.clientId} has no shared anchor`);
+}
+```
 
 ## The three tiers
 
-Every resolved cursor carries a `tier`:
+Every resolved cursor carries a `tier`. The resolver tries the tiers in this order:
+
+<Mermaid
+  chart={`flowchart TD
+  start["remote presence"] --> hasCursor{"cursor is null?"}
+  hasCursor -- yes --> hidden["tier: hidden"]
+  hasCursor -- no --> anchor{"an anchor of the chain is connected and has a size?"}
+  anchor -- yes --> anchorTier["tier: anchor, anchorId set"]
+  anchor -- no --> viewport{"viewport position present?"}
+  viewport -- yes --> viewportTier["tier: viewport"]
+  viewport -- no --> hidden`}
+/>
 
 | Tier       | Meaning                                                             |
 | ---------- | ------------------------------------------------------------------- |
 | `anchor`   | An anchor in the fallback chain resolved. `anchorId` names it.      |
-| `viewport` | No anchor resolved. The cursor used the viewport fallback position. |
+| `viewport` | No anchor resolved. The cursor uses the viewport fallback position. |
 | `hidden`   | Nothing resolved. The cursor has no valid position.                 |
 
-The resolver walks the sender's fallback chain in order. It uses the first anchor that is connected to the DOM and has a width and height greater than zero on the receiver. If none resolve, it falls back to the sender's viewport position. If the presence carries no cursor at all, the tier is `hidden`. See [Fallback chain](/docs/get-started/concepts/fallback-chain) for how the sender builds the chain.
+The resolver walks the fallback chain of the sender in order. It uses the first anchor that is connected to the DOM and has a width and height greater than zero on the receiver. See [Fallback chain](/docs/get-started/concepts/fallback-chain) for how the sender builds the chain.
 
 ## Viewport coordinates
 
-For the `anchor` tier, the resolver computes the pixel position from the receiver's own measured rectangle:
+For the `anchor` tier, the resolver computes the pixel position from the rectangle of the anchor on the receiver:
 
 ```text
 x = rect.left + rect.width * u
 y = rect.top + rect.height * v
 ```
 
-For the `viewport` tier, it scales the sender's normalized position by the receiver's own window size:
+For the `viewport` tier, it scales the normalized position of the sender by the window size of the receiver:
 
 ```text
 x = viewport.u * window.innerWidth
 y = viewport.v * window.innerHeight
 ```
 
-Both `x` and `y` on `ResolvedCursor` are pixels in the receiver's viewport, ready to position a cursor element with `left`/`top` or a `transform`.
+`x` and `y` are pixels in the viewport of the receiver. Use them with `left`/`top` or a `transform` on an element with `position: fixed`. An `anchor` tier cursor can have a position outside the window, for example when the anchor is scrolled out of view.
 
 ## ResolvedCursor
 
-Every subscriber reads an array of `ResolvedCursor` values from `binding.getSnapshot()`. Each entry carries the tier, the winning anchor ID, and the `x`/`y` position. It also carries a `visible` flag and a `pointVisible` flag. The sender's `context` and `user` values follow, when present, then an `idle` flag.
+`binding.getSnapshot()` returns an array of `ResolvedCursor` values. Each entry has these fields:
 
-### idle
+| Field          | Meaning                                                                                                         |
+| -------------- | --------------------------------------------------------------------------------------------------------------- |
+| `clientId`     | The peer that owns the cursor.                                                                                  |
+| `x`, `y`       | The eased position, in viewport pixels. See [Motion](/docs/dom/motion).                                         |
+| `tier`         | `anchor`, `viewport`, or `hidden`.                                                                              |
+| `anchorId`     | The anchor that won, or `null`.                                                                                 |
+| `visible`      | The decision of the [visibility policy](/docs/dom/visibility-policy). Render the cursor only when it is `true`. |
+| `pointVisible` | Whether a scroll container clips the point. See [Occlusion and scroll](/docs/dom/occlusion-and-scroll).         |
+| `context`      | The `context` of the sender, when set.                                                                          |
+| `user`         | The `user` of the sender, when set.                                                                             |
+| `idle`         | `true` when the presence of the sender did not change for `idleAfterMs`.                                        |
 
-`idle` is `true` when the presence of the sending client did not change for `idleAfterMs`. The core store sets this flag. See [Idle stage](/docs/core/remote-presence#idle-stage). The binding copies the flag onto the resolved cursor unchanged. It runs no idle timer of its own. A renderer can use `idle` to fade a cursor or hide its label without hiding the cursor itself.
+The core store sets `idle`. See [Idle stage](/docs/core/remote-presence#idle-stage). The binding copies the flag and runs no idle timer of its own. A renderer can use `idle` to fade a cursor or hide its label.
 
 ## Result identity
 
-The resolver reuses the same `ResolvedCursor` object, and the same result array, across frames when nothing about a cursor changed. The compared fields are position, visibility, tier, anchor, context, user, and idle stage. A renderer keyed on object identity, such as `React.memo`, avoids rework on a frame where nothing moved.
+When nothing about a cursor changed, the resolver keeps the same `ResolvedCursor` object across frames, and the same result array. It compares position, visibility, tier, anchor, context, user, and the idle stage. A renderer that compares object identity, such as `React.memo`, then skips the work on a frame where nothing moved.
 
 ## Related
 
-- [Visibility policy](/docs/dom/visibility-policy)
-- [Motion](/docs/dom/motion)
-- [Resolution types](/docs/dom/api/resolution)
-- [Fallback chain](/docs/get-started/concepts/fallback-chain)
+<Cards>
+  <Card icon={<Eye />} title="Visibility policy" href="/docs/dom/visibility-policy">
+    Decide which resolved cursors render.
+  </Card>
+  <Card icon={<Move />} title="Motion" href="/docs/dom/motion">
+    How `x` and `y` ease between positions.
+  </Card>
+  <Card icon={<Braces />} title="Resolution types" href="/docs/dom/api/resolution">
+    The types of the result.
+  </Card>
+  <Card icon={<BookOpen />} title="Fallback chain" href="/docs/get-started/concepts/fallback-chain">
+    How the sender builds the chain.
+  </Card>
+</Cards>

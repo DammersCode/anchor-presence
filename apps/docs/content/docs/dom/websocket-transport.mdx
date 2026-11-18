@@ -1,9 +1,12 @@
 ---
 title: WebSocket transport
 description: createWebSocketTransport, the default URL, the room token, reconnect with backoff, and close reasons.
+icon: radio-tower
 ---
 
-`createWebSocketTransport` builds a `LiveCursorTransport` over the native browser `WebSocket`. It is the one transport that `@anchor-presence/dom` ships. It works with any relay that follows the [relay contract](/docs/examples/backends/relay-contract).
+import { Cable, PlugZap, Shield } from "lucide-react";
+
+`createWebSocketTransport` builds a `LiveCursorTransport` over the native browser `WebSocket`. It works with any relay that follows the [relay contract](/docs/examples/backends/relay-contract). Use it to connect clients on different machines. For tabs of one origin with no server, use the [BroadcastChannel transport](/docs/dom/broadcast-channel-transport).
 
 ## Basic use
 
@@ -17,7 +20,7 @@ const transport = createWebSocketTransport({ url: "wss://relay.example.com/?room
 const client = createPresenceClient({ transport });
 ```
 
-`connect()` and `disconnect()` are always present on the returned transport, unlike the optional methods on the base `LiveCursorTransport` contract. See [Transports](/docs/core/transports) for that contract.
+The returned transport always has `connect()`, `disconnect()`, `subscribeStatus`, `getStatus`, `subscribeClose`, and `bufferedBytes`. See [Transports](/docs/core/transports) for the contract.
 
 The transport uses `globalThis.WebSocket` by default. If there is no global `WebSocket`, for example on an older Node.js, pass `WebSocketCtor`.
 
@@ -26,9 +29,26 @@ The transport uses `globalThis.WebSocket` by default. If there is no global `Web
   stays `connecting`, with no warning and no close.
 </Callout>
 
+## Connection status
+
+The transport moves through these statuses:
+
+<Mermaid
+  chart={`stateDiagram-v2
+  [*] --> connecting
+  connecting --> connected: socket opens
+  connected --> reconnecting: close, retry allowed
+  connecting --> reconnecting: close, retry allowed
+  reconnecting --> connected: socket opens
+  connected --> disconnected: close, no retry
+  reconnecting --> disconnected: close, no retry
+  connecting --> disconnected: close, no retry
+  connected --> disconnected: disconnect()`}
+/>
+
 ## The default URL
 
-When you omit `url`, the transport builds one from `host` (default `window.location.hostname`), `port` (default `8787`), and `path` (default `/`). The protocol is `wss:` when the page loads over `https:`, and `ws:` otherwise.
+When you omit `url`, the transport builds one from `host` (default `window.location.hostname`), `port` (default `8787`), and `path` (default `/`, including the query). The protocol is `wss:` when the page loads over `https:`, and `ws:` otherwise.
 
 The default URL needs `window`. If you omit `url` and `window` does not exist, for example on a server, `createWebSocketTransport` throws a `TypeError`. Outside the browser, pass `url`.
 
@@ -56,8 +76,15 @@ If the function throws or rejects, the transport reports a close with no code an
 - The first delay is `baseBackoffMs` (default `500`). The delay doubles on each attempt, up to `maxBackoffMs` (default `8000`).
 - The transport waits a random time between 50% and 100% of that delay. As a result, many clients that lose the connection at the same time do not all retry at the same moment.
 - The backoff resets only after a connection stays open for `stableAfterMs` (default `5000`). A relay that accepts a connection and then closes it therefore sees growing delays, not a retry loop.
-- A close with code `1008` (policy), `4004` (origin), `4006` (room token) or `4007` (room name) stops the reconnect, and the status becomes `disconnected`.
-- `random` overrides the jitter source. It defaults to `Math.random`. A test can pass a fixed function to get a fixed delay.
+- A close with code `1008` (policy), `4004` (origin), `4006` (room token), or `4007` (room name) stops the reconnect, and the status becomes `disconnected`.
+- `random` replaces the jitter source. It defaults to `Math.random`. A test can pass a fixed function to get a fixed delay.
+
+While a connection is connecting or open, a second `connect()` call has no effect. It does not open a second socket.
+
+<Callout type="warn">
+  If you call `connect()` after `disconnect()`, the transport logs a development-mode warning and does
+  nothing. To reconnect, for example with a new room token, create a new transport and a new client.
+</Callout>
 
 ## Stop reconnecting
 
@@ -73,18 +100,11 @@ const transport = createWebSocketTransport({
 ```
 
 <Callout type="warn">
-  If you pass `shouldReconnect`, it replaces the default rule. Include `1008`, `4004` and `4006` in your rule,
-  or the transport retries a connection that the relay rejects.
+  If you pass `shouldReconnect`, it replaces the default rule. Include `1008`, `4004`, `4006`, and `4007` in
+  your rule, or the transport retries a connection that the relay rejects.
 </Callout>
 
 When `reconnect` is `false`, the transport never calls `shouldReconnect`.
-
-While a connection is connecting or open, a second `connect()` call has no effect. It does not open a second socket.
-
-<Callout type="warn">
-  If you call `connect()` after `disconnect()`, the transport logs a development-mode warning and does
-  nothing. To reconnect, for example with a new room token, create a new transport and a new client.
-</Callout>
 
 ## Close reasons
 
@@ -98,14 +118,26 @@ transport.subscribeClose?.((close) => {
 });
 ```
 
-The transport does not replay a past close to a new listener. A close after your own `disconnect()` call does not run the listener. The client has the same method: `client.subscribeClose`.
+The `?.` is necessary because the `WebSocketTransport` type marks `subscribeClose` as optional, although the transport always has it.
 
-## Buffered bytes
+The transport does not replay a past close to a new listener. A close after your own `disconnect()` call does not run the listener. In development mode, the transport also logs each close with a code of `4000` or higher. `client.subscribeClose` receives the same closes.
 
-`transport.bufferedBytes()` returns the underlying socket's `bufferedAmount`, or `0` when no socket is open. Presence is lossy by design. If the socket is not open, `send()` drops the message without a warning and does not queue it.
+## Send and receive
+
+`send()` drops the message without a warning when the socket is not open. It does not queue it, because presence is lossy by design. The transport delivers only binary frames to its listeners. It drops a text frame.
+
+`transport.bufferedBytes()` returns the `bufferedAmount` of the socket, or `0` when no socket is open.
 
 ## Related
 
-- [Transports](/docs/core/transports)
-- [WebSocket transport API](/docs/dom/api/websocket-transport)
-- [Security](/docs/get-started/guides/security)
+<Cards>
+  <Card icon={<Cable />} title="Transports" href="/docs/core/transports">
+    The transport contract.
+  </Card>
+  <Card icon={<PlugZap />} title="WebSocket transport API" href="/docs/dom/api/websocket-transport">
+    Every option, with its type.
+  </Card>
+  <Card icon={<Shield />} title="Security" href="/docs/get-started/guides/security">
+    The room token and the relay checks.
+  </Card>
+</Cards>

@@ -1,9 +1,12 @@
 ---
 title: In-memory transport
 description: createInMemoryPair, two transports wired to each other for tests and prototypes.
+icon: memory-stick
 ---
 
-`createInMemoryPair` returns two transports wired directly to each other in one process. Use it for tests and for a quick local check, before a relay exists.
+import { Cable, Plug, Server } from "lucide-react";
+
+`createInMemoryPair` returns two transports that are wired directly to each other in one process. Use it in unit tests, in server-rendered samples, and to try the provider and the hooks before a relay exists.
 
 ## Usage
 
@@ -19,19 +22,31 @@ const clientB = createPresenceClient({ transport: b, user: { name: "Bob" } });
 
 A send from `a` reaches only the listeners of `b`. A send from `b` reaches only the listeners of `a`. Call `dispose()` on the pair to stop delivery and clear both sides.
 
-## When to use it
+## Delivery
 
-Use `createInMemoryPair` in unit tests and in server-rendered samples. It also lets you check the provider and the hooks before a relay exists. It cannot cross a process, tab, or iframe boundary. Both sides must run in the same JavaScript realm.
-
-To deliver messages in a microtask instead of at once, pass `{ async: true }`:
+By default, a send reaches the other side at once, inside the `send` call. To deliver in a microtask, pass `{ async: true }`:
 
 ```ts
 const { a, b } = createInMemoryPair({ async: true });
 ```
 
-See [Backends](/docs/examples/backends) for transports that do cross a process boundary.
+## Limits
+
+- Both sides must run in the same JavaScript realm. The pair cannot cross a process, tab, or iframe boundary.
+- Each side starts `disconnected`. `connect()` sets it to `connected`, and `disconnect()` sets it to `disconnected`.
+- A send reaches the other side also while the sending side is `disconnected`. The browser transports drop such a send. A test of offline behavior can pass with this pair and fail in the browser.
+- The pair has no `subscribeClose` and no `bufferedBytes`.
 
 ## Related
 
-- [Transports](/docs/core/transports)
-- [Custom transport](/docs/core/custom-transport)
+<Cards>
+  <Card icon={<Cable />} title="Transports" href="/docs/core/transports">
+    The contract that each side implements.
+  </Card>
+  <Card icon={<Plug />} title="Custom transport" href="/docs/core/custom-transport">
+    Write a transport for a real channel.
+  </Card>
+  <Card icon={<Server />} title="Backends" href="/docs/examples/backends">
+    Transports that cross a process boundary.
+  </Card>
+</Cards>

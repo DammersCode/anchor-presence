@@ -1,37 +1,70 @@
 ---
 title: Fallback chain
-description: How a cursor degrades from an exact anchor to viewport, and the resolution tiers.
+description: How a cursor falls back from the exact anchor to a parent anchor, then to the window.
+icon: waypoints
 ---
 
-A fallback chain lets a receiver place a cursor when the exact element is missing on its screen.
+import { Anchor, Crosshair, EyeOff, LayoutDashboard } from "lucide-react";
+
+The fallback chain lets a receiver place a cursor when the exact element is missing on its screen. One example is a table row that exists on the sender but not in a shorter table on the receiver. The cursor then moves to the nearest parent anchor that the receiver has, and not to a random place.
+
+## Example
+
+Anchor each level of a table: the button, its row, and the table:
+
+```tsx
+<table data-anchor="orders">
+  <tbody>
+    <tr data-anchor="orders.row:17">
+      <td>
+        <button data-anchor="orders.row:17.actions">Edit</button>
+      </td>
+    </tr>
+  </tbody>
+</table>
+```
+
+A pointer on the button sends the chain `orders.row:17.actions`, `orders.row:17`, `orders`. If the receiver shows no row 17, its cursor lands on `orders`.
 
 ## How the chain works
 
-A fallback chain is the ordered list of anchors that a cursor position carries, most specific first, up to 8 entries.
+The fallback chain is the ordered list of anchors that a cursor position carries, the most specific anchor first.
 
-The sender starts at the pointer target. It adds each registered anchor between the target and the document root, the nearest anchor first. The binding caps the chain length at `maxAnchors`. The default is 4 anchors, and the protocol allows at most 8. See [Binding](/docs/dom/binding).
+1. The sender starts at the element under the pointer.
+2. It adds each registered anchor between that element and the document root, the nearest anchor first.
+3. It stops at `maxAnchors` entries. The default is 4, and the protocol allows at most 8. See [Binding](/docs/dom/binding).
 
-The receiver walks the chain in order. It uses the first anchor that is connected to the DOM and has a non-zero size. If the exact element is missing on the receiver, the cursor moves to the next anchor in the chain. One example is a table row that does not exist in a shorter table.
+The receiver walks the chain in order. It uses the first anchor that is connected to its DOM and has a size larger than zero.
 
 ## Viewport fallback
 
-Every cursor position can also carry a `viewport` field: a normalized `u`/`v` position across the full browser window, computed from `pointerX / innerWidth` and `pointerY / innerHeight`.
-
-When no anchor in the fallback chain resolves, the receiver falls back to this viewport position. Viewport fallback keeps a cursor visible even when every semantic anchor is missing on the receiver.
+Each cursor position also carries a `viewport` field. It is a `u`/`v` position across the full browser window: `pointerX / innerWidth` and `pointerY / innerHeight`. If no anchor in the chain resolves, the receiver uses this position. The cursor then stays visible, but it can land on another element.
 
 ## Resolution tiers
 
-Every resolved cursor carries a tier that names which fallback stage won: an exact anchor, the viewport position, or nothing. See [Resolution](/docs/dom/resolution) for the tier table and the pixel formulas.
+A **tier** names the fallback step that placed the cursor. Each resolved cursor carries one:
 
-The resolution order is fixed: the exact anchor, then each ancestor anchor in the chain from the nearest to the outermost, then the viewport position. After resolution, a visibility policy decides whether the cursor shows. The policy can hide an `anchor` or `viewport` tier cursor for application reasons. See [UI context](/docs/get-started/concepts/ui-context).
+| Tier       | Meaning                                      |
+| ---------- | -------------------------------------------- |
+| `anchor`   | An anchor in the chain resolved.             |
+| `viewport` | No anchor resolved. The window position won. |
+| `hidden`   | The cursor has no position to show.          |
 
-## Interpolation
-
-The receiver eases a remote cursor from its last position to its new one, instead of jumping. The library has two styles: `noneInterpolator` (snap) and `linearInterpolator` (fixed-duration ease). Write a custom style, such as a spring, against the public `Interpolator` interface. See [Interpolation](/docs/core/interpolation).
+After this step, a **visibility policy** decides whether the cursor shows. The default policy hides only the `hidden` tier. A custom policy can hide other cursors for app reasons. See [UI context](/docs/get-started/concepts/ui-context). [Resolution](/docs/dom/resolution) gives the pixel formula of each tier.
 
 ## Related
 
-- [Anchors](/docs/get-started/concepts/anchors)
-- [Resolution](/docs/dom/resolution)
-- [UI context](/docs/get-started/concepts/ui-context)
-- [Security](/docs/get-started/guides/security)
+<Cards>
+  <Card icon={<Anchor />} title="Anchors" href="/docs/get-started/concepts/anchors">
+    Anchor IDs and the u/v position.
+  </Card>
+  <Card icon={<Crosshair />} title="Resolution" href="/docs/dom/resolution">
+    The pixel formula of each tier.
+  </Card>
+  <Card icon={<EyeOff />} title="UI context" href="/docs/get-started/concepts/ui-context">
+    Hide a cursor with a visibility policy.
+  </Card>
+  <Card icon={<LayoutDashboard />} title="Layout design" href="/docs/get-started/guides/layout-design">
+    Anchor each level so that the fallback lands one step up.
+  </Card>
+</Cards>

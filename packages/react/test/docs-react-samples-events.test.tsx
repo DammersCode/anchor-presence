@@ -272,9 +272,7 @@ describe("doc sample sources", () => {
       docSample("react/typed-hooks.mdx", "function Reactions"),
       docSample("react/typed-hooks.mdx", "createEventParser<Events>"),
       docSample("react/remote-users.mdx", "function JoinNotice"),
-      docSample("react/remote-users.mdx", "function usePeerChanges"),
       docSample("react/local-context.mdx", "function NameField"),
-      docSample("react/local-context.mdx", "function useLocalUser"),
       docSample("react/api/hooks.mdx", "function useLocalUser"),
       docSample("react/api/hooks.mdx", "function usePeerChanges"),
     ];

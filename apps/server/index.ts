@@ -97,20 +97,6 @@ export function closePeerAboveHardLimit(
   return true;
 }
 
-export type SlowPeerAction = "send" | "skip" | "close";
-
-export function slowPeerAction(
-  bufferedAmount: number,
-  skipped: boolean,
-  softBytes: number,
-  hardBytes: number,
-  resumeBytes: number,
-): SlowPeerAction {
-  if (bufferedAmount > hardBytes) return "close";
-  if (skipped) return bufferedAmount < resumeBytes ? "send" : "skip";
-  return bufferedAmount > softBytes ? "skip" : "send";
-}
-
 if (typeof Bun !== "undefined" && import.meta.main) {
   Bun.serve({
     port: PORT,

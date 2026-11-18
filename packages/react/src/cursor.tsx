@@ -4,20 +4,21 @@ import { CURSOR_MARKER_ATTRIBUTE, type ResolvedCursor } from "@anchor-presence/d
 import { useRemoteCursorsSelector } from "./hooks/index.js";
 
 const DEFAULT_COLOR = "#6b7280";
+const MAX_DEFAULT_LABEL_LENGTH = 32;
 const DEFAULT_PALETTE = [
   "#2563eb",
   "#dc2626",
-  "#059669",
-  "#d97706",
+  "#047857",
+  "#b45309",
   "#7c3aed",
-  "#db2777",
-  "#0891b2",
+  "#be185d",
+  "#0e7490",
   "#4b5563",
 ];
 
 function defaultLabel(cursor: ResolvedCursor): string | null {
   const name = (cursor.user as { name?: unknown } | undefined)?.name;
-  return typeof name === "string" && name !== "" ? name : null;
+  return typeof name === "string" && name !== "" ? name.slice(0, MAX_DEFAULT_LABEL_LENGTH) : null;
 }
 
 function defaultColor(cursor: ResolvedCursor): string {
@@ -135,6 +136,10 @@ export function DefaultCursor(props: DefaultCursorProps): ReactNode {
             fontWeight: 500,
             color: cssLabelColor,
             backgroundColor: cssColor,
+            maxWidth: "20rem",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
             ...labelStyle,
           }}
         >
@@ -164,15 +169,17 @@ function CursorItem<TContext = unknown, TUser = unknown>(props: CursorItemProps<
   const { style: consumerStyle, ...consumerRest } = consumerProps ?? {};
 
   const style: CSSProperties = {
-    zIndex: zIndex ?? DEFAULT_Z_INDEX,
     ...consumerStyle,
+    zIndex: zIndex ?? consumerStyle?.zIndex ?? DEFAULT_Z_INDEX,
     position: "fixed",
     left: 0,
     top: 0,
     pointerEvents: "none",
     transform: `translate3d(${cursor.x}px, ${cursor.y}px, 0)`,
     opacity: cursor.idle ? IDLE_OPACITY : 1,
-    ...(prefersReducedMotion() ? null : { transition: "opacity 200ms ease-out" }),
+    ...(prefersReducedMotion()
+      ? null
+      : { transition: consumerStyle?.transition ?? "opacity 200ms ease-out" }),
   };
 
   return (

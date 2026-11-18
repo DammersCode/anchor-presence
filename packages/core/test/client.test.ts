@@ -1679,7 +1679,28 @@ describe("inbound drop warnings", () => {
     vi.useFakeTimers();
     const { a } = createInMemoryPair();
     const client = createPresenceClient({ transport: a, idleAfterMs: 0 });
-    expect(() => vi.advanceTimersByTime(1000)).not.toThrow();
+    const before = vi.getTimerCount();
+    vi.advanceTimersByTime(1000);
+    expect(vi.getTimerCount()).toBeLessThanOrEqual(before);
     client.dispose();
+  });
+
+  it("sends the cursor without user and context when they cannot encode", () => {
+    vi.useFakeTimers();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { a, b } = createInMemoryPair();
+    const sender = createPresenceClient({ transport: a, clientId: "S" });
+    const receiver = createPresenceClient({ transport: b, clientId: "R" });
+    void a.connect?.();
+    void b.connect?.();
+    const cycle: Record<string, unknown> = {};
+    cycle.self = cycle;
+    sender.setContext(cycle);
+    sender.setLocalCursor({ anchors: [{ id: "a", u: 0.5, v: 0.5 }] });
+    vi.advanceTimersByTime(200);
+    expect(receiver.getRemoteSnapshot()).toHaveLength(1);
+    warn.mockRestore();
+    sender.dispose();
+    receiver.dispose();
   });
 });

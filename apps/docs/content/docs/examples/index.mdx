@@ -1,0 +1,87 @@
+---
+title: Overview
+description: Live demos of cursors across layouts, and relay servers for every common backend.
+icon: flask-conical
+---
+
+import {
+  Brush,
+  EyeOff,
+  FileCheck,
+  Kanban,
+  Layers,
+  LayoutGrid,
+  ListTree,
+  MousePointer2,
+  Server,
+  Spline,
+  TableProperties,
+  Users,
+} from "lucide-react";
+
+Each example page has a live demo with two panes. The panes show the same app in two layouts, a wide one and a narrow one. Move your pointer in one pane, and your cursor appears in the other pane on the same element. The panes connect through a `BroadcastChannel`, so the demos need no server.
+
+## Layouts
+
+<Cards>
+  <Card icon={<MousePointer2 />} title="Basics" href="/docs/examples/basics">
+    Use this when you start: the smallest setup with a client, a provider, and three anchors.
+  </Card>
+  <Card icon={<LayoutGrid />} title="Responsive grid" href="/docs/examples/responsive-grid">
+    Use this when your grid changes its column count at a breakpoint.
+  </Card>
+  <Card icon={<TableProperties />} title="Table and cards" href="/docs/examples/table-and-cards">
+    Use this when a table turns into a stack of cards on a narrow screen.
+  </Card>
+  <Card icon={<Kanban />} title="Kanban board" href="/docs/examples/kanban">
+    Use this when your columns keep a fixed width and the board scrolls.
+  </Card>
+</Cards>
+
+## Resolution
+
+<Cards>
+  <Card icon={<ListTree />} title="Anchors and fallbacks" href="/docs/examples/anchors-and-fallbacks">
+    Use this when the receiver can hide a row, a column, or a whole table.
+  </Card>
+  <Card
+    icon={<EyeOff />}
+    title="Occlusion and scroll containers"
+    href="/docs/examples/occlusion-and-scroll-containers"
+  >
+    Use this when an anchor can scroll out of view inside a list.
+  </Card>
+</Cards>
+
+## Dialogs and layers
+
+<Cards>
+  <Card icon={<Layers />} title="Dialogs and layers" href="/docs/examples/dialogs-and-layers">
+    Use this when one client has a dialog open and the other client does not.
+  </Card>
+</Cards>
+
+## Presence and rendering
+
+<Cards>
+  <Card icon={<Users />} title="Presence list" href="/docs/examples/presence-list">
+    Use this when you show who is online, idle, or gone.
+  </Card>
+  <Card icon={<Brush />} title="Custom cursor rendering" href="/docs/examples/custom-cursor-rendering">
+    Use this when the default arrow does not fit your design.
+  </Card>
+  <Card icon={<Spline />} title="Interpolation styles" href="/docs/examples/interpolation-styles">
+    Use this when you change how a cursor moves between updates.
+  </Card>
+</Cards>
+
+## Servers
+
+<Cards>
+  <Card icon={<Server />} title="Backends" href="/docs/examples/backends">
+    Use this when you pick a relay: Bun, Node.js, Hono, Elysia, Socket.IO, or SignalR.
+  </Card>
+  <Card icon={<FileCheck />} title="Relay contract" href="/docs/examples/backends/relay-contract">
+    Use this when you write your own relay and want to test it.
+  </Card>
+</Cards>

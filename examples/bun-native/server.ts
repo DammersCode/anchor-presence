@@ -47,8 +47,8 @@ const SERVER_FULL_CODE = 4002;
 
 /**
  * Creates a Bun-native relay. Rooms are Bun pub-sub topics: `ws.publish` fans out to every other
- * subscriber without a room map. Bun's pub-sub API gives no per-subscriber buffered-amount, so
- * this example has no slow-peer backpressure; see the README for the tradeoff.
+ * subscriber without a room map. Bun closes a receiver whose buffer passes `RELAY_SLOW_PEER_HARD_BYTES`
+ * but cannot skip a send for it; see the README for the tradeoff.
  */
 export function createBunRelay(port: number, options: BunRelayOptions = {}) {
   const maxMessageBytes = options.maxMessageBytes ?? limitFromEnv(process.env.MAX_MESSAGE_BYTES, 32 * 1024);

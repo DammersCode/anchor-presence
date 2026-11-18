@@ -1,7 +1,10 @@
 ---
 title: Custom cursor rendering
 description: Replace the default arrow with a name pill, an avatar, or a crosshair.
+icon: brush
 ---
+
+import { Atom, Spline, Users } from "lucide-react";
 
 `CursorLayer` renders `DefaultCursor` by default. `renderCursor` replaces the visual, and `CursorLayer` keeps control of the position and the pointer events. In this demo, the same remote cursor shows as a name pill in the wide pane and as an avatar in the narrow pane.
 
@@ -33,8 +36,20 @@ Pick cursor colors that reach WCAG AA contrast (4.5:1) against the label text.
 
 ## Related
 
-- [renderCursor](/docs/react/custom-cursors#rendercursor): the props that a renderer gets.
-- [Positioning contract](/docs/react/custom-cursors#positioning-contract): what `CursorLayer` sets on the root, and what a renderer cannot change.
-- [Label and color](/docs/react/cursor-layer#label-and-color): `getLabel` and `getColor`.
-- [Presence list](/docs/examples/presence-list): the same user data in a roster.
-- [Interpolation styles](/docs/examples/interpolation-styles): change how a cursor moves, not how it looks.
+<Cards>
+  <Card icon={<Atom />} title="renderCursor" href="/docs/react/custom-cursors#rendercursor">
+    The props that a renderer gets.
+  </Card>
+  <Card icon={<Atom />} title="Positioning contract" href="/docs/react/custom-cursors#positioning-contract">
+    What `CursorLayer` sets on the root, and what a renderer cannot change.
+  </Card>
+  <Card icon={<Atom />} title="Label and color" href="/docs/react/cursor-layer#label-and-color">
+    `getLabel` and `getColor`.
+  </Card>
+  <Card icon={<Users />} title="Presence list" href="/docs/examples/presence-list">
+    The same user data in a roster.
+  </Card>
+  <Card icon={<Spline />} title="Interpolation styles" href="/docs/examples/interpolation-styles">
+    Change how a cursor moves, not how it looks.
+  </Card>
+</Cards>

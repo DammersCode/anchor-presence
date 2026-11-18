@@ -2,6 +2,8 @@ import type { MDXComponents } from "mdx/types";
 import defaultMdxComponents from "fumadocs-ui/mdx";
 import { Tab, Tabs } from "fumadocs-ui/components/tabs";
 import { Step, Steps } from "fumadocs-ui/components/steps";
+import { Accordion, Accordions } from "fumadocs-ui/components/accordion";
+import { File, Files, Folder } from "fumadocs-ui/components/files";
 import { AutoTypeTable } from "@/components/auto-type-table";
 import { InstallCommand } from "@/components/install-command";
 import { Demo } from "@/components/demo";
@@ -18,6 +20,11 @@ export function getMDXComponents(components?: MDXComponents) {
     ExamplePreview,
     CodeFromSource,
     Mermaid,
+    Accordion,
+    Accordions,
+    File,
+    Files,
+    Folder,
     Step,
     Steps,
     Tabs,

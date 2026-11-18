@@ -1,17 +1,14 @@
 ---
 title: Remote users
 description: Read the remote user values with useRemoteUsers, and react to joins and leaves with usePeerChanges.
+icon: users
 ---
 
-`useRemoteUsers` returns one entry per peer. A peer is another client in the same room. The entry has the `user` value of the peer, its session, and whether it is idle. Use it for a presence list or an avatar stack. These lists need one row per person, not one row per cursor frame.
+import { Gauge, LayoutList, UserPen, Braces } from "lucide-react";
+
+`useRemoteUsers` returns one entry for each peer (another client in the same room). An entry holds the `user` value of the peer, its session, and its idle state. Use it for a presence list or an avatar stack. These lists need one row per person, and they do not rerender while cursors move.
 
 ## Usage
-
-The hook has this signature:
-
-```ts
-function useRemoteUsers<TUser = unknown>(): RemoteUser<TUser>[];
-```
 
 This component lists the peers and dims the idle ones:
 
@@ -34,30 +31,30 @@ function PresenceList() {
 }
 ```
 
-Each `RemoteUser` entry has:
+For a full presence list with avatars, see the [Presence list](/docs/examples/presence-list) example.
 
-| Field      | Type                 | Meaning                                                                                             |
-| ---------- | -------------------- | --------------------------------------------------------------------------------------------------- |
-| `clientId` | `string`             | the peer that sent the user value                                                                   |
-| `user`     | `TUser \| undefined` | the user value, or `undefined` when the peer sent none                                              |
-| `session`  | `string`             | the session ID of the peer                                                                          |
-| `idle`     | `boolean`            | `true` when the presence of the peer did not change for `idleAfterMs`, even while heartbeats arrive |
+## RemoteUser fields
+
+| Field      | Type                 | Meaning                                                                                     |
+| ---------- | -------------------- | ------------------------------------------------------------------------------------------- |
+| `clientId` | `string`             | the peer that sent the user value                                                           |
+| `user`     | `TUser \| undefined` | the user value, or `undefined` when the peer sent none or sent `null`                       |
+| `session`  | `string`             | the session ID of the peer                                                                  |
+| `idle`     | `boolean`            | `true` when the presence of the peer did not change for `idleAfterMs`, even with heartbeats |
 
 ## User shape
 
-The client checks each remote `user` against the shape of the local `user` value. A `null` inside a remote `user` fits every key, so render each field with a `null` fallback. If a remote value does not fit the shape, the client drops it, and the entry keeps the previous `user` value. In development mode, the client then warns one time and names `parseUser`. For the rules and for `parseUser`, see [Remote user and context](/docs/core/validation#remote-user-and-context).
+The client checks each remote `user` against the shape of your local `user` value. If a remote value does not fit, the client drops it, and the entry keeps the previous `user` value. In development mode, the client then warns one time and names `parseUser`. A `null` inside a remote `user` fits every key, so give each field a fallback when you render it. For the rules, see [Remote user and context](/docs/core/validation#remote-user-and-context).
+
+## Render cost
+
+The hook rerenders only when a peer joins or leaves, or when the `user`, `session`, or `idle` field of a peer changes. A cursor move does not rerender it, because the position is not part of `RemoteUser`.
+
+The list and each unchanged entry keep their object identity. A `React.memo` row, keyed by `clientId`, renders again only for the peer that changed.
 
 ## Peer changes
 
 `usePeerChanges(listener)` calls `listener` when a peer joins, leaves, or changes its `user` or `context`. Use it for a one-time effect, such as a notice. For a list, use `useRemoteUsers`.
-
-The hook has this signature:
-
-```ts
-function usePeerChanges<TContext = unknown, TUser = unknown>(
-  listener: (change: PeerChange<TContext, TUser>) => void,
-): void;
-```
 
 This component shows the last peer that joined:
 
@@ -74,18 +71,24 @@ function JoinNotice() {
 }
 ```
 
-The listener receives a `PeerChange` with a `type` of `join`, `update`, or `leave`, the `clientId` of the peer, and its `user` and `context` when set. On `leave`, they hold the last known values. Cursor moves never call it. For the rules of each `type`, see [Peer changes](/docs/core/remote-presence#peer-changes).
-
-The hook keeps one subscription per client, so an inline listener does not subscribe again on each render. The hook always calls the listener from the last render. Without a client, the hook calls nothing. The hook never rerenders its component.
-
-## Render cost
-
-The hook rerenders only when the set of peers changes, or when one entry's `user`, `session`, or `idle` field changes. A remote cursor that moves across the screen does not rerender this hook, because position is not part of `RemoteUser`.
-
-The returned list, and each unchanged entry inside it, keep the same object identity across renders. A `React.memo` row component keyed by `clientId` skips rendering for every user whose fields did not change.
+- The listener receives a `PeerChange`: a `type` of `"join"`, `"update"`, or `"leave"`, the `clientId`, and the `user` and `context` of the peer when they are set. On `"leave"`, `user` and `context` hold the last known values.
+- A cursor move never calls the listener. For the rules of each `type`, see [Peer changes](/docs/core/remote-presence#peer-changes).
+- The hook subscribes one time per client. An inline listener does not subscribe again on each render, and the hook always calls the listener of the last render.
+- The hook never rerenders its component. Without a client, it calls nothing.
 
 ## Related
 
-- [Custom cursors](/docs/react/custom-cursors)
-- [Rerenders](/docs/react/rerenders)
-- [Hooks API](/docs/react/api/hooks)
+<Cards>
+  <Card icon={<UserPen />} title="Local context and user" href="/docs/react/local-context">
+    Set the user value that peers see.
+  </Card>
+  <Card icon={<LayoutList />} title="Presence list example" href="/docs/examples/presence-list">
+    A live list with avatars and idle states.
+  </Card>
+  <Card icon={<Gauge />} title="Rerenders" href="/docs/react/rerenders">
+    Which hook rerenders when.
+  </Card>
+  <Card icon={<Braces />} title="Hooks API" href="/docs/react/api/hooks#useremoteusers">
+    The signatures of useRemoteUsers and usePeerChanges.
+  </Card>
+</Cards>

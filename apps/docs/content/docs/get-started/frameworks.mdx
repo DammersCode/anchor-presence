@@ -1,13 +1,16 @@
 ---
 title: Frameworks
 description: Use Anchor Presence with Vite, Next.js, TanStack Start and Router, React Router and Remix, and Astro.
+icon: workflow
 ---
 
-`@anchor-presence/react` works with any React framework. `LiveCursorProvider` and `CursorLayer` run only in the browser. On the server, the provider renders its children with a `null` client and creates no client. See [SSR and Strict Mode](/docs/react/ssr-and-strict-mode) for the rule.
+import { Atom, Rocket, Server } from "lucide-react";
+
+`@anchor-presence/react` works with any React framework. This page shows where to put the provider in each framework. The provider and `CursorLayer` run only in the browser. On the server, the provider renders its children with a `null` client and creates no client.
 
 ## Create a provider module
 
-Every section below uses one provider module. It creates the client in the `factory` of the provider, never at module scope:
+Every framework below uses this provider module. It creates the client in the `factory` of the provider, never at module scope:
 
 ```tsx
 // presence-provider.tsx
@@ -35,13 +38,19 @@ export function PresenceProvider({ children }: { children: ReactNode }) {
 
 The `"use client"` line has an effect only in a framework with React Server Components, such as the Next.js App Router. Other frameworks ignore it.
 
-## Vite and React SPA
+## Mount the provider
+
+Render the provider in a component that stays mounted across navigation. Then the page keeps one client and one connection. Pick your framework:
+
+<Tabs items={["Vite", "Next.js", "TanStack", "React Router", "Astro"]}>
+<Tab value="Vite">
 
 Render `PresenceProvider` around your app in the entry file. A single-page app renders nothing on the server, so it needs no other step.
 
-## Next.js App Router
+</Tab>
+<Tab value="Next.js">
 
-Keep `"use client"` at the top of the provider module. A Server Component cannot pass a function, such as `factory`, to a Client Component. As a result, the `factory` must live in a Client Component. Render the provider in the root layout:
+Keep `"use client"` at the top of the provider module. A Server Component cannot pass a function, such as `factory`, to a Client Component, so `factory` must live in a Client Component. Render the provider in the root layout:
 
 ```tsx
 // app/layout.tsx
@@ -59,11 +68,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 }
 ```
 
-The root layout stays mounted across navigation, so the page keeps one client.
+</Tab>
+<Tab value="TanStack">
 
-## TanStack Router and TanStack Start
-
-Render the provider in the component of the root route, around `<Outlet />`:
+Render the provider in the component of the root route, around `<Outlet />`. This works for TanStack Router and TanStack Start:
 
 ```tsx
 // src/routes/__root.tsx
@@ -79,9 +87,10 @@ export const Route = createRootRoute({
 });
 ```
 
-The root route stays mounted across navigation, so the page keeps one client. TanStack Start renders the root route on the server too. There, the provider renders with a `null` client. The provider creates the client after hydration.
+TanStack Start also renders the root route on the server. There, the provider renders with a `null` client. The provider creates the client after hydration.
 
-## React Router and Remix
+</Tab>
+<Tab value="React Router">
 
 Render the provider in the root route module, around `<Outlet />`:
 
@@ -99,9 +108,10 @@ export default function App() {
 }
 ```
 
-For Remix, import `Outlet` from `@remix-run/react`. The root route stays mounted across navigation, so the page keeps one client.
+For Remix, import `Outlet` from `@remix-run/react`.
 
-## Astro
+</Tab>
+<Tab value="Astro">
 
 Render the provider as a React island. Use `client:only="react"` to skip the server render, or `client:load` to render on the server and hydrate:
 
@@ -116,11 +126,14 @@ import { PresenceProvider } from "../components/presence-provider";
 </PresenceProvider>
 ```
 
-The binding registers every `data-anchor` element in the document. As a result, elements outside the island are anchors too. Each island has its own React tree. A hook or a `CursorLayer` in another island has no provider and returns empty data.
+The binding registers every `data-anchor` element in the document, so elements outside the island are anchors too. Each island has its own React tree. A hook or a `CursorLayer` in another island has no provider and returns empty data.
+
+</Tab>
+</Tabs>
 
 ## Test coverage
 
-This table shows which frameworks the test suite covers:
+The test suite covers some frameworks directly. The others use a tested router, or are not tested:
 
 | Framework          | Status                                                                                               |
 | ------------------ | ---------------------------------------------------------------------------------------------------- |
@@ -134,6 +147,14 @@ This table shows which frameworks the test suite covers:
 
 ## Related
 
-- [Quick start](/docs/get-started/quick-start)
-- [SSR and Strict Mode](/docs/react/ssr-and-strict-mode)
-- [LiveCursorProvider](/docs/react/live-cursor-provider)
+<Cards>
+  <Card icon={<Rocket />} title="Quick start" href="/docs/get-started/quick-start">
+    The smallest working app.
+  </Card>
+  <Card icon={<Server />} title="SSR and Strict Mode" href="/docs/react/ssr-and-strict-mode">
+    Why the client lives in `factory`.
+  </Card>
+  <Card icon={<Atom />} title="LiveCursorProvider" href="/docs/react/live-cursor-provider">
+    Every prop of the provider.
+  </Card>
+</Cards>

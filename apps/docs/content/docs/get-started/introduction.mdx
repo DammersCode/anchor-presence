@@ -1,53 +1,101 @@
 ---
 title: Introduction
-description: What Anchor Presence does and why receiver layout is authoritative.
+description: What Anchor Presence does, when to use it, and where to start.
+icon: book-open
 ---
 
-Anchor Presence is a live-cursor layer for web apps. It shows where your teammates are looking and clicking. It keeps every cursor on the correct element, even when their layout, sidebar, or screen size differs from yours.
+import {
+  Anchor,
+  Atom,
+  Blocks,
+  Bot,
+  Box,
+  Download,
+  FlaskConical,
+  MousePointer,
+  Rocket,
+  Waypoints,
+} from "lucide-react";
+
+Anchor Presence is a live-cursor library for web apps. It shows where your teammates point and click. It keeps each cursor on the correct element, even when the two screens show different layouts. Use it when users of one page work at the same time on different screen sizes, sidebar states, or zoom levels.
+
+<Cards>
+  <Card icon={<Download />} title="Installation" href="/docs/get-started/installation">
+    Install the packages and check the requirements.
+  </Card>
+  <Card icon={<Rocket />} title="Quick start" href="/docs/get-started/quick-start">
+    See live cursors in two tabs, then connect a relay.
+  </Card>
+  <Card icon={<Blocks />} title="How it works" href="/docs/get-started/concepts/how-it-works">
+    The package layers, the message flow, and the 10 invariants.
+  </Card>
+  <Card icon={<Anchor />} title="Anchors" href="/docs/get-started/concepts/anchors">
+    Mark the elements that a cursor can point at.
+  </Card>
+</Cards>
+
+## A minimal example
+
+Mark an element as an anchor, and render the cursor layer inside the provider:
+
+```tsx
+<LiveCursorProvider factory={createClient}>
+  <button data-anchor="nav.dashboard">Dashboard</button>
+  <CursorLayer />
+</LiveCursorProvider>
+```
+
+[Quick start](/docs/get-started/quick-start) shows the full file, with the `createClient` function.
 
 ## The problem
 
-A typical remote cursor is a screen coordinate. Two clients rarely show the same layout. A sidebar can be collapsed on one screen and open on another. A table can wrap to one column on a narrow screen. A pixel coordinate from one screen can land on the wrong element, or on no element at all, on another screen.
+A typical remote cursor is a screen coordinate. Two clients rarely show the same layout. A sidebar can be open on one screen and collapsed on the other. A table can wrap to one column on a narrow screen. On the other screen, a pixel coordinate can land on the wrong element, or on no element.
 
 ## The fix
 
-Anchor Presence never sends a screen coordinate as the primary signal. It sends an anchor ID and a position:
+Anchor Presence sends an element ID and a point inside that element, not a screen coordinate. These terms appear in all pages of the docs:
 
-- An **anchor** is an element with a `data-anchor` attribute, for example `<button data-anchor="nav.dashboard">`. The attribute value is the anchor ID.
-- The **position** is the point inside the anchor, as a fraction from 0 to 1 of its width and of its height.
-- The **receiver layout** is the layout of the browser that shows the cursor. Each receiver measures its own copy of the anchor and turns the position into pixels.
-- The **fallback chain** is the list of the anchor and its parent anchors, then a position in the viewport. If the receiver has no element for the first anchor ID, it tries the next entry.
+- An **anchor** is an element with a `data-anchor` attribute, for example `<button data-anchor="nav.dashboard">`. The attribute value is the **anchor ID**.
+- The **position** is a point inside the anchor, as a fraction from 0 to 1 of its width (`u`) and of its height (`v`).
+- The **receiver** is the browser that shows a remote cursor. The receiver measures its own copy of the anchor and turns the position into pixels.
+- The **fallback chain** is the anchor, then its parent anchors, then a position in the browser window. If the receiver has no element for an entry, it tries the next entry.
+- A **peer** is another client in the same room.
 - A **relay** is a server that forwards each message to every other client in a room.
-
-Read [Anchors](/docs/get-started/concepts/anchors) and [Fallback chain](/docs/get-started/concepts/fallback-chain) for the full model.
 
 ## Packages
 
-The library has three packages. Each adds one layer, and the dependency direction is one-way: `@anchor-presence/react` depends on `@anchor-presence/dom`, and `@anchor-presence/dom` depends on `@anchor-presence/core`.
+The library has three packages. Each package adds one layer. `@anchor-presence/react` depends on `@anchor-presence/dom`, and `@anchor-presence/dom` depends on `@anchor-presence/core`.
 
-| Package                  | What it does                                                                           | Depends on DOM or React |
-| ------------------------ | -------------------------------------------------------------------------------------- | ----------------------- |
-| `@anchor-presence/core`  | Protocol, validation, presence store, and the client that sends and receives presence. | No                      |
-| `@anchor-presence/dom`   | Anchor registry, pointer capture, layout measurement, resolver.                        | DOM only                |
-| `@anchor-presence/react` | Provider component and hooks, built on `useSyncExternalStore`.                         | React                   |
+<Cards>
+  <Card icon={<Box />} title="@anchor-presence/core" href="/docs/core">
+    Protocol, validation, presence store, and the client. No DOM, no React, no dependencies.
+  </Card>
+  <Card icon={<MousePointer />} title="@anchor-presence/dom" href="/docs/dom">
+    Anchors, pointer capture, layout measurement, resolver, and the WebSocket transport.
+  </Card>
+  <Card icon={<Atom />} title="@anchor-presence/react" href="/docs/react">
+    The provider, hooks, and cursor components.
+  </Card>
+</Cards>
 
-## How the docs are organized
+## More sections
 
-The section switcher in the sidebar splits the docs into six sections:
-
-- [Get started](/docs/get-started/introduction): setup and cross-cutting guides, such as performance and security.
-- [Core](/docs/core): `@anchor-presence/core`, the protocol, codecs, and client.
-- [DOM](/docs/dom): `@anchor-presence/dom`, the browser binding, anchors, and pointer capture.
-- [React](/docs/react): `@anchor-presence/react`, the provider, hooks, and cursor components.
-- [Examples](/docs/examples/basics): live demos and backend relays.
-- [Skills](/docs/skills): agent skills that install Anchor Presence and audit layouts.
-
-## Guarantees
-
-The library holds a fixed set of rules on every message. A cursor does not depend on the layout of the sender. A cursor that misses its anchor falls back in a fixed order. All cursor state lives in `@anchor-presence/core` and `@anchor-presence/dom`, never in the React adapter. See [How it works](/docs/get-started/concepts/how-it-works) for the full list of invariants.
+<Cards>
+  <Card icon={<FlaskConical />} title="Examples" href="/docs/examples/basics">
+    Live demos of layouts, and relays for Bun, Node.js, Socket.IO, and more.
+  </Card>
+  <Card icon={<Bot />} title="Skills" href="/docs/skills">
+    Agent skills that install Anchor Presence and audit layouts.
+  </Card>
+</Cards>
 
 ## Related
 
-- [Installation](/docs/get-started/installation)
-- [Quick start](/docs/get-started/quick-start)
-- [How it works](/docs/get-started/concepts/how-it-works)
+<Cards>
+  <Card icon={<Waypoints />} title="Fallback chain" href="/docs/get-started/concepts/fallback-chain">
+    What the receiver does when an anchor is missing.
+  </Card>
+  <Card icon={<Blocks />} title="How it works" href="/docs/get-started/concepts/how-it-works">
+    The rules that every message follows.
+  </Card>
+</Cards>

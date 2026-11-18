@@ -1,70 +1,88 @@
 ---
 title: Overview
-description: How transports and relays fit together, the transport interface, and a matrix of options.
+description: Pick a relay for your server, and learn what every relay does, checks, and limits.
+icon: server
 ---
 
-Anchor Presence needs a bidirectional byte channel between clients: a relay that forwards each message to the peers of the sender. A peer is another client in the same room. `@anchor-presence/core` imports no transport library. Any channel that implements `LiveCursorTransport` works. Pick a backend from the [backend matrix](#backend-matrix).
+import { Cable, Cpu, FileCheck, Flame, Gauge, Hexagon, Radio, Signal, Sparkles, Zap } from "lucide-react";
+
+Live cursors need a relay: a server that forwards each message to the peers of the sender. A peer is another client in the same room. `@anchor-presence/core` imports no transport library, so any channel that implements `LiveCursorTransport` works. This section has one tested relay for each common backend.
+
+## Pick a relay
+
+<Cards>
+  <Card icon={<Zap />} title="Bun" href="/docs/examples/backends/bun-native">
+    Use this when your server runs Bun and you want no extra dependency.
+  </Card>
+  <Card icon={<Hexagon />} title="Node.js (ws)" href="/docs/examples/backends/node-ws">
+    Use this when your server runs Node.js, or you want to skip sends to a slow receiver.
+  </Card>
+  <Card icon={<Flame />} title="Hono" href="/docs/examples/backends/hono">
+    Use this when your HTTP routes already use Hono on Bun.
+  </Card>
+  <Card icon={<Sparkles />} title="Elysia" href="/docs/examples/backends/elysia">
+    Use this when you use Elysia and want a client that type-checks the query.
+  </Card>
+  <Card icon={<Radio />} title="Socket.IO" href="/docs/examples/backends/socketio">
+    Use this when your app already has a Socket.IO connection.
+  </Card>
+  <Card icon={<Signal />} title="SignalR" href="/docs/examples/backends/signalr">
+    Use this when your server runs ASP.NET Core.
+  </Card>
+</Cards>
+
+This table compares the relays. "Topics" means that the runtime forwards a message to every subscriber of the room topic. "Room loop" means that the relay keeps a set of sockets per room and sends to each one:
+
+| Relay        | Runtime        | Library                  | Fan-out               | Pick it when                                         |
+| ------------ | -------------- | ------------------------ | --------------------- | ---------------------------------------------------- |
+| Bun          | Bun            | none (`Bun.serve`)       | Topics (`ws.publish`) | You run Bun and want the least code.                 |
+| Node.js (ws) | Node.js or Bun | `ws` over `node:http`    | Room loop             | You run Node.js, or you need a soft slow-peer limit. |
+| Hono         | Bun            | `hono` (`hono/bun`)      | Room loop             | You already route HTTP with Hono.                    |
+| Elysia       | Bun            | `elysia`, `@elysia/eden` | Topics (`ws.publish`) | You use Elysia and want a typed client.              |
+| Socket.IO    | Node.js or Bun | `socket.io`              | Socket.IO rooms       | Your app already uses Socket.IO.                     |
+| SignalR      | .NET 10        | ASP.NET Core SignalR     | SignalR groups        | Your server runs ASP.NET Core.                       |
+
+The Bun, Node.js (ws), Hono and Elysia relays need no custom client transport. The client connects with `createWebSocketTransport` from `@anchor-presence/dom`. Socket.IO and SignalR need the client transport of their example.
+
+Every relay has an integration test that starts the real server and connects two clients. The Bun, Node.js (ws), Hono and Elysia relays also pass the [conformance suite](#conformance-suite).
+
+## No server
+
+Two transports need no relay:
+
+- `createInMemoryPair` from `@anchor-presence/core` connects two transports in one process. Use it for tests and prototypes. The code samples of this site use it.
+- `createBroadcastChannelTransport` from `@anchor-presence/dom` connects tabs and iframes on the same origin. The live demos of this site use it.
 
 ## What a relay does
 
-A relay does not read the presence protocol. It only forwards bytes between the sockets in one room:
+A relay does not read the presence protocol. It forwards bytes between the sockets of one room:
 
 ```text
 sender.send(bytes) -> relay -> every other socket in the same room -> receiver.subscribe(listener)
 ```
 
-The reference relay forwards binary frames and does not decode them. It never reads the `anchors`, `context`, or `user` field of a message. It also has caps, a rate limit, an origin check, an optional [room token](/docs/dom/websocket-transport#room-token) check, and a liveness ping. Every relay reads the room from the `room` query parameter, and only the reference relay also reads it from the path. See [Relay contract](/docs/examples/backends/relay-contract#room-from-the-url) for the rules. See [Performance](/docs/get-started/guides/performance#scaling-limits) for how the load of a room-broadcast relay grows with the size of the room.
+The relay never reads the `anchors`, `context`, or `user` field of a message. It only decodes a message when [identity binding](#identity-binding) is on. Every relay page has the same three behavior tables: what the relay does, its limits, and its auth checks. [Relay contract](/docs/examples/backends/relay-contract) gives the rules that every relay must obey. [Performance](/docs/get-started/guides/performance#scaling-limits) shows how the load of a relay grows with the size of a room.
 
-## The transport interface
-
-Every transport implements `LiveCursorTransport`. Only `send` and `subscribe` are required. See [Transports](/docs/core/transports) for the full interface, its contract, and the shipped WebSocket transport.
-
-## Backend matrix
-
-| Backend                                         | Relay                 | Client transport              | Tested by                             |
-| ----------------------------------------------- | --------------------- | ----------------------------- | ------------------------------------- |
-| Native WebSocket                                | your own server       | `createWebSocketTransport`    | Unit tests in `packages/dom`          |
-| [Bun](/docs/examples/backends/bun-native)       | `examples/bun-native` | `createWebSocketTransport`    | Integration test against a real relay |
-| [Node.js (ws)](/docs/examples/backends/node-ws) | `examples/node-ws`    | `createWebSocketTransport`    | Integration test against a real relay |
-| [Hono](/docs/examples/backends/hono)            | `examples/hono`       | `createWebSocketTransport`    | Integration test against a real relay |
-| [Elysia](/docs/examples/backends/elysia)        | `examples/elysia`     | `createWebSocketTransport`    | Integration test against a real relay |
-| [Socket.IO](/docs/examples/backends/socketio)   | `examples/socketio`   | Socket.IO transport (example) | Integration test against a real relay |
-| [SignalR](/docs/examples/backends/signalr)      | `examples/signalr`    | SignalR transport (example)   | Integration test against a real hub   |
-
-A transport that needs a third-party library lives in `examples/`, never in a package. `@anchor-presence/core`, `@anchor-presence/dom`, and `@anchor-presence/react` have no framework or vendor dependencies. The [package table](/docs/get-started/introduction#packages) shows the dependencies of each package.
-
-### No server
-
-Two options need no relay:
-
-- `createInMemoryPair` from `@anchor-presence/core` connects two transports directly in one process. The code samples of this site use it.
-- `createBroadcastChannelTransport` from `@anchor-presence/dom` connects tabs and iframes on the same origin. The live demos of this site use it.
-
-## Choose a backend
-
-- If you run a plain WebSocket server, or you have no server yet, use `createWebSocketTransport` from `@anchor-presence/dom`. It has reconnect and backoff.
-- If your server runs on Bun, Node.js, Hono, or Elysia, use the matching relay example. The client uses `createWebSocketTransport` with no custom transport.
-- If your app uses Socket.IO for other real-time features, use the [Socket.IO example](/docs/examples/backends/socketio). Presence then shares that connection, and you need no second WebSocket server.
-- If your server runs ASP.NET Core, use the [SignalR example](/docs/examples/backends/signalr). It wraps a `HubConnection` as a transport.
-- For a prototype or a test, use `createInMemoryPair` in one process. For two tabs or iframes on the same origin with no server, use `createBroadcastChannelTransport`.
+Every transport implements `LiveCursorTransport`. Only `send` and `subscribe` are required. See [Transports](/docs/core/transports) for the full interface.
 
 ## Shared guard helpers
 
-The Bun, Node.js (ws), Hono, Elysia, and Socket.IO relays share one file of guard helpers. The file has these helpers:
+The Bun, Node.js (ws), Hono, Elysia, and Socket.IO relays share one file of guard helpers:
 
-- room name validation
-- a rate limiter per connection
-- a message size check
+- room name validation (`parseRoom`)
+- a token bucket rate limiter per connection (`RateLimiter`)
+- a message size check (`messageByteLength`)
 - origin and room token checks
-- connection caps per room and per process
+- connection caps per room and per process (`ConnectionLimits`)
+- identity binding (`bindIdentity`)
 
-Read the room name with `parseRoom`. It returns `null` for an invalid name, and the relay then closes the connection with code `4007`. Copy this file together with the server you pick:
+`parseRoom` returns `null` for an invalid room name. The relay then closes the connection with code `4007`. Copy this file together with the server that you pick:
 
 <CodeFromSource repo="examples/_shared/relay-guard.ts" lang="ts" />
 
 ## Identity binding
 
-A relay that does not decode messages cannot tell who sent a message. With identity binding, the `authCheck` hook returns a verified `{ clientId, user }`, and the relay writes it into every JSON frame of the connection. [Relay contract](/docs/examples/backends/relay-contract#identity) gives the rules and lists the relays that support it.
+A relay that does not decode messages cannot tell who sent a message. With identity binding, the `authCheck` hook returns a verified `{ clientId, user }`. The relay then writes that identity into every JSON frame of the connection. [Relay contract](/docs/examples/backends/relay-contract#identity) gives the rules and lists the relays that support it.
 
 The entry files of the Bun, Node.js (ws), Hono and Elysia relays have a demo identity mode. To turn it on, set `RELAY_DEMO_IDENTITY=1` before you start the relay:
 
@@ -82,9 +100,21 @@ In this mode, the [room token](/docs/dom/websocket-transport#room-token) names t
 
 ## Conformance suite
 
-`examples/_shared/relay-conformance-suite.ts` is a vitest suite that checks a relay against the relay contract. The Bun, Node.js (ws), Hono and Elysia relays pass the full suite. See [Check your relay](/docs/examples/backends/relay-contract#check-your-relay) for the checks and for how to run the suite against your own relay.
+`examples/_shared/relay-conformance-suite.ts` is a vitest suite that checks a relay against the relay contract. The Bun, Node.js (ws), Hono and Elysia relays pass the full suite. The suite connects with plain WebSockets. The Socket.IO relay and the SignalR hub speak their own protocol, so the suite does not run against them. See [Check your relay](/docs/examples/backends/relay-contract#check-your-relay) to run the suite against your own relay.
 
 ## Related
 
-- [Transports](/docs/core/transports)
-- [Performance](/docs/get-started/guides/performance)
+<Cards>
+  <Card icon={<FileCheck />} title="Relay contract" href="/docs/examples/backends/relay-contract">
+    The rules, the close codes, and the conformance suite.
+  </Card>
+  <Card icon={<Cable />} title="WebSocket transport" href="/docs/dom/websocket-transport">
+    The client side of the Bun, Node.js, Hono and Elysia relays.
+  </Card>
+  <Card icon={<Cpu />} title="Transports" href="/docs/core/transports">
+    The `LiveCursorTransport` interface and its contract.
+  </Card>
+  <Card icon={<Gauge />} title="Performance" href="/docs/get-started/guides/performance">
+    How relay load grows with the size of a room.
+  </Card>
+</Cards>

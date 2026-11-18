@@ -1,77 +1,111 @@
 ---
 title: Build a framework adapter
-description: How the React adapter layers on core and dom, and what a Solid or Vue adapter needs.
+description: How the React adapter sits on core and dom, and what a Solid or Vue adapter needs.
+icon: puzzle
 ---
 
-Anchor Presence has three layers. `@anchor-presence/core` runs the protocol. `@anchor-presence/dom` runs the binding to the browser. A framework adapter connects that binding to the reactivity of one UI framework. A Solid or Vue adapter copies the shape of the React adapter.
+import { Atom, Code, Link, Network } from "lucide-react";
+
+A framework adapter connects the DOM binding to the reactivity of one UI framework. `@anchor-presence/react` is the adapter for React. Read this page to write an adapter for Solid, Vue, or another framework. The adapter copies the shape of the React adapter.
+
+## The bridge
+
+The core of every adapter is a bridge from `subscribe` and `getSnapshot` to a reactive value. This function writes each new snapshot of a binding into a callback, and returns the unsubscribe function:
+
+```ts
+import type { DomBinding, ResolvedCursor } from "@anchor-presence/dom";
+
+function observeCursors(binding: DomBinding, write: (cursors: ResolvedCursor[]) => void): () => void {
+  write(binding.getSnapshot());
+  return binding.subscribe(() => write(binding.getSnapshot()));
+}
+```
+
+In Solid, `write` is the setter of a `createSignal`. In Vue, `write` assigns to a `shallowRef`. Neither framework has `useSyncExternalStore`. This bridge does the same job.
 
 ## The three layers
 
 Each layer depends only on the layers below it:
 
-```text
-@anchor-presence/react   provider component, hooks, SSR safety
-@anchor-presence/dom     anchor registry, pointer capture, geometry scheduler, resolver
-@anchor-presence/core    protocol types, validation, presence store, client
-```
+<Mermaid
+  chart={`flowchart TD
+  adapter["adapter: provider, hooks, SSR guard"] --> dom["@anchor-presence/dom: anchor registry, pointer capture, scheduler, resolver"]
+  dom --> core["@anchor-presence/core: protocol types, validation, store, client"]
+  adapter --> core`}
+/>
 
-An adapter depends on `@anchor-presence/dom` and `@anchor-presence/core`, never the other way around. It holds no protocol state of its own ([invariant 5](/docs/get-started/concepts/how-it-works#the-10-invariants)). Every value it exposes comes from a `PresenceClient` or a `DomBinding`, not from logic in the adapter.
+An adapter holds no protocol state of its own ([invariant 5](/docs/get-started/concepts/how-it-works#the-10-invariants)). Every value that it exposes comes from a `PresenceClient` or a `DomBinding`.
+
+## Write the adapter
+
+<Steps>
+  <Step>
+    **Give the binding an owner.** A Solid `createRoot` scope or the `setup()` of a Vue component owns the
+    `DomBinding`. When a `client` is available, it calls `createDomBinding(client, options)`.
+  </Step>
+  <Step>**Add an SSR guard.** If `window` or `document` does not exist, do not create the binding.</Step>
+  <Step>
+    **Expose the client and the binding.** Expose them as a Solid signal pair or a Vue `ref`. The adapter
+    makes their state observable. It does not copy that state.
+  </Step>
+  <Step>
+    **Bridge the snapshots.** Use the bridge above for the cursors. Use `client.subscribeStatus`,
+    `client.subscribeRemote`, and `client.subscribeContext` the same way for status, presence, and local
+    context.
+  </Step>
+  <Step>
+    **Dispose on cleanup.** Solid `onCleanup` or Vue `onUnmounted` unsubscribes and calls `binding.dispose()`.
+    A binding that outlives its scope leaks the pointer listener and the observers of the scheduler.
+  </Step>
+</Steps>
+
+<Callout type="warn">
+  If the adapter keeps cursors, status, or presence in a framework store, the copy can drift from the client.
+  Read the client and the binding on every reactive update.
+</Callout>
 
 ## What the React adapter does
 
-`LiveCursorProvider` is the one stateful part of the adapter:
+`LiveCursorProvider` is the one stateful part of `@anchor-presence/react`:
 
-- It creates the client from a `factory` prop in a mount effect, and disposes it on unmount. The factory runs again each time the `clientKey` prop changes. The provider also accepts a `client` prop for a client that the app owns. It never disposes that client.
+- It creates the client from a `factory` prop in a mount effect, and disposes it on unmount. The factory runs again each time the `clientKey` prop changes. A client from the `client` prop belongs to the app, and the provider never disposes it.
 - If you pass no `binding` prop, it creates one `DomBinding` with `createDomBinding(client, bindingOptions)` in an effect. The cleanup of that effect calls `binding.dispose()`.
-- It creates a new binding when the `client` or the `bindingKey` prop changes. A `bindingOptions` change alone does not create a new binding. The effect reads the last options through a ref, so a new options object never causes a rebuild.
-- Outside the browser (`typeof window === "undefined"`), it creates no client from `factory` and no binding. As a result, server rendering never touches `@anchor-presence/dom`.
-- It exposes `{ client, binding }` through `LiveCursorContext`, so the hooks below it can read both without props.
+- It creates a new binding when the `client` or the `bindingKey` prop changes. A `bindingOptions` change alone creates no new binding.
+- Outside the browser, it creates no client from `factory` and no binding.
+- It exposes `{ client, binding }` through `LiveCursorContext`.
 
-Every hook of the adapter reads that context. The hooks that read changing data subscribe with `useSyncExternalStore`:
-
-- `useRemoteCursors` subscribes to `binding.subscribe` and reads `binding.getSnapshot()`. Without a binding, it returns an empty array. This case includes server rendering.
-- `useCursorClient`, `useCursorStatus`, `useRemotePresence`, and `useLocalContext` read from `client`, never from component state.
-- `useCursorBinding` returns `binding`, so a component can call `binding.invalidate()`.
-
-No hook stores cursor data in framework state. Every render reads the last snapshot from `@anchor-presence/core` or `@anchor-presence/dom`.
-
-## What a Solid or Vue adapter needs
-
-The same shape works for any framework with a primitive that a subscription can update, such as Solid signals or a Vue `ref`. The adapter has these parts:
-
-- **A root that owns the binding.** A Solid `createRoot` scope or the `setup()` of a Vue component owns the `DomBinding`. When a `client` is available, it calls `createDomBinding(client, options)`, like the effect of the provider.
-- **Dispose on cleanup.** Solid `onCleanup` or Vue `onUnmounted` calls `binding.dispose()`, at the same point as the effect cleanup in React. A binding that outlives its scope leaks the pointer listener and the observers of the geometry scheduler.
-- **Client and binding as reactive values.** Expose `client` and `binding` as a Solid signal pair or a Vue `ref`. They are not state that the adapter owns. The adapter makes the state of the client and the binding observable. It does not copy that state.
-- **A bridge from `subscribe` and `getSnapshot`.** In Solid, update a `createSignal` from the `binding.subscribe` callback. In Vue, call `binding.subscribe` inside `onMounted`. Write into a `shallowRef` on each notification. Unsubscribe in `onUnmounted`. Neither framework has `useSyncExternalStore`. This subscribe-and-write pattern does the same job.
-- **No engine state in the adapter.** A Solid or Vue store for cursors, status, or presence copies data. The `PresenceClient` and the `DomBinding` already hold that data. That copy can drift. Read the client and the binding on every reactive update instead.
-- **An SSR guard.** If there is no `window`, do not create the binding. The React provider does the same check.
+The hooks read that context. `useRemoteCursors` subscribes to `binding.subscribe` through `useSyncExternalStore` and returns an empty array without a binding. No hook stores cursor data in React state. See the [React overview](/docs/react).
 
 ## Public APIs an adapter uses
 
-An adapter calls only the public exports of `@anchor-presence/core` and `@anchor-presence/dom`.
+An adapter calls only the public exports of `@anchor-presence/core` and `@anchor-presence/dom`:
 
-From `@anchor-presence/core`:
+| Package                 | Exports                                                                                                                                               |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@anchor-presence/core` | `createPresenceClient`, the methods of [`PresenceClient`](/docs/core/api/client#presenceclient), and the protocol types such as `RemotePresence`.     |
+| `@anchor-presence/dom`  | `createDomBinding`, the `DomBinding` methods, `DomBindingOptions`, `ResolvedCursor`, `ResolutionTier`, `VisibilityPolicy`, `CURSOR_MARKER_ATTRIBUTE`. |
 
-- `createPresenceClient` and the `PresenceClient` type that it returns.
-- The methods of `PresenceClient`. See the [Client API](/docs/core/api/client) for the full client shape.
-- `ConnectionStatus`, `RemotePresence`, `CursorPresence`, and the other protocol types, for the types that the adapter passes through.
+Set `CURSOR_MARKER_ATTRIBUTE` on the root element of each cursor that the adapter draws. See [Draw cursors without React](/docs/dom/binding#draw-cursors-without-react).
 
-From `@anchor-presence/dom`:
+An adapter package exports again the types of the lower packages that its own public signatures use. For example, `@anchor-presence/react` exports `AnchorPoint`, `ConnectionStatus`, `PresenceClient`, and `DomBinding`. A user of the adapter then needs no direct dependency on the lower packages for types.
 
-- `createDomBinding(client, options?)`, which returns a `DomBinding`.
-- The `subscribe(listener)`, `getSnapshot()`, `invalidate(reason?)`, and `dispose()` methods of `DomBinding`.
-- `DomBindingOptions`, `ResolvedCursor`, `ResolutionTier`, and `VisibilityPolicy` for types.
-- `CURSOR_MARKER_ATTRIBUTE`, which the adapter sets on the root element of each cursor that it draws. See [Draw cursors without React](/docs/dom/binding#draw-cursors-without-react).
+## Package boundaries
 
-An adapter package exports again the types of `@anchor-presence/core` and `@anchor-presence/dom` that its own public signatures use. For example, `@anchor-presence/react` exports `AnchorPoint`, `ConnectionStatus`, `PresenceClient`, and `DomBinding`. A user of the adapter then needs no direct dependency on the two lower packages for types.
-
-## Naming and package boundaries
-
-An adapter obeys the same rule as `@anchor-presence/react`: no third-party framework code lives inside `@anchor-presence/core` or `@anchor-presence/dom`. A `@anchor-presence/solid` or `@anchor-presence/vue` package depends on `@anchor-presence/core` and `@anchor-presence/dom` only. It has its own test that pins its exports. It never imports the internals of another adapter. The [package table](/docs/get-started/introduction#packages) shows the dependencies that each package can have.
+No third-party framework code lives inside `@anchor-presence/core` or `@anchor-presence/dom`. A `@anchor-presence/solid` or `@anchor-presence/vue` package depends on these two packages only. It has its own test that pins its exports, and it never imports the internals of another adapter. The [package table](/docs/get-started/introduction#packages) shows the dependencies of each package.
 
 ## Related
 
-- [How it works](/docs/get-started/concepts/how-it-works)
-- [React overview](/docs/react)
-- [Client API](/docs/core/api/client)
-- [Binding API](/docs/dom/api/binding)
+<Cards>
+  <Card icon={<Network />} title="How it works" href="/docs/get-started/concepts/how-it-works">
+    The full picture and the invariants.
+  </Card>
+  <Card icon={<Atom />} title="React overview" href="/docs/react">
+    The reference adapter.
+  </Card>
+  <Card icon={<Code />} title="Client API" href="/docs/core/api/client">
+    Every method of `PresenceClient`.
+  </Card>
+  <Card icon={<Link />} title="Binding API" href="/docs/dom/api/binding">
+    Every method of `DomBinding`.
+  </Card>
+</Cards>

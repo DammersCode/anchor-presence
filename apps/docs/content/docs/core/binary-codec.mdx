@@ -1,9 +1,14 @@
 ---
 title: Binary codec
 description: The binaryCodec wire layout, coordinate precision, and encode limits.
+icon: file-digit
 ---
 
-`binaryCodec` is a compact binary codec with a fixed layout. `@anchor-presence/core` ships it. It sends smaller messages than `jsonCodec`.
+import { Binary, FileCode, Shield } from "lucide-react";
+
+`binaryCodec` is a compact codec with a fixed binary layout. It sends about half the bytes of `jsonCodec` for a typical message. If bandwidth matters more than readable traffic, use it. See [Choose a codec](/docs/core/codecs#choose-a-codec).
+
+## Usage
 
 Pass `binaryCodec` as the `codec` option:
 
@@ -17,21 +22,23 @@ const client = createPresenceClient({ transport: myTransport, codec: binaryCodec
 
 The layout is little-endian. The fields come in this order:
 
-1. Header: magic `0x41`, format `2`, protocol version `1`.
-2. `clientId`: a `u16` byte length, then the UTF-8 bytes.
-3. `session`: a `u16` byte length, then the UTF-8 bytes.
-4. `sequence`: a `u32`.
-5. Cursor tag: `0` for a `null` cursor, `1` for a cursor, `2` for a leave message, `3` for an event.
-6. For tag `3` only: a `u16` byte length of the event type, then the UTF-8 event type.
-7. For tag `1` only: a `u8` anchor count. Then each anchor: a `u16` id length, the UTF-8 id, an `f32` `u`, and an `f32` `v`.
-8. For tag `1` only: a viewport tag, `0` absent or `1` present. A present viewport adds an `f32` `u` and an `f32` `v`.
-9. Pointer tag: `0` absent, `1` present without a type, `2` `mouse`, `3` `pen`, `4` `touch`.
-10. `context` tag: `0` absent, `1` explicit `null`, or `2` JSON. Tag `2` adds a `u32` byte length and the UTF-8 JSON.
-11. `user` tag: the same encoding as `context`.
+| Field       | Present for | Encoding                                                                                                  |
+| ----------- | ----------- | --------------------------------------------------------------------------------------------------------- |
+| Header      | every frame | Magic `0x41`, format `2`, protocol version `1`, one byte each.                                            |
+| `clientId`  | every frame | A `u16` byte length, then the UTF-8 bytes.                                                                |
+| `session`   | every frame | A `u16` byte length, then the UTF-8 bytes.                                                                |
+| `sequence`  | every frame | A `u32`.                                                                                                  |
+| Cursor tag  | every frame | `0` for a `null` cursor, `1` for a cursor, `2` for a leave message, `3` for an event.                     |
+| Event type  | tag `3`     | A `u16` byte length, then the UTF-8 event type.                                                           |
+| Anchors     | tag `1`     | A `u8` anchor count. Then for each anchor: a `u16` id length, the UTF-8 id, an `f32` `u`, an `f32` `v`.   |
+| Viewport    | tag `1`     | A tag, `0` absent or `1` present. A present viewport adds an `f32` `u` and an `f32` `v`.                  |
+| Pointer tag | every frame | `0` absent, `1` present without a type, `2` `mouse`, `3` `pen`, `4` `touch`.                              |
+| `context`   | every frame | A tag: `0` absent, `1` explicit `null`, or `2` JSON. Tag `2` adds a `u32` byte length and the UTF-8 JSON. |
+| `user`      | every frame | The same encoding as `context`.                                                                           |
 
 An event frame writes the pointer tag and the `context` tag as `0`. It writes the event `data` in the `user` slot.
 
-The `context` and `user` values stay JSON inside the binary frame. The cursor fields use the fixed layout. As a result, `binaryCodec` is smaller than `jsonCodec` for a typical message with many anchors.
+The `context` and `user` values stay JSON inside the binary frame. Only the cursor fields use the fixed layout. As a result, the size gain grows with the number of anchors.
 
 ## Coordinate precision
 
@@ -39,7 +46,7 @@ The `context` and `user` values stay JSON inside the binary frame. The cursor fi
 
 ## Encode limits
 
-`binaryCodec.encode` throws an `Error` when a message breaks a frame limit:
+`binaryCodec.encode` throws when a message breaks a frame limit. It throws an `Error` in these cases:
 
 - `version` is not `1`.
 - `clientId`, `session`, or an anchor `id` is longer than 65535 UTF-8 bytes.
@@ -47,16 +54,26 @@ The `context` and `user` values stay JSON inside the binary frame. The cursor fi
 - `cursor.anchors` is not an array.
 - The cursor has more than 255 anchors.
 - `sequence` is not a safe integer from 0 to `DEFAULT_MAX_SEQUENCE`.
-- An anchor or viewport coordinate is not a finite number.
+- An anchor coordinate is not a finite number.
 - `pointer.type` is not `mouse`, `pen`, or `touch`.
 - `JSON.stringify` cannot serialize `context` or `user`.
 
-The protocol limits on the [Security](/docs/get-started/guides/security) page are tighter than these frame limits. For example, the protocol allows 8 anchors and the frame allows 255. A message inside the protocol limits never reaches a frame limit.
+A viewport coordinate that is not a finite number throws a `TypeError`.
+
+The protocol limits on the [Validation](/docs/core/validation#validationlimits) page are tighter than these frame limits. For example, the protocol allows 8 anchors and the frame allows 255. A message inside the protocol limits never reaches a frame limit. If an encode error comes from `user` or `context`, the client sends the message again without them. In all other cases, the client loses the message and continues.
 
 `binaryCodec.decode` never throws. It returns `null` for malformed, truncated, or non-binary input.
 
 ## Related
 
-- [Codecs](/docs/core/codecs)
-- [Custom codec](/docs/core/custom-codec)
-- [Security](/docs/get-started/guides/security)
+<Cards>
+  <Card icon={<Binary />} title="Codecs" href="/docs/core/codecs">
+    The codec contract and how to choose a codec.
+  </Card>
+  <Card icon={<FileCode />} title="Custom codec" href="/docs/core/custom-codec">
+    Log binary traffic during development.
+  </Card>
+  <Card icon={<Shield />} title="Security" href="/docs/get-started/guides/security">
+    The limits that every decoded message must meet.
+  </Card>
+</Cards>

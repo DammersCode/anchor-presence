@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Cable, MonitorSmartphone, ShieldCheck } from "lucide-react";
 import { InstallCommand } from "@/components/install-command";
 import { Demo } from "@/components/demo";
 import { mainContentId } from "@/lib/shared";
@@ -36,6 +37,28 @@ const GUARANTEES = [
   { n: "10", title: "Built to grow", body: "The boundary is designed to extend without touching the core." },
 ];
 
+const FRAMEWORKS = ["Next.js", "TanStack Start and Router", "Remix and React Router", "Vite", "Astro"];
+
+const WHY = [
+  {
+    icon: MonitorSmartphone,
+    title: "The right element on every screen",
+    body: "A cursor on a card stays on that card at any screen width, even when the layout reflows.",
+  },
+  {
+    icon: Cable,
+    title: "Your channel, your server",
+    body: "Six tested relays, or any channel that carries bytes. No hosted service.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Network data stays inert",
+    body: "Anchor IDs resolve only against elements you mark. A message cannot select anything else.",
+  },
+];
+
+const accent = "text-[#4f46e5] dark:text-fd-accent-foreground";
+
 export default function HomePage() {
   return (
     <div id={mainContentId} className="mx-auto max-w-6xl px-4 py-12">
@@ -52,12 +75,21 @@ export default function HomePage() {
           Anchor Presence sends a label, not pixels. Each browser resolves it against its own layout. Your
           teammate&apos;s cursor stays on the element, even when their screen differs from yours.
         </p>
-        <p className="mt-3 text-sm text-fd-muted-foreground">
-          Works with Next.js, TanStack Start and Router, Remix and React Router, Vite, and Astro.{" "}
-          <Link href="/docs/get-started/frameworks" className="border-b border-fd-border pb-px font-semibold">
-            Frameworks &rarr;
-          </Link>
+        <p id="frameworks" className="mt-6 mb-2 text-sm text-fd-muted-foreground">
+          Works with
         </p>
+        <ul aria-labelledby="frameworks" className="flex flex-wrap gap-2">
+          {FRAMEWORKS.map((name) => (
+            <li key={name}>
+              <Link
+                href="/docs/get-started/frameworks"
+                className="inline-flex rounded-full border border-fd-border bg-fd-card px-3 py-1 text-sm font-medium text-fd-muted-foreground transition-colors hover:border-[#4f46e5]/40 hover:text-fd-foreground"
+              >
+                {name}
+              </Link>
+            </li>
+          ))}
+        </ul>
         <div className="mt-8 flex flex-wrap items-center gap-4">
           <Link
             href="/docs"
@@ -78,39 +110,55 @@ export default function HomePage() {
         <div className="mt-10 md:mt-14">
           <Demo />
           <p className="text-xs text-fd-muted-foreground">
-            The same board in two layouts. Move your pointer in one pane — the cursor lands on the same card
-            in the other.
+            The same board in two layouts. Move your pointer in one pane. Your cursor lands on the same card
+            in the other pane.
           </p>
         </div>
       </section>
 
+      <section aria-labelledby="why" className="border-t border-fd-border py-14">
+        <h2 id="why" className="sr-only">
+          Why Anchor Presence
+        </h2>
+        <div className="grid gap-4 md:grid-cols-3">
+          {WHY.map(({ icon: Icon, title, body }) => (
+            <div key={title} className="rounded-2xl border border-fd-border bg-fd-card p-6 shadow-sm">
+              <span className="mb-4 inline-flex size-10 items-center justify-center rounded-xl bg-fd-accent">
+                <Icon aria-hidden className={`size-5 ${accent}`} />
+              </span>
+              <h3 className="mb-2 font-semibold">{title}</h3>
+              <p className="text-sm text-fd-muted-foreground">{body}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       <section id="how" className="border-t border-fd-border py-14">
-        <p className="font-mono text-xs tracking-[0.16em] text-[#4f46e5] dark:text-fd-accent-foreground uppercase">
-          How it works
-        </p>
+        <p className={`font-mono text-xs tracking-[0.16em] uppercase ${accent}`}>How it works</p>
         <h2 className="font-display mt-3 mb-3 text-3xl font-extrabold tracking-tight md:text-4xl">
           A cursor is an address, not a coordinate.
         </h2>
         <p className="mb-8 max-w-[60ch] text-fd-muted-foreground">
-          No screen position ever crosses the wire. What travels is an address — the rest happens locally.
+          No screen position ever crosses the wire. What travels is an address. The rest happens in the
+          browser of each user.
         </p>
         <div className="grid gap-4 md:grid-cols-3">
           <div className="rounded-2xl border border-fd-border bg-fd-card p-6">
-            <div className="mb-3 font-mono text-xs text-[#4f46e5] dark:text-fd-accent-foreground">01</div>
+            <div className={`mb-3 font-mono text-xs ${accent}`}>01</div>
             <h3 className="mb-2 font-semibold">You send what, not where</h3>
             <p className="text-sm text-fd-muted-foreground">
               A pointer move becomes a label plus a position inside it. Never a screen coordinate.
             </p>
           </div>
           <div className="rounded-2xl border border-fd-border bg-fd-card p-6">
-            <div className="mb-3 font-mono text-xs text-[#4f46e5] dark:text-fd-accent-foreground">02</div>
+            <div className={`mb-3 font-mono text-xs ${accent}`}>02</div>
             <h3 className="mb-2 font-semibold">Your channel carries it</h3>
             <p className="text-sm text-fd-muted-foreground">
               It works over any real-time channel: WebSocket, Socket.IO, SignalR, BroadcastChannel.
             </p>
           </div>
           <div className="rounded-2xl border border-fd-border bg-fd-card p-6">
-            <div className="mb-3 font-mono text-xs text-[#4f46e5] dark:text-fd-accent-foreground">03</div>
+            <div className={`mb-3 font-mono text-xs ${accent}`}>03</div>
             <h3 className="mb-2 font-semibold">Their browser does the rest</h3>
             <p className="text-sm text-fd-muted-foreground">
               The label is measured against their own layout and turned into pixels there.
@@ -120,9 +168,7 @@ export default function HomePage() {
       </section>
 
       <section id="rules" className="border-t border-fd-border py-14">
-        <p className="font-mono text-xs tracking-[0.16em] text-[#4f46e5] dark:text-fd-accent-foreground uppercase">
-          Guarantees
-        </p>
+        <p className={`font-mono text-xs tracking-[0.16em] uppercase ${accent}`}>Guarantees</p>
         <h2 className="font-display mt-3 mb-3 text-3xl font-extrabold tracking-tight md:text-4xl">
           Built so it doesn&apos;t break.
         </h2>
@@ -135,9 +181,7 @@ export default function HomePage() {
               key={g.n}
               className="grid grid-cols-[44px_1fr] gap-3.5 border-t border-fd-border/60 py-4 first:border-t-0"
             >
-              <span className="font-mono text-sm font-semibold text-[#4f46e5] dark:text-fd-accent-foreground">
-                {g.n}
-              </span>
+              <span className={`font-mono text-sm font-semibold ${accent}`}>{g.n}</span>
               <div>
                 <b className="block text-sm font-semibold">{g.title}</b>
                 <span className="text-[13.5px] text-fd-muted-foreground">{g.body}</span>
@@ -148,9 +192,7 @@ export default function HomePage() {
       </section>
 
       <section className="border-t border-fd-border py-14">
-        <p className="font-mono text-xs tracking-[0.16em] text-[#4f46e5] dark:text-fd-accent-foreground uppercase">
-          Run it
-        </p>
+        <p className={`font-mono text-xs tracking-[0.16em] uppercase ${accent}`}>Run it</p>
         <h2 className="font-display mt-3 mb-3 text-3xl font-extrabold tracking-tight md:text-4xl">
           Add live cursors in minutes.
         </h2>

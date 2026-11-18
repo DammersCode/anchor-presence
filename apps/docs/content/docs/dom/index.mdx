@@ -1,28 +1,79 @@
 ---
 title: Overview
-description: What @anchor-presence/dom does and how it sits between the core client and a UI adapter.
+description: What @anchor-presence/dom does, when to use it directly, and where each part is documented.
+icon: mouse-pointer
 ---
 
-`@anchor-presence/dom` is the only package that calls browser APIs. It turns a `PresenceClient` from `@anchor-presence/core` into a stream of resolved cursor positions, ready for a renderer to draw. It depends only on `@anchor-presence/core` and has no React dependency.
+import { Anchor, AppWindow, Code, Crosshair, Link, Pointer, RadioTower } from "lucide-react";
+
+`@anchor-presence/dom` is the only package that calls browser APIs. It turns a `PresenceClient` from `@anchor-presence/core` into a list of resolved cursors: the position of each remote cursor in the pixels of your viewport. It renders nothing. `@anchor-presence/react` uses it for you. Use it directly to draw cursors without React, or to build an adapter for another UI framework.
+
+This sample connects a client and logs each visible cursor:
+
+```ts
+import { createPresenceClient } from "@anchor-presence/core";
+import { createDomBinding } from "@anchor-presence/dom";
+
+const client = createPresenceClient({ transport: myTransport });
+const binding = createDomBinding(client);
+
+binding.subscribe(() => {
+  for (const cursor of binding.getSnapshot()) {
+    if (cursor.visible) renderCursor(cursor.clientId, cursor.x, cursor.y);
+  }
+});
+```
+
+## Main paths
+
+<Cards>
+  <Card icon={<Link />} title="Binding" href="/docs/dom/binding">
+    Create a binding, draw cursors without React, and stop the binding.
+  </Card>
+  <Card icon={<Anchor />} title="Anchor registration" href="/docs/dom/anchor-registration">
+    Mark the elements that cursors attach to.
+  </Card>
+  <Card icon={<Pointer />} title="Pointer capture" href="/docs/dom/pointer-capture">
+    What the binding sends for the local pointer and keyboard focus.
+  </Card>
+  <Card icon={<Crosshair />} title="Resolution" href="/docs/dom/resolution">
+    How a remote cursor gets a position on this screen.
+  </Card>
+  <Card icon={<RadioTower />} title="WebSocket transport" href="/docs/dom/websocket-transport">
+    Connect to a relay, with a room token and reconnect.
+  </Card>
+  <Card icon={<AppWindow />} title="BroadcastChannel transport" href="/docs/dom/broadcast-channel-transport">
+    Connect tabs of one origin, with no server.
+  </Card>
+  <Card icon={<Code />} title="API reference" href="/docs/dom/api/binding">
+    Every export of the package, with its type.
+  </Card>
+</Cards>
 
 ## What the binding does
 
 `createDomBinding` does four jobs:
 
-- It watches the page for elements marked with an anchor attribute and registers them.
+<Mermaid
+  chart={`flowchart LR
+  page["page: data-anchor elements"] --> registry["anchor registry"]
+  pointer["local pointer events"] --> client["PresenceClient"]
+  registry --> pointer
+  client --> resolver["resolver, once per frame"]
+  registry --> resolver
+  resolver --> snapshot["ResolvedCursor[] snapshot"]`}
+/>
+
+- It watches the page for elements with an anchor attribute and registers them.
 - It listens for pointer events and reports the local cursor position relative to the nearest anchors.
-- It reads remote presence from the client and resolves each one against the page's own layout.
-- It schedules geometry reads on the frame clock, so a resolve pass never runs more than once per frame.
+- It reads the remote presence from the client and resolves each cursor against the layout of this page.
+- It schedules layout reads on the frame clock, so a resolve pass runs at most once per frame.
 
-The React package (`@anchor-presence/react`) calls `createDomBinding` for you and exposes its snapshot through hooks. Call it directly to build an adapter for another UI layer. See [Build a framework adapter](/docs/core/build-a-framework-adapter).
-
-## Where it sits
-
-`@anchor-presence/core` knows the protocol and the store, but not the DOM. `@anchor-presence/dom` reads and writes the DOM, but renders nothing. A UI adapter, such as `@anchor-presence/react`, renders the resolved cursors that the binding produces. See [How it works](/docs/get-started/concepts/how-it-works) for the full picture.
+See [How it works](/docs/get-started/concepts/how-it-works) for the full picture.
 
 ## Related
 
-- [Binding](/docs/dom/binding)
-- [Resolution](/docs/dom/resolution)
-- [WebSocket transport](/docs/dom/websocket-transport)
-- [How it works](/docs/get-started/concepts/how-it-works)
+<Cards>
+  <Card icon={<Link />} title="Binding" href="/docs/dom/binding" />
+  <Card icon={<Crosshair />} title="Resolution" href="/docs/dom/resolution" />
+</Cards>

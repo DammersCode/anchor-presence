@@ -1,0 +1,62 @@
+---
+title: BroadcastChannel transport
+description: createBroadcastChannelTransport, a transport between tabs and iframes of one origin, with no server.
+icon: app-window
+---
+
+import { Cable, MemoryStick, Plug, RadioTower } from "lucide-react";
+
+`createBroadcastChannelTransport(channelName)` builds a `LiveCursorTransport` over the browser `BroadcastChannel` API. It connects tabs, windows, and iframes of one origin in one browser, with no server. Use it for demos, for multi-tab apps, and to try presence before a relay exists. It never crosses a network.
+
+## Usage
+
+Give each client its own transport with the same channel name:
+
+```ts
+import { createPresenceClient } from "@anchor-presence/core";
+import { createBroadcastChannelTransport } from "@anchor-presence/dom";
+
+const client = createPresenceClient({ transport: createBroadcastChannelTransport("presence-demo") });
+```
+
+Every transport with the same `channelName` on the same origin receives the messages of the others. Use the channel name as the room name.
+
+## Behavior
+
+- The transport starts `disconnected`. `connect()` opens a `BroadcastChannel` and sets the status to `connected`. The client calls `connect()` for you, unless you pass `autoConnect: false`.
+- `disconnect()` closes the channel and sets the status to `disconnected`. `client.dispose()` calls it. A later `connect()` opens a new channel.
+- `send` while the transport is disconnected drops the message. In development mode, the transport warns one time.
+- A transport never receives its own messages. As a result, two clients in one tab need two transports.
+- The transport delivers only byte arrays to its listeners. It ignores other messages on the channel.
+- A listener that throws does not stop the other listeners. In development mode, the error goes to `console.error`.
+- The transport has no `subscribeClose` and no `bufferedBytes`.
+
+The transport creates the `BroadcastChannel` in `connect()`, not at creation. As a result, you can create it during server rendering, as long as nothing calls `connect()` there.
+
+<Callout type="warn">
+  If you use this transport, keep a check on remote values: a local `user` and `context` for the shape check,
+  or `parseUser` and `parseContext`. Any script of the same origin can post on the channel.
+</Callout>
+
+## API
+
+`createBroadcastChannelTransport(channelName: string): BroadcastChannelTransport`
+
+`BroadcastChannelTransport` is a `LiveCursorTransport` whose `connect` and `disconnect` methods are always present. It also always has `subscribeStatus` and `getStatus`.
+
+## Related
+
+<Cards>
+  <Card icon={<Cable />} title="Transports" href="/docs/core/transports">
+    The transport contract.
+  </Card>
+  <Card icon={<Plug />} title="Custom transport" href="/docs/core/custom-transport">
+    A smaller version of this transport, part by part.
+  </Card>
+  <Card icon={<RadioTower />} title="WebSocket transport" href="/docs/dom/websocket-transport">
+    The transport for clients on different machines.
+  </Card>
+  <Card icon={<MemoryStick />} title="In-memory transport" href="/docs/core/in-memory-transport">
+    Two transports in one process, for tests.
+  </Card>
+</Cards>

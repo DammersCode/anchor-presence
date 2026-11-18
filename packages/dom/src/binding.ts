@@ -125,7 +125,9 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
   const { resolution = {}, environment = {} } = options;
   const anchorAttribute = options.anchorAttribute ?? DEFAULT_ANCHOR_ATTRIBUTE;
   if (!ANCHOR_ATTRIBUTE_PATTERN.test(anchorAttribute)) {
-    throw new TypeError(`anchorAttribute must be a valid DOM attribute name, got "${anchorAttribute}"`);
+    throw new TypeError(
+      `anchorAttribute must be letters and digits in hyphen-separated groups, such as data-anchor, got "${anchorAttribute}"`,
+    );
   }
 
   let maxAnchors = DEFAULT_SENT_ANCHORS;

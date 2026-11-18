@@ -298,7 +298,7 @@ describe("binaryCodec", () => {
     ).toThrow("too many anchors");
   });
 
-  it("the presence client skips unencodable messages without throwing and recovers once the value is fixed", () => {
+  it("the presence client sends the cursor without an unencodable value and recovers once it is fixed", () => {
     vi.useFakeTimers();
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     const { a, b } = createInMemoryPair();
@@ -309,9 +309,9 @@ describe("binaryCodec", () => {
 
     sender.setContext({ big: 10n });
     sender.setLocalCursor({ anchors: [] });
-    // the encode error is swallowed inside send(): no uncaught throw, nothing on the wire
+    // the cursor still goes out without the value that cannot encode
     expect(() => vi.advanceTimersByTime(10)).not.toThrow();
-    expect(receiver.getRemoteSnapshot()).toHaveLength(0);
+    expect(receiver.getRemoteSnapshot()[0]?.context).toBeUndefined();
 
     sender.setContext({ ok: "fine" });
     vi.advanceTimersByTime(200); // retry backoff delivers the fixed message

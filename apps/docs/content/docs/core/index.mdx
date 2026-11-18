@@ -1,33 +1,75 @@
 ---
 title: Overview
-description: What @anchor-presence/core does, and why it has no DOM and no framework.
+description: What @anchor-presence/core does, when to use it directly, and where each part is documented.
+icon: box
 ---
 
-`@anchor-presence/core` is the protocol layer. It checks and stores the presence of peers, publishes the local presence, and defines the interfaces that every transport and codec implements. A peer is another client in the same room.
+import { Binary, Cable, Code, Puzzle, Radio, ShieldCheck, Spline, Users } from "lucide-react";
 
-`@anchor-presence/core` has zero runtime dependencies and needs no DOM. It runs in Node.js, Bun, workers, and browsers. Its only browser access is one read of `document`, with a check that it exists. The client uses it to send a pending publish when the page becomes visible again. See [How it works](/docs/get-started/concepts/how-it-works) for how it fits under `@anchor-presence/dom` and `@anchor-presence/react`.
+`@anchor-presence/core` is the protocol layer. It sends the local presence, and it checks and stores the presence of each peer. A peer is another client in the same room. Use the package directly in a test, on a server, or in an adapter for a UI framework other than React.
 
-## Framework- and DOM-free
+`@anchor-presence/core` has no runtime dependencies and needs no DOM. It runs in Node.js, Bun, workers, and browsers. It reads `document` at one place only, after a check that `document` exists. There, the client listens for `visibilitychange`. When the page becomes visible, the client sends a pending publish at once.
 
-`@anchor-presence/core` never imports a DOM library, React, or any transport or codec library. This split has two effects:
+This sample connects two clients in one process:
 
-- A test or a server process can create a `PresenceClient` and exercise the protocol with no browser and no framework.
-- A framework adapter, such as `@anchor-presence/react`, holds no protocol state of its own. It only subscribes to the client that `@anchor-presence/core` runs.
+```ts
+import { createInMemoryPair, createPresenceClient } from "@anchor-presence/core";
 
-## What core owns
+const { a, b } = createInMemoryPair();
+const clientA = createPresenceClient({ transport: a, user: { name: "Alice" } });
+const clientB = createPresenceClient({ transport: b, user: { name: "Bob" } });
+```
 
-- The wire protocol types (`CursorPresence`, `AnchorPoint`, `RemotePresence`, and related types).
-- `validatePresence`, which turns an untrusted decoded value into a `CursorPresence` or `null`.
-- `RemotePresenceStore`, which holds the presence of each peer and removes stale peers.
-- `createPresenceClient`, which runs publishing and heartbeats over a transport and a codec.
-- The `LiveCursorTransport` and `CursorCodec` interfaces, plus `createInMemoryPair`, `jsonCodec`, and `binaryCodec`.
-- The `Interpolator` interface, plus `linearInterpolator` and `noneInterpolator`.
+## Main paths
+
+<Cards>
+  <Card icon={<Radio />} title="Presence client" href="/docs/core/presence-client">
+    Create a client, publish the local cursor, send events, and stop the client.
+  </Card>
+  <Card icon={<Users />} title="Remote presence" href="/docs/core/remote-presence">
+    Read peers, the idle stage, the stale timeout, and peer changes.
+  </Card>
+  <Card icon={<ShieldCheck />} title="Validation" href="/docs/core/validation">
+    The checks on each inbound message, and the limits that you can change.
+  </Card>
+  <Card icon={<Spline />} title="Interpolation" href="/docs/core/interpolation">
+    Ease a remote cursor between two positions.
+  </Card>
+  <Card icon={<Cable />} title="Transports" href="/docs/core/transports">
+    The transport contract, connection status, and close reasons.
+  </Card>
+  <Card icon={<Binary />} title="Codecs" href="/docs/core/codecs">
+    Turn messages into bytes with JSON, the binary codec, or your own format.
+  </Card>
+  <Card icon={<Puzzle />} title="Build a framework adapter" href="/docs/core/build-a-framework-adapter">
+    Connect the client and the DOM binding to Solid, Vue, or another framework.
+  </Card>
+  <Card icon={<Code />} title="API reference" href="/docs/core/api/client">
+    Every export of the package, with its type.
+  </Card>
+</Cards>
+
+## Where core sits
+
+`@anchor-presence/core` imports no DOM library, no framework, and no transport or codec library. `@anchor-presence/dom` adds the browser side, and `@anchor-presence/react` adds the React components:
+
+<Mermaid
+  chart={`flowchart LR
+  react["@anchor-presence/react"] --> dom["@anchor-presence/dom"]
+  dom --> core["@anchor-presence/core"]
+  react --> core`}
+/>
+
+This split has two results:
+
+- A test or a server process can create a `PresenceClient` and run the protocol with no browser and no framework.
+- A framework adapter holds no protocol state of its own. It only subscribes to the client.
+
+See [How it works](/docs/get-started/concepts/how-it-works) for the full picture.
 
 ## Related
 
-- [Presence client](/docs/core/presence-client)
-- [Transports](/docs/core/transports)
-- [Codecs](/docs/core/codecs)
-- [Build a framework adapter](/docs/core/build-a-framework-adapter)
-- [Client API](/docs/core/api/client)
-- [Performance](/docs/get-started/guides/performance)
+<Cards>
+  <Card icon={<Radio />} title="Presence client" href="/docs/core/presence-client" />
+  <Card icon={<Puzzle />} title="Build a framework adapter" href="/docs/core/build-a-framework-adapter" />
+</Cards>

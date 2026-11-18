@@ -1,59 +1,46 @@
 ---
 title: Security
-description: Validation limits, why anchor IDs never touch selectors, and the rendering rule for untrusted data.
+description: What the client validates, why anchor IDs are safe, and how to render untrusted peer data.
+icon: shield-check
 ---
 
-All inbound presence data is untrusted. A peer is another client in the same room. The client drops data above the validation limits, anchor IDs never reach a selector, and your app must render `user` and `context` as text.
+import { Box, Eye, Handshake, ListChecks } from "lucide-react";
+
+Every inbound message comes from a peer, so treat it as untrusted. This page lists what the library protects, and what your app and your relay must protect. Read it before you put Anchor Presence in production.
+
+## The short version
+
+- The client drops messages and fields above the validation limits.
+- Anchor IDs never reach a selector or code.
+- Your app renders `user` and `context` as text.
+- Your server, not the protocol, proves who a peer is.
 
 ## Validation limits
 
-The client checks every inbound message in two steps. First, it drops a message whose encoded bytes are above `maxMessageBytes`, before it decodes the message. Then it passes the decoded message to `validatePresence()`, which checks the fields in this table:
+The client checks each inbound message in two steps:
 
-| Field                           | Rule                                                                      | Limit key                        |
-| ------------------------------- | ------------------------------------------------------------------------- | -------------------------------- |
-| `version`                       | must equal `1`, else the client drops the message                         |                                  |
-| `clientId`                      | string, 1 to 128 characters, else the client drops the message            | `maxClientIdLength`              |
-| `session`                       | string, 1 to 64 characters, else the client drops the message             | `maxSessionLength`               |
-| `sequence`                      | finite integer from 0 to 2147483647, else the client drops it             | `maxSequence`                    |
-| `anchors`                       | array, max 8 entries, the client cuts extra entries                       | `maxAnchors`                     |
-| anchor `id`                     | string, 1 to 256 characters, else the client drops that entry             | `maxAnchorIdLength`              |
-| anchor `u`, `v`                 | finite number, clamped to `[0, 1]`                                        |                                  |
-| `viewport.u`, `viewport.v`      | finite number, clamped to `[0, 1]`                                        |                                  |
-| `context`                       | max 8 KiB when JSON-encoded, else the client drops the field              | `maxFieldBytes`                  |
-| `user`                          | max 8 KiB when JSON-encoded, else the client drops the field              | `maxFieldBytes`                  |
-| `context`, `user` nesting depth | max 8 levels, else the client drops the field                             | `maxFieldDepth`                  |
-| `pointer.type`                  | `mouse`, `pen` or `touch`, else the client drops the field                |                                  |
-| whole message                   | max 32 KiB encoded, else the client drops the message                     | `maxMessageBytes`                |
-| event `type`                    | string, 1 to 64 characters, else the client drops the event               |                                  |
-| event `data`                    | max 8 KiB and 8 levels when JSON-encoded, else the client drops the event | `maxFieldBytes`, `maxFieldDepth` |
+1. It drops a message above `maxMessageBytes` (32 KiB) before it decodes the message.
+2. It passes the decoded message to `validatePresence()`.
 
-Each receiver also limits the rate of inbound events, with the `eventRateLimit` option of `createPresenceClient`:
+`validatePresence()` drops a message with an invalid `version`, `clientId`, `session`, `sequence`, or `cursor` shape. If only `user` or `context` breaks a limit, it drops that field and keeps the rest of the message. It clamps `u` and `v` to the range 0 to 1. [ValidationLimits](/docs/core/validation#validationlimits) lists every limit, its default, and the result of a break. To change a limit, pass `validationLimits` to `createPresenceClient`.
 
-| Key              | Default | Limit                                            |
-| ---------------- | ------- | ------------------------------------------------ |
-| `burst`          | `20`    | The events that one sender can send at once.     |
-| `perSecond`      | `10`    | The events per second that refill one sender.    |
-| `totalPerSecond` | `100`   | The events per second from all senders together. |
+<Callout type="warn">
+  If your relay calls `validatePresence`, cap the frame size on the relay. `validatePresence` ignores
+  `maxMessageBytes`, because a decoded message has no byte length. See [Relay
+  contract](/docs/examples/backends/relay-contract).
+</Callout>
 
-These limits protect one receiver. A sender can still flood the whole room, so the rate limit per socket on the relay is the real control against a flood. See [Event rate limit](/docs/core/presence-client#event-rate-limit).
-
-The defaults are constants in `@anchor-presence/core`. To change a limit, pass its key in `PresenceClientOptions.validationLimits` to `createPresenceClient`. `validatePresence` also takes a `ValidationLimits` object, but it ignores `maxMessageBytes`. A decoded message has no byte length, so only the client checks the size. A relay that calls `validatePresence` must cap the frame size itself. See [Relay contract](/docs/examples/backends/relay-contract).
-
-The client drops a message in full when its `version`, `clientId`, `session`, `sequence`, or `cursor` shape is invalid. When only a `context` or `user` field is too large, the client drops that field and keeps the rest of the message.
-
-On the wire, a missing `context` or `user` field means "unchanged since the previous message of the same session". An explicit `null` clears the field. The store turns a cleared field into `undefined` in the receiver snapshot.
+Each receiver also limits the rate of inbound events with the `eventRateLimit` option. See [Event rate limit](/docs/core/presence-client#event-rate-limit). This limit protects one receiver only. A sender can still flood the room, so the rate limit per socket on the relay is the real control.
 
 ## Why anchor IDs never touch selectors
 
-An anchor ID is an opaque string. The resolver looks it up as a plain key in the registry's `Map<string, Element>`. The library never passes it to `querySelector`, `eval`, a template engine, or any other code that reads a string as a program or a selector.
+An anchor ID is an opaque string. The resolver looks it up as a key in a `Map<string, Element>`. The library never passes it to `querySelector`, `eval`, a template engine, or any code that reads a string as a program.
 
-An anchor ID from the network can only address an element that the application registered. This holds for any string. An unknown anchor ID causes a lookup miss, and the fallback chain treats a miss as a normal case.
+As a result, an anchor ID from the network can only address an element that your app registered. An unknown ID is a lookup miss, and the fallback chain handles it as a normal case.
 
 ## Render user and context as text
 
-`user` and `context` values are untrusted, even after validation passes. Validation checks size, not content. The field can hold attacker-controlled strings, numbers, or nested objects.
-
-Render both fields as text: text nodes in plain DOM code, or framework text interpolation such as JSX's `{value}`.
+Validation checks the size of `user` and `context`, not the content. A peer can put any string into them. Render both as text: a text node in DOM code, or `{value}` in JSX.
 
 <Callout type="warn">
   If you render `user` or `context` as HTML, through `innerHTML`, `dangerouslySetInnerHTML`, or an equivalent,
@@ -72,11 +59,11 @@ This sample shows the correct and the wrong way to render a remote name:
 
 ## Check the shape of remote values
 
-Validation checks the size and depth of `user` and `context`, not their shape. A peer can send `{ name: {} }` where you expect a string. React throws when it renders that object as a child.
+A peer can send `{ name: {} }` where you expect a string. React throws when it renders that object as a child.
 
-For this reason, the client compares each remote value with your own local value. If you pass `user: { name: "Ada" }` to `createPresenceClient`, a remote `user` must be an object whose `name` is a string or `null`. Your render code must accept `null` in every field. The client drops a field that does not fit, so the receiver keeps the previous value. [Remote user and context](/docs/core/validation#remote-user-and-context) lists every rule of the shape check.
+If you pass a local `user` or `context` to `createPresenceClient`, the client compares each remote value with its shape. For example, with `user: { name: "Ada" }`, a remote `user` must be an object whose `name` is a string or `null`. The client drops a value that does not fit, and keeps the previous value. Your render code must accept `null` in every field. [Remote user and context](/docs/core/validation#remote-user-and-context) lists every rule.
 
-A client with no local `user` or `context` has no shape to compare with. To check the value yourself, pass `parseUser` or `parseContext`. Return `undefined` to drop the value:
+A client with no local value has no shape to compare with. Pass `parseUser` or `parseContext` instead. Return `undefined` to drop the value:
 
 ```ts
 const client = createPresenceClient<unknown, { name: string; avatar?: string }>({
@@ -89,37 +76,48 @@ const client = createPresenceClient<unknown, { name: string; avatar?: string }>(
 });
 ```
 
-In [development mode](/docs/core/presence-client#development-mode), the client warns when no check applies to a remote value, and when the shape check drops a value.
+In development mode, the client warns when no check applies to a remote value, and when the shape check drops a value.
 
 ## Identity is not authenticated
 
-`clientId` and `session` are plain fields on the wire. Any peer can send any value for either. The store accepts a new session for a known `clientId` without proof that the same person sent the earlier one.
+`clientId` and `session` are plain fields on the wire. Any peer can send any value. The store accepts a new session for a known `clientId` with no proof that the same person sent both.
 
-If your app needs to know who sent a message, bind the identity on your own server. The [relay contract](/docs/examples/backends/relay-contract#identity) shows how a relay replaces `clientId` and `user` with a verified identity.
+If your app must know who sent a message, bind the identity on your server. The [relay contract](/docs/examples/backends/relay-contract#identity) shows how a relay replaces `clientId` and `user` with a verified identity.
 
 ## maxRemoteClients
 
-`maxRemoteClients` limits every allocation that network data causes: store entries, resolved cursors, and observed anchors. It defaults to 64. See [Remote presence](/docs/core/remote-presence) for the drop rule and how to react to it.
+`maxRemoteClients` caps every allocation that network data causes: store entries, resolved cursors, and observed anchors. The default is 64. When the store is full, it drops new clients and calls `onRemoteClientDropped`.
 
-Set `maxRemoteClients` to the number of sessions that you expect at the same time. When the store is full, it drops new clients. An attacker in the room can take every slot with distinct `clientId` values. Real clients then stay out until those slots expire after `staleTimeoutMs`.
+A peer can fill every slot with new `clientId` values. Real clients then stay out until those entries expire after `staleTimeoutMs`. Set `maxRemoteClients` to the number of sessions that you expect at the same time. See [maxRemoteClients](/docs/core/remote-presence#maxremoteclients).
 
 ## Room token
 
-When `RELAY_AUTH_TOKEN` is set, the reference relay requires a matching [room token](/docs/dom/websocket-transport#room-token) on every connection. It closes a connection with a missing or wrong room token with code `4006`. The room token controls who can connect to the relay. It does not authenticate the identity inside a message. Every message still passes the same validation and sequence rules as on an open relay.
+A **room token** is a secret that the relay checks before it accepts a connection. If `RELAY_AUTH_TOKEN` is set, the reference relay requires a matching [room token](/docs/dom/websocket-transport#room-token). It closes a connection with a missing or wrong token with code `4006`.
 
-The reference relay and the example relays compare every connection with one `RELAY_AUTH_TOKEN` for the whole process. As a result, one room token opens every room. The example relays give the room name to the `authCheck` hook. To limit a room token to one room, check the `room` field in your own `authCheck`.
-
-The transport sends the room token in the `token` query parameter of the URL. Many proxies and servers write the full URL, with its query string, into their access logs. As a result, the room token can appear in those logs.
+- The room token controls who can connect. It does not prove the identity inside a message.
+- The reference relay and the example relays compare all connections with one `RELAY_AUTH_TOKEN`, so one token opens every room.
+- To limit a token to one room, check the `room` field in your own `authCheck` hook.
+- The transport sends the token in the `token` query parameter. Proxies and servers often write the full URL into their access logs.
 
 <Callout type="warn">
   If you use a long-lived room token, anyone who reads the access logs can join the relay. Create a
-  short-lived room token for each session on your server. Check it in your own `authCheck`, because
-  `RELAY_AUTH_TOKEN` is one fixed value. On the client, pass a `token` function to `createWebSocketTransport`.
-  The transport calls the function before each connection attempt.
+  short-lived token for each session on your server, and check it in your own `authCheck`. On the client, pass
+  a `token` function to `createWebSocketTransport`. The transport calls it before each connection attempt.
 </Callout>
 
 ## Related
 
-- [UI context](/docs/get-started/concepts/ui-context)
-- [Remote presence](/docs/core/remote-presence)
-- [Codecs](/docs/core/codecs)
+<Cards>
+  <Card icon={<ListChecks />} title="Validation" href="/docs/core/validation">
+    Every limit and its default.
+  </Card>
+  <Card icon={<Handshake />} title="Relay contract" href="/docs/examples/backends/relay-contract">
+    What a relay must check, and the close codes.
+  </Card>
+  <Card icon={<Box />} title="Remote presence" href="/docs/core/remote-presence">
+    The store, the stale timeout, and the client cap.
+  </Card>
+  <Card icon={<Eye />} title="UI context" href="/docs/get-started/concepts/ui-context">
+    What context to send, and what not to send.
+  </Card>
+</Cards>

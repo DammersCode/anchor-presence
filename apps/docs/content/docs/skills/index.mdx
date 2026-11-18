@@ -1,16 +1,25 @@
 ---
 title: Overview
 description: What an agent skill is, the two skills this repository ships, and how the docs serve agents.
+icon: bot
 ---
+
+import { FileText, Plug, Rocket, Ruler, ScanSearch, ShieldCheck } from "lucide-react";
 
 An agent skill is a folder of instructions, `SKILL.md` plus reference files, that a coding agent reads before it does a task. It gives the agent the steps, the rules, and the vocabulary for the task. Without a skill, a human maintainer must explain these by hand. Anchor Presence ships two.
 
 ## The two skills
 
-| Skill                                     | What it does                                                                  | When to use it                                                        |
-| ----------------------------------------- | ----------------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| [Integration](/docs/skills/integration)   | Adds live cursors to a React app: transport, client, anchors, presence list.  | To add cursors to a new app, or to fix a broken integration.          |
-| [Layout audit](/docs/skills/layout-audit) | Scores a running app for cursor-jump risk between layouts and proposes fixes. | Before you ship a responsive or collapsible layout with live cursors. |
+<Cards>
+  <Card icon={<Plug />} title="Integration" href="/docs/skills/integration">
+    Use this when you add cursors to an app, or fix a broken integration. It sets up the transport, the
+    client, and the anchors. On request, it also adds a presence list.
+  </Card>
+  <Card icon={<ScanSearch />} title="Layout audit" href="/docs/skills/layout-audit">
+    Use this when you ship a responsive or collapsible layout. It scores a running app for cursor-jump risk
+    and proposes fixes.
+  </Card>
+</Cards>
 
 ## Install
 
@@ -42,6 +51,17 @@ If the agent runs inside this repository, or in a project that depends on it, us
 
 ## Related
 
-- [Quick start](/docs/get-started/quick-start)
-- [Layout design for presence](/docs/get-started/guides/layout-design)
-- [Security](/docs/get-started/guides/security)
+<Cards>
+  <Card icon={<Rocket />} title="Quick start" href="/docs/get-started/quick-start">
+    The integration steps, for a human who does them by hand.
+  </Card>
+  <Card icon={<Ruler />} title="Layout design for presence" href="/docs/get-started/guides/layout-design">
+    The layout rules that the audit skill measures.
+  </Card>
+  <Card icon={<ShieldCheck />} title="Security" href="/docs/get-started/guides/security">
+    What a relay and a receiver must check.
+  </Card>
+  <Card icon={<FileText />} title="llms.txt" href="/llms.txt">
+    The index of every doc page as Markdown, for agents.
+  </Card>
+</Cards>

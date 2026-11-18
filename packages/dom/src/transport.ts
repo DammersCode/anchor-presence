@@ -1,6 +1,6 @@
 // oxlint-disable unicorn/prefer-add-event-listener -- WebSocketLike only exposes on* handlers
 
-import { isDevMode } from "@anchor-presence/core";
+import { isDevMode, warnOnce } from "@anchor-presence/core";
 import type { ConnectionStatus, LiveCursorTransport, TransportClose } from "@anchor-presence/core";
 
 type Handler<Event> = { bivarianceHack(event: Event): void }["bivarianceHack"];
@@ -170,7 +170,15 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
   let openAttempt = 0;
 
   function open(): void {
-    if (disposedByUser || WebSocketImpl === undefined) return;
+    if (disposedByUser) return;
+    if (WebSocketImpl === undefined) {
+      warnOnce(
+        "no-websocket",
+        "createWebSocketTransport found no global WebSocket. Pass `WebSocketCtor`, or connect in the browser.",
+      );
+      setStatus("disconnected");
+      return;
+    }
     // a reconnect or a double connect() must not orphan a live socket: sever and close the previous one
     if (socket !== null) {
       const previous = socket;

@@ -1,36 +1,70 @@
 ---
 title: Socket.IO
-description: A tested Socket.IO transport and its matching relay.
+description: A Socket.IO relay and a tested client transport for it.
+icon: radio
 ---
 
-Your app already uses Socket.IO for other real-time features, and you want presence on the same connection. `examples/socketio` has a Socket.IO relay and a client transport for it. A peer is another client in the same room. The relay forwards each presence message to the peers of the sender. Every `@anchor-presence/react` hook works the same way as on a WebSocket relay.
+import { Cpu, FileCheck, ShieldCheck, Signal } from "lucide-react";
+
+Your app already uses Socket.IO for other real-time features, and you want presence on the same connection. `examples/socketio` has a Socket.IO relay and a client transport for it. The relay forwards each `"presence"` event to the peers of the sender and never reads the payload. Every `@anchor-presence/react` hook works the same way as on a WebSocket relay.
+
+## Install
 
 Install the Socket.IO server and client with your package manager:
 
 <InstallCommand packages="socket.io socket.io-client" />
 
-## Server
+## Code
 
-The server is a room-broadcast relay. It joins each socket to the room from the `room` query parameter of the handshake. It forwards `"presence"` events to the other sockets in that room and never reads the payload:
+The client wraps a Socket.IO socket as a transport. The server file exports a factory, and the entry file starts it:
 
-<CodeFromSource repo="examples/socketio/server.ts" lang="ts" />
+<Tabs items={["Client", "Transport", "Server", "Entry file"]}>
+  <Tab value="Client">
+    Use the transport like any other transport:
 
-## Client transport
+    ```ts
+    import { createPresenceClient } from "@anchor-presence/core";
+    import { io } from "socket.io-client";
+    import { createSocketIoTransport } from "./transport";
 
-`createSocketIoTransport` wraps a Socket.IO client socket as a `LiveCursorTransport`:
+    const socket = io("https://your-server.example", { query: { room: "main" } });
+    const client = createPresenceClient({ transport: createSocketIoTransport(socket) });
+    ```
+
+  </Tab>
+  <Tab value="Transport">
+    `createSocketIoTransport` wraps a Socket.IO client socket as a `LiveCursorTransport`:
 
 <CodeFromSource repo="examples/socketio/transport.ts" lang="ts" />
 
-Use it like any other transport:
+  </Tab>
+  <Tab value="Server">
+    The relay joins each socket to the room from the `room` query parameter of the handshake:
 
-```ts
-import { createPresenceClient } from "@anchor-presence/core";
-import { io } from "socket.io-client";
-import { createSocketIoTransport } from "./transport";
+<CodeFromSource repo="examples/socketio/server.ts" lang="ts" />
 
-const socket = io("https://your-server.example", { query: { room: "main" } });
-const client = createPresenceClient({ transport: createSocketIoTransport(socket) });
+  </Tab>
+  <Tab value="Entry file">
+    The entry file calls the factory once and logs the URL:
+
+<CodeFromSource repo="examples/socketio/relay.ts" lang="ts" />
+
+  </Tab>
+</Tabs>
+
+`subscribeStatus` replays the current status to every new subscriber, so a component that mounts after the socket connects still learns that it can send.
+
+## Run it
+
+Start the entry file with Bun, or with a TypeScript runner on Node.js:
+
+```sh
+bun relay.ts
+# On Node.js:
+npx tsx relay.ts
 ```
+
+The relay listens on `http://localhost:5001`. To use a different port, give the port as the first argument.
 
 ## Close reasons
 
@@ -53,16 +87,68 @@ client.subscribeClose((close) => {
 
 ## Behavior notes
 
-- `subscribeStatus` replays the current status to every new subscriber. As a result, a component that mounts after the socket connects still learns that it can send.
-- The relay never parses `"presence"` payloads. The validation in the receiving client is the only check between the wire and the store. See [Security](/docs/get-started/guides/security).
-- A token bucket (a counter that refills at a fixed rate) limits the inbound `"presence"` messages of each socket (`RATE_CAPACITY`, default 80, and `RATE_REFILL_PER_SECOND`, default 40). The relay drops a message above the limit and keeps the socket open.
-- The relay limits one room with `RELAY_MAX_ROOM_SOCKETS` (default 64) and the process with `RELAY_MAX_TOTAL_SOCKETS` (default 10,000).
-- Socket.IO closes dead connections with its own heartbeat. The `pingInterval` and `pingTimeout` server options control it.
-- If `authCheck` returns `{ clientId, user }`, the relay binds that identity to every JSON frame of the socket. See [Identity binding](/docs/examples/backends#identity-binding).
-- `examples/socketio/socketio.test.ts` starts a real Socket.IO server on a free port and connects two clients. It checks that a cursor update from one client reaches the other through `getRemoteSnapshot()`. It also checks the rate limit.
+Each setting is an environment variable. The factory options `maxMessageBytes`, `rateCapacity`, `rateRefillPerSecond`, `maxRoomSockets`, `maxSockets`, `allowedOrigins` and `authCheck` override them. `allowedOrigins` is an array of strings in this relay.
+
+### What the relay does
+
+| Topic            | Behavior                                                                                                                   |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Room             | Reads `room` from the handshake query. A missing value is `main`. An invalid name gets a `refused` event with code `4007`. |
+| Upgrade path     | The default Socket.IO path, `/socket.io/`.                                                                                 |
+| Fan-out          | `socket.to(room).emit` sends to every other socket in the Socket.IO room.                                                  |
+| Payload          | Forwards each `"presence"` payload unchanged. Decodes a payload only for identity binding.                                 |
+| Dead connections | The Socket.IO heartbeat closes them. The `pingInterval` and `pingTimeout` server options control it.                       |
+| Room cleanup     | Releases the room slot when a socket disconnects. Socket.IO deletes an empty room.                                         |
+
+### Limits
+
+The rate limit is a token bucket: a socket can send a burst of 80 messages, then 40 messages per second.
+
+| Limit               | Setting (default)                                      | Above the limit                                     |
+| ------------------- | ------------------------------------------------------ | --------------------------------------------------- |
+| Message size        | `MAX_MESSAGE_BYTES` (32 KiB)                           | The `"presence"` handler drops the payload.         |
+| Hard frame size     | `maxHttpBufferSize`, equal to `MAX_MESSAGE_BYTES`      | Socket.IO closes the connection.                    |
+| Message rate        | `RATE_CAPACITY` (80) and `RATE_REFILL_PER_SECOND` (40) | Drops the message. The socket stays open.           |
+| Sockets in one room | `RELAY_MAX_ROOM_SOCKETS` (64)                          | Sends `refused` with code `4001`, then disconnects. |
+| Sockets in total    | `RELAY_MAX_TOTAL_SOCKETS` (10,000)                     | Sends `refused` with code `4002`, then disconnects. |
+| Slow receiver       | None                                                   | The relay does not check the send buffer.           |
+
+The message size limit and the hard frame size are equal. As a result, a message above 32 KiB closes the connection, and the relay does not drop it.
+
+### Auth
+
+| Check            | Setting                                                                              | On refusal                                                         |
+| ---------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| Origin           | `RELAY_ALLOWED_ORIGINS`, comma-separated. Empty allows every origin.                 | `allowRequest` fails the handshake with no code.                   |
+| Room token       | `RELAY_AUTH_TOKEN`. Compares the `token` handshake query. Empty turns the check off. | `connect_error` with code `4006`.                                  |
+| `authCheck` hook | Factory option. Replaces the room token check.                                       | `connect_error` with code `4006` on `false` or an error.           |
+| Identity binding | `authCheck` returns `{ clientId, user }`.                                            | Drops a payload that is not a JSON object.                         |
+| Check order      | Origin, then the hook, then room name.                                               | The hook runs for an invalid room name, with `room` set to `main`. |
+
+See [Identity binding](/docs/examples/backends#identity-binding) for the rules. The relay never parses a payload without identity binding. The validation in the receiving client is then the only check between the wire and the store. See [Security](/docs/get-started/guides/security).
+
+### Tests
+
+`examples/socketio/socketio.test.ts` starts a real Socket.IO server on a free port and connects two clients. It checks that a cursor update from one client reaches the other through `getRemoteSnapshot()`. It also checks the rate limit.
+
+<Callout type="warn">
+  If you expose this relay outside local development, set `RELAY_ALLOWED_ORIGINS` and `RELAY_AUTH_TOKEN`. Also
+  serve it over TLS (`https://`). Without them, any page and any visitor can join a room.
+</Callout>
 
 ## Related
 
-- [Backends](/docs/examples/backends)
-- [Relay contract](/docs/examples/backends/relay-contract)
-- [Transports](/docs/core/transports)
+<Cards>
+  <Card icon={<Signal />} title="SignalR" href="/docs/examples/backends/signalr">
+    The same pattern on an ASP.NET Core hub.
+  </Card>
+  <Card icon={<FileCheck />} title="Relay contract" href="/docs/examples/backends/relay-contract">
+    The rules, the close codes, and the conformance suite.
+  </Card>
+  <Card icon={<Cpu />} title="Transports" href="/docs/core/transports">
+    The `LiveCursorTransport` interface that the transport implements.
+  </Card>
+  <Card icon={<ShieldCheck />} title="Security" href="/docs/get-started/guides/security">
+    Why a payload from the network is untrusted.
+  </Card>
+</Cards>

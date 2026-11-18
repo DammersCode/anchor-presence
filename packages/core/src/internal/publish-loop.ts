@@ -1,4 +1,5 @@
 import type { CursorPosition, CursorPresence } from "../protocol.js";
+import { warnOnce } from "./dev-warnings.js";
 import { validatePresence } from "../validate.js";
 import type { PresenceClientState } from "./types.js";
 
@@ -71,6 +72,22 @@ export function createPublishLoop<TContext, TUser>(state: PresenceClientState<TC
 
   let warnedSendFailure = false;
 
+  // a `user` or `context` that cannot encode must not silence the cursor: resend without them
+  function encodeOrDropProfile(message: CursorPresence<TContext, TUser>): Uint8Array {
+    try {
+      return state.codec.encode(message);
+    } catch (error) {
+      if (message.context === undefined && message.user === undefined) throw error;
+      warnOnce(
+        "unencodable-profile",
+        "`user` or `context` could not be encoded, so the client sends the cursor without them. Use plain JSON values.",
+      );
+      delete message.context;
+      delete message.user;
+      return state.codec.encode(message);
+    }
+  }
+
   function send(cursor: CursorPosition | null, includeFull = false, leave = false): boolean {
     if (state.status !== "connected") return false;
     // peers dropped us on leave, so the next message must carry the full state
@@ -80,7 +97,7 @@ export function createPublishLoop<TContext, TUser>(state: PresenceClientState<TC
     }
     try {
       const message = buildMessage(cursor, includeFull, leave);
-      const bytes = state.codec.encode(message);
+      const bytes = encodeOrDropProfile(message);
       const result = state.transport.send(bytes);
       if (result && typeof result.catch === "function") {
         result.catch(() => {});

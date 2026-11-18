@@ -1,11 +1,14 @@
 ---
 title: CursorLayer
 description: Render every visible remote cursor with labels, colors, and filtering.
+icon: mouse-pointer-2
 ---
 
-`CursorLayer` renders one fixed-position root per visible remote cursor. No cursor component is required. If you need a different rendering model, build your own with [useRemoteCursors](/docs/react/remote-cursors) instead.
+import { Crosshair, Gauge, Component, Paintbrush } from "lucide-react";
 
-## Basic use
+`CursorLayer` draws the cursor of every peer (another client in the same room) that is visible on your screen. If an arrow with a name label is enough, use it. For a different rendering model, read the positions with [useRemoteCursors](/docs/react/remote-cursors) and draw them yourself.
+
+## Usage
 
 This app renders the remote cursors with the defaults:
 
@@ -22,11 +25,20 @@ function App() {
 }
 ```
 
-With no props, `CursorLayer` renders `DefaultCursor` for each visible cursor. If `user.name` is a string that is not empty, it is the label of the cursor. Each client gets one color from a palette of 8 colors, picked from its `clientId`, so one client keeps its color on every screen. See [Custom cursors](/docs/react/custom-cursors) to replace the cursor content or its default styling.
+This preview shows `CursorLayer` in two layouts, with the label and the color from each `user` value:
+
+<ExamplePreview scene="basics" />
+
+## Defaults
+
+- **Element:** one fixed-position root element per visible cursor, with `DefaultCursor` inside it.
+- **Label:** the `name` field of the peer's `user` value, if it is a string that is not empty. The layer cuts the name to 32 characters. Otherwise, the cursor has no label.
+- **Color:** one of 8 palette colors, picked from the peer's `clientId`. A peer keeps its color on every screen. A page reload creates a new `clientId`, so the color can change.
+- **Stacking:** `zIndex` `9999`, above most app UI.
 
 ## Label and color
 
-`getLabel` and `getColor` run once per visible cursor. They replace the default label and the default color:
+`getLabel` and `getColor` run for each visible cursor. They replace the default label and the default color:
 
 ```tsx
 type MyUser = { name: string; color?: string };
@@ -52,7 +64,7 @@ type MyUser = { name: string; color?: string };
 
 ## Extra props on the root
 
-`getCursorProps` adds classes, non-geometry styles, and attributes to each cursor's root element:
+`getCursorProps` adds classes, styles, and attributes to the root element of each cursor:
 
 ```tsx
 <CursorLayer
@@ -63,9 +75,13 @@ type MyUser = { name: string; color?: string };
 />
 ```
 
-`CursorLayer` sets `position`, `left`, `top`, `transform`, `pointerEvents`, and `opacity` after your style, so your value never replaces them. The `zIndex` prop replaces the default of `9999`, which keeps cursors above most app UI.
+`CursorLayer` applies `position`, `left`, `top`, `transform`, `pointerEvents`, and `opacity` after your style, so your values for these keys have no effect. It also sets `transition` after your style, except when the operating system prefers reduced motion. A `zIndex` in your style replaces the `zIndex` prop.
 
-## Dialogs and the top layer
+## Keep the callbacks stable
+
+`CursorLayer` skips the render of a cursor whose resolved values did not change. This works only while `getLabel`, `getColor`, `getCursorProps`, and `renderCursor` keep their identity. If you pass inline functions and the parent rerenders, every cursor renders again. Declare the callbacks at module level, or wrap them in `useCallback`.
+
+## Dialogs and transforms
 
 <Callout type="warn">
   If a dialog opens with `<dialog>.showModal()`, or an element uses `popover`, it covers the cursors. The
@@ -81,15 +97,24 @@ type MyUser = { name: string; color?: string };
 
 ## Accessibility
 
-- Each cursor root has `aria-hidden="true"` and `pointerEvents: "none"`, so a screen reader and pointer input both skip it.
-- The opacity transition on a cursor's root follows the OS reduced-motion setting: `CursorLayer` skips it when the operating system prefers reduced motion.
-- `DefaultCursor` sets `forced-color-adjust: none`, so its arrow and label keep their own colors under Windows forced-colors mode.
-- Label text contrast is your app's palette choice: `getLabel`, `getColor`, and `renderCursor` control the content and colors that `CursorLayer` renders.
-
-See [Custom cursors](/docs/react/custom-cursors) to change what a cursor renders, and [Motion](/docs/dom/motion) for the interpolator and reduced-motion behavior underneath it.
+- Each cursor root has `aria-hidden="true"` and `pointerEvents: "none"`. Screen readers and pointer input skip it.
+- If the operating system prefers reduced motion, `CursorLayer` drops the opacity transition of the root. For the movement itself, see [Motion](/docs/dom/motion).
+- `DefaultCursor` sets `forced-color-adjust: none`. Its arrow and label keep their colors in Windows forced-colors mode.
+- You control the label contrast. `getLabel`, `getColor`, and `renderCursor` set the content and the colors.
 
 ## Related
 
-- [Custom cursors](/docs/react/custom-cursors)
-- [Remote cursors](/docs/react/remote-cursors)
-- [Components API](/docs/react/api/components)
+<Cards>
+  <Card icon={<Paintbrush />} title="Custom cursors" href="/docs/react/custom-cursors">
+    Replace the cursor content or style the default arrow.
+  </Card>
+  <Card icon={<Crosshair />} title="Remote cursors" href="/docs/react/remote-cursors">
+    Read the positions and draw the cursors yourself.
+  </Card>
+  <Card icon={<Gauge />} title="Rerenders" href="/docs/react/rerenders">
+    Which hook rerenders when.
+  </Card>
+  <Card icon={<Component />} title="Components API" href="/docs/react/api/components">
+    Every prop of CursorLayer with its type.
+  </Card>
+</Cards>

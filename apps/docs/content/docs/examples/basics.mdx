@@ -1,7 +1,10 @@
 ---
 title: Basics
 description: The smallest setup that shows a remote cursor on the same button in two layouts.
+icon: mouse-pointer-2
 ---
+
+import { AppWindow, Atom, BookOpen, LayoutGrid, ListTree } from "lucide-react";
 
 A live cursor needs three things: a client, a provider, and at least one anchor. In this demo, the same three buttons sit in a row in the wide pane and in a column in the narrow pane. A cursor on a button in one pane lands on the same button in the other pane.
 
@@ -30,8 +33,24 @@ The preview gives the scene a `client` on a `BroadcastChannel` transport, so the
 
 ## Related
 
-- [Anchors](/docs/get-started/concepts/anchors): what an anchor ID is, and how `u` and `v` place the cursor inside it.
-- [The anchor attribute](/docs/dom/anchor-registration#the-anchor-attribute): how the binding finds anchors without a registration call.
-- [CursorLayer](/docs/react/cursor-layer): which cursors the layer renders, and where.
-- [Responsive grid](/docs/examples/responsive-grid): the same idea with cards of different sizes.
-- [Anchors and fallbacks](/docs/examples/anchors-and-fallbacks): what happens when an anchor is missing.
+<Cards>
+  <Card icon={<BookOpen />} title="Anchors" href="/docs/get-started/concepts/anchors">
+    What an anchor ID is, and how `u` and `v` place the cursor inside it.
+  </Card>
+  <Card
+    icon={<AppWindow />}
+    title="The anchor attribute"
+    href="/docs/dom/anchor-registration#the-anchor-attribute"
+  >
+    How the binding finds anchors without a registration call.
+  </Card>
+  <Card icon={<Atom />} title="CursorLayer" href="/docs/react/cursor-layer">
+    Which cursors the layer renders, and where.
+  </Card>
+  <Card icon={<LayoutGrid />} title="Responsive grid" href="/docs/examples/responsive-grid">
+    The same idea with cards of different sizes.
+  </Card>
+  <Card icon={<ListTree />} title="Anchors and fallbacks" href="/docs/examples/anchors-and-fallbacks">
+    What happens when an anchor is missing.
+  </Card>
+</Cards>

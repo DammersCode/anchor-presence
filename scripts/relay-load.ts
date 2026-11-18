@@ -1,8 +1,8 @@
-// Local-only relay load test (plan 027). Starts apps/server, opens N native WebSocket clients in one
+// Local-only relay load test (plan 027). Starts apps/server or an example relay, opens N native WebSocket clients in one
 // room sending real binaryCodec cursor messages at 20 Hz, and reports throughput, delivery ratio,
 // latency percentiles, and relay process CPU/RSS. Never runs in CI.
 //
-// Usage: bun run scripts/relay-load.ts --clients 50,100,200 --seconds 10
+// Usage: bun run scripts/relay-load.ts --clients 50,100,200 --seconds 10 [--relay reference|node-ws|hono|elysia|bun-native]
 
 import { spawn, type ChildProcess } from "node:child_process";
 import net from "node:net";
@@ -16,9 +16,10 @@ const PUBLISH_HZ = 20;
 const PUBLISH_INTERVAL_MS = 1000 / PUBLISH_HZ;
 const ROOM = "relay-load";
 
-function parseArgs(argv: string[]): { clientCounts: number[]; seconds: number } {
+function parseArgs(argv: string[]): { clientCounts: number[]; seconds: number; relay: string } {
   let clientCounts = [50, 100, 200];
   let seconds = 10;
+  let relay = "reference";
   for (let i = 0; i < argv.length; i++) {
     const next = argv[i + 1];
     if (argv[i] === "--clients" && next !== undefined) {
@@ -27,9 +28,12 @@ function parseArgs(argv: string[]): { clientCounts: number[]; seconds: number } 
     } else if (argv[i] === "--seconds" && next !== undefined) {
       seconds = Math.trunc(Number(next));
       i++;
+    } else if (argv[i] === "--relay" && next !== undefined) {
+      relay = next;
+      i++;
     }
   }
-  return { clientCounts, seconds };
+  return { clientCounts, seconds, relay };
 }
 
 function freePort(): Promise<number> {
@@ -67,6 +71,7 @@ function waitForPort(port: number, timeoutMs: number): Promise<void> {
 }
 
 type RelayEnv = {
+  relay: string;
   port: number;
   maxRoomSockets: number;
   maxTotalSockets: number;
@@ -74,12 +79,15 @@ type RelayEnv = {
   rateRefillPerSecond: number;
 };
 
-/** Starts apps/server with room/socket/rate caps raised so the client count under test is not itself rejected. */
+/** Starts a relay with room/socket/rate caps raised so the client count under test is not itself rejected. */
 function startRelay(env: RelayEnv): ChildProcess {
   // spawns the file directly (not `bun run --cwd ... dev`) so relay.pid is the real worker process,
   // not a wrapper: `bun run <script>` re-execs a child, which would make CPU/RSS sampling read the wrong pid
-  return spawn("bun", [path.join(repoRoot, "apps/server/index.ts")], {
-    cwd: path.join(repoRoot, "apps/server"),
+  const dir = env.relay === "reference" ? "apps/server" : `examples/${env.relay}`;
+  const entry = env.relay === "reference" ? "index.ts" : "relay.ts";
+  const runtime = env.relay === "node-ws" ? "node" : "bun";
+  return spawn(runtime, [path.join(repoRoot, dir, entry), String(env.port)], {
+    cwd: path.join(repoRoot, dir),
     env: {
       ...process.env,
       PORT: String(env.port),
@@ -212,16 +220,21 @@ type RunResult = {
   peakRssBytes: number;
 };
 
-async function runForClientCount(clientCount: number, seconds: number): Promise<RunResult> {
+async function runForClientCount(
+  clientCount: number,
+  seconds: number,
+  relayName: string,
+): Promise<RunResult> {
   const port = await freePort();
   // room/socket caps default to 128/10000; the socket cap is raised only when clientCount needs it,
-  // and the rate cap stays at the shipped default (40 burst / 20 per second) unless explicitly raised
+  // and the rate cap stays at the shipped default (80 burst / 40 per second)
   const relay = startRelay({
+    relay: relayName,
     port,
     maxRoomSockets: Math.max(128, clientCount + 8),
     maxTotalSockets: Math.max(10_000, clientCount + 8),
-    rateCapacity: 40,
-    rateRefillPerSecond: 20,
+    rateCapacity: 80,
+    rateRefillPerSecond: 40,
   });
   if (relay.pid === undefined) throw new Error("relay did not start (no pid)");
   await waitForPort(port, 15_000);
@@ -349,12 +362,12 @@ async function runForClientCount(clientCount: number, seconds: number): Promise<
 }
 
 async function main(): Promise<void> {
-  const { clientCounts, seconds } = parseArgs(process.argv.slice(2));
+  const { clientCounts, seconds, relay } = parseArgs(process.argv.slice(2));
 
-  console.log(`relay-load: clients=${clientCounts.join(",")} seconds=${seconds} room=${ROOM}`);
+  console.log(`relay-load: relay=${relay} clients=${clientCounts.join(",")} seconds=${seconds} room=${ROOM}`);
   console.log(
     "note: room/socket caps raised to fit the client count under test (RELAY_MAX_ROOM_SOCKETS," +
-      " RELAY_MAX_TOTAL_SOCKETS); the rate limit stays at the shipped default (40 burst, 20/s refill)." +
+      " RELAY_MAX_TOTAL_SOCKETS); the rate limit stays at the shipped default (80 burst, 40/s refill)." +
       " closeCodes below shows whether a drop came from a forced disconnect (slow-peer 4003, room/server" +
       " full) or from the relay's event loop simply falling behind while every socket stayed open.",
   );
@@ -368,7 +381,7 @@ async function main(): Promise<void> {
   const results: RunResult[] = [];
   for (const clientCount of clientCounts) {
     console.log(`\nrunning N=${clientCount} for ${seconds}s...`);
-    const result = await runForClientCount(clientCount, seconds);
+    const result = await runForClientCount(clientCount, seconds, relay);
     results.push(result);
     console.log(
       `N=${clientCount}: sent/s=${result.sentPerSec.toFixed(0)} delivered/s=${result.deliveredPerSec.toFixed(0)}` +

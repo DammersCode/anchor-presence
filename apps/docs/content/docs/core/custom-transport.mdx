@@ -1,17 +1,18 @@
 ---
 title: Custom transport
 description: Write a transport for BroadcastChannel or a managed real-time service.
+icon: plug
 ---
 
-If your app already has a byte channel, write your own transport. Do the same for a managed real-time service. A transport only moves bytes. It never checks or reads them.
+import { AppWindow, Cable, MemoryStick, Server } from "lucide-react";
+
+A custom transport connects the client to a byte channel that the packages do not ship, for example the SDK of a managed real-time service. A transport only moves bytes. It never checks or reads them.
 
 If your app uses Socket.IO or SignalR, use the [Socket.IO](/docs/examples/backends/socketio) or [SignalR](/docs/examples/backends/signalr) example. You do not need to write a transport.
 
 ## BroadcastChannel sketch
 
-`BroadcastChannel` sends messages between browsing contexts (tabs, iframes, workers) on the same origin. It never crosses a network. As a result, it fits demos and multi-tab apps on one origin, not presence over the internet.
-
-`@anchor-presence/dom` ships `createBroadcastChannelTransport` for this channel. This sketch shows the parts of a transport on a smaller version of it:
+`BroadcastChannel` sends messages between browsing contexts (tabs, iframes, workers) on the same origin. It never crosses a network. This sketch shows the parts of a transport on a small version of [`createBroadcastChannelTransport`](/docs/dom/broadcast-channel-transport), which `@anchor-presence/dom` ships:
 
 ```ts
 import type { ConnectionStatus, LiveCursorTransport } from "@anchor-presence/core";
@@ -48,15 +49,23 @@ function createBroadcastChannelTransport(channelName: string): LiveCursorTranspo
 }
 ```
 
-`BroadcastChannel` delivers structured-cloned values. As a result, it can carry a `Uint8Array` directly, with no base64 step.
+`BroadcastChannel` delivers structured-cloned values. As a result, it carries a `Uint8Array` with no base64 step.
 
-## Managed real-time services
+## Wrap a managed service
 
-A managed service is a hosted pub/sub or a serverless WebSocket gateway. Its SDK has a `send` method and a message event. Wrap that SDK in the same way:
+A managed service is a hosted pub/sub or a serverless WebSocket gateway. Its SDK has a `send` method and a message event. Wrap the SDK in a transport object:
 
-- Forward `send` calls to the SDK.
-- Forward the message event of the SDK to the `subscribe` listeners.
-- Map the connection events of the SDK to `ConnectionStatus`.
+<Steps>
+  <Step>Forward each `send` call to the SDK.</Step>
+  <Step>Forward each message event of the SDK to the `subscribe` listeners.</Step>
+  <Step>
+    Map the connection events of the SDK to `ConnectionStatus`, and replay the current status to each new
+    `subscribeStatus` listener.
+  </Step>
+  <Step>
+    If the SDK reports close codes, implement `subscribeClose`. See [Close reasons](#close-reasons).
+  </Step>
+</Steps>
 
 <Callout type="warn">
   If the SDK delivers text or JSON instead of bytes, convert at the transport boundary. Each `subscribe`
@@ -65,7 +74,7 @@ A managed service is a hosted pub/sub or a serverless WebSocket gateway. Its SDK
 
 ## Close reasons
 
-A transport can report why a connection closed through the optional `subscribeClose` method. Keep a set of listeners, and call each one from the close handler of your socket:
+A transport reports why a connection closed through the optional `subscribeClose` method. Keep a set of listeners, and call each one from the close handler of your socket:
 
 ```ts
 import type { TransportClose } from "@anchor-presence/core";
@@ -85,7 +94,7 @@ function onSocketClose(event: CloseEvent, willReconnect: boolean) {
 }
 ```
 
-Return `subscribeClose` on the transport object. When the transport schedules another attempt, set `willReconnect` to `true`. Otherwise, set it to `false`. `client.subscribeClose` then receives each close. See [Close reasons](/docs/core/transports#close-reasons).
+Return `subscribeClose` on the transport object. Set `willReconnect` to `true` when the transport schedules another attempt, and to `false` otherwise. `client.subscribeClose` then receives each close. See [Close reasons](/docs/core/transports#close-reasons).
 
 ## Test a custom transport
 
@@ -93,14 +102,25 @@ Do a test of your transport with these cases:
 
 - A connect.
 - A send while the transport is connected.
-- A send while the transport is disconnected.
+- A send while the transport is disconnected. The browser transports drop this send.
 - A status change with no active subscriber.
+- A `subscribeStatus` call after the connection opened. The listener must receive `connected` at once.
 
-`createInMemoryPair` implements the required methods of the contract. It has no `subscribeClose` and no `bufferedBytes`. It also delivers a send while its side is disconnected. See [In-memory transport](/docs/core/in-memory-transport).
+`createInMemoryPair` is not a reference for the disconnected case: it delivers a send while its side is disconnected. See [In-memory transport](/docs/core/in-memory-transport#limits).
 
 ## Related
 
-- [Transports](/docs/core/transports)
-- [In-memory transport](/docs/core/in-memory-transport)
-- [WebSocket transport](/docs/dom/websocket-transport)
-- [Backends](/docs/examples/backends)
+<Cards>
+  <Card icon={<Cable />} title="Transports" href="/docs/core/transports">
+    The full transport contract.
+  </Card>
+  <Card icon={<AppWindow />} title="BroadcastChannel transport" href="/docs/dom/broadcast-channel-transport">
+    The shipped version of the sketch.
+  </Card>
+  <Card icon={<MemoryStick />} title="In-memory transport" href="/docs/core/in-memory-transport">
+    Two transports in one process, for tests.
+  </Card>
+  <Card icon={<Server />} title="Backends" href="/docs/examples/backends">
+    Relays and transports for other servers.
+  </Card>
+</Cards>

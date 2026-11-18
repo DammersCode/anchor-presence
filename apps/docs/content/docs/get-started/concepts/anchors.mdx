@@ -1,55 +1,62 @@
 ---
 title: Anchors
-description: Semantic anchors, anchor IDs, and normalized u/v coordinates.
+description: Mark elements as anchors, choose anchor IDs, and read the u/v position.
+icon: anchor
 ---
 
-An anchor is a DOM element with a stable ID. A cursor position names an anchor and a normalized position inside it.
+import { LayoutDashboard, Scaling, ShieldCheck, Waypoints } from "lucide-react";
 
-## Semantic anchors
+An anchor is an element that a remote cursor can point at. Each anchor has a stable ID. The sender sends the ID and a point inside the anchor, and the receiver finds its own element with the same ID. Put anchors on the elements that matter to your users: a button, a table row, a sidebar link.
 
-A semantic anchor is a DOM element that the application marks with a stable string ID. Anchors mark locations that matter: a button, a table row, or a sidebar link.
+## Mark an anchor
 
-The sender expresses cursor position relative to an anchor, not as an absolute screen coordinate. The receiver measures its own copy of that anchor and places the cursor there.
-
-Mark an anchor with the configured anchor attribute. The default attribute is `data-anchor`:
+Add the `data-anchor` attribute. Its value is the anchor ID:
 
 ```tsx
 <button data-anchor="nav.dashboard">Dashboard</button>
 ```
 
-A binding can use another attribute through `anchorAttribute`. See [`DomBindingOptions`](/docs/dom/api/binding).
+The binding finds and registers every element with the attribute. It needs no other call. To use another attribute name, set `anchorAttribute` in [`DomBindingOptions`](/docs/dom/api/binding). [Anchor registration](/docs/dom/anchor-registration) explains automatic registration, empty values, and shadow DOM.
 
 ## Anchor IDs
 
-An anchor ID is an opaque string, 1 to 256 characters. Choose your own naming scheme, for example `nav.dashboard`, `stats.revenue`, or `orders.row:17.actions`.
+An anchor ID is a string of 1 to 256 characters. The library gives it no meaning, so you choose the naming scheme. Examples are `nav.dashboard`, `stats.revenue`, and `orders.row:17.actions`.
 
-Anchor IDs are map keys only. They never become CSS selectors, query strings, or code. A remote message can only address an element in the registered anchor map. See [Security](/docs/get-started/guides/security).
+- Give one element the same ID in every layout and every UI state. Then the receiver always finds it.
+- Do not create a new ID on each render for the same element.
+- If two elements use one ID, the newest element wins. See [Duplicate IDs](/docs/dom/anchor-registration#duplicate-ids).
 
-If two elements register the same ID, the newest one wins. See [Duplicate IDs](/docs/dom/anchor-registration#duplicate-ids) for the reason and the development-mode warning.
+Anchor IDs are map keys only. They never become CSS selectors or code. A remote message can only address an element that your app registered. See [Security](/docs/get-started/guides/security#why-anchor-ids-never-touch-selectors).
 
 ## Normalized u/v coordinates
 
-Each anchor point carries `u` and `v`, both in the range 0 to 1.
+The position inside an anchor has two numbers, `u` and `v`, from 0 to 1:
 
-- `u` is the horizontal position across the anchor's width: 0 at the left edge, 1 at the right edge.
-- `v` is the vertical position across the anchor's height: 0 at the top edge, 1 at the bottom edge.
+- `u` is the horizontal position: 0 at the left edge, 1 at the right edge.
+- `v` is the vertical position: 0 at the top edge, 1 at the bottom edge.
 
-The sender computes `u` and `v` from its own anchor rectangle:
+The sender computes them from its own rectangle of the anchor:
 
 ```text
 u = (pointerX - rect.left) / rect.width
 v = (pointerY - rect.top) / rect.height
 ```
 
-The receiver reverses the formula against its own anchor rectangle to place the cursor. See [Resolution](/docs/dom/resolution) for the pixel formula.
-
-Both sides use a proportion of the anchor's own size. A 75% mark stays a 75% mark, even if the anchor is a different width or height on each client. See [Responsive layouts](/docs/get-started/concepts/responsive-layouts) for a worked example.
-
-The receiver clamps `u` and `v` to `[0, 1]` during validation. See [Security](/docs/get-started/guides/security).
+The receiver applies the same fraction to its own rectangle of the anchor. A point at 75% of the width stays at 75%, even if the anchor has a different size on each screen. [Responsive layouts](/docs/get-started/concepts/responsive-layouts) shows a worked example. [Resolution](/docs/dom/resolution) gives the pixel formula. The receiver clamps `u` and `v` to the range 0 to 1.
 
 ## Related
 
-- [Fallback chain](/docs/get-started/concepts/fallback-chain)
-- [Resolution](/docs/dom/resolution)
-- [Responsive layouts](/docs/get-started/concepts/responsive-layouts)
-- [Security](/docs/get-started/guides/security)
+<Cards>
+  <Card icon={<Waypoints />} title="Fallback chain" href="/docs/get-started/concepts/fallback-chain">
+    What happens when the receiver has no element for an ID.
+  </Card>
+  <Card icon={<Scaling />} title="Responsive layouts" href="/docs/get-started/concepts/responsive-layouts">
+    The same point on two different layouts.
+  </Card>
+  <Card icon={<LayoutDashboard />} title="Layout design" href="/docs/get-started/guides/layout-design">
+    Where to put anchors so that cursors stay steady.
+  </Card>
+  <Card icon={<ShieldCheck />} title="Security" href="/docs/get-started/guides/security">
+    Why a remote anchor ID is safe.
+  </Card>
+</Cards>

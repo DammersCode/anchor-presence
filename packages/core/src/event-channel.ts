@@ -35,7 +35,7 @@ export function createEventChannel<TEvents extends object>(
 }
 
 /** One data parser per event type. A parser returns the checked data, or `undefined` to drop the event. Use `null` for an event without data. */
-export type EventParsers<TEvents extends EventMap> = {
+export type EventParsers<TEvents extends object> = {
   [K in keyof TEvents & string]:
     ((data: unknown) => TEvents[K] | undefined) | (undefined extends TEvents[K] ? null : never);
 };
@@ -44,7 +44,7 @@ export type EventParsers<TEvents extends EventMap> = {
  * Builds a `parseEvent` option from one data parser per event type.
  * The client drops an event with an unknown type, data that its parser rejects, or data where the parser is `null`.
  */
-export function createEventParser<TEvents extends EventMap>(
+export function createEventParser<TEvents extends object>(
   parsers: EventParsers<TEvents>,
 ): (event: RemoteEvent) => TypedRemoteEvent<TEvents> | undefined {
   return (event) => {

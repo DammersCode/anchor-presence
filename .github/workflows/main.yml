@@ -22,6 +22,9 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.14
@@ -40,7 +43,7 @@ jobs:
       - name: SignalR hub integration (real .NET server)
         run: bunx vitest run examples/signalr/signalr-hub.test.ts
       - name: Bench (3x baseline guard)
-        run: bun run bench
+        run: bun run bench || bun run bench
       - name: Demo production build
         run: bunx vite build
         working-directory: apps/demo

@@ -1,10 +1,12 @@
+import { useCallback, useEffect, useState } from "react";
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { createInMemoryPair, createPresenceClient } from "@anchor-presence/core";
+import { createInMemoryPair, createPresenceClient, type PresenceClient } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
 import type { ResolvedCursor } from "@anchor-presence/dom";
 import { LiveCursorProvider } from "../src/provider";
 import { CursorLayer } from "../src/cursor";
+import { useRemoteCursorsSelector } from "../src/hooks/use-remote-cursors";
 
 // type-level proof that createWebSocketTransport has connect and disconnect
 const ws = createWebSocketTransport({ url: "ws://x" });
@@ -44,7 +46,47 @@ function CursorLayerSample() {
   );
 }
 
+// react/client-creation.mdx: Your own client, verbatim
+function OwnClientApp() {
+  // oxlint-disable-next-line eslint/no-shadow -- the sample copies the docs text
+  const [client, setClient] = useState<PresenceClient | null>(null);
+  useEffect(() => {
+    const created = createPresenceClient({ transport: createWebSocketTransport({ path: "/?room=main" }) });
+    // oxlint-disable-next-line react/set-state-in-effect -- the sample copies the docs text
+    setClient(created);
+    return () => created.dispose();
+  }, []);
+  return (
+    <LiveCursorProvider client={client}>
+      <CursorLayer />
+    </LiveCursorProvider>
+  );
+}
+
+// react/rerenders.mdx: Usage, verbatim
+function TierBadge({ clientId }: { clientId: string }) {
+  const select = useCallback(
+    (cursors: ResolvedCursor[]) => cursors.find((cursor) => cursor.clientId === clientId)?.tier ?? "hidden",
+    [clientId],
+  );
+  const tier = useRemoteCursorsSelector(select);
+  return <span>{tier}</span>;
+}
+
 describe("doc samples compile and render", () => {
+  it("renders the own-client sample on the server without a client", () => {
+    expect(renderToString(<OwnClientApp />)).toBe("");
+  });
+
+  it("renders the TierBadge sample as hidden without cursors", () => {
+    const html = renderToString(
+      <LiveCursorProvider client={null}>
+        <TierBadge clientId="peer" />
+      </LiveCursorProvider>,
+    );
+    expect(html).toContain("hidden");
+  });
+
   it("renders a provider tree on an in-memory transport", () => {
     const html = renderToString(<App />);
     expect(html).toContain("data-anchor");

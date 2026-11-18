@@ -32,6 +32,28 @@ describe("createBroadcastChannelTransport", () => {
     expect(seenByA).toEqual([]);
   });
 
+  it("ignores payloads that are not byte views and keeps delivering", async () => {
+    const { a, b } = pair();
+    const seen: number[][] = [];
+    b.subscribe((data) => seen.push([...data]));
+    const raw = new BroadcastChannel((a as unknown as { name?: string }).name ?? "");
+    raw.close();
+    void a.send(new Uint8Array([7]));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(seen).toEqual([[7]]);
+  });
+
+  it("delivers again after a disconnect and reconnect", async () => {
+    const { a, b } = pair();
+    const seen: number[][] = [];
+    b.subscribe((data) => seen.push([...data]));
+    void b.disconnect();
+    void b.connect();
+    void a.send(new Uint8Array([9]));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(seen).toEqual([[9]]);
+  });
+
   it("reports its status and sends nothing before connect", () => {
     const transport = createBroadcastChannelTransport(`test-${Math.random()}`);
     open.push(transport);

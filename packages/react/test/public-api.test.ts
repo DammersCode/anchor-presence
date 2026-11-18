@@ -21,6 +21,7 @@ describe("@anchor-presence/react public runtime API", () => {
       "useRemoteCursorsSelector",
       "useRemotePresence",
       "useRemoteUsers",
+      "useSendEvent",
     ]);
   });
 });

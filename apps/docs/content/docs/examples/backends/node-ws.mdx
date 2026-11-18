@@ -1,9 +1,12 @@
 ---
 title: Node.js (ws)
 description: A room-broadcast relay built on the ws package over node:http.
+icon: hexagon
 ---
 
-You want a relay that runs on plain Node, not Bun, with a well-known WebSocket library. This example uses [`ws`](https://github.com/websockets/ws) over `node:http`, with each room kept as a plain `Set<WebSocket>`.
+import { Cable, FileCheck, Flame, Zap } from "lucide-react";
+
+You want a relay that runs on plain Node.js, with a well-known WebSocket library. This example uses [`ws`](https://github.com/websockets/ws) over `node:http`. The relay keeps each room as a `Set` of sockets and sends to each one. As a result, it can skip sends to a slow receiver.
 
 ## Install
 
@@ -14,37 +17,44 @@ bun add @anchor-presence/core @anchor-presence/dom ws
 bun add -D @types/ws
 ```
 
-## Client
+## Code
 
-The client needs no custom transport. It connects with the native `createWebSocketTransport`:
+The client connects with `createWebSocketTransport`. The server file exports a factory, and the entry file starts it:
 
-```tsx
-import { createPresenceClient } from "@anchor-presence/core";
-import { createWebSocketTransport } from "@anchor-presence/dom";
+<Tabs items={["Client", "Server", "Entry file"]}>
+  <Tab value="Client">
+    The client needs no custom transport:
 
-const transport = createWebSocketTransport({ port: 8789, path: "/?room=main" });
-const client = createPresenceClient({ transport });
-```
+    ```tsx
+    import { createPresenceClient } from "@anchor-presence/core";
+    import { createWebSocketTransport } from "@anchor-presence/dom";
 
-## Server
+    const transport = createWebSocketTransport({ port: 8789, path: "/?room=main" });
+    const client = createPresenceClient({ transport });
+    ```
 
-The server file exports a factory that starts the relay:
+  </Tab>
+  <Tab value="Server">
+    The factory imports the [shared guard helpers](/docs/examples/backends#shared-guard-helpers):
 
 <CodeFromSource repo="examples/node-ws/server.ts" lang="ts" />
 
-The server imports the shared guard helpers. See [Shared guard helpers](/docs/examples/backends#shared-guard-helpers).
-
-## Run it
-
-The entry file calls the factory once and logs the URL:
+  </Tab>
+  <Tab value="Entry file">
+    The entry file calls the factory once and logs the URL:
 
 <CodeFromSource repo="examples/node-ws/relay.ts" lang="ts" />
 
-Start the entry file with Bun, or with a TypeScript runner on Node:
+  </Tab>
+</Tabs>
+
+## Run it
+
+Start the entry file with Bun, or with a TypeScript runner on Node.js:
 
 ```sh
 bun relay.ts
-# On Node:
+# On Node.js:
 npx tsx relay.ts
 ```
 
@@ -52,17 +62,46 @@ The relay listens on `http://localhost:8789`. To use a different port, give the 
 
 ## Behavior notes
 
-- **Room name validation.** The relay reads the room from the `room` query parameter. `parseRoom` caps room names at 256 characters and restricts them to `[A-Za-z0-9_-]`. A missing name is `main`. An invalid name closes the socket with code `4007`.
-- **Upgrade path.** The relay accepts the upgrade only at `/`. It answers any other path with HTTP `404`.
-- **Max payload size.** The message handler drops a message above `MAX_MESSAGE_BYTES` (default 32 KiB) and keeps the connection open. The `maxPayload` option of `ws` is a hard limit at four times that size, or at least 1 MiB. Above it, `ws` closes the connection.
-- **Per-connection rate limit.** A token bucket (a counter that refills at a fixed rate) limits inbound messages per socket (`RATE_CAPACITY`, default 80, and `RATE_REFILL_PER_SECOND`, default 40).
-- **Origin allowlist.** `RELAY_ALLOWED_ORIGINS` is a comma-separated list of allowed origins. Leave it empty for local development. The relay then accepts every origin. The relay accepts the upgrade of a foreign origin and then closes the socket with code `4004`.
-- **Connection check.** Pass an `authCheck` function to check each connection. Without it, set `RELAY_AUTH_TOKEN`. The relay then compares the [room token](/docs/dom/websocket-transport#room-token) of each connection with that value.
-- **Identity binding.** If `authCheck` returns `{ clientId, user }`, the relay writes that identity into every JSON frame of the connection. See [Identity binding](/docs/examples/backends#identity-binding).
-- **Room cleanup.** The relay drops a room's entry once its last socket closes.
-- **Connection caps.** `RELAY_MAX_ROOM_SOCKETS` (default 64) limits one room. `RELAY_MAX_TOTAL_SOCKETS` (default 10,000) limits the process. Above either cap, the relay closes the new socket with code `4001` (room full) or `4002` (server full).
-- **Dead connections.** The relay sends a ping to each socket at an interval of half `RELAY_IDLE_TIMEOUT_SECONDS` (default 60, so every 30 seconds). It terminates a socket that did not answer the previous ping.
-- **Slow receivers.** `ws` exposes `bufferedAmount` per socket. The relay skips sends above `RELAY_SLOW_PEER_SOFT_BYTES` (default 1 MiB). It closes the connection with code `4003` above `RELAY_SLOW_PEER_HARD_BYTES` (default 8 MiB).
+Each setting is an environment variable. The factory options `maxMessageBytes`, `rateCapacity`, `rateRefillPerSecond`, `maxRoomSockets`, `maxSockets`, `idleTimeoutSeconds`, `slowPeerSoftBytes`, `slowPeerHardBytes`, `slowPeerResumeBytes`, `allowedOrigins` and `authCheck` override them.
+
+### What the relay does
+
+| Topic            | Behavior                                                                                                                                           |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Room             | Reads `room` from the query. A missing value is `main`. An invalid name closes the socket with code `4007`.                                        |
+| Upgrade path     | Accepts the upgrade only at `/`. Any other path gets HTTP `404`.                                                                                   |
+| Fan-out          | Sends to every other open socket in the room `Set`.                                                                                                |
+| Payload          | Forwards each frame unchanged. Decodes a frame only for identity binding.                                                                          |
+| Dead connections | Pings each socket every half of `RELAY_IDLE_TIMEOUT_SECONDS` (60, so every 30 seconds). Terminates a socket that did not answer the previous ping. |
+| Room cleanup     | Drops the room entry when its last socket closes.                                                                                                  |
+
+### Limits
+
+The rate limit is a token bucket: a socket can send a burst of 80 messages, then 40 messages per second.
+
+| Limit               | Setting (default)                                                 | Above the limit                                                                 |
+| ------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| Message size        | `MAX_MESSAGE_BYTES` (32 KiB)                                      | Drops the message. The socket stays open.                                       |
+| Hard frame size     | The `maxPayload` of `ws`: 4 × `MAX_MESSAGE_BYTES`, at least 1 MiB | `ws` closes the connection.                                                     |
+| Message rate        | `RATE_CAPACITY` (80) and `RATE_REFILL_PER_SECOND` (40)            | Drops the message. The socket stays open.                                       |
+| Sockets in one room | `RELAY_MAX_ROOM_SOCKETS` (64)                                     | Closes the new socket with code `4001`.                                         |
+| Sockets in total    | `RELAY_MAX_TOTAL_SOCKETS` (10,000)                                | Closes the new socket with code `4002`.                                         |
+| Slow receiver, soft | `RELAY_SLOW_PEER_SOFT_BYTES` (1 MiB)                              | Skips sends until the buffer is below `RELAY_SLOW_PEER_RESUME_BYTES` (512 KiB). |
+| Slow receiver, hard | `RELAY_SLOW_PEER_HARD_BYTES` (8 MiB)                              | Closes the receiver with code `4003`.                                           |
+
+The relay reads the send buffer of a receiver from `bufferedAmount`.
+
+### Auth
+
+| Check            | Setting                                                                              | On refusal                                                         |
+| ---------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| Origin           | `RELAY_ALLOWED_ORIGINS`, comma-separated. Empty allows every origin.                 | Upgrades, then closes with code `4004`.                            |
+| Room token       | `RELAY_AUTH_TOKEN`. Compares the `token` query parameter. Empty turns the check off. | Closes with code `4006`.                                           |
+| `authCheck` hook | Factory option. Replaces the room token check.                                       | Closes with code `4006` on `false` or an error.                    |
+| Identity binding | `authCheck` returns `{ clientId, user }`.                                            | Drops a frame that is not a JSON object.                           |
+| Check order      | Origin, then the hook, then room name.                                               | The hook runs for an invalid room name, with `room` set to `main`. |
+
+See [Identity binding](/docs/examples/backends#identity-binding) for the demo identity mode.
 
 <Callout type="warn">
   If you expose this relay outside local development, set `RELAY_ALLOWED_ORIGINS` and `RELAY_AUTH_TOKEN`. Also
@@ -72,6 +111,17 @@ The relay listens on `http://localhost:8789`. To use a different port, give the 
 
 ## Related
 
-- [Bun](/docs/examples/backends/bun-native)
-- [Hono](/docs/examples/backends/hono)
-- [Elysia](/docs/examples/backends/elysia)
+<Cards>
+  <Card icon={<Zap />} title="Bun" href="/docs/examples/backends/bun-native">
+    The same relay on Bun topics, with no dependency.
+  </Card>
+  <Card icon={<Flame />} title="Hono" href="/docs/examples/backends/hono">
+    The same room loop with Hono routes on Bun.
+  </Card>
+  <Card icon={<FileCheck />} title="Relay contract" href="/docs/examples/backends/relay-contract">
+    The rules, the close codes, and the conformance suite.
+  </Card>
+  <Card icon={<Cable />} title="WebSocket transport" href="/docs/dom/websocket-transport">
+    The client transport: reconnect, backoff, and room tokens.
+  </Card>
+</Cards>

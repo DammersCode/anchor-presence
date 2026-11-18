@@ -309,3 +309,39 @@ describe("extra docs samples", () => {
     );
   });
 });
+
+describe("default cursor appearance", () => {
+  function luminance(hex: string): number {
+    const channels = [1, 3, 5].map((index) => {
+      const value = Number.parseInt(hex.slice(index, index + 2), 16) / 255;
+      return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+    });
+    return 0.2126 * channels[0]! + 0.7152 * channels[1]! + 0.0722 * channels[2]!;
+  }
+
+  it("keeps every default palette color readable under a white label", async () => {
+    const source = (await import("node:fs")).readFileSync("packages/react/src/cursor.tsx", "utf8");
+    const palette = source.match(/DEFAULT_PALETTE = \[([^\]]+)\]/u)?.[1]?.match(/#[0-9a-f]{6}/gu) ?? [];
+    expect(palette.length).toBe(8);
+    for (const color of palette) expect(1.05 / (luminance(color) + 0.05)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("cuts a long user name in the default label", () => {
+    const { client } = makeFakeClient();
+    const { binding, publish } = makeFakeBinding();
+    const host = document.createElement("div");
+    document.body.append(host);
+    const root = createRoot(host);
+    act(() =>
+      root.render(
+        <LiveCursorProvider client={client} binding={binding}>
+          <CursorLayer />
+        </LiveCursorProvider>,
+      ),
+    );
+    act(() => publish([{ ...makeCursor("a"), user: { name: "x".repeat(500) } }]));
+    expect(host.textContent?.length).toBeLessThanOrEqual(32);
+    act(() => root.unmount());
+    host.remove();
+  });
+});

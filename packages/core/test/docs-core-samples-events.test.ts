@@ -99,6 +99,26 @@ describe("presence-client.mdx: event rate limit", () => {
   });
 });
 
+describe("presence-client.mdx: create a client", () => {
+  it("runs from creation to dispose and leaves no peer behind", () => {
+    const { a, b } = createInMemoryPair();
+    const myTransport = a;
+    const peer = createPresenceClient({ transport: b });
+
+    const client = createPresenceClient({ transport: myTransport, user: { name: "Ada" } });
+
+    client.setLocalCursor({ anchors: [{ id: "doc", u: 0.5, v: 0.5 }] });
+    const unsubscribe = client.subscribeRemote(() => console.log(client.getRemotePresence()));
+
+    client.dispose();
+
+    expectTypeOf(unsubscribe).toEqualTypeOf<() => void>();
+    vi.advanceTimersByTime(100);
+    expect(peer.getRemotePresence()).toEqual([]);
+    peer.dispose();
+  });
+});
+
 describe("presence-client.mdx: typed events", () => {
   it("sends typed events, and the parser drops data that does not fit the map", () => {
     const { a, b } = createInMemoryPair();
@@ -211,6 +231,7 @@ describe("doc sample sources", () => {
       .join("\n");
     const samples = [
       docSample("core/presence-client.mdx", "eventRateLimit: { burst: 40"),
+      docSample("core/presence-client.mdx", 'user: { name: "Ada" } });'),
       docSample("core/presence-client.mdx", "createEventParser<Events>"),
       docSample("core/api/client.mdx", "type EventMap"),
       docSample("core/api/client.mdx", "type EventParsers"),

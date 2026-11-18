@@ -1,9 +1,21 @@
 ---
 title: Visibility policy
 description: VisibilityPolicy, the default policy, how to write a custom one, and when to run it again.
+icon: eye
 ---
 
-A `VisibilityPolicy` decides whether a resolved cursor renders. A peer is another client in the same room. Each time the resolver resolves the cursors, it calls the policy once per peer. It calls the policy after it computes the tier and the occlusion state of the point.
+import { Braces, Crosshair, Layers, Webhook } from "lucide-react";
+
+A `VisibilityPolicy` is a function that decides whether a resolved cursor renders. It returns `"show"` or `"hide"`, and the result goes into `ResolvedCursor.visible`. A custom policy can hide cursors by role, by UI mode, or for a point that a scroll container clips.
+
+This policy hides the cursors of staff users:
+
+```ts
+import type { VisibilityPolicy } from "@anchor-presence/dom";
+
+const hideStaffCursors: VisibilityPolicy<{ role: string }> = ({ presence }) =>
+  presence.context?.role === "staff" ? "hide" : "show";
+```
 
 ## The default policy
 
@@ -14,22 +26,16 @@ const defaultVisibilityPolicy: VisibilityPolicy = ({ resolution }) =>
   resolution.tier === "hidden" ? "hide" : "show";
 ```
 
-`@anchor-presence/dom` does not export the default policy. The default policy hides a cursor only when nothing resolved. It shows an `anchor` or `viewport` tier cursor even when the point sits in a clipped, scrolled-away region. See [Occlusion and scroll](/docs/dom/occlusion-and-scroll) for a policy that also hides a clipped point.
+`@anchor-presence/dom` does not export the default policy. The default policy hides a cursor only when nothing resolved. It shows an `anchor` or `viewport` tier cursor even when the point sits in a clipped region. See [Occlusion and scroll](/docs/dom/occlusion-and-scroll) for a policy that also hides a clipped point.
 
 ## Write a custom policy
 
-A policy receives the full presence, including `context` and `user`, and the resolution result. The first type parameter of `VisibilityPolicy` is the context type. This policy hides the cursors of staff users:
+Each time the resolver resolves the cursors, it calls the policy once for each peer. A peer is another client in the same room. The policy receives two values:
 
-```ts
-import type { VisibilityPolicy } from "@anchor-presence/dom";
+- `presence`: the full presence of the peer, with its `context` and `user`.
+- `resolution`: the `tier`, the winning `anchorId`, and `pointVisible`.
 
-const hideStaffCursors: VisibilityPolicy<{ role: string }> = ({ presence }) =>
-  presence.context?.role === "staff" ? "hide" : "show";
-```
-
-The sender sets `context`, and nothing authenticates it. A policy hides a cursor on the receiver. It does not enforce a permission. See [Security](/docs/get-started/guides/security).
-
-Pass the policy through `resolution.visibilityPolicy`. The client must have the same context type as the policy:
+The first type parameter of `VisibilityPolicy` is the context type, and the second is the user type. Pass the policy through `resolution.visibilityPolicy`. The client must have the same context type as the policy:
 
 ```ts
 import { createPresenceClient } from "@anchor-presence/core";
@@ -41,9 +47,13 @@ const binding = createDomBinding(client, {
 });
 ```
 
-## What the policy can decide
+<Callout type="warn">
+  If you use a policy for access control, it gives no protection. The sender sets `context`, and nothing
+  authenticates it. A policy only hides a cursor on the receiver. See
+  [Security](/docs/get-started/guides/security).
+</Callout>
 
-The policy runs after tier resolution. It can act on the resolution tier, the winning anchor ID, or whether the point sits in a visible region (`pointVisible`). It can also read the `context` and `user` values of the sender. One use is to hide cursors for a role, a permission, or a UI mode that the state of the receiver defines. See [UI context](/docs/get-started/concepts/ui-context).
+See [UI context](/docs/get-started/concepts/ui-context) for policies that compare the UI state of the sender and the receiver.
 
 ## Run the policy again after a state change
 
@@ -66,7 +76,7 @@ function setOpenDialog(next: string | null) {
 }
 ```
 
-In React, `useCursorBinding` returns the binding of the nearest `LiveCursorProvider`. This component writes the open dialog into the variable of the policy. Then it calls `invalidate`:
+In React, `useCursorBinding` returns the binding of the nearest `LiveCursorProvider`. This component writes the open dialog into the variable of the policy, then calls `invalidate`:
 
 ```tsx
 import { useEffect } from "react";
@@ -82,11 +92,21 @@ function SyncOpenDialog({ dialog }: { dialog: string | null }) {
 }
 ```
 
-See [invalidate](/docs/dom/binding#invalidate) for what an `invalidate` call does.
+If a policy throws, the binding keeps the last snapshot. See [Errors in a policy or interpolator](/docs/dom/binding#errors-in-a-policy-or-interpolator).
 
 ## Related
 
-- [Resolution](/docs/dom/resolution)
-- [Occlusion and scroll](/docs/dom/occlusion-and-scroll)
-- [Resolution types](/docs/dom/api/resolution)
-- [Hooks API](/docs/react/api/hooks#usecursorbinding)
+<Cards>
+  <Card icon={<Crosshair />} title="Resolution" href="/docs/dom/resolution">
+    The tiers that the policy reads.
+  </Card>
+  <Card icon={<Layers />} title="Occlusion and scroll" href="/docs/dom/occlusion-and-scroll">
+    Hide a cursor that a scroll container clips.
+  </Card>
+  <Card icon={<Braces />} title="Resolution types" href="/docs/dom/api/resolution">
+    The type of `VisibilityPolicy`.
+  </Card>
+  <Card icon={<Webhook />} title="useCursorBinding" href="/docs/react/api/hooks#usecursorbinding">
+    The React hook that returns the binding.
+  </Card>
+</Cards>

@@ -1,9 +1,12 @@
 ---
 title: Components API
 description: Prop types for LiveCursorProvider, CursorLayer, and DefaultCursor, and the LiveCursorContext value.
+icon: component
 ---
 
-`@anchor-presence/react` exports the components below, with these prop types. See [LiveCursorProvider](/docs/react/live-cursor-provider), [CursorLayer](/docs/react/cursor-layer), and [Custom cursors](/docs/react/custom-cursors) for prose and examples.
+import { Braces, MousePointer2, Paintbrush, Plug } from "lucide-react";
+
+This page lists the props of every component in `@anchor-presence/react`, and the value of `LiveCursorContext`. Use it to look up a prop type. For usage and examples, read the guide page that each section links to.
 
 ## LiveCursorProvider
 
@@ -15,7 +18,7 @@ import { LiveCursorProvider } from "@anchor-presence/react";
 
 <AutoTypeTable path="../../packages/react/src/provider.tsx" name="LiveCursorProviderProps" />
 
-See [Rebuild the binding](/docs/react/live-cursor-provider#rebuild-the-binding) for `bindingKey` and [Switch rooms](/docs/react/live-cursor-provider#switch-rooms) for `clientKey`. For a provider with your types fixed, see [Typed hooks](/docs/react/typed-hooks).
+Guide: [LiveCursorProvider](/docs/react/live-cursor-provider). For `bindingKey`, see [Rebuild the binding](/docs/react/live-cursor-provider#rebuild-the-binding). For `clientKey`, see [Switch rooms](/docs/react/live-cursor-provider#switch-rooms).
 
 ## CursorLayer
 
@@ -26,6 +29,8 @@ import { CursorLayer } from "@anchor-presence/react";
 ```
 
 <AutoTypeTable path="../../packages/react/src/cursor.tsx" name="CursorLayerProps" />
+
+`CursorLayer` takes the type parameters `<TContext, TUser>`, for example `<CursorLayer<unknown, MyUser> />`. Guide: [CursorLayer](/docs/react/cursor-layer).
 
 `CursorRenderProps` is the shape that `renderCursor` receives:
 
@@ -41,6 +46,8 @@ import { DefaultCursor } from "@anchor-presence/react";
 
 <AutoTypeTable path="../../packages/react/src/cursor.tsx" name="DefaultCursorProps" />
 
+Guide: [Custom cursors](/docs/react/custom-cursors).
+
 ## LiveCursorContext
 
 `LiveCursorContext` is the React context that `LiveCursorProvider` fills. Import it and its value type from `@anchor-presence/react`:
@@ -51,7 +58,7 @@ import { LiveCursorContext, type LiveCursorContextValue } from "@anchor-presence
 
 <AutoTypeTable path="../../packages/react/src/context.ts" name="LiveCursorContextValue" />
 
-Outside a provider, both fields are `null`. During server rendering, `binding` is the `binding` prop of the provider, or `null` without that prop. The hooks read this context for you. To get the `DomBinding`, call [`useCursorBinding`](/docs/react/api/hooks#usecursorbinding).
+Outside a provider, both fields are `null`. A provider before its client exists also has a `null` client, so the value cannot tell these two cases apart. During server rendering, `binding` is the `binding` prop of the provider, or `null` without that prop. The hooks read this context for you, so most apps never read it directly.
 
 This component reads the context directly and shows a line when the client and the binding exist:
 
@@ -67,6 +74,17 @@ function PresenceReady() {
 
 ## Related
 
-- [LiveCursorProvider](/docs/react/live-cursor-provider)
-- [Custom cursors](/docs/react/custom-cursors)
-- [Hooks API](/docs/react/api/hooks)
+<Cards>
+  <Card icon={<Plug />} title="LiveCursorProvider" href="/docs/react/live-cursor-provider">
+    How the provider creates the client and the binding.
+  </Card>
+  <Card icon={<MousePointer2 />} title="CursorLayer" href="/docs/react/cursor-layer">
+    Labels, colors, filters, and accessibility.
+  </Card>
+  <Card icon={<Paintbrush />} title="Custom cursors" href="/docs/react/custom-cursors">
+    renderCursor and DefaultCursor in use.
+  </Card>
+  <Card icon={<Braces />} title="Hooks API" href="/docs/react/api/hooks">
+    The signature of every hook.
+  </Card>
+</Cards>

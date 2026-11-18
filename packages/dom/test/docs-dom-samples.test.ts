@@ -119,6 +119,17 @@ describe("dom docs samples", () => {
     expect(() => createWebSocketTransport()).toThrow(TypeError);
   });
 
+  it("websocket-transport.mdx: the basic sample connects a client to one room", () => {
+    vi.stubGlobal("WebSocket", FakeSocket);
+
+    // Copied from apps/docs/content/docs/dom/websocket-transport.mdx (Basic use).
+    const transport = createWebSocketTransport({ url: "wss://relay.example.com/?room=room-42" });
+    const client = createPresenceClient({ transport });
+
+    expect(FakeSocket.instances[0]?.url).toBe("wss://relay.example.com/?room=room-42");
+    client.dispose();
+  });
+
   it("api/websocket-transport.mdx: accepts the platform WebSocket constructor", () => {
     vi.stubGlobal("WebSocket", FakeSocket);
     const transport = createWebSocketTransport({
@@ -429,6 +440,7 @@ describe("doc sample sources", () => {
       docSample("core/build-a-framework-adapter.mdx", "function observeCursors"),
       docSample("dom/occlusion-and-scroll.mdx", "const clippedPointPolicy"),
       docSample("dom/websocket-transport.mdx", "const NO_RETRY_CODES"),
+      docSample("dom/websocket-transport.mdx", "room=room-42"),
       docSample("dom/motion.mdx", "interpolatorFactory: mySpringInterpolatorFactory"),
     ];
     for (const sample of samples) expect(source).toContain(trimLines(sample));

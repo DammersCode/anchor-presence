@@ -24,7 +24,7 @@ Install the three packages:
 bun add @anchor-presence/react @anchor-presence/dom @anchor-presence/core
 ```
 
-If the command returns a 404, the packages are not published to npm. Build them from this repository with `bun install` and `bun run build`, then add each one with `bun add file:<path>/packages/core` (and `dom`, `react`).
+If the command returns a 404, the packages are not published to npm. Build them from this repository with `bun install` and `bun run build`. Then add `"overrides"` to your `package.json` that map `@anchor-presence/core` and `@anchor-presence/dom` to `file:<path>/packages/core` and `file:<path>/packages/dom`, and run `bun add file:<path>/packages/core file:<path>/packages/dom file:<path>/packages/react`. [Installation](https://anchor-presence.vercel.app/docs/get-started/installation) has the full steps.
 
 Pass the provider a `factory` that creates the transport and the client. Mark one element with `data-anchor`. Then render the provider and the cursor layer:
 

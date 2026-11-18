@@ -41,6 +41,8 @@ npm install @anchor-presence/core @anchor-presence/dom @anchor-presence/react
 
 Use the project's package manager. Install the relay dependencies from the chosen row too.
 
+If the install returns a 404, the packages are not on npm. Build a clone with `bun install && bun run build`. In the project's `package.json`, add an `overrides` block that maps `@anchor-presence/core` and `@anchor-presence/dom` to `file:<clone>/packages/core` and `file:<clone>/packages/dom`. Then run `bun add file:<clone>/packages/core file:<clone>/packages/dom file:<clone>/packages/react`.
+
 ### 4. Create the client and render the cursor layer
 
 Create the client in the provider's `factory`, in a client component. The factory creates the transport and returns the client; the client connects by default:

@@ -22,7 +22,7 @@ export type RemotePresenceStoreOptions = {
   staleTimeoutMs?: number;
   /** Time before a client counts as idle, in milliseconds. Default `DEFAULT_IDLE_AFTER_MS`, clamped below `staleTimeoutMs`. */
   idleAfterMs?: number;
-  /** Returns the current time in milliseconds. Default: a monotonic clock. */
+  /** Returns the current time in milliseconds. Default: `performance.now()`, or `Date.now()` without `performance`. */
   now?: () => number;
   /** Runs when the store drops a new client because the store is full. */
   onDropNewClient?: (clientId: string) => void;

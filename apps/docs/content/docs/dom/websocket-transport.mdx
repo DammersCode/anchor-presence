@@ -79,6 +79,8 @@ const transport = createWebSocketTransport({
 
 If the function throws or rejects, the transport reports a close with no code and the reason `connection attempt failed`. Then, if `reconnect` is on, it schedules the next attempt.
 
+A `WebSocketCtor` that throws reports the same close. If 4 sockets in a row close before they open, the transport logs a [development warning](/docs/get-started/guides/troubleshooting#development-warnings).
+
 ## Reconnect and backoff
 
 `reconnect` defaults to `true`. When a connection drops and your own `disconnect()` call did not cause it, the transport schedules a reconnect with exponential backoff:

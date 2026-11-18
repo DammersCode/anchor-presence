@@ -30,7 +30,7 @@ export const messagePackCodec: CursorCodec = {
 };
 ```
 
-Wrap every decode call in `try`/`catch`. For a malformed or truncated buffer, `decode` must return `null` and never throw. `encode` can throw. If it throws on a message with `user` or `context`, the client encodes the message again without them. If the second encode also throws, the client drops the message.
+Wrap every decode call in `try`/`catch`. For a malformed or truncated buffer, `decode` must return `null` and never throw. `encode` can throw. If it throws on a message with `user` or `context`, the client encodes the message again. It encodes without `context`, then without `user`, then without both, and sends the first message that encodes. If no message encodes, the client drops it.
 
 ## Debug binary traffic
 

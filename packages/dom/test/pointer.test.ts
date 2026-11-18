@@ -65,6 +65,7 @@ function makeClient(): {
     subscribeClose: () => () => {},
     sendEvent: () => false,
     subscribeEvents: () => () => {},
+    subscribeUser: () => () => {},
     subscribePeers: () => () => {},
     getStatus: () => "connected" as const,
     subscribeStatus: () => () => {},

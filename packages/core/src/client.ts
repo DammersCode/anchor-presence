@@ -150,6 +150,13 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     status,
     contextListeners: new Set(),
     eventListeners: new Set(),
+    userListeners: new Set(),
+    eventRate: {
+      burst: options.eventRateLimit?.burst ?? 20,
+      perSecond: options.eventRateLimit?.perSecond ?? 10,
+      totalPerSecond: options.eventRateLimit?.totalPerSecond ?? 100,
+    },
+    now,
     teardowns: [],
   };
 
@@ -251,6 +258,20 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
       state.userDirty = true;
       warnIfOversized();
       publish.markPending();
+      for (const listener of state.userListeners) {
+        try {
+          listener();
+        } catch {
+          // one throwing listener must not starve the rest
+        }
+      }
+    },
+
+    subscribeUser(listener) {
+      state.userListeners.add(listener);
+      return () => {
+        state.userListeners.delete(listener);
+      };
     },
 
     getUser() {
@@ -308,6 +329,7 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
       statusMachine.dispose();
       state.contextListeners.clear();
       state.eventListeners.clear();
+      state.userListeners.clear();
       for (const teardown of state.teardowns.splice(0)) {
         try {
           teardown();

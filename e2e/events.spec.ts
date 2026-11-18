@@ -38,3 +38,22 @@ test.describe("leaving", () => {
     await expect(sender.locator('[data-testid="presence-count"]')).toHaveText(/0 online/, { timeout: 5000 });
   });
 });
+
+test.describe("peer notifications", () => {
+  test("a toast tells the other page when a peer leaves", async ({ browser }) => {
+    const { sender, receiver } = await openPair(browser, {
+      senderViewport: { width: 1280, height: 800 },
+      receiverViewport: { width: 1280, height: 800 },
+      room: uniqueRoom("peers"),
+    });
+    await expect(sender.locator('[data-testid="presence-count"]')).toHaveText(/1 online/);
+
+    await receiver.close({ runBeforeUnload: true });
+
+    await expect(sender.locator('[data-testid="reaction-toast"]', { hasText: "Receiver: left" })).toBeVisible(
+      {
+        timeout: 5000,
+      },
+    );
+  });
+});

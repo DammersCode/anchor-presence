@@ -21,6 +21,7 @@ describe("@anchor-presence/core public runtime API", () => {
       "MAX_EVENT_TYPE_LENGTH",
       "RemotePresenceStore",
       "binaryCodec",
+      "createEventChannel",
       "createInMemoryPair",
       "createPresenceClient",
       "isDevMode",

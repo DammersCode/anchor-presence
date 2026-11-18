@@ -13,6 +13,9 @@ export const DEMO_REACTIONS = [
 ] as const;
 export const MAX_CHAT_LENGTH = 80;
 
+/** The events the demo sends, by type. */
+export type DemoEvents = { reaction: { emoji: string }; chat: { text: string } };
+
 export type DemoEvent = { type: "reaction"; emoji: string } | { type: "chat"; text: string };
 
 /** Accepts only the two events the demo sends, with an allowed emoji or a capped text. */

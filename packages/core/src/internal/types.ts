@@ -76,6 +76,11 @@ export type PresenceClientOptions<TContext = unknown, TUser = unknown> = {
   idFactory?: () => string;
   /** Returns the current time in milliseconds. Default `Date.now`. */
   now?: () => number;
+  /**
+   * Limits for inbound events. `burst` and `perSecond` apply to each sender, `totalPerSecond` to all senders together.
+   * Defaults: burst 20, 10 per second per sender, 100 per second in total.
+   */
+  eventRateLimit?: { burst?: number; perSecond?: number; totalPerSecond?: number };
   /** The timer surface for the client schedules. Default: the global timers. */
   scheduler?: SchedulerLike;
   /** Limits for inbound messages. Default: the protocol defaults. */
@@ -125,6 +130,12 @@ export interface PresenceClient<TContext = unknown, TUser = unknown> {
    * @returns `false` when the client is not connected or the event is invalid.
    */
   sendEvent(type: string, data?: unknown): boolean;
+  /**
+   * Adds a listener for local user changes.
+   * The client calls the listener on every `setUser` that changes the value.
+   * @returns A function that removes the listener.
+   */
+  subscribeUser(listener: () => void): () => void;
   /**
    * Adds a listener for events from remote peers.
    * @returns A function that removes the listener.
@@ -244,5 +255,8 @@ export type PresenceClientState<TContext, TUser> = {
   status: ConnectionStatus;
   contextListeners: Set<() => void>;
   eventListeners: Set<(event: RemoteEvent) => void>;
+  userListeners: Set<() => void>;
+  eventRate: { burst: number; perSecond: number; totalPerSecond: number };
+  now: () => number;
   teardowns: Array<() => void>;
 };

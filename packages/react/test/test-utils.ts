@@ -35,6 +35,7 @@ export function makeFakeClient<TContext = unknown, TUser = unknown>(): {
     subscribeClose: () => () => {},
     sendEvent: () => false,
     subscribeEvents: () => () => {},
+    subscribeUser: () => () => {},
     subscribePeers: () => () => {},
     getStatus: () => status,
     subscribeStatus: (listener) => {

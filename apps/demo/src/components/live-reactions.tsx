@@ -1,8 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useCursorClient, useCursorEvents, useRemoteUsers } from "@anchor-presence/react";
-import type { RemoteEvent } from "@anchor-presence/react";
+import {
+  useCursorEvents,
+  useLocalUser,
+  usePeerChanges,
+  useRemoteUsers,
+  useSendEvent,
+} from "../cursors/hooks";
 import { DEMO_REACTIONS, MAX_CHAT_LENGTH, parseDemoEvent } from "../cursors/setup";
-import type { DemoContext, DemoUser } from "../cursors/setup";
 
 type Toast = { id: number; who: string; text: string };
 
@@ -11,8 +15,10 @@ const MAX_TOASTS = 5;
 
 /** Reaction buttons and a one-line chat, both sent as one-shot events and shown as short-lived toasts. */
 export function LiveReactions({ localName }: { localName: string }) {
-  const client = useCursorClient<DemoContext, DemoUser>();
-  const users = useRemoteUsers<DemoUser>();
+  const send = useSendEvent();
+  const [localUser] = useLocalUser();
+  const users = useRemoteUsers();
+  const me = localUser?.name ?? localName;
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [chat, setChat] = useState("");
   const nextId = useRef(0);
@@ -24,11 +30,17 @@ export function LiveReactions({ localName }: { localName: string }) {
     setTimeout(() => setToasts((current) => current.filter((toast) => toast.id !== id)), TOAST_MS);
   }, []);
 
-  useCursorEvents((event: RemoteEvent) => {
+  useCursorEvents((event) => {
     const parsed = parseDemoEvent(event);
     if (parsed === undefined) return;
     const who = users.find((user) => user.clientId === event.clientId)?.user?.name ?? "Someone";
     show(who, parsed.type === "reaction" ? parsed.emoji : parsed.text);
+  });
+
+  usePeerChanges((change) => {
+    if (change.type === "update") return;
+    const name = users.find((user) => user.clientId === change.clientId)?.user?.name ?? "Someone";
+    show(name, change.type === "join" ? "joined" : "left");
   });
 
   useEffect(() => {
@@ -42,13 +54,13 @@ export function LiveReactions({ localName }: { localName: string }) {
   }, []);
 
   const react = (emoji: string) => {
-    if (client?.sendEvent("reaction", { emoji }) === true) show(localName, emoji);
+    if (send("reaction", { emoji })) show(me, emoji);
   };
 
   const sendChat = () => {
     const text = chat.trim().slice(0, MAX_CHAT_LENGTH);
     if (text === "") return;
-    if (client?.sendEvent("chat", { text }) === true) show(localName, text);
+    if (send("chat", { text })) show(me, text);
     setChat("");
   };
 

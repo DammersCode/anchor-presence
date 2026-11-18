@@ -2,7 +2,6 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { createPresenceClient } from "@anchor-presence/core";
 import "./index.css";
-import { createPresenceHooks } from "@anchor-presence/react";
 import App from "./app";
 import { BenchPage } from "./bench/bench-page";
 import { ReflowBenchPage } from "./reflow/reflow-bench-page";
@@ -12,6 +11,7 @@ import { parseDemoEvent, parseDemoUser } from "./cursors/setup";
 import type { DemoContext, DemoUser } from "./cursors/setup";
 import { createVisibilityPolicy } from "./cursors/visibility-policy";
 import type { LocalViewState } from "./cursors/visibility-policy";
+import { LiveCursorProvider } from "./cursors/hooks";
 import { interpolatorRegistry } from "./cursors/interpolators";
 import { useInterpolatorStyle } from "./use-interpolator-style";
 
@@ -33,8 +33,6 @@ function createDemoClient() {
     parseEvent: (event) => (parseDemoEvent(event) === undefined ? undefined : event),
   });
 }
-
-const { LiveCursorProvider } = createPresenceHooks<DemoContext, DemoUser>();
 
 function Root() {
   const [interpolatorStyle, selectInterpolatorStyle] = useInterpolatorStyle();

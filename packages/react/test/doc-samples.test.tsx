@@ -6,12 +6,12 @@ import type { ResolvedCursor } from "@anchor-presence/dom";
 import { LiveCursorProvider } from "../src/provider";
 import { CursorLayer } from "../src/cursor";
 
-// type-level proof that createWebSocketTransport's connect/disconnect are no longer optional (README quick start)
+// type-level proof that createWebSocketTransport has connect and disconnect
 const ws = createWebSocketTransport({ url: "ws://x" });
 void ws.connect;
 void ws.disconnect;
 
-// README quick start, rendered with an in-memory transport so the sample needs no network
+// a provider tree on an in-memory transport, so the render needs no network
 const { a: transport } = createInMemoryPair();
 const client = createPresenceClient({ transport, user: { name: "Alice" } });
 
@@ -45,7 +45,7 @@ function CursorLayerSample() {
 }
 
 describe("doc samples compile and render", () => {
-  it("renders the README quick start", () => {
+  it("renders a provider tree on an in-memory transport", () => {
     const html = renderToString(<App />);
     expect(html).toContain("data-anchor");
   });

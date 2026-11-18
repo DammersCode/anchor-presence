@@ -1,3 +1,4 @@
+import { warnOnce } from "./dev-warnings.js";
 import { validatePresence } from "../validate.js";
 import type { RemoteEvent } from "../protocol.js";
 import type { PresenceClientState } from "./types.js";
@@ -163,16 +164,38 @@ function warnDropped(
  */
 export function wireInbound<TContext, TUser>(state: PresenceClientState<TContext, TUser>): void {
   let warnedUnparsed = false;
+  const warnedInbound = new Set<string>();
+  const dropInbound = (reason: string): void => {
+    if (!state.devMode || warnedInbound.has(reason)) return;
+    warnedInbound.add(reason);
+    console.warn(
+      `[anchor-presence] dropped an inbound message: ${reason}. A codec mismatch between peers causes this.`,
+    );
+  };
   const warnedDropped = { user: false, context: false };
   const eventAllowance = createEventAllowance(state.eventRate, state.now);
   const unsubscribeTransport = state.transport.subscribe((data) => {
     if (state.disposed) return;
     try {
-      if (data.byteLength > state.maxMessageBytes) return; // oversized wire message: drop before parsing (spec §4.2)
+      if (data.byteLength > state.maxMessageBytes) {
+        dropInbound(`larger than maxMessageBytes (${state.maxMessageBytes})`);
+        return; // oversized wire message: drop before parsing (spec §4.2)
+      }
       const decoded = state.codec.decode(data);
       const presence = validatePresence<TContext, TUser>(decoded, state.validationLimits);
-      if (presence === null) return;
-      if (presence.clientId === state.clientId) return; // ignore echoes of our own messages
+      if (presence === null) {
+        dropInbound("it failed to decode or validate");
+        return;
+      }
+      if (presence.clientId === state.clientId) {
+        if (presence.session !== state.session && state.devMode) {
+          warnOnce(
+            "duplicate-client-id",
+            `another client uses the clientId "${state.clientId}". Two tabs that share a clientId hide each other's cursors. Use the default clientId, or one per tab.`,
+          );
+        }
+        return; // ignore echoes of our own messages
+      }
       if (presence.event !== undefined) {
         if (eventAllowance.tryConsume(presence.clientId)) {
           deliverEvent(state, { ...presence.event, clientId: presence.clientId });
@@ -201,7 +224,7 @@ export function wireInbound<TContext, TUser>(state: PresenceClientState<TContext
       const known = state.store.has(presence.clientId, presence.session);
       if (state.store.ingest(presence) && !known && presence.leave !== true) state.onNewPeer();
     } catch {
-      // a throwing codec or subscriber must not break the transport dispatch loop
+      dropInbound("the codec or a subscriber threw");
     }
   });
   state.teardowns.push(unsubscribeTransport);

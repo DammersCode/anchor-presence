@@ -52,10 +52,10 @@ type RoomEntry = { ws: WSContext; raw: RawSocket };
  */
 export function createHonoRelay(port: number, options: HonoRelayOptions = {}) {
   const maxMessageBytes = options.maxMessageBytes ?? limitFromEnv(process.env.MAX_MESSAGE_BYTES, 32 * 1024);
-  const rateCapacity = options.rateCapacity ?? limitFromEnv(process.env.RATE_CAPACITY, 40);
+  const rateCapacity = options.rateCapacity ?? limitFromEnv(process.env.RATE_CAPACITY, 80);
   const rateRefillPerSecond =
-    options.rateRefillPerSecond ?? limitFromEnv(process.env.RATE_REFILL_PER_SECOND, 20);
-  const maxRoomSockets = options.maxRoomSockets ?? limitFromEnv(process.env.RELAY_MAX_ROOM_SOCKETS, 128);
+    options.rateRefillPerSecond ?? limitFromEnv(process.env.RATE_REFILL_PER_SECOND, 40);
+  const maxRoomSockets = options.maxRoomSockets ?? limitFromEnv(process.env.RELAY_MAX_ROOM_SOCKETS, 64);
   const maxSockets = options.maxSockets ?? limitFromEnv(process.env.RELAY_MAX_TOTAL_SOCKETS, 10_000);
   const idleTimeoutSeconds =
     options.idleTimeoutSeconds ?? limitFromEnv(process.env.RELAY_IDLE_TIMEOUT_SECONDS, 60);
@@ -181,7 +181,12 @@ export function createHonoRelay(port: number, options: HonoRelayOptions = {}) {
   const server = Bun.serve({
     port,
     fetch: app.fetch,
-    websocket: { ...websocket, idleTimeout: idleTimeoutSeconds, sendPings: true },
+    websocket: {
+      ...websocket,
+      idleTimeout: idleTimeoutSeconds,
+      sendPings: true,
+      maxPayloadLength: Math.max(maxMessageBytes * 4, 1024 * 1024),
+    },
   });
 
   return {

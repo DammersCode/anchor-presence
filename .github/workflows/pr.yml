@@ -21,7 +21,7 @@ jobs:
     # Only listed maintainers burn Actions minutes; add a login to let another user's PRs run checks.
     if: >-
       github.event_name != 'pull_request' ||
-      contains('["DammersCode"]', github.event.pull_request.user.login)
+      contains(fromJSON('["DammersCode"]'), github.event.pull_request.user.login)
     steps:
       - uses: actions/checkout@v7
       - uses: oven-sh/setup-bun@v2

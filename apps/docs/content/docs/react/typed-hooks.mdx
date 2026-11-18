@@ -84,9 +84,36 @@ function Reactions() {
 
 <Callout type="warn">
   If a peer sends data of another type, `useCursorEvents` still delivers it. The types check only the code
-  that you write. Pass a `parseEvent` that checks the same event map, as in [Typed
-  events](/docs/core/presence-client#typed-events).
+  that you write. Pass the client a `parseEvent` that checks the same event map.
 </Callout>
+
+`createEventParser` from `@anchor-presence/core` builds this `parseEvent` from one parser per event type. An event without data gets `null`. Pass the result to `createPresenceClient` in the provider `factory`:
+
+```tsx
+import { createEventParser, createPresenceClient } from "@anchor-presence/core";
+import { createWebSocketTransport } from "@anchor-presence/dom";
+import { type Events, LiveCursorProvider } from "./presence";
+
+const parseEvent = createEventParser<Events>({
+  reaction: (data) => {
+    const emoji = (data as { emoji?: unknown } | undefined)?.emoji;
+    return typeof emoji === "string" ? { emoji } : undefined;
+  },
+  ping: null,
+});
+
+function App() {
+  return (
+    <LiveCursorProvider
+      factory={() => createPresenceClient({ transport: createWebSocketTransport(), parseEvent })}
+    >
+      <Reactions />
+    </LiveCursorProvider>
+  );
+}
+```
+
+See [Typed events](/docs/core/presence-client#typed-events) for the parser rules.
 
 ## What the result contains
 

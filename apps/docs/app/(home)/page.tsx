@@ -52,6 +52,12 @@ export default function HomePage() {
           Anchor Presence sends a label, not pixels. Each browser resolves it against its own layout. Your
           teammate&apos;s cursor stays on the element, even when their screen differs from yours.
         </p>
+        <p className="mt-3 text-sm text-fd-muted-foreground">
+          Works with Next.js, TanStack Start and Router, Remix and React Router, Vite, and Astro.{" "}
+          <Link href="/docs/get-started/frameworks" className="border-b border-fd-border pb-px font-semibold">
+            Frameworks &rarr;
+          </Link>
+        </p>
         <div className="mt-8 flex flex-wrap items-center gap-4">
           <Link
             href="/docs"

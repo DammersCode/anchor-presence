@@ -58,7 +58,7 @@ The reference relay closes a socket with one of these codes:
 | `4004` | The origin is not allowed.                   | No                       |
 | `4005` | The client did not answer the liveness ping. | Yes                      |
 | `4006` | The room token is missing or wrong.          | No                       |
-| `4007` | The room name is not valid.                  | Yes                      |
+| `4007` | The room name is not valid.                  | No                       |
 
 The column "The transport reconnects" applies to `createWebSocketTransport` with its default `shouldReconnect`. To change which codes stop the reconnect, pass `shouldReconnect` to `createWebSocketTransport`.
 

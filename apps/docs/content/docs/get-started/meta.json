@@ -1,5 +1,5 @@
 {
-  "title": "Anchor Presence",
+  "title": "Get started",
   "icon": "compass",
   "description": "Overview, setup, and cross-cutting guides",
   "root": true,
@@ -7,6 +7,7 @@
     "introduction",
     "installation",
     "quick-start",
+    "frameworks",
     "---[Blocks]Concepts---",
     "concepts/how-it-works",
     "concepts/anchors",

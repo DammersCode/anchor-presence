@@ -523,6 +523,29 @@ describe("createWebSocketTransport", () => {
     expect(transport.getStatus?.()).toBe("disconnected");
   });
 
+  it("does not reconnect after a room refusal (4007)", () => {
+    vi.useFakeTimers();
+    const transport = make();
+    void transport.connect();
+    FakeWebSocket.fire(lastSocket(), "close", { code: 4007 });
+    expect(transport.getStatus?.()).toBe("disconnected");
+  });
+
+  it("keeps reconnecting when a status listener throws", () => {
+    vi.useFakeTimers();
+    const transport = make({ baseBackoffMs: 100 });
+    let calls = 0;
+    transport.subscribeStatus?.(() => {
+      calls += 1;
+      if (calls > 1) throw new Error("listener bug");
+    });
+    void transport.connect();
+    const first = FakeWebSocket.instances.length;
+    FakeWebSocket.fire(lastSocket(), "close", { code: 1006 });
+    vi.advanceTimersByTime(60_000);
+    expect(FakeWebSocket.instances.length).toBeGreaterThan(first);
+  });
+
   it("reports the close code, reason and whether it reconnects", () => {
     vi.useFakeTimers();
     const transport = make();

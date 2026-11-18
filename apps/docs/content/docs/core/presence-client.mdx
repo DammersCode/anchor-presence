@@ -36,7 +36,7 @@ Call `client.setLocalCursor(cursor, pointer?)` to set the local cursor position.
 
 Call `client.setContext(value)` and `client.setUser(value)` to set the values that the client sends to peers. Both accept `undefined` to clear the value. Read the current local values with `getContext()` and `getUser()`.
 
-`client.subscribeContext(listener)` calls `listener` on each `setContext` call that changes the value. `client.subscribeUser(listener)` does the same for `setUser`. A call changes the value when `value` is another reference than the current value. The listener receives no argument, so read the value with `getContext()` or `getUser()`. Both methods return a function that removes the listener. The [`useLocalContext`](/docs/react/cursor-context) and [`useLocalUser`](/docs/react/cursor-context#local-user) hooks use them.
+`client.subscribeContext(listener)` calls `listener` on each `setContext` call that changes the value. `client.subscribeUser(listener)` does the same for `setUser`. A call changes the value when `value` is another reference than the current value. The listener receives no argument, so read the value with `getContext()` or `getUser()`. Both methods return a function that removes the listener. The [`useLocalContext`](/docs/react/local-context) and [`useLocalUser`](/docs/react/local-context#local-user) hooks use them.
 
 To stop the client, call `client.dispose()`. `dispose` sends a best-effort leave message and stops every timer. It also calls `transport.disconnect()` when the transport has one. You cannot use a client after `dispose`. Create a new client instead:
 
@@ -132,21 +132,28 @@ The total limit stops a peer that sends each event with another `clientId`. Each
   you write, and it does not check remote data. Pass a `parseEvent` that checks the same `EventMap`.
 </Callout>
 
-This sample declares two events, checks them with `parseEvent`, and sends and receives them through a channel:
+`createEventParser<TEvents>(parsers)` builds this `parseEvent` from one parser per event type. `parsers` is an `EventParsers<TEvents>` object:
+
+- A parser receives the remote `data` and returns the checked data, or `undefined` to drop the event.
+- For an event without data, use `null` in place of a parser. The client then drops the event if it carries data.
+- The client drops an event whose type has no entry in `parsers`.
+
+This sample declares two events, checks them with `createEventParser`, and sends and receives them through a channel:
 
 ```ts
-import { createEventChannel, createPresenceClient, type RemoteEvent } from "@anchor-presence/core";
+import { createEventChannel, createEventParser, createPresenceClient } from "@anchor-presence/core";
 
 type Events = { reaction: { emoji: string }; ping: undefined };
 
-function parseEvents(event: RemoteEvent): RemoteEvent | undefined {
-  if (event.type === "ping") return { clientId: event.clientId, type: "ping" };
-  const emoji = (event.data as { emoji?: unknown } | undefined)?.emoji;
-  if (event.type !== "reaction" || typeof emoji !== "string") return undefined;
-  return { clientId: event.clientId, type: "reaction", data: { emoji } };
-}
+const parseEvent = createEventParser<Events>({
+  reaction: (data) => {
+    const emoji = (data as { emoji?: unknown } | undefined)?.emoji;
+    return typeof emoji === "string" ? { emoji } : undefined;
+  },
+  ping: null,
+});
 
-const client = createPresenceClient({ transport, parseEvent: parseEvents });
+const client = createPresenceClient({ transport, parseEvent });
 const events = createEventChannel<Events>(client);
 
 events.send("reaction", { emoji: "tada" });
@@ -213,6 +220,11 @@ const client = createPresenceClient({
 ```
 
 <Callout type="warn">
+  If the page loads over plain HTTP from a host other than `localhost`, `crypto.randomUUID` is missing and
+  this `idFactory` throws. The default `idFactory` works on plain HTTP.
+</Callout>
+
+<Callout type="warn">
   If `idFactory` returns IDs longer than 64 characters, receivers drop every message of the client. The
   default limits allow 128 characters for `clientId` and 64 for `session`.
 </Callout>
@@ -257,6 +269,12 @@ The client calls `isDevMode` one time, at creation. In development mode, the cli
 - A remote `user` or `context` arrives and no check applies. The client warns one time.
 - The shape check drops a remote `user` or `context`. The warning names `parseUser` or `parseContext`. The client warns one time for `user` and one time for `context`.
 - The store is full and drops a new peer. The client warns one time.
+- The client drops an inbound message because it is too large, does not decode or validate, or a subscriber throws. The client warns one time for each reason.
+- Another client uses the same `clientId`. The client warns one time.
+- `staleTimeoutMs` is at most twice `heartbeatIntervalMs`, so a quiet peer expires between two heartbeats. The client warns one time.
+- A message fails to encode or to send. The client warns one time.
+
+See [Troubleshooting](/docs/get-started/guides/troubleshooting#development-warnings) for the warnings of the other packages.
 
 ## Related
 

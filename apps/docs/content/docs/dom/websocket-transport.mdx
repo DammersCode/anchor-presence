@@ -56,15 +56,15 @@ If the function throws or rejects, the transport reports a close with no code an
 - The first delay is `baseBackoffMs` (default `500`). The delay doubles on each attempt, up to `maxBackoffMs` (default `8000`).
 - The transport waits a random time between 50% and 100% of that delay. As a result, many clients that lose the connection at the same time do not all retry at the same moment.
 - The backoff resets only after a connection stays open for `stableAfterMs` (default `5000`). A relay that accepts a connection and then closes it therefore sees growing delays, not a retry loop.
-- A close with code `1008` (policy), `4004` (origin) or `4006` (room token) stops the reconnect, and the status becomes `disconnected`.
+- A close with code `1008` (policy), `4004` (origin), `4006` (room token) or `4007` (room name) stops the reconnect, and the status becomes `disconnected`.
 - `random` overrides the jitter source. It defaults to `Math.random`. A test can pass a fixed function to get a fixed delay.
 
 ## Stop reconnecting
 
-`shouldReconnect` decides after each close whether the transport tries again. It receives the close `code` and `reason`, and returns `false` to stop. This rule also stops on `4007`, the code that the reference relay and the example relays send for a room name that is not valid:
+`shouldReconnect` decides after each close whether the transport tries again. It receives the close `code` and `reason`, and returns `false` to stop. This rule also stops on `4001`, the code that the reference relay and the example relays send for a full room:
 
 ```ts
-const NO_RETRY_CODES = [1008, 4004, 4006, 4007];
+const NO_RETRY_CODES = [1008, 4001, 4004, 4006, 4007];
 
 const transport = createWebSocketTransport({
   url: "wss://relay.example.com/?room=main",

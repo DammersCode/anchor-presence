@@ -5,6 +5,16 @@ description: The LiveCursorTransport contract, connect and disconnect ownership,
 
 A transport is the byte channel between a presence client and the network. `@anchor-presence/core` imports no transport library. You supply a transport that implements `LiveCursorTransport`.
 
+These transports ship in the packages:
+
+| Transport                                      | Package                 | Connects                                  |
+| ---------------------------------------------- | ----------------------- | ----------------------------------------- |
+| `createWebSocketTransport(options?)`           | `@anchor-presence/dom`  | Clients through a WebSocket relay         |
+| `createBroadcastChannelTransport(channelName)` | `@anchor-presence/dom`  | Tabs and iframes of one origin, no server |
+| `createInMemoryPair()`                         | `@anchor-presence/core` | Two transports in one process, for tests  |
+
+A `BroadcastChannel` transport ignores its own messages. As a result, two clients in one tab need two transports. After `disconnect()`, it closes its channel, so create one transport for each client.
+
 ## The LiveCursorTransport interface
 
 `@anchor-presence/core` exports `LiveCursorTransport`, `ConnectionStatus`, and `TransportClose` with these shapes:

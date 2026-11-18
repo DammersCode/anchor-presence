@@ -50,6 +50,7 @@ const DEMO = /<Demo \/>\n?/g;
 const EXAMPLE_PREVIEW = /<ExamplePreview scene="[^"]+" \/>\n?/g;
 const INSTALL_COMMAND = /<InstallCommand(?: packages="([^"]+)")? \/>/g;
 const MERMAID = /<Mermaid\s+chart="([\s\S]*?)"\s*\/>/g;
+const WARN_CALLOUT = /<Callout type="warn">\s*([\s\S]*?)\s*<\/Callout>/g;
 const FENCE = "```";
 
 function unescapeMdxAttribute(value: string): string {
@@ -70,6 +71,11 @@ function typeTableMarkdown(doc: GeneratedDoc): string {
   );
 }
 
+function warningQuote(body: string): string {
+  const [first = "", ...rest] = body.split("\n").map((line) => line.trim());
+  return [`> **Warning:** ${first}`, ...rest.map((line) => (line === "" ? ">" : `> ${line}`))].join("\n");
+}
+
 // MDX components render nothing in markdown, so agents get the real code and type tables instead.
 async function inlineComponents(markdown: string): Promise<string> {
   let out = markdown
@@ -84,7 +90,8 @@ async function inlineComponents(markdown: string): Promise<string> {
       const code = kind === "repo" ? readExampleSource(file) : readDocsSource(file);
       return `${FENCE}${lang}\n${code.trimEnd()}\n${FENCE}`;
     })
-    .replace(MERMAID, (_tag, chart: string) => `${FENCE}mermaid\n${unescapeMdxAttribute(chart)}\n${FENCE}`);
+    .replace(MERMAID, (_tag, chart: string) => `${FENCE}mermaid\n${unescapeMdxAttribute(chart)}\n${FENCE}`)
+    .replace(WARN_CALLOUT, (_tag, body: string) => warningQuote(body));
   for (const [tag, path, name] of markdown.matchAll(AUTO_TYPE_TABLE)) {
     const docs = await getTypeGenerator().generateTypeTable({ path, name });
     out = out.replace(tag, docs.map(typeTableMarkdown).join("\n\n"));

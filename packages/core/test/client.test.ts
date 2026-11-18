@@ -1658,3 +1658,28 @@ describe("numeric option validation", () => {
     expect(() => createPresenceClient({ transport: a, [name]: Number.POSITIVE_INFINITY })).toThrow(/finite/);
   });
 });
+
+describe("inbound drop warnings", () => {
+  it("warns once in dev mode when a message fails to decode", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { a, b } = createInMemoryPair();
+    const receiver = createPresenceClient({ transport: b, clientId: "R" });
+    void a.connect?.();
+    void b.connect?.();
+    void a.send(new Uint8Array([9, 9, 9]));
+    void a.send(new Uint8Array([9, 9, 9]));
+    expect(
+      warn.mock.calls.filter(([text]) => String(text).includes("dropped an inbound message")),
+    ).toHaveLength(1);
+    receiver.dispose();
+    warn.mockRestore();
+  });
+
+  it("does not spin the sweep timer when idleAfterMs is 0", () => {
+    vi.useFakeTimers();
+    const { a } = createInMemoryPair();
+    const client = createPresenceClient({ transport: a, idleAfterMs: 0 });
+    expect(() => vi.advanceTimersByTime(1000)).not.toThrow();
+    client.dispose();
+  });
+});

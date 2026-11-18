@@ -6,16 +6,16 @@ A **relay** forwards each presence message to the other clients in the same room
 
 Use the first row that matches the survey. Each docs page has the full server and client code; fetch it as markdown.
 
-| The project has                        | Transport on the client                                | Relay                                | Docs page (append `.md`)             |
-| -------------------------------------- | ------------------------------------------------------ | ------------------------------------ | ------------------------------------ |
-| A Socket.IO server                     | Socket.IO transport from the example                   | Add a presence event to that server  | `/docs/examples/backends/socketio`   |
-| An ASP.NET Core app                    | SignalR transport from the example                     | Add the presence hub to that app     | `/docs/examples/backends/signalr`    |
-| A Hono app                             | `createWebSocketTransport` from `@anchor-presence/dom` | Hono `upgradeWebSocket` route        | `/docs/examples/backends/hono`       |
-| An Elysia app                          | `createWebSocketTransport`                             | Elysia `.ws()` route                 | `/docs/examples/backends/elysia`     |
-| A Node server (Express, Fastify, http) | `createWebSocketTransport`                             | `ws` package on the same HTTP server | `/docs/examples/backends/node-ws`    |
-| Bun, or no server yet                  | `createWebSocketTransport`                             | `Bun.serve` WebSocket relay          | `/docs/examples/backends/bun-native` |
-| Tests or a local prototype             | `createInMemoryPair` from `@anchor-presence/core`      | none                                 | `/docs/core/in-memory-transport`     |
-| Two tabs on one origin, no server      | A `BroadcastChannel` transport                         | none                                 | `/docs/core/custom-transport`        |
+| The project has                        | Transport on the client                                       | Relay                                | Docs page (append `.md`)             |
+| -------------------------------------- | ------------------------------------------------------------- | ------------------------------------ | ------------------------------------ |
+| A Socket.IO server                     | Socket.IO transport from the example                          | Add a presence event to that server  | `/docs/examples/backends/socketio`   |
+| An ASP.NET Core app                    | SignalR transport from the example                            | Add the presence hub to that app     | `/docs/examples/backends/signalr`    |
+| A Hono app                             | `createWebSocketTransport` from `@anchor-presence/dom`        | Hono `upgradeWebSocket` route        | `/docs/examples/backends/hono`       |
+| An Elysia app                          | `createWebSocketTransport`                                    | Elysia `.ws()` route                 | `/docs/examples/backends/elysia`     |
+| A Node server (Express, Fastify, http) | `createWebSocketTransport`                                    | `ws` package on the same HTTP server | `/docs/examples/backends/node-ws`    |
+| Bun, or no server yet                  | `createWebSocketTransport`                                    | `Bun.serve` WebSocket relay          | `/docs/examples/backends/bun-native` |
+| Tests or a local prototype             | `createInMemoryPair` from `@anchor-presence/core`             | none                                 | `/docs/core/in-memory-transport`     |
+| Two tabs on one origin, no server      | `createBroadcastChannelTransport` from `@anchor-presence/dom` | none                                 | `/docs/get-started/quick-start`      |
 
 Base URL: `https://anchor-presence.vercel.app`. Every page also links the shared relay guard helpers (`/docs/examples/backends`).
 

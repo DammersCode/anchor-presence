@@ -1,16 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 
-// Cross-layout invariant proof (spec §17): two clients, different layouts, same semantic cursor position.
-//
-// The relay stays on the spec's default port 8787: it broadcasts opaque bytes per room with no message
-// inspection, so it is safe to share with another worktree's relay instance already listening there
-// (rooms are isolated via a random UUID suffix, see uniqueRoom() in helpers.ts) — and apps/server is on
-// the DO-NOT-CHANGE list, so its hardcoded connection port in the demo's createWebSocketTransport setup cannot move.
-// reuseExistingServer stays on for the relay so this works whether or not one is already up.
-//
-// The demo dev server (vite) cannot share with another worktree's instance — it serves that worktree's
-// source, not this one's data-testid additions — so it runs on a dedicated port with reuseExistingServer
-// off, guaranteeing every run serves this worktree's code.
+// The relay shares port 8787 with other worktrees; the demo dev server runs on its own port so it serves this worktree's code.
 const DEMO_PORT = Number(process.env.E2E_DEMO_PORT ?? 5917);
 const isCI = Boolean(process.env.CI);
 
@@ -34,7 +24,7 @@ export default defineConfig({
     {
       command: "bun run --cwd apps/server dev",
       port: 8787,
-      reuseExistingServer: true,
+      reuseExistingServer: !isCI,
     },
     {
       command: `bun run --cwd apps/demo dev -- --port ${DEMO_PORT} --strictPort`,

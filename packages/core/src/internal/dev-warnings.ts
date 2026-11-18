@@ -15,6 +15,15 @@ export function isDevMode(): boolean {
   }
 }
 
+const warnedKeys = new Set<string>();
+
+/** Prints `message` once per `key` outside production builds. The sibling packages share it. */
+export function warnOnce(key: string, message: string): void {
+  if (warnedKeys.has(key) || !isDevMode()) return;
+  warnedKeys.add(key);
+  console.warn(`[anchor-presence] ${message}`);
+}
+
 // Returns the JSON byte length of `value`, or `Number.POSITIVE_INFINITY` when it cannot serialize.
 function jsonByteLength(value: unknown): number {
   try {

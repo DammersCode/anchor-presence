@@ -1,7 +1,8 @@
 import { useContext } from "react";
 import type { ConnectionStatus, PresenceClient, RemotePresence } from "@anchor-presence/core";
 import type { ResolvedCursor } from "@anchor-presence/dom";
-import { LiveCursorContext } from "../context.js";
+import { warnOnce } from "@anchor-presence/core";
+import { LiveCursorContext, LiveCursorContextDefault } from "../context.js";
 import type { LiveCursorContextValue } from "../context.js";
 
 export const EMPTY_CURSORS: ResolvedCursor[] = [];
@@ -20,7 +21,14 @@ export function getServerStatus(): ConnectionStatus {
 }
 
 export function useLiveCursorContext<TContext, TUser>(): LiveCursorContextValue<TContext, TUser> {
-  return useContext(LiveCursorContext) as LiveCursorContextValue<TContext, TUser>;
+  const value = useContext(LiveCursorContext);
+  if (value === LiveCursorContextDefault) {
+    warnOnce(
+      "no-provider",
+      "a hook or CursorLayer runs outside LiveCursorProvider, so it returns empty data. Wrap the tree in LiveCursorProvider.",
+    );
+  }
+  return value as LiveCursorContextValue<TContext, TUser>;
 }
 
 /**

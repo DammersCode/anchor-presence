@@ -7,14 +7,15 @@ function limitFromEnv(name: string, fallback: number): number {
 }
 
 const PORT = limitFromEnv("PORT", 8787);
-const MAX_ROOM_SOCKETS = limitFromEnv("RELAY_MAX_ROOM_SOCKETS", 128);
+const MAX_ROOM_SOCKETS = limitFromEnv("RELAY_MAX_ROOM_SOCKETS", 64);
 const MAX_TOTAL_SOCKETS = limitFromEnv("RELAY_MAX_TOTAL_SOCKETS", 10_000);
 const MAX_MESSAGE_BYTES = limitFromEnv("MAX_MESSAGE_BYTES", 32 * 1024);
-const RATE_CAPACITY = limitFromEnv("RATE_CAPACITY", 40);
-const RATE_REFILL_PER_SECOND = limitFromEnv("RATE_REFILL_PER_SECOND", 20);
+const RATE_CAPACITY = limitFromEnv("RATE_CAPACITY", 80);
+const RATE_REFILL_PER_SECOND = limitFromEnv("RATE_REFILL_PER_SECOND", 40);
 const SLOW_PEER_SOFT_BYTES = limitFromEnv("RELAY_SLOW_PEER_SOFT_BYTES", 1024 * 1024);
 const SLOW_PEER_HARD_BYTES = limitFromEnv("RELAY_SLOW_PEER_HARD_BYTES", 8 * 1024 * 1024);
-const SLOW_PEER_RESUME_BYTES = limitFromEnv("RELAY_SLOW_PEER_RESUME_BYTES", 512 * 1024);
+// Bun drops frames above the soft watermark, so a buffer only passes the hard limit when one frame can bridge the gap
+const HARD_LIMIT_REACHABLE = SLOW_PEER_HARD_BYTES < SLOW_PEER_SOFT_BYTES + MAX_MESSAGE_BYTES;
 const PING_INTERVAL_MS = 30_000;
 const LIVENESS_LIMIT_MS = 60_000;
 const AUTH_TOKEN = process.env.RELAY_AUTH_TOKEN ?? "";
@@ -35,7 +36,6 @@ type SocketData = {
   tokens: number;
   lastRefill: number;
   lastPong: number;
-  skipped: boolean;
   authOk: boolean;
   roomInvalid: boolean;
 };
@@ -88,6 +88,15 @@ function messageByteLength(message: string | ArrayBuffer): number {
   return encoder.encode(message).byteLength;
 }
 
+export function closePeerAboveHardLimit(
+  peer: Pick<RoomSocket, "getBufferedAmount" | "close">,
+  hardBytes = SLOW_PEER_HARD_BYTES,
+): boolean {
+  if (peer.getBufferedAmount() <= hardBytes) return false;
+  peer.close(SLOW_PEER_CODE, "slow peer");
+  return true;
+}
+
 export type SlowPeerAction = "send" | "skip" | "close";
 
 export function slowPeerAction(
@@ -118,7 +127,6 @@ if (typeof Bun !== "undefined" && import.meta.main) {
             tokens: RATE_CAPACITY,
             lastRefill: Date.now(),
             lastPong: Date.now(),
-            skipped: false,
             authOk,
             roomInvalid: parsedRoom === null,
           },
@@ -128,6 +136,9 @@ if (typeof Bun !== "undefined" && import.meta.main) {
       return new Response("WebSocket relay: upgrade required", { status: 426 });
     },
     websocket: {
+      maxPayloadLength: Math.max(MAX_MESSAGE_BYTES * 4, 1024 * 1024),
+      // Bun drops a published frame for a subscriber buffered above this soft watermark
+      backpressureLimit: SLOW_PEER_SOFT_BYTES,
       open(ws: RoomSocket) {
         if (allowedOrigins.size > 0 && !allowedOrigins.has(ws.data.origin)) {
           ws.close(ORIGIN_REJECTED_CODE, "origin not allowed");
@@ -154,6 +165,7 @@ if (typeof Bun !== "undefined" && import.meta.main) {
         room.add(ws);
         rooms.set(ws.data.room, room);
         totalSockets += 1;
+        ws.subscribe(ws.data.room);
       },
       message(ws: RoomSocket, message: string | ArrayBuffer) {
         const sockets = rooms.get(ws.data.room);
@@ -173,23 +185,9 @@ if (typeof Bun !== "undefined" && import.meta.main) {
 
         if (messageByteLength(message) > MAX_MESSAGE_BYTES) return;
 
-        for (const peer of sockets) {
-          if (peer === ws || peer.readyState !== WebSocket.OPEN) continue;
-          const action = slowPeerAction(
-            peer.getBufferedAmount(),
-            peer.data.skipped,
-            SLOW_PEER_SOFT_BYTES,
-            SLOW_PEER_HARD_BYTES,
-            SLOW_PEER_RESUME_BYTES,
-          );
-          if (action === "close") {
-            peer.close(SLOW_PEER_CODE, "slow peer");
-            continue;
-          }
-          peer.data.skipped = action === "skip";
-          if (action === "skip") continue;
-          peer.send(message);
-        }
+        // a result of 0 (dropped) or -1 (backpressure) means at least one subscriber is behind
+        if (ws.publish(ws.data.room, message) > 0 || !HARD_LIMIT_REACHABLE) return;
+        for (const peer of sockets) if (peer !== ws) closePeerAboveHardLimit(peer);
       },
       pong(ws: RoomSocket) {
         ws.data.lastPong = Date.now();
@@ -208,7 +206,7 @@ if (typeof Bun !== "undefined" && import.meta.main) {
     const now = Date.now();
     for (const sockets of rooms.values()) {
       for (const peer of sockets) {
-        if (peer.readyState !== WebSocket.OPEN) continue;
+        if (peer.readyState !== WebSocket.OPEN || closePeerAboveHardLimit(peer)) continue;
         if (now - peer.data.lastPong >= LIVENESS_LIMIT_MS) {
           peer.close(LIVENESS_CODE, "liveness timeout");
           continue;

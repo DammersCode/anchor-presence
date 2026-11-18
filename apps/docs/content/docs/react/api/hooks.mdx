@@ -48,7 +48,7 @@ See [Remote users](/docs/react/remote-users).
 function useRemotePresence<TContext = unknown, TUser = unknown>(): RemotePresence<TContext, TUser>[];
 ```
 
-See [Cursor presence](/docs/react/cursor-presence).
+See [Remote presence](/docs/react/remote-presence).
 
 ## useLocalContext
 
@@ -58,7 +58,7 @@ See [Cursor presence](/docs/react/cursor-presence).
 function useLocalContext<TContext = unknown>(): [TContext | undefined, (next: TContext | undefined) => void];
 ```
 
-See [Cursor context](/docs/react/cursor-context).
+See [Local context and user](/docs/react/local-context).
 
 ## useLocalUser
 
@@ -68,7 +68,7 @@ See [Cursor context](/docs/react/cursor-context).
 function useLocalUser<TUser = unknown>(): [TUser | undefined, (next: TUser | undefined) => void];
 ```
 
-It returns the local `user` value and a setter that calls `client.setUser`. During server rendering, the value is `undefined`. Without a client, the setter does nothing. See [Local user](/docs/react/cursor-context#local-user).
+It returns the local `user` value and a setter that calls `client.setUser`. During server rendering, the value is `undefined`. Without a client, the setter does nothing. See [Local user](/docs/react/local-context#local-user).
 
 ## useCursorStatus
 

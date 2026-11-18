@@ -48,10 +48,10 @@ type ConnectionState = {
  */
 export function createElysiaRelay(port: number, options: ElysiaRelayOptions = {}) {
   const maxMessageBytes = options.maxMessageBytes ?? limitFromEnv(process.env.MAX_MESSAGE_BYTES, 32 * 1024);
-  const rateCapacity = options.rateCapacity ?? limitFromEnv(process.env.RATE_CAPACITY, 40);
+  const rateCapacity = options.rateCapacity ?? limitFromEnv(process.env.RATE_CAPACITY, 80);
   const rateRefillPerSecond =
-    options.rateRefillPerSecond ?? limitFromEnv(process.env.RATE_REFILL_PER_SECOND, 20);
-  const maxRoomSockets = options.maxRoomSockets ?? limitFromEnv(process.env.RELAY_MAX_ROOM_SOCKETS, 128);
+    options.rateRefillPerSecond ?? limitFromEnv(process.env.RATE_REFILL_PER_SECOND, 40);
+  const maxRoomSockets = options.maxRoomSockets ?? limitFromEnv(process.env.RELAY_MAX_ROOM_SOCKETS, 64);
   const maxSockets = options.maxSockets ?? limitFromEnv(process.env.RELAY_MAX_TOTAL_SOCKETS, 10_000);
   const idleTimeoutSeconds =
     options.idleTimeoutSeconds ?? limitFromEnv(process.env.RELAY_IDLE_TIMEOUT_SECONDS, 60);
@@ -65,6 +65,7 @@ export function createElysiaRelay(port: number, options: ElysiaRelayOptions = {}
   const app = new Elysia({
     websocket: {
       idleTimeout: idleTimeoutSeconds,
+      maxPayloadLength: Math.max(maxMessageBytes * 4, 1024 * 1024),
       sendPings: true,
       backpressureLimit: slowPeerHardBytes,
       closeOnBackpressureLimit: true,

@@ -1,3 +1,5 @@
+"use client";
+
 export { LiveCursorProvider } from "./provider.js";
 export type { LiveCursorProviderProps } from "./provider.js";
 

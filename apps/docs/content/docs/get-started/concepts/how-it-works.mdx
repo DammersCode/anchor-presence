@@ -9,6 +9,14 @@ This central invariant gives the library its design:
 
 > A remote cursor represents a semantic DOM location, not an absolute screen coordinate.
 
+These terms appear on this page:
+
+- An **anchor** is an element with a `data-anchor` attribute. The attribute value is the anchor ID.
+- A **position** is a point inside an anchor, as a fraction from 0 to 1 of its width and of its height.
+- The **receiver layout** is the layout of the browser that shows a remote cursor.
+- The **fallback chain** is the anchor, its parent anchors, and a viewport position, in this order. The receiver uses the first entry that it can find.
+- A **relay** is a server that forwards each message to every other client in a room.
+
 ## Package layers
 
 The system has three packages. Each package adds one layer, and the dependency direction is one-way. `@anchor-presence/react` depends on `@anchor-presence/dom`, and `@anchor-presence/dom` depends on `@anchor-presence/core`:
@@ -18,15 +26,15 @@ flowchart TB
     accTitle: Package layers
     accDescr: @anchor-presence/react depends on @anchor-presence/dom, which depends on @anchor-presence/core.
     react["@anchor-presence/react<br/>provider component, hooks, SSR safety"]
-    dom["@anchor-presence/dom<br/>anchor registry, pointer capture, geometry scheduler, resolver"]
-    core["@anchor-presence/core<br/>protocol types, validation, presence store, client orchestration"]
+    dom["@anchor-presence/dom<br/>anchor registry, pointer capture, layout measurement, resolver"]
+    core["@anchor-presence/core<br/>protocol types, validation, presence store, client"]
 
     react --> dom --> core
 ```
 
-- `@anchor-presence/core` has zero dependencies and needs no DOM. If `document` exists, it reads `document` to send a pending update when the page becomes visible again. It runs in Node.js, Bun, workers, and browsers. It owns the protocol, validation, sequencing, the remote presence store, and client orchestration.
-- `@anchor-presence/dom` depends only on `@anchor-presence/core`. It owns every browser API call, the anchor registry, pointer capture, the geometry scheduler, and visibility policies.
-- `@anchor-presence/react` is an adapter only. It holds no engine state. It subscribes to `@anchor-presence/core` and `@anchor-presence/dom` stores with `useSyncExternalStore`, and declares anchors through the binding's anchor attribute, with no separate registration helper of its own.
+- `@anchor-presence/core` has zero dependencies and needs no DOM. If `document` exists, it reads `document` to send a pending update when the page becomes visible again. It runs in Node.js, Bun, workers, and browsers. It owns the protocol, validation, sequencing, the remote presence store, and the client that sends and receives presence.
+- `@anchor-presence/dom` depends only on `@anchor-presence/core`. It owns every browser API call, the anchor registry, pointer capture, the layout measurement once per animation frame, and visibility policies.
+- `@anchor-presence/react` is an adapter only. It keeps no cursor state of its own. It subscribes to `@anchor-presence/core` and `@anchor-presence/dom` stores with `useSyncExternalStore`, and declares anchors through the binding's anchor attribute, with no separate registration helper of its own.
 
 ## Sender to receiver flow
 
@@ -74,11 +82,11 @@ The invariants have numbers, so that other pages can refer to them:
 7. A local layout change moves a stationary remote cursor without a new network message.
 8. A network message cannot run a DOM selector. Anchor IDs resolve only against the registered anchor map.
 9. The consumer controls rendering. No cursor component is required. `@anchor-presence/react` has optional cursor components.
-10. All engine state lives in `@anchor-presence/core` and `@anchor-presence/dom`. An adapter for another framework, such as Svelte, Vue, or Solid, uses both packages without a change.
+10. All cursor state lives in `@anchor-presence/core` and `@anchor-presence/dom`. An adapter for another framework, such as Svelte, Vue, or Solid, uses both packages without a change.
 
 ## Why receiver layout is authoritative
 
-The receiver resolves each cursor against its own DOM. Local scrolling and resizing therefore cost no network traffic: the geometry scheduler measures the same anchor again and moves the cursor (invariant 7). See [Anchors](/docs/get-started/concepts/anchors) for the coordinate math, and [Responsive layouts](/docs/get-started/concepts/responsive-layouts) for a worked example across two different layouts.
+The receiver resolves each cursor against its own DOM. Local scrolling and resizing therefore cost no network traffic: the binding measures the same anchor again and moves the cursor (invariant 7). See [Anchors](/docs/get-started/concepts/anchors) for the coordinate math, and [Responsive layouts](/docs/get-started/concepts/responsive-layouts) for a worked example across two different layouts.
 
 ## Related
 

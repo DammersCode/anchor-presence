@@ -1,6 +1,6 @@
 ---
 title: Client API
-description: createPresenceClient, its options, PresenceClient, createEventChannel, RemotePresenceStore, isDevMode, and the client constants.
+description: createPresenceClient, its options, PresenceClient, createEventChannel, createEventParser, RemotePresenceStore, isDevMode, and the client constants.
 ---
 
 `@anchor-presence/core` exports every name below.
@@ -59,6 +59,29 @@ function createEventChannel<TEvents extends object>(
 ```
 
 An `EventMap` maps each event type to the type of its `data`. `TypedRemoteEvent<TEvents>` is a union with one member per event type. The channel does not check remote data. See [Typed events](/docs/core/presence-client#typed-events).
+
+## createEventParser
+
+`createEventParser` and `EventParsers` have these signatures:
+
+```ts
+type EventParsers<TEvents extends EventMap> = {
+  [K in keyof TEvents & string]:
+    ((data: unknown) => TEvents[K] | undefined) | (undefined extends TEvents[K] ? null : never);
+};
+
+function createEventParser<TEvents extends EventMap>(
+  parsers: EventParsers<TEvents>,
+): (event: RemoteEvent) => TypedRemoteEvent<TEvents> | undefined;
+```
+
+`createEventParser` returns a function for the `parseEvent` option of `createPresenceClient`. Each parser receives the remote `data` and returns the checked data, or `undefined` to drop the event. `null` is legal only for an event whose data type includes `undefined`. The returned function drops an event in these cases:
+
+- `parsers` has no entry for its `type`.
+- Its parser returns `undefined`.
+- Its entry is `null` and the event carries data.
+
+See [Typed events](/docs/core/presence-client#typed-events) for a sample.
 
 ## AdaptivePublishOptions
 

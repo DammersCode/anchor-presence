@@ -38,15 +38,15 @@ A transport that needs a third-party library lives in `examples/`, never in a pa
 Two options need no relay:
 
 - `createInMemoryPair` from `@anchor-presence/core` connects two transports directly in one process. The code samples of this site use it.
-- A `BroadcastChannel` transport connects two tabs or iframes on the same origin. The library does not ship one, so write your own. The live demos of this site use one.
+- `createBroadcastChannelTransport` from `@anchor-presence/dom` connects tabs and iframes on the same origin. The live demos of this site use it.
 
 ## Choose a backend
 
-- If you run a plain WebSocket server, or you have no server yet, use `createWebSocketTransport` from `@anchor-presence/dom`. It is the only transport that ships in a package. It has reconnect and backoff.
+- If you run a plain WebSocket server, or you have no server yet, use `createWebSocketTransport` from `@anchor-presence/dom`. It has reconnect and backoff.
 - If your server runs on Bun, Node.js, Hono, or Elysia, use the matching relay example. The client uses `createWebSocketTransport` with no custom transport.
 - If your app uses Socket.IO for other real-time features, use the [Socket.IO example](/docs/examples/backends/socketio). Presence then shares that connection, and you need no second WebSocket server.
 - If your server runs ASP.NET Core, use the [SignalR example](/docs/examples/backends/signalr). It wraps a `HubConnection` as a transport.
-- For a prototype or a test, use `createInMemoryPair` in one process. For two tabs or iframes on the same origin with no server, use a `BroadcastChannel` transport.
+- For a prototype or a test, use `createInMemoryPair` in one process. For two tabs or iframes on the same origin with no server, use `createBroadcastChannelTransport`.
 
 ## Shared guard helpers
 

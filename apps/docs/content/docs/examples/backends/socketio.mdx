@@ -55,8 +55,8 @@ client.subscribeClose((close) => {
 
 - `subscribeStatus` replays the current status to every new subscriber. As a result, a component that mounts after the socket connects still learns that it can send.
 - The relay never parses `"presence"` payloads. The validation in the receiving client is the only check between the wire and the store. See [Security](/docs/get-started/guides/security).
-- A token bucket (a counter that refills at a fixed rate) limits the inbound `"presence"` messages of each socket (`RATE_CAPACITY`, default 40, and `RATE_REFILL_PER_SECOND`, default 20). The relay drops a message above the limit and keeps the socket open.
-- The relay limits one room with `RELAY_MAX_ROOM_SOCKETS` (default 128) and the process with `RELAY_MAX_TOTAL_SOCKETS` (default 10,000).
+- A token bucket (a counter that refills at a fixed rate) limits the inbound `"presence"` messages of each socket (`RATE_CAPACITY`, default 80, and `RATE_REFILL_PER_SECOND`, default 40). The relay drops a message above the limit and keeps the socket open.
+- The relay limits one room with `RELAY_MAX_ROOM_SOCKETS` (default 64) and the process with `RELAY_MAX_TOTAL_SOCKETS` (default 10,000).
 - Socket.IO closes dead connections with its own heartbeat. The `pingInterval` and `pingTimeout` server options control it.
 - If `authCheck` returns `{ clientId, user }`, the relay binds that identity to every JSON frame of the socket. See [Identity binding](/docs/examples/backends#identity-binding).
 - `examples/socketio/socketio.test.ts` starts a real Socket.IO server on a free port and connects two clients. It checks that a cursor update from one client reaches the other through `getRemoteSnapshot()`. It also checks the rate limit.

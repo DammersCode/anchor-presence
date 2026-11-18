@@ -1,54 +1,27 @@
 ---
 title: Quick start
-description: Run live cursors with no backend, then connect a real relay.
+description: See live cursors in two browser tabs with no backend, then connect a relay.
 ---
 
-Run live cursors in two steps. First, mount the library with no backend, on an in-process transport. Then connect two browser tabs through a real relay.
+Run live cursors in two steps. First, connect two tabs of one browser with no backend. Then connect two browsers through a relay. A relay is a server that forwards each message to every other client in a room.
 
-## Try it with no backend
+## Try it in two tabs
 
-`createInMemoryPair` gives you two connected transports in one process. Use it to see the library work before you connect a relay:
-
-```tsx
-import { createInMemoryPair, createPresenceClient } from "@anchor-presence/core";
-import { LiveCursorProvider, CursorLayer } from "@anchor-presence/react";
-
-const { a: transport } = createInMemoryPair();
-const client = createPresenceClient({ transport, user: { name: "Alice" } });
-
-function DashboardButton() {
-  return <button data-anchor="nav.dashboard">Dashboard</button>;
-}
-
-function App() {
-  return (
-    <LiveCursorProvider client={client}>
-      <DashboardButton />
-      <CursorLayer />
-    </LiveCursorProvider>
-  );
-}
-```
-
-`createInMemoryPair` returns two transports, `a` and `b`. The client sends on `a`, and its messages go to the listeners of `b`. Nothing listens on `b`, so no remote cursor appears. The sample only shows that the anchors, the provider, and `CursorLayer` compile and mount.
-
-## Connect two real clients
-
-Real live cursors need two clients, one per browser tab, on a shared transport. Pass the provider a `factory`. The provider runs the factory once per mount, in a mount effect. In development, React Strict Mode runs each effect twice. The provider disposes the first client before it creates the second, so only one client stays connected:
+`createBroadcastChannelTransport` from `@anchor-presence/dom` connects the tabs and iframes of one origin, with no server. Pass the provider a `factory` that creates the transport and the client. Mark one element with `data-anchor`:
 
 ```tsx
 import { createPresenceClient } from "@anchor-presence/core";
-import { createWebSocketTransport } from "@anchor-presence/dom";
+import { createBroadcastChannelTransport } from "@anchor-presence/dom";
 import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
 
-function App() {
+function createClient() {
+  const transport = createBroadcastChannelTransport("live-cursors");
+  return createPresenceClient({ transport, user: { name: `Guest ${Math.floor(Math.random() * 100)}` } });
+}
+
+export function App() {
   return (
-    <LiveCursorProvider
-      factory={() => {
-        const transport = createWebSocketTransport({ port: 8788, path: "/?room=main" });
-        return createPresenceClient({ transport, user: { name: "Alice" } });
-      }}
-    >
+    <LiveCursorProvider factory={createClient}>
       <button data-anchor="nav.dashboard">Dashboard</button>
       <CursorLayer />
     </LiveCursorProvider>
@@ -56,15 +29,37 @@ function App() {
 }
 ```
 
-The client connects the transport by default. Before the mount effect runs, the provider renders its children with a `null` client, and every hook returns its server-safe value. See [SSR and Strict Mode](/docs/react/ssr-and-strict-mode) for the full rule.
+Open your app in two tabs of the same browser. Move the pointer in one tab. A cursor with a guest name appears in the other tab. `CursorLayer` shows `user.name` as the label. It gives each client one color from a palette of 8 colors.
 
-The sample connects to port 8788, where the [Bun relay](/docs/examples/backends/bun-native) listens. It is the smallest runnable relay in [Backends](/docs/examples/backends). Every relay there uses its own port, so set `port` to the port of the relay that you run. Without `port`, the transport connects to 8787, the port of the reference relay in `apps/server`.
+The provider runs the factory once per mount, in a browser-only effect, and disposes the client on unmount. Create the client in the factory, not at module scope. A module-scope client also runs on the server, and every request then shares it. See [SSR and Strict Mode](/docs/react/ssr-and-strict-mode).
 
-`room` is a relay-side grouping key, not part of the protocol. Any bidirectional byte channel that implements the transport interface works in place of `createWebSocketTransport`. See [Transports](/docs/core/transports).
+## Connect a relay
+
+A `BroadcastChannel` never leaves the browser. To connect two browsers or two devices, run a relay and use `createWebSocketTransport`. Start the [Bun relay](/docs/examples/backends/bun-native) from a clone of the repository:
+
+```sh
+bun install
+cd examples/bun-native
+bun run dev:relay
+```
+
+The relay listens on port 8788. Change only the transport in `createClient`:
+
+```tsx
+import { createPresenceClient } from "@anchor-presence/core";
+import { createWebSocketTransport } from "@anchor-presence/dom";
+
+function createClient() {
+  const transport = createWebSocketTransport({ port: 8788, path: "/?room=main" });
+  return createPresenceClient({ transport, user: { name: `Guest ${Math.floor(Math.random() * 100)}` } });
+}
+```
+
+The client connects the transport by default. `room` is a key of the relay that groups clients, not part of the protocol. Every relay in [Backends](/docs/examples/backends) uses its own port, so set `port` to the port of the relay that you run. Any bidirectional byte channel that implements the transport interface works in place of `createWebSocketTransport`. See [Transports](/docs/core/transports).
 
 ## See it move
 
-Open your app in two browser windows. Move the pointer in one window. A live cursor appears in the second window. It stays on the same element, even at a different window size:
+Open your app in two browser windows. Move the pointer in one window. The cursor appears in the second window. It stays on the same element, even at a different window size:
 
 <Demo />
 
@@ -74,6 +69,7 @@ Open your app in two browser windows. Move the pointer in one window. A live cur
 
 ## Related
 
+- [Frameworks](/docs/get-started/frameworks)
 - [Anchors](/docs/get-started/concepts/anchors)
 - [Fallback chain](/docs/get-started/concepts/fallback-chain)
 - [SSR and Strict Mode](/docs/react/ssr-and-strict-mode)

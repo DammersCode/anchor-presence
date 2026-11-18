@@ -1,5 +1,5 @@
 import { jsonCodec } from "./codec.js";
-import { createOversizedWarning, isDevMode } from "./internal/dev-warnings.js";
+import { createOversizedWarning, isDevMode, warnOnce } from "./internal/dev-warnings.js";
 import { defaultIdFactory } from "./internal/ids.js";
 import { wireInbound } from "./internal/ingest.js";
 import { startLiveness } from "./internal/liveness.js";
@@ -23,6 +23,7 @@ import {
 export const DEFAULT_PUBLISH_INTERVAL_MS = 50;
 
 /** Default heartbeat interval, in milliseconds. */
+const MIN_SWEEP_INTERVAL_MS = 250;
 export const DEFAULT_HEARTBEAT_INTERVAL_MS = 10_000;
 
 const MIN_TIMER_INTERVAL_MS = 1;
@@ -101,6 +102,13 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     options.staleTimeoutMs === undefined ? undefined : Math.max(MIN_STALE_TIMEOUT_MS, options.staleTimeoutMs);
   const idleAfterMs = options.idleAfterMs === undefined ? undefined : Math.max(0, options.idleAfterMs);
 
+  if (isDevMode() && staleTimeoutMs !== undefined && staleTimeoutMs <= heartbeatIntervalMs * 2) {
+    warnOnce(
+      "stale-vs-heartbeat",
+      `staleTimeoutMs (${staleTimeoutMs}) is at most twice heartbeatIntervalMs (${heartbeatIntervalMs}), so a quiet peer expires between heartbeats. Raise staleTimeoutMs or lower heartbeatIntervalMs.`,
+    );
+  }
+
   const clientId = options.clientId ?? idFactory();
   const session = idFactory();
 
@@ -141,8 +149,10 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     adaptivePublish: adaptiveOptions !== undefined,
     heartbeatIntervalMs,
     // half the shorter of the two timeouts, so an idle or stale transition shows up within one sweep tick
-    sweepIntervalMs:
+    sweepIntervalMs: Math.max(
+      MIN_SWEEP_INTERVAL_MS,
       Math.min(staleTimeoutMs ?? DEFAULT_STALE_TIMEOUT_MS, idleAfterMs ?? DEFAULT_IDLE_AFTER_MS) / 2,
+    ),
     maxFieldBytes: validationLimits?.maxFieldBytes ?? DEFAULT_MAX_FIELD_BYTES,
     maxMessageBytes: validationLimits?.maxMessageBytes ?? DEFAULT_MAX_MESSAGE_BYTES,
     validationLimits,

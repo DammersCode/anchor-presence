@@ -4,6 +4,16 @@ Semantic live cursors for the DOM: different layouts, same meaning.
 
 Each cursor tracks a named element, not a screen pixel. Every client resolves it against its own layout.
 
+Anchor Presence works with Next.js, TanStack Start and Router, Remix and React Router, Vite, and Astro. See [Frameworks](https://anchor-presence.vercel.app/docs/get-started/frameworks).
+
+These terms appear in this README:
+
+- An **anchor** is an element with a `data-anchor` attribute. The attribute value is the anchor ID.
+- A **position** is a point inside an anchor, as a fraction from 0 to 1 of its width and of its height.
+- The **receiver layout** is the layout of the browser that shows a remote cursor.
+- The **fallback chain** is the anchor, its parent anchors, and a viewport position, in this order. The receiver uses the first entry that it can find.
+- A **relay** is a server that forwards each message to every other client in a room.
+
 [![MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![Agent skill](https://skills.sh/b/DammersCode/anchor-presence)](https://skills.sh)
 
 ## Quick start
@@ -14,21 +24,21 @@ Install the three packages:
 bun add @anchor-presence/react @anchor-presence/dom @anchor-presence/core
 ```
 
-Pass the provider a `factory` that builds the transport and the client. The client connects the transport by default. Mark one element with `data-anchor`. Then render the provider and the cursor layer, as in this sample:
+Pass the provider a `factory` that creates the transport and the client. Mark one element with `data-anchor`. Then render the provider and the cursor layer:
 
 ```tsx
 import { createPresenceClient } from "@anchor-presence/core";
-import { createWebSocketTransport } from "@anchor-presence/dom";
+import { createBroadcastChannelTransport } from "@anchor-presence/dom";
 import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
 
-function App() {
+function createClient() {
+  const transport = createBroadcastChannelTransport("live-cursors");
+  return createPresenceClient({ transport, user: { name: `Guest ${Math.floor(Math.random() * 100)}` } });
+}
+
+export function App() {
   return (
-    <LiveCursorProvider
-      factory={() => {
-        const transport = createWebSocketTransport({ path: "/?room=main" });
-        return createPresenceClient({ transport });
-      }}
-    >
+    <LiveCursorProvider factory={createClient}>
       <button data-anchor="nav.dashboard">Dashboard</button>
       <CursorLayer />
     </LiveCursorProvider>
@@ -36,7 +46,15 @@ function App() {
 }
 ```
 
-To start the matching relay for this example, run `cd apps/server && bun run dev`. Open your app in two browser windows. Move the pointer in one window. A live cursor appears in the other window, on the same element, even at a different window size. See the [docs site](https://anchor-presence.vercel.app/docs) for the full quick start, every transport, and the API reference.
+Open your app in two tabs of the same browser. Move the pointer in one tab. A cursor with a guest name appears in the other tab, on the same element, even at a different window size. `createBroadcastChannelTransport` connects the tabs of one origin and needs no server.
+
+To connect two browsers, run a relay. Start the Bun relay with `cd examples/bun-native && bun run dev:relay`. Then change the transport in `createClient`:
+
+```ts
+const transport = createWebSocketTransport({ port: 8788, path: "/?room=main" });
+```
+
+`createWebSocketTransport` comes from `@anchor-presence/dom`. See the [quick start](https://anchor-presence.vercel.app/docs/get-started/quick-start) for the full steps.
 
 ## Requirements
 
@@ -49,13 +67,13 @@ To start the matching relay for this example, run `cd apps/server && bun run dev
 
 ## Packages
 
-| Package                  | Description                                                                                   | Link                                         |
-| ------------------------ | --------------------------------------------------------------------------------------------- | -------------------------------------------- |
-| `@anchor-presence/core`  | Protocol, validation, presence store, client orchestration. Zero dependencies, no DOM needed. | [`packages/core`](packages/core/README.md)   |
-| `@anchor-presence/dom`   | Anchor registry, pointer capture, geometry scheduler, resolver.                               | [`packages/dom`](packages/dom/README.md)     |
-| `@anchor-presence/react` | Provider component and hooks, built on `useSyncExternalStore`.                                | [`packages/react`](packages/react/README.md) |
-| `apps/demo`              | React admin dashboard that shows correct cursors across layouts.                              | [`apps/demo`](apps/demo/README.md)           |
-| `apps/server`            | Bun WebSocket relay for the demo.                                                             | [`apps/server`](apps/server)                 |
+| Package                  | Description                                                                                                  | Link                                         |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------ | -------------------------------------------- |
+| `@anchor-presence/core`  | Protocol, validation, presence store, and the client. Zero dependencies, no DOM needed.                      | [`packages/core`](packages/core/README.md)   |
+| `@anchor-presence/dom`   | Anchor registry, pointer capture, layout measurement, resolver, WebSocket and `BroadcastChannel` transports. | [`packages/dom`](packages/dom/README.md)     |
+| `@anchor-presence/react` | Provider component and hooks, built on `useSyncExternalStore`.                                               | [`packages/react`](packages/react/README.md) |
+| `apps/demo`              | React admin dashboard that shows correct cursors across layouts.                                             | [`apps/demo`](apps/demo/README.md)           |
+| `apps/server`            | Bun WebSocket relay for the demo.                                                                            | [`apps/server`](apps/server)                 |
 
 ## Features
 
@@ -129,7 +147,7 @@ flowchart TD
     subgraph Receiver
         E["transport.subscribe()"] --> F["codec.decode()"]
         F --> G["validatePresence()"]
-        G --> H["geometry scheduler: measure own anchor, resolve tier, interpolate"]
+        G --> H["binding: measure own anchor, resolve tier, interpolate"]
         H --> I["ResolvedCursor { x, y, visible, tier }"]
     end
     D --> E

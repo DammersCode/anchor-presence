@@ -60,4 +60,4 @@ export type {
 export { linearInterpolator, noneInterpolator } from "./interpolate.js";
 export type { Interpolator, InterpolatorFactory } from "./interpolate.js";
 
-export { isDevMode } from "./internal/dev-warnings.js";
+export { isDevMode, warnOnce } from "./internal/dev-warnings.js";

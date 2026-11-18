@@ -5,6 +5,16 @@ description: Common problems and their causes.
 
 Most cursor problems come from a missing anchor, a connection that is not open, or a layout change that the binding cannot see. Find your symptom below for its causes and the fix.
 
+## No cursor at all
+
+If no remote cursor ever appears, do these checks in order:
+
+1. Open the browser console. Read the [development warnings](#development-warnings) of the library.
+2. Show the value of `useCursorStatus()`. If it is not `"connected"`, the transport has no open connection.
+3. Call `client.subscribeClose(listener)` and log the close `code` and `reason`. Find the code in the [close code table](/docs/examples/backends/relay-contract#close-codes).
+4. Open the network panel of the browser developer tools. Select the WebSocket connection and read its frames. If no frames arrive, the relay does not forward the messages of the other client.
+5. Make sure that both clients use the same room and the same codec.
+
 ## Cursor not visible
 
 Three separate causes produce the same symptom.
@@ -63,9 +73,26 @@ For this reason, client creation never throws on plain HTTP. For a specific ID f
 
 A `clientId` identifies a client instance, not a user. Two live tabs that share one `clientId` generate two different `session` values, because `session` is random per client instance.
 
-The sequence rule of the receiver treats a session change as a restart. It accepts the messages of the new session and resets the stored sequence number. Two tabs that share a `clientId` look like a restart on every message. The visible cursor then jumps between the positions of the two tabs.
+A client ignores every message with its own `clientId`, so the two tabs do not see the cursors of each other. A third tab sees one client. The sequence rule of the receiver treats a session change as a restart, so its cursor jumps between the positions of the two tabs.
 
-The library does not report this error. Give every tab or connection its own `clientId`. Attach the user identity through the `user` field, and do not reuse a `clientId` across tabs.
+In development, the console warns one time when a client receives its own `clientId` from another session. Give every tab or connection its own `clientId`. The default `clientId` is different for each client. Attach the user identity through the `user` field, and do not reuse a `clientId` across tabs.
+
+## Development warnings
+
+Outside production builds, the library writes warnings to the console with the prefix `[anchor-presence]`. Production builds write none of them. [`isDevMode()`](/docs/core/presence-client#development-mode) decides which build is a production build.
+
+| Warning                                                 | Cause                                                                                                                                    | How often                |
+| ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| A hook or `CursorLayer` runs outside the provider       | A hook or `CursorLayer` has no `LiveCursorProvider` above it. It returns empty data.                                                     | One time                 |
+| The provider got neither `client` nor `factory`         | `LiveCursorProvider` has no client, so it renders without presence.                                                                      | One time                 |
+| The provider got both `binding` and `bindingOptions`    | The provider uses `binding` and ignores `bindingOptions`.                                                                                | One time                 |
+| A client dropped an inbound message                     | A message is larger than `maxMessageBytes`, fails to decode or validate, or a subscriber throws. The warning names the reason.           | One time for each reason |
+| Another client uses the same `clientId`                 | Two tabs share one `clientId`. See [Two tabs share one clientId](#two-tabs-share-one-clientid).                                          | One time                 |
+| `staleTimeoutMs` is at most twice `heartbeatIntervalMs` | A quiet peer expires between two heartbeats. Raise `staleTimeoutMs` or lower `heartbeatIntervalMs`.                                      | One time                 |
+| The relay closed the connection with code N             | The relay closed the WebSocket with a code of `4000` or more. See the [close codes](/docs/examples/backends/relay-contract#close-codes). | On each close            |
+| A message failed to encode or send                      | The codec or `transport.send` threw, for example because `user` or `context` is not plain JSON.                                          | One time for each client |
+
+The client writes more warnings for oversized outbound values and for remote values that fail a check. See [Development mode](/docs/core/presence-client#development-mode).
 
 ## Tests in jsdom
 

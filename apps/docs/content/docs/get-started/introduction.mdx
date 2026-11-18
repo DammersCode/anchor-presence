@@ -11,17 +11,25 @@ A typical remote cursor is a screen coordinate. Two clients rarely show the same
 
 ## The fix
 
-Anchor Presence never sends a screen coordinate as the primary signal. It sends a semantic anchor ID plus a normalized position inside that anchor. Each receiver measures its own copy of the anchor and computes a pixel position from that proportion. Read [Anchors](/docs/get-started/concepts/anchors) and [Fallback chain](/docs/get-started/concepts/fallback-chain) for the full model.
+Anchor Presence never sends a screen coordinate as the primary signal. It sends an anchor ID and a position:
+
+- An **anchor** is an element with a `data-anchor` attribute, for example `<button data-anchor="nav.dashboard">`. The attribute value is the anchor ID.
+- The **position** is the point inside the anchor, as a fraction from 0 to 1 of its width and of its height.
+- The **receiver layout** is the layout of the browser that shows the cursor. Each receiver measures its own copy of the anchor and turns the position into pixels.
+- The **fallback chain** is the list of the anchor and its parent anchors, then a position in the viewport. If the receiver has no element for the first anchor ID, it tries the next entry.
+- A **relay** is a server that forwards each message to every other client in a room.
+
+Read [Anchors](/docs/get-started/concepts/anchors) and [Fallback chain](/docs/get-started/concepts/fallback-chain) for the full model.
 
 ## Packages
 
 The library has three packages. Each adds one layer, and the dependency direction is one-way: `@anchor-presence/react` depends on `@anchor-presence/dom`, and `@anchor-presence/dom` depends on `@anchor-presence/core`.
 
-| Package                  | What it does                                                    | Depends on DOM or React |
-| ------------------------ | --------------------------------------------------------------- | ----------------------- |
-| `@anchor-presence/core`  | Protocol, validation, presence store, client orchestration.     | No                      |
-| `@anchor-presence/dom`   | Anchor registry, pointer capture, layout measurement, resolver. | DOM only                |
-| `@anchor-presence/react` | Provider component and hooks, built on `useSyncExternalStore`.  | React                   |
+| Package                  | What it does                                                                           | Depends on DOM or React |
+| ------------------------ | -------------------------------------------------------------------------------------- | ----------------------- |
+| `@anchor-presence/core`  | Protocol, validation, presence store, and the client that sends and receives presence. | No                      |
+| `@anchor-presence/dom`   | Anchor registry, pointer capture, layout measurement, resolver.                        | DOM only                |
+| `@anchor-presence/react` | Provider component and hooks, built on `useSyncExternalStore`.                         | React                   |
 
 ## How the docs are organized
 
@@ -36,7 +44,7 @@ The section switcher in the sidebar splits the docs into six sections:
 
 ## Guarantees
 
-The library holds a fixed set of rules on every message: layout independence, predictable degradation, and no engine state outside `@anchor-presence/core`. See [How it works](/docs/get-started/concepts/how-it-works) for the full list of invariants.
+The library holds a fixed set of rules on every message. A cursor does not depend on the layout of the sender. A cursor that misses its anchor falls back in a fixed order. All cursor state lives in `@anchor-presence/core` and `@anchor-presence/dom`, never in the React adapter. See [How it works](/docs/get-started/concepts/how-it-works) for the full list of invariants.
 
 ## Related
 

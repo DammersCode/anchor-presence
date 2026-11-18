@@ -4,7 +4,7 @@ import net from "node:net";
 import { randomBytes, randomUUID } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { slowPeerAction } from "../index";
+import { closePeerAboveHardLimit, slowPeerAction } from "../index";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 
@@ -353,26 +353,16 @@ describe("reference relay hardening", () => {
     allowed.socket.destroy();
   }, 10_000);
 
-  it(
-    "closes a stalled peer with 4003 and stops queueing messages for it",
-    { retry: 2, timeout: 30_000 },
-    async () => {
-      const room = randomUUID();
-      const stalled = await rawConnect(slowPort, `/?room=${room}`, null);
-      stalled.socket.pause();
-
-      const sender = await connect(`ws://127.0.0.1:${slowPort}/?room=${room}`);
-      // the 4003 close only fires once the paused peer's buffers back up past the hard threshold, so over-send + retry to stay deterministic on slow CI
-      const burst = 16;
-      for (let i = 0; i < burst; i++) sender.ws.send(new Uint8Array(256 * 1024));
-      await new Promise((resolve) => setTimeout(resolve, 5000));
-
-      const { code, received } = await awaitCloseCode(stalled, 12_000);
-      expect(code).toBe(4003);
-      expect(received).toBeGreaterThanOrEqual(262144);
-      expect(received).toBeLessThan(burst * 262154);
-    },
-  );
+  it("closes a peer whose buffer is above the hard limit with 4003", () => {
+    const closes: unknown[][] = [];
+    const peer = (buffered: number) => ({
+      getBufferedAmount: () => buffered,
+      close: (...args: unknown[]) => closes.push(args),
+    });
+    expect(closePeerAboveHardLimit(peer(192), 192)).toBe(false);
+    expect(closePeerAboveHardLimit(peer(193), 192)).toBe(true);
+    expect(closes).toEqual([[4003, "slow peer"]]);
+  });
 
   it("keeps delivering to healthy peers while a peer is stalled", async () => {
     const room = randomUUID();

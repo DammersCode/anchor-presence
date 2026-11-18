@@ -36,6 +36,18 @@ function eventTargetElement(event: Event): Element | null {
   return event.target instanceof Element ? event.target : null;
 }
 
+// 1e-4 of a box is 0.2 px at 2000 px, and it shortens every JSON frame by about a quarter
+function roundFraction(value: number): number {
+  return Math.round(value * 1e4) / 1e4;
+}
+
+// a captured pointer keeps its start element as target; the element under the pointer is the real anchor
+function pointerTarget(event: PointerEvent): Element | null {
+  const target = eventTargetElement(event);
+  if (!target?.hasPointerCapture?.(event.pointerId)) return target;
+  return target.ownerDocument.elementFromPoint(event.clientX, event.clientY) ?? target;
+}
+
 function buildCursorPosition(
   clientX: number,
   clientY: number,
@@ -48,14 +60,17 @@ function buildCursorPosition(
     // cache is at most one frame old; every layout-changing signal invalidates it (spec §9 tolerance)
     const rect = getCachedRect?.(element) ?? element.getBoundingClientRect();
     if (rect.width <= 0 || rect.height <= 0) continue;
-    const u = (clientX - rect.left) / rect.width;
-    const v = (clientY - rect.top) / rect.height;
+    const u = roundFraction((clientX - rect.left) / rect.width);
+    const v = roundFraction((clientY - rect.top) / rect.height);
     anchors.push({ id, u, v });
   }
 
   const position: CursorPosition = { anchors };
   if (win.innerWidth > 0 && win.innerHeight > 0) {
-    position.viewport = { u: clientX / win.innerWidth, v: clientY / win.innerHeight };
+    position.viewport = {
+      u: roundFraction(clientX / win.innerWidth),
+      v: roundFraction(clientY / win.innerHeight),
+    };
   }
   return position;
 }
@@ -90,7 +105,7 @@ export function attachPointerSource(
   const activeTouchPointers = new Set<number>();
 
   function onPointerEvent(event: PointerEvent): void {
-    const target = eventTargetElement(event);
+    const target = pointerTarget(event);
     if (target === null) return;
     if (event.pointerType === "touch") activeTouchPointers.add(event.pointerId);
     const position = buildCursorPosition(event.clientX, event.clientY, chainFor(target), win, getCachedRect);

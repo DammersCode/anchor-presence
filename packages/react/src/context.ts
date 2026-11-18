@@ -12,9 +12,10 @@ export type LiveCursorContextValue<TContext = unknown, TUser = unknown> = {
   binding: DomBinding<TContext, TUser> | null;
 };
 
-const defaultValue: LiveCursorContextValue = { client: null, binding: null };
+/** The context value without a provider. Compare against it to detect a missing provider. */
+export const LiveCursorContextDefault: LiveCursorContextValue = { client: null, binding: null };
 
 /**
  * The React context that carries the client and the binding.
  */
-export const LiveCursorContext = createContext<LiveCursorContextValue>(defaultValue);
+export const LiveCursorContext = createContext<LiveCursorContextValue>(LiveCursorContextDefault);

@@ -40,6 +40,14 @@ export default defineConfig({
       },
       {
         test: {
+          name: "built-packages",
+          environment: "node",
+          include: ["test/built-packages/**/*.test.ts"],
+          testTimeout: 20_000,
+        },
+      },
+      {
+        test: {
           name: "audit-skill",
           environment: "node",
           include: ["test/audit-skill/**/*.test.mjs"],

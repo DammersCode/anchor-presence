@@ -88,8 +88,11 @@ function messageByteLength(message: string | ArrayBuffer): number {
   return encoder.encode(message).byteLength;
 }
 
-function closePeerAboveHardLimit(peer: RoomSocket): boolean {
-  if (peer.getBufferedAmount() <= SLOW_PEER_HARD_BYTES) return false;
+export function closePeerAboveHardLimit(
+  peer: Pick<RoomSocket, "getBufferedAmount" | "close">,
+  hardBytes = SLOW_PEER_HARD_BYTES,
+): boolean {
+  if (peer.getBufferedAmount() <= hardBytes) return false;
   peer.close(SLOW_PEER_CODE, "slow peer");
   return true;
 }

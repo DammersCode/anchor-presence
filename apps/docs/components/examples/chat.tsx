@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { READER } from "./_preview/scenes";
 import { LongPage } from "./long-page";
+import { safeColor } from "./safe-color";
 
 type User = { name: string; color: string };
 
@@ -66,7 +67,7 @@ function ChatCursorLayer() {
   return (
     <CursorLayer<unknown, User>
       getLabel={(cursor) => messages[cursor.clientId] ?? cursor.user?.name}
-      getColor={(cursor) => cursor.user?.color ?? "#4f46e5"}
+      getColor={(cursor) => safeColor(cursor.user?.color, "#4f46e5")}
     />
   );
 }

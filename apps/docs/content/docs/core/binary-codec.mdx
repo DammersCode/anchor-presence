@@ -46,7 +46,7 @@ The `context` and `user` values stay JSON inside the binary frame. Only the curs
 
 ## Encode limits
 
-`binaryCodec.encode` throws when a message breaks a frame limit. It throws an `Error` in these cases:
+`binaryCodec.encode` throws when a message breaks a frame limit. It throws a `TypeError` for a coordinate that is not a finite 32-bit float, and an `Error` in these cases:
 
 - `version` is not `1`.
 - `clientId`, `session`, or an anchor `id` is longer than 65535 UTF-8 bytes.
@@ -55,11 +55,10 @@ The `context` and `user` values stay JSON inside the binary frame. Only the curs
 - `cursor.anchors` is not an array.
 - The cursor has more than 255 anchors.
 - `sequence` is not a safe integer from 0 to `DEFAULT_MAX_SEQUENCE`.
-- An anchor coordinate is not a finite 32-bit float. For example, `1e39` throws.
 - `pointer.type` is not `mouse`, `pen`, or `touch`.
 - `JSON.stringify` cannot serialize `context` or `user`.
 
-A viewport coordinate that is not a finite 32-bit float throws a `TypeError`.
+The `TypeError` cases are an anchor or viewport coordinate that is not a finite 32-bit float. For example, `1e39` throws a `TypeError`.
 
 The protocol limits on the [Validation](/docs/core/validation#validationlimits) page are tighter than these frame limits. For example, the protocol allows 8 anchors and the frame allows 255. A message inside the protocol limits never reaches a frame limit. If an encode error comes from `user` or `context`, the client encodes the message again without them. See [Development mode](/docs/core/presence-client#development-mode). In all other cases, the client loses the message and continues.
 

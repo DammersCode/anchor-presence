@@ -47,7 +47,10 @@ const INSTALL_COMMAND = /<InstallCommand(?: packages="([^"]+)")? \/>/g;
 const MERMAID = /<Mermaid\s+chart="([\s\S]*?)"\s*\/>/g;
 const WARN_CALLOUT = /<Callout type="warn">\s*([\s\S]*?)\s*<\/Callout>/g;
 const LUCIDE_IMPORT = /^import \{[^}]*\} from "lucide-react";\n/gm;
-const CARD = /<Card\b[^>]*?title="([^"]+)"[^>]*?href="([^"]+)"[^>]*>\s*([\s\S]*?)\s*<\/Card>/g;
+const CARD =
+  /<Card\b(?:"[^"]*"|\{[^}]*\}|[^>])*?title="([^"]+)"(?:"[^"]*"|\{[^}]*\}|[^>])*?href="([^"]+)"(?:"[^"]*"|\{[^}]*\}|[^>])*>\s*([\s\S]*?)\s*<\/Card>/g;
+const STEP_BODY = /(<Step>)([\s\S]*?)(<\/Step>)/g;
+const TAB_BODY = /(<Tab value="[^"]+">)([\s\S]*?)(<\/Tab>)/g;
 const TAB = /<Tab value="([^"]+)">/g;
 const ACCORDION = /<Accordion title="([^"]+)">/g;
 const STRUCTURE_TAGS = /^\s*<\/?(?:Cards|Tabs|Steps|Accordions)\b[^>]*>\s*\n?|<\/?(?:Tab|Step|Accordion)>/gm;
@@ -76,6 +79,10 @@ function warningQuote(body: string): string {
   return [`> **Warning:** ${first}`, ...rest.map((line) => (line === "" ? ">" : `> ${line}`))].join("\n");
 }
 
+function dedentBody(_block: string, open: string, body: string, close: string): string {
+  return open + body.replaceAll(/^ {4}/gm, "") + close;
+}
+
 // MDX components render nothing in markdown, so agents get the real code and type tables instead.
 async function inlineComponents(markdown: string): Promise<string> {
   let out = markdown
@@ -98,6 +105,8 @@ async function inlineComponents(markdown: string): Promise<string> {
       (_tag, title: string, href: string, body: string) =>
         `- [${title}](${href}): ${body.replaceAll("\n", " ")}`,
     )
+    .replace(STEP_BODY, dedentBody)
+    .replace(TAB_BODY, dedentBody)
     .replace(TAB, (_tag, name: string) => `**${name}**\n`)
     .replace(ACCORDION, (_tag, title: string) => `**${title}**\n`)
     .replace(STRUCTURE_TAGS, "");

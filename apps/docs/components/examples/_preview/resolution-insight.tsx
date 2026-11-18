@@ -3,6 +3,7 @@
 import { useCursorClient, useRemoteCursors, type ResolvedCursor } from "@anchor-presence/react";
 import { useLayoutEffect, useMemo, useRef } from "react";
 import type { TourUser } from "./tour";
+import { safeColor } from "../safe-color";
 
 type Cursor = ResolvedCursor<unknown, TourUser>;
 
@@ -99,7 +100,7 @@ function ResolvedOutline({ cursor, dashed }: { cursor: Cursor | null; dashed: bo
     };
   });
 
-  const color = cursor?.user?.color ?? "#4f46e5";
+  const color = safeColor(cursor?.user?.color, "#4f46e5");
   return (
     <div
       ref={boxRef}
@@ -146,7 +147,10 @@ export function ResolutionInsight() {
             <span className="flex flex-none items-center gap-1.5 font-medium">
               <span
                 className="size-2 rounded-full"
-                style={{ backgroundColor: focus.user?.color ?? "#6b7280", opacity: focus.idle ? 0.4 : 1 }}
+                style={{
+                  backgroundColor: safeColor(focus.user?.color, "#6b7280"),
+                  opacity: focus.idle ? 0.4 : 1,
+                }}
               />
               {focus.user?.name ?? "Guest"}
             </span>

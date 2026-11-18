@@ -4,6 +4,7 @@ import { createPresenceClient } from "@anchor-presence/core";
 import { createBroadcastChannelTransport, type VisibilityPolicy } from "@anchor-presence/dom";
 import { CursorLayer, LiveCursorProvider, useLocalContext } from "@anchor-presence/react";
 import { useEffect, useRef, useState } from "react";
+import { safeColor } from "../safe-color";
 
 type User = { name: string; color: string };
 type DialogContext = { dialog?: "invite" };
@@ -63,10 +64,7 @@ export function InviteBoard() {
       </div>
       <CursorLayer<DialogContext, User>
         getLabel={(cursor) => cursor.user?.name ?? null}
-        getColor={(cursor) => {
-          const color = cursor.user?.color;
-          return color !== undefined && /^#[0-9a-f]{6}$/iu.test(color) ? color : "#4f46e5";
-        }}
+        getColor={(cursor) => safeColor(cursor.user?.color, "#4f46e5")}
       />
     </LiveCursorProvider>
   );

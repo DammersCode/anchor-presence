@@ -158,7 +158,7 @@ describe("codec edge probes", () => {
 
   it("binary: refuses a finite coordinate above the float32 range", () => {
     const message = { ...base, cursor: { anchors: [{ id: "a", u: 1e39, v: 0.5 }] } };
-    expect(() => binaryCodec.encode(message)).toThrow("invalid anchor");
+    expect(() => binaryCodec.encode(message)).toThrow(TypeError);
   });
 
   it("binary: a lone surrogate in clientId becomes U+FFFD, as UTF-8 requires", () => {

@@ -86,6 +86,35 @@ describe("cursor components", () => {
     act(() => root.unmount());
   });
 
+  it.each([
+    ["a flag emoji", "\u{1F1E9}\u{1F1EA}"],
+    ["a ZWJ family emoji", "\u{1F468}‍\u{1F469}‍\u{1F467}‍\u{1F466}"],
+  ])("keeps %s whole at the label limit and drops it whole past the limit", (_name, emoji) => {
+    const { client } = makeFakeClient();
+    const { binding, publish } = makeFakeBinding();
+    const root = createRoot(container);
+    act(() => {
+      root.render(
+        <LiveCursorProvider client={client} binding={binding}>
+          <CursorLayer />
+        </LiveCursorProvider>,
+      );
+    });
+    const label = () => container.querySelector("[data-anchor-presence-cursor]")?.textContent;
+
+    act(() => {
+      publish([cursor({ user: { name: `${"a".repeat(31)}${emoji}b` } })]);
+    });
+    expect(label()).toBe(`${"a".repeat(31)}${emoji}`);
+
+    act(() => {
+      publish([cursor({ user: { name: `${"a".repeat(32)}${emoji}` } })]);
+    });
+    expect(label()).toBe("a".repeat(32));
+
+    act(() => root.unmount());
+  });
+
   it("applies getLabel and getColor to change the default visual", () => {
     const { client } = makeFakeClient();
     const { binding, publish } = makeFakeBinding();

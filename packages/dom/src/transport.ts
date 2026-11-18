@@ -1,6 +1,6 @@
 // oxlint-disable unicorn/prefer-add-event-listener -- WebSocketLike only exposes on* handlers
 
-import { isDevMode, warnOnce } from "@anchor-presence/core";
+import { isDevMode, reportListenerError, warnOnce } from "@anchor-presence/core";
 import type { ConnectionStatus, LiveCursorTransport, TransportClose } from "@anchor-presence/core";
 
 type Handler<Event> = { bivarianceHack(event: Event): void }["bivarianceHack"];
@@ -268,6 +268,15 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
         }
       };
 
+      const decideReconnect = (event: { code?: number; reason?: string }): boolean => {
+        try {
+          return shouldReconnect(event);
+        } catch (error) {
+          reportListenerError(error);
+          return false;
+        }
+      };
+
       ws.onclose = (event) => {
         clearStableTimer();
         if (!opened) failedAttempts += 1;
@@ -279,7 +288,7 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
         }
         if (socket === ws) socket = null;
         if (disposedByUser) return;
-        const willReconnect = reconnect && shouldReconnect(event);
+        const willReconnect = reconnect && decideReconnect(event);
         const closeInfo: TransportClose = { willReconnect };
         if (event.code !== undefined) closeInfo.code = event.code;
         if (event.reason !== undefined && event.reason !== "") closeInfo.reason = event.reason;

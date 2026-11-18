@@ -29,10 +29,12 @@ Give a row a stable ID from its own data.
 
 ## Behavior notes
 
+Try it: Turn off "Show orders" in the narrow pane.
+
 - A refund button sends four anchors, most specific first: `orders.row:1042.refund`, `orders.row:1042`, `orders`, and `shop`.
 - Order 1042 exists in the narrow pane, but its button does not. The cursor falls back one level to the row. The status bar shows "fallback +1", and a dashed outline marks the row.
 - Order 1046 does not exist in the narrow pane. The cursor falls back two levels to the table.
-- Turn off "Show orders" in the narrow pane. The table disappears, and the cursor falls back to the page anchor `shop`.
+- Without the orders table, the cursor falls back to the page anchor `shop`.
 
 ## Related
 

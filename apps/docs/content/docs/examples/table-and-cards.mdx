@@ -24,10 +24,12 @@ The `field` helper builds every anchor ID from the invoice ID and the field name
 
 ## Behavior notes
 
+Try it: Move your pointer down the amount column in the wide pane.
+
 - Each field has the same anchor ID in the table and in the card, for example `invoices.row:INV-2043.status`.
 - Each row and each card has the anchor `invoices.row:<id>`. A cursor between two fields resolves to the record.
 - The action buttons have their own anchors. A cursor on "Remind" in the table lands on "Remind" in the card.
-- Move your pointer down the amount column in the wide pane. In the narrow pane, the cursor moves to the second line of each card.
+- In the narrow pane, the cursor moves to the second line of each card.
 - The fields move and change size when the pane shrinks. The demo shows this worst case on purpose. For the layout rule, see [Keep item sizes and shapes alike](/docs/get-started/guides/layout-design#keep-item-sizes-and-shapes-alike).
 
 ## Related

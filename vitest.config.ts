@@ -54,7 +54,7 @@ export default defineConfig({
         test: {
           name: "audit-skill",
           environment: "node",
-          include: ["test/audit-skill/**/*.test.mjs"],
+          include: ["test/audit-skill/**/*.test.mjs", "test/scripts/**/*.test.mjs"],
         },
       },
       {

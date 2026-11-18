@@ -1,12 +1,21 @@
 import { readFileSync } from "node:fs";
 
-const configured = [...readFileSync("vitest.config.ts", "utf8").matchAll(/^\s+name: "([^"]+)",/gmu)].map(
-  (match) => match[1],
-);
-const inWorkflow = new Set(
-  [...readFileSync(".github/workflows/pr.yml", "utf8").matchAll(/--project ([\w-]+)/gu)].map(
-    (match) => match[1],
+const withoutComments = (text, marker) =>
+  text
+    .split("\n")
+    .map((line) => line.replace(marker, ""))
+    .join("\n");
+
+const configured = [
+  ...withoutComments(readFileSync("vitest.config.ts", "utf8"), /\/\/.*$/u).matchAll(
+    /name:\s*["']([^"']+)["']/gu,
   ),
+].map((match) => match[1]);
+const matrixProjectLines = withoutComments(readFileSync(".github/workflows/pr.yml", "utf8"), /#.*$/u)
+  .split("\n")
+  .filter((line) => /^\s*projects:/u.test(line));
+const inWorkflow = new Set(
+  [...matrixProjectLines.join("\n").matchAll(/--project\s+([\w-]+)/gu)].map((match) => match[1]),
 );
 
 const missing = configured.filter((name) => !inWorkflow.has(name));

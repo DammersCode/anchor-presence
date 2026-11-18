@@ -3,6 +3,7 @@
 import type { PresenceClient } from "@anchor-presence/core";
 import { CursorLayer, LiveCursorProvider, useRemoteUsers } from "@anchor-presence/react";
 import type { ReactNode } from "react";
+import { safeColor } from "./safe-color";
 
 type User = { name: string; color: string };
 
@@ -54,7 +55,7 @@ function WhoIsOnline({ compact }: { compact: boolean }) {
               key={clientId}
               title={user?.name ?? "Guest"}
               className="grid size-5 place-items-center rounded-full text-[9px] font-semibold text-white ring-2 ring-fd-card transition-opacity"
-              style={{ backgroundColor: user?.color ?? "#6b7280", opacity: idle ? 0.35 : 1 }}
+              style={{ backgroundColor: safeColor(user?.color, "#6b7280"), opacity: idle ? 0.35 : 1 }}
             >
               {(user?.name ?? "?").charAt(0)}
             </span>
@@ -76,7 +77,7 @@ function WhoIsOnline({ compact }: { compact: boolean }) {
         >
           <span
             className="grid size-4 place-items-center rounded-full text-[9px] font-semibold text-white"
-            style={{ backgroundColor: user?.color ?? "#6b7280" }}
+            style={{ backgroundColor: safeColor(user?.color, "#6b7280") }}
           >
             {(user?.name ?? "?").charAt(0)}
           </span>
@@ -125,7 +126,7 @@ export function PresenceScene({ client, layout, children }: Props) {
       </div>
       <CursorLayer<unknown, User>
         getLabel={(cursor) => cursor.user?.name ?? null}
-        getColor={(cursor) => cursor.user?.color ?? "#4f46e5"}
+        getColor={(cursor) => safeColor(cursor.user?.color, "#4f46e5")}
       />
       {children}
     </LiveCursorProvider>

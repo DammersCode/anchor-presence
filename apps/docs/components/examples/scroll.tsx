@@ -4,6 +4,7 @@ import type { PresenceClient } from "@anchor-presence/core";
 import type { VisibilityPolicy } from "@anchor-presence/dom";
 import { CursorLayer, LiveCursorProvider, useRemoteCursors } from "@anchor-presence/react";
 import { useRef, type ReactNode, type RefObject } from "react";
+import { safeColor } from "./safe-color";
 
 type User = { name: string; color: string };
 
@@ -49,7 +50,7 @@ function OutOfViewHint({ listRef }: { listRef: RefObject<HTMLUListElement | null
       type="button"
       onClick={reveal}
       className={`absolute left-1/2 z-10 flex -translate-x-1/2 items-center gap-1.5 rounded-full whitespace-nowrap px-2.5 py-1 text-[11px] font-medium text-white shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fd-ring ${below ? "bottom-2" : "top-2"}`}
-      style={{ backgroundColor: clipped.user?.color ?? "#4f46e5" }}
+      style={{ backgroundColor: safeColor(clipped.user?.color, "#4f46e5") }}
     >
       {below ? "↓" : "↑"} Show {clipped.user?.name ?? "the cursor"}
     </button>
@@ -97,7 +98,7 @@ export function ScrollScene({ client, layout, children }: Props) {
       </div>
       <CursorLayer<unknown, User>
         getLabel={(cursor) => cursor.user?.name ?? null}
-        getColor={(cursor) => cursor.user?.color ?? "#4f46e5"}
+        getColor={(cursor) => safeColor(cursor.user?.color, "#4f46e5")}
       />
       {children}
     </LiveCursorProvider>

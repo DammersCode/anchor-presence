@@ -34,11 +34,13 @@ The demo uses short timeouts, so that you see the idle and leave steps in second
 
 ## Behavior notes
 
+Try it: Move your pointer in one pane.
+
 - Mira, Theo, and Jun join a few seconds apart. Each user appears in the bar when the first message from that user arrives.
-- Theo stops after two moves. After `idleAfterMs` with no change, the bar dims Theo and shows "away". `CursorLayer` dims the cursor too. Heartbeats do not end the idle stage.
+- Theo stops after two moves. After `idleAfterMs` with no change, the bar dims Theo and shows "away". `CursorLayer` dims the cursor too. Heartbeats do not end the idle state.
 - Jun leaves the page. Jun's client sends a leave message, so Jun's cursor and bar entry disappear at once.
 - A client that stops without a leave message stays in the bar until `staleTimeoutMs` passes with no message.
-- Move your pointer in one pane. You appear in the bar of the other pane as "You".
+- You appear in the bar of the other pane as "You".
 
 ## Related
 

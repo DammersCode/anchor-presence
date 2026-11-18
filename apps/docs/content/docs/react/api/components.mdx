@@ -62,7 +62,7 @@ import { LiveCursorContext, type LiveCursorContextValue } from "@anchor-presence
 
 <AutoTypeTable path="../../packages/react/src/context.ts" name="LiveCursorContextValue" />
 
-Outside a provider, both fields are `null`. A provider before its client exists also has a `null` client, so the value cannot tell these two cases apart. During server rendering, `binding` is the `binding` prop of the provider, or `null` without that prop. The hooks read this context for you, so most apps never read it directly.
+Outside a provider, both fields are `null`. A provider with a `factory` has a `null` client until the factory runs. In that time `clientPending` is `true`. It is `false` with `client={null}`, and absent without a provider. During server rendering, `binding` is the `binding` prop of the provider, or `null` without that prop. The hooks read this context for you, so most apps never read it directly.
 
 This component reads the context directly and shows a line when the client and the binding exist:
 

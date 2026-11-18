@@ -20,7 +20,7 @@ The binding finds and registers every element with the attribute. It needs no ot
 
 ## Anchor IDs
 
-An anchor ID is a string of 1 to 256 characters. The library gives it no meaning, so you choose the naming scheme. Examples are `nav.dashboard`, `stats.revenue`, and `orders.row:17.actions`.
+An anchor ID is a string of 1 to 256 UTF-16 code units. The library gives it no meaning, so you choose the naming scheme. Examples are `nav.dashboard`, `stats.revenue`, and `orders.row:17.actions`.
 
 - Give one element the same ID in every layout and every UI state. Then the receiver always finds it.
 - Do not create a new ID on each render for the same element.

@@ -5,6 +5,7 @@ import type { VisibilityPolicy } from "@anchor-presence/dom";
 import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
 import { UserPlus, X } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { safeColor } from "./safe-color";
 import { MIRA } from "./_preview/scenes";
 
 type User = { name: string; color: string };
@@ -146,10 +147,7 @@ export function DialogsScene({ client, layout, children }: Props) {
       </div>
       <CursorLayer<DialogContext, User>
         getLabel={(cursor) => cursor.user?.name ?? null}
-        getColor={(cursor) => {
-          const color = cursor.user?.color;
-          return color !== undefined && /^#[0-9a-f]{6}$/iu.test(color) ? color : "#4f46e5";
-        }}
+        getColor={(cursor) => safeColor(cursor.user?.color, "#4f46e5")}
       />
       {children}
     </LiveCursorProvider>

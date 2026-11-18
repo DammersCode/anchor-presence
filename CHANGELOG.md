@@ -110,11 +110,16 @@
 - `@anchor-presence/react`: `LiveCursorProviderConfig` is the provider props without `children`, so a wrapper component can pass them through and keep the `client` or `factory` rule.
 - `@anchor-presence/dom`: a throwing `binding.subscribe` listener no longer stops the other listeners or the frame loop. Transitions of `opacity`, `color`, `background-color`, `box-shadow` and `filter`, and transitions inside a cursor element, no longer re-measure anchors.
 - `@anchor-presence/react`: `useCursorStatus` returns `"connecting"`, not `"disconnected"`, while a provider `factory` has not created its client, so the server and first render do not flash a disconnected state.
-- `@anchor-presence/react`: the default cursor label is cut at 32 characters by code point, so an emoji at the limit stays whole.
+- `@anchor-presence/react`: the default cursor label is cut at 32 characters by grapheme cluster, so a flag or family emoji at the limit stays whole.
 
 ## 0.1.0 - 2026-09-26
 
 First release.
+
+- `@anchor-presence/dom`: a throwing `shouldReconnect` counts as `false` and no longer leaves the status stuck.
+- `@anchor-presence/dom`: `startAutoRegister` frees an id for a duplicate anchor when the newer one changes or loses its attribute.
+- `@anchor-presence/core`: the `staleTimeoutMs` dev warning also covers the default timeout, and `binaryCodec.encode` throws a `TypeError` for an invalid anchor, like it does for an invalid viewport.
+- `@anchor-presence/core`: the dev warning for a failed send also names a transport send failure.
 
 ### Packages
 

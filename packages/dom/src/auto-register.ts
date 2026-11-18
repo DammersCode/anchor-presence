@@ -60,7 +60,12 @@ export function startAutoRegister(options: AutoRegisterOptions): AutoRegisterHan
     const replacedIds = new Set<string>();
     for (const record of records) {
       if (record.type === "attributes") {
-        if (record.attributeName === attribute && isElement(record.target)) syncElement(record.target);
+        if (record.attributeName === attribute && isElement(record.target)) {
+          const previous = autoAnchors.get(record.target);
+          syncElement(record.target);
+          if (previous !== undefined && autoAnchors.get(record.target)?.id !== previous.id)
+            replacedIds.add(previous.id);
+        }
         continue;
       }
       for (const node of Array.from(record.removedNodes)) releaseNode(node, replacedIds);

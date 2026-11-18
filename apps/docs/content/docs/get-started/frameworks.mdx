@@ -42,13 +42,13 @@ The `"use client"` line has an effect only in a framework with React Server Comp
 
 Render the provider in a component that stays mounted across navigation. Then the page keeps one client and one connection. Pick your framework:
 
-<Tabs items={["Vite", "Next.js", "TanStack", "React Router", "Astro"]}>
+<Tabs items={["Vite", "Next", "TanStack", "React Router", "Astro"]}>
 <Tab value="Vite">
 
 Render `PresenceProvider` around your app in the entry file. A single-page app renders nothing on the server, so it needs no other step.
 
 </Tab>
-<Tab value="Next.js">
+<Tab value="Next">
 
 Keep `"use client"` at the top of the provider module. A Server Component cannot pass a function, such as `factory`, to a Client Component, so `factory` must live in a Client Component. Render the provider in the root layout:
 

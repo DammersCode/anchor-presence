@@ -301,6 +301,30 @@ describe("startAutoRegister", () => {
     handle.dispose();
   });
 
+  it("reclaims a freed id when the newer duplicate changes its attribute", () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { ctor } = makeMoStub();
+    const registry = createAnchorRegistry();
+    const el1 = document.createElement("div");
+    el1.dataset.anchor = "dup";
+    const el2 = document.createElement("div");
+    el2.dataset.anchor = "dup";
+    document.body.append(el1, el2);
+
+    const handle = startAutoRegister({ attribute: "data-anchor", registry, MutationObserverCtor: ctor });
+    expect(registry.get("dup")).toBe(el2);
+
+    el2.dataset.anchor = "other";
+    handle.handleRecords([
+      { type: "attributes", target: el2, attributeName: "data-anchor" },
+    ] as unknown as MutationRecord[]);
+
+    expect(registry.get("dup")).toBe(el1);
+    expect(registry.get("other")).toBe(el2);
+
+    handle.dispose();
+  });
+
   it("reclaims a duplicate id through an incremental removal record", () => {
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     const { ctor } = makeMoStub();

@@ -47,7 +47,7 @@ On the server, and before the provider has a client, each hook returns a fixed v
 | `useRemoteCursorsSelector` | the result of `select([])`                             |
 | `useRemoteUsers`           | `[]`                                                   |
 | `useRemotePresence`        | `[]`                                                   |
-| `useCursorStatus`          | `"disconnected"`                                       |
+| `useCursorStatus`          | `"connecting"` with a `factory`, else `"disconnected"` |
 | `useLocalContext`          | `[undefined, setContext]`, and the setter does nothing |
 | `useLocalUser`             | `[undefined, setUser]`, and the setter does nothing    |
 | `useCursorClient`          | the `client` prop, or `null` without it                |

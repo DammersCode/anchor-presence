@@ -5,6 +5,7 @@ import { CursorLayer, LiveCursorProvider, useRemoteCursors } from "@anchor-prese
 import type { ResolvedCursor } from "@anchor-presence/react";
 import type { ReactNode } from "react";
 import { LongPage } from "./long-page";
+import { safeColor } from "./safe-color";
 
 type User = { name: string; color: string };
 
@@ -62,7 +63,7 @@ export function EdgeArrowsScene({ client, layout, children }: Props) {
       <LongPage layout={layout} />
       <CursorLayer<unknown, User>
         getLabel={(cursor) => cursor.user?.name ?? null}
-        getColor={(cursor) => cursor.user?.color ?? "#4f46e5"}
+        getColor={(cursor) => safeColor(cursor.user?.color, "#4f46e5")}
       />
       {/* The arrows take the status bar's place at the window edge. */}
       {layout === "narrow" ? <OffscreenHints /> : children}

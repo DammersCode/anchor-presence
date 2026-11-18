@@ -3,6 +3,7 @@
 import type { PresenceClient } from "@anchor-presence/core";
 import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
 import type { ReactNode } from "react";
+import { safeColor } from "./safe-color";
 
 type User = { name: string; color: string };
 
@@ -129,7 +130,7 @@ export function ResponsiveGridScene({ client, layout, children }: Props) {
       </div>
       <CursorLayer<unknown, User>
         getLabel={(cursor) => cursor.user?.name ?? null}
-        getColor={(cursor) => cursor.user?.color ?? "#4f46e5"}
+        getColor={(cursor) => safeColor(cursor.user?.color, "#4f46e5")}
       />
       {children}
     </LiveCursorProvider>

@@ -111,7 +111,13 @@ Calls `listener` when a peer joins, leaves, or changes its `user` or `context`. 
 
 ## useSendEvent
 
-`useSendEvent` exists only in the result of `createPresenceHooks`. It returns a function of the type `EventChannel<TEvents>["send"]`. Without a client, the function returns `false`. Guide: [Typed events](/docs/react/typed-hooks#typed-events).
+```ts
+function useSendEvent<TEvents extends object = EventMap>(): EventChannel<TEvents>["send"];
+```
+
+Returns a function that sends one event to every peer. The function returns the result of `client.sendEvent`. Without a client, it sends nothing and returns `false`.
+
+`TEvents` is an event map. The default `EventMap` accepts any `type` and any `data`. The `useSendEvent` of the `createPresenceHooks` result takes no type argument, because the result fixes `TEvents`. Guides: [Cursor events](/docs/react/cursor-events#send-typed-events) and [Typed events](/docs/react/typed-hooks#typed-events).
 
 ## createPresenceHooks
 

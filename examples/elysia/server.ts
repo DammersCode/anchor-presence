@@ -80,17 +80,16 @@ export function createElysiaRelay(port: number, options: ElysiaRelayOptions = {}
         ws.close(ORIGIN_REJECTED_CODE, "origin not allowed");
         return;
       }
-      const parsedRoom = parseRoom(rawRoom);
-      const room = parsedRoom ?? "main";
+      const room = parseRoom(rawRoom);
+      if (room === null) {
+        ws.close(INVALID_ROOM_CODE, "invalid room");
+        return;
+      }
       const authOk = await authCheck({ token: token ?? "", room, origin, headers });
       // the socket can close while the hook runs; admitting it would leak a limit slot
       if (ws.raw.readyState !== 1) return;
       if (!authOk) {
         ws.close(AUTH_REJECTED_CODE, "invalid token");
-        return;
-      }
-      if (parsedRoom === null) {
-        ws.close(INVALID_ROOM_CODE, "invalid room");
         return;
       }
       const admission = limits.admit(room);

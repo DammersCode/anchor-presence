@@ -8,6 +8,8 @@ import {
   createEventParser,
   createInMemoryPair,
   createPresenceClient,
+  type EventChannel,
+  type EventMap,
   type PeerChange,
   type PresenceClient,
   type RemoteEvent,
@@ -17,6 +19,7 @@ import {
   LiveCursorProvider as PlainProvider,
   useLocalUser,
   usePeerChanges,
+  type useSendEvent as exportedUseSendEvent,
 } from "../src/index";
 import type { useLocalUser as exportedUseLocalUser } from "../src/hooks/use-local-user";
 import type { usePeerChanges as exportedUsePeerChanges } from "../src/hooks/use-peer-changes";
@@ -107,6 +110,9 @@ declare namespace Listing {
   function usePeerChanges<TContext = unknown, TUser = unknown>(
     listener: (change: PeerChange<TContext, TUser>) => void,
   ): void;
+
+  // oxlint-disable-next-line eslint/no-shadow, typescript/no-unnecessary-type-parameters -- the listing copies the export
+  function useSendEvent<TEvents extends object = EventMap>(): EventChannel<TEvents>["send"];
 }
 
 let container: HTMLDivElement;
@@ -225,7 +231,7 @@ describe("local-context.mdx: local user", () => {
   });
 });
 
-describe("api/hooks.mdx: useLocalUser and usePeerChanges listings", () => {
+describe("api/hooks.mdx: hook listings", () => {
   it("equal the exported signatures", () => {
     expectTypeOf<ReturnType<typeof Listing.useLocalUser<MyUser>>>().toEqualTypeOf<
       ReturnType<typeof exportedUseLocalUser<MyUser>>
@@ -234,6 +240,13 @@ describe("api/hooks.mdx: useLocalUser and usePeerChanges listings", () => {
       Parameters<typeof exportedUsePeerChanges>
     >();
     expect(usePeerChanges).toBeTypeOf("function");
+  });
+
+  it("include the useSendEvent listing, which the typed result fixes to Events", () => {
+    expectTypeOf<ReturnType<typeof Listing.useSendEvent<Events>>>().toEqualTypeOf<
+      ReturnType<typeof exportedUseSendEvent<Events>>
+    >();
+    expectTypeOf(useSendEvent).returns.toEqualTypeOf<EventChannel<Events>["send"]>();
   });
 });
 
@@ -275,6 +288,7 @@ describe("doc sample sources", () => {
       docSample("react/local-context.mdx", "function NameField"),
       docSample("react/api/hooks.mdx", "function useLocalUser"),
       docSample("react/api/hooks.mdx", "function usePeerChanges"),
+      docSample("react/api/hooks.mdx", "function useSendEvent"),
     ];
     for (const sample of samples) expect(source).toContain(trimLines(sample));
   });

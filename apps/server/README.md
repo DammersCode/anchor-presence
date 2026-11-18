@@ -1,6 +1,6 @@
 # Relay server
 
-This is the reference room-broadcast relay. It is not a production service. It gives the quick start and `apps/demo` a real WebSocket endpoint. A peer is another client in the same room. The relay forwards every inbound message to the peers of the sender.
+This is the reference room-broadcast relay. It is not a production service. It gives `apps/demo` a real WebSocket endpoint on port `8787`, the default port of `createWebSocketTransport`. The quick start uses the Bun relay in `examples/bun-native` on port `8788` instead. A peer is another client in the same room. The relay forwards every inbound message to the peers of the sender.
 
 ## Run
 

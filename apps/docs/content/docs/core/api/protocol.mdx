@@ -1,6 +1,6 @@
 ---
 title: Protocol types
-description: CursorPresence, leave and event messages, PresenceEvent, PeerChange, RemotePresence, and the protocol constants.
+description: CursorPresence, leave and event messages, PresenceEvent, PeerChange, RemotePresence, validatePresence, ValidationLimits, and the protocol constants.
 icon: file-code
 ---
 
@@ -22,7 +22,7 @@ A missing `user` or `context` field keeps the previous value of the same session
 
 ### Leave and event messages
 
-A message with `leave: true` tells receivers that the client left. A message with an `event` field carries one [event](/docs/core/presence-client#events). Both messages have a `null` cursor. An event message carries no `context`, `user`, or `pointer`.
+A message with `leave: true` tells receivers that the client left. A message with an `event` field carries one [event](/docs/core/events). Both messages have a `null` cursor. An event message carries no `context`, `user`, or `pointer`.
 
 Both codecs carry the two fields:
 
@@ -77,6 +77,16 @@ A `RemotePresence` is a stored presence message without the `sequence` field and
 
 `ConnectionStatus` is `"connecting" | "connected" | "reconnecting" | "disconnected"`. See [Connection status](/docs/core/transports#connection-status) for how a transport reports it.
 
+## validatePresence
+
+`validatePresence(input: unknown, limits?: ValidationLimits): CursorPresence | null` checks one decoded message. It returns the checked message, or `null` for a message to drop. It never throws, and it does not check `maxMessageBytes`. See [Use validatePresence directly](/docs/core/validation#use-validatepresence-directly).
+
+## ValidationLimits
+
+`ValidationLimits` is the shape of the `validationLimits` option and of the `limits` argument. Each field is optional. See [ValidationLimits](/docs/core/validation#validationlimits) for the result of each limit.
+
+<AutoTypeTable path="../../packages/core/src/validate.ts" name="ValidationLimits" />
+
 ## Protocol constants
 
 Import the protocol constants from `@anchor-presence/core`:
@@ -95,7 +105,7 @@ import {
 } from "@anchor-presence/core";
 ```
 
-The `DEFAULT_` constants are the defaults of `ValidationLimits`. See [ValidationLimits](/docs/core/validation#validationlimits) for the value and the result of each limit.
+The `DEFAULT_` constants are the defaults of `ValidationLimits`. See [ValidationLimits](/docs/core/validation#validationlimits) for the value of each limit.
 
 `MAX_EVENT_TYPE_LENGTH` is `64`, the maximum length of an event `type`. `ValidationLimits` cannot change it.
 

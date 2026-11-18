@@ -37,6 +37,8 @@ The hook applies `select` to each snapshot. It rerenders only when `isEqual` rep
 This selector derives the set of clients whose cursor is clipped out of view:
 
 ```tsx
+import { type ResolvedCursor, useRemoteCursorsSelector } from "@anchor-presence/react";
+
 function selectClippedClientIds(cursors: ResolvedCursor[]): ReadonlySet<string> {
   const clipped = new Set<string>();
   for (const cursor of cursors) {

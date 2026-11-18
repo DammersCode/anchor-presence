@@ -111,11 +111,11 @@ This client raises the cap and reports each dropped peer:
 const client = createPresenceClient({
   transport: myTransport,
   maxRemoteClients: 200,
-  onRemoteClientDropped: () => reportMetric("presence.remote_client_dropped"),
+  onRemoteClientDropped: ({ clientId }) => reportMetric("presence.remote_client_dropped", clientId),
 });
 ```
 
-`onRemoteClientDropped` runs each time the store drops a new peer because it is full. See [maxRemoteClients](/docs/get-started/guides/security#maxremoteclients) on the Security page for capacity planning.
+`onRemoteClientDropped` runs each time the store drops a new peer because it is full. It receives `{ clientId }`, the ID of the dropped peer. If it throws, the client ignores the error. See [maxRemoteClients](/docs/get-started/guides/security#maxremoteclients) on the Security page for capacity planning.
 
 ## Message ordering
 

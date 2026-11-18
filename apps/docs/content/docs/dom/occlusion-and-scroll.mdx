@@ -45,6 +45,10 @@ The hit test has these rules:
 - It treats a point outside the window as visible.
 - It adds at least one `elementFromPoint` call on each frame for each `anchor` tier cursor that passes the walk. Each open shadow root at the point adds one more call.
 
+## Browser coverage
+
+The browser tests of the clip check run in Chromium only, in CI and locally. Unit tests in jsdom cover the hit test, and no browser test covers it.
+
 ## Related
 
 <Cards>

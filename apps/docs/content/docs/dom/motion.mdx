@@ -33,6 +33,14 @@ If you omit `resolution.interpolatorFactory`, `createDomBinding` picks a factory
 
 The check reads `environment.window`, or the global `window`. It runs one time, at creation. A preference change after that does not change the interpolator of an existing binding.
 
+## Compare the styles
+
+This demo moves a remote cursor between four far-apart targets. The wide pane uses `noneInterpolator`, so the cursor jumps. In the narrow pane, select `none`, `linear` (`linearInterpolator(360)`), or a spring:
+
+<ExamplePreview scene="interpolation" />
+
+The [Interpolation styles](/docs/examples/interpolation-styles) example shows the code of the demo and of the spring.
+
 ## Where easing runs
 
 `@anchor-presence/core` defines the interpolators but never calls them, because it has no frame clock. The binding samples the interpolator on each scheduled frame and writes the result into `ResolvedCursor.x` and `ResolvedCursor.y`. Code that uses only `@anchor-presence/core` reads raw positions, with no easing.

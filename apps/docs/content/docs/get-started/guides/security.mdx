@@ -22,7 +22,7 @@ The client checks each inbound message in two steps:
 1. It drops a message above `maxMessageBytes` (32 KiB) before it decodes the message.
 2. It passes the decoded message to `validatePresence()`.
 
-`validatePresence()` drops a message with an invalid `version`, `clientId`, `session`, `sequence`, or `cursor` shape. If only `user` or `context` breaks a limit, it drops that field and keeps the rest of the message. It clamps `u` and `v` to the range 0 to 1. [ValidationLimits](/docs/core/validation#validationlimits) lists every limit, its default, and the result of a break. To change a limit, pass `validationLimits` to `createPresenceClient`.
+`validatePresence()` drops a message with an invalid `version`, `clientId`, `session`, `sequence`, or `cursor` shape. If only `user` or `context` breaks a limit, it drops that field and keeps the rest of the message. It clamps `u` and `v` to the range 0 to 1. [ValidationLimits](/docs/core/validation#validationlimits) lists every limit, its default, and the result of a break. The validation defaults are the `DEFAULT_MAX_*` constants of `@anchor-presence/core`. To change a limit, pass `validationLimits` to `createPresenceClient`.
 
 <Callout type="warn">
   If your relay calls `validatePresence`, cap the frame size on the relay. `validatePresence` ignores
@@ -30,7 +30,7 @@ The client checks each inbound message in two steps:
   contract](/docs/examples/backends/relay-contract).
 </Callout>
 
-Each receiver also limits the rate of inbound events with the `eventRateLimit` option. See [Event rate limit](/docs/core/presence-client#event-rate-limit). This limit protects one receiver only. A sender can still flood the room, so the rate limit per socket on the relay is the real control.
+Each receiver also limits the rate of inbound events with the `eventRateLimit` option. See [Event rate limit](/docs/core/events#event-rate-limit). This limit protects one receiver only. A sender can still flood the room, so the rate limit per socket on the relay is the real control.
 
 ## Why anchor IDs never touch selectors
 

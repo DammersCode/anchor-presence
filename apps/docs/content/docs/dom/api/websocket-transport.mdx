@@ -1,6 +1,6 @@
 ---
 title: WebSocket transport API
-description: createWebSocketTransport, WebSocketTransport, WebSocketTransportOptions, WebSocketCtor, WebSocketLike, and TransportClose.
+description: createWebSocketTransport, WebSocketTransport, WebSocketTransportOptions, WebSocketCtor, and WebSocketLike.
 icon: plug-zap
 ---
 
@@ -46,9 +46,7 @@ const transport = createWebSocketTransport({
 
 ## TransportClose
 
-`subscribeClose` listeners receive a `TransportClose` from `@anchor-presence/core`:
-
-<AutoTypeTable path="../../packages/core/src/transport.ts" name="TransportClose" />
+`subscribeClose` listeners receive a `TransportClose` from `@anchor-presence/core`. See [TransportClose](/docs/core/api/transports-and-codecs#transportclose) for its fields.
 
 ## Related
 

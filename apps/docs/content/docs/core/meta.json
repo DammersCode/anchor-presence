@@ -7,6 +7,7 @@
     "index",
     "---[Radio]Client---",
     "presence-client",
+    "events",
     "remote-presence",
     "validation",
     "interpolation",

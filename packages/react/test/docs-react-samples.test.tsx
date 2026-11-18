@@ -17,6 +17,7 @@ import {
   createPresenceHooks,
   useCursorClient,
   useCursorEvents,
+  useSendEvent,
 } from "../src/index";
 import { LiveCursorContext } from "../src/context";
 
@@ -116,6 +117,18 @@ function Reactions() {
       </button>
       {lastReaction !== null && <p role="status">{lastReaction}</p>}
     </div>
+  );
+}
+
+// cursor-events.mdx: Send typed events
+type Events = { reaction: string };
+
+function WaveButton() {
+  const sendEvent = useSendEvent<Events>();
+  return (
+    <button type="button" onClick={() => sendEvent("reaction", "wave")}>
+      Wave
+    </button>
   );
 }
 
@@ -241,6 +254,28 @@ describe("react docs samples", () => {
 
     expect(receiverView.querySelector("[role=status]")?.textContent).toBe(`${sender.clientId}: wave`);
     expect(senderView.querySelector("[role=status]")).toBeNull();
+    sender.dispose();
+    receiver.dispose();
+  });
+
+  it("WaveButton sends a typed reaction that the peer receives", () => {
+    const { a, b } = createInMemoryPair();
+    const sender = createPresenceClient({ transport: a });
+    const receiver = createPresenceClient({ transport: b });
+    const senderView = mount(
+      <LiveCursorProvider client={sender}>
+        <WaveButton />
+      </LiveCursorProvider>,
+    );
+    const receiverView = mount(
+      <LiveCursorProvider client={receiver}>
+        <Reactions />
+      </LiveCursorProvider>,
+    );
+
+    act(() => senderView.querySelector("button")!.click());
+
+    expect(receiverView.querySelector("[role=status]")?.textContent).toBe(`${sender.clientId}: wave`);
     sender.dispose();
     receiver.dispose();
   });

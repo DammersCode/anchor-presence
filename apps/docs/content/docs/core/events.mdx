@@ -1,0 +1,145 @@
+---
+title: Events
+description: sendEvent and subscribeEvents, the limits of an event, parseEvent, the event rate limit, and typed events with createEventChannel and createEventParser.
+icon: zap
+---
+
+import { Code, MousePointerClick, Radio, ShieldCheck } from "lucide-react";
+
+An event is a one-shot message to every peer, for example a reaction or a ping. A peer is another client in the same room. Use an event for a short action that peers see one time. Use `setContext` for a state that peers keep, such as a selection. See [Lifecycle](/docs/core/presence-client#lifecycle).
+
+## Send and receive events
+
+`client.sendEvent(type, data?)` sends one event. `client.subscribeEvents(listener)` receives the events of peers:
+
+```ts
+const unsubscribe = client.subscribeEvents((event) => {
+  if (event.type === "wave") showWave(event.clientId);
+});
+
+client.sendEvent("wave");
+client.sendEvent("reaction", { emoji: "tada" });
+```
+
+The listener receives a `RemoteEvent`: the `type`, the optional `data`, and the `clientId` of the sender. A client never receives its own events. `subscribeEvents` returns a function that removes the listener.
+
+## Delivery
+
+The client never stores an event and never sends it again. A peer that is not connected at that time never receives the event. A peer that joins later never receives it either. An event does not add the sender to the remote presence, and it does not end the idle stage of the sender.
+
+## Limits of an event
+
+`type` is a string of 1 to `MAX_EVENT_TYPE_LENGTH` (`64`) characters. `data` is optional JSON within the `maxFieldBytes` and `maxFieldDepth` limits of [`validationLimits`](/docs/core/validation#validationlimits).
+
+`sendEvent` returns `false` in these cases:
+
+- The client is not connected.
+- The client is disposed.
+- `type` is empty or longer than 64 characters.
+- `data` breaks the field limits.
+- The codec or a synchronous `transport.send` throws.
+
+In all other cases, `sendEvent` gives the message to the transport and returns `true`. `true` does not mean that a peer received the event.
+
+## Check remote events
+
+<Callout type="warn">
+  If you render `event.data`, check its shape first. `parseUser` and `parseContext` do not apply to events, so
+  a peer can send any JSON within the field limits.
+</Callout>
+
+The `parseEvent` option checks events. It receives each remote event and returns the event to deliver, or `undefined` to drop it. A parser that throws drops the event:
+
+```ts
+const client = createPresenceClient({
+  transport,
+  parseEvent: (event) => {
+    if (event.type !== "reaction") return undefined;
+    const emoji = (event.data as { emoji?: unknown } | undefined)?.emoji;
+    return typeof emoji === "string" ? { ...event, data: { emoji: emoji.slice(0, 2) } } : undefined;
+  },
+});
+```
+
+## Event rate limit
+
+Each receiver limits the events that it accepts. The `eventRateLimit` option changes the limits:
+
+```ts
+const client = createPresenceClient({
+  transport: myTransport,
+  eventRateLimit: { burst: 40, perSecond: 20, totalPerSecond: 200 },
+});
+```
+
+| Field            | Default | Limit                                                                |
+| ---------------- | ------- | -------------------------------------------------------------------- |
+| `burst`          | `20`    | The number of events that one sender can send at once.               |
+| `perSecond`      | `10`    | The number of events per second that refill the burst of one sender. |
+| `totalPerSecond` | `100`   | The number of events per second from all senders together.           |
+
+The receiver drops each event above a limit, and the sender still gets `true` for it. Each field is optional. A field that you omit keeps its default. The limits read the time from the `now` option.
+
+The total limit stops a peer that sends each event with another `clientId`. Each new `clientId` gets its own burst, but all events share the total limit.
+
+The receiver keeps a burst for at most 512 senders. When a new sender arrives after that, the receiver forgets the sender that it started to track first. That sender gets a full burst again on its next event.
+
+## Typed events
+
+`createEventChannel<TEvents>(client)` gives the events of a client a type. `TEvents` maps each event type to the type of its `data`. Declare it with `type` or with `interface`. The channel has two methods:
+
+- `send(type, data)` calls `client.sendEvent` and returns its result. A misspelled `type` or a `data` value of the wrong type does not compile. If the `data` type of an event includes `undefined`, `data` is optional.
+- `subscribe(listener)` calls `client.subscribeEvents` and returns a function that removes the listener. The listener receives a `TypedRemoteEvent<TEvents>`. A check of `event.type` narrows `event.data` to the type of that event.
+
+<Callout type="warn">
+  If a peer sends data of another type, the listener still receives it. The channel types only the code that
+  you write, and it does not check remote data. Pass a `parseEvent` that checks the same event types.
+</Callout>
+
+`createEventParser<TEvents>(parsers)` builds this `parseEvent` from one parser for each event type. `parsers` is an `EventParsers<TEvents>` object:
+
+- A parser receives the remote `data` and returns the checked data, or `undefined` to drop the event.
+- For an event without data, use `null` in place of a parser. The client then drops the event if it carries data.
+- The client drops an event whose type has no entry in `parsers`.
+
+This sample declares two events, checks them with `createEventParser`, and sends and receives them through a channel:
+
+```ts
+import { createEventChannel, createEventParser, createPresenceClient } from "@anchor-presence/core";
+
+type Events = { reaction: { emoji: string }; ping: undefined };
+
+const parseEvent = createEventParser<Events>({
+  reaction: (data) => {
+    const emoji = (data as { emoji?: unknown } | undefined)?.emoji;
+    return typeof emoji === "string" ? { emoji } : undefined;
+  },
+  ping: null,
+});
+
+const client = createPresenceClient({ transport, parseEvent });
+const events = createEventChannel<Events>(client);
+
+events.send("reaction", { emoji: "tada" });
+events.send("ping");
+const unsubscribe = events.subscribe((event) => {
+  if (event.type === "reaction") showReaction(event.clientId, event.data.emoji);
+});
+```
+
+## Related
+
+<Cards>
+  <Card icon={<Radio />} title="Presence client" href="/docs/core/presence-client">
+    The client that sends and receives the events.
+  </Card>
+  <Card icon={<ShieldCheck />} title="Validation" href="/docs/core/validation#events-and-leave-messages">
+    The checks on each inbound event.
+  </Card>
+  <Card icon={<MousePointerClick />} title="Cursor events in React" href="/docs/react/cursor-events">
+    Send and receive events from React components.
+  </Card>
+  <Card icon={<Code />} title="Client API" href="/docs/core/api/client#createeventchannel">
+    The signatures of `createEventChannel` and `createEventParser`.
+  </Card>
+</Cards>

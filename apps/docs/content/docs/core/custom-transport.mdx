@@ -18,38 +18,53 @@ If your app uses Socket.IO or SignalR, use the [Socket.IO](/docs/examples/backen
 import type { ConnectionStatus, LiveCursorTransport } from "@anchor-presence/core";
 
 function createBroadcastChannelTransport(channelName: string): LiveCursorTransport {
-  const channel = new BroadcastChannel(channelName);
+  const listeners = new Set<(data: Uint8Array) => void>();
   const statusListeners = new Set<(status: ConnectionStatus) => void>();
+  let channel: BroadcastChannel | null = null;
+  let status: ConnectionStatus = "disconnected";
+
+  function setStatus(next: ConnectionStatus) {
+    status = next;
+    for (const listener of statusListeners) listener(next);
+  }
 
   return {
     connect() {
-      // a BroadcastChannel has no handshake and is open from construction
-      for (const listener of statusListeners) listener("connected");
+      if (channel !== null) return;
+      channel = new BroadcastChannel(channelName);
+      channel.addEventListener("message", (event: MessageEvent<Uint8Array>) => {
+        for (const listener of listeners) listener(event.data);
+      });
+      // a BroadcastChannel has no handshake, so it is connected at once
+      setStatus("connected");
     },
     disconnect() {
-      channel.close();
+      channel?.close();
+      channel = null;
+      setStatus("disconnected");
     },
     send(data) {
-      channel.postMessage(data);
+      channel?.postMessage(data);
     },
     subscribe(listener) {
-      const onMessage = (event: MessageEvent<Uint8Array>) => listener(event.data);
-      channel.addEventListener("message", onMessage);
-      return () => channel.removeEventListener("message", onMessage);
+      listeners.add(listener);
+      return () => listeners.delete(listener);
     },
     subscribeStatus(listener) {
-      listener("connected");
+      listener(status);
       statusListeners.add(listener);
       return () => statusListeners.delete(listener);
     },
     getStatus() {
-      return "connected";
+      return status;
     },
   };
 }
 ```
 
-`BroadcastChannel` delivers structured-cloned values. As a result, it carries a `Uint8Array` with no base64 step.
+The sketch keeps the current status in `status`. `connect` and `disconnect` set it and call each status listener. A new `subscribeStatus` listener receives the current status at once.
+
+`BroadcastChannel` delivers structured-cloned values, that is, copies that the browser makes of each posted value. A `Uint8Array` arrives as a `Uint8Array`, so it needs no base64 step.
 
 ## Wrap a managed service
 

@@ -13,11 +13,15 @@ import { Crosshair, Gauge, Component, Paintbrush } from "lucide-react";
 This app renders the remote cursors with the defaults:
 
 ```tsx
+import { createPresenceClient } from "@anchor-presence/core";
+import { createWebSocketTransport } from "@anchor-presence/dom";
 import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
 
 function App() {
   return (
-    <LiveCursorProvider client={client}>
+    <LiveCursorProvider
+      factory={() => createPresenceClient({ transport: createWebSocketTransport({ path: "/?room=main" }) })}
+    >
       <Dashboard />
       <CursorLayer />
     </LiveCursorProvider>
@@ -75,7 +79,7 @@ type MyUser = { name: string; color?: string };
 />
 ```
 
-`CursorLayer` applies `position`, `left`, `top`, `transform`, `pointerEvents`, and `opacity` after your style, so your values for these keys have no effect. It also sets `transition` after your style, except when the operating system prefers reduced motion. A `zIndex` in your style replaces the `zIndex` prop.
+`CursorLayer` applies `position`, `left`, `top`, `transform`, `pointerEvents`, and `opacity` after your style, so your values for these keys have no effect. The `zIndex` prop wins over a `zIndex` in your style. A style `zIndex` replaces only the default `9999`. A `transition` in your style wins. If your style has no `transition` and the operating system does not prefer reduced motion, the layer adds `opacity 200ms ease-out`.
 
 ## Keep the callbacks stable
 
@@ -98,7 +102,7 @@ type MyUser = { name: string; color?: string };
 ## Accessibility
 
 - Each cursor root has `aria-hidden="true"` and `pointerEvents: "none"`. Screen readers and pointer input skip it.
-- If the operating system prefers reduced motion, `CursorLayer` drops the opacity transition of the root. For the movement itself, see [Motion](/docs/dom/motion).
+- If the operating system prefers reduced motion, `CursorLayer` adds no opacity transition to the root. A `transition` in your style stays. For the movement itself, see [Motion](/docs/dom/motion).
 - `DefaultCursor` sets `forced-color-adjust: none`. Its arrow and label keep their colors in Windows forced-colors mode.
 - You control the label contrast. `getLabel`, `getColor`, and `renderCursor` set the content and the colors.
 

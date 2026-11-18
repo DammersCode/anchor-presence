@@ -34,17 +34,11 @@ function App() {
 
 ## Props
 
-| Prop             | Type                                      | Default                    |
-| ---------------- | ----------------------------------------- | -------------------------- |
-| `factory`        | `() => PresenceClient<TContext, TUser>`   | none                       |
-| `client`         | `PresenceClient<TContext, TUser> \| null` | none (wins over `factory`) |
-| `binding`        | `DomBinding`                              | the provider creates one   |
-| `bindingOptions` | `DomBindingOptions`                       | none                       |
-| `clientKey`      | `unknown`                                 | none                       |
-| `bindingKey`     | `unknown`                                 | none                       |
-| `children`       | `ReactNode`                               | none                       |
+The provider takes `factory`, `client`, `binding`, `bindingOptions`, `clientKey`, `bindingKey`, and `children`. For the type of each prop, see [Components API](/docs/react/api/components#livecursorprovider).
 
-Pass `factory` or `client`. For the difference between the two, read [Create the client](/docs/react/client-creation). The provider disposes a client that `factory` created. It never disposes a `client` that you pass. To render without a client, for example on the server, pass `client={null}`. See [SSR and Strict Mode](/docs/react/ssr-and-strict-mode).
+Pass `factory` or `client`. If you pass both, `client` wins. For the difference between the two, read [Create the client](/docs/react/client-creation). The provider disposes a client that `factory` created. It never disposes a `client` that you pass.
+
+To render without a client, for example on the server, pass `client={null}`. See [SSR and Strict Mode](/docs/react/ssr-and-strict-mode).
 
 ## The binding
 

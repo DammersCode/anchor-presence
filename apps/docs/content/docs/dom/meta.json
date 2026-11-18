@@ -20,6 +20,7 @@
     "---[BookOpen]API reference---",
     "api/binding",
     "api/resolution",
-    "api/websocket-transport"
+    "api/websocket-transport",
+    "api/broadcast-channel-transport"
   ]
 }

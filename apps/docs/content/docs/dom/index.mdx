@@ -4,7 +4,18 @@ description: What @anchor-presence/dom does, when to use it directly, and where 
 icon: mouse-pointer
 ---
 
-import { Anchor, AppWindow, Code, Crosshair, Link, Pointer, RadioTower } from "lucide-react";
+import {
+  Anchor,
+  AppWindow,
+  Code,
+  Crosshair,
+  Eye,
+  Layers,
+  Link,
+  Move,
+  Pointer,
+  RadioTower,
+} from "lucide-react";
 
 `@anchor-presence/dom` is the only package that calls browser APIs. It turns a `PresenceClient` from `@anchor-presence/core` into a list of resolved cursors: the position of each remote cursor in the pixels of your viewport. It renders nothing. `@anchor-presence/react` uses it for you. Use it directly to draw cursors without React, or to build an adapter for another UI framework.
 
@@ -39,6 +50,15 @@ binding.subscribe(() => {
   <Card icon={<Crosshair />} title="Resolution" href="/docs/dom/resolution">
     How a remote cursor gets a position on this screen.
   </Card>
+  <Card icon={<Eye />} title="Visibility policy" href="/docs/dom/visibility-policy">
+    Decide when to show or hide a remote cursor.
+  </Card>
+  <Card icon={<Layers />} title="Occlusion and scroll" href="/docs/dom/occlusion-and-scroll">
+    Detect a cursor that a scroll container clips or an overlay covers.
+  </Card>
+  <Card icon={<Move />} title="Motion" href="/docs/dom/motion">
+    Ease a remote cursor between positions, and respect reduced motion.
+  </Card>
   <Card icon={<RadioTower />} title="WebSocket transport" href="/docs/dom/websocket-transport">
     Connect to a relay, with a room token and reconnect.
   </Card>
@@ -56,12 +76,12 @@ binding.subscribe(() => {
 
 <Mermaid
   chart={`flowchart LR
-  page["page: data-anchor elements"] --> registry["anchor registry"]
-  pointer["local pointer events"] --> client["PresenceClient"]
-  registry --> pointer
-  client --> resolver["resolver, once per frame"]
-  registry --> resolver
-  resolver --> snapshot["ResolvedCursor[] snapshot"]`}
+  page["page: data-anchor elements"] -->|registers| registry["anchor registry"]
+  pointer["local pointer events"] -->|local cursor| client["PresenceClient"]
+  registry -->|nearest anchors| pointer
+  client -->|remote presence| resolver["resolver, once per frame"]
+  registry -->|anchor rectangles| resolver
+  resolver -->|positions| snapshot["ResolvedCursor[] snapshot"]`}
 />
 
 - It watches the page for elements with an anchor attribute and registers them.

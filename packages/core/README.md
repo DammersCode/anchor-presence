@@ -52,4 +52,4 @@ The client calls `transport.connect()` for you by default. To connect at a time 
 | `parseUser`, `parseContext`, `parseEvent` options                   | Check, rewrite, or drop each remote `user`, `context`, and event                                          |
 | `linearInterpolator`, `noneInterpolator`                            | Interpolation factories                                                                                   |
 
-See [How it works](https://anchor-presence.vercel.app/docs/get-started/concepts/how-it-works) and [Codecs](https://anchor-presence.vercel.app/docs/core/codecs) for full guides.
+See [How it works](https://anchor-presence.vercel.app/docs/get-started/concepts/how-it-works), [Events](https://anchor-presence.vercel.app/docs/core/events), and [Codecs](https://anchor-presence.vercel.app/docs/core/codecs) for full guides.

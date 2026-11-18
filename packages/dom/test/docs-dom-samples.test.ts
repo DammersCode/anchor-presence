@@ -16,6 +16,7 @@ import type {
   RafLike,
   ResizeObserverCtor,
   ResizeObserverLike,
+  VisibilityPolicy,
   WebSocketLike,
 } from "../src/index";
 
@@ -288,6 +289,19 @@ describe("binding api docs: host types", () => {
 });
 
 describe("dom docs samples: pages without a guide test", () => {
+  it("occlusion-and-scroll.mdx: clippedPointPolicy hides a clipped or hidden cursor", () => {
+    // Copied from apps/docs/content/docs/dom/occlusion-and-scroll.mdx (Use pointVisible).
+    const clippedPointPolicy: VisibilityPolicy = ({ resolution }) =>
+      !resolution.pointVisible || resolution.tier === "hidden" ? "hide" : "show";
+
+    const presence = { version: 1, clientId: "a", session: "s", sequence: 1, cursor: null } as const;
+    const decide = (tier: "anchor" | "hidden", pointVisible: boolean) =>
+      clippedPointPolicy({ presence, resolution: { tier, anchorId: null, pointVisible } });
+    expect(decide("anchor", true)).toBe("show");
+    expect(decide("anchor", false)).toBe("hide");
+    expect(decide("hidden", true)).toBe("hide");
+  });
+
   it("pointer-capture.mdx: captureFocus publishes a cursor for the focused element", () => {
     const { a } = createInMemoryPair();
     const client = createPresenceClient({ transport: a });

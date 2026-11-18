@@ -1,0 +1,37 @@
+---
+title: BroadcastChannel transport API
+description: createBroadcastChannelTransport and BroadcastChannelTransport.
+icon: app-window
+---
+
+import { AppWindow, Cable } from "lucide-react";
+
+This page lists `createBroadcastChannelTransport` and its type. The [BroadcastChannel transport](/docs/dom/broadcast-channel-transport) guide explains the behavior.
+
+```ts
+import { createBroadcastChannelTransport } from "@anchor-presence/dom";
+import type { BroadcastChannelTransport } from "@anchor-presence/dom";
+```
+
+## createBroadcastChannelTransport
+
+`createBroadcastChannelTransport(channelName: string): BroadcastChannelTransport` returns a transport for one channel name. It does not open the `BroadcastChannel` until `connect()`, so it never throws at creation.
+
+## BroadcastChannelTransport
+
+`BroadcastChannelTransport` is a `LiveCursorTransport` from `@anchor-presence/core` whose `connect` and `disconnect` methods are required. The returned object also always has `subscribeStatus` and `getStatus`. It has no `subscribeClose` and no `bufferedBytes`.
+
+## Related
+
+<Cards>
+  <Card icon={<AppWindow />} title="BroadcastChannel transport" href="/docs/dom/broadcast-channel-transport">
+    The guide to the transport.
+  </Card>
+  <Card
+    icon={<Cable />}
+    title="Transport API"
+    href="/docs/core/api/transports-and-codecs#livecursortransport"
+  >
+    The `LiveCursorTransport` contract.
+  </Card>
+</Cards>

@@ -90,15 +90,23 @@ Read [anchors.md](anchors.md), then add `data-anchor` to the elements users poin
 
 ### 6. Scope cursors with context and a policy
 
-This step applies when one anchor ID can appear in different app states (pages, tabs, open dialogs). Publish the state as **context** and hide cursors from other states with a visibility **policy**:
+This step applies when one anchor ID can appear in different app states (pages, tabs, open dialogs). Publish the state as **context** and hide cursors from other states with a visibility **policy**. Extend `PresenceRoot` from step 4 with `bindingOptions` and a `PublishPage` child:
 
 ```tsx
-function PresenceScope({
-  client,
+"use client";
+import { useEffect, useRef } from "react";
+import { createPresenceClient } from "@anchor-presence/core";
+import { createWebSocketTransport } from "@anchor-presence/dom";
+import { CursorLayer, LiveCursorProvider, useLocalContext } from "@anchor-presence/react";
+
+export function PresenceRoot({
+  room,
+  userName,
   currentPage,
   children,
 }: {
-  client: PresenceClient<{ page: string }> | null;
+  room: string;
+  userName: string;
   currentPage: string;
   children: React.ReactNode;
 }) {
@@ -109,8 +117,16 @@ function PresenceScope({
   }, [currentPage]);
 
   return (
-    <LiveCursorProvider<{ page: string }>
-      client={client}
+    <LiveCursorProvider<{ page: string }, { name: string }>
+      factory={() => {
+        const transport = createWebSocketTransport({
+          url: `wss://relay.example.com/?room=${encodeURIComponent(room)}`,
+        });
+        return createPresenceClient<{ page: string }, { name: string }>({
+          transport,
+          user: { name: userName },
+        });
+      }}
       bindingOptions={{
         resolution: {
           visibilityPolicy: ({ presence, resolution }) =>
@@ -120,6 +136,7 @@ function PresenceScope({
     >
       <PublishPage page={currentPage} />
       {children}
+      <CursorLayer<{ page: string }, { name: string }> getLabel={(cursor) => cursor.user?.name ?? null} />
     </LiveCursorProvider>
   );
 }
@@ -131,6 +148,8 @@ function PublishPage({ page }: { page: string }) {
   return null;
 }
 ```
+
+**Done when** a cursor shows only on clients whose current page matches the sender's page.
 
 ### 7. Add a presence list
 

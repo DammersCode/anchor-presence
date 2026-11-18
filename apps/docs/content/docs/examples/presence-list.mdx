@@ -23,8 +23,8 @@ This file renders the scene of the demo:
 The demo uses short timeouts, so that you see the idle and leave steps in seconds. The defaults are 10 s for `heartbeatIntervalMs`, 15 s for `idleAfterMs`, and 70 s for `staleTimeoutMs`.
 
 <Callout type="warn">
-  If `heartbeatIntervalMs` is not below `staleTimeoutMs`, the store removes a connected user who does not
-  move.
+  If `staleTimeoutMs` is at most twice `heartbeatIntervalMs`, the store can remove a connected user who does
+  not move. In development mode, `createPresenceClient` logs a warning for this setting.
 </Callout>
 
 <Callout type="warn">

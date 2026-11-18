@@ -46,13 +46,13 @@ The `--anchor-presence-cursor-color` variable on `style` wins over the `color` p
 
 The root of each cursor carries these attributes. Select and test cursors with them, not with class names:
 
-| Attribute                        | Value                                                     |
-| -------------------------------- | --------------------------------------------------------- |
-| `data-anchor-presence-cursor`    | present on every cursor root                              |
-| `data-anchor-presence-client-id` | the `clientId` of the peer                                |
-| `data-anchor-presence-tier`      | the resolution tier: `"anchor"`, `"viewport"`, `"hidden"` |
-| `data-anchor-presence-anchor`    | the anchor ID that resolved the cursor, or `""`           |
-| `data-anchor-presence-idle`      | present while the peer is idle                            |
+| Attribute                        | Value                                                                                                                       |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `data-anchor-presence-cursor`    | present on every cursor root                                                                                                |
+| `data-anchor-presence-client-id` | the `clientId` of the peer                                                                                                  |
+| `data-anchor-presence-tier`      | the resolution tier: `"anchor"` or `"viewport"`. A `visibilityPolicy` that shows a `"hidden"` cursor also gives `"hidden"`. |
+| `data-anchor-presence-anchor`    | the anchor ID that resolved the cursor, or `""`                                                                             |
+| `data-anchor-presence-idle`      | present while the peer is idle                                                                                              |
 
 ## Idle cursors
 

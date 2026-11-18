@@ -8,7 +8,7 @@ import { createPresenceClient } from "@anchor-presence/core";
 import { createBroadcastChannelTransport, createWebSocketTransport } from "@anchor-presence/dom";
 import { CursorLayer, LiveCursorProvider } from "../src/index";
 
-// Verbatim copies of the quick start samples; the last test checks each copy against its source.
+// Verbatim copies of the quick start and deploy-relay samples; the last test checks each copy against its source.
 
 function createClient() {
   const transport = createBroadcastChannelTransport("live-cursors");
@@ -35,6 +35,14 @@ function relayVariant() {
 
 function readmeRelayLine() {
   const transport = createWebSocketTransport({ port: 8788, path: "/?room=main" });
+  return transport;
+}
+
+function deployRelayTransport() {
+  const transport = createWebSocketTransport({
+    url: "wss://relay.example.com/?room=main",
+    token: async () => (await fetch("/api/room-token")).text(),
+  });
   return transport;
 }
 
@@ -79,6 +87,7 @@ describe("quick start samples", () => {
   it("build a relay client factory", () => {
     expect(relayVariant()).toBeTypeOf("function");
     expect(readmeRelayLine).toBeTypeOf("function");
+    expect(deployRelayTransport).toBeTypeOf("function");
   });
 
   it("match the docs and the README", () => {
@@ -92,6 +101,7 @@ describe("quick start samples", () => {
       sampleIn(quickStart, "createWebSocketTransport({ port: 8788"),
       sampleIn("README.md", 'createBroadcastChannelTransport("live-cursors")'),
       sampleIn("README.md", "createWebSocketTransport({ port: 8788"),
+      sampleIn("apps/docs/content/docs/get-started/guides/deploy-relay.mdx", "wss://relay.example.com"),
     ];
     for (const sample of samples) expect(source).toContain(trimLines(sample));
   });

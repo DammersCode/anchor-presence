@@ -6,12 +6,17 @@ icon: info
 
 import {
   Braces,
+  Component,
+  Crosshair,
   Factory,
+  Gauge,
   MousePointer2,
   Paintbrush,
   Plug,
+  Radar,
   Rocket,
   Server,
+  UserPen,
   Users,
   Wifi,
   Zap,
@@ -76,14 +81,26 @@ Until the factory runs, the provider renders its children with no cursors. For t
   <Card icon={<Users />} title="Remote users" href="/docs/react/remote-users">
     Build a presence list and react to joins and leaves.
   </Card>
+  <Card icon={<UserPen />} title="Local context and user" href="/docs/react/local-context">
+    Set the values that travel with your cursor.
+  </Card>
   <Card icon={<Wifi />} title="Connection status" href="/docs/react/connection-status">
     Show a banner while the connection is down.
   </Card>
   <Card icon={<Zap />} title="Cursor events" href="/docs/react/cursor-events">
     Send one-shot events, such as reactions.
   </Card>
+  <Card icon={<Crosshair />} title="Remote cursors" href="/docs/react/remote-cursors">
+    Read the screen positions and draw the cursors yourself.
+  </Card>
+  <Card icon={<Radar />} title="Remote presence" href="/docs/react/remote-presence">
+    Read the raw presence of every peer.
+  </Card>
   <Card icon={<Braces />} title="Typed hooks" href="/docs/react/typed-hooks">
     Fix the context, user, and event types one time.
+  </Card>
+  <Card icon={<Gauge />} title="Rerenders" href="/docs/react/rerenders">
+    Pick the hook with the smallest render cost.
   </Card>
 </Cards>
 
@@ -91,7 +108,7 @@ Until the factory runs, the provider renders its children with no cursors. For t
 
 - The package has no state store of its own. The hooks read the client from `@anchor-presence/core` and the binding from `@anchor-presence/dom`.
 - The package entry starts with `"use client"`. In a framework with React Server Components, its exports are Client Components. See [Frameworks](/docs/get-started/frameworks).
-- The peer dependency is `react` 18 or later. The test suite runs on React 19 only.
+- The peer dependency is `react` 18 or later. CI runs the test suite on React 19. On React 18.3, every test passes except the router tests, which need React 19.
 - In development mode, the provider and the hooks write console warnings for setup errors. See [Development warnings](/docs/get-started/guides/troubleshooting#development-warnings).
 
 ## Related
@@ -102,5 +119,8 @@ Until the factory runs, the provider renders its children with no cursors. For t
   </Card>
   <Card icon={<Braces />} title="Hooks API" href="/docs/react/api/hooks">
     The signature of every hook.
+  </Card>
+  <Card icon={<Component />} title="Components API" href="/docs/react/api/components">
+    The props of every component.
   </Card>
 </Cards>

@@ -17,7 +17,7 @@ A sender transmits a semantic anchor ID, a normalized position inside that ancho
 1. Absolute sender screen coordinates are never the primary cross-client positioning representation.
 2. Receiver layout is authoritative.
 3. Semantic anchors survive responsive layout changes.
-4. Missing exact anchors degrade predictably: exact anchor → nearest registered parent → larger region → viewport fallback → visibility policy.
+4. Missing exact anchors degrade predictably: exact anchor → nearest registered parent anchors → viewport fallback → visibility policy (hidden).
 5. Framework adapters do not own core presence state.
 6. Transport implementation is independent from cursor logic. Core imports no transport library.
 7. A local layout change repositions a stationary remote cursor without a new network packet.

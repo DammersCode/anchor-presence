@@ -146,8 +146,9 @@ const client = createPresenceClient({
 </Callout>
 
 <Callout type="warn">
-  A `clientId` must have 1 to 128 characters, and a session ID 1 to 64. If `idFactory` returns a session ID
-  that is empty or longer than 64 characters, `createPresenceClient` throws a `TypeError`.
+  A `clientId` must have 1 to 128 characters by default (`validationLimits.maxClientIdLength`), and a session
+  ID 1 to 64 by default (`validationLimits.maxSessionLength`). If `idFactory` returns a session ID outside
+  that range, `createPresenceClient` throws a `TypeError`.
 </Callout>
 
 ## Development mode
@@ -181,7 +182,7 @@ The client reads development mode one time, at creation. In development mode, it
     - `staleTimeoutMs` is at most twice `heartbeatIntervalMs`, so a quiet peer expires between two heartbeats. The page warns one time, for all clients together.
     - The codec cannot encode the `user` or `context`. The client encodes again without `context`, then without `user`, then without both, and sends the first message that encodes. The page warns one time.
     - A message fails to encode or to send for another reason. The client warns one time.
-    - A `subscribeContext`, `subscribeUser`, `subscribeRemote`, or `subscribePeers` listener throws. The client writes the error with `console.error` and calls the other listeners. A throwing `subscribeEvents` listener gives no output.
+    - A `subscribeContext`, `subscribeUser`, `subscribeRemote`, or `subscribePeers` listener throws. The client writes the error with `console.error` and calls the other listeners. A throwing `subscribeEvents` or `subscribeStatus` listener gives no output.
 
   </Accordion>
 

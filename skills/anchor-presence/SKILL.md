@@ -1,10 +1,10 @@
 ---
 name: anchor-presence
-description: Adds anchor-presence live cursors to a React app, or fixes them. Use when adding live, shared, multiplayer, or Figma-style cursors, real-time presence, or a who-is-online list; wiring @anchor-presence packages or a relay; choosing anchor IDs; or when remote cursors drift, vanish, or land on the wrong element.
-compatibility: Requires React 18+ and a browser app; a relay needs Bun, Node, or an existing real-time server.
+description: Adds anchor-presence live cursors to a React app, or fixes them. Use when adding live, shared, multiplayer, or Figma-style cursors, real-time presence, or a who-is-online list. Use it to wire @anchor-presence packages or a relay, or to choose anchor IDs. Use it when remote cursors drift, vanish, or land on the wrong element.
+compatibility: Requires React 18+ and a browser app. A relay needs Bun, Node, or an existing real-time server.
 ---
 
-Anchor-presence shows remote cursors in DOM apps. A cursor travels as a semantic **anchor** ID plus a normalized offset inside that element, with a fallback **chain** of parent anchors and a viewport position. The **receiver** is authoritative: it resolves the anchor against its own layout, so the cursor lands on the same element at any window size, sidebar state, or responsive wrap.
+Anchor-presence shows remote cursors in DOM apps. A cursor travels as a semantic **anchor** ID plus a normalized offset inside that element. It also carries a fallback **chain** of parent anchors and a viewport position. The **receiver** is authoritative. It resolves the anchor against its own layout, so the cursor lands on the same element at any window size, sidebar state, or responsive wrap.
 
 Sources of truth, in order:
 
@@ -19,10 +19,10 @@ To fix a broken integration, go straight to [troubleshooting.md](troubleshooting
 
 Read the code and record:
 
-- package manager and React version (18 or later required);
-- framework and rendering: Vite SPA, Next.js App Router, Remix, or other; whether components render on the server;
-- existing real-time channel: Socket.IO, SignalR, a WebSocket server, a managed service, or none;
-- where the current user's display name comes from;
+- package manager and React version (18 or later required)
+- framework and rendering: Vite SPA, Next.js App Router, Remix, or other. Also whether components render on the server.
+- existing real-time channel: Socket.IO, SignalR, a WebSocket server, a managed service, or none.
+- where the current user's display name comes from.
 - which views get live cursors.
 
 **Done when** every item has an answer. Ask the user only for items the code cannot answer, usually the target views and, when no real-time channel exists, where a **relay** may run.
@@ -45,7 +45,7 @@ If the install returns a 404, the packages are not on npm. Build a clone with `b
 
 ### 4. Create the client and render the cursor layer
 
-Create the client in the provider's `factory`, in a client component. The factory creates the transport and returns the client; the client connects by default:
+Create the client in the provider's `factory`, in a client component. The factory creates the transport and returns the client. The client connects by default:
 
 ```tsx
 "use client";
@@ -73,16 +73,16 @@ export function PresenceRoot({
       }}
     >
       {children}
-      <CursorLayer<unknown, { name: string }> getLabel={(cursor) => cursor.user?.name ?? null} />
+      <CursorLayer />
     </LiveCursorProvider>
   );
 }
 ```
 
-- The `factory` never runs on the server or before the mount effect; until then the provider renders its children with a `null` client. This keeps SSR and React Strict Mode safe. The provider disposes the client it created on unmount.
+- The `factory` never runs on the server or before the mount effect. Until then, the provider renders its children with a `null` client. This keeps SSR and React Strict Mode safe. The provider disposes the client it created on unmount.
 - The provider ignores a new `factory` until `clientKey` changes. For this reason, `clientKey={room}` makes a room change create a new client.
 - A client identifies one browser tab. User identity goes in `user`. If the user name changes, call `client.setUser` or the setter from `useLocalUser`. Do not change `factory` for it.
-- `CursorLayer` owns positioning. Customize it with `getLabel`, `getColor`, `filterCursor`, `getCursorProps`, or `renderCursor`.
+- `CursorLayer` owns positioning. Its default label is `user.name`, cut to 32 characters. Customize it with `getLabel`, `getColor`, `filterCursor`, `getCursorProps`, or `renderCursor`.
 
 **Done when** the provider wraps every target view and the project typechecks.
 
@@ -90,7 +90,7 @@ export function PresenceRoot({
 
 Read [anchors.md](anchors.md), then add `data-anchor` to the elements users point at.
 
-**Done when** every navigation item, card, table row, row action, dialog, and primary control in the target views has an anchor, and every specific anchor has a marked parent.
+**Done when** these elements in the target views have an anchor: every navigation item, card, table row, row action, dialog, and primary control. Every specific anchor also needs a marked parent.
 
 ### 6. Scope cursors with context and a policy
 
@@ -138,7 +138,7 @@ export function PresenceRoot({
     >
       <PublishPage page={currentPage} pageRef={pageRef} />
       {children}
-      <CursorLayer<{ page: string }, { name: string }> getLabel={(cursor) => cursor.user?.name ?? null} />
+      <CursorLayer />
     </LiveCursorProvider>
   );
 }

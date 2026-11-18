@@ -30,7 +30,7 @@ export function PresenceRoot({
       }}
     >
       {children}
-      <CursorLayer<unknown, { name: string }> getLabel={(cursor) => cursor.user?.name ?? null} />
+      <CursorLayer />
     </LiveCursorProvider>
   );
 }
@@ -70,7 +70,7 @@ function ScopedPresenceRoot({
     >
       <PublishPage page={currentPage} pageRef={pageRef} />
       {children}
-      <CursorLayer<{ page: string }, { name: string }> getLabel={(cursor) => cursor.user?.name ?? null} />
+      <CursorLayer />
     </LiveCursorProvider>
   );
 }

@@ -19,6 +19,8 @@ const TRANSITION_END_EVENTS = [
   "animationcancel",
 ] as const;
 
+const NON_GEOMETRY_PROPERTIES = new Set(["opacity", "color", "background-color", "box-shadow", "filter"]);
+
 const SAFETY_TIMEOUT_CAP_MS = 10_000;
 const INFINITE_ANIMATION_WINDOW_MS = 500;
 const CANCEL_SAFETY_MARGIN_MS = 500;
@@ -201,7 +203,17 @@ export function createSignalHub(host: SignalHubHost): SignalHub {
     }
   }
 
+  function isIgnoredTransition(event: Event): boolean {
+    const { target } = event;
+    if (isElementNode(target) && target.closest(`[${markerAttribute}]`) !== null) return true;
+    return (
+      event.type.startsWith("transition") &&
+      NON_GEOMETRY_PROPERTIES.has((event as TransitionEvent).propertyName)
+    );
+  }
+
   function onTransitionStart(event: Event): void {
+    if (isIgnoredTransition(event)) return;
     const isAnimation = event.type === "animationstart";
     const name = isAnimation
       ? (event as AnimationEvent).animationName
@@ -234,6 +246,7 @@ export function createSignalHub(host: SignalHubHost): SignalHub {
   }
 
   function onTransitionEnd(event: Event): void {
+    if (isIgnoredTransition(event)) return;
     const isAnimation = event.type.startsWith("animation");
     const name = isAnimation
       ? (event as AnimationEvent).animationName

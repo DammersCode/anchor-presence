@@ -7,6 +7,7 @@ import type { ResolvedCursor } from "@anchor-presence/dom";
 import { LiveCursorProvider } from "../src/provider";
 import { CursorLayer } from "../src/cursor";
 import { useRemoteCursorsSelector } from "../src/hooks/use-remote-cursors";
+import { docSample, missingSamples } from "./doc-source";
 
 // type-level proof that createWebSocketTransport has connect and disconnect
 const ws = createWebSocketTransport({ url: "ws://x" });
@@ -109,5 +110,16 @@ describe("doc samples compile and render", () => {
       </LiveCursorProvider>,
     );
     expect(html).not.toBeNull();
+  });
+});
+
+describe("doc sample sources", () => {
+  it("match the copies in this file", () => {
+    expect(
+      missingSamples("doc-samples.test.tsx", [
+        docSample("react/client-creation.mdx", "function OwnClientApp"),
+        docSample("react/rerenders.mdx", "function TierBadge"),
+      ]),
+    ).toEqual([]);
   });
 });

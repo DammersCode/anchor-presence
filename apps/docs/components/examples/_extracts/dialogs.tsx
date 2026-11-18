@@ -63,7 +63,10 @@ export function InviteBoard() {
       </div>
       <CursorLayer<DialogContext, User>
         getLabel={(cursor) => cursor.user?.name ?? null}
-        getColor={(cursor) => cursor.user?.color ?? "#4f46e5"}
+        getColor={(cursor) => {
+          const color = cursor.user?.color;
+          return color !== undefined && /^#[0-9a-f]{6}$/iu.test(color) ? color : "#4f46e5";
+        }}
       />
     </LiveCursorProvider>
   );

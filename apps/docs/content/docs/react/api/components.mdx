@@ -18,6 +18,10 @@ import { LiveCursorProvider } from "@anchor-presence/react";
 
 <AutoTypeTable path="../../packages/react/src/provider.tsx" name="LiveCursorProviderProps" />
 
+Pass exactly one of `client` and `factory`.
+
+`LiveCursorProviderProps` is `LiveCursorProviderConfig & { children }`. Use `LiveCursorProviderConfig`, the props without `children`, to type a wrapper that forwards its props to the provider.
+
 Guide: [LiveCursorProvider](/docs/react/live-cursor-provider). For `bindingKey`, see [Rebuild the binding](/docs/react/live-cursor-provider#rebuild-the-binding). For `clientKey`, see [Switch rooms](/docs/react/live-cursor-provider#switch-rooms).
 
 ## CursorLayer

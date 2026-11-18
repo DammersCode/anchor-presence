@@ -70,7 +70,7 @@ The core store sets `idle`. See [Idle stage](/docs/core/remote-presence#idle-sta
 
 ## Result identity
 
-When nothing about a cursor changed, the resolver keeps the same `ResolvedCursor` object across frames, and the same result array. It compares position, visibility, tier, anchor, context, user, and the idle stage. A renderer that compares object identity, such as `React.memo`, then skips the work on a frame where nothing moved.
+When nothing about a cursor changed, the resolver keeps the same `ResolvedCursor` object across frames, and the same result array. It compares position, visibility, `pointVisible`, tier, anchor, context, user, and the idle stage. A renderer that compares object identity, such as `React.memo`, then skips the work on a frame where nothing moved.
 
 ## Related
 

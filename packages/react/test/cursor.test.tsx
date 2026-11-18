@@ -64,6 +64,28 @@ describe("cursor components", () => {
     act(() => root.unmount());
   });
 
+  it("truncates the default label by code points, never inside an emoji", () => {
+    const { client } = makeFakeClient();
+    const { binding, publish } = makeFakeBinding();
+    const root = createRoot(container);
+    const name = `${"a".repeat(31)}😀${"b".repeat(5)}`;
+
+    act(() => {
+      root.render(
+        <LiveCursorProvider client={client} binding={binding}>
+          <CursorLayer />
+        </LiveCursorProvider>,
+      );
+    });
+    act(() => {
+      publish([cursor({ user: { name } })]);
+    });
+
+    expect(container.querySelector("[data-anchor-presence-cursor]")?.textContent).toBe(`${"a".repeat(31)}😀`);
+
+    act(() => root.unmount());
+  });
+
   it("applies getLabel and getColor to change the default visual", () => {
     const { client } = makeFakeClient();
     const { binding, publish } = makeFakeBinding();

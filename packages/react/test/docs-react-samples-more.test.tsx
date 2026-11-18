@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { act, useContext, useEffect, type ReactNode } from "react";
+import { act, useContext, useEffect, useState, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { describe, expect, expectTypeOf, it, vi } from "vitest";
 import {
@@ -40,6 +40,23 @@ function ConnectionBanner() {
   const status = useCursorStatus();
   if (status === "connected") return null;
   return <div role="status">{status}</div>;
+}
+
+function DelayedConnectionBanner() {
+  const status = useCursorStatus();
+  const connected = status === "connected";
+  const [show, setShow] = useState(false);
+
+  useEffect(() => {
+    if (connected) return;
+    const timer = setTimeout(() => setShow(true), 1500);
+    return () => {
+      clearTimeout(timer);
+      setShow(false);
+    };
+  }, [connected]);
+
+  return show ? <div role="status">{status}</div> : null;
 }
 
 function PresenceReady() {
@@ -175,6 +192,31 @@ describe("connection-status.mdx: ConnectionBanner", () => {
   });
 });
 
+describe("connection-status.mdx: DelayedConnectionBanner", () => {
+  it("shows the banner only after the status stays not connected for 1.5 seconds", () => {
+    vi.useFakeTimers();
+    const { client, setStatus } = makeFakeClient();
+    const view = render(
+      <LiveCursorProvider client={client} binding={makeFakeBinding().binding}>
+        <DelayedConnectionBanner />
+      </LiveCursorProvider>,
+    );
+    act(() => setStatus("reconnecting"));
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(view.container.textContent).toBe("");
+    act(() => {
+      vi.advanceTimersByTime(600);
+    });
+    expect(view.container.textContent).toBe("reconnecting");
+    act(() => setStatus("connected"));
+    expect(view.container.textContent).toBe("");
+    view.unmount();
+    vi.useRealTimers();
+  });
+});
+
 describe("api/components.mdx: LiveCursorContext", () => {
   it("shows the line only below a provider with a client and a binding", () => {
     const { client } = makeFakeClient();
@@ -266,6 +308,7 @@ describe("doc sample sources", () => {
       .join("\n");
     const samples = [
       docSample("react/connection-status.mdx", "function ConnectionBanner"),
+      docSample("react/connection-status.mdx", "function DelayedConnectionBanner"),
       docSample("react/api/components.mdx", "function PresenceReady"),
       docSample("get-started/concepts/ui-context.mdx", "type VisibilityPolicy"),
       docSample("get-started/concepts/ui-context.mdx", "const dialogAwarePolicy"),

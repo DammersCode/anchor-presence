@@ -8,9 +8,10 @@ import { LiveCursorContext } from "./context.js";
 import type { LiveCursorContextValue } from "./context.js";
 
 /**
- * Props for `LiveCursorProvider`.
+ * Every `LiveCursorProvider` prop except `children`.
+ * Use it for a wrapper component: `Omit` on `LiveCursorProviderProps` loses the `client` or `factory` rule.
  */
-export type LiveCursorProviderProps<TContext = unknown, TUser = unknown> = (
+export type LiveCursorProviderConfig<TContext = unknown, TUser = unknown> = (
   | {
       /** A client you own; the provider never disposes it. `null` provides no client. */
       client: PresenceClient<TContext, TUser> | null;
@@ -41,9 +42,18 @@ export type LiveCursorProviderProps<TContext = unknown, TUser = unknown> = (
     clientKey?: unknown;
     /** Change this value to rebuild the binding with the current `bindingOptions`. The client stays connected. */
     bindingKey?: unknown;
-    /** The tree below the provider. */
-    children?: ReactNode;
   };
+
+/**
+ * Props for `LiveCursorProvider`.
+ */
+export type LiveCursorProviderProps<TContext = unknown, TUser = unknown> = LiveCursorProviderConfig<
+  TContext,
+  TUser
+> & {
+  /** The tree below the provider. */
+  children?: ReactNode;
+};
 
 function isBrowser(): boolean {
   return typeof window !== "undefined" && typeof document !== "undefined";
@@ -146,10 +156,11 @@ export function LiveCursorProvider<TContext = unknown, TUser = unknown>(
   }, [client, providedBinding, bindingKey]);
 
   const activeBinding = providedBinding ?? ownBinding;
+  const clientPending = factory !== undefined && providedClient === undefined && ownClient === null;
 
   const value = useMemo<LiveCursorContextValue<TContext, TUser>>(
-    () => ({ client, binding: activeBinding }),
-    [client, activeBinding],
+    () => ({ client, binding: activeBinding, clientPending }),
+    [client, activeBinding, clientPending],
   );
 
   return <LiveCursorContext.Provider value={value}>{children}</LiveCursorContext.Provider>;

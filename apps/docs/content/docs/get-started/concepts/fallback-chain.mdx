@@ -28,7 +28,7 @@ A pointer on the button sends the chain `orders.row:17.actions`, `orders.row:17`
 
 ## How the chain works
 
-The fallback chain is the anchor, then its parent anchors, then the window position when the message carries one. A cursor position stores the anchors in an ordered list, the most specific first.
+The fallback chain is the anchor, then its parent anchors, then the viewport position when the message carries one. A cursor position stores the anchors in an ordered list, the most specific first.
 
 1. The sender starts at the element under the pointer.
 2. It adds each registered anchor between that element and the document root, the nearest anchor first.
@@ -38,17 +38,17 @@ The receiver walks the chain in order. It uses the first anchor that is connecte
 
 ## Viewport fallback
 
-A cursor position can also carry a `viewport` field. It is a `u`/`v` position across the full browser window: `pointerX / innerWidth` and `pointerY / innerHeight`. If no anchor in the chain resolves, the receiver uses this position. The cursor then stays visible, but it can land on another element.
+A cursor position can also carry a `viewport` field. It is a `u`/`v` position across the full viewport: `pointerX / innerWidth` and `pointerY / innerHeight`. If no anchor in the chain resolves, the receiver uses this position. The cursor then stays visible, but it can land on another element.
 
 ## Resolution tiers
 
 A **tier** names the fallback step that placed the cursor. Each resolved cursor carries one:
 
-| Tier       | Meaning                                      |
-| ---------- | -------------------------------------------- |
-| `anchor`   | An anchor in the chain resolved.             |
-| `viewport` | No anchor resolved. The window position won. |
-| `hidden`   | The cursor has no position to show.          |
+| Tier       | Meaning                                        |
+| ---------- | ---------------------------------------------- |
+| `anchor`   | An anchor in the chain resolved.               |
+| `viewport` | No anchor resolved. The viewport position won. |
+| `hidden`   | The cursor has no position to show.            |
 
 After this step, a **visibility policy** decides whether the cursor shows. The default policy hides only the `hidden` tier. A custom policy can hide other cursors for app reasons. See [UI context](/docs/get-started/concepts/ui-context). [Resolution](/docs/dom/resolution) gives the pixel formula of each tier.
 

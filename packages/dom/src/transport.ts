@@ -28,7 +28,7 @@ export type WebSocketLike = {
 
 export type WebSocketCtor = new (url: string) => WebSocketLike;
 
-/** A `LiveCursorTransport` whose `connect`/`disconnect` are always present, not optional. */
+/** A `LiveCursorTransport` whose lifecycle, status, and close members are always present, not optional. */
 export type WebSocketTransport = LiveCursorTransport & {
   connect(): void;
   disconnect(): void;

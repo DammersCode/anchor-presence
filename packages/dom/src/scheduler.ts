@@ -2,7 +2,7 @@
 
 import type { Rect, ViewportSize } from "./geometry.js";
 import type { StyleValues } from "./occlusion.js";
-import { isDevMode } from "@anchor-presence/core";
+import { isDevMode, reportListenerError } from "@anchor-presence/core";
 import { createFrameCache } from "./frame-cache.js";
 import { createSignalHub } from "./internal/signals.js";
 
@@ -147,7 +147,11 @@ export function createGeometryScheduler<TSnapshot>(
       return;
     }
     signals.syncAnchors(result.activeAnchors);
-    options.notify(result.snapshot);
+    try {
+      options.notify(result.snapshot);
+    } catch (error) {
+      reportListenerError(error);
+    }
 
     if (result.needsAnotherFrame || dirty || signals.hasOpenTransitions()) {
       scheduleFrame();

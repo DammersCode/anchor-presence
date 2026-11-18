@@ -11,7 +11,7 @@ A relay forwards bytes between the clients of one room. A relay must obey these 
 ## Rules
 
 - Accept binary WebSocket frames. The transport sets `binaryType` to `arraybuffer` and ignores text frames from the relay.
-- Forward each frame, unchanged, to every peer of the sender. Never send a frame back to its sender.
+- Without identity binding, forward each frame, unchanged, to every peer of the sender. Never send a frame back to its sender.
 - Read the room from the `room` query parameter, for example `/?room=room-42`. If the parameter is missing, use the room `main`.
 - Accept a room name of letters, digits, `_` and `-`, up to 256 characters. Close a connection with any other name with code `4007`.
 - Treat a repeated `room` parameter as an invalid room name: close the connection with code `4007`.

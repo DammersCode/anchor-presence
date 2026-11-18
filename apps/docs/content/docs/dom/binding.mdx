@@ -100,7 +100,7 @@ While the scheduler runs, the binding reacts to these layout signals:
 - A window resize, or a scroll of the document or of any element.
 - A size change of an active anchor or of the document element.
 - A DOM change anywhere in the document body, outside the cursor elements.
-- A CSS transition or animation on an active anchor.
+- A CSS transition or animation on an element outside the cursor layer that can change geometry.
 
 Call `invalidate` after a layout change that none of these signals can see. One example is a web font that loads after the first paint and moves an anchor without a change to its size:
 
@@ -125,6 +125,8 @@ On the `pagehide` event of the window, the binding calls `client.leave()`. Peers
 ## Errors in a policy or interpolator
 
 If a `visibilityPolicy` or an interpolator throws, the binding keeps the last snapshot and does not stop. In development mode, it logs the error with `console.error`. The binding tries again on the next remote, anchor, or layout change.
+
+If a `binding.subscribe` listener throws, the binding reports the error through the development warning. It still calls the other listeners.
 
 ## Dispose
 

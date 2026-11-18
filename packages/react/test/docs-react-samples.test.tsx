@@ -20,6 +20,7 @@ import {
   useSendEvent,
 } from "../src/index";
 import { LiveCursorContext } from "../src/context";
+import { docSample, missingSamples } from "./doc-source";
 
 class FakeSocket implements WebSocketLike {
   static instances: FakeSocket[] = [];
@@ -302,5 +303,19 @@ describe("react docs samples", () => {
     expect(view.querySelector("li")?.textContent).toBe("Ada");
     local.dispose();
     peer.dispose();
+  });
+});
+
+describe("doc sample sources", () => {
+  it("match the copies in this file", () => {
+    expect(
+      missingSamples("docs-react-samples.test.tsx", [
+        docSample("react/live-cursor-provider.mdx", "function Workspace"),
+        docSample("react/live-cursor-provider.mdx", "function Room"),
+        docSample("react/connection-status.mdx", "function TokenError"),
+        docSample("react/cursor-events.mdx", "function Reactions"),
+        docSample("react/cursor-events.mdx", "function WaveButton"),
+      ]),
+    ).toEqual([]);
   });
 });

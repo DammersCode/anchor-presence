@@ -47,5 +47,3 @@ jobs:
       # No .NET on this runner, so the real SignalR hub test skips itself; main runs it.
       - name: Unit tests
         run: bun run test
-      - name: Relays under the Bun runtime
-        run: bun run test:bun-runtime

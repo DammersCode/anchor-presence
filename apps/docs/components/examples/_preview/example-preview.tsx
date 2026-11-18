@@ -44,7 +44,7 @@ function PaneFrame({ title, src }: { title: string; src: string }) {
         src={src}
         loading="lazy"
         onLoad={() => setLoaded(true)}
-        className={`block ${PANE_HEIGHT} w-full rounded-lg border border-fd-border bg-fd-card`}
+        className={`block ${PANE_HEIGHT} w-full rounded-lg border border-fd-border bg-fd-card focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fd-ring`}
       />
       {loaded ? null : <PaneSkeleton className="absolute inset-0" />}
     </div>

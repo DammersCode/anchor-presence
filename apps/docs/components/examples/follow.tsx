@@ -137,7 +137,7 @@ function FollowBanner() {
     >
       <span className="min-w-0 flex-1 truncate">Following {MIRA.name}</span>
       <span className="hidden text-white/80 sm:inline">Scroll or Esc stops</span>
-      <button type="button" onClick={stop} className={`${bannerButton} bg-white/20 hover:bg-white/30`}>
+      <button type="button" onClick={stop} className={`${bannerButton} bg-black/25 hover:bg-black/35`}>
         Stop
       </button>
     </div>

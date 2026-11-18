@@ -36,8 +36,8 @@ Wrap every decode call in `try`/`catch`. For a malformed or truncated buffer, `d
 
 The network tab of the browser DevTools cannot show the content of `binaryCodec` frames. Use one of these two options:
 
-<Tabs items={["Switch the codec", "Wrap the codec"]}>
-  <Tab value="Switch the codec">
+<Tabs items={["Switch codec", "Wrap codec"]}>
+  <Tab value="Switch codec">
     Use `jsonCodec` in development and `binaryCodec` in production. The network tab then shows every development message as readable JSON.
 
     <Callout type="warn">
@@ -46,7 +46,7 @@ The network tab of the browser DevTools cannot show the content of `binaryCodec`
     </Callout>
 
   </Tab>
-  <Tab value="Wrap the codec">
+  <Tab value="Wrap codec">
     This wrapper logs every message and keeps `binaryCodec` on the wire:
 
 ```ts

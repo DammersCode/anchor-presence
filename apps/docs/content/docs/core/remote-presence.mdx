@@ -29,6 +29,7 @@ A peer joins on its first accepted message. It goes idle when its presence stops
 
 <Mermaid
   chart={`stateDiagram-v2
+  accTitle: Remote client states
   [*] --> active: first message
   active --> idle: idleAfterMs, no change
   idle --> active: presence changes
@@ -145,7 +146,7 @@ The store has no timer of its own. Without a `sweep()` call on a timer, no peer 
 2. Drop the echoes of your own `clientId`.
 3. Keep event messages out of the store. An event message has a `null` cursor, so `ingest` stores it as a peer without a cursor.
 
-The constructor takes [`RemotePresenceStoreOptions`](/docs/core/api/client#remotepresencestore). Its `staleTimeoutMs` has no minimum, unlike the client option. `onDropNewClient` runs each time the full store drops a message from a new peer.
+The constructor takes [`RemotePresenceStoreOptions`](/docs/core/api/client#remotepresencestore). Its `staleTimeoutMs` has no minimum, unlike the client option. `onRemoteClientRejected` runs each time the full store drops a message from a new peer.
 
 The store has these methods:
 

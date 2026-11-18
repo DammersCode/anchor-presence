@@ -87,7 +87,35 @@ export const Route = createRootRoute({
 });
 ```
 
-TanStack Start also renders the root route on the server. There, the provider renders with a `null` client. The provider creates the client after hydration.
+TanStack Start also renders the root route on the server. There, the root route needs a `shellComponent` that renders the document. Keep the provider in `component`, not in the shell:
+
+```tsx
+// src/routes/__root.tsx
+import type { ReactNode } from "react";
+import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
+import { PresenceProvider } from "../presence-provider";
+
+export const Route = createRootRoute({
+  shellComponent: ({ children }: { children: ReactNode }) => (
+    <html lang="en">
+      <head>
+        <HeadContent />
+      </head>
+      <body>
+        {children}
+        <Scripts />
+      </body>
+    </html>
+  ),
+  component: () => (
+    <PresenceProvider>
+      <Outlet />
+    </PresenceProvider>
+  ),
+});
+```
+
+On the server, the provider renders with a `null` client. The provider creates the client after hydration.
 
 </Tab>
 <Tab value="React Router">
@@ -138,12 +166,12 @@ The test suite covers two routers directly, with React 19. The others use a test
 | Framework          | Status                                                                                                               |
 | ------------------ | -------------------------------------------------------------------------------------------------------------------- |
 | TanStack Router    | Tested with `@tanstack/react-router` 1: server render, hydration with no mismatch, and one client across navigation. |
-| TanStack Start     | Not tested. It uses TanStack Router, which is tested.                                                                |
+| TanStack Start     | Built and run in a sample app, not in the test suite. It uses TanStack Router, which is tested.                      |
 | React Router       | Tested with `react-router` 8, which needs React 19: server render inside a router, and one client across navigation. |
 | Remix              | Not tested. Remix v2 uses React Router 6, which the tests do not cover.                                              |
 | Next.js App Router | Not tested. The built packages import in plain Node, and the React entry starts with `"use client"`.                 |
 | Vite and React SPA | Not tested. The package tests mount the provider with `createRoot`, as a single-page app does.                       |
-| Astro              | Not tested.                                                                                                          |
+| Astro              | Built and run in a sample app, not in the test suite.                                                                |
 
 The tests do not cover React 18 with a router.
 

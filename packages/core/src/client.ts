@@ -12,7 +12,12 @@ import type {
   PresenceClientState,
   SchedulerLike,
 } from "./internal/types.js";
-import { DEFAULT_MAX_FIELD_BYTES, DEFAULT_MAX_MESSAGE_BYTES, MAX_EVENT_TYPE_LENGTH } from "./protocol.js";
+import {
+  DEFAULT_MAX_CLIENT_ID_LENGTH,
+  DEFAULT_MAX_FIELD_BYTES,
+  DEFAULT_MAX_MESSAGE_BYTES,
+  MAX_EVENT_TYPE_LENGTH,
+} from "./protocol.js";
 import {
   DEFAULT_IDLE_AFTER_MS,
   DEFAULT_MAX_REMOTE_CLIENTS,
@@ -23,8 +28,9 @@ import {
 /** Default publish interval, in milliseconds. */
 export const DEFAULT_PUBLISH_INTERVAL_MS = 50;
 
-/** Default heartbeat interval, in milliseconds. */
 const MIN_SWEEP_INTERVAL_MS = 250;
+
+/** Default heartbeat interval, in milliseconds. */
 export const DEFAULT_HEARTBEAT_INTERVAL_MS = 10_000;
 
 const MIN_TIMER_INTERVAL_MS = 1;
@@ -45,7 +51,7 @@ const defaultScheduler: SchedulerLike = {
 function assertFiniteOptions(values: Record<string, number | undefined>): void {
   for (const [name, value] of Object.entries(values)) {
     if (value !== undefined && !Number.isFinite(value)) {
-      throw new TypeError(`${name} must be a finite number, got ${String(value)}`);
+      throw new TypeError(`createPresenceClient: ${name} must be a finite number, got ${String(value)}`);
     }
   }
 }
@@ -60,6 +66,9 @@ function assertFiniteOptions(values: Record<string, number | undefined>): void {
 export function createPresenceClient<TContext = unknown, TUser = unknown>(
   options: PresenceClientOptions<TContext, TUser>,
 ): PresenceClient<TContext, TUser> {
+  if (options?.transport === undefined || options.transport === null) {
+    throw new TypeError("createPresenceClient: options.transport is required");
+  }
   const {
     transport,
     codec = jsonCodec,
@@ -106,11 +115,16 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
   if (isDevMode() && staleTimeoutMs !== undefined && staleTimeoutMs <= heartbeatIntervalMs * 2) {
     warnOnce(
       "stale-vs-heartbeat",
-      `staleTimeoutMs (${staleTimeoutMs}) is at most twice heartbeatIntervalMs (${heartbeatIntervalMs}), so a quiet peer expires between heartbeats. Raise staleTimeoutMs or lower heartbeatIntervalMs.`,
+      `staleTimeoutMs (${options.staleTimeoutMs}) is at most twice heartbeatIntervalMs (${heartbeatIntervalMs}), so a quiet peer expires between heartbeats. Raise staleTimeoutMs or lower heartbeatIntervalMs.`,
     );
   }
 
   const clientId = options.clientId ?? idFactory();
+  if (typeof clientId !== "string" || clientId.length < 1 || clientId.length > DEFAULT_MAX_CLIENT_ID_LENGTH) {
+    throw new TypeError(
+      `createPresenceClient: clientId must be 1 to ${DEFAULT_MAX_CLIENT_ID_LENGTH} characters, got ${typeof clientId === "string" ? clientId.length : typeof clientId}`,
+    );
+  }
   const session = idFactory();
 
   const status = transport.subscribeStatus ? (transport.getStatus?.() ?? "connecting") : "connected";
@@ -122,7 +136,7 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     ...(staleTimeoutMs !== undefined ? { staleTimeoutMs } : {}),
     ...(idleAfterMs !== undefined ? { idleAfterMs } : {}),
     now,
-    onDropNewClient: (droppedClientId) => {
+    onRemoteClientRejected: ({ clientId: droppedClientId }) => {
       if (devMode && !warnedAboutRemoteCap) {
         warnedAboutRemoteCap = true;
         console.warn(

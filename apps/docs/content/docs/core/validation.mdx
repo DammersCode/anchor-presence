@@ -34,6 +34,7 @@ The client runs these steps on each inbound message, in this order:
 
 <Mermaid
   chart={`flowchart TD
+  accTitle: Incoming message checks
   bytes["bytes"] --> checks["steps 1 to 4"]
   checks -->|fails| drop["drop"]
   checks -->|step 5| listeners["event listeners"]

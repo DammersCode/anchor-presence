@@ -14,7 +14,7 @@ function pair() {
   open.push(a, b);
   void a.connect();
   void b.connect();
-  return { a, b };
+  return { a, b, name };
 }
 
 describe("createBroadcastChannelTransport", () => {
@@ -33,10 +33,16 @@ describe("createBroadcastChannelTransport", () => {
   });
 
   it("ignores payloads that are not byte views and keeps delivering", async () => {
-    const { a, b } = pair();
+    const { a, b, name } = pair();
     const seen: number[][] = [];
     b.subscribe((data) => seen.push([...data]));
-    const raw = new BroadcastChannel((a as unknown as { name?: string }).name ?? "");
+    const raw = new BroadcastChannel(name);
+    // oxlint-disable-next-line unicorn/require-post-message-target-origin
+    raw.postMessage({ from: "other", data: "not bytes" });
+    // oxlint-disable-next-line unicorn/require-post-message-target-origin
+    raw.postMessage(null);
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(seen).toEqual([]);
     raw.close();
     void a.send(new Uint8Array([7]));
     await new Promise((resolve) => setTimeout(resolve, 50));

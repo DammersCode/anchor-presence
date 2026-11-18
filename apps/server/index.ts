@@ -56,7 +56,9 @@ const ROOM_CHARSET = /^[A-Za-z0-9_-]+$/;
 // null means the name is not a valid room name: the relay refuses the connection instead of merging it into `main`
 function roomFor(req: Request): string | null {
   const url = new URL(req.url);
-  const fromQuery = url.searchParams.get("room");
+  const rooms = url.searchParams.getAll("room");
+  if (rooms.length > 1) return null;
+  const fromQuery = rooms[0];
   const fromPath = url.pathname.replace(/^\/+|\/+$/g, "");
   const candidate = fromQuery || fromPath || "main";
   return candidate.length <= 256 && ROOM_CHARSET.test(candidate) ? candidate : null;
@@ -65,7 +67,9 @@ function roomFor(req: Request): string | null {
 // Opt-in room auth: when AUTH_TOKEN is set, the upgrade must carry a matching `token` query param.
 function authOkFor(req: Request): boolean {
   if (AUTH_TOKEN === "") return true;
-  const provided = new URL(req.url).searchParams.get("token") ?? "";
+  const tokens = new URL(req.url).searchParams.getAll("token");
+  if (tokens.length > 1) return false;
+  const provided = tokens[0] ?? "";
   return timingSafeEqualString(provided, AUTH_TOKEN);
 }
 

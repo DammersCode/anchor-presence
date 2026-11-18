@@ -10,6 +10,7 @@ import {
   bindIdentity,
   newConnectionId,
   parseRoom,
+  parseToken,
   type AuthIdentity,
   safeAuthCheck,
   tokenAuthCheck,
@@ -76,19 +77,21 @@ export function createBunRelay(port: number, options: BunRelayOptions = {}) {
       }
       if (url.pathname !== "/")
         return new Response("Not found: rooms come from the room query parameter", { status: 404 });
-      const parsedRoom = parseRoom(url.searchParams.get("room"));
+      const parsedRoom = parseRoom(url.searchParams.getAll("room"));
       const room = parsedRoom ?? "main";
       const origin = req.headers.get("origin") ?? "";
       // origin and room are checked before the hook runs, so a refused request never drives an expensive hook
       const preChecked = originAllowed(allowedOrigins, origin) && parsedRoom !== null;
-      const authOk = preChecked
-        ? await authCheck({
-            token: url.searchParams.get("token") ?? "",
-            room,
-            origin,
-            headers: Object.fromEntries(req.headers),
-          })
-        : false;
+      const token = parseToken(url.searchParams.getAll("token"));
+      const authOk =
+        preChecked && token !== null
+          ? await authCheck({
+              token,
+              room,
+              origin,
+              headers: Object.fromEntries(req.headers),
+            })
+          : false;
       if (
         srv.upgrade(req, {
           data: {

@@ -11,6 +11,7 @@ import {
   bindIdentity,
   newConnectionId,
   parseRoom,
+  parseToken,
   type AuthIdentity,
   safeAuthCheck,
   tokenAuthCheck,
@@ -71,7 +72,10 @@ export function createElysiaRelay(port: number, options: ElysiaRelayOptions = {}
       closeOnBackpressureLimit: true,
     },
   }).ws("/", {
-    query: t.Object({ room: t.Optional(t.String()), token: t.Optional(t.String()) }),
+    query: t.Object({
+      room: t.Optional(t.Union([t.String(), t.Array(t.String())])),
+      token: t.Optional(t.Union([t.String(), t.Array(t.String())])),
+    }),
     async open(ws) {
       const { room: rawRoom, token } = ws.data.query;
       const headers = ws.data.headers as Record<string, string | undefined>;
@@ -85,7 +89,9 @@ export function createElysiaRelay(port: number, options: ElysiaRelayOptions = {}
         ws.close(INVALID_ROOM_CODE, "invalid room");
         return;
       }
-      const authOk = await authCheck({ token: token ?? "", room, origin, headers });
+      const parsedToken = parseToken(token);
+      const authOk =
+        parsedToken === null ? false : await authCheck({ token: parsedToken, room, origin, headers });
       // the socket can close while the hook runs; admitting it would leak a limit slot
       if (ws.raw.readyState !== 1) return;
       if (!authOk) {

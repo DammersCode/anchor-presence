@@ -37,6 +37,17 @@ export function parseDemoUser(value: unknown): DemoUser | undefined {
   return { name: name.slice(0, 40), color };
 }
 
+const PAGE_IDS: readonly string[] = ["dashboard", "orders", "customers", "products"];
+
+export function parseDemoContext(value: unknown): DemoContext | undefined {
+  if (typeof value !== "object" || value === null) return undefined;
+  const { page, dialog } = value as Record<string, unknown>;
+  const parsed: DemoContext = {};
+  if (typeof page === "string" && PAGE_IDS.includes(page)) parsed.page = page as PageId;
+  if (dialog === "settings") parsed.dialog = dialog;
+  return parsed;
+}
+
 export { CURSOR_PALETTE, DEFAULT_CURSOR_COLOR, isKnownCursorColor, colorForName } from "./palette";
 
 const params = new URLSearchParams(window.location.search);

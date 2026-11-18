@@ -8,8 +8,8 @@
 - `@anchor-presence/core`: the default clock is monotonic (`performance.now()`), so a wall-clock step no longer leaves ghost peers or mutes event senders. Pass `now` to use another clock.
 - `@anchor-presence/core`: `binaryCodec.encode` throws for a coordinate outside the float32 range and for an event message that carries a cursor. The client drops such a message.
 - `@anchor-presence/dom`: `createWebSocketTransport` throws a `TypeError` for a `path` that does not start with `/` or `?`.
-- `@anchor-presence/core`: the client option `onRemoteClientDropped` is `onRemoteClientRejected`. It runs when a full store refuses a new peer, and it receives `{ clientId }`.
-- Renames, for names that say what they do: `useCursorContext` is `useLocalContext`, `useCursorPresence` is `useRemotePresence`, `client.updateLocalCursor` is `setLocalCursor`, the option `heartbeatMs` is `heartbeatIntervalMs` (and `DEFAULT_HEARTBEAT_MS` is `DEFAULT_HEARTBEAT_INTERVAL_MS`), `onRemoteClientDrop` is `onRemoteClientDropped`, and the binding option `localCursorCapture` is `capturePointer`.
+- `@anchor-presence/core`: the client option `onRemoteClientDrop` is `onRemoteClientRejected`, and the store option `onDropNewClient` is `onRemoteClientRejected`. Both run when a full store refuses a new peer, and receive `{ clientId }`.
+- Renames, for names that say what they do: `useCursorContext` is `useLocalContext`, `useCursorPresence` is `useRemotePresence`, `client.updateLocalCursor` is `setLocalCursor`, the option `heartbeatMs` is `heartbeatIntervalMs` (and `DEFAULT_HEARTBEAT_MS` is `DEFAULT_HEARTBEAT_INTERVAL_MS`), and the binding option `localCursorCapture` is `capturePointer`.
 - `@anchor-presence/core`: `createPresenceClient` throws a `TypeError` for a non-finite `publishIntervalMs`, `heartbeatIntervalMs`, `staleTimeoutMs`, `idleAfterMs`, `maxRemoteClients` or adaptive-publish option, instead of running with a broken timer.
 - `@anchor-presence/core`: `PeerChange` is generic and carries the peer's `user` and `context`. For a `leave`, they hold the last known values.
 - Example relays: the node-ws relay counts only admitted sockets against `maxSockets` and terminates a refused socket after one second, so a flood of refused clients that ignore the close frame cannot fill the cap.
@@ -30,7 +30,13 @@
 - `@anchor-presence/react`: `usePresenceClient` is removed. Pass `LiveCursorProvider` a `factory` prop instead. The provider runs it once per mount, in a browser-only effect, and disposes the client it created on unmount. The `client` prop stays as bring-your-own: the provider never disposes a client you pass, and it wins over `factory` when both are set.
 - `@anchor-presence/core`: `createPresenceClient` now defaults `autoConnect` to `true`. The client calls `transport.connect()` itself, once, during creation, after it subscribes to the transport's messages and status. Pass `autoConnect: false` to connect the transport yourself.
 
+- `@anchor-presence/core`: `createPresenceClient` throws a `TypeError` when `options.transport` is missing, or when `clientId` is not 1 to 128 characters. Every option error message starts with `createPresenceClient:`.
+- `@anchor-presence/react`: the `LiveCursorProvider` props type needs `client` (or `null`) or `factory`, and rejects `binding` together with `bindingOptions`.
+- Example relays and the reference relay: a repeated `room` query value closes the socket with `4007`, and a repeated `token` value with `4006`.
+
 ### Added
+
+- `@anchor-presence/core`: `createEventChannel` has `EventMap` as the default for its type argument. The `DEFAULT_HEARTBEAT_INTERVAL_MS`, `staleTimeoutMs` and dom `*Like` type docs state their defaults and purpose.
 
 - `@anchor-presence/core`: when a `user` or `context` cannot encode, the client drops only the failing field and keeps the other. The default shape check warns once in development when it drops a key, and skips keys such as `toString` that exist on `Object.prototype`.
 - `@anchor-presence/dom`: the transport warns once in development after four failed connection attempts in a row, and when `url` overrides `host`, `port` or `path`. A binding works with elements of an iframe, because the checks use `nodeType` instead of `instanceof`.

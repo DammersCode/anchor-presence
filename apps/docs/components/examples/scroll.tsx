@@ -66,6 +66,8 @@ export function ScrollScene({ client, layout, children }: Props) {
         <h3 className="font-display px-1 pb-1.5 text-sm font-semibold">Inbox</h3>
         <div className="relative min-h-0">
           <ul
+            tabIndex={0}
+            aria-label="Inbox"
             ref={listRef}
             data-anchor="inbox"
             className={`overflow-y-auto rounded-lg border border-fd-border bg-fd-background ${wide ? "" : "h-[148px]"}`}

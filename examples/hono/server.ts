@@ -13,6 +13,7 @@ import {
   bindIdentity,
   newConnectionId,
   parseRoom,
+  parseToken,
   safeAuthCheck,
   tokenAuthCheck,
   type AuthCheck,
@@ -61,20 +62,22 @@ export function createHonoRelay(port: number, options: HonoRelayOptions = {}) {
   app.get(
     "/",
     upgradeWebSocket(async (c) => {
-      const parsedRoom = parseRoom(c.req.query("room"));
+      const parsedRoom = parseRoom(c.req.queries("room"));
       const room = parsedRoom ?? "main";
       const connectionId = newConnectionId();
       const origin = c.req.header("origin") ?? "";
       // origin and room are checked before the hook runs, so a refused request never drives an expensive hook
       const preChecked = originAllowed(allowedOrigins, origin) && parsedRoom !== null;
-      const authOk = preChecked
-        ? await authCheck({
-            token: c.req.query("token") ?? "",
-            room,
-            origin,
-            headers: c.req.header(),
-          })
-        : false;
+      const token = parseToken(c.req.queries("token"));
+      const authOk =
+        preChecked && token !== null
+          ? await authCheck({
+              token,
+              room,
+              origin,
+              headers: c.req.header(),
+            })
+          : false;
       const rateLimiter = new RateLimiter(rateCapacity, rateRefillPerSecond);
       let admitted = false;
 

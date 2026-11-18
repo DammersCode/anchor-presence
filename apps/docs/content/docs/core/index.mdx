@@ -70,6 +70,7 @@ const clientB = createPresenceClient({ transport: b, user: { name: "Bob" } });
 
 <Mermaid
   chart={`flowchart TD
+  accTitle: Package layers and imports
   react["@anchor-presence/react"] --> dom["@anchor-presence/dom"]
   dom --> core["@anchor-presence/core"]
   react --> core`}

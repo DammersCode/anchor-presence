@@ -33,11 +33,11 @@ client.dispose();
 
 The `autoConnect` option decides who calls `transport.connect()`:
 
-<Tabs items={["autoConnect: true (default)", "autoConnect: false"]}>
-  <Tab value="autoConnect: true (default)">
+<Tabs items={["autoConnect on", "autoConnect off"]}>
+  <Tab value="autoConnect on">
     The client calls `transport.connect()` one time, during creation. It subscribes to the messages and the status of the transport first, so it misses no inbound message and no status change.
   </Tab>
-  <Tab value="autoConnect: false">
+  <Tab value="autoConnect off">
     You call `connect()` yourself, before or right after you create the client:
 
 ```ts

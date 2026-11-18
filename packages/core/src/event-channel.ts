@@ -25,7 +25,7 @@ export type EventChannel<TEvents extends object> = {
  * The types describe what you send. Remote data is untrusted, so pass `parseEvent` to `createPresenceClient` to check it.
  * @param client The client whose events you type.
  */
-export function createEventChannel<TEvents extends object>(
+export function createEventChannel<TEvents extends object = EventMap>(
   client: Pick<PresenceClient, "sendEvent" | "subscribeEvents">,
 ): EventChannel<TEvents> {
   return {

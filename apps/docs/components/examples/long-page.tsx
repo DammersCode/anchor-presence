@@ -33,7 +33,12 @@ export function LongPage({ layout, header }: { layout: "wide" | "narrow"; header
   return (
     <div className="flex h-full flex-col">
       {header}
-      <div data-page-scroller="" className="min-h-0 flex-1 overflow-y-auto px-2.5">
+      <div
+        data-page-scroller=""
+        tabIndex={0}
+        aria-label="Page content"
+        className="min-h-0 flex-1 overflow-y-auto px-2.5"
+      >
         {SECTIONS.map((title, index) => (
           <section
             key={title}

@@ -7,7 +7,7 @@ import { BenchPage } from "./bench/bench-page";
 import { ReflowBenchPage } from "./reflow/reflow-bench-page";
 import { createBackendTransport } from "./cursors/backends";
 import { backendId, colorForName, localRoom, localUserName } from "./cursors/setup";
-import { parseDemoEvent, parseDemoUser } from "./cursors/setup";
+import { parseDemoContext, parseDemoEvent, parseDemoUser } from "./cursors/setup";
 import type { DemoContext, DemoUser } from "./cursors/setup";
 import { createVisibilityPolicy } from "./cursors/visibility-policy";
 import type { LocalViewState } from "./cursors/visibility-policy";
@@ -29,6 +29,7 @@ function createDemoClient() {
     transport,
     codec,
     user: { name: localUserName, color: colorForName(localUserName) },
+    parseContext: parseDemoContext,
     parseUser: parseDemoUser,
     parseEvent: (event) => (parseDemoEvent(event) === undefined ? undefined : event),
   });

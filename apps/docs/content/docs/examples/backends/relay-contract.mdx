@@ -45,7 +45,7 @@ These relays have an `authCheck` hook and bind the identity that it returns:
 
 The relay adds a suffix per connection to `clientId`, in the form `<clientId>~<connection>`, so two tabs of one user stay two clients. Identity binding works with `jsonCodec` only. The relay drops a frame that is not a JSON object, for example a `binaryCodec` frame.
 
-The reference relay and the Bun, Node.js (ws), Hono, Elysia, and Socket.IO relays use one check order. They check the origin first, then the room name, then the room token or the `authCheck` hook. A connection from a refused origin or with an invalid room name never runs the hook. If a connection fails more than one check, it gets the code of the first failed check. The SignalR hub checks the origin first, then your ASP.NET Core authentication, then the room name.
+The reference relay and the Bun, Node.js (ws), Hono, Elysia, and Socket.IO relays use one check order. They check the origin first, then the room name, then the room token or the `authCheck` hook. A connection from a refused origin or with an invalid room name never runs the hook. If a connection fails more than one check, it gets the code of the first failed check. The SignalR hub checks the origin first, then your ASP.NET Core authentication, if you add it, then the room name.
 
 The reference relay and the SignalR hub have no `authCheck` hook and bind no identity. The reference relay checks only a shared room token. See [Identity binding](/docs/examples/backends#identity-binding) for the demo identity mode.
 

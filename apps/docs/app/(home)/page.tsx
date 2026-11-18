@@ -76,7 +76,7 @@ export default function HomePage() {
           Your teammate&apos;s cursor stays on the element, even when their screen differs from yours.
         </p>
         <p id="frameworks" className="mt-6 mb-2 text-sm text-fd-muted-foreground">
-          Runs in
+          Works with
         </p>
         <ul aria-labelledby="frameworks" className="flex flex-wrap gap-2">
           {FRAMEWORKS.map((name) => (

@@ -10,12 +10,13 @@ You want a relay that runs on plain Node.js, with a well-known WebSocket library
 
 ## Install
 
-Install the packages with Bun:
+Install the packages:
 
-```sh
-bun add @anchor-presence/core @anchor-presence/dom ws
-bun add -D @types/ws
-```
+<InstallCommand packages="@anchor-presence/core @anchor-presence/dom ws" />
+
+Install the types of `ws` as a development dependency:
+
+<InstallCommand packages="-D @types/ws" />
 
 ## Code
 

@@ -50,11 +50,18 @@ Validation checks the size of `user` and `context`, not the content. A peer can 
 This sample shows the correct and the wrong way to render a remote name:
 
 ```tsx
-// correct: renders as text, no matter what the string contains
-<span>{cursor.user?.name}</span>
+import type { ResolvedCursor } from "@anchor-presence/react";
 
-// wrong: never do this with network-sourced data
-<span dangerouslySetInnerHTML={{ __html: cursor.user?.name }} />
+function RemoteName({ cursor }: { cursor: ResolvedCursor<unknown, { name: string }> }) {
+  return (
+    <>
+      {/* correct: renders as text, no matter what the string contains */}
+      <span>{cursor.user?.name}</span>
+      {/* wrong: never do this with network-sourced data */}
+      <span dangerouslySetInnerHTML={{ __html: cursor.user?.name ?? "" }} />
+    </>
+  );
+}
 ```
 
 ## Check the shape of remote values

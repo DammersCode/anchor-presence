@@ -26,12 +26,20 @@ import { makeFakeBinding, makeFakeClient } from "./test-utils";
 
 const CHAT_MAX_LENGTH = 100;
 const CHAT_HIDE_MS = 5000;
+const NAME_MAX_LENGTH = 40;
+
+const segmenter = typeof Intl.Segmenter === "function" ? new Intl.Segmenter() : null;
+
+function cutGraphemes(text: string, max: number): string {
+  const units = segmenter ? Array.from(segmenter.segment(text), (part) => part.segment) : Array.from(text);
+  return units.length <= max ? text : units.slice(0, max).join("");
+}
 
 function readChatText(data: unknown): string | null {
   if (typeof data !== "object" || data === null) return null;
   const text: unknown = (data as { text?: unknown }).text;
   if (typeof text !== "string") return null;
-  const trimmed = text.trim().slice(0, CHAT_MAX_LENGTH);
+  const trimmed = cutGraphemes(text.trim(), CHAT_MAX_LENGTH);
   return trimmed === "" ? null : trimmed;
 }
 
@@ -75,7 +83,9 @@ function ChatCursorLayer() {
   const messages = useRemoteChat();
   return (
     <CursorLayer<unknown, User>
-      getLabel={(cursor) => messages[cursor.clientId] ?? cursor.user?.name}
+      getLabel={(cursor) =>
+        messages[cursor.clientId] ?? (cursor.user && cutGraphemes(cursor.user.name, NAME_MAX_LENGTH))
+      }
       renderCursor={({ label, color }) => (
         <DefaultCursor label={label} color={color} labelStyle={{ maxWidth: "24rem", whiteSpace: "normal" }} />
       )}
@@ -353,6 +363,7 @@ describe("cursor chat recipe", () => {
   it("caps the text, trims it and rejects anything that is not a string", () => {
     expect(readChatText({ text: "x".repeat(500) })).toHaveLength(CHAT_MAX_LENGTH);
     expect(readChatText({ text: "  hi  " })).toBe("hi");
+    expect(readChatText({ text: "👨‍👩‍👧".repeat(150) })).toBe("👨‍👩‍👧".repeat(CHAT_MAX_LENGTH));
     expect(readChatText({ text: 42 })).toBeNull();
     expect(readChatText("hi")).toBeNull();
     expect(readChatText({ text: "   " })).toBeNull();

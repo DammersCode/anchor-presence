@@ -10,9 +10,9 @@ Your app runs on ASP.NET Core, and you want presence without a second WebSocket 
 
 ## Install
 
-Install the SignalR client with your package manager:
+Install the packages. `@anchor-presence/react` and `@dammers/use-signalr-react` are needed only for the shared connection below:
 
-<InstallCommand packages="@microsoft/signalr" />
+<InstallCommand packages="@anchor-presence/core @anchor-presence/react @dammers/use-signalr-react @microsoft/signalr" />
 
 ## Code
 
@@ -122,7 +122,7 @@ function PresenceProvider({ children }: { children: ReactNode }) {
 
 `getConnection` returns `null` until `use-signalr` opens the hub. Until then, the component shows its children without presence. When the hub opens, the children mount again inside the provider, so their local state resets one time.
 
-The provider runs `factory` once per mount and once more for each new connection. It disposes the client on unmount. The option `stopConnection: false` keeps the shared connection open after the dispose. The transport still removes its `Refused` and `PresenceReceived` handlers. After `disconnect()`, a transport stays `disconnected` when the shared connection reconnects. `connect()` waits up to 10 seconds for a shared connection that is still starting. See [Create the client](/docs/react/client-creation) for the rules of `factory`.
+The provider runs `factory` once per mount and once more for each new connection. It disposes the client on unmount. The option `stopConnection: false` keeps the shared connection open after the dispose. The transport still removes its `Refused` and `PresenceReceived` handlers. After `disconnect()`, a transport stays `disconnected` when the shared connection reconnects. If the shared connection is `Connecting` or `Disconnecting`, `connect()` waits and reports `connecting`. It polls every 50 ms for 10 seconds, then every second with no time limit, until the state is final. `disconnect()` cancels the wait. A `connect()` right after `disconnect()` waits for the stop to finish, then starts the hub. See [Create the client](/docs/react/client-creation) for the rules of `factory`.
 
 <Callout type="warn">
   If the provider remounts on a shared connection, the `onclose`, `onreconnecting`, and `onreconnected`

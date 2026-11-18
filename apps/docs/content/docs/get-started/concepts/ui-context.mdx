@@ -52,7 +52,7 @@ The cursor of a sender can sit inside the anchor `settings.dialog.invite`. If th
 - **Fall back to the dialog trigger.** Give the button that opens the dialog a stable anchor ID. Then the fallback chain lands on that button.
 - **Show a muted cursor.** Keep the cursor, and render a muted version from the `tier` and `context` of the resolved cursor.
 
-This policy hides the cursor of a sender whose open dialog differs from the dialog of the receiver:
+This policy hides the cursor of a sender whose `dialog` context is not the dialog that is open on the receiver:
 
 ```ts
 const dialogAwarePolicy: VisibilityPolicy<{ dialog?: string }> = ({ presence, resolution }) => {

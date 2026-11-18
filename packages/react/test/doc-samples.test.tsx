@@ -113,12 +113,27 @@ describe("doc samples compile and render", () => {
   });
 });
 
+// get-started/guides/security.mdx
+function RemoteName({ cursor }: { cursor: ResolvedCursor<unknown, { name: string }> }) {
+  return (
+    <>
+      {/* correct: renders as text, no matter what the string contains */}
+      <span>{cursor.user?.name}</span>
+      {/* wrong: never do this with network-sourced data */}
+      {/* oxlint-disable-next-line react/no-danger */}
+      <span dangerouslySetInnerHTML={{ __html: cursor.user?.name ?? "" }} />
+    </>
+  );
+}
+void RemoteName;
+
 describe("doc sample sources", () => {
   it("match the copies in this file", () => {
     expect(
       missingSamples("doc-samples.test.tsx", [
         docSample("react/client-creation.mdx", "function OwnClientApp"),
         docSample("react/rerenders.mdx", "function TierBadge"),
+        docSample("get-started/guides/security.mdx", "function RemoteName"),
       ]),
     ).toEqual([]);
   });

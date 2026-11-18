@@ -1,7 +1,7 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ResolvedCursor } from "@anchor-presence/dom";
 import { LiveCursorProvider } from "../src/provider";
 import { CursorLayer, DefaultCursor } from "../src/cursor";
@@ -118,6 +118,36 @@ describe("cursor components", () => {
     expect(label()).toBe("a".repeat(32));
 
     act(() => root.unmount());
+  });
+
+  it("cuts a huge name lazily by code point when Intl.Segmenter is missing", async () => {
+    vi.stubGlobal("Intl", { ...Intl, Segmenter: undefined });
+    vi.resetModules();
+    try {
+      const { CursorLayer: Layer } = await import("../src/cursor");
+      const { LiveCursorProvider: Provider } = await import("../src/provider");
+      const { client } = makeFakeClient();
+      const { binding, publish } = makeFakeBinding();
+      const root = createRoot(container);
+      act(() => {
+        root.render(
+          <Provider client={client} binding={binding}>
+            <Layer />
+          </Provider>,
+        );
+      });
+      const smile = "\u{1F600}";
+      const start = performance.now();
+      act(() => {
+        publish([cursor({ user: { name: smile.repeat(500_000) } })]);
+      });
+      expect(performance.now() - start).toBeLessThan(500);
+      expect(container.querySelector("[data-anchor-presence-cursor]")?.textContent).toBe(smile.repeat(32));
+      act(() => root.unmount());
+    } finally {
+      vi.unstubAllGlobals();
+      vi.resetModules();
+    }
   });
 
   it("applies getLabel and getColor to change the default visual", () => {

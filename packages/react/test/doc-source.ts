@@ -33,16 +33,21 @@ export function docSample(page: string, marker: string): string {
   return block;
 }
 
-// For a sample that is a bare JSX expression: the copy wraps it in a function, so check line by line.
+const stripSemicolon = (line: string) => line.replace(/;$/u, "");
+
+// A doc line is present when a whole trimmed source line equals it, so a changed number fails.
 export function missingLines(file: string, sample: string): string[] {
-  const source = trimmedTestSource(file);
+  const sourceLines = new Set(
+    trimmedTestSource(file)
+      .split("\n")
+      .map((line) => stripSemicolon(line)),
+  );
   return trimLines(sample)
     .split("\n")
-    .map((line) => line.replace(/;$/u, ""))
-    .filter((text) => text !== "" && !source.includes(text));
+    .map((line) => stripSemicolon(line))
+    .filter((text) => text !== "" && !sourceLines.has(text));
 }
 
 export function missingSamples(file: string, samples: string[]): string[] {
-  const source = trimmedTestSource(file);
-  return samples.filter((sample) => !source.includes(trimLines(sample)));
+  return samples.filter((sample) => missingLines(file, sample).length > 0);
 }

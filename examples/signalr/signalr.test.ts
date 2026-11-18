@@ -324,5 +324,75 @@ describe("createSignalRTransport", () => {
       expect(fake.connection.state).toBe(HubConnectionState.Disconnected);
       expect(vi.getTimerCount()).toBe(0);
     });
+
+    it("keeps following a shared connection that stays connecting past the fast poll", async () => {
+      vi.useFakeTimers();
+      const fake = createFakeConnection(HubConnectionState.Connecting);
+      const transport = createSignalRTransport(fake.connection);
+      const done = transport.connect?.();
+      await vi.advanceTimersByTimeAsync(15_000);
+      expect(transport.getStatus?.()).toBe("connecting");
+      fake.setState(HubConnectionState.Connected);
+      await vi.advanceTimersByTimeAsync(1_000);
+      await done;
+      expect(transport.getStatus?.()).toBe("connected");
+    });
+
+    it("stops the slow poll after disconnect", async () => {
+      vi.useFakeTimers();
+      const fake = createFakeConnection(HubConnectionState.Connecting);
+      const transport = createSignalRTransport(fake.connection, { stopConnection: false });
+      const done = transport.connect?.();
+      await vi.advanceTimersByTimeAsync(15_000);
+      await transport.disconnect?.();
+      await vi.advanceTimersByTimeAsync(1_000);
+      await done;
+      expect(vi.getTimerCount()).toBe(0);
+      expect(transport.getStatus?.()).toBe("disconnected");
+    });
+
+    it("ends disconnected when disconnect lands during start", async () => {
+      const fake = createFakeConnection(HubConnectionState.Disconnected);
+      let finishStart: () => void = () => {};
+      Object.assign(fake.connection, {
+        start: () =>
+          new Promise<void>((resolve) => {
+            fake.setState(HubConnectionState.Connecting);
+            finishStart = () => {
+              fake.setState(HubConnectionState.Disconnected);
+              resolve();
+            };
+          }),
+        stop: async () => finishStart(),
+      });
+      const transport = createSignalRTransport(fake.connection);
+      const done = transport.connect?.();
+      await transport.disconnect?.();
+      await done;
+      expect(transport.getStatus?.()).toBe("disconnected");
+    });
+
+    it.each([0, 5, 15, 40])("connect right after disconnect starts the hub (delay %i ms)", async (delay) => {
+      const fake = createFakeConnection(HubConnectionState.Connected);
+      let starts = 0;
+      Object.assign(fake.connection, {
+        start: async () => {
+          starts += 1;
+          fake.setState(HubConnectionState.Connected);
+        },
+        stop: async () => {
+          fake.setState(HubConnectionState.Disconnecting);
+          await new Promise((resolve) => setTimeout(resolve, 20));
+          fake.setState(HubConnectionState.Disconnected);
+        },
+      });
+      const transport = createSignalRTransport(fake.connection);
+      const stopped = transport.disconnect?.();
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      await transport.connect?.();
+      await stopped;
+      expect(starts).toBe(1);
+      expect(transport.getStatus?.()).toBe("connected");
+    });
   });
 });

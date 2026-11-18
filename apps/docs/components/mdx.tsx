@@ -11,6 +11,7 @@ import { Demo } from "@/components/demo";
 import { ExamplePreview } from "@/components/examples/_preview/example-preview";
 import { CodeFromSource } from "@/components/code-from-source";
 import { Mermaid } from "@/components/mermaid";
+import { SceneNote } from "@/components/scene-note";
 
 export function getMDXComponents(components?: MDXComponents) {
   return {
@@ -31,6 +32,7 @@ export function getMDXComponents(components?: MDXComponents) {
     ExamplePreview,
     CodeFromSource,
     Mermaid,
+    SceneNote,
     Accordion,
     Accordions,
     File,

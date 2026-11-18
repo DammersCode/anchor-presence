@@ -21,7 +21,7 @@ const graphemeSegmenter =
 
 function truncateLabel(name: string): string {
   const units: string[] = [];
-  const parts = graphemeSegmenter === null ? Array.from(name) : graphemeSegmenter.segment(name);
+  const parts = graphemeSegmenter === null ? name : graphemeSegmenter.segment(name);
   for (const part of parts) {
     if (units.length === MAX_DEFAULT_LABEL_LENGTH) break;
     units.push(typeof part === "string" ? part : part.segment);

@@ -16,6 +16,7 @@ export const METHOD_SEND = "OnPresence";
 
 const CONNECTING_POLL_MS = 50;
 const CONNECTING_POLL_LIMIT = 200;
+const SLOW_POLL_MS = 1000;
 
 // Core's default JSON codec, re-exported so the transport and the presence client
 // share one encoding.
@@ -133,14 +134,17 @@ export function createSignalRTransport(
       registerHandlers();
       active = true;
       const generation = ++connectGeneration;
-      // a shared connection that is still starting: wait for it instead of returning early
+      // a shared connection that is still starting, or one that is still stopping: wait for it instead of returning early
       for (
         let tries = 0;
-        connection.state === HubConnectionState.Connecting && tries < CONNECTING_POLL_LIMIT;
+        connection.state === HubConnectionState.Connecting ||
+        connection.state === HubConnectionState.Disconnecting;
         tries++
       ) {
         setStatus("connecting");
-        await new Promise((resolve) => setTimeout(resolve, CONNECTING_POLL_MS));
+        await new Promise((resolve) =>
+          setTimeout(resolve, tries < CONNECTING_POLL_LIMIT ? CONNECTING_POLL_MS : SLOW_POLL_MS),
+        );
         if (generation !== connectGeneration) return;
       }
       // Idempotent: a fresh connection reports Disconnected; connected or reconnecting, skip.
@@ -161,11 +165,15 @@ export function createSignalRTransport(
       setStatus("connected");
     },
     disconnect: () => {
-      connectGeneration++;
+      const generation = ++connectGeneration;
       connection.off(EVENT_REFUSED, onRefused);
       connection.off(EVENT_RECEIVED, onReceived);
       handlersRegistered = false;
-      if (stopConnection) return connection.stop();
+      if (stopConnection) {
+        return connection.stop().finally(() => {
+          if (generation === connectGeneration) setStatus(mapStatus(connection.state));
+        });
+      }
       active = false;
       setStatus("disconnected");
       return Promise.resolve();

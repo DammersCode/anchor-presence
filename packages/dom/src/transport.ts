@@ -66,7 +66,7 @@ export type WebSocketTransportOptions = {
   random?: () => number;
   /** How long a connection must stay open before the backoff resets, in milliseconds. Default `5000`. */
   stableAfterMs?: number;
-  /** Return `false` to stop reconnecting after a close. Default: reconnect unless the close code is 1008, 4004 (origin), 4006 (auth) or 4007 (room). */
+  /** Return `false` to stop reconnecting after a close. Default: reconnect unless the close code is 1008, 4004 (origin), 4006 (auth) or 4007 (room). A failed connection attempt calls it with no `code` and reason "connection attempt failed". */
   shouldReconnect?: (close: { code?: number; reason?: string }) => boolean;
   /** A WebSocket constructor to use. Default: `globalThis.WebSocket`. */
   WebSocketCtor?: WebSocketCtor;

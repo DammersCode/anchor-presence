@@ -129,7 +129,7 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
         );
       }
       try {
-        options.onRemoteClientDropped?.({ clientId: droppedClientId });
+        options.onRemoteClientRejected?.({ clientId: droppedClientId });
       } catch {
         // a throwing callback must not break the inbound pipeline
       }

@@ -4,6 +4,7 @@
 
 ### Breaking
 
+- `@anchor-presence/core`: the client option `onRemoteClientDropped` is `onRemoteClientRejected`. It runs when a full store refuses a new peer, and it receives `{ clientId }`.
 - Renames, for names that say what they do: `useCursorContext` is `useLocalContext`, `useCursorPresence` is `useRemotePresence`, `client.updateLocalCursor` is `setLocalCursor`, the option `heartbeatMs` is `heartbeatIntervalMs` (and `DEFAULT_HEARTBEAT_MS` is `DEFAULT_HEARTBEAT_INTERVAL_MS`), `onRemoteClientDrop` is `onRemoteClientDropped`, and the binding option `localCursorCapture` is `capturePointer`.
 - `@anchor-presence/core`: `createPresenceClient` throws a `TypeError` for a non-finite `publishIntervalMs`, `heartbeatIntervalMs`, `staleTimeoutMs`, `idleAfterMs`, `maxRemoteClients` or adaptive-publish option, instead of running with a broken timer.
 - `@anchor-presence/core`: `PeerChange` is generic and carries the peer's `user` and `context`. For a `leave`, they hold the last known values.
@@ -28,7 +29,7 @@
 ### Added
 
 - `@anchor-presence/react`: `useSendEvent()` sends typed events without `createPresenceHooks`. `CursorLayer` labels cut a name at 32 characters, and a `zIndex` or `transition` in `getCursorProps` wins over the defaults.
-- `@anchor-presence/core`: `onRemoteClientDropped` receives `{ clientId }`. A listener that throws prints an error in development. `isDevMode` is off in a production bundle from any bundler that replaces `process.env.NODE_ENV`. A `user` or `context` that cannot encode no longer stops the cursor: the client sends the cursor without them and warns once.
+- `@anchor-presence/core`: A listener that throws prints an error in development. `isDevMode` is off in a production bundle from any bundler that replaces `process.env.NODE_ENV`. A `user` or `context` that cannot encode no longer stops the cursor: the client sends the cursor without them and warns once.
 - `@anchor-presence/dom`: the pointer source ignores a second touch or pen contact. A keyboard focus cursor clears the pointer type. `createWebSocketTransport` reports `disconnected` and warns when no `WebSocket` exists. `createBroadcastChannelTransport` can reconnect after `disconnect()` and ignores payloads that are not byte views.
 - Reference relay: it checks origin, then room name, then the token, like every example relay.
 - Example relays: node-ws, Elysia and Socket.IO check the room name before they call `authCheck`, so the hook never sees a made-up room. Socket.IO caps one message at 4 times `MAX_MESSAGE_BYTES` (at least 1 MiB) and drops a larger one instead of closing the connection.

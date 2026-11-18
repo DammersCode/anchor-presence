@@ -1213,7 +1213,7 @@ describe("createPresenceClient dev-mode remote-cap warning", () => {
   });
 });
 
-describe("createPresenceClient onRemoteClientDropped", () => {
+describe("createPresenceClient onRemoteClientRejected", () => {
   function emitRemote(emit: (data: Uint8Array) => void, clientId: string) {
     emit(
       jsonCodec.encode({
@@ -1226,30 +1226,30 @@ describe("createPresenceClient onRemoteClientDropped", () => {
     );
   }
 
-  it("invokes onRemoteClientDropped whenever a new remote client is dropped at the cap", () => {
-    const onRemoteClientDropped = vi.fn();
+  it("invokes onRemoteClientRejected whenever a new remote client is dropped at the cap", () => {
+    const onRemoteClientRejected = vi.fn();
     const { transport, emit } = makeTransport();
     const client = createPresenceClient({
       transport,
       idFactory,
       maxRemoteClients: 1,
-      onRemoteClientDropped,
+      onRemoteClientRejected,
     });
 
     emitRemote(emit, "remote-1");
-    expect(onRemoteClientDropped).not.toHaveBeenCalled();
+    expect(onRemoteClientRejected).not.toHaveBeenCalled();
 
     emitRemote(emit, "remote-2");
-    expect(onRemoteClientDropped).toHaveBeenCalledTimes(1);
+    expect(onRemoteClientRejected).toHaveBeenCalledTimes(1);
 
     emitRemote(emit, "remote-3");
-    expect(onRemoteClientDropped).toHaveBeenCalledTimes(2);
+    expect(onRemoteClientRejected).toHaveBeenCalledTimes(2);
 
     client.dispose();
   });
 
   it("keeps ingesting existing clients when the drop callback throws", () => {
-    const onRemoteClientDropped = vi.fn(() => {
+    const onRemoteClientRejected = vi.fn(() => {
       throw new Error("boom");
     });
     const { transport, emit } = makeTransport();
@@ -1257,7 +1257,7 @@ describe("createPresenceClient onRemoteClientDropped", () => {
       transport,
       idFactory,
       maxRemoteClients: 1,
-      onRemoteClientDropped,
+      onRemoteClientRejected,
     });
 
     expect(() => {

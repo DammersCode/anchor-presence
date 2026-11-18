@@ -61,7 +61,7 @@ export type PresenceClientOptions<TContext = unknown, TUser = unknown> = {
   /** Maximum remote clients in the store. Default `DEFAULT_MAX_REMOTE_CLIENTS`. */
   maxRemoteClients?: number;
   /** Runs when the store drops a new `clientId` because the store is full. */
-  onRemoteClientDropped?: (info: { clientId: string }) => void;
+  onRemoteClientRejected?: (info: { clientId: string }) => void;
   /** The user value the client sends to remote peers. */
   user?: TUser;
   /** Checks the `user` of each remote message. Return `undefined` or throw to drop the field. Default: the value must have the shape of the local `user`. */

@@ -102,7 +102,7 @@ Any accepted message confirms a peer. If an unconfirmed peer sends no message wi
 
 <Callout type="warn">
   If a room can hold more than 64 clients, raise `maxRemoteClients`. Otherwise the clients above the cap never
-  appear. In a production build, nothing reports the drop unless you pass `onRemoteClientDropped`.
+  appear. In a production build, nothing reports the drop unless you pass `onRemoteClientRejected`.
 </Callout>
 
 This client raises the cap and reports each dropped peer:
@@ -111,11 +111,11 @@ This client raises the cap and reports each dropped peer:
 const client = createPresenceClient({
   transport: myTransport,
   maxRemoteClients: 200,
-  onRemoteClientDropped: ({ clientId }) => reportMetric("presence.remote_client_dropped", clientId),
+  onRemoteClientRejected: ({ clientId }) => reportMetric("presence.remote_client_dropped", clientId),
 });
 ```
 
-`onRemoteClientDropped` runs each time the store drops a new peer because it is full. It receives `{ clientId }`, the ID of the dropped peer. If it throws, the client ignores the error. See [maxRemoteClients](/docs/get-started/guides/security#maxremoteclients) on the Security page for capacity planning.
+`onRemoteClientRejected` runs each time the store drops a new peer because it is full. It receives `{ clientId }`, the ID of the dropped peer. If it throws, the client ignores the error. See [maxRemoteClients](/docs/get-started/guides/security#maxremoteclients) on the Security page for capacity planning.
 
 ## Message ordering
 

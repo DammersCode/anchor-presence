@@ -18,7 +18,8 @@ const rootDir = dirname(import.meta.dirname);
 type Budget = { ten: number; nine: number; seven: number; higher?: boolean };
 
 const BUDGETS: Record<string, Budget> = {
-  "bundle core gzip (KB)": { ten: 7, nine: 9, seven: 13 },
+  // Whole entry, so binaryCodec and the in-memory transports count; apps tree-shake what they do not import.
+  "bundle core gzip (KB)": { ten: 7, nine: 10, seven: 13 },
   "bundle dom gzip (KB)": { ten: 10, nine: 13, seven: 19 },
   "bundle react gzip (KB)": { ten: 4, nine: 5, seven: 8 },
   "wire json steady cursor (bytes)": { ten: 220, nine: 300, seven: 420 },

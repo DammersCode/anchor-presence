@@ -142,8 +142,8 @@ Final structure: five tabs (`get-started`, `core`, `dom`, `react`, `examples`), 
 
 1. Owner: import the repo in Vercel (Root Directory `apps/docs`).
 2. Owner decides when to publish: `npm version` pushes the commit and a `v*` tag; `release.yml` waits for a green `main.yml` run on that SHA.
-4. Owner: open the PR from `develop` to `main` (all audit rounds up to 12 are on `develop`; scorers: three docs scopes at 9.0, last audit approved with no P1 or P2). Pin the actions in `pr.yml`, `main.yml` and the setup action before step 4 of `plans/release-hardening.md`.
-5. Future backends: `plans/backends/`. Future framework adapters (Solid, Vue): `plans/adapters/framework-adapters.md`.
+3. Owner: open the PR from `develop` to `main` (all audit rounds up to 12 are on `develop`; scorers: three docs scopes at 9.0, last audit approved with no P1 or P2). Pin the actions in `pr.yml`, `main.yml` and the setup action before step 4 of `plans/release-hardening.md`.
+4. Future backends: `plans/backends/`. Future framework adapters (Solid, Vue): `plans/adapters/framework-adapters.md`.
 
 ## How to resume
 

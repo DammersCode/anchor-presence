@@ -200,6 +200,9 @@ export function safeAuthCheck(check: AuthCheck): (request: AuthRequest) => Promi
   };
 }
 
+/** Close code and reason of a relay that binds identity when a peer sends a frame it cannot rewrite: a non-JSON frame, such as binaryCodec. */
+export const UNBINDABLE_FRAME_CLOSE = { code: 1008, reason: "identity binding needs JSON frames" } as const;
+
 const identityEncoder = new TextEncoder();
 const identityDecoder = new TextDecoder();
 

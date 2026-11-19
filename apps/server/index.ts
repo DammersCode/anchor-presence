@@ -1,5 +1,15 @@
 // Room-broadcast relay with reference-side size, rate, room, origin, and liveness limits.
-import { timingSafeEqual } from "node:crypto";
+import {
+  bindIdentity,
+  demoIdentityOptions,
+  newConnectionId,
+  parseToken,
+  safeAuthCheck,
+  tokenAuthCheck,
+  UNBINDABLE_FRAME_CLOSE,
+  type AuthCheck,
+  type AuthIdentity,
+} from "../../examples/_shared/relay-guard";
 
 function limitFromEnv(name: string, fallback: number): number {
   const parsed = Number(process.env[name]);
@@ -37,6 +47,8 @@ type SocketData = {
   lastRefill: number;
   lastPong: number;
   authOk: boolean;
+  identity?: AuthIdentity;
+  connectionId: string;
   roomInvalid: boolean;
 };
 
@@ -62,27 +74,6 @@ function roomFor(req: Request): string | null {
   const fromPath = url.pathname.replace(/^\/+|\/+$/g, "");
   const candidate = fromQuery || fromPath || "main";
   return candidate.length <= 256 && ROOM_CHARSET.test(candidate) ? candidate : null;
-}
-
-// Opt-in room auth: when AUTH_TOKEN is set, the upgrade must carry a matching `token` query param.
-function authOkFor(req: Request): boolean {
-  if (AUTH_TOKEN === "") return true;
-  const tokens = new URL(req.url).searchParams.getAll("token");
-  if (tokens.length > 1) return false;
-  const provided = tokens[0] ?? "";
-  return timingSafeEqualString(provided, AUTH_TOKEN);
-}
-
-// constant-time compare guards against timing side-channels; unequal lengths compare padded copies.
-function timingSafeEqualString(a: string, b: string): boolean {
-  const aBytes = encoder.encode(a);
-  const bBytes = encoder.encode(b);
-  const length = Math.max(aBytes.length, bBytes.length, 1);
-  const aPadded = new Uint8Array(length);
-  const bPadded = new Uint8Array(length);
-  aPadded.set(aBytes);
-  bPadded.set(bBytes);
-  return timingSafeEqual(aPadded, bPadded) && aBytes.length === bBytes.length;
 }
 
 function messageByteLength(message: string | ArrayBuffer): number {
@@ -113,14 +104,22 @@ export function closePeerAboveHardLimit(
   return true;
 }
 
-if (typeof Bun !== "undefined" && import.meta.main) {
+export type ReferenceRelayOptions = { authCheck?: AuthCheck };
+
+/** Starts the relay. `authCheck` defaults to the `RELAY_AUTH_TOKEN` check; an identity result binds each frame to that identity. */
+export function startReferenceRelay(options: ReferenceRelayOptions = {}): void {
+  const authCheck = safeAuthCheck(options.authCheck ?? tokenAuthCheck(AUTH_TOKEN));
   Bun.serve({
     port: PORT,
-    fetch(req, server) {
+    async fetch(req, server) {
       const parsedRoom = roomFor(req);
       const room = parsedRoom ?? "main";
       const origin = req.headers.get("origin") ?? "";
-      const authOk = authOkFor(req);
+      const token = parseToken(new URL(req.url).searchParams.getAll("token"));
+      const authResult =
+        token === null || parsedRoom === null
+          ? false
+          : await authCheck({ token, room, origin, headers: Object.fromEntries(req.headers) });
       if (
         server.upgrade(req, {
           data: {
@@ -129,7 +128,9 @@ if (typeof Bun !== "undefined" && import.meta.main) {
             tokens: RATE_CAPACITY,
             lastRefill: performance.now(),
             lastPong: performance.now(),
-            authOk,
+            authOk: authResult !== false,
+            identity: typeof authResult === "object" ? authResult : undefined,
+            connectionId: newConnectionId(),
             roomInvalid: parsedRoom === null,
           },
         })
@@ -179,8 +180,22 @@ if (typeof Bun !== "undefined" && import.meta.main) {
 
         if (messageByteLength(message) > MAX_MESSAGE_BYTES) return;
 
+        let outgoing: string | ArrayBuffer | Uint8Array = message;
+        if (ws.data.identity !== undefined) {
+          const bound = bindIdentity(
+            typeof message === "string" ? message : new Uint8Array(message),
+            ws.data.identity,
+            ws.data.connectionId,
+          );
+          if (bound === null) {
+            ws.close(UNBINDABLE_FRAME_CLOSE.code, UNBINDABLE_FRAME_CLOSE.reason);
+            return;
+          }
+          outgoing = bound;
+        }
+
         // a result of 0 (dropped) or -1 (backpressure) means at least one subscriber is behind
-        if (ws.publish(ws.data.room, message) > 0 || !HARD_LIMIT_REACHABLE) return;
+        if (ws.publish(ws.data.room, outgoing) > 0 || !HARD_LIMIT_REACHABLE) return;
         for (const peer of sockets) if (peer !== ws) closePeerAboveHardLimit(peer);
       },
       pong(ws: RoomSocket) {
@@ -212,3 +227,5 @@ if (typeof Bun !== "undefined" && import.meta.main) {
 
   console.log(`relay listening on :${PORT}`);
 }
+
+if (typeof Bun !== "undefined" && import.meta.main) startReferenceRelay(demoIdentityOptions());

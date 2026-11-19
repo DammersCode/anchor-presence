@@ -16,6 +16,7 @@ import {
   usePeerChanges,
   useRemoteCursors,
   useRemoteCursorsSelector,
+  useDomBinding,
   useRemoteUsers,
 } from "../src/index";
 import type { PeerChange, PresenceClient, RemoteEvent, ResolvedCursor } from "../src/index";
@@ -183,18 +184,12 @@ function isOffscreen(cursor: ResolvedCursor, width: number, height: number): boo
   return !cursor.pointVisible || cursor.x < 0 || cursor.y < 0 || cursor.x > width || cursor.y > height;
 }
 
-function findAnchor(anchorId: string): HTMLElement | null {
-  for (const element of document.querySelectorAll<HTMLElement>("[data-anchor]")) {
-    if (element.dataset.anchor === anchorId) return element;
-  }
-  return null;
-}
-
 function useFollowMode(): {
   leaderId: string | null;
   follow: (clientId: string) => void;
   stop: () => void;
 } {
+  const binding = useDomBinding();
   const [leaderId, setLeaderId] = useState<string | null>(null);
   const stop = useCallback(() => setLeaderId(null), []);
   usePeerChanges((change) => {
@@ -212,8 +207,9 @@ function useFollowMode(): {
   const target = useRemoteCursorsSelector(selectTarget);
 
   useEffect(() => {
-    if (target !== null) findAnchor(target)?.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, [target]);
+    if (target !== null)
+      binding?.getAnchorElement(target)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [binding, target]);
 
   useEffect(() => {
     if (leaderId === null) return;

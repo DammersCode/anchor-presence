@@ -38,17 +38,18 @@ A relay that does not decode messages cannot tell who sent one. Any room member 
 
 These relays have an `authCheck` hook and bind the identity that it returns:
 
+- Reference relay (`startReferenceRelay({ authCheck })`)
 - Bun
 - Node.js (ws)
 - Hono
 - Elysia
 - Socket.IO
 
-The relay adds a suffix per connection to `clientId`, in the form `<clientId>~<connection>`, so two tabs of one user stay two clients. If `authCheck` returns a `clientId` that contains `~`, the example relays refuse the connection, as for a wrong room token. A custom relay that adds the suffix must also refuse such a `clientId`. Otherwise, a receiver must split the `clientId` at the last `~` to find the identity. Identity binding works with `jsonCodec` only. The relay drops a frame that is not a JSON object, for example a `binaryCodec` frame.
+The relay adds a suffix per connection to `clientId`, in the form `<clientId>~<connection>`, so two tabs of one user stay two clients. If `authCheck` returns a `clientId` that contains `~`, the example relays refuse the connection, as for a wrong room token. A custom relay that adds the suffix must also refuse such a `clientId`. Otherwise, a receiver must split the `clientId` at the last `~` to find the identity. Identity binding works with `jsonCodec` only. The relay closes a connection that sends a frame that is not a JSON object, for example a `binaryCodec` frame, with code `1008` and the reason `identity binding needs JSON frames`. It relays nothing from that frame. The transport does not reconnect on `1008`.
 
 The reference relay and the Bun, Node.js (ws), Hono, Elysia, and Socket.IO relays use one check order. They check the origin first, then the room name, then the room token or the `authCheck` hook. A connection from a refused origin or with an invalid room name never runs the hook. If a connection fails more than one check, it gets the code of the first failed check. The SignalR hub checks the origin first, then your ASP.NET Core authentication, if you add it, then the room name.
 
-The reference relay and the SignalR hub have no `authCheck` hook and bind no identity. The reference relay checks only a shared room token. See [Identity binding](/docs/examples/backends#identity-binding) for the demo identity mode.
+The SignalR hub has no `authCheck` hook and binds no identity. The reference relay checks the shared room token unless you pass `authCheck` to `startReferenceRelay`. See [Identity binding](/docs/examples/backends#identity-binding) for the demo identity mode.
 
 ## Close codes
 
@@ -90,6 +91,7 @@ The conformance suite `examples/_shared/relay-conformance-suite.ts` runs in vite
 - The relay drops frames above the rate limit of a socket, and keeps the socket open.
 - The relay keeps serving after a malformed request line, a reset during the handshake, and an oversized header.
 - With `{ identity: true }`, the relay replaces `clientId` and `user` with the verified identity, with one `clientId` per connection.
+- With `{ identity: true }`, the relay closes a sender of a non-JSON frame with code `1008` and relays nothing.
 
 The suite does not check the codes `4001`, `4002`, `4003` and `4005`.
 

@@ -1,6 +1,6 @@
 // Remote anchor resolution — spec §10 — and interpolation integration — spec §13
 
-import type { PresenceMessage, InterpolatorFactory } from "@anchor-presence/core";
+import type { PresenceMessage, InterpolatorFactory, PointerType } from "@anchor-presence/core";
 import { linearInterpolator } from "@anchor-presence/core";
 import type { AnchorRegistry } from "./registry.js";
 import { parentAcrossShadow } from "./dom-tree.js";
@@ -39,6 +39,8 @@ export type ResolvedCursor<TContext = unknown, TUser = unknown> = {
   user?: TUser;
   /** `true` when the remote cursor has not changed for a while. */
   idle: boolean;
+  /** The pointer type that moved the remote cursor. `undefined` when the sender sent no pointer info. */
+  pointerType?: PointerType;
 };
 
 /**
@@ -333,7 +335,8 @@ export class RemoteResolver<TContext = unknown, TUser = unknown> {
         prev.tier === raw.tier &&
         prev.context === presence.context &&
         prev.user === presence.user &&
-        prev.idle === idle
+        prev.idle === idle &&
+        prev.pointerType === presence.pointer?.type
       ) {
         result = prev;
       } else {
@@ -349,6 +352,7 @@ export class RemoteResolver<TContext = unknown, TUser = unknown> {
         };
         if (presence.context !== null && presence.context !== undefined) result.context = presence.context;
         if (presence.user !== null && presence.user !== undefined) result.user = presence.user;
+        if (presence.pointer?.type !== undefined) result.pointerType = presence.pointer.type;
         this.lastResults.set(presence.clientId, result);
       }
       if (listUnchanged && previous !== result) listUnchanged = false;

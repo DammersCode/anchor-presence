@@ -5,6 +5,7 @@ import type { VisibilityPolicy } from "@anchor-presence/dom";
 import {
   CursorLayer,
   PresenceProvider,
+  useDomBinding,
   usePresenceClient,
   useRemoteCursorsSelector,
 } from "@anchor-presence/react";
@@ -31,16 +32,8 @@ function isOffscreen(cursor: ResolvedCursor, width: number, height: number): boo
   return !cursor.pointVisible || cursor.x < 0 || cursor.y < 0 || cursor.x > width || cursor.y > height;
 }
 
-function findAnchor(anchorId: string): HTMLElement | null {
-  for (const element of document.querySelectorAll<HTMLElement>("[data-anchor]")) {
-    if (element.dataset.anchor === anchorId) return element;
-  }
-  return null;
-}
-
 // In a preview iframe, scrollIntoView would also scroll the docs page around the frame.
-function scrollToAnchor(anchorId: string): void {
-  const element = findAnchor(anchorId);
+function scrollToAnchor(element: Element | null): void {
   const scroller = element?.closest<HTMLElement>("[data-page-scroller]") ?? null;
   if (element === null || scroller === null) return;
   const box = element.getBoundingClientRect();
@@ -56,6 +49,7 @@ function useFollowMode(): {
   stop: () => void;
 } {
   const client = usePresenceClient();
+  const binding = useDomBinding();
   const [leaderId, setLeaderId] = useState<string | null>(null);
   const stop = useCallback(() => setLeaderId(null), []);
 
@@ -70,8 +64,8 @@ function useFollowMode(): {
   const target = useRemoteCursorsSelector(selectTarget);
 
   useEffect(() => {
-    if (target !== null) scrollToAnchor(target);
-  }, [target]);
+    if (target !== null) scrollToAnchor(binding?.getAnchorElement(target) ?? null);
+  }, [binding, target]);
 
   useEffect(() => {
     if (leaderId === null) return;

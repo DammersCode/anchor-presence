@@ -33,7 +33,7 @@ function GlyphLayer() {
 }
 ```
 
-`renderCursor` receives the resolved `cursor`, the `label` from `getLabel`, and the `color` from `getColor`. `CursorLayer` keeps control of the root position, transform, pointer events, `aria-hidden`, and data attributes.
+`renderCursor` receives the resolved `cursor`, the `label` from `getLabel`, the `color` from `getColor`, and the `pointerType` of the peer. `CursorLayer` keeps control of the root position, transform, pointer events, `aria-hidden`, and data attributes.
 
 This preview switches between several renderers:
 
@@ -58,6 +58,36 @@ function LargeCursorLayer() {
 ```
 
 The `--anchor-presence-cursor-color` variable on `style` wins over the `color` prop. A `label` of `null` or `undefined` shows the arrow without a label. For every prop, see [DefaultCursor](/docs/react/api/components#defaultcursor).
+
+## Style touch and pen cursors
+
+`pointerType` is `"mouse"`, `"pen"`, or `"touch"`. It is `undefined` when the sender sent no pointer info. This renderer shows a ring for a touch cursor and the default arrow for all others:
+
+```tsx
+import { CursorLayer, DefaultCursor } from "@anchor-presence/react";
+
+function TouchRingLayer() {
+  return (
+    <CursorLayer
+      renderCursor={({ label, color, pointerType }) =>
+        pointerType === "touch" ? (
+          <span
+            style={{
+              display: "block",
+              width: 24,
+              height: 24,
+              borderRadius: "50%",
+              border: `2px solid ${color}`,
+            }}
+          />
+        ) : (
+          <DefaultCursor label={label} color={color} />
+        )
+      }
+    />
+  );
+}
+```
 
 ## Root attributes
 

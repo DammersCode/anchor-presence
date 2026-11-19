@@ -96,7 +96,9 @@ export const SCENES: Record<SceneName, SceneMeta> = {
         steps: [
           { kind: "point", anchor: "board.card:design", u: 0.45, v: 0.4 },
           { kind: "point", anchor: "board.card:api", u: 0.5, v: 0.5 },
+          { kind: "context", value: { selection: ["board.card:api"] }, dwellMs: 1200 },
           { kind: "point", anchor: "board.card:sso", u: 0.4, v: 0.5, dwellMs: 2600 },
+          { kind: "context", value: { selection: [] }, dwellMs: 400 },
         ],
       },
       {

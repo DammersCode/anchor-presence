@@ -9,6 +9,7 @@ import {
   RateLimiter,
   INVALID_ROOM_CODE,
   bindIdentity,
+  UNBINDABLE_FRAME_CLOSE,
   newConnectionId,
   parseRoom,
   parseToken,
@@ -124,7 +125,10 @@ export function createSocketIoRelay(port: number, options: SocketIoRelayOptions 
       if (identity !== undefined) {
         const bytes = data instanceof ArrayBuffer ? new Uint8Array(data) : (data as Uint8Array);
         const bound = bindIdentity(bytes, identity, connectionId);
-        if (bound === null) return;
+        if (bound === null) {
+          refuse(socket, UNBINDABLE_FRAME_CLOSE.code, UNBINDABLE_FRAME_CLOSE.reason);
+          return;
+        }
         outgoing = bound;
       }
       socket.to(ioRoom).emit("presence", outgoing);

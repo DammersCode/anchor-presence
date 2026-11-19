@@ -97,6 +97,8 @@ export type DomBinding<TContext = unknown, TUser = unknown> = {
   invalidate(reason?: string): void;
   /** Returns the latest resolved cursors. */
   getSnapshot(): ResolvedCursor<TContext, TUser>[];
+  /** Returns the element the resolver uses for an anchor id: the newest one when ids repeat, `null` when none is connected. */
+  getAnchorElement(anchorId: string): Element | null;
   /**
    * Adds a listener for new cursor snapshots.
    * @returns A function that removes the listener.
@@ -257,6 +259,7 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
   return {
     invalidate: (reason) => scheduler.invalidate(reason),
     getSnapshot: () => snapshot,
+    getAnchorElement: (anchorId) => registry.get(anchorId),
     subscribe(listener) {
       snapshotListeners.add(listener);
       return () => {

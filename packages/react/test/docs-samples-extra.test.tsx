@@ -114,6 +114,31 @@ function LargeCursorLayer() {
   );
 }
 
+// custom-cursors.mdx: Style touch and pen cursors
+function TouchRingLayer() {
+  return (
+    <CursorLayer
+      renderCursor={({ label, color, pointerType }) =>
+        pointerType === "touch" ? (
+          <span
+            style={{
+              display: "block",
+              width: 24,
+              height: 24,
+              borderRadius: "50%",
+              border: `2px solid ${color}`,
+            }}
+          />
+        ) : (
+          <DefaultCursor label={label} color={color} />
+        )
+      }
+    />
+  );
+}
+
+void TouchRingLayer;
+
 // cursor-layer.mdx: Label and color
 type LayerUser = { name: string; color?: string };
 
@@ -354,6 +379,7 @@ describe("doc sample sources", () => {
   it("match the copies in this file", () => {
     expect(
       missingSamples("docs-samples-extra.test.tsx", [
+        docSample("react/custom-cursors.mdx", "function TouchRingLayer"),
         docSample("react/remote-cursors.mdx", "function CursorCount"),
         docSample("react/remote-presence.mdx", "function PointerTypeBadge"),
       ]),

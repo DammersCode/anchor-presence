@@ -490,6 +490,22 @@ describe("RemoteResolver (spec §10 + §13)", () => {
     expect(idle.cursors[0]?.idle).toBe(true);
   });
 
+  it("carries the pointer type of the presence and re-resolves when it changes alone", () => {
+    const resolver = new RemoteResolver({ registry });
+    const rects = new Map<Element, Rect>([[el, { left: 0, top: 0, width: 100, height: 100 }]]);
+    const state = readState(rects);
+
+    const none = resolver.resolveAll([presence()], state, 0);
+    expect(none.cursors[0]).not.toHaveProperty("pointerType");
+
+    const touch = resolver.resolveAll([presence({ pointer: { type: "touch" } })], state, 16);
+    expect(touch.cursors[0]?.pointerType).toBe("touch");
+    expect(touch.cursors[0]).not.toBe(none.cursors[0]);
+
+    const pen = resolver.resolveAll([presence({ pointer: { type: "pen" } })], state, 32);
+    expect(pen.cursors[0]?.pointerType).toBe("pen");
+  });
+
   it("defaults to not idle when no isIdle lookup is given", () => {
     const resolver = new RemoteResolver({ registry });
     const rects = new Map<Element, Rect>([[el, { left: 0, top: 0, width: 100, height: 100 }]]);

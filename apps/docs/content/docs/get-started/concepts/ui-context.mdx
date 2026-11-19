@@ -64,6 +64,88 @@ const dialogAwarePolicy: VisibilityPolicy<{ dialog?: string }> = ({ presence, re
 
 The client needs the same context type as the policy, for example `createPresenceClient<{ dialog?: string }>`. The binding cannot see the open dialog of the receiver. When it changes, call `binding.invalidate()` to run the policy again. See [Run the policy again after a state change](/docs/dom/visibility-policy#run-the-policy-again-after-a-state-change).
 
+## Share typing and away
+
+Two common states fit in `context`: the anchor where the user types, and whether the tab is hidden. The sender sets both with `useLocalContext`. The receiver reads them with `useRemotePresence`.
+
+`setContext` replaces the whole context. The hook below keeps both fields in one ref, so a change of one field never drops the other. It sends a new context only when a field changes:
+
+```tsx
+import { useLocalContext, useRemotePresence } from "@anchor-presence/react";
+import { useCallback, useEffect, useRef } from "react";
+
+type Person = { name: string };
+type Status = { typingIn: string | null; away: boolean };
+
+const TYPING_STOP_MS = 2000;
+
+function useStatus(): (patch: Partial<Status>) => void {
+  const [, setContext] = useLocalContext<Status>();
+  const status = useRef<Status>({ typingIn: null, away: false });
+
+  const publish = useCallback(
+    (patch: Partial<Status>) => {
+      const next = { ...status.current, ...patch };
+      if (next.typingIn === status.current.typingIn && next.away === status.current.away) return;
+      status.current = next;
+      setContext(next);
+    },
+    [setContext],
+  );
+
+  useEffect(() => {
+    const sync = () => publish({ away: document.visibilityState === "hidden" });
+    sync();
+    document.addEventListener("visibilitychange", sync);
+    return () => document.removeEventListener("visibilitychange", sync);
+  }, [publish]);
+
+  return publish;
+}
+
+function CommentBox({ anchorId }: { anchorId: string }) {
+  const publish = useStatus();
+  const stopTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const stopTyping = () => {
+    clearTimeout(stopTimer.current);
+    publish({ typingIn: null });
+  };
+
+  return (
+    <textarea
+      data-anchor={anchorId}
+      aria-label="Comment"
+      onChange={() => {
+        publish({ typingIn: anchorId });
+        clearTimeout(stopTimer.current);
+        stopTimer.current = setTimeout(stopTyping, TYPING_STOP_MS);
+      }}
+      onBlur={stopTyping}
+    />
+  );
+}
+
+function TypingHint({ anchorId }: { anchorId: string }) {
+  const names = useRemotePresence<Status, Person>()
+    .filter(({ context }) => context?.typingIn === anchorId && !context.away)
+    .map(({ user }) => user?.name ?? "Someone");
+
+  return names.length === 0 ? null : <p>{names.join(", ")} typing…</p>;
+}
+```
+
+Render `<TypingHint anchorId="comments.box" />` next to a `<CommentBox anchorId="comments.box" />`. Both read the same anchor ID.
+
+`away` is a visibility flag that the sender sets on `visibilitychange`. It is true at once when the tab is hidden, and false at once when the tab shows again. A peer with `away: true` does not show as typing, even if its last typing state was never cleared. The receiver treats `typingIn` and `away` as untrusted: it compares them, and renders only `user.name` as text.
+
+### Idle or away
+
+The store sets `idle` on a peer whose presence did not change for `idleAfterMs`, 15 seconds by default. It needs no code in the sender, and it cannot tell a tab in the background from a user who reads. A context change ends the idle state, so a sender that sets `away` also resets the idle timer.
+
+- Use `idle` to dim a cursor that stopped. `CursorLayer` and `useRemoteUsers` already give it.
+- Use `away` when you need to know at once, and for a reason you can name, like a hidden tab.
+
 ## Never change the receiver UI
 
 A remote cursor only gives information. It must not change a route, open or close a dialog, expand a sidebar, or scroll the page of the receiver. If a cursor points into UI that is closed on the receiver, fall back or hide the cursor.

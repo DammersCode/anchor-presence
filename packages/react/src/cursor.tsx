@@ -1,5 +1,6 @@
 import { memo, useCallback } from "react";
 import type { ComponentPropsWithoutRef, CSSProperties, ReactNode } from "react";
+import type { PointerType } from "@anchor-presence/core";
 import { CURSOR_MARKER_ATTRIBUTE, type ResolvedCursor } from "@anchor-presence/dom";
 import { useRemoteCursorsSelector } from "./hooks/index.js";
 
@@ -72,6 +73,8 @@ export type CursorRenderProps<TContext = unknown, TUser = unknown> = {
   label: ReactNode;
   /** The color, from `getColor`. */
   color: string;
+  /** The pointer type that moved the cursor. `undefined` when the sender sent no pointer info. */
+  pointerType?: PointerType | undefined;
 };
 
 /**
@@ -206,7 +209,11 @@ function CursorItem<TContext = unknown, TUser = unknown>(props: CursorItemProps<
       data-anchor-presence-anchor={cursor.anchorId ?? ""}
       data-anchor-presence-idle={cursor.idle || undefined}
     >
-      {renderCursor ? renderCursor({ cursor, label, color }) : <DefaultCursor label={label} color={color} />}
+      {renderCursor ? (
+        renderCursor({ cursor, label, color, pointerType: cursor.pointerType })
+      ) : (
+        <DefaultCursor label={label} color={color} />
+      )}
     </div>
   );
 }

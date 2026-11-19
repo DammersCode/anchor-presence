@@ -241,6 +241,19 @@ export function defineRelayConformance(
         expect(new Set(seen.map((message) => message.clientId)).size).toBe(2);
         for (const { socket } of [peer, tabOne, tabTwo]) socket.close();
       });
+
+      it("closes a sender whose frame it cannot bind, with code 1008, and relays nothing", async () => {
+        const { baseUrl } = relay();
+        const peer = await connect(baseUrl, "ident-binary", "&token=bob");
+        const sender = await connect(baseUrl, "ident-binary", "&token=ada");
+        const closed = closeCode(sender.socket);
+
+        sender.socket.send(new Uint8Array([0x41, 0x02, 0xff]));
+
+        expect(await closed).toBe(1008);
+        expect(peer.received).toHaveLength(0);
+        peer.socket.close();
+      });
     });
   }
 }

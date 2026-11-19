@@ -210,6 +210,41 @@ describe("createDomBinding", () => {
     binding.dispose();
   });
 
+  it("getAnchorElement returns the newest element for a duplicate id, null once removed or unknown", () => {
+    const { raf, caf } = makeRafStub();
+    const { client } = makeFakeClient();
+    const older = document.createElement("div");
+    older.dataset.anchor = "a";
+    const newer = document.createElement("div");
+    newer.dataset.anchor = "a";
+    document.body.append(older, newer);
+    const binding = createDomBinding(client, { environment: { raf, caf } });
+
+    expect(binding.getAnchorElement("a")).toBe(newer);
+    expect(binding.getAnchorElement("missing")).toBeNull();
+
+    newer.remove();
+    older.remove();
+    expect(binding.getAnchorElement("a")).toBeNull();
+    binding.dispose();
+  });
+
+  it("getAnchorElement returns a shadow host anchor, and null for an attribute inside its shadow root", () => {
+    const { raf, caf } = makeRafStub();
+    const { client } = makeFakeClient();
+    const host = document.createElement("div");
+    const inner = document.createElement("div");
+    inner.dataset.anchor = "in-shadow";
+    host.dataset.anchor = "host";
+    host.attachShadow({ mode: "open" }).append(inner);
+    document.body.append(host);
+    const binding = createDomBinding(client, { environment: { raf, caf } });
+
+    expect(binding.getAnchorElement("host")).toBe(host);
+    expect(binding.getAnchorElement("in-shadow")).toBeNull();
+    binding.dispose();
+  });
+
   it("hides remote cursors while the connection is down and shows them again after", () => {
     const el = document.createElement("div");
     el.dataset.anchor = "a";

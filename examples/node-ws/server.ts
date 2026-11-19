@@ -15,6 +15,7 @@ import {
   slowPeerAction,
   safeAuthCheck,
   bindIdentity,
+  UNBINDABLE_FRAME_CLOSE,
   type AuthIdentity,
   tokenAuthCheck,
   type AuthCheck,
@@ -185,7 +186,10 @@ export function createNodeWsRelay(port: number, options: NodeWsRelayOptions = {}
       let outgoingBinary = isBinary;
       if (socketState.identity !== undefined) {
         const bound = bindIdentity(message, socketState.identity, socketState.connectionId);
-        if (bound === null) return;
+        if (bound === null) {
+          ws.close(UNBINDABLE_FRAME_CLOSE.code, UNBINDABLE_FRAME_CLOSE.reason);
+          return;
+        }
         outgoing = bound;
         outgoingBinary = true;
       }

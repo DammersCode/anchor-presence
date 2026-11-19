@@ -6,6 +6,7 @@
 
 - `@anchor-presence/dom`: the binding option `maxAnchors` is `maxSentAnchors`. The `validationLimits.maxAnchors` limit keeps its name. `createDomBinding` errors now start with `createDomBinding:`.
 - Example relays: with identity binding, a frame never carries a `user` that the peer chose. The relay writes the `user` of the identity, or removes the field when the identity has none.
+- Example relays: with identity binding, a frame that is not a JSON object (for example `binaryCodec`) closes the connection with code `1008` instead of being dropped silently. The reference relay takes an `authCheck` through `startReferenceRelay` and binds identity like the example relays.
 - `@anchor-presence/core`: the default clock is monotonic (`performance.now()`), so a wall-clock step no longer leaves ghost peers or mutes event senders. Pass `now` to use another clock.
 - `@anchor-presence/core`: `binaryCodec.encode` throws for a coordinate outside the float32 range and for an event message that carries a cursor. The client drops such a message.
 - `@anchor-presence/dom`: `createWebSocketTransport` throws a `TypeError` for a `path` that does not start with `/` or `?`.
@@ -38,6 +39,8 @@
 
 ### Added
 
+- `@anchor-presence/dom`: `ResolvedCursor` has `pointerType` (`"mouse"`, `"pen"` or `"touch"`), and `@anchor-presence/react`: `CursorRenderProps` passes it to `renderCursor`. A change of pointer type alone updates the cursor.
+- `@anchor-presence/dom`: `DomBinding.getAnchorElement(anchorId)` returns the element the binding resolves for an anchor ID, or `null`.
 - `@anchor-presence/core`: `createInMemoryRoom` returns a room. Each `join()` gives a transport that reaches every other joined transport, for tests with three or more clients.
 - `@anchor-presence/core`: `createEventChannel` has `EventMap` as the default for its type argument. The `DEFAULT_HEARTBEAT_INTERVAL_MS`, `staleTimeoutMs` and dom `*Like` type docs state their defaults and purpose.
 

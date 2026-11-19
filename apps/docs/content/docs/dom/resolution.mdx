@@ -65,12 +65,13 @@ y = viewport.v * window.innerHeight
 | `context`      | The `context` of the sender, when set.                                                                                                                                |
 | `user`         | The `user` of the sender, when set.                                                                                                                                   |
 | `idle`         | `true` when the presence of the sender did not change for `idleAfterMs`.                                                                                              |
+| `pointerType`  | `"mouse"`, `"pen"`, or `"touch"`. Absent when the sender sent no pointer info.                                                                                        |
 
 The core store sets `idle`. See [Idle state](/docs/core/remote-presence#idle-state). The binding copies the flag and runs no idle timer of its own. A renderer can use `idle` to fade a cursor or hide its label.
 
 ## Result identity
 
-When nothing about a cursor changed, the resolver keeps the same `ResolvedCursor` object across frames, and the same result array. It compares position, visibility, `pointVisible`, tier, anchor, context, user, and the idle state. A renderer that compares object identity, such as `React.memo`, then skips the work on a frame where nothing moved.
+When nothing about a cursor changed, the resolver keeps the same `ResolvedCursor` object across frames, and the same result array. It compares position, visibility, `pointVisible`, tier, anchor, context, user, the idle state, and the pointer type. A renderer that compares object identity, such as `React.memo`, then skips the work on a frame where nothing moved.
 
 ## Related
 

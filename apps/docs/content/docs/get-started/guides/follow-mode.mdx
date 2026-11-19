@@ -25,6 +25,7 @@ import {
   PresenceProvider,
   usePeerChanges,
   useRemoteCursorsSelector,
+  useDomBinding,
   useRemoteUsers,
 } from "@anchor-presence/react";
 import type { PresenceClient, ResolvedCursor } from "@anchor-presence/react";
@@ -35,13 +36,6 @@ const SCROLL_KEYS = new Set(["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home
 
 export function isOffscreen(cursor: ResolvedCursor, width: number, height: number): boolean {
   return !cursor.pointVisible || cursor.x < 0 || cursor.y < 0 || cursor.x > width || cursor.y > height;
-}
-
-function findAnchor(anchorId: string): HTMLElement | null {
-  for (const element of document.querySelectorAll<HTMLElement>("[data-anchor]")) {
-    if (element.dataset.anchor === anchorId) return element;
-  }
-  return null;
 }
 ```
 
@@ -57,6 +51,7 @@ export function useFollowMode(): {
   follow: (clientId: string) => void;
   stop: () => void;
 } {
+  const binding = useDomBinding();
   const [leaderId, setLeaderId] = useState<string | null>(null);
   const stop = useCallback(() => setLeaderId(null), []);
   usePeerChanges((change) => {
@@ -74,8 +69,9 @@ export function useFollowMode(): {
   const target = useRemoteCursorsSelector(selectTarget);
 
   useEffect(() => {
-    if (target !== null) findAnchor(target)?.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, [target]);
+    if (target !== null)
+      binding?.getAnchorElement(target)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [binding, target]);
 
   useEffect(() => {
     if (leaderId === null) return;
@@ -147,7 +143,7 @@ export function FollowApp({ client }: { client: PresenceClient<unknown, User> })
 - **Viewport tier.** If the leader's cursor resolves through the viewport tier, `anchorId` is `null`. The page does not scroll then.
 - **Stop on scroll.** `scrollIntoView` fires `scroll` events, so the recipe does not listen for `scroll`. It stops on `wheel`, on `touchmove` and on the scroll keys. A drag on the scrollbar fires none of these events. For this case, the controls show the stop button.
 - **Stop on leave.** `usePeerChanges` reports a `leave` each time the store removes the leader. The causes are a leave message, the stale timeout, the reconnect expiry, and a `store.remove` call. A leader without a cursor is not a leave, so follow mode continues.
-- **Anchor attribute.** `findAnchor` reads `data-anchor`. If you set `anchorAttribute` in the binding options, read that attribute instead.
+- **Anchor element.** `binding.getAnchorElement` returns the element that the binding resolves for the anchor ID. It follows your `anchorAttribute` option, picks the newest element when IDs repeat, and returns `null` when no element is connected.
 
 ## Related
 

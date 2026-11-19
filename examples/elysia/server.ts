@@ -10,6 +10,7 @@ import {
   RateLimiter,
   INVALID_ROOM_CODE,
   bindIdentity,
+  UNBINDABLE_FRAME_CLOSE,
   newConnectionId,
   parseRoom,
   parseToken,
@@ -134,7 +135,10 @@ export function createElysiaRelay(port: number, options: ElysiaRelayOptions = {}
             state.identity,
             state.connectionId,
           );
-          if (bound === null) return;
+          if (bound === null) {
+            ws.close(UNBINDABLE_FRAME_CLOSE.code, UNBINDABLE_FRAME_CLOSE.reason);
+            return;
+          }
           outgoing = bound;
         }
         ws.publish(parseRoom(ws.data.query.room) ?? "main", outgoing);

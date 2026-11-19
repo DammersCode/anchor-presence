@@ -8,6 +8,7 @@ import {
   RateLimiter,
   INVALID_ROOM_CODE,
   bindIdentity,
+  UNBINDABLE_FRAME_CLOSE,
   newConnectionId,
   parseRoom,
   parseToken,
@@ -145,7 +146,10 @@ export function createBunRelay(port: number, options: BunRelayOptions = {}) {
         let outgoing: string | Uint8Array | Buffer = message;
         if (ws.data.identity !== undefined) {
           const bound = bindIdentity(message, ws.data.identity, ws.data.connectionId);
-          if (bound === null) return;
+          if (bound === null) {
+            ws.close(UNBINDABLE_FRAME_CLOSE.code, UNBINDABLE_FRAME_CLOSE.reason);
+            return;
+          }
           outgoing = bound;
         }
         // ws.publish (not server.publish) excludes the sender from the topic fan-out.

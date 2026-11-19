@@ -64,6 +64,28 @@ describe("cursor components", () => {
     act(() => root.unmount());
   });
 
+  it("passes the pointer type to renderCursor and re-renders when only it changes", () => {
+    const { client } = makeFakeClient();
+    const { binding, publish } = makeFakeBinding();
+    const root = createRoot(container);
+
+    act(() => {
+      root.render(
+        <PresenceProvider client={client} binding={binding}>
+          <CursorLayer renderCursor={({ pointerType }) => <i>{pointerType ?? "none"}</i>} />
+        </PresenceProvider>,
+      );
+    });
+    act(() => publish([cursor()]));
+    expect(container.querySelector("i")?.textContent).toBe("none");
+    act(() => publish([cursor({ pointerType: "touch" })]));
+    expect(container.querySelector("i")?.textContent).toBe("touch");
+    act(() => publish([cursor({ pointerType: "pen" })]));
+    expect(container.querySelector("i")?.textContent).toBe("pen");
+
+    act(() => root.unmount());
+  });
+
   it("truncates the default label by code points, never inside an emoji", () => {
     const { client } = makeFakeClient();
     const { binding, publish } = makeFakeBinding();

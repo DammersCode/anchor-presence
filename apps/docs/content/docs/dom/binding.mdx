@@ -91,6 +91,20 @@ function drawCursors(binding: DomBinding, layer: HTMLElement): () => void {
 
 `x` and `y` are viewport pixels. Give `.remote-cursor` the CSS `position: fixed`, `left: 0`, `top: 0`, and `pointer-events: none`. `aria-hidden="true"` keeps the cursor away from screen readers. `@anchor-presence/react` uses the same styles and attribute on each cursor root. The final empty snapshot of `dispose` removes every element.
 
+## getAnchorElement
+
+`binding.getAnchorElement(anchorId)` returns the element that the binding uses for an anchor ID. Use it to scroll to the anchor of a remote cursor:
+
+```ts
+import type { DomBinding } from "@anchor-presence/dom";
+
+function scrollToAnchor(binding: DomBinding, anchorId: string): void {
+  binding.getAnchorElement(anchorId)?.scrollIntoView({ block: "center" });
+}
+```
+
+When several elements share an ID, it returns the newest one. It returns `null` when no connected element has the ID. An attribute inside a shadow root is not an anchor, so it returns `null` for it.
+
 ## invalidate
 
 `binding.invalidate(reason?)` marks the layout dirty. On the next frame, the binding measures every active anchor again and resolves the cursors again. An active anchor is an anchor that a remote cursor uses.

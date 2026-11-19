@@ -103,6 +103,7 @@ export function makeFakeBinding<TContext = unknown, TUser = unknown>(): {
   const binding: DomBinding<TContext, TUser> = {
     invalidate: () => {},
     getSnapshot: () => snapshot,
+    getAnchorElement: (id) => document.querySelector(`[data-anchor="${id}"]`),
     subscribe(listener) {
       listeners.add(listener);
       return () => listeners.delete(listener);

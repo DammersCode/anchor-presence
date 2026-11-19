@@ -4,7 +4,7 @@ description: A cursor stays on the same dashboard card when the grid changes fro
 icon: layout-grid
 ---
 
-import { BookOpen, MousePointer2, TableProperties } from "lucide-react";
+import { BookOpen, LayoutGrid, Ruler, MousePointer2, TableProperties } from "lucide-react";
 
 A dashboard grid changes its column count at each breakpoint. Cards move to new rows and change their size. In this demo, the wide pane shows a 4-column grid with cards of mixed sizes. The narrow pane shows the same cards in 2 columns. The remote cursor stays on the same card, and on the same day in the chart.
 
@@ -45,14 +45,14 @@ Try it: Move your pointer into a gap between two cards.
     Why the cursor follows a card to its new row.
   </Card>
   <Card
-    icon={<BookOpen />}
+    icon={<Ruler />}
     title="How element-size differences resolve"
     href="/docs/get-started/concepts/responsive-layouts#how-element-size-differences-resolve"
   >
     How `u` and `v` scale with the card size.
   </Card>
   <Card
-    icon={<BookOpen />}
+    icon={<LayoutGrid />}
     title="Normalized u/v coordinates"
     href="/docs/get-started/concepts/anchors#normalized-uv-coordinates"
   >

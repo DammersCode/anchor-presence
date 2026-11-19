@@ -154,8 +154,8 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
     for (const listener of statusListeners) {
       try {
         listener(status);
-      } catch {
-        // a throwing listener must not stop the reconnect
+      } catch (error) {
+        reportListenerError(error);
       }
     }
   }

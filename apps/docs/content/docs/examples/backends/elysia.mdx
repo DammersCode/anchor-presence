@@ -69,7 +69,7 @@ Each setting is an environment variable. The factory options `maxMessageBytes`, 
 
 | Topic            | Behavior                                                                                                                         |
 | ---------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| Query            | Checks `room` and `token` against the schema before the upgrade. A wrong type fails the upgrade with HTTP `422`.                 |
+| Query            | Types `room` and `token` as a string or an array of strings, for the Eden client.                                                |
 | Room             | Reads `room` from the query. A missing value is `main`. An invalid name closes the socket with code `4007`.                      |
 | Upgrade path     | Accepts the upgrade only at `/`. Any other path gets HTTP `404`.                                                                 |
 | Fan-out          | `ws.publish` sends to every subscriber of the room topic except the sender.                                                      |
@@ -79,7 +79,7 @@ Each setting is an environment variable. The factory options `maxMessageBytes`, 
 
 ### Limits
 
-[Deploy a relay](/docs/get-started/guides/deploy-relay#set-the-environment-variables) lists the limits, their defaults, and the close codes. The relay sets the hard frame size with Bun's `maxPayloadLength`.
+[Deploy a relay](/docs/get-started/guides/deploy-relay#set-the-environment-variables) lists the limits and their defaults. [Close codes](/docs/examples/backends/relay-contract#close-codes) lists the codes. The relay sets the hard frame size with Bun's `maxPayloadLength`.
 
 Bun does not expose the send buffer of each subscriber. For this reason, the relay cannot skip sends to a slow receiver, as the [Node.js (ws)](/docs/examples/backends/node-ws) relay does.
 

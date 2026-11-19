@@ -253,6 +253,20 @@ describe("createWebSocketTransport", () => {
     expect(afterUnsubscribe).toEqual(["reconnecting"]);
   });
 
+  it("reports a throwing status listener and still notifies the others", () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const transport = make();
+    const statuses: ConnectionStatus[] = [];
+    void transport.connect?.();
+    transport.subscribeStatus?.((s) => {
+      if (s !== "connecting") throw new Error("boom");
+    });
+    transport.subscribeStatus?.((s) => statuses.push(s));
+    FakeWebSocket.fire(lastSocket(), "open");
+    expect(statuses).toEqual(["connecting", "connected"]);
+    expect(error).toHaveBeenCalled();
+  });
+
   it("drops send before open and records exact bytes while OPEN", () => {
     const transport = make();
     const bytes = new Uint8Array([1, 2, 3]);

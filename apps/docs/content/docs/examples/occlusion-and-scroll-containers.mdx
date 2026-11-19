@@ -4,7 +4,7 @@ description: Hide a cursor whose anchor is scrolled out of its container, and sh
 icon: eye-off
 ---
 
-import { AppWindow, Atom, LifeBuoy, ListTree } from "lucide-react";
+import { AppWindow, Braces, ScanEye, Atom, LifeBuoy, ListTree } from "lucide-react";
 
 An anchor inside a scroll container can exist, with a real size and position, while the container clips it out of view. Without a policy for this case, the cursor floats outside the container. In this demo, the wide pane shows every thread of an inbox. The narrow pane shows the same threads in a short scroll list.
 
@@ -36,7 +36,7 @@ Try it: Scroll the narrow list with your pointer or your keyboard, or select the
 
 <Cards>
   <Card
-    icon={<AppWindow />}
+    icon={<ScanEye />}
     title="How the check works"
     href="/docs/dom/occlusion-and-scroll#how-the-check-works"
   >
@@ -46,7 +46,7 @@ Try it: Scroll the narrow list with your pointer or your keyboard, or select the
     The field that the policy and the hint read.
   </Card>
   <Card
-    icon={<AppWindow />}
+    icon={<Braces />}
     title="Write a custom policy"
     href="/docs/dom/visibility-policy#write-a-custom-policy"
   >

@@ -69,6 +69,16 @@ Last, add the packages from the same folders:
 bun add file:../anchor-presence/packages/core file:../anchor-presence/packages/dom file:../anchor-presence/packages/react
 ```
 
+If you use Vite, `react` and `dom` can keep nested copies of `core`. Then the bundle has two copies of `core`, and each copy has its own state for the one-time warnings. Make Vite use one copy in `vite.config.ts`:
+
+```ts
+import { defineConfig } from "vite";
+
+export default defineConfig({
+  resolve: { dedupe: ["@anchor-presence/core", "@anchor-presence/dom", "react"] },
+});
+```
+
   </Accordion>
 </Accordions>
 

@@ -81,12 +81,12 @@ If a pair scores moderate or high, the agent proposes fixes with the file and li
 
 ## Output formats
 
-| Format      | Content                                                                                   | Rough chat cost                                                |
-| ----------- | ----------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| `table`     | One row per view pair (top 15): total, band, five sub-scores                              | About 40 tokens per row, 600 for 15 rows                       |
-| `markdown`  | A file: the score table, then per pair the inputs, largest jumps, gaps, shapes, fallbacks | About 30 tokens for the path. The script prints the file size. |
-| `mermaid`   | A file: bar charts of total and jump distance per pair, plus fallback-chain flowcharts    | About 30 tokens for the path                                   |
-| Combination | `table,markdown`, `markdown,mermaid`, or `all`                                            | The sum of the parts. The files merge into one file.           |
+| Format      | Content                                                                                                                    | Rough chat cost                                                |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| `table`     | One row per view pair (top 15): total, band, five sub-scores                                                               | About 40 tokens per row, 600 for 15 rows                       |
+| `markdown`  | A file: the score table, then per pair the inputs, largest jumps, gaps, shapes, fallbacks                                  | About 30 tokens for the path. The script prints the file size. |
+| `mermaid`   | A file: bar charts of total and jump distance for the top 20 pairs, each with a data table, plus fallback-chain flowcharts | About 30 tokens for the path                                   |
+| Combination | `table,markdown`, `markdown,mermaid`, or `all`                                                                             | The sum of the parts. The files merge into one file.           |
 
 ## Score bands
 

@@ -15,7 +15,7 @@ function createClient() {
   return createPresenceClient({ transport, user: { name: `Guest ${Math.floor(Math.random() * 100)}` } });
 }
 
-export function App() {
+export default function App() {
   return (
     <PresenceProvider factory={createClient}>
       <button data-anchor="nav.dashboard">Dashboard</button>

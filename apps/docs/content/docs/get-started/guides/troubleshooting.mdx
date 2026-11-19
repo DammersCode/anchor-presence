@@ -50,7 +50,7 @@ Four causes give the same symptom.
 
 **A visibility policy hides it.** A custom policy can return `"hide"` for a cursor that the default policy shows. The default policy hides only the `hidden` tier. Check the policy in `resolution.visibilityPolicy` of the binding options. See [UI context](/docs/get-started/concepts/ui-context).
 
-**The peer is idle or stale.** A peer is **idle** after `idleAfterMs` (default 15 000 ms) with no change. `CursorLayer` dims an idle cursor. A heartbeat that changes nothing does not end the idle state. A peer is **stale** after `staleTimeoutMs` (default 70 000 ms) with no message, and the store then removes it. A background tab still sends a heartbeat every `heartbeatIntervalMs` (default 10 000 ms). A browser can slow the timers of a hidden tab to one run per minute, so a long background period can still remove the peer.
+**The peer is idle or stale.** A peer is **idle** after `idleAfterMs` with no change. `CursorLayer` dims an idle cursor. A heartbeat that changes nothing does not end the idle state. A peer is **stale** after `staleTimeoutMs` with no message, and the store then removes it. A background tab still sends a heartbeat every `heartbeatIntervalMs`. A browser can slow the timers of a hidden tab to one run per minute, so a long background period can still remove the peer. See [Remote presence](/docs/core/remote-presence) for the defaults.
 
 ## Cursor is outside the window
 

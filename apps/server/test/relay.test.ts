@@ -273,6 +273,11 @@ describe("reference relay hardening", () => {
       const room = randomUUID();
       const first = await connect(`ws://127.0.0.1:${port}/?room=${room}`);
       const second = await connect(`ws://127.0.0.1:${port}/?room=${room}`);
+      const settled = await Promise.race([
+        second.closeCode,
+        new Promise((r) => setTimeout(() => r("open"), 200)),
+      ]);
+      expect(settled).toBe("open");
       first.ws.close();
       second.ws.close();
     } finally {
@@ -426,12 +431,15 @@ describe("reference relay hardening", () => {
   it("keeps the room count per relay instance, enforces both caps and rejects invalid cap options", async () => {
     const child = spawn("bun", ["apps/server/test/two-relays-fixture.ts"], {
       cwd: repoRoot,
-      stdio: "ignore",
+      stdio: "pipe",
       windowsHide: true,
     });
+    let output = "";
+    child.stdout.on("data", (chunk) => (output += chunk));
+    child.stderr.on("data", (chunk) => (output += chunk));
     const killer = setTimeout(() => child.kill(), 12_000);
     const code = await new Promise((resolve) => child.once("exit", resolve));
     clearTimeout(killer);
-    expect(code).toBe(0);
+    expect(code, output).toBe(0);
   }, 15_000);
 });

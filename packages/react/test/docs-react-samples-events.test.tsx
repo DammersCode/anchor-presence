@@ -65,7 +65,7 @@ function Reactions() {
 
 const parseEvent = createEventParser<Events>({
   reaction: (data) => {
-    const emoji = (data as { emoji?: unknown } | undefined)?.emoji;
+    const emoji = typeof data === "object" && data !== null && "emoji" in data ? data.emoji : undefined;
     return typeof emoji === "string" ? { emoji } : undefined;
   },
   ping: null,

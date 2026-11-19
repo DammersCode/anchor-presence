@@ -121,6 +121,8 @@ const transport = createWebSocketTransport({
 
 If `shouldReconnect` throws, the transport does not reconnect, and the status becomes `disconnected`. In development mode, it logs the error with `console.error`.
 
+If a status listener throws, the transport reports the error through the development error log and keeps running.
+
 When `reconnect` is `false`, the transport never calls `shouldReconnect`.
 
 ## Close reasons

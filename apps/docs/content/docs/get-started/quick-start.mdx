@@ -8,6 +8,8 @@ import { Anchor, Cable, FlaskConical, MousePointer, Server, Workflow } from "luc
 
 This page takes you from an empty React app to live cursors in two steps. First, you connect two windows of one browser with no server. Then you connect two browsers through a relay. Install the packages first. See [Installation](/docs/get-started/installation).
 
+To get an empty app, run `bun create vite my-app --template react-ts`. Put the sample in `src/App.tsx`.
+
 ## Try it in two windows
 
 <Steps>
@@ -27,7 +29,7 @@ function createClient() {
   return createPresenceClient({ transport, user: { name: `Guest ${Math.floor(Math.random() * 100)}` } });
 }
 
-export function App() {
+export default function App() {
   return (
     <PresenceProvider factory={createClient}>
       <button data-anchor="nav.dashboard">Dashboard</button>

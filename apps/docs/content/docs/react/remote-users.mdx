@@ -6,7 +6,7 @@ icon: users
 
 import { Gauge, LayoutList, UserPen, Braces } from "lucide-react";
 
-`useRemoteUsers` returns one entry for each peer. An entry holds the `user` value of the peer, its session, and its idle state. Use it for a presence list or an avatar stack. These lists need one row per person, and they do not rerender when cursors move.
+`useRemoteUsers` returns one entry for each peer. An entry holds the `user` value of the peer, its session, and its idle state. Use it for a presence list or an avatar stack. These lists need one row per client (tab), and they do not rerender when cursors move.
 
 ## Usage
 

@@ -4,7 +4,7 @@ description: Replace the default arrow with a name pill, an avatar, or a crossha
 icon: brush
 ---
 
-import { Atom, Spline, Users } from "lucide-react";
+import { Atom, Code, Palette, Spline, Users } from "lucide-react";
 
 `CursorLayer` renders `DefaultCursor` by default. `renderCursor` replaces the visual, and `CursorLayer` keeps control of the position and the pointer events. In this demo, the same remote cursor shows as a name pill in the wide pane and as an avatar in the narrow pane.
 
@@ -44,10 +44,10 @@ Try it: Select a renderer in either pane.
   <Card icon={<Atom />} title="renderCursor" href="/docs/react/custom-cursors#usage">
     The props that a renderer gets.
   </Card>
-  <Card icon={<Atom />} title="Root attributes" href="/docs/react/custom-cursors#root-attributes">
+  <Card icon={<Code />} title="Root attributes" href="/docs/react/custom-cursors#root-attributes">
     The attributes on each cursor root, for selectors and tests.
   </Card>
-  <Card icon={<Atom />} title="Label and color" href="/docs/react/cursor-layer#label-and-color">
+  <Card icon={<Palette />} title="Label and color" href="/docs/react/cursor-layer#label-and-color">
     `getLabel` and `getColor`.
   </Card>
   <Card icon={<Users />} title="Presence list" href="/docs/examples/presence-list">

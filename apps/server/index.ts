@@ -13,8 +13,8 @@ import {
 } from "../../examples/_shared/relay-guard";
 
 function limitFromEnv(name: string, fallback: number): number {
-  const parsed = Number(process.env[name]);
-  return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback;
+  const floored = Math.floor(Number(process.env[name]));
+  return Number.isFinite(floored) && floored > 0 ? floored : fallback;
 }
 
 const PORT = limitFromEnv("PORT", 8787);

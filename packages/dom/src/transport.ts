@@ -323,11 +323,12 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
           reconnect &&
           !willReconnect &&
           options.shouldReconnect === undefined &&
-          (event.code ?? 0) < FIRST_APPLICATION_CLOSE_CODE
+          event.code !== undefined &&
+          event.code < FIRST_APPLICATION_CLOSE_CODE
         ) {
           warnOnce(
             `no-reconnect:${baseUrl}`,
-            `the connection closed with code ${event.code ?? "none"}${event.reason === undefined || event.reason === "" ? "" : ` (${event.reason})`} and the client does not reconnect.`,
+            `the connection closed with code ${event.code}${event.reason === undefined || event.reason === "" ? "" : ` (${event.reason})`} and the client does not reconnect.`,
           );
         }
         if (willReconnect) scheduleReconnect();

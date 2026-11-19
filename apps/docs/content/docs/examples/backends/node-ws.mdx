@@ -81,7 +81,7 @@ Each setting is an environment variable. The factory options `maxMessageBytes`, 
 
 ### Limits
 
-The relay reads the limits, the defaults, and the codes on [Deploy a relay](/docs/get-started/guides/deploy-relay#set-the-environment-variables). The hard frame size is enforced through the `maxPayload` of `ws`.
+The relay reads the limits, the defaults, and the codes on [Deploy a relay](/docs/get-started/guides/deploy-relay#set-the-environment-variables). The relay sets the hard frame size with the `maxPayload` option of `ws`.
 
 The relay reads the send buffer of a receiver from `bufferedAmount`.
 

@@ -4,7 +4,11 @@ description: "Show who types in a field and who left the tab, with useLocalConte
 icon: eye-off
 ---
 
+import { Compass, Eye, Kanban, Users } from "lucide-react";
+
 Two common states fit in `context`: the anchor where the user types, and whether the tab is hidden. The sender sets both with `useLocalContext`. The receiver reads them with `useRemotePresence`.
+
+## Send the state
 
 `setContext` replaces the whole context. The hook below merges each change into the current local context, so a change of one field never drops the other. It sends a new context only when a field changes. Call `useStatus` once, in a parent, and pass `publish` to each box. Then one `visibilitychange` listener serves every box:
 
@@ -86,6 +90,8 @@ function TypingHint({ anchorId }: { anchorId: string }) {
 
 Render `<TypingHint anchorId="comments.box" />` next to `<Comments />`. Both read the same anchor ID. If your app puts more fields in the context, for example a `selection` from the [card occupancy recipe](/docs/get-started/guides/card-occupancy), use one context type with all fields. Both recipes spread the current context before they change a field, so neither drops the other's field.
 
+## Away and idle
+
 `away` is a visibility flag that the sender sets on `visibilitychange`. It is true at once when the tab is hidden, and false at once when the tab shows again. A peer with `away: true` does not show as typing, even if its last typing state was never cleared. The receiver treats `typingIn` and `away` as untrusted: it compares them, and renders only `user.name` as text.
 
 ### Idle or away
@@ -94,3 +100,20 @@ The store sets `idle` on a peer whose presence did not change for `idleAfterMs`,
 
 - Use `idle` to dim a cursor that stopped. `CursorLayer` and `useRemoteUsers` already give it.
 - Use `away` when you need to know at once, and for a reason you can name, like a hidden tab.
+
+## Related
+
+<Cards>
+  <Card icon={<Compass />} title="UI context" href="/docs/get-started/concepts/ui-context">
+    What `context` is for.
+  </Card>
+  <Card icon={<Eye />} title="Remote presence" href="/docs/react/remote-presence">
+    Read the `user` and `context` of each peer.
+  </Card>
+  <Card icon={<Kanban />} title="Card occupancy" href="/docs/get-started/guides/card-occupancy">
+    Show who is on a card.
+  </Card>
+  <Card icon={<Users />} title="Presence list" href="/docs/examples/presence-list">
+    List the peers in the room.
+  </Card>
+</Cards>

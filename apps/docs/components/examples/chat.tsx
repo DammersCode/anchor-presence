@@ -23,10 +23,9 @@ const CHAT_MAX_LENGTH = 100;
 const CHAT_HIDE_MS = 5000;
 
 function readChatText(data: unknown): string | null {
-  if (typeof data !== "object" || data === null) return null;
-  const text: unknown = (data as { text?: unknown }).text;
-  if (typeof text !== "string") return null;
-  const trimmed = text.trim().slice(0, CHAT_MAX_LENGTH);
+  if (typeof data !== "object" || data === null || !("text" in data) || typeof data.text !== "string")
+    return null;
+  const trimmed = data.text.trim().slice(0, CHAT_MAX_LENGTH);
   return trimmed === "" ? null : trimmed;
 }
 

@@ -20,7 +20,7 @@ const clientA = createPresenceClient({ transport: a, user: { name: "Alice" } });
 const clientB = createPresenceClient({ transport: b, user: { name: "Bob" } });
 ```
 
-A send from `a` reaches only the listeners of `b`. A send from `b` reaches only the listeners of `a`. Call `dispose()` on the pair to stop delivery and clear both sides.
+A send from `a` reaches only the listeners of `b`. A send from `b` reaches only the listeners of `a`. Call `dispose()` on the pair to stop delivery. It sets both sides to `disconnected`, tells their status listeners, and clears the listeners.
 
 ## Delivery
 
@@ -34,7 +34,7 @@ const { a, b } = createInMemoryPair({ async: true });
 
 - Both sides must run in the same JavaScript realm, that is, one global environment such as one page or one worker. The pair cannot cross a process, tab, or iframe boundary.
 - Each side starts `disconnected`. `connect()` sets it to `connected`, and `disconnect()` sets it to `disconnected`.
-- A send reaches the other side also while the sending side is `disconnected`. The browser transports drop such a send. A test of offline behavior can pass with this pair and fail in the browser.
+- A send reaches the other side while the sending side is `disconnected`. It also reaches a `disconnected` receiver. The browser transports drop such a send. A test of offline behavior can pass with this pair and fail in the browser. The room drops both: a `disconnected` transport neither sends nor receives.
 - The pair has no `subscribeClose` and no `bufferedBytes`.
 
 ## Test with more than two peers

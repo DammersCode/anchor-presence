@@ -44,12 +44,14 @@ export type ReflowSpyState = {
   longTasks: { count: number; sum: number; max: number };
 };
 
-type BenchWindow = Window & {
-  __reflowSpy?: ReflowSpyState;
-  __inPointerDispatch?: boolean;
-  __inRaf?: boolean;
-  __reflowBench?: { runScenario: (scenario: ScenarioName, ms: number) => Promise<ReflowReport> };
-};
+declare global {
+  interface Window {
+    __reflowSpy?: ReflowSpyState;
+    __inPointerDispatch?: boolean;
+    __inRaf?: boolean;
+    __reflowBench?: { runScenario: (scenario: ScenarioName, ms: number) => Promise<ReflowReport> };
+  }
+}
 
 // ?rows=N (clamped 20..2000) so the bench can be re-run at a heavier page size
 const ROW_COUNT = Math.min(
@@ -126,7 +128,7 @@ export function ReflowBenchPage() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const win = window as BenchWindow;
+    const win = window;
     if (win.__reflowSpy === undefined) {
       win.__reflowSpy = {
         frames: [],
@@ -142,12 +144,12 @@ export function ReflowBenchPage() {
 
     const base = createLoopbackTransport();
     const sendCounts = { count: 0 };
-    const transport = {
+    const transport: LoopbackTransport = {
       ...base,
       send: () => {
         sendCounts.count += 1;
       },
-    } as LoopbackTransport;
+    };
 
     const client: PresenceClient<unknown, unknown> = createPresenceClient({
       transport,

@@ -5,7 +5,7 @@ const PAGE_IDS: readonly PageId[] = ["dashboard", "orders", "customers", "produc
 const DEFAULT_PAGE: PageId = "dashboard";
 
 export function isPageId(value: string | null): value is PageId {
-  return PAGE_IDS.includes(value as PageId);
+  return PAGE_IDS.some((id) => id === value);
 }
 
 function readPageFromUrl(): PageId {

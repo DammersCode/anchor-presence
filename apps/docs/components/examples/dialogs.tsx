@@ -13,6 +13,12 @@ const safeColor = (color: string | undefined, fallback: string) =>
 type User = { name: string; color: string };
 type DialogContext = { dialog: "invite" | null };
 
+function isInviteContext(context: unknown): boolean {
+  return (
+    typeof context === "object" && context !== null && "dialog" in context && context.dialog === "invite"
+  );
+}
+
 type Props = {
   client: PresenceClient<unknown, User> | null;
   layout: "wide" | "narrow";
@@ -32,23 +38,20 @@ export function DialogsScene({ client, layout, children }: Props) {
   const [readerOpen, setReaderOpen] = useState(false);
   const [tourOpen, setTourOpen] = useState(false);
 
-  // The preview frame builds the client with an unknown context; the tour publishes DialogContext.
-  const typedClient = client as PresenceClient<DialogContext, User> | null;
-
   const dialogOpen = wide && (readerOpen || tourOpen);
   const dialogOpenRef = useRef(dialogOpen);
   dialogOpenRef.current = dialogOpen;
 
   // Mira's context step is the dialog opening and closing in this pane.
   useEffect(() => {
-    if (!wide || typedClient === null) return;
+    if (!wide || client === null) return;
     const read = () => {
-      const mira = typedClient.getRemotePresence().find((remote) => remote.user?.name === MIRA.name);
-      setTourOpen(mira?.context?.dialog === "invite");
+      const mira = client.getRemotePresence().find((remote) => remote.user?.name === MIRA.name);
+      setTourOpen(isInviteContext(mira?.context));
     };
     read();
-    return typedClient.subscribeRemote(read);
-  }, [wide, typedClient]);
+    return client.subscribeRemote(read);
+  }, [wide, client]);
 
   // While this pane's dialog is open, this pane's reader belongs to the dialog layer:
   // publish the dialog context so the other pane hides their cursor.
@@ -58,13 +61,13 @@ export function DialogsScene({ client, layout, children }: Props) {
     const value: DialogContext["dialog"] | null = readerDialog ? "invite" : null;
     if (readerDialogRef.current === value) return;
     readerDialogRef.current = value;
-    typedClient?.setContext(value ? { dialog: value } : undefined);
-  }, [readerDialog, typedClient]);
+    client?.setContext(value ? ({ dialog: value } satisfies DialogContext) : undefined);
+  }, [readerDialog, client]);
 
-  const policy: VisibilityPolicy<DialogContext> = ({ presence, resolution }) => {
+  const policy: VisibilityPolicy<unknown> = ({ presence, resolution }) => {
     if (resolution.tier === "hidden") return "hide";
     // The sender is inside a dialog this pane has not opened.
-    if (presence.context?.dialog === "invite" && !dialogOpenRef.current) return "hide";
+    if (isInviteContext(presence.context) && !dialogOpenRef.current) return "hide";
     // This pane's dialog is open; a cursor outside the dialog belongs to the covered layer.
     if (dialogOpenRef.current && !resolution.anchorId?.startsWith("team.dialog.invite")) return "hide";
     return "show";
@@ -73,8 +76,8 @@ export function DialogsScene({ client, layout, children }: Props) {
   const takeControl = (open: boolean) => setReaderOpen(open);
 
   return (
-    <PresenceProvider<DialogContext, User>
-      client={typedClient}
+    <PresenceProvider<unknown, User>
+      client={client}
       bindingOptions={{ resolution: { visibilityPolicy: policy } }}
     >
       <div data-anchor="team" className="relative flex h-full flex-col gap-2 p-2.5">
@@ -147,7 +150,7 @@ export function DialogsScene({ client, layout, children }: Props) {
           </div>
         ) : null}
       </div>
-      <CursorLayer<DialogContext, User>
+      <CursorLayer<unknown, User>
         getLabel={(cursor) => cursor.user?.name ?? null}
         getColor={(cursor) => safeColor(cursor.user?.color, "#4f46e5")}
       />

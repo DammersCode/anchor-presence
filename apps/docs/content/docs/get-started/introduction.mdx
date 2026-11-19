@@ -61,6 +61,7 @@ Anchor Presence sends an element ID and a point inside that element, not a scree
 - The **receiver** is the browser that shows a remote cursor. The receiver measures its own copy of the anchor and turns the position into pixels.
 - The **fallback chain** is the anchor, then its parent anchors, then a viewport position, when the message carries one. If the receiver has no element for an entry, it tries the next entry.
 - A **peer** is another client in the same room.
+- The **binding** (`createDomBinding`) connects the client to the DOM: it registers anchors, captures the pointer, and resolves remote cursors.
 - A **relay** is a server that forwards each message to every other client in a room.
 
 ## Packages

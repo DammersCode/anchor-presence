@@ -17,6 +17,8 @@ type Props = {
 
 type Renderer = "arrow" | "pill" | "avatar" | "crosshair";
 
+const isRenderer = (value: string): value is Renderer => Object.hasOwn(RENDERERS, value);
+
 type RenderCursor = (props: CursorRenderProps<unknown, User>) => ReactNode;
 
 // CursorLayer places each root at the cursor point, so every renderer draws relative to (0, 0).
@@ -74,7 +76,9 @@ export function CustomCursorsScene({ client, layout, children }: Props) {
           Remote cursor style
           <select
             value={renderer}
-            onChange={(event) => setRenderer(event.target.value as Renderer)}
+            onChange={(event) => {
+              if (isRenderer(event.target.value)) setRenderer(event.target.value);
+            }}
             className="rounded-md border border-fd-border bg-fd-background px-1.5 py-1 text-[11px] text-fd-foreground focus-visible:outline-2 focus-visible:outline-fd-ring"
           >
             {Object.entries(RENDERERS).map(([value, { label }]) => (

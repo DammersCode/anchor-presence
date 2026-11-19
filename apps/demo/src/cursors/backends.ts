@@ -24,19 +24,16 @@ const BACKEND_IDS: readonly BackendId[] = [
 ];
 
 function isBackendId(value: string | null): value is BackendId {
-  return value !== null && (BACKEND_IDS as readonly string[]).includes(value);
+  return value !== null && BACKEND_IDS.some((id) => id === value);
 }
-
-// Read structurally instead of via the ambient `ImportMetaEnv` type, so this file typechecks
-// under tsconfig.test.json too, which does not load Vite's client types. `unknown` values also
-// cover the package's minimal ImportMeta.env declaration (a boolean DEV flag).
-type ViteEnvMeta = { env?: Record<string, unknown> };
 
 /** Reads the backend choice from `?backend=`, then `VITE_BACKEND`, falling back to apps/server. */
 export function resolveBackendId(search: string): BackendId {
   const fromQuery = new URLSearchParams(search).get("backend");
   if (isBackendId(fromQuery)) return fromQuery;
-  const fromEnv = (import.meta as ViteEnvMeta).env?.VITE_BACKEND;
+  const env: unknown = import.meta.env;
+  const fromEnv =
+    typeof env === "object" && env !== null && "VITE_BACKEND" in env ? env.VITE_BACKEND : undefined;
   if (typeof fromEnv === "string" && isBackendId(fromEnv)) return fromEnv;
   return DEFAULT_BACKEND;
 }

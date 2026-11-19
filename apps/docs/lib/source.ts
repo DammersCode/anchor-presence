@@ -42,7 +42,7 @@ export function getPageMarkdownUrl(page: (typeof source)["$inferPage"]) {
 const CODE_FROM_SOURCE = /<CodeFromSource (repo|docs)="([^"]+)" lang="([^"]+)" \/>/g;
 const AUTO_TYPE_TABLE = /<AutoTypeTable path="([^"]+)" name="([^"]+)" \/>/g;
 const DEMO = /<Demo \/>\n?/g;
-const EXAMPLE_PREVIEW = /<ExamplePreview scene="[^"]+" \/>\n?/g;
+const EXAMPLE_PREVIEW = /(?:^The demo runs this recipe[^\n]*:\n\n)?<ExamplePreview scene="[^"]+" \/>\n?/gm;
 const INSTALL_COMMAND = /<InstallCommand(?: packages="([^"]+)")? \/>/g;
 const MERMAID = /<Mermaid\s+chart="([\s\S]*?)"\s*\/>/g;
 const WARN_CALLOUT = /<Callout type="warn">\s*([\s\S]*?)\s*<\/Callout>/g;

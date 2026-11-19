@@ -4,7 +4,11 @@ description: "A live region that tells screen reader users when a peer joins or 
 icon: users
 ---
 
-A screen reader user cannot see the bar change. `CursorLayer` cannot help: each cursor root has `aria-hidden="true"`, so screen readers skip it. Add a live region that says when a peer joins or leaves.
+import { Compass, Eye, Shield, Users } from "lucide-react";
+
+A screen reader user cannot see a peer join or leave. `CursorLayer` cannot help: each cursor root has `aria-hidden="true"`, so screen readers skip it. Add a live region that says when a peer joins or leaves.
+
+## Collect changes into one message
 
 `usePeerChanges` calls your listener for each join, leave, and `user` or `context` update. If ten peers join in one second, ten messages would queue up in the screen reader. The component below collects the changes for 1 second and announces one message:
 
@@ -65,6 +69,8 @@ function PeerAnnouncer() {
 }
 ```
 
+## Place the announcer
+
 Render `PeerAnnouncer` once, inside `PresenceProvider`. Keep it mounted: a screen reader only announces text that changes inside a region that already exists. `sr-only` is the Tailwind class that hides the text from the eye and keeps it for screen readers. Use an equal CSS rule if you do not use Tailwind.
 
 - The first change starts a 1 second window. Every later join or leave in that window joins the same message.
@@ -72,3 +78,20 @@ Render `PeerAnnouncer` once, inside `PresenceProvider`. Keep it mounted: a scree
 - A window with two or more changes says "3 people joined, 1 person left".
 - The listener ignores `update`, so a change of `user` or `context` stays silent.
 - `user.name` is untrusted network data. React renders it as text.
+
+## Related
+
+<Cards>
+  <Card icon={<Users />} title="Remote users" href="/docs/react/remote-users">
+    `useRemoteUsers` and `usePeerChanges`.
+  </Card>
+  <Card icon={<Eye />} title="Remote presence" href="/docs/react/remote-presence">
+    Read the `user` and `context` of each peer.
+  </Card>
+  <Card icon={<Compass />} title="UI context" href="/docs/get-started/concepts/ui-context">
+    What `context` is for.
+  </Card>
+  <Card icon={<Shield />} title="Security" href="/docs/get-started/guides/security">
+    Treat `user.name` as untrusted data.
+  </Card>
+</Cards>

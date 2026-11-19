@@ -30,6 +30,10 @@ declare global {
 type AnchorCount = (typeof ANCHOR_COUNTS)[number];
 type CursorCount = (typeof CURSOR_COUNTS)[number];
 
+function parseCount<T extends number>(counts: readonly T[], raw: string): T | undefined {
+  return counts.find((count) => String(count) === raw);
+}
+
 function buildAnchorIds(count: number): string[] {
   return Array.from({ length: count }, (_, i) => `bench.cell:${i}`);
 }
@@ -284,7 +288,7 @@ export function BenchPage() {
             <select
               className="rounded-md border border-gray-300 px-2 py-1"
               value={anchorCount}
-              onChange={(e) => setAnchorCount(Number(e.target.value) as AnchorCount)}
+              onChange={(e) => setAnchorCount(parseCount(ANCHOR_COUNTS, e.target.value) ?? anchorCount)}
             >
               {ANCHOR_COUNTS.map((n) => (
                 <option key={n} value={n}>
@@ -299,7 +303,7 @@ export function BenchPage() {
             <select
               className="rounded-md border border-gray-300 px-2 py-1"
               value={cursorCount}
-              onChange={(e) => setCursorCount(Number(e.target.value) as CursorCount)}
+              onChange={(e) => setCursorCount(parseCount(CURSOR_COUNTS, e.target.value) ?? cursorCount)}
             >
               {CURSOR_COUNTS.map((n) => (
                 <option key={n} value={n}>

@@ -27,7 +27,7 @@ export type InMemoryPair = {
   a: InMemoryTransport;
   /** Side B. A send from side B reaches the listeners of side A. */
   b: InMemoryTransport;
-  /** Stops all delivery and clears both sides. */
+  /** Stops all delivery, disconnects both sides and clears their listeners. */
   dispose(): void;
 };
 
@@ -131,8 +131,10 @@ export function createInMemoryPair(options: InMemoryPairOptions = {}): InMemoryP
     b: guarded(buildTransport(b, (data) => deliver(a, data))),
     dispose() {
       disposed = true;
-      clearSide(a);
-      clearSide(b);
+      for (const side of [a, b]) {
+        setStatus(side, "disconnected");
+        clearSide(side);
+      }
     },
   };
 }

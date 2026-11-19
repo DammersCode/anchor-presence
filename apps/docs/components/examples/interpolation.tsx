@@ -83,6 +83,8 @@ const INTERPOLATORS: Record<Style, InterpolatorFactory> = {
   spring: () => springInterpolator(),
 };
 
+const isStyle = (value: string): value is Style => Object.hasOwn(INTERPOLATORS, value);
+
 const TARGETS = [
   { id: "a", place: "col-start-1 row-start-1 self-start justify-self-start" },
   { id: "b", place: "col-start-2 row-start-1 self-start justify-self-end" },
@@ -141,7 +143,9 @@ export function InterpolationScene({ client, layout, children }: Props) {
             <select
               aria-label="Interpolator"
               value={style}
-              onChange={(event) => setStyle(event.target.value as Style)}
+              onChange={(event) => {
+                if (isStyle(event.target.value)) setStyle(event.target.value);
+              }}
               className="rounded-md border border-fd-border bg-fd-background px-1.5 py-1 text-[11px] text-fd-foreground focus-visible:outline-2 focus-visible:outline-fd-ring"
             >
               <option value="none">none</option>

@@ -17,6 +17,18 @@ afterEach(() => {
 });
 
 describe("createInMemoryPair", () => {
+  it("dispose() disconnects both sides and notifies their status listeners", () => {
+    const pair = createInMemoryPair();
+    void pair.a.connect();
+    void pair.b.connect();
+    const seen: string[] = [];
+    pair.a.subscribeStatus((status) => seen.push(status));
+    pair.dispose();
+    expect(seen).toEqual(["connected", "disconnected"]);
+    expect(pair.a.getStatus()).toBe("disconnected");
+    expect(pair.b.getStatus()).toBe("disconnected");
+  });
+
   it("connect() after dispose() keeps both sides disconnected", () => {
     const pair = createInMemoryPair();
     pair.dispose();

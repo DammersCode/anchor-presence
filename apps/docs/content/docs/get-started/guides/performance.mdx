@@ -75,7 +75,7 @@ For a large room, use one or more of these measures:
 - Add rate limits and message size caps on the relay.
 - Add a server-side aggregator.
 
-The reference relay (`apps/server`) caps the sockets per room and per server, the bytes per message, and the message rate per socket. See the [environment variables](/docs/get-started/guides/deploy-relay) for the defaults.
+The reference relay (`apps/server`) caps the sockets per room and per server, the bytes per message, and the message rate per socket. See the [environment variables](/docs/get-started/guides/deploy-relay#set-the-environment-variables) for the defaults.
 
 It also checks the origin, checks an optional [room token](/docs/dom/websocket-transport#room-token), and pings each socket. The frame size cap is on [Deploy a relay](/docs/get-started/guides/deploy-relay#pick-a-runtime).
 

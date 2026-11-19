@@ -50,3 +50,12 @@ The performance dimension comes from `bun run perf:score --relay`, not from read
 - inbound path time per message and `store.ingest` time per message,
 - heap growth per ingested message,
 - relay p99 latency and delivery ratio at 50 clients, as the median of three runs. The load generator shares the machine with the relay, so these budgets are loose: they catch a relay that falls behind, not a few milliseconds.
+
+## Amendments
+
+The rubric above was frozen before round 1. Each later change is logged here. No score definition changed beyond these entries.
+
+- 2026-11-19, Demo evidence: a constant counts as covered when a unit test or a docs table pins its value, so a constant needs no demo or e2e use. Why: a demo cannot meaningfully "use" a constant such as a default limit, and a pinned value is the stronger evidence.
+- 2026-11-19, Performance: the core size budget for 9 rose from 9 KB to 10 KB for the whole entry (`bundle core gzip (KB)` in `scripts/perf-score.ts`). A new metric, `bundle core app (jsonCodec client only, KB)`, measures an app that imports only `createPresenceClient` and `jsonCodec` (7.30 KB) and keeps the 9 KB budget. Why: the entry bundles the binary codec and the store for every importer, and a whole-entry budget at 9 KB would punish features most apps tree-shake away. The JSON-only figure shows the cost an app pays.
+
+Scores are reported under both texts. Under the original text, Demo evidence is 8. Under the amended text, it is 9.

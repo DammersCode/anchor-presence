@@ -237,3 +237,21 @@ describe("parserFrom with a schema whose declared output differs from its valida
     expect(parserFrom(schema)).toBeTypeOf("function");
   });
 });
+
+describe("eventParserFrom with a schema that can be null", () => {
+  it("types the data as the output or undefined", () => {
+    const withSchema = Math.random() > 2;
+    const parseEvent = eventParserFrom({ chat: withSchema ? z.object({ text: z.string() }) : null });
+    const event = parseEvent({ clientId: "p", type: "chat", data: { text: "x" } });
+    expectTypeOf(event).toEqualTypeOf<
+      { clientId: string; type: "chat"; data: { text: string } | undefined } | undefined
+    >();
+  });
+});
+
+describe("parserFrom with a readonly array schema", () => {
+  it("accepts a Valibot readonly array and a Zod readonly array", () => {
+    expect(parserFrom(v.pipe(v.array(v.string()), v.readonly()))(["a"])).toEqual(["a"]);
+    expect(parserFrom(z.array(z.string()).readonly())(["a"])).toEqual(["a"]);
+  });
+});

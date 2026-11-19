@@ -48,7 +48,7 @@ In all other cases, `sendEvent` gives the message to the transport and returns `
   a peer can send any JSON within the field limits.
 </Callout>
 
-The `parseEvent` option checks events. It receives each remote event and returns the event to deliver, or `undefined` to drop it. A parser that throws drops the event:
+The `parseEvent` option checks events. It receives each remote event. It returns an event with `clientId`, `type`, and `data` to deliver, or `undefined` to drop it. A filter that returns the received event needs `data: event.data` set, because the received `data` is optional. A parser that throws drops the event:
 
 ```ts
 const client = createPresenceClient({

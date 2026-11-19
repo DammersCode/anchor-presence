@@ -32,9 +32,15 @@ export type InferSchemaInput<Schema extends StandardSchemaV1> = NonNullable<
   Schema["~standard"]["types"]
 >["input"];
 
-/** Resolves to `unknown` when a peer can parse what the schema outputs. */
+type WithReadonlyArrays<T> = T extends readonly (infer Item)[]
+  ? readonly WithReadonlyArrays<Item>[]
+  : T extends object
+    ? { [Key in keyof T]: WithReadonlyArrays<T[Key]> }
+    : T;
+
+/** Resolves to `unknown` when a peer can parse what the schema outputs. A readonly array output fits a mutable array input. */
 export type SchemaRoundTrip<Schema extends StandardSchemaV1> = [InferSchemaOutput<Schema>] extends [
-  InferSchemaInput<Schema>,
+  WithReadonlyArrays<InferSchemaInput<Schema>>,
 ]
   ? unknown
   : { readonly "the schema output must be assignable to its input": never };
@@ -85,26 +91,33 @@ export function parserFrom<Schema extends StandardSchemaV1>(
 export type EventSchemas = Record<string, StandardSchemaV1 | null>;
 
 /** The event map that a set of event schemas describes. A `null` schema stands for an event without data. */
+type EventData<Schema> = Schema extends StandardSchemaV1 ? InferSchemaOutput<Schema> : undefined;
+
 export type EventsFromSchemas<Schemas extends EventSchemas> = {
-  [Type in keyof Schemas]: Schemas[Type] extends StandardSchemaV1
-    ? InferSchemaOutput<Schemas[Type]>
-    : undefined;
+  [Type in keyof Schemas]: EventData<Schemas[Type]>;
 };
+
+type CheckedKey<Schema> = [NonNullable<Schema>] extends [never]
+  ? unknown
+  : null extends Schema
+    ? CheckedSchema<NonNullable<Schema>> | null
+    : CheckedSchema<NonNullable<Schema>>;
+
+type CheckedSchema<Schema> = Schema extends StandardSchemaV1
+  ? SchemaRoundTrip<Schema> & StandardSchemaV1<unknown, InferSchemaOutput<Schema>>
+  : unknown;
 
 /**
  * Builds a `parseEvent` option from one Standard Schema per event type.
  * The client drops an event with an unknown type or data that its schema rejects.
  */
 export function eventParserFrom<Schemas extends EventSchemas>(
-  schemas: Schemas & {
-    [Type in keyof Schemas]: Schemas[Type] extends StandardSchemaV1
-      ? SchemaRoundTrip<Schemas[Type]> & StandardSchemaV1<unknown, InferSchemaOutput<Schemas[Type]>>
-      : unknown;
-  },
+  schemas: Schemas & { [Type in keyof Schemas]: CheckedKey<Schemas[Type]> },
   options: SchemaParserOptions = {},
 ): EventParser<EventsFromSchemas<Schemas>> {
   const parsers: Record<string, SchemaParser<StandardSchemaV1> | null> = {};
-  for (const [type, schema] of Object.entries(schemas)) {
+  const entries: Record<string, StandardSchemaV1 | null> = schemas;
+  for (const [type, schema] of Object.entries(entries)) {
     parsers[type] = schema === null ? null : parserFrom(schema, options);
   }
   return createEventParser(parsers as EventParsers<EventsFromSchemas<Schemas>>);

@@ -68,7 +68,7 @@ export type PresenceClientOptions<TContext = unknown, TUser = unknown, TEvents e
   parseUser?: (value: unknown) => TUser | undefined;
   /** Checks the `context` of each remote message. Return `undefined` or throw to drop the field. Default: the value must have the shape of the local `context`. */
   parseContext?: (value: unknown) => TContext | undefined;
-  /** Checks each remote event. Return the event to deliver it, or `undefined` or throw to drop it. Default: deliver as is. */
+  /** Checks each remote event. Return an event with `clientId`, `type`, and `data` to deliver it, or `undefined` or throw to drop it. Default: deliver as is. */
   parseEvent?: EventParser<TEvents> | undefined;
   /** The context value the client sends to remote peers. */
   context?: NoInfer<TContext>;

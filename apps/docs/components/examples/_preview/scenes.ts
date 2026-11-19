@@ -87,8 +87,8 @@ export const SCENES: Record<SceneName, SceneMeta> = {
   },
   kanban: {
     panes: {
-      wide: { label: "Wide", detail: "About 3 columns fit" },
-      narrow: { label: "Narrow", detail: "Columns keep a fixed width, the board scrolls" },
+      wide: { label: "Wide", detail: "Fixed-width columns, more of them in view" },
+      narrow: { label: "Narrow", detail: "Fixed-width columns, the board scrolls" },
     },
     tour: [
       {

@@ -57,6 +57,12 @@ function assertFiniteOptions(values: Record<string, number | undefined>): void {
   }
 }
 
+function assertId(name: string, value: unknown, max: number): asserts value is string {
+  if (typeof value === "string" && value.length >= 1 && value.length <= max) return;
+  const got = typeof value === "string" ? value.length : typeof value;
+  throw new TypeError(`createPresenceClient: ${name} must be 1 to ${max} characters, got ${got}`);
+}
+
 /**
  * Creates one presence client.
  * The client sends and receives messages through the transport you give it.
@@ -130,19 +136,9 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
   }
 
   const clientId = options.clientId ?? idFactory();
-  const maxClientIdLength = validationLimits?.maxClientIdLength ?? DEFAULT_MAX_CLIENT_ID_LENGTH;
-  if (typeof clientId !== "string" || clientId.length < 1 || clientId.length > maxClientIdLength) {
-    throw new TypeError(
-      `createPresenceClient: clientId must be 1 to ${maxClientIdLength} characters, got ${typeof clientId === "string" ? clientId.length : typeof clientId}`,
-    );
-  }
-  const maxSessionLength = validationLimits?.maxSessionLength ?? DEFAULT_MAX_SESSION_LENGTH;
+  assertId("clientId", clientId, validationLimits?.maxClientIdLength ?? DEFAULT_MAX_CLIENT_ID_LENGTH);
   const session = idFactory();
-  if (typeof session !== "string" || session.length < 1 || session.length > maxSessionLength) {
-    throw new TypeError(
-      `createPresenceClient: session must be 1 to ${maxSessionLength} characters, got ${typeof session === "string" ? session.length : typeof session}`,
-    );
-  }
+  assertId("session", session, validationLimits?.maxSessionLength ?? DEFAULT_MAX_SESSION_LENGTH);
 
   const status = transport.subscribeStatus ? (transport.getStatus?.() ?? "connecting") : "connected";
 

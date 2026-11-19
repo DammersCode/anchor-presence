@@ -45,7 +45,7 @@ const carol = createPresenceClient({ transport: room.join(), user: { name: "Caro
 
 A send reaches every other joined transport and never the sender. `join()` returns a connected transport. Call `disconnect()` on a transport to leave the room. A disconnected transport receives nothing, and its sends are dropped. Call `connect()` to join again. The room takes the same `{ async: true }` option as the pair.
 
-## Limits
+## Limits of the pair
 
 - Both sides must run in the same JavaScript realm, that is, one global environment such as one page or one worker. The pair cannot cross a process, tab, or iframe boundary.
 - Each side starts `disconnected`. `connect()` sets it to `connected`, and `disconnect()` sets it to `disconnected`.

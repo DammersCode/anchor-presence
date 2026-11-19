@@ -128,7 +128,10 @@ async function inlineComponents(markdown: string): Promise<string> {
 }
 
 export async function getLLMText(page: (typeof source)["$inferPage"]) {
-  const processed = await inlineComponents(await page.data.getText("processed"));
+  const processed = (await inlineComponents(await page.data.getText("processed"))).replaceAll(
+    /^(#{1,6} .+?) \[#[\w-]+\]$/gmu,
+    "$1",
+  );
 
   return `# ${page.data.title} (${page.url})\n\n${processed}`;
 }

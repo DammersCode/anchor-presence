@@ -44,6 +44,7 @@ export type {
   InMemoryPair,
   InMemoryPairOptions,
   InMemoryRoom,
+  InMemoryRoomOptions,
   InMemoryTransport,
 } from "./in-memory-transport.js";
 

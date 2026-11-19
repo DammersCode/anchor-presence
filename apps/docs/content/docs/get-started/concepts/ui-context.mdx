@@ -68,7 +68,7 @@ The client needs the same context type as the policy, for example `createPresenc
 
 Two common states fit in `context`: the anchor where the user types, and whether the tab is hidden. The sender sets both with `useLocalContext`. The receiver reads them with `useRemotePresence`.
 
-`setContext` replaces the whole context. The hook below keeps both fields in one ref, so a change of one field never drops the other. It sends a new context only when a field changes:
+`setContext` replaces the whole context. The hook below merges each change into the current local context, so a change of one field never drops the other. It sends a new context only when a field changes. Call `useStatus` once, in a parent, and pass `publish` to each box. Then one `visibilitychange` listener serves every box:
 
 ```tsx
 import { useLocalContext, useRemotePresence } from "@anchor-presence/react";
@@ -80,14 +80,19 @@ type Status = { typingIn: string | null; away: boolean };
 const TYPING_STOP_MS = 2000;
 
 function useStatus(): (patch: Partial<Status>) => void {
-  const [, setContext] = useLocalContext<Status>();
-  const status = useRef<Status>({ typingIn: null, away: false });
+  const [context, setContext] = useLocalContext<Status>();
+  const latest = useRef(context);
+
+  useEffect(() => {
+    latest.current = context;
+  }, [context]);
 
   const publish = useCallback(
     (patch: Partial<Status>) => {
-      const next = { ...status.current, ...patch };
-      if (next.typingIn === status.current.typingIn && next.away === status.current.away) return;
-      status.current = next;
+      const current = { typingIn: null, away: false, ...latest.current };
+      const next = { ...current, ...patch };
+      if (next.typingIn === current.typingIn && next.away === current.away) return;
+      latest.current = next;
       setContext(next);
     },
     [setContext],
@@ -103,14 +108,15 @@ function useStatus(): (patch: Partial<Status>) => void {
   return publish;
 }
 
-function CommentBox({ anchorId }: { anchorId: string }) {
-  const publish = useStatus();
+function CommentBox({ anchorId, publish }: { anchorId: string; publish: (patch: Partial<Status>) => void }) {
   const stopTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const stopTyping = () => {
     clearTimeout(stopTimer.current);
     publish({ typingIn: null });
   };
+
+  useEffect(() => () => clearTimeout(stopTimer.current), []);
 
   return (
     <textarea
@@ -126,6 +132,11 @@ function CommentBox({ anchorId }: { anchorId: string }) {
   );
 }
 
+function Comments() {
+  const publish = useStatus();
+  return <CommentBox anchorId="comments.box" publish={publish} />;
+}
+
 function TypingHint({ anchorId }: { anchorId: string }) {
   const names = useRemotePresence<Status, Person>()
     .filter(({ context }) => context?.typingIn === anchorId && !context.away)
@@ -135,7 +146,7 @@ function TypingHint({ anchorId }: { anchorId: string }) {
 }
 ```
 
-Render `<TypingHint anchorId="comments.box" />` next to a `<CommentBox anchorId="comments.box" />`. Both read the same anchor ID.
+Render `<TypingHint anchorId="comments.box" />` next to `<Comments />`. Both read the same anchor ID. If your app puts more fields in the context, for example a `selection` from the [kanban recipe](/docs/examples/kanban#show-who-is-on-a-card), use one context type with all fields. Both recipes spread the current context before they change a field, so neither drops the other's field.
 
 `away` is a visibility flag that the sender sets on `visibilitychange`. It is true at once when the tab is hidden, and false at once when the tab shows again. A peer with `away: true` does not show as typing, even if its last typing state was never cleared. The receiver treats `typingIn` and `away` as untrusted: it compares them, and renders only `user.name` as text.
 

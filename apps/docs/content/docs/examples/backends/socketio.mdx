@@ -72,6 +72,7 @@ Socket.IO has no close codes. For this reason, the relay sends the code in one o
 
 | Code   | Meaning                             | How the relay sends it             |
 | ------ | ----------------------------------- | ---------------------------------- |
+| `1008` | Identity binding needs JSON frames. | `refused` event, then a disconnect |
 | `4001` | The room is full.                   | `refused` event, then a disconnect |
 | `4002` | The server is full.                 | `refused` event, then a disconnect |
 | `4004` | The origin is not allowed.          | `connect_error` with `data.code`   |

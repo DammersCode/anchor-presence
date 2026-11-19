@@ -27,7 +27,7 @@ client.dispose();
 
 `transport` is the only required option. See [Transports](/docs/core/transports) for the transport contract, and [Codecs](/docs/core/codecs) for the `codec` option. [`PresenceClientOptions`](/docs/core/api/client#createpresenceclient) lists every option with its default.
 
-`createPresenceClient` throws a `TypeError` for a missing transport, an ID of the wrong length, or a numeric option that is not a finite number. See [createPresenceClient](/docs/core/api/client#createpresenceclient) for the list.
+`createPresenceClient` throws a `TypeError` for an invalid option. See [createPresenceClient](/docs/core/api/client#createpresenceclient) for the list.
 
 ## Connect the transport
 
@@ -147,8 +147,8 @@ const client = createPresenceClient({
 
 <Callout type="warn">
   A `clientId` must have 1 to 128 characters by default (`validationLimits.maxClientIdLength`), and a session
-  ID 1 to 64 by default (`validationLimits.maxSessionLength`). If `idFactory` returns a session ID outside
-  that range, `createPresenceClient` throws a `TypeError`.
+  ID 1 to 64 by default (`validationLimits.maxSessionLength`). See the [list of `TypeError`
+  cases](/docs/core/api/client#createpresenceclient).
 </Callout>
 
 ## Development mode

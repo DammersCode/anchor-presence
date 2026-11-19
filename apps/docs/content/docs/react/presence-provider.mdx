@@ -84,6 +84,10 @@ To replace the client that `factory` made, change `clientKey`. The provider disp
 This example joins the room that the `room` prop names:
 
 ```tsx
+import { createPresenceClient } from "@anchor-presence/core";
+import { createWebSocketTransport } from "@anchor-presence/dom";
+import { CursorLayer, PresenceProvider } from "@anchor-presence/react";
+
 function Room({ room }: { room: string }) {
   return (
     <PresenceProvider
@@ -117,6 +121,8 @@ In development mode, the provider writes one console warning in each of these ca
 - It gets neither `client` nor `factory`. It then renders without presence.
 - It gets both `client` and `factory`. It then ignores `factory`.
 - It gets both `binding` and `bindingOptions`. It then ignores `bindingOptions`.
+
+If `factory` is set and is not a function, and you pass no `client`, the provider throws a `TypeError` in every mode.
 
 ## Related
 

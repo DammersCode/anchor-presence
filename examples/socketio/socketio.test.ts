@@ -209,6 +209,24 @@ describe("Socket.IO transport integration", () => {
     }
   });
 
+  it("refuses a frame it cannot bind with 1008 under identity binding", async () => {
+    const bound = await createSocketIoRelay(0, {
+      authCheck: ({ token }) => ({ clientId: `user-${token}`, user: { name: token } }),
+    });
+    try {
+      const sender = io(bound.url, { query: { room: "bind", token: "t" }, transports: ["websocket"] });
+      sockets.push(sender);
+      const closes: unknown[] = [];
+      createSocketIoTransport(sender).subscribeClose?.((close) => closes.push(close));
+      await vi.waitFor(() => expect(sender.connected).toBe(true), { timeout: 5000, interval: 25 });
+      sender.emit("presence", new Uint8Array([0xff, 0x00]));
+      await vi.waitFor(() => expect(closes).toHaveLength(1), { timeout: 5000, interval: 25 });
+      expect(closes[0]).toMatchObject({ code: 1008, willReconnect: false });
+    } finally {
+      await bound.close();
+    }
+  });
+
   it("drops frames above the per-socket rate and keeps the socket open", async () => {
     const limited = await createSocketIoRelay(0, { rateCapacity: 5, rateRefillPerSecond: 1 });
     try {

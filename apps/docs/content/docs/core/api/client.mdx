@@ -18,13 +18,13 @@ import { createPresenceClient } from "@anchor-presence/core";
 
 It throws a `TypeError` in these cases:
 
-- `transport` is missing.
+- `transport` is missing, or `transport.subscribe` is not a function.
 - `clientId` is not a string of 1 to 128 characters. The limit is `validationLimits.maxClientIdLength` when you set it.
-- The session ID that `idFactory` returns is not a string of 1 to 64 characters.
+- The session ID that `idFactory` returns is not a string of 1 to 64 characters. The limit is `validationLimits.maxSessionLength` when you set it.
+- `maxRemoteClients` is not an integer of at least 1.
 - One of these options is not a finite number:
 
   - `publishIntervalMs`, `heartbeatIntervalMs`, `staleTimeoutMs`, and `idleAfterMs`.
-  - `maxRemoteClients`.
   - `adaptivePublish.highWatermarkBytes`, `adaptivePublish.lowWatermarkBytes`, and `adaptivePublish.slowPublishIntervalMs`.
 
 The fields of `eventRateLimit` and `validationLimits` get no such check.

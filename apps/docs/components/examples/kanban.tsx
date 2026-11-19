@@ -123,7 +123,8 @@ function useCardPeers() {
     peersOn: (anchorId: string) => byClient(here[anchorId]),
     peerPicking: (anchorId: string) => byClient(picked[anchorId])[0],
     isSelected: (anchorId: string) => mine.includes(anchorId),
-    toggle: (anchorId: string) => setContext({ selection: mine.includes(anchorId) ? [] : [anchorId] }),
+    toggle: (anchorId: string) =>
+      setContext({ ...context, selection: mine.includes(anchorId) ? [] : [anchorId] }),
   };
 }
 
@@ -132,46 +133,57 @@ type CardPeers = ReturnType<typeof useCardPeers>;
 function CardTile({ id, title, peers }: { id: string; title: string; peers: CardPeers }) {
   const anchorId = `board.card:${id}`;
   const picker = peers.peerPicking(anchorId);
+  const pickerColor = safeColor(picker?.user?.color, "#4f46e5");
   const selected = peers.isSelected(anchorId);
 
   return (
     <div
       data-anchor={anchorId}
-      className={`flex items-center gap-1.5 rounded-md border bg-fd-background px-2 py-1.5 shadow-xs ${selected ? "border-fd-primary" : "border-fd-border"}`}
+      className={`flex flex-col gap-1 rounded-md border bg-fd-background px-2 py-1.5 shadow-xs ${selected ? "border-fd-primary" : "border-fd-border"}`}
       style={
         picker !== undefined
-          ? { boxShadow: `0 0 0 2px ${safeColor(picker.user?.color, "#4f46e5")}` }
+          ? { backgroundColor: `color-mix(in srgb, ${pickerColor} 22%, var(--color-fd-background))` }
           : undefined
       }
     >
-      <button
-        type="button"
-        aria-pressed={selected}
-        onClick={() => peers.toggle(anchorId)}
-        className="min-w-0 flex-1 truncate text-left text-xs font-medium focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-fd-ring"
-      >
-        {title}
-      </button>
-      <span className="flex -space-x-1">
-        {peers.peersOn(anchorId).map(({ clientId, user }) => (
-          <span
-            key={clientId}
-            title={user?.name ?? "Guest"}
-            className="grid size-4 place-items-center rounded-full text-[8px] font-semibold text-white ring-2 ring-fd-background"
-            style={{ backgroundColor: safeColor(user?.color, "#6b7280") }}
-          >
-            {(user?.name ?? "?").charAt(0)}
-          </span>
-        ))}
-      </span>
-      <button
-        type="button"
-        data-anchor={`${anchorId}.delete`}
-        aria-label={`Delete ${title}`}
-        className="grid size-4 flex-none place-items-center rounded text-fd-muted-foreground hover:bg-fd-secondary hover:text-fd-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-fd-ring"
-      >
-        <X className="size-3" />
-      </button>
+      <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          aria-pressed={selected}
+          onClick={() => peers.toggle(anchorId)}
+          className="min-w-0 flex-1 truncate text-left text-xs font-medium focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-fd-ring"
+        >
+          {title}
+        </button>
+        <span className="flex -space-x-1">
+          {peers.peersOn(anchorId).map(({ clientId, user }) => (
+            <span
+              key={clientId}
+              title={user?.name ?? "Guest"}
+              className="grid size-4 place-items-center rounded-full text-[8px] font-semibold text-white ring-2 ring-fd-background"
+              style={{ backgroundColor: safeColor(user?.color, "#6b7280") }}
+            >
+              {(user?.name ?? "?").charAt(0)}
+            </span>
+          ))}
+        </span>
+        <button
+          type="button"
+          data-anchor={`${anchorId}.delete`}
+          aria-label={`Delete ${title}`}
+          className="grid size-4 flex-none place-items-center rounded text-fd-muted-foreground hover:bg-fd-secondary hover:text-fd-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-fd-ring"
+        >
+          <X className="size-3" />
+        </button>
+      </div>
+      {picker !== undefined && (
+        <span
+          className="w-fit rounded px-1 text-[9px] font-semibold text-white"
+          style={{ backgroundColor: pickerColor }}
+        >
+          Selected by {picker.user?.name ?? "Guest"}
+        </span>
+      )}
     </div>
   );
 }

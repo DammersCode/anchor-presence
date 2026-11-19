@@ -6,7 +6,7 @@ icon: footprints
 
 import { Crosshair, Gauge, LocateFixed, MousePointer, Users } from "lucide-react";
 
-In a long page, a user wants to see what another user looks at. Follow mode makes one client, the follower, track the cursor of a peer, the leader. When the leader's cursor leaves the follower's window, the follower's page scrolls the leader's anchor into view. Follow mode stops when the follower scrolls, when the follower presses Escape, or when the leader leaves the room. The recipe uses only public APIs: `useRemoteCursorsSelector`, `ResolvedCursor`, `element.scrollIntoView` and `usePeerChanges`.
+In a long page, a user wants to see what another user looks at. Follow mode makes one client, the follower, track the cursor of a peer, the leader. When the leader's cursor leaves the follower's window, the follower's page scrolls the leader's anchor into view. Follow mode stops when the follower scrolls, when the follower presses Escape, or when the leader leaves the room. The recipe uses only public APIs: `useRemoteCursorsSelector`, `useDomBinding`, `binding.getAnchorElement`, `ResolvedCursor`, `element.scrollIntoView` and `usePeerChanges`.
 
 The demo runs this recipe in the narrow pane, with a pane-local scroll in place of `scrollIntoView`:
 
@@ -143,7 +143,7 @@ export function FollowApp({ client }: { client: PresenceClient<unknown, User> })
 - **Viewport tier.** If the leader's cursor resolves through the viewport tier, `anchorId` is `null`. The page does not scroll then.
 - **Stop on scroll.** `scrollIntoView` fires `scroll` events, so the recipe does not listen for `scroll`. It stops on `wheel`, on `touchmove` and on the scroll keys. A drag on the scrollbar fires none of these events. For this case, the controls show the stop button.
 - **Stop on leave.** `usePeerChanges` reports a `leave` each time the store removes the leader. The causes are a leave message, the stale timeout, the reconnect expiry, and a `store.remove` call. A leader without a cursor is not a leave, so follow mode continues.
-- **Anchor element.** `binding.getAnchorElement` returns the element that the binding resolves for the anchor ID. It follows your `anchorAttribute` option, picks the newest element when IDs repeat, and returns `null` when no element is connected.
+- **Anchor element.** `binding.getAnchorElement` returns the element that the binding resolves for the anchor ID. It follows your `anchorAttribute` option, picks the newest element when IDs repeat, and returns `null` when no registered element is connected. It does not measure the element. The resolver skips an element with zero width or height, so the element can be one that no cursor resolves to.
 
 ## Related
 

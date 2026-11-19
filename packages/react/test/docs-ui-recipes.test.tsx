@@ -71,7 +71,8 @@ function useCardPeers() {
     peersOn: (anchorId: string) => byClient(here[anchorId]),
     peerPicking: (anchorId: string) => byClient(picked[anchorId])[0],
     isSelected: (anchorId: string) => mine.includes(anchorId),
-    toggle: (anchorId: string) => setContext({ selection: mine.includes(anchorId) ? [] : [anchorId] }),
+    toggle: (anchorId: string) =>
+      setContext({ ...context, selection: mine.includes(anchorId) ? [] : [anchorId] }),
   };
 }
 
@@ -80,38 +81,49 @@ type CardPeers = ReturnType<typeof useCardPeers>;
 function CardTile({ id, title, peers }: { id: string; title: string; peers: CardPeers }) {
   const anchorId = `board.card:${id}`;
   const picker = peers.peerPicking(anchorId);
+  const pickerColor = safeColor(picker?.user?.color, "#4f46e5");
   const selected = peers.isSelected(anchorId);
 
   return (
     <div
       data-anchor={anchorId}
-      className={`flex items-center gap-1.5 rounded-md border bg-fd-background px-2 py-1.5 shadow-xs ${selected ? "border-fd-primary" : "border-fd-border"}`}
+      className={`flex flex-col gap-1 rounded-md border bg-fd-background px-2 py-1.5 shadow-xs ${selected ? "border-fd-primary" : "border-fd-border"}`}
       style={
         picker !== undefined
-          ? { boxShadow: `0 0 0 2px ${safeColor(picker.user?.color, "#4f46e5")}` }
+          ? { backgroundColor: `color-mix(in srgb, ${pickerColor} 22%, var(--color-fd-background))` }
           : undefined
       }
     >
-      <button
-        type="button"
-        aria-pressed={selected}
-        onClick={() => peers.toggle(anchorId)}
-        className="min-w-0 flex-1 truncate text-left text-xs font-medium focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-fd-ring"
-      >
-        {title}
-      </button>
-      <span className="flex -space-x-1">
-        {peers.peersOn(anchorId).map(({ clientId, user }) => (
-          <span
-            key={clientId}
-            title={user?.name ?? "Guest"}
-            className="grid size-4 place-items-center rounded-full text-[8px] font-semibold text-white ring-2 ring-fd-background"
-            style={{ backgroundColor: safeColor(user?.color, "#6b7280") }}
-          >
-            {(user?.name ?? "?").charAt(0)}
-          </span>
-        ))}
-      </span>
+      <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          aria-pressed={selected}
+          onClick={() => peers.toggle(anchorId)}
+          className="min-w-0 flex-1 truncate text-left text-xs font-medium focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-fd-ring"
+        >
+          {title}
+        </button>
+        <span className="flex -space-x-1">
+          {peers.peersOn(anchorId).map(({ clientId, user }) => (
+            <span
+              key={clientId}
+              title={user?.name ?? "Guest"}
+              className="grid size-4 place-items-center rounded-full text-[8px] font-semibold text-white ring-2 ring-fd-background"
+              style={{ backgroundColor: safeColor(user?.color, "#6b7280") }}
+            >
+              {(user?.name ?? "?").charAt(0)}
+            </span>
+          ))}
+        </span>
+      </div>
+      {picker !== undefined && (
+        <span
+          className="w-fit rounded px-1 text-[9px] font-semibold text-white"
+          style={{ backgroundColor: pickerColor }}
+        >
+          Selected by {picker.user?.name ?? "Guest"}
+        </span>
+      )}
     </div>
   );
 }
@@ -134,6 +146,7 @@ function TestBoard() {
 type Person = { name: string };
 
 const BURST_MS = 1000;
+const CLEAR_MS = 100;
 
 const people = (count: number) => `${count} ${count === 1 ? "person" : "people"}`;
 
@@ -152,18 +165,28 @@ function PeerAnnouncer() {
   const [message, setMessage] = useState("");
   const pending = useRef<PeerChange<unknown, Person>[]>([]);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const announceTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   usePeerChanges<unknown, Person>((change) => {
     if (change.type === "update") return;
     pending.current.push(change);
     timer.current ??= setTimeout(() => {
-      setMessage(describeChanges(pending.current));
+      const text = describeChanges(pending.current);
       pending.current = [];
       timer.current = undefined;
+      // A region does not announce a message equal to the last one, so clear it first.
+      setMessage("");
+      announceTimer.current = setTimeout(() => setMessage(text), CLEAR_MS);
     }, BURST_MS);
   });
 
-  useEffect(() => () => clearTimeout(timer.current), []);
+  useEffect(
+    () => () => {
+      clearTimeout(timer.current);
+      clearTimeout(announceTimer.current);
+    },
+    [],
+  );
 
   return (
     <div role="status" aria-live="polite" className="sr-only">
@@ -179,14 +202,19 @@ type Status = { typingIn: string | null; away: boolean };
 const TYPING_STOP_MS = 2000;
 
 function useStatus(): (patch: Partial<Status>) => void {
-  const [, setContext] = useLocalContext<Status>();
-  const status = useRef<Status>({ typingIn: null, away: false });
+  const [context, setContext] = useLocalContext<Status>();
+  const latest = useRef(context);
+
+  useEffect(() => {
+    latest.current = context;
+  }, [context]);
 
   const publish = useCallback(
     (patch: Partial<Status>) => {
-      const next = { ...status.current, ...patch };
-      if (next.typingIn === status.current.typingIn && next.away === status.current.away) return;
-      status.current = next;
+      const current = { typingIn: null, away: false, ...latest.current };
+      const next = { ...current, ...patch };
+      if (next.typingIn === current.typingIn && next.away === current.away) return;
+      latest.current = next;
       setContext(next);
     },
     [setContext],
@@ -202,14 +230,15 @@ function useStatus(): (patch: Partial<Status>) => void {
   return publish;
 }
 
-function CommentBox({ anchorId }: { anchorId: string }) {
-  const publish = useStatus();
+function CommentBox({ anchorId, publish }: { anchorId: string; publish: (patch: Partial<Status>) => void }) {
   const stopTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const stopTyping = () => {
     clearTimeout(stopTimer.current);
     publish({ typingIn: null });
   };
+
+  useEffect(() => () => clearTimeout(stopTimer.current), []);
 
   return (
     <textarea
@@ -223,6 +252,11 @@ function CommentBox({ anchorId }: { anchorId: string }) {
       onBlur={stopTyping}
     />
   );
+}
+
+function Comments() {
+  const publish = useStatus();
+  return <CommentBox anchorId="comments.box" publish={publish} />;
 }
 
 function TypingHint({ anchorId }: { anchorId: string }) {
@@ -291,7 +325,8 @@ describe("doc recipes for ui context", () => {
 
     const [a, b] = [...container.querySelectorAll<HTMLElement>("[data-anchor]")];
     expect(a?.textContent).toBe("Card AM");
-    expect(b?.getAttribute("style")).toContain("0 0 0 2px");
+    expect(b?.getAttribute("style")).toContain("color-mix");
+    expect(b?.textContent).toContain("Selected by Mira");
     expect(a?.getAttribute("style")).toBeNull();
 
     const before = tileRenders;
@@ -327,18 +362,31 @@ describe("doc recipes for ui context", () => {
 
     emit({ type: "join", clientId: "a", user: { name: "Ada" } });
     emit({ type: "update", clientId: "a", user: { name: "Ada B" } });
-    act(() => {
-      vi.advanceTimersByTime(BURST_MS);
-    });
+    const flush = () =>
+      act(() => {
+        vi.advanceTimersByTime(BURST_MS);
+      });
+    const settle = () =>
+      act(() => {
+        vi.advanceTimersByTime(CLEAR_MS);
+      });
+    flush();
+    expect(region?.textContent).toBe("");
+    settle();
+    expect(region?.textContent).toBe("Ada joined");
+
+    emit({ type: "join", clientId: "a", user: { name: "Ada" } });
+    flush();
+    expect(region?.textContent).toBe("");
+    settle();
     expect(region?.textContent).toBe("Ada joined");
 
     emit({ type: "join", clientId: "b" });
     emit({ type: "join", clientId: "c" });
     emit({ type: "leave", clientId: "a", user: { name: "Ada" } });
     expect(region?.textContent).toBe("Ada joined");
-    act(() => {
-      vi.advanceTimersByTime(BURST_MS);
-    });
+    flush();
+    settle();
     expect(region?.textContent).toBe("2 people joined, 1 person left");
   });
 
@@ -349,7 +397,7 @@ describe("doc recipes for ui context", () => {
     act(() =>
       root.render(
         <PresenceProvider client={sender.client} binding={makeFakeBinding().binding}>
-          <CommentBox anchorId="comments.box" />
+          <Comments />
         </PresenceProvider>,
       ),
     );

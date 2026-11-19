@@ -24,7 +24,7 @@ function CursorCount() {
 
 ## ResolvedCursor fields
 
-Each entry has `clientId`, `x`, `y`, `visible`, `pointVisible`, `anchorId`, `tier`, `idle`, and, when the peer sent them, `context` and `user`. For the meaning of each field, see [ResolvedCursor](/docs/dom/api/resolution#resolvedcursor).
+Each entry has `clientId`, `x`, `y`, `visible`, `pointVisible`, `anchorId`, `tier`, `idle`, and, when the peer sent them, `context`, `user`, and `pointerType`. For the meaning of each field, see [ResolvedCursor](/docs/dom/api/resolution#resolvedcursor).
 
 `x` and `y` are pixels in your viewport. To place an element at these values, use `position: fixed`. Give the element `pointer-events: none` and `aria-hidden="true"`, so that pointer input and screen readers skip it.
 

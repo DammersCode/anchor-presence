@@ -34,16 +34,6 @@ The demo uses short timeouts, so that you see the idle and leave steps in second
   data. Render `user.name` as text, as the scene does.
 </Callout>
 
-## Behavior notes
-
-Try it: Move your pointer in one pane.
-
-- Mira, Theo, and Jun join a few seconds apart. Each user appears in the bar when the first message from that user arrives.
-- Theo stops after two moves. After `idleAfterMs` with no change, the bar dims Theo and shows "away". `CursorLayer` dims the cursor too. Heartbeats do not end the idle state.
-- Jun leaves the page. Jun's client sends a leave message, so Jun's cursor and bar entry disappear at once.
-- A client that stops without a leave message stays in the bar until `staleTimeoutMs` passes with no message.
-- You appear in the bar of the other pane as "You".
-
 ## Announce joins and leaves
 
 A screen reader user cannot see the bar change. `CursorLayer` cannot help: each cursor root has `aria-hidden="true"`, so screen readers skip it. Add a live region that says when a peer joins or leaves.
@@ -57,6 +47,7 @@ import { useEffect, useRef, useState } from "react";
 type Person = { name: string };
 
 const BURST_MS = 1000;
+const CLEAR_MS = 100;
 
 const people = (count: number) => `${count} ${count === 1 ? "person" : "people"}`;
 
@@ -75,18 +66,28 @@ function PeerAnnouncer() {
   const [message, setMessage] = useState("");
   const pending = useRef<PeerChange<unknown, Person>[]>([]);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const announceTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   usePeerChanges<unknown, Person>((change) => {
     if (change.type === "update") return;
     pending.current.push(change);
     timer.current ??= setTimeout(() => {
-      setMessage(describeChanges(pending.current));
+      const text = describeChanges(pending.current);
       pending.current = [];
       timer.current = undefined;
+      // A region does not announce a message equal to the last one, so clear it first.
+      setMessage("");
+      announceTimer.current = setTimeout(() => setMessage(text), CLEAR_MS);
     }, BURST_MS);
   });
 
-  useEffect(() => () => clearTimeout(timer.current), []);
+  useEffect(
+    () => () => {
+      clearTimeout(timer.current);
+      clearTimeout(announceTimer.current);
+    },
+    [],
+  );
 
   return (
     <div role="status" aria-live="polite" className="sr-only">
@@ -99,9 +100,20 @@ function PeerAnnouncer() {
 Render `PeerAnnouncer` once, inside `PresenceProvider`. Keep it mounted: a screen reader only announces text that changes inside a region that already exists. `sr-only` is the Tailwind class that hides the text from the eye and keeps it for screen readers. Use an equal CSS rule if you do not use Tailwind.
 
 - The first change starts a 1 second window. Every later join or leave in that window joins the same message.
+- The component clears the region for 100 ms before it sets the text. Then two windows with the same text, like two "Ada joined" messages, are both announced.
 - A window with two or more changes says "3 people joined, 1 person left".
 - The listener ignores `update`, so a change of `user` or `context` stays silent.
 - `user.name` is untrusted network data. React renders it as text.
+
+## Behavior notes
+
+Try it: Move your pointer in one pane.
+
+- Mira, Theo, and Jun join a few seconds apart. Each user appears in the bar when the first message from that user arrives.
+- Theo stops after two moves. After `idleAfterMs` with no change, the bar dims Theo and shows "away". `CursorLayer` dims the cursor too. Heartbeats do not end the idle state.
+- Jun leaves the page. Jun's client sends a leave message, so Jun's cursor and bar entry disappear at once.
+- A client that stops without a leave message stays in the bar until `staleTimeoutMs` passes with no message.
+- You appear in the bar of the other pane as "You".
 
 ## Related
 

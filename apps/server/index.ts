@@ -3,6 +3,7 @@ import {
   bindIdentity,
   demoIdentityOptions,
   newConnectionId,
+  originAllowed,
   parseToken,
   safeAuthCheck,
   tokenAuthCheck,
@@ -106,18 +107,19 @@ export function closePeerAboveHardLimit(
 
 export type ReferenceRelayOptions = { authCheck?: AuthCheck };
 
-/** Starts the relay. `authCheck` defaults to the `RELAY_AUTH_TOKEN` check; an identity result binds each frame to that identity. */
-export function startReferenceRelay(options: ReferenceRelayOptions = {}): void {
+/** Starts the relay on `port`. `authCheck` defaults to the `RELAY_AUTH_TOKEN` check; an identity result binds each frame to that identity. */
+export function createReferenceRelay(port: number, options: ReferenceRelayOptions = {}) {
   const authCheck = safeAuthCheck(options.authCheck ?? tokenAuthCheck(AUTH_TOKEN));
-  Bun.serve({
-    port: PORT,
+  const server = Bun.serve({
+    port,
     async fetch(req, server) {
       const parsedRoom = roomFor(req);
       const room = parsedRoom ?? "main";
       const origin = req.headers.get("origin") ?? "";
       const token = parseToken(new URL(req.url).searchParams.getAll("token"));
+      // origin and room are checked before the hook runs, so a refused request never drives an expensive hook
       const authResult =
-        token === null || parsedRoom === null
+        token === null || parsedRoom === null || !originAllowed(allowedOrigins, origin)
           ? false
           : await authCheck({ token, room, origin, headers: Object.fromEntries(req.headers) });
       if (
@@ -143,7 +145,7 @@ export function startReferenceRelay(options: ReferenceRelayOptions = {}): void {
       // Bun drops a published frame for a subscriber buffered above this soft watermark
       backpressureLimit: SLOW_PEER_SOFT_BYTES,
       open(ws: RoomSocket) {
-        if (allowedOrigins.size > 0 && !allowedOrigins.has(ws.data.origin)) {
+        if (!originAllowed(allowedOrigins, ws.data.origin)) {
           ws.close(ORIGIN_REJECTED_CODE, "origin not allowed");
           return;
         }
@@ -211,7 +213,7 @@ export function startReferenceRelay(options: ReferenceRelayOptions = {}): void {
     },
   });
 
-  setInterval(() => {
+  const pinger = setInterval(() => {
     const now = performance.now();
     for (const sockets of rooms.values()) {
       for (const peer of sockets) {
@@ -225,7 +227,19 @@ export function startReferenceRelay(options: ReferenceRelayOptions = {}): void {
     }
   }, PING_INTERVAL_MS);
 
+  return {
+    url: `http://localhost:${server.port}`,
+    close: () => {
+      clearInterval(pinger);
+      return server.stop(true);
+    },
+  };
+}
+
+export function startReferenceRelay(options: ReferenceRelayOptions = {}) {
+  const relay = createReferenceRelay(PORT, options);
   console.log(`relay listening on :${PORT}`);
+  return relay;
 }
 
 if (typeof Bun !== "undefined" && import.meta.main) startReferenceRelay(demoIdentityOptions());

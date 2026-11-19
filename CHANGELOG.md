@@ -40,6 +40,8 @@
 ### Added
 
 - `@anchor-presence/dom`: `ResolvedCursor` has `pointerType` (`"mouse"`, `"pen"` or `"touch"`), and `@anchor-presence/react`: `CursorRenderProps` passes it to `renderCursor`. A change of pointer type alone updates the cursor.
+- `@anchor-presence/core`: `room.dispose()` on `createInMemoryRoom` disconnects and forgets every side, a disconnected side leaves the delivery set until `connect()`, a throwing listener no longer throws into the sender or stops later peers, and the type `InMemoryRoomOptions` is exported.
+- `@anchor-presence/dom` and `@anchor-presence/react`: the `PointerType` type is exported.
 - `@anchor-presence/dom`: `DomBinding.getAnchorElement(anchorId)` returns the element the binding resolves for an anchor ID, or `null`.
 - `@anchor-presence/core`: `createInMemoryRoom` returns a room. Each `join()` gives a transport that reaches every other joined transport, for tests with three or more clients.
 - `@anchor-presence/core`: `createEventChannel` has `EventMap` as the default for its type argument. The `DEFAULT_HEARTBEAT_INTERVAL_MS`, `staleTimeoutMs` and dom `*Like` type docs state their defaults and purpose.
@@ -102,6 +104,8 @@
 
 ### Changed
 
+- `@anchor-presence/dom`: a pointer event with an unknown `pointerType` clears the pointer info a peer sees instead of keeping the last one.
+- Reference relay: `createReferenceRelay(port, options)` returns `{ url, close }`, and the origin check runs before `authCheck`.
 - `@anchor-presence/dom`: `createWebSocketTransport` throws a `TypeError` for a `baseBackoffMs` or `maxBackoffMs` that is not a positive finite number, and when `maxBackoffMs` is below `baseBackoffMs`. A failed connection attempt that throws before a socket exists (a URL without a scheme, a rejecting `token` function) counts toward the dev warning after 4 failures in a row.
 - `@anchor-presence/core`: `createPresenceClient` throws a `TypeError` for a transport without `subscribe`, and for a `maxRemoteClients` that is not an integer of at least 1.
 - `@anchor-presence/react`: `PresenceProvider` throws a `TypeError` when `factory` is not a function, for example a client object. Pass a client with the `client` prop.

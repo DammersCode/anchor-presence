@@ -127,7 +127,7 @@ export function attachPointerSource(
     if (target === null) return;
     if (event.pointerType === "touch") activeTouchPointers.add(event.pointerId);
     const position = buildCursorPosition(event.clientX, event.clientY, chainFor(target), win, getCachedRect);
-    client.setLocalCursor(position, POINTER_INFO[event.pointerType]);
+    client.setLocalCursor(position, POINTER_INFO[event.pointerType] ?? {});
   }
 
   function onPointerEnd(event: PointerEvent): void {

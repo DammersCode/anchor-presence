@@ -38,6 +38,7 @@ export type {
   PresenceClient,
   PresenceEvent,
   RemoteEvent,
+  PointerType,
   RemotePresence,
   TypedRemoteEvent,
 } from "@anchor-presence/core";

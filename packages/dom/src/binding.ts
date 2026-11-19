@@ -134,7 +134,7 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
 
   let sentAnchors = DEFAULT_SENT_ANCHORS;
   if (options.maxSentAnchors !== undefined) {
-    if (!Number.isInteger(options.maxSentAnchors) || !Number.isFinite(options.maxSentAnchors)) {
+    if (!Number.isInteger(options.maxSentAnchors)) {
       throw new TypeError(
         `createDomBinding: maxSentAnchors must be a finite integer, got ${String(options.maxSentAnchors)}`,
       );

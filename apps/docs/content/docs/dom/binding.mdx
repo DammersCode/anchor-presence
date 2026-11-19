@@ -46,7 +46,11 @@ In all other cases the scheduler stops, so an empty room costs no frame work.
 
 Each `environment` field defaults to the matching browser global. A test can replace one host with a fake and keep the others. See [Binding API](/docs/dom/api/binding) for the full types.
 
-For a same-origin iframe, `root` can be its `contentDocument`, with its `contentWindow` as `window`. The binding identifies an element by its `nodeType`, so the elements of the iframe pass that check. The tests cover only a root in the same document as the binding code, so an iframe root is not tested.
+<Callout type="warn">
+  If you use a same-origin iframe, set `root` to its `contentDocument` and `window` to its `contentWindow`.
+  The binding identifies an element by its `nodeType`, so the elements of the iframe pass that check. The
+  tests cover only a root in the same document as the binding code, so an iframe root is not tested.
+</Callout>
 
 `createDomBinding` throws a `TypeError` in these cases:
 
@@ -103,7 +107,7 @@ function scrollToAnchor(binding: DomBinding, anchorId: string): void {
 }
 ```
 
-When several elements share an ID, it returns the newest one. It returns `null` when no connected element has the ID. An attribute inside a shadow root is not an anchor, so it returns `null` for it.
+When several elements share an ID, it returns the newest registered one. It returns `null` when no registered element with the ID is connected. It does not measure the element. The resolver skips an element with zero width or height, so a returned element can be one that no cursor resolves to. An attribute inside a shadow root is not an anchor, so it returns `null` for it.
 
 ## invalidate
 

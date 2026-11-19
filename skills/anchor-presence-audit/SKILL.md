@@ -104,7 +104,7 @@ Present the proposals grouped by view pair and numbered, so the user can pick by
 | `views`           | Explicit views: `{ "page", "name", "url", "width", "height", "steps" }`. Views with the same `page` pair.                                                                              |
 | `anchorAttribute` | Default `data-anchor`. Use the app's custom attribute when it sets one.                                                                                                                |
 | `adjacencyPx`     | Default 24. Two anchors this close count as neighbors.                                                                                                                                 |
-| `maxAnchors`      | Default 4. The chain length the app's binding sends.                                                                                                                                   |
+| `maxAnchors`      | Default 4. The chain length the app's binding sends. Set it to the `maxSentAnchors` option of your binding.                                                                            |
 | `jumpScale`       | Default `px`. `viewport` scores each jump as a percent of the receiver's viewport width. Use it when the views span phone and desktop widths. See [scoring.md](scoring.md#jump-scale). |
 | `settleMs`        | Default 500. Wait after load and after the steps.                                                                                                                                      |
 | `waitUntil`       | Default `load`. Playwright's navigation wait.                                                                                                                                          |

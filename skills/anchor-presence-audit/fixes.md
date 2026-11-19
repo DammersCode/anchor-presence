@@ -63,7 +63,7 @@ A large anchor with no children reports one ID for its whole area. If its conten
 
 ## Do not anchor decorative wrappers
 
-The chain carries at most `maxAnchors` IDs (default 4). A wrapper anchor, such as a padding `div` or a grid shell, spends a slot and gives a fallback target that means nothing. Remove the anchor from the wrapper and keep it on the meaningful parent.
+The chain carries at most 4 IDs by default. This is `maxAnchors` in the audit config, which you set to the `maxSentAnchors` option of your binding. A wrapper anchor, such as a padding `div` or a grid shell, spends a slot and gives a fallback target that means nothing. Remove the anchor from the wrapper and keep it on the meaningful parent.
 
 ## Breakpoints that keep proportions
 

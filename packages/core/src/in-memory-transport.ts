@@ -1,5 +1,6 @@
 import type { ConnectionStatus } from "./protocol.js";
 import type { PresenceTransport } from "./transport.js";
+import { reportListenerError } from "./internal/dev-warnings.js";
 
 /**
  * Options for `createInMemoryPair`.
@@ -36,7 +37,12 @@ export type InMemoryPair = {
 export type InMemoryRoom = {
   /** Returns a new connected transport. Each send reaches every other connected transport. */
   join(): InMemoryTransport;
+  /** Disconnects every joined transport, clears their listeners and stops delivery. */
+  dispose(): void;
 };
+
+/** Options for `createInMemoryRoom`. */
+export type InMemoryRoomOptions = InMemoryPairOptions;
 
 type Side = {
   status: ConnectionStatus;
@@ -44,10 +50,49 @@ type Side = {
   statusListeners: Set<(status: ConnectionStatus) => void>;
 };
 
+function newSide(status: ConnectionStatus): Side {
+  return { status, listeners: new Set(), statusListeners: new Set() };
+}
+
 function setStatus(side: Side, next: ConnectionStatus): void {
   if (side.status === next) return;
   side.status = next;
   for (const listener of side.statusListeners) listener(next);
+}
+
+function clearSide(side: Side): void {
+  side.listeners.clear();
+  side.statusListeners.clear();
+}
+
+function buildTransport(
+  self: Side,
+  send: (data: Uint8Array) => void,
+  onStatus: () => void = () => {},
+): InMemoryTransport {
+  const change = (next: ConnectionStatus): void => {
+    setStatus(self, next);
+    onStatus();
+  };
+  return {
+    connect: () => change("connected"),
+    disconnect: () => change("disconnected"),
+    send,
+    subscribe(listener) {
+      self.listeners.add(listener);
+      return () => {
+        self.listeners.delete(listener);
+      };
+    },
+    subscribeStatus(listener) {
+      listener(self.status);
+      self.statusListeners.add(listener);
+      return () => {
+        self.statusListeners.delete(listener);
+      };
+    },
+    getStatus: () => self.status,
+  };
 }
 
 /**
@@ -59,10 +104,8 @@ function setStatus(side: Side, next: ConnectionStatus): void {
  */
 export function createInMemoryPair(options: InMemoryPairOptions = {}): InMemoryPair {
   const isAsync = options.async === true;
-
-  const a: Side = { status: "disconnected", listeners: new Set(), statusListeners: new Set() };
-  const b: Side = { status: "disconnected", listeners: new Set(), statusListeners: new Set() };
-
+  const a = newSide("disconnected");
+  const b = newSide("disconnected");
   let disposed = false;
 
   function deliver(to: Side, data: Uint8Array): void {
@@ -77,103 +120,68 @@ export function createInMemoryPair(options: InMemoryPairOptions = {}): InMemoryP
     }
   }
 
-  function buildTransport(self: Side, other: Side): InMemoryTransport {
-    return {
-      connect() {
-        setStatus(self, "connected");
-      },
-      disconnect() {
-        setStatus(self, "disconnected");
-      },
-      send(data) {
-        deliver(other, data);
-      },
-      subscribe(listener) {
-        self.listeners.add(listener);
-        return () => {
-          self.listeners.delete(listener);
-        };
-      },
-      subscribeStatus(listener) {
-        listener(self.status);
-        self.statusListeners.add(listener);
-        return () => {
-          self.statusListeners.delete(listener);
-        };
-      },
-      getStatus() {
-        return self.status;
-      },
-    };
-  }
-
   return {
-    a: buildTransport(a, b),
-    b: buildTransport(b, a),
+    a: buildTransport(a, (data) => deliver(b, data)),
+    b: buildTransport(b, (data) => deliver(a, data)),
     dispose() {
       disposed = true;
-      a.listeners.clear();
-      b.listeners.clear();
-      a.statusListeners.clear();
-      b.statusListeners.clear();
+      clearSide(a);
+      clearSide(b);
     },
   };
+}
+
+function receive(to: Side, data: Uint8Array): void {
+  if (to.status !== "connected") return;
+  for (const listener of to.listeners) {
+    try {
+      listener(data);
+    } catch (error) {
+      reportListenerError(error);
+    }
+  }
 }
 
 /**
  * Creates a room of in-memory transports.
  * A send from one transport reaches every other connected transport, never the sender.
+ * A listener that throws is reported and does not stop delivery to the other transports.
  * @param options Optional settings. Omit for synchronous delivery.
  * @returns A room. Call `join()` once per peer.
  */
-export function createInMemoryRoom(options: InMemoryPairOptions = {}): InMemoryRoom {
+export function createInMemoryRoom(options: InMemoryRoomOptions = {}): InMemoryRoom {
   const isAsync = options.async === true;
-  const sides = new Set<Side>();
-
-  function deliver(from: Side, data: Uint8Array): void {
-    if (from.status !== "connected") return;
-    for (const to of sides) {
-      if (to === from) continue;
-      const receive = (): void => {
-        if (to.status !== "connected") return;
-        for (const listener of to.listeners) listener(data);
-      };
-      if (isAsync) queueMicrotask(receive);
-      else receive();
-    }
-  }
+  const all = new Set<Side>();
+  const connected = new Set<Side>();
 
   return {
     join() {
-      const self: Side = { status: "connected", listeners: new Set(), statusListeners: new Set() };
-      sides.add(self);
-      return {
-        connect() {
-          setStatus(self, "connected");
+      const self = newSide("connected");
+      all.add(self);
+      connected.add(self);
+      return buildTransport(
+        self,
+        (data) => {
+          if (self.status !== "connected") return;
+          for (const to of connected) {
+            if (to === self) continue;
+            if (isAsync) queueMicrotask(() => receive(to, data));
+            else receive(to, data);
+          }
         },
-        disconnect() {
-          setStatus(self, "disconnected");
+        () => {
+          if (self.status === "connected" && all.has(self)) connected.add(self);
+          else connected.delete(self);
         },
-        send(data) {
-          deliver(self, data);
-        },
-        subscribe(listener) {
-          self.listeners.add(listener);
-          return () => {
-            self.listeners.delete(listener);
-          };
-        },
-        subscribeStatus(listener) {
-          listener(self.status);
-          self.statusListeners.add(listener);
-          return () => {
-            self.statusListeners.delete(listener);
-          };
-        },
-        getStatus() {
-          return self.status;
-        },
-      };
+      );
+    },
+    dispose() {
+      for (const side of all) {
+        setStatus(side, "disconnected");
+        clearSide(side);
+      }
+      all.clear();
+      connected.clear();
     },
   };
 }

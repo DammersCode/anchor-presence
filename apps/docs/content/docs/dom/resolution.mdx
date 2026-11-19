@@ -52,20 +52,12 @@ y = viewport.v * window.innerHeight
 
 ## ResolvedCursor
 
-`binding.getSnapshot()` returns an array of `ResolvedCursor` values. Each entry has these fields:
+`binding.getSnapshot()` returns an array of `ResolvedCursor` values. [ResolvedCursor](/docs/dom/api/resolution#resolvedcursor) lists every field. These notes cover the fields that need context:
 
-| Field          | Meaning                                                                                                                                                               |
-| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `clientId`     | The peer that owns the cursor.                                                                                                                                        |
-| `x`, `y`       | The eased position, in viewport pixels. See [Motion](/docs/dom/motion).                                                                                               |
-| `tier`         | `anchor`, `viewport`, or `hidden`.                                                                                                                                    |
-| `anchorId`     | The anchor that won, or `null`.                                                                                                                                       |
-| `visible`      | The decision of the [visibility policy](/docs/dom/visibility-policy). Render the cursor only when it is `true`.                                                       |
-| `pointVisible` | `true` when the point is inside the visible part of the anchor, after the clip of every scroll container. See [Occlusion and scroll](/docs/dom/occlusion-and-scroll). |
-| `context`      | The `context` of the sender, when set.                                                                                                                                |
-| `user`         | The `user` of the sender, when set.                                                                                                                                   |
-| `idle`         | `true` when the presence of the sender did not change for `idleAfterMs`.                                                                                              |
-| `pointerType`  | `"mouse"`, `"pen"`, or `"touch"`. Absent when the sender sent no pointer info.                                                                                        |
+- `x` and `y` are the eased position. See [Motion](/docs/dom/motion).
+- `visible` is the decision of the [visibility policy](/docs/dom/visibility-policy). Render the cursor only when it is `true`.
+- `pointVisible` is `true` when the point is inside the visible part of the anchor, after the clip of every scroll container. See [Occlusion and scroll](/docs/dom/occlusion-and-scroll).
+- `pointerType` is absent when the sender sent no pointer info.
 
 The core store sets `idle`. See [Idle state](/docs/core/remote-presence#idle-state). The binding copies the flag and runs no idle timer of its own. A renderer can use `idle` to fade a cursor or hide its label.
 

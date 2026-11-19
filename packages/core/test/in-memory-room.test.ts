@@ -108,4 +108,58 @@ describe("createInMemoryRoom", () => {
     await Promise.resolve();
     expect(received).toEqual([7]);
   });
+
+  it("dispose disconnects every side, clears listeners and stops delivery", () => {
+    const room = createInMemoryRoom();
+    const a = room.join();
+    const b = room.join();
+    const received: number[] = [];
+    b.subscribe((data) => received.push(data[0]!));
+    room.dispose();
+    expect(a.getStatus()).toBe("disconnected");
+    expect(b.getStatus()).toBe("disconnected");
+    void a.connect();
+    void a.send(bytes(1));
+    expect(received).toEqual([]);
+  });
+
+  it("a disconnected side leaves the delivery set and connect rejoins it", () => {
+    const room = createInMemoryRoom();
+    const a = room.join();
+    const b = room.join();
+    const received: number[] = [];
+    b.subscribe((data) => received.push(data[0]!));
+    void b.disconnect();
+    void a.send(bytes(1));
+    void b.connect();
+    void a.send(bytes(2));
+    expect(received).toEqual([2]);
+  });
+
+  it("many disposed joins do not slow a send", () => {
+    const room = createInMemoryRoom();
+    const a = room.join();
+    for (let i = 0; i < 10_000; i++) void room.join().disconnect();
+    const received: number[] = [];
+    const b = room.join();
+    b.subscribe((data) => received.push(data[0]!));
+    void a.send(bytes(1));
+    expect(received).toEqual([1]);
+  });
+
+  it("a throwing receiver does not reach the sender or starve later peers", () => {
+    const room = createInMemoryRoom();
+    const a = room.join();
+    const bad = room.join();
+    const good = room.join();
+    const received: number[] = [];
+    bad.subscribe(() => {
+      throw new Error("boom");
+    });
+    good.subscribe((data) => received.push(data[0]!));
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(() => a.send(bytes(3))).not.toThrow();
+    expect(received).toEqual([3]);
+    spy.mockRestore();
+  });
 });

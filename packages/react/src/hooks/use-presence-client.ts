@@ -1,18 +1,17 @@
 import { useContext } from "react";
-import type { ConnectionStatus, PresenceClient, RemotePresence } from "@anchor-presence/core";
-import type { ResolvedCursor } from "@anchor-presence/dom";
+import type { ConnectionStatus, PresenceClient } from "@anchor-presence/core";
 import { warnOnce } from "@anchor-presence/core";
 import { PresenceProviderContext, PresenceProviderContextDefault } from "../context.js";
 import type { PresenceProviderValue } from "../context.js";
 
-export const EMPTY_CURSORS: ResolvedCursor[] = [];
-export const EMPTY_PRESENCE: RemotePresence[] = [];
+export const EMPTY_CURSORS: never[] = [];
+export const EMPTY_PRESENCE: never[] = [];
 
-export function getServerCursors(): ResolvedCursor[] {
+export function getServerCursors(): never[] {
   return EMPTY_CURSORS;
 }
 
-export function getServerPresence(): RemotePresence[] {
+export function getServerPresence(): never[] {
   return EMPTY_PRESENCE;
 }
 
@@ -28,6 +27,7 @@ export function usePresenceProviderContext<TContext, TUser>(): PresenceProviderV
       "a hook or CursorLayer runs outside PresenceProvider, so it returns empty data. Wrap the tree in PresenceProvider.",
     );
   }
+  // a React context cannot be generic per provider, so the erased value is restored here
   return value as PresenceProviderValue<TContext, TUser>;
 }
 

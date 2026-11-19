@@ -1502,7 +1502,7 @@ describe("default shape check for remote fields", () => {
 
   it("drops a remote user that does not have the shape of the local user, and removes extra object keys", () => {
     const { transport, emit } = makeTransport();
-    const client = createPresenceClient<unknown, { name: string; tags: string[] }>({
+    const client = createPresenceClient({
       transport,
       idFactory,
       user: { name: "Ada", tags: ["x"] },
@@ -1525,7 +1525,7 @@ describe("default shape check for remote fields", () => {
 
   it("accepts only plain values where the local value is null or an empty array", () => {
     const { transport, emit } = makeTransport();
-    const client = createPresenceClient<unknown, { name: string; avatar: string | null; tags: string[] }>({
+    const client = createPresenceClient({
       transport,
       idFactory,
       user: { name: "Ada", avatar: null, tags: [] },
@@ -1546,7 +1546,7 @@ describe("default shape check for remote fields", () => {
 
   it("keeps an optional context key that the local context lacks, as in a dialog flag", () => {
     const { transport, emit } = makeTransport();
-    const client = createPresenceClient<{ page: string; dialog?: string }>({
+    const client = createPresenceClient({
       transport,
       idFactory,
       context: { page: "dashboard" },
@@ -1572,7 +1572,7 @@ describe("default shape check for remote fields", () => {
   it("accepts a remote null for any key and warns once when a value is dropped", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     const { transport, emit } = makeTransport();
-    const client = createPresenceClient<{ hover: { id: string } | null; name: string }>({
+    const client = createPresenceClient({
       transport,
       idFactory,
       context: { hover: { id: "a" }, name: "Ada" },
@@ -1601,7 +1601,7 @@ describe("default shape check for remote fields", () => {
 
   it("ignores prototype and inherited keys in a remote value", () => {
     const { transport, emit } = makeTransport();
-    const client = createPresenceClient<unknown, { name: string }>({
+    const client = createPresenceClient({
       transport,
       idFactory,
       user: { name: "Ada" },

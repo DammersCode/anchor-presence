@@ -16,7 +16,7 @@ export type RemoteUser<TUser = unknown> = {
   idle: boolean;
 };
 
-const EMPTY_USERS: RemoteUser[] = [];
+const EMPTY_USERS: never[] = [];
 
 // Keeps each RemoteUser's identity across presence snapshots that change only cursor position,
 // so a consumer rendering a user list does not re-render on every remote pointer move.
@@ -91,13 +91,12 @@ export function useRemoteUsers<TUser = unknown>(): RemoteUser<TUser>[] {
   );
 
   const getSnapshot = useCallback((): RemoteUser<TUser>[] => {
-    const presence =
-      client !== null ? client.getRemotePresence() : (EMPTY_PRESENCE as RemotePresence<unknown, TUser>[]);
+    const presence = client !== null ? client.getRemotePresence() : EMPTY_PRESENCE;
     const nextUsers = projectRemoteUsers(presence, previousUsersRef.current, byClientIdRef.current);
     previousUsersRef.current = nextUsers;
     return nextUsers;
   }, [client]);
 
-  const getServerSnapshot = useCallback(() => EMPTY_USERS as RemoteUser<TUser>[], []);
+  const getServerSnapshot = useCallback(() => EMPTY_USERS, []);
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }

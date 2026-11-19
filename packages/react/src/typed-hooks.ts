@@ -28,7 +28,8 @@ export function createPresenceHooks<
   TEvents extends object = EventMap,
 >() {
   return {
-    PresenceProvider: PresenceProvider as (props: PresenceProviderProps<TContext, TUser>) => ReactNode,
+    PresenceProvider: (props: PresenceProviderProps<TContext, TUser>): ReactNode =>
+      PresenceProvider<TContext, TUser>(props),
     useDomBinding: () => useDomBinding<TContext, TUser>(),
     usePresenceClient: () => usePresenceClient<TContext, TUser>(),
     useLocalContext: () => useLocalContext<TContext>(),

@@ -16,7 +16,7 @@ import {
   useRemoteUsers,
 } from "../src/index";
 import { docSample, missingLines, missingSamples } from "./doc-source";
-import { makeFakeBinding, makeFakeClient } from "./test-utils";
+import { makeFakeBinding, makeFakeClient, parserOf } from "./test-utils";
 
 function DialogBody() {
   return <div role="dialog" />;
@@ -196,7 +196,7 @@ describe("extra docs samples", () => {
 
   it("local-context.mdx: SettingsDialog sets the context, and a direct setContext reaches the hook", () => {
     const { a } = createInMemoryPair();
-    const client = createPresenceClient<{ dialog?: string }>({ transport: a });
+    const client = createPresenceClient({ transport: a, parseContext: parserOf<{ dialog?: string }>() });
     const view = mount(
       <PresenceProvider client={client}>
         <SettingsDialog open />

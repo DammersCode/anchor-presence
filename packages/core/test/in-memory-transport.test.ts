@@ -60,13 +60,13 @@ describe("createInMemoryPair", () => {
 
   it("delivers binaryCodec cursor, user, and context changes end to end", () => {
     const { a, b } = createInMemoryPair();
-    const clientA = createPresenceClient<{ page?: string }, { name?: string }>({
+    const clientA = createPresenceClient({
       transport: a,
       clientId: "A",
       codec: binaryCodec,
       user: { name: "A" },
     });
-    const clientB = createPresenceClient<{ page?: string }, { name?: string }>({
+    const clientB = createPresenceClient({
       transport: b,
       clientId: "B",
       codec: binaryCodec,

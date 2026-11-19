@@ -32,7 +32,7 @@ import {
   type RemoteUser,
 } from "../src/index";
 import type { useDomBinding as exportedUseDomBinding } from "../src/hooks/use-dom-binding";
-import { makeFakeBinding, makeFakeClient } from "./test-utils";
+import { makeFakeBinding, makeFakeClient, parserOf } from "./test-utils";
 
 // Verbatim copies of doc samples; the last test checks each copy against its .mdx source.
 
@@ -252,7 +252,10 @@ describe("ui-context.mdx: VisibilityPolicy and dialogAwarePolicy", () => {
       "show",
     );
 
-    const client = createPresenceClient<{ dialog?: string }>({ transport: createInMemoryPair().a });
+    const client = createPresenceClient({
+      transport: createInMemoryPair().a,
+      parseContext: parserOf<{ dialog?: string }>(),
+    });
     const domBinding = createDomBinding(client, { resolution: { visibilityPolicy: dialogAwarePolicy } });
     domBinding.dispose();
     client.dispose();

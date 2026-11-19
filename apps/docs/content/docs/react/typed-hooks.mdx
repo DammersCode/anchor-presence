@@ -91,12 +91,13 @@ function Reactions() {
   client. See [Events](/docs/core/events).
 </Callout>
 
-`createEventParser` from `@anchor-presence/core` builds this `parseEvent` from one parser per event type. For an event without data, use `null` as the parser. Pass the result to `createPresenceClient` in the provider `factory`:
+`createEventParser` from `@anchor-presence/core` builds this `parseEvent` from one parser per event type. For an event without data, use `null` as the parser. The client types `user` and `context` only through `parseUser` and `parseContext`, so pass them too. Pass the result to `createPresenceClient` in the provider `factory`:
 
 ```tsx
 import { createEventParser, createPresenceClient } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
 import { type Events, PresenceProvider } from "./presence";
+import { parseContext, parseUser } from "./parsers";
 
 const parseEvent = createEventParser<Events>({
   reaction: (data) => {
@@ -112,6 +113,8 @@ function App() {
       factory={() =>
         createPresenceClient({
           transport: createWebSocketTransport({ port: 8788, path: "/?room=main" }),
+          parseUser,
+          parseContext,
           parseEvent,
         })
       }
@@ -122,7 +125,7 @@ function App() {
 }
 ```
 
-The transport connects to the Bun relay of the [Quick start](/docs/get-started/quick-start#connect-a-relay), on port 8788.
+`./parsers` exports a `parseUser` that returns `User | undefined` and a `parseContext` that returns `Context | undefined`. [Validate with a schema](/docs/core/standard-schema) shows how to build them. The transport connects to the Bun relay of the [Quick start](/docs/get-started/quick-start#connect-a-relay), on port 8788.
 
 An event map can be a `type` or an `interface`. For the parser rules, see [Typed events](/docs/core/events#typed-events).
 

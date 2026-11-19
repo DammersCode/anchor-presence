@@ -4,6 +4,7 @@
 
 ### Breaking
 
+- `@anchor-presence/core`: the type of `user` and `context` comes only from `parseUser` and `parseContext`. Without a parser both are `unknown`, and a type argument without its parser does not compile. Before: `createPresenceClient<Ctx, User>({ transport, user })`. After: `createPresenceClient({ transport, user, parseUser, parseContext })`. Runtime behavior is the same.
 - `@anchor-presence/dom`: the binding option `maxAnchors` is `maxSentAnchors`. The `validationLimits.maxAnchors` limit keeps its name. `createDomBinding` errors now start with `createDomBinding:`.
 - Example relays: with identity binding, a frame never carries a `user` that the peer chose. The relay writes the `user` of the identity, or removes the field when the identity has none.
 - Example relays: with identity binding, a frame that is not a JSON object (for example `binaryCodec`) closes the connection with code `1008` instead of being dropped silently. The reference relay takes an `authCheck` through `startReferenceRelay` and binds identity like the example relays.

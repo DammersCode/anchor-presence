@@ -11,6 +11,17 @@ const safeColor = (color: string | undefined, fallback: string) =>
 type User = { name: string; color: string };
 type DialogContext = { dialog?: "invite" };
 
+function parseUser(value: unknown): User | undefined {
+  const name = typeof value === "object" && value !== null && "name" in value ? value.name : undefined;
+  const color = typeof value === "object" && value !== null && "color" in value ? value.color : undefined;
+  return typeof name === "string" && typeof color === "string" ? { name, color } : undefined;
+}
+
+function parseContext(value: unknown): DialogContext | undefined {
+  if (typeof value !== "object" || value === null) return undefined;
+  return "dialog" in value && value.dialog === "invite" ? { dialog: "invite" } : {};
+}
+
 const INVITE_DIALOG = "team.dialog.invite";
 
 function PublishDialogContext({ open }: { open: boolean }) {
@@ -36,9 +47,11 @@ export function InviteBoard() {
   return (
     <PresenceProvider<DialogContext, User>
       factory={() =>
-        createPresenceClient<DialogContext, User>({
+        createPresenceClient({
           transport: createBroadcastChannelTransport("invite-board"),
           user: { name: "Ada", color: "#0f766e" },
+          parseUser,
+          parseContext,
         })
       }
       bindingOptions={{ resolution: { visibilityPolicy: policy } }}

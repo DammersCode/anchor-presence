@@ -20,7 +20,7 @@ export function PresenceRoot({
   children: React.ReactNode;
 }) {
   return (
-    <PresenceProvider<unknown, { name: string }>
+    <PresenceProvider
       clientKey={room}
       factory={() => {
         const transport = createWebSocketTransport({
@@ -33,6 +33,11 @@ export function PresenceRoot({
       <CursorLayer />
     </PresenceProvider>
   );
+}
+
+function parseContext(value: unknown): { page: string } | undefined {
+  const page = typeof value === "object" && value !== null && "page" in value ? value.page : undefined;
+  return typeof page === "string" ? { page } : undefined;
 }
 
 function ScopedPresenceRoot({
@@ -50,16 +55,13 @@ function ScopedPresenceRoot({
   const pageRef = useRef(currentPage);
 
   return (
-    <PresenceProvider<{ page: string }, { name: string }>
+    <PresenceProvider<{ page: string }>
       clientKey={room}
       factory={() => {
         const transport = createWebSocketTransport({
           url: `wss://relay.example.com/?room=${encodeURIComponent(room)}`,
         });
-        return createPresenceClient<{ page: string }, { name: string }>({
-          transport,
-          user: { name: userName },
-        });
+        return createPresenceClient({ transport, user: { name: userName }, parseContext });
       }}
       bindingOptions={{
         resolution: {

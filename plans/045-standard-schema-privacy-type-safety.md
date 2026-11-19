@@ -15,7 +15,8 @@ Status: in progress · Branch: `develop` · Advisor-reviewed design.
 - The adapter is a parser factory. It returns a `(value: unknown) => Output | undefined` that fits `parseUser`, `parseContext`, and `createEventParser`. The client needs no new hook. `validatePresence` already runs before the parsers, so a schema never sees input over the size and depth limits.
 - A schema whose `validate` returns a Promise throws a `TypeError`. Decoding is synchronous and ordered.
 - A failed parse drops that field or message. An optional `onInvalid` callback reports the issues, so a peer on an older app version is visible.
-- Without a schema or a type argument, `user` and `context` stay `unknown`. A generic without a schema is the caller's claim, not a check. The docs say so.
+- `user` and `context` take their types only from `parseUser` and `parseContext`. Without a parser they are `unknown`, and an explicit type argument without its parser does not compile. The change is type-only (`NoInfer` on the options, `RequiredParsers` on the parameter).
+- `createEventParser` and `createEventChannel` keep one cast each. The parsers map proves the event shape only at runtime, and the client has no event type parameter. A third parameter would break `createEventChannel<TEvents>(client)` in the react hooks.
 - Pointer privacy is an attribute, `data-anchor-private`, read through `composedPath()`. Over a private element the client sends `null`, not the nearest anchored parent, because that parent plus `u`/`v` still leaks the position. Focus capture follows the same rule.
 - The type-safety rubric and the task list are frozen before round 1.
 

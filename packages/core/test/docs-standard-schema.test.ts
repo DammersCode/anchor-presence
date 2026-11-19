@@ -28,6 +28,18 @@ describe("standard-schema.mdx: check the user and the context", () => {
   });
 });
 
+describe("standard-schema.mdx: types without a schema", () => {
+  it("types the remote user as unknown", () => {
+    const client = createPresenceClient({ transport, user: { name: "Ada" } });
+    const remote = client.getRemotePresence()[0];
+    const user: unknown = remote?.user;
+
+    expectTypeOf(remote?.user).toEqualTypeOf<unknown>();
+    expect(user).toBeUndefined();
+    client.dispose();
+  });
+});
+
 describe("standard-schema.mdx: check the events", () => {
   it("types the delivered events from the schemas", () => {
     const parseEvent = eventParserFrom({
@@ -62,6 +74,7 @@ describe("standard-schema.mdx samples", () => {
     const source = trimLines(readRepoFile("packages/core/test/docs-standard-schema.test.ts"));
     const samples = [
       docSample("core/standard-schema.mdx", "const User = v.object"),
+      docSample("core/standard-schema.mdx", "const remote = client"),
       docSample("core/standard-schema.mdx", "const parseEvent = eventParserFrom"),
       docSample("core/standard-schema.mdx", "const parseUser = parserFrom"),
     ];

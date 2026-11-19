@@ -34,6 +34,22 @@ const client = createPresenceClient({
 
 The local `user` that you pass must have the output type of its schema.
 
+## Types without a schema
+
+The client takes the type of `user` and `context` only from `parseUser` and `parseContext`. A type argument alone is a compile error. Without a parser, both types are `unknown`. The default shape check is a runtime guard. It never types the value.
+
+This client has no parser, so `user` and `context` are `unknown`:
+
+```ts
+import { createPresenceClient } from "@anchor-presence/core";
+
+const client = createPresenceClient({ transport, user: { name: "Ada" } });
+const remote = client.getRemotePresence()[0];
+const user: unknown = remote?.user;
+```
+
+Check an `unknown` value before you use it. To type it, pass a parser.
+
 ## Check the events
 
 This client drops an event with an unknown type, or with data that its schema rejects:

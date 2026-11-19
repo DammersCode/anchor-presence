@@ -115,7 +115,7 @@ When a part of the remote value does not fit, the client drops the whole field. 
 
   </Accordions>
 
-`parseUser` and `parseContext` replace the shape check. The parser receives the remote value and returns the value to store. Return `undefined` or throw to drop the field:
+`parseUser` and `parseContext` replace the shape check. They also give the `user` and `context` their types. Without them, both types are `unknown`, because the shape check never types a value. The parser receives the remote value and returns the value to store. Return `undefined` or throw to drop the field:
 
 ```ts
 const viewer = createPresenceClient<{ page: string }>({

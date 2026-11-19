@@ -22,7 +22,10 @@ describe("extra dom docs samples", () => {
 
   it("visibility-policy.mdx: a client with the policy's context type accepts the policy", () => {
     const { a: transport } = createInMemoryPair();
-    const client = createPresenceClient<{ role: string }>({ transport });
+    const client = createPresenceClient({
+      transport,
+      parseContext: (value) => value as { role: string } | undefined,
+    });
     const binding = createDomBinding(client, {
       resolution: { visibilityPolicy: hideStaffCursors },
     });

@@ -37,13 +37,18 @@ Each time the resolver resolves the cursors, it calls the policy once for each p
 
 The resolver reuses one input object for every call. Read it in the call. Do not keep it, and do not change it or its `resolution`.
 
-The first type parameter of `VisibilityPolicy` is the context type, and the second is the user type. Pass the policy through `resolution.visibilityPolicy`. The client must have the same context type as the policy:
+The first type parameter of `VisibilityPolicy` is the context type, and the second is the user type. Pass the policy through `resolution.visibilityPolicy`. The client must have the same context type as the policy. The client takes this type from `parseContext`:
 
 ```ts
 import { createPresenceClient } from "@anchor-presence/core";
+import { parserFrom } from "@anchor-presence/core/standard-schema";
 import { createDomBinding } from "@anchor-presence/dom";
+import * as v from "valibot";
 
-const client = createPresenceClient<{ role: string }>({ transport: myTransport });
+const client = createPresenceClient({
+  transport: myTransport,
+  parseContext: parserFrom(v.object({ role: v.string() })),
+});
 const binding = createDomBinding(client, {
   resolution: { visibilityPolicy: hideStaffCursors },
 });

@@ -56,7 +56,7 @@ const dialogAwarePolicy: VisibilityPolicy<{ dialog?: string }> = ({ presence, re
 };
 ```
 
-The client needs the same context type as the policy, for example `createPresenceClient<{ dialog?: string }>`. The binding cannot see the open dialog of the receiver. When it changes, call `binding.invalidate()` to run the policy again. See [Run the policy again after a state change](/docs/dom/visibility-policy#run-the-policy-again-after-a-state-change).
+The client needs the same context type as the policy. Give the client a `parseContext` that returns `{ dialog?: string }`. Without a parser, the context type is `unknown`, and the policy does not compile. The binding cannot see the open dialog of the receiver. When it changes, call `binding.invalidate()` to run the policy again. See [Run the policy again after a state change](/docs/dom/visibility-policy#run-the-policy-again-after-a-state-change).
 
 ## Never change the receiver UI
 

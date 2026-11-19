@@ -9,6 +9,7 @@ import { createStatusMachine } from "./internal/reconnect.js";
 import type {
   PresenceClient,
   PresenceClientOptions,
+  RequiredParsers,
   PresenceClientState,
   SchedulerLike,
 } from "./internal/types.js";
@@ -71,7 +72,7 @@ function assertId(name: string, value: unknown, max: number): asserts value is s
  * @returns The client.
  */
 export function createPresenceClient<TContext = unknown, TUser = unknown>(
-  options: PresenceClientOptions<TContext, TUser>,
+  options: PresenceClientOptions<TContext, TUser> & NoInfer<RequiredParsers<TContext, TUser>>,
 ): PresenceClient<TContext, TUser> {
   if (options?.transport === undefined || options.transport === null) {
     throw new TypeError("createPresenceClient: options.transport is required");

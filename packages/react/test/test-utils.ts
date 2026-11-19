@@ -126,3 +126,8 @@ export function makeFakeBinding<TContext = unknown, TUser = unknown>(): {
     listenerCount: () => listeners.size,
   };
 }
+
+export const parserOf =
+  <T>() =>
+  (value: unknown): T | undefined =>
+    value as T;

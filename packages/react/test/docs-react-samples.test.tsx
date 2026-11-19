@@ -21,6 +21,7 @@ import {
 } from "../src/index";
 import { PresenceProviderContext } from "../src/context";
 import { docSample, missingSamples } from "./doc-source";
+import { parserOf } from "./test-utils";
 
 class FakeSocket implements WebSocketLike {
   static instances: FakeSocket[] = [];
@@ -141,6 +142,8 @@ type User = { name: string; color: string };
 type Context = { pageId: string };
 
 const typed = createPresenceHooks<Context, User>();
+const parseUser = parserOf<User>();
+const parseContext = parserOf<Context>();
 const { useRemoteUsers } = typed;
 
 // typed-hooks.mdx: Use the hooks
@@ -286,8 +289,18 @@ describe("react docs samples", () => {
 
   it("PresenceList renders typed remote users", async () => {
     const { a, b } = createInMemoryPair();
-    const local = createPresenceClient<Context, User>({ transport: a, user: { name: "Me", color: "blue" } });
-    const peer = createPresenceClient<Context, User>({ transport: b, user: { name: "Ada", color: "red" } });
+    const local = createPresenceClient({
+      transport: a,
+      parseUser,
+      parseContext,
+      user: { name: "Me", color: "blue" },
+    });
+    const peer = createPresenceClient({
+      transport: b,
+      parseUser,
+      parseContext,
+      user: { name: "Ada", color: "red" },
+    });
     const view = mount(
       <typed.PresenceProvider client={local}>
         <PresenceList />

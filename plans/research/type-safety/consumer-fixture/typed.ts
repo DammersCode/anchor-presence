@@ -30,13 +30,16 @@ const pair = createInMemoryPair();
 const inferred = createPresenceClient({ transport: pair.a, parseUser, parseContext });
 assertEqual<PresenceClient<Ctx, User>, typeof inferred>(true);
 
-// inferred from local values
+// local values do not give the type: only a parser does
 const fromValues = createPresenceClient({ transport: pair.a, user: { name: "a" }, context: { page: "x" } });
-assertEqual<PresenceClient<{ page: string }, { name: string }>, typeof fromValues>(true);
+assertEqual<PresenceClient<unknown, unknown>, typeof fromValues>(true);
 
-// explicit type arguments
-const explicit = createPresenceClient<Ctx, User>({ transport: pair.a });
+// explicit type arguments need their parsers
+const explicit = createPresenceClient<Ctx, User>({ transport: pair.a, parseUser, parseContext });
 assertEqual<PresenceClient<Ctx, User>, typeof explicit>(true);
+
+// @ts-expect-error an explicit type argument without its parser does not compile
+createPresenceClient<Ctx, User>({ transport: pair.a });
 
 // @ts-expect-error user must match the type argument
 createPresenceClient<Ctx, User>({ transport: pair.a, user: { name: 1 } });

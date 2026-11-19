@@ -227,13 +227,12 @@ export class RemoteResolver<TContext = unknown, TUser = unknown> {
     element: null,
     activeAnchors: this.rawAnchorScratch,
   };
-  private readonly policyInput: {
-    presence: PresenceMessage<TContext, TUser>;
-    resolution: { tier: ResolutionTier; anchorId: string | null; pointVisible: boolean };
-  } = {
-    presence: undefined as unknown as PresenceMessage<TContext, TUser>,
-    resolution: { tier: "hidden", anchorId: null, pointVisible: false },
-  };
+  private readonly policyInputCell: {
+    input?: {
+      presence: PresenceMessage<TContext, TUser>;
+      resolution: { tier: ResolutionTier; anchorId: string | null; pointVisible: boolean };
+    };
+  } = {};
 
   constructor(options: ResolverOptions<TContext, TUser>) {
     this.registry = options.registry;
@@ -280,11 +279,15 @@ export class RemoteResolver<TContext = unknown, TUser = unknown> {
       resolveGeometryInto(presence, this.registry, readState, visibleRectMemo, raw, rawAnchors);
       for (const element of rawAnchors) activeAnchors.add(element);
       const pointVisible = this.isPointVisible(raw, readState.viewportSize);
-      this.policyInput.presence = presence;
-      this.policyInput.resolution.tier = raw.tier;
-      this.policyInput.resolution.anchorId = raw.anchorId;
-      this.policyInput.resolution.pointVisible = pointVisible;
-      const visibility = this.visibilityPolicy(this.policyInput);
+      const policyInput = (this.policyInputCell.input ??= {
+        presence,
+        resolution: { tier: raw.tier, anchorId: raw.anchorId, pointVisible },
+      });
+      policyInput.presence = presence;
+      policyInput.resolution.tier = raw.tier;
+      policyInput.resolution.anchorId = raw.anchorId;
+      policyInput.resolution.pointVisible = pointVisible;
+      const visibility = this.visibilityPolicy(policyInput);
 
       let state = this.states.get(presence.clientId);
       const hidden = raw.tier === "hidden";

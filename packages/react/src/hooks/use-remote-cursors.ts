@@ -14,14 +14,10 @@ export function useRemoteCursors<TContext = unknown, TUser = unknown>(): Resolve
     [binding],
   );
   const getSnapshot = useCallback(
-    () => (binding !== null ? binding.getSnapshot() : (EMPTY_CURSORS as ResolvedCursor<TContext, TUser>[])),
+    () => (binding !== null ? binding.getSnapshot() : EMPTY_CURSORS),
     [binding],
   );
-  return useSyncExternalStore(
-    subscribe,
-    getSnapshot,
-    getServerCursors as () => ResolvedCursor<TContext, TUser>[],
-  );
+  return useSyncExternalStore(subscribe, getSnapshot, getServerCursors);
 }
 
 /**
@@ -48,8 +44,7 @@ export function useRemoteCursorsSelector<TSelected, TContext = unknown, TUser = 
   );
 
   const getSnapshot = useCallback(() => {
-    const cursors =
-      binding !== null ? binding.getSnapshot() : (EMPTY_CURSORS as ResolvedCursor<TContext, TUser>[]);
+    const cursors = binding !== null ? binding.getSnapshot() : EMPTY_CURSORS;
     const lastInput = lastInputRef.current;
     if (lastInput?.cursors === cursors && lastInput.select === select && lastInput.isEqual === isEqual) {
       return lastInput.value;
@@ -65,7 +60,7 @@ export function useRemoteCursorsSelector<TSelected, TContext = unknown, TUser = 
   }, [binding, select, isEqual]);
 
   // computed once: React may call the server snapshot repeatedly, and it compares by identity
-  const [serverValue] = useState(() => select(EMPTY_CURSORS as ResolvedCursor<TContext, TUser>[]));
+  const [serverValue] = useState(() => select(EMPTY_CURSORS));
   const getServerSnapshot = useCallback(() => serverValue, [serverValue]);
 
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);

@@ -67,4 +67,4 @@ The unweighted mean of the six scores. Done when the mean is at least 9 and no d
 
 ## Amendment log
 
-None.
+1. Parsers-only typing rule. The fixture lines that claimed `user` and `context` types from local values or from a type argument without a parser became `@ts-expect-error` negatives and `unknown` assertions. Dimensions c and e counted those four lines as compile errors (c 6, e 6, mean 7.33) before the amendment. After it, the same code scores c 10 and e 10. Both scores are reported in every later round.

@@ -75,12 +75,12 @@ describe("the default shape check", () => {
     vi.useFakeTimers();
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     const { a, b } = createInMemoryPair();
-    const sender = createPresenceClient<unknown, Record<string, unknown>>({
+    const sender = createPresenceClient({
       transport: a,
       clientId: "S",
     });
     sender.setUser({ name: "Ada", toString: "boom", nested: { x: 1 } });
-    const receiver = createPresenceClient<unknown, Record<string, unknown>>({
+    const receiver = createPresenceClient({
       transport: b,
       clientId: "R",
     });

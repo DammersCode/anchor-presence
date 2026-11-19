@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useSyncExternalStore } from "react";
 import { usePresenceProviderContext } from "./use-presence-client.js";
 import { getContextStore } from "../context-store.js";
+const getServerContext = (): undefined => {};
 
 /**
  * Reads the local context value and gives a setter.
@@ -19,7 +20,7 @@ export function useLocalContext<TContext = unknown>(): [
     [store],
   );
   const getSnapshot = useCallback(() => (store !== null ? store.getSnapshot() : undefined), [store]);
-  const value = useSyncExternalStore(subscribe, getSnapshot, () => undefined as TContext | undefined);
+  const value = useSyncExternalStore(subscribe, getSnapshot, getServerContext);
 
   const setContext = useCallback(
     (next: TContext | undefined) => {

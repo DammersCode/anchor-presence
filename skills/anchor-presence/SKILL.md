@@ -63,7 +63,7 @@ export function PresenceRoot({
   children: React.ReactNode;
 }) {
   return (
-    <PresenceProvider<unknown, { name: string }>
+    <PresenceProvider
       clientKey={room}
       factory={() => {
         const transport = createWebSocketTransport({
@@ -103,6 +103,11 @@ import { createPresenceClient } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
 import { CursorLayer, PresenceProvider, useDomBinding, useLocalContext } from "@anchor-presence/react";
 
+function parseContext(value: unknown): { page: string } | undefined {
+  const page = typeof value === "object" && value !== null && "page" in value ? value.page : undefined;
+  return typeof page === "string" ? { page } : undefined;
+}
+
 export function PresenceRoot({
   room,
   userName,
@@ -118,16 +123,13 @@ export function PresenceRoot({
   const pageRef = useRef(currentPage);
 
   return (
-    <PresenceProvider<{ page: string }, { name: string }>
+    <PresenceProvider<{ page: string }>
       clientKey={room}
       factory={() => {
         const transport = createWebSocketTransport({
           url: `wss://relay.example.com/?room=${encodeURIComponent(room)}`,
         });
-        return createPresenceClient<{ page: string }, { name: string }>({
-          transport,
-          user: { name: userName },
-        });
+        return createPresenceClient({ transport, user: { name: userName }, parseContext });
       }}
       bindingOptions={{
         resolution: {
@@ -156,7 +158,7 @@ function PublishPage({ page, pageRef }: { page: string; pageRef: { current: stri
 }
 ```
 
-**Done when** a cursor shows only on clients whose current page matches the sender's page.
+`parseContext` is what gives `presence.context` the type `{ page: string }`. Without it, the type stays `unknown`. **Done when** a cursor shows only on clients whose current page matches the sender's page.
 
 ### 7. Add a presence list
 

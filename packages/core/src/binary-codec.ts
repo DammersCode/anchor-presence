@@ -249,7 +249,7 @@ function decodeMessage(data: Uint8Array): unknown {
       const length = dv.getUint32(offset, true);
       offset += 4;
       if (offset + length > data.byteLength) throw new Error("truncated JSON field");
-      const value = JSON.parse(decoder.decode(data.subarray(offset, offset + length)));
+      const value: unknown = JSON.parse(decoder.decode(data.subarray(offset, offset + length)));
       offset += length;
       return { present: true, value };
     }

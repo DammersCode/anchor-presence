@@ -7,7 +7,7 @@ import { createPresenceClient } from "@anchor-presence/core";
 import type { PresenceTransport } from "@anchor-presence/core";
 import { PresenceProvider } from "../src/provider";
 import { useLocalContext } from "../src/hooks";
-import { makeFakeBinding } from "./test-utils";
+import { makeFakeBinding, parserOf } from "./test-utils";
 
 type TestContext = { route: string };
 
@@ -42,7 +42,8 @@ describe("useLocalContext", () => {
   }
 
   it("returns the client's initial context option", () => {
-    const client = createPresenceClient<TestContext>({
+    const client = createPresenceClient({
+      parseContext: parserOf<TestContext>(),
       transport: makeStubTransport(),
       context: { route: "/home" },
     });
@@ -65,7 +66,10 @@ describe("useLocalContext", () => {
   });
 
   it("setContext via the hook updates both the client and the hook value", () => {
-    const client = createPresenceClient<TestContext>({ transport: makeStubTransport() });
+    const client = createPresenceClient({
+      parseContext: parserOf<TestContext>(),
+      transport: makeStubTransport(),
+    });
     const { binding } = makeFakeBinding<TestContext, unknown>();
     const root = createRoot(container);
 
@@ -91,7 +95,10 @@ describe("useLocalContext", () => {
   });
 
   it("re-renders when the client's context is set directly, bypassing the hook", () => {
-    const client = createPresenceClient<TestContext>({ transport: makeStubTransport() });
+    const client = createPresenceClient({
+      parseContext: parserOf<TestContext>(),
+      transport: makeStubTransport(),
+    });
     const { binding } = makeFakeBinding<TestContext, unknown>();
     const root = createRoot(container);
 

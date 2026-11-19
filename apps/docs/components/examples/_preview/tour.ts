@@ -4,6 +4,12 @@ import { createBroadcastChannelTransport } from "@anchor-presence/dom";
 
 export type TourUser = { name: string; color: string };
 
+export function parseTourUser(value: unknown): TourUser | undefined {
+  const name = typeof value === "object" && value !== null && "name" in value ? value.name : undefined;
+  const color = typeof value === "object" && value !== null && "color" in value ? value.color : undefined;
+  return typeof name === "string" && typeof color === "string" ? { name, color } : undefined;
+}
+
 export type TourStep =
   | { kind: "point"; anchor: string; u?: number; v?: number; dwellMs?: number }
   | { kind: "context"; value: unknown; dwellMs?: number }

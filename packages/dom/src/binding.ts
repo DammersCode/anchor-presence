@@ -130,7 +130,7 @@ export type DomBinding<TContext = unknown, TUser = unknown> = {
   dispose(options?: { keepLocalCursor?: boolean }): void;
 };
 
-const EMPTY_SNAPSHOT: ResolvedCursor[] = [];
+const EMPTY_SNAPSHOT: never[] = [];
 
 /**
  * Creates the DOM side of one client.
@@ -182,7 +182,7 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
     resolution.interpolatorFactory ?? defaultInterpolatorFactory(environment.window);
   const resolver = new RemoteResolver<TContext, TUser>({ registry, ...resolution, interpolatorFactory });
 
-  let snapshot: ResolvedCursor<TContext, TUser>[] = EMPTY_SNAPSHOT as ResolvedCursor<TContext, TUser>[];
+  let snapshot: ResolvedCursor<TContext, TUser>[] = EMPTY_SNAPSHOT;
   const snapshotListeners = new Set<() => void>();
 
   function notifySnapshotListeners(): void {
@@ -277,7 +277,7 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
     scheduler.dispose();
     pointerHandle.detach();
     // final empty snapshot so subscribers render cursors gone before the signals go quiet
-    snapshot = EMPTY_SNAPSHOT as ResolvedCursor<TContext, TUser>[];
+    snapshot = EMPTY_SNAPSHOT;
     notifySnapshotListeners();
     snapshotListeners.clear();
   }

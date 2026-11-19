@@ -24,7 +24,7 @@ import {
 import type { useLocalUser as exportedUseLocalUser } from "../src/hooks/use-local-user";
 import type { usePeerChanges as exportedUsePeerChanges } from "../src/hooks/use-peer-changes";
 import { createWebSocketTransport } from "@anchor-presence/dom";
-import { makeFakeBinding } from "./test-utils";
+import { makeFakeBinding, parserOf } from "./test-utils";
 
 // Verbatim copies of doc samples; the last test checks each copy against its .mdx source.
 
@@ -63,6 +63,9 @@ function Reactions() {
   );
 }
 
+const parseUser = parserOf<User>();
+const parseContext = parserOf<Context>();
+
 const parseEvent = createEventParser<Events>({
   reaction: (data) => {
     const emoji = typeof data === "object" && data !== null && "emoji" in data ? data.emoji : undefined;
@@ -77,6 +80,8 @@ function App() {
       factory={() =>
         createPresenceClient({
           transport: createWebSocketTransport({ port: 8788, path: "/?room=main" }),
+          parseUser,
+          parseContext,
           parseEvent,
         })
       }
@@ -140,11 +145,11 @@ afterEach(() => {
 
 function connectedPair<TUser, TContext = unknown>(user?: TUser) {
   const { a, b } = createInMemoryPair();
-  const local = createPresenceClient<TContext, TUser>({
+  const local = createPresenceClient({
     transport: a,
     clientId: "local",
     ...(user === undefined ? {} : { user }),
-  });
+  }) as unknown as PresenceClient<TContext, TUser>;
   const peer = createPresenceClient({ transport: b, clientId: "peer" });
   clients.push(local as PresenceClient<unknown, unknown>, peer);
   return { local, peer };

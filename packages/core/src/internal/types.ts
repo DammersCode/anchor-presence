@@ -63,7 +63,7 @@ export type PresenceClientOptions<TContext = unknown, TUser = unknown> = {
   /** Runs when the store drops a new `clientId` because the store is full. */
   onRemoteClientRejected?: (info: { clientId: string }) => void;
   /** The user value the client sends to remote peers. */
-  user?: TUser;
+  user?: NoInfer<TUser>;
   /** Checks the `user` of each remote message. Return `undefined` or throw to drop the field. Default: the value must have the shape of the local `user`. */
   parseUser?: (value: unknown) => TUser | undefined;
   /** Checks the `context` of each remote message. Return `undefined` or throw to drop the field. Default: the value must have the shape of the local `context`. */
@@ -71,7 +71,7 @@ export type PresenceClientOptions<TContext = unknown, TUser = unknown> = {
   /** Checks each remote event. Return the event to deliver it, or `undefined` or throw to drop it. Default: deliver as is. */
   parseEvent?: (event: RemoteEvent) => RemoteEvent | undefined;
   /** The context value the client sends to remote peers. */
-  context?: TContext;
+  context?: NoInfer<TContext>;
   /** Returns a new random ID. The client uses it for `clientId` and `session`. */
   idFactory?: () => string;
   /** Returns the current time in milliseconds. Default: `performance.now()`, or `Date.now()` without `performance`. */
@@ -260,3 +260,9 @@ export type PresenceClientState<TContext, TUser> = {
   now: () => number;
   teardowns: Array<() => void>;
 };
+
+/** A `user` or `context` type other than `unknown` needs the parser that checks it. */
+export type RequiredParsers<TContext, TUser> = (unknown extends TUser
+  ? unknown
+  : { parseUser: (value: unknown) => TUser | undefined }) &
+  (unknown extends TContext ? unknown : { parseContext: (value: unknown) => TContext | undefined });

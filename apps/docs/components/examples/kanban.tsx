@@ -167,14 +167,13 @@ function CardTile({ id, title, peers }: { id: string; title: string; peers: Card
             </span>
           ))}
         </span>
-        <button
-          type="button"
+        <span
+          aria-hidden="true"
           data-anchor={`${anchorId}.delete`}
-          aria-label={`Delete ${title}`}
-          className="grid size-4 flex-none place-items-center rounded text-fd-muted-foreground hover:bg-fd-secondary hover:text-fd-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-fd-ring"
+          className="grid size-4 flex-none place-items-center rounded text-fd-muted-foreground"
         >
           <X className="size-3" />
-        </button>
+        </span>
       </div>
       {picker !== undefined && (
         <span
@@ -245,14 +244,13 @@ function Board() {
                 <h4 className="text-[10px] font-semibold tracking-wide text-fd-muted-foreground uppercase">
                   {column.title} <span className="font-normal">{column.cards.length}</span>
                 </h4>
-                <button
-                  type="button"
+                <span
+                  aria-hidden="true"
                   data-anchor={`board.column:${column.id}.add`}
-                  aria-label={`Add a card to ${column.title}`}
-                  className="grid size-4 place-items-center rounded text-fd-muted-foreground hover:bg-fd-background hover:text-fd-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-fd-ring"
+                  className="grid size-4 place-items-center rounded text-fd-muted-foreground"
                 >
                   <Plus className="size-3" />
-                </button>
+                </span>
               </header>
               <div className="flex min-h-0 flex-col gap-1.5 overflow-y-auto">
                 {column.cards.map((card) => (

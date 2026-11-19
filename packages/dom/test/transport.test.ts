@@ -295,6 +295,19 @@ describe("createWebSocketTransport", () => {
     expect(events).toEqual(["connecting", "connected", "reconnecting", "connected"]);
   });
 
+  it("warns once in dev when a code below 4000 ends reconnecting", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const url = "ws://no-reconnect.test/?room=main";
+    for (let i = 0; i < 2; i++) {
+      const transport = createWebSocketTransport({ url, WebSocketCtor: FakeWebSocket });
+      void transport.connect?.();
+      FakeWebSocket.fire(lastSocket(), "close", { code: 1008, reason: "identity binding needs JSON frames" });
+      expect(transport.getStatus()).toBe("disconnected");
+    }
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0]?.[0])).toContain("does not reconnect");
+  });
+
   it("treats connect() after disconnect() as a no-op and warns in dev", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     const transport = make();

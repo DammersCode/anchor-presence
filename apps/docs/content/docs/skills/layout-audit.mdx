@@ -8,6 +8,14 @@ import { BookOpen, LayoutGrid, Plug, Ruler } from "lucide-react";
 
 The layout audit skill measures how far a remote cursor can jump when the layout of your app changes. Examples are a sidebar that collapses, a table that becomes cards, and a breakpoint that reflows a grid. To use it, install the skill and ask your agent to audit your layouts. The agent opens your running app in a real browser. It gives back a score for each view pair, with concrete fixes.
 
+To install only this skill, run:
+
+```sh
+npx skills add DammersCode/anchor-presence --skill anchor-presence-audit
+```
+
+See [Install](/docs/skills#install) for both skills.
+
 ## What it does
 
 The agent scans your code for anchors, routes, breakpoints, and toggles, such as a collapsible sidebar or a dialog. An anchor is an element marked with `data-anchor`. The agent builds a list of views. A view is one route at one viewport width in one UI state. Then the agent measures every pair of views of the same page in a real browser. Each pair gets a score from 0 (low risk) to 100 (high risk), broken into five sub-scores.

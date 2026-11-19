@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { createPresenceClient } from "@anchor-presence/core";
 import "./index.css";
 import App from "./app";
+import { InMemoryRoomPage } from "./fixtures/in-memory-room-page";
 import { BenchPage } from "./bench/bench-page";
 import { ReflowBenchPage } from "./reflow/reflow-bench-page";
 import { createBackendTransport } from "./cursors/backends";
@@ -23,6 +24,8 @@ const isReflowBenchRoute = new URLSearchParams(window.location.search).get("page
 const localViewState: LocalViewState = { page: null, settingsOpen: false };
 const visibilityPolicy = createVisibilityPolicy(() => localViewState);
 
+const isInMemoryRoomRoute = new URLSearchParams(window.location.search).get("page") === "in-memory-room";
+
 function createDemoClient() {
   const { transport, codec } = createBackendTransport(backendId, localRoom);
   return createPresenceClient<DemoContext, DemoUser>({
@@ -37,6 +40,7 @@ function createDemoClient() {
 
 function Root() {
   const [interpolatorStyle, selectInterpolatorStyle] = useInterpolatorStyle();
+  if (isInMemoryRoomRoute) return <InMemoryRoomPage />;
   if (isBenchRoute) return <BenchPage />;
   if (isReflowBenchRoute) return <ReflowBenchPage />;
 

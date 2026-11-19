@@ -1,6 +1,6 @@
 ---
 title: Transport and codec API
-description: PresenceTransport, TransportClose, createInMemoryPair, createInMemoryRoom, InMemoryTransport, PresenceCodec, and the shipped codecs.
+description: PresenceTransport, TransportClose, createInMemoryPair, createInMemoryRoom, InMemoryRoomOptions, InMemoryTransport, PresenceCodec, and the shipped codecs.
 icon: arrow-left-right
 ---
 
@@ -10,7 +10,12 @@ This page lists the transport and codec exports of `@anchor-presence/core` with 
 
 ```ts
 import { binaryCodec, createInMemoryPair, createInMemoryRoom, jsonCodec } from "@anchor-presence/core";
-import type { PresenceCodec, PresenceTransport, TransportClose } from "@anchor-presence/core";
+import type {
+  InMemoryRoomOptions,
+  PresenceCodec,
+  PresenceTransport,
+  TransportClose,
+} from "@anchor-presence/core";
 ```
 
 ## PresenceTransport
@@ -39,6 +44,8 @@ import type { PresenceCodec, PresenceTransport, TransportClose } from "@anchor-p
 
 `createInMemoryRoom(options?)` returns a room. Each `join()` returns a new `InMemoryTransport` that reaches every other joined transport. See [Test with more than two peers](/docs/core/in-memory-transport#test-with-more-than-two-peers).
 
+`InMemoryRoomOptions` is `InMemoryPairOptions`. After `dispose()`, `join()` returns a transport that stays `disconnected`, and `connect()` and `send()` do nothing.
+
 <AutoTypeTable path="../../packages/core/src/in-memory-transport.ts" name="InMemoryRoom" />
 
 ## PresenceCodec
@@ -58,7 +65,7 @@ import type { PresenceCodec, PresenceTransport, TransportClose } from "@anchor-p
     The guide to the transport contract.
   </Card>
   <Card icon={<MemoryStick />} title="In-memory transport" href="/docs/core/in-memory-transport">
-    Two transports in one process.
+    Two transports, or a room of many, in one process.
   </Card>
   <Card icon={<Binary />} title="Codecs" href="/docs/core/codecs">
     The guide to the codec contract.

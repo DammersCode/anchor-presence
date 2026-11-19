@@ -181,6 +181,7 @@ export function defineRelayConformance(
       expect(await closeCode(new WebSocket(`${baseUrl}/?room=auth`))).toBe(4006);
       expect(await closeCode(new WebSocket(`${baseUrl}/?room=auth&token=nope`))).toBe(4006);
       expect(await closeCode(new WebSocket(`${baseUrl}/?room=auth&token=secret&token=secret`))).toBe(4006);
+      expect(await closeCode(new WebSocket(`${baseUrl}/?room=auth&token=secret&token=other`))).toBe(4006);
 
       const admitted = await connect(baseUrl, "auth", "&token=secret");
       expect(admitted.socket.readyState).toBe(WebSocket.OPEN);

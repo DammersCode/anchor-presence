@@ -122,7 +122,9 @@ In development mode, the provider writes one console warning in each of these ca
 - It gets both `client` and `factory`. It then ignores `factory`.
 - It gets both `binding` and `bindingOptions`. It then ignores `bindingOptions`.
 
-If `factory` is set and is not a function, and you pass no `client`, the provider throws a `TypeError` in every mode.
+## A factory that is not a function
+
+If `factory` is set and is not a function, and you pass no `client`, the provider throws a `TypeError` in every build mode. It throws on mount in the browser, never on the server.
 
 ## Related
 

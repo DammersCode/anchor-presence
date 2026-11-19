@@ -55,15 +55,12 @@ type SocketData = {
 
 type RoomSocket = Bun.ServerWebSocket<SocketData>;
 
-const rooms = new Map<string, Set<RoomSocket>>();
 const allowedOrigins = new Set(
   (process.env.RELAY_ALLOWED_ORIGINS ?? "")
     .split(",")
     .map((origin) => origin.trim())
     .filter((origin) => origin.length > 0),
 );
-let totalSockets = 0;
-
 const ROOM_CHARSET = /^[A-Za-z0-9_-]+$/;
 
 // null means the name is not a valid room name: the relay refuses the connection instead of merging it into `main`
@@ -105,11 +102,21 @@ export function closePeerAboveHardLimit(
   return true;
 }
 
-export type ReferenceRelayOptions = { authCheck?: AuthCheck };
+export type ReferenceRelayOptions = {
+  authCheck?: AuthCheck;
+  /** Overrides `RELAY_MAX_ROOM_SOCKETS`. */
+  maxRoomSockets?: number;
+  /** Overrides `RELAY_MAX_TOTAL_SOCKETS`. */
+  maxTotalSockets?: number;
+};
 
 /** Starts the relay on `port`. `authCheck` defaults to the `RELAY_AUTH_TOKEN` check; an identity result binds each frame to that identity. */
 export function createReferenceRelay(port: number, options: ReferenceRelayOptions = {}) {
   const authCheck = safeAuthCheck(options.authCheck ?? tokenAuthCheck(AUTH_TOKEN));
+  const maxRoomSockets = options.maxRoomSockets ?? MAX_ROOM_SOCKETS;
+  const maxTotalSockets = options.maxTotalSockets ?? MAX_TOTAL_SOCKETS;
+  const rooms = new Map<string, Set<RoomSocket>>();
+  let totalSockets = 0;
   const server = Bun.serve({
     port,
     async fetch(req, server) {
@@ -157,12 +164,12 @@ export function createReferenceRelay(port: number, options: ReferenceRelayOption
           ws.close(AUTH_REJECTED_CODE, "invalid token");
           return;
         }
-        if (totalSockets >= MAX_TOTAL_SOCKETS) {
+        if (totalSockets >= maxTotalSockets) {
           ws.close(SERVER_FULL_CODE, "server full");
           return;
         }
         const sockets = rooms.get(ws.data.room);
-        if (sockets && sockets.size >= MAX_ROOM_SOCKETS) {
+        if (sockets && sockets.size >= maxRoomSockets) {
           ws.close(ROOM_FULL_CODE, "room full");
           return;
         }

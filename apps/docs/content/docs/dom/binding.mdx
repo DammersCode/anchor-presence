@@ -52,10 +52,7 @@ Each `environment` field defaults to the matching browser global. A test can rep
   tests cover only a root in the same document as the binding code, so an iframe root is not tested.
 </Callout>
 
-`createDomBinding` throws a `TypeError` in these cases:
-
-- `anchorAttribute` is not letters and digits in groups split by single hyphens, with a letter first. For example, `data-anchor` and `anchor` pass, and `data_anchor` and `1-anchor` fail.
-- `maxSentAnchors` is not an integer, for example `2.5` or `NaN`.
+`createDomBinding` throws a `TypeError` for a bad `anchorAttribute` or `maxSentAnchors`. See the [binding API](/docs/dom/api/binding#createdombinding).
 
 ## Draw cursors without React
 

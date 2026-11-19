@@ -75,15 +75,7 @@ For a large room, use one or more of these measures:
 - Add rate limits and message size caps on the relay.
 - Add a server-side aggregator.
 
-The reference relay (`apps/server`) has these limits:
-
-| Limit                  | Setting                   | Default                |
-| ---------------------- | ------------------------- | ---------------------- |
-| Sockets per room       | `RELAY_MAX_ROOM_SOCKETS`  | 64                     |
-| Sockets per server     | `RELAY_MAX_TOTAL_SOCKETS` | 10 000                 |
-| Bytes per message      | `MAX_MESSAGE_BYTES`       | 32 KiB                 |
-| Rate burst per socket  | `RATE_CAPACITY`           | 80 messages            |
-| Rate refill per socket | `RATE_REFILL_PER_SECOND`  | 40 messages per second |
+The reference relay (`apps/server`) caps the sockets per room and per server, the bytes per message, and the message rate per socket. See the [environment variables](/docs/get-started/guides/deploy-relay) for the defaults.
 
 It also checks the origin, checks an optional [room token](/docs/dom/websocket-transport#room-token), and pings each socket. Bun closes a connection with a frame above `maxPayloadLength`: four times `MAX_MESSAGE_BYTES`, or at least 1 MiB.
 

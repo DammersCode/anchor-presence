@@ -407,4 +407,14 @@ describe("reference relay hardening", () => {
     refillBucket(bucket, 6_000, 10, 2);
     expect(bucket.tokens).toBe(2);
   });
+
+  it("keeps the room count per relay instance", async () => {
+    const child = spawn("bun", ["apps/server/test/two-relays-fixture.ts"], {
+      cwd: repoRoot,
+      stdio: "ignore",
+      windowsHide: true,
+    });
+    const code = await new Promise((resolve) => child.once("exit", resolve));
+    expect(code).toBe(0);
+  }, 15_000);
 });

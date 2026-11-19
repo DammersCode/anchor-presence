@@ -8,7 +8,7 @@ Owner request: replace the GitHub Pages site with a Fumadocs docs site on Vercel
 
 Owner decisions:
 
-- Core size budget: the `perf:score` tier for `@anchor-presence/core` is 10 KB gzip for the whole entry (9.85 KB measured). The extra 1.4 KB over the first target is validation and safety checks plus the in-memory transports and `binaryCodec`, which apps tree-shake away. Revisit with a `@anchor-presence/core/binary` subpath if the budget matters before the first publish.
+- Core size budget: the `perf:score` tier for `@anchor-presence/core` is 10 KB gzip for the whole entry (9.85 KB measured). The extra 1.4 KB over the first target is validation and safety checks, which stay in every app, plus `binaryCodec` (about 1.5 KB) and the in-memory transports, which apps tree-shake away. The `bundle core app` metric (createPresenceClient plus jsonCodec only) measures 7.3 KB; the whole entry 9.9 KB. Revisit with a `@anchor-presence/core/binary` subpath if the budget matters before the first publish.
 - Docs: Fumadocs in `apps/docs`, the design of the old `site/index.html`, deployed on Vercel. The owner imports the repo in Vercel (Root Directory `apps/docs`).
 - Examples: live in-browser demos plus backend code tabs. Real backends stay in `examples/` with integration tests.
 - Backends to implement: Bun native, Node `ws`, Hono, Elysia. Edge, managed realtime, and other languages are plans only (`plans/backends/`).

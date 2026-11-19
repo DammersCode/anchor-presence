@@ -112,11 +112,10 @@ export function createInMemoryPair(options: InMemoryPairOptions = {}): InMemoryP
     if (disposed) return;
     if (isAsync) {
       queueMicrotask(() => {
-        if (disposed) return;
-        for (const listener of to.listeners) listener(data);
+        if (!disposed) notify(to, data);
       });
     } else {
-      for (const listener of to.listeners) listener(data);
+      notify(to, data);
     }
   }
 
@@ -131,8 +130,7 @@ export function createInMemoryPair(options: InMemoryPairOptions = {}): InMemoryP
   };
 }
 
-function receive(to: Side, data: Uint8Array): void {
-  if (to.status !== "connected") return;
+function notify(to: Side, data: Uint8Array): void {
   for (const listener of to.listeners) {
     try {
       listener(data);
@@ -140,6 +138,10 @@ function receive(to: Side, data: Uint8Array): void {
       reportListenerError(error);
     }
   }
+}
+
+function receive(to: Side, data: Uint8Array): void {
+  if (to.status === "connected") notify(to, data);
 }
 
 /**
@@ -153,16 +155,19 @@ export function createInMemoryRoom(options: InMemoryRoomOptions = {}): InMemoryR
   const isAsync = options.async === true;
   const all = new Set<Side>();
   const connected = new Set<Side>();
+  let disposed = false;
 
   return {
     join() {
-      const self = newSide("connected");
-      all.add(self);
-      connected.add(self);
-      return buildTransport(
+      const self = newSide(disposed ? "disconnected" : "connected");
+      if (!disposed) {
+        all.add(self);
+        connected.add(self);
+      }
+      const transport = buildTransport(
         self,
         (data) => {
-          if (self.status !== "connected") return;
+          if (disposed || self.status !== "connected" || !all.has(self)) return;
           for (const to of connected) {
             if (to === self) continue;
             if (isAsync) queueMicrotask(() => receive(to, data));
@@ -170,12 +175,19 @@ export function createInMemoryRoom(options: InMemoryRoomOptions = {}): InMemoryR
           }
         },
         () => {
-          if (self.status === "connected" && all.has(self)) connected.add(self);
+          if (!disposed && self.status === "connected" && all.has(self)) connected.add(self);
           else connected.delete(self);
         },
       );
+      return {
+        ...transport,
+        connect() {
+          if (!disposed) void transport.connect();
+        },
+      };
     },
     dispose() {
+      disposed = true;
       for (const side of all) {
         setStatus(side, "disconnected");
         clearSide(side);

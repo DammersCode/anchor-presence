@@ -37,6 +37,10 @@ type VisibilityPolicy<TContext = unknown, TUser = unknown> = (input: {
 
 `CURSOR_MARKER_ATTRIBUTE` is the string `"data-anchor-presence-cursor"`. The binding ignores the DOM changes inside an element with this attribute. A renderer sets it on the root element of each cursor. `@anchor-presence/react` sets it for you. See [Draw cursors without React](/docs/dom/binding#draw-cursors-without-react).
 
+## Re-exported types
+
+`@anchor-presence/dom` re-exports `PointerType` from `@anchor-presence/core`. Import it from either package.
+
 ## Related
 
 <Cards>

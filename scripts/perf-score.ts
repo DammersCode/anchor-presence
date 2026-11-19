@@ -2,7 +2,7 @@
 // Usage: bun run perf:score [--relay]. Run `bun run build` first. Prints a table and writes .crew/rounds/perf-score.json when .crew exists.
 
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { gzipSync } from "node:zlib";
 import { Bench } from "tinybench";
@@ -20,6 +20,7 @@ type Budget = { ten: number; nine: number; seven: number; higher?: boolean };
 const BUDGETS: Record<string, Budget> = {
   // Whole entry, so binaryCodec and the in-memory transports count; apps tree-shake what they do not import.
   "bundle core gzip (KB)": { ten: 7, nine: 10, seven: 13 },
+  "bundle core app (jsonCodec client only, KB)": { ten: 7, nine: 9, seven: 13 },
   "bundle dom gzip (KB)": { ten: 10, nine: 13, seven: 19 },
   "bundle react gzip (KB)": { ten: 4, nine: 5, seven: 8 },
   "wire json steady cursor (bytes)": { ten: 220, nine: 300, seven: 420 },
@@ -56,6 +57,28 @@ async function bundleSizes(): Promise<void> {
     if (result.success !== true || output === undefined)
       throw new Error(`bundle failed for ${name}: run bun run build`);
     metrics.set(`bundle ${name} gzip (KB)`, gzipSync(Buffer.from(await output.text())).length / 1024);
+  }
+  metrics.set("bundle core app (jsonCodec client only, KB)", await coreAppBundleKb());
+}
+
+// An app imports only what it uses, so the bundler drops binaryCodec and the in-memory transports.
+async function coreAppBundleKb(): Promise<number> {
+  const dir = mkdtempSync(join(rootDir, "node_modules", ".anchor-app-"));
+  try {
+    const entry = join(dir, "entry.js");
+    const core = join(rootDir, "packages/core/dist/index.js").replaceAll("\\", "/");
+    writeFileSync(
+      entry,
+      `import { createPresenceClient, jsonCodec } from "${core}";
+globalThis.app = [createPresenceClient, jsonCodec];
+`,
+    );
+    const result = await Bun.build({ entrypoints: [entry], minify: true, target: "browser" });
+    const output = result.outputs[0];
+    if (result.success !== true || output === undefined) throw new Error("app bundle failed");
+    return gzipSync(Buffer.from(await output.text())).length / 1024;
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
   }
 }
 

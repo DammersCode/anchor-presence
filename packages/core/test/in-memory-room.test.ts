@@ -162,4 +162,35 @@ describe("createInMemoryRoom", () => {
     expect(received).toEqual([3]);
     spy.mockRestore();
   });
+
+  it("does nothing after dispose: connect, send and join", () => {
+    const room = createInMemoryRoom();
+    const old = room.join();
+    room.dispose();
+    const late = room.join();
+    const received: number[] = [];
+    late.subscribe((data) => received.push(data[0]!));
+    void old.connect();
+    void old.send(bytes(1));
+    void late.connect();
+    void late.send(bytes(2));
+    expect(old.getStatus()).toBe("disconnected");
+    expect(late.getStatus()).toBe("disconnected");
+    expect(received).toEqual([]);
+  });
+
+  it("async delivery skips a receiver that disconnects or is disposed before the microtask", async () => {
+    const room = createInMemoryRoom({ async: true });
+    const a = room.join();
+    const leaving = room.join();
+    const disposed = room.join();
+    const received: string[] = [];
+    leaving.subscribe(() => received.push("leaving"));
+    disposed.subscribe(() => received.push("disposed"));
+    void a.send(bytes(1));
+    void leaving.disconnect();
+    room.dispose();
+    await Promise.resolve();
+    expect(received).toEqual([]);
+  });
 });

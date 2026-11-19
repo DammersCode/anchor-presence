@@ -134,6 +134,8 @@ First release.
 - `@anchor-presence/dom`: `startAutoRegister` frees an id for a duplicate anchor when the newer one changes or loses its attribute.
 - `@anchor-presence/core`: the `staleTimeoutMs` dev warning also covers the default timeout, and `binaryCodec.encode` throws a `TypeError` for an invalid anchor, like it does for an invalid viewport.
 - `@anchor-presence/core`: the dev warning for a failed send also names a transport send failure.
+- `@anchor-presence/core`: after `room.dispose()`, `createInMemoryRoom` ignores `join()` connects and sends, and a throwing listener on an `createInMemoryPair` side no longer stops the other listeners or throws into the sender.
+- `@anchor-presence/dom`: `createWebSocketTransport` warns once in dev when a close with a code below 4000 (for example 1008) ends reconnecting.
 
 ### Packages
 

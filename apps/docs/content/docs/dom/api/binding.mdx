@@ -15,7 +15,12 @@ import type { DomBinding, DomBindingOptions } from "@anchor-presence/dom";
 
 ## createDomBinding
 
-`createDomBinding(client, options?)` creates the DOM side of one client and returns a `DomBinding`. It throws a `TypeError` for a bad `anchorAttribute` or a `maxSentAnchors` that is not an integer. See [Options](/docs/dom/binding#options).
+`createDomBinding(client, options?)` creates the DOM side of one client and returns a `DomBinding`. It throws a `TypeError` in these cases:
+
+- `anchorAttribute` is not letters and digits in groups split by single hyphens, with a letter first. For example, `data-anchor` and `anchor` pass, and `data_anchor` and `1-anchor` fail.
+- `maxSentAnchors` is not an integer, for example `2.5` or `NaN`.
+
+See [Options](/docs/dom/binding#options).
 
 ## DomBinding
 

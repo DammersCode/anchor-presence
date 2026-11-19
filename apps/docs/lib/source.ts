@@ -58,6 +58,7 @@ const CARD = new RegExp(
 );
 const STEP_BODY = /(<Step>)([\s\S]*?)(<\/Step>)/g;
 const TAB_BODY = /(<Tab value="[^"]+">)([\s\S]*?)(<\/Tab>)/g;
+const ACCORDION_BODY = /(<Accordion title="[^"]+">)([\s\S]*?)(<\/Accordion>)/g;
 const TAB = /<Tab value="([^"]+)">/g;
 const ACCORDION = /<Accordion title="([^"]+)">/g;
 const STRUCTURE_TAGS = /^\s*<\/?(?:Cards|Tabs|Steps|Accordions)\b[^>]*>\s*\n?|<\/?(?:Tab|Step|Accordion)>/gm;
@@ -117,6 +118,7 @@ async function inlineComponents(markdown: string): Promise<string> {
     )
     .replace(STEP_BODY, dedentBody)
     .replace(TAB_BODY, dedentBody)
+    .replace(ACCORDION_BODY, dedentBody)
     .replace(ACCORDION, (_tag, title: string) => `**${title}**\n`)
     .replace(STRUCTURE_TAGS, "")
     .replace(TAB, (_tag, name: string) => `\n**${name}**\n\n`);
@@ -133,5 +135,5 @@ export async function getLLMText(page: (typeof source)["$inferPage"]) {
     "$1",
   );
 
-  return `# ${page.data.title} (${page.url})\n\n${processed}`;
+  return `# ${page.data.title} (${page.url})\n\n${processed.trim()}`;
 }

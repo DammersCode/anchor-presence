@@ -98,19 +98,7 @@ The Bun, Node.js (ws), Hono, Elysia, and Socket.IO relays share one file of guar
 
 A relay that does not decode messages cannot tell who sent a message. With identity binding, the `authCheck` hook returns a verified `{ clientId, user }`. The relay then writes that identity into every JSON frame of the connection. [Relay contract](/docs/examples/backends/relay-contract#identity) gives the rules and lists the relays that support it.
 
-The entry files of the Bun, Node.js (ws), Hono and Elysia relays have a demo identity mode. To turn it on, set `RELAY_DEMO_IDENTITY=1` before you start the relay:
-
-```sh
-RELAY_DEMO_IDENTITY=1 bun relay.ts
-```
-
-In this mode, the [room token](/docs/dom/websocket-transport#room-token) names the user. `authCheck` returns `{ clientId: "user-<token>", user: { name: "<token>" } }`. A client with the room token `ada` gets the `clientId` `user-ada~<connection>` and the user `{ name: "ada" }`. The relay refuses a connection without a room token.
-
-<Callout type="warn">
-  If you use the demo identity mode in production, any client can claim any name. The relay trusts the room
-  token as the user name. Check the room token in your own `authCheck`, for example as a JWT, and return the
-  verified user.
-</Callout>
+To try identity binding without your own auth, use the [demo identity mode](/docs/examples/backends/relay-contract#demo-identity-mode).
 
 ## Conformance suite
 

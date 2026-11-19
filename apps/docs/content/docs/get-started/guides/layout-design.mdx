@@ -94,8 +94,10 @@ A board of fixed-size columns that scrolls, and does not shrink, keeps every cur
 A collapsed and an expanded sidebar are two layouts of one page. Give each item the same anchor ID in both states:
 
 ```tsx
-const id = `nav.${item.key}`;
-return collapsed ? <IconLink data-anchor={id} /> : <LabeledLink data-anchor={id} />;
+function NavItem({ item, collapsed }: { item: { key: string }; collapsed: boolean }) {
+  const id = `nav.${item.key}`;
+  return collapsed ? <IconLink data-anchor={id} /> : <LabeledLink data-anchor={id} />;
+}
 ```
 
 ## Keep the parent of a hidden anchor anchored

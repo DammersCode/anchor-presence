@@ -115,7 +115,7 @@ The relay reads the limits, the defaults, and the codes on [Deploy a relay](/doc
 | Origin           | `RELAY_ALLOWED_ORIGINS`, comma-separated. Empty allows every origin.                 | `io.use` fails the handshake with code `4004`.           |
 | Room token       | `RELAY_AUTH_TOKEN`. Compares the `token` handshake query. Empty turns the check off. | `connect_error` with code `4006`.                        |
 | `authCheck` hook | Factory option. Replaces the room token check.                                       | `connect_error` with code `4006` on `false` or an error. |
-| Identity binding | `authCheck` returns `{ clientId, user }`.                                            | Drops a payload that is not a JSON object.               |
+| Identity binding | `authCheck` returns `{ clientId, user }`.                                            | Closes the sender with code `1008`.                      |
 | Check order      | Origin, then room name, then the hook.                                               | The hook never runs for a refused origin or room.        |
 
 See [Identity binding](/docs/examples/backends#identity-binding) for the rules. The relay never parses a payload without identity binding. The validation in the receiving client is then the only check between the wire and the store. See [Security](/docs/get-started/guides/security).

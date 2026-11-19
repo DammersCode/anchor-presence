@@ -144,4 +144,19 @@ describe("createInMemoryPair", () => {
 
     unsub();
   });
+
+  it("a throwing listener does not stop the others or throw into the sender", () => {
+    const pair = createInMemoryPair();
+    void pair.a.connect();
+    void pair.b.connect();
+    const received: number[] = [];
+    pair.b.subscribe(() => {
+      throw new Error("boom");
+    });
+    pair.b.subscribe((data) => received.push(data[0]!));
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(() => pair.a.send(Uint8Array.of(4))).not.toThrow();
+    expect(received).toEqual([4]);
+    spy.mockRestore();
+  });
 });

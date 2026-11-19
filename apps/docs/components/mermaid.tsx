@@ -51,11 +51,21 @@ export function Mermaid({ chart }: { chart: string }) {
   const id = useId().replace(/:/g, "-");
   const { resolvedTheme } = useTheme();
   const [svg, setSvg] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
 
   useLayoutEffect(() => {
     let cancelled = false;
 
     const render = async () => {
+      try {
+        await draw();
+      } catch (error) {
+        console.error("Mermaid could not render the diagram", error);
+        if (!cancelled) setFailed(true);
+      }
+    };
+
+    const draw = async () => {
       const { default: mermaid } = await import("mermaid");
       mermaid.initialize({
         startOnLoad: false,
@@ -68,7 +78,10 @@ export function Mermaid({ chart }: { chart: string }) {
         state: { useMaxWidth: false },
       });
       const { svg: rendered } = await mermaid.render(`mermaid-${id}`, chart);
-      if (!cancelled) setSvg(rendered);
+      if (!cancelled) {
+        setSvg(rendered);
+        setFailed(false);
+      }
     };
 
     // A hidden tab measures text wrong, so Mermaid would lay the diagram out at a huge size.
@@ -93,7 +106,11 @@ export function Mermaid({ chart }: { chart: string }) {
       aria-label={/^\s*accTitle:\s*(.+)$/m.exec(chart)?.[1]?.trim() ?? "Diagram"}
       className="my-6 min-h-32 overflow-x-auto rounded-lg border border-fd-border bg-fd-card p-4"
     >
-      {svg ? (
+      {failed ? (
+        <p className="text-sm text-fd-muted-foreground">
+          The diagram could not render. Reload the page. The browser console names the cause.
+        </p>
+      ) : svg ? (
         <div className="[&_svg]:mx-auto [&_svg]:max-w-none" dangerouslySetInnerHTML={{ __html: svg }} />
       ) : (
         <div className="h-32 animate-pulse rounded-md bg-fd-secondary/40" aria-hidden />

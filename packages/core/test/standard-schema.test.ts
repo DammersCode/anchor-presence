@@ -69,13 +69,16 @@ describe("parserFrom with a transforming schema", () => {
     expectTypeOf(parserFrom(schema)).returns.toEqualTypeOf<{ n: string } | undefined>();
   });
 
-  it("rejects a schema whose output is not assignable to its input", () => {
+  it("parses its input, rejects its own output, and reports the drop", () => {
+    const onInvalid = vi.fn();
     const schema = v.pipe(
       v.object({ n: v.string() }),
       v.transform((value) => ({ count: Number(value.n) })),
     );
-    // @ts-expect-error a peer would parse { count: number } with a schema that expects { n: string }
-    expect(parserFrom(schema)({ n: "3" })).toEqual({ count: 3 });
+    const parse = parserFrom(schema, { onInvalid });
+    expect(parse({ n: "3" })).toEqual({ count: 3 });
+    expect(parse({ count: 3 })).toBeUndefined();
+    expect(onInvalid).toHaveBeenCalledOnce();
   });
 });
 
@@ -210,18 +213,6 @@ describe("the standard-schema entry point", () => {
   });
 });
 
-describe("eventParserFrom with a transforming schema", () => {
-  const transforming = v.pipe(
-    v.object({ n: v.string() }),
-    v.transform((value) => ({ count: Number(value.n) })),
-  );
-
-  it("rejects a schema whose output is not a valid input", () => {
-    // @ts-expect-error a peer parses what the sender's output sent, so the output must fit the input
-    expect(eventParserFrom({ count: transforming })).toBeTypeOf("function");
-  });
-});
-
 describe("parserFrom with a schema whose declared output differs from its validate result", () => {
   const schema = {
     "~standard": {
@@ -253,5 +244,32 @@ describe("parserFrom with a readonly array schema", () => {
   it("accepts a Valibot readonly array and a Zod readonly array", () => {
     expect(parserFrom(v.pipe(v.array(v.string()), v.readonly()))(["a"])).toEqual(["a"]);
     expect(parserFrom(z.array(z.string()).readonly())(["a"])).toEqual(["a"]);
+  });
+});
+
+describe("schemas that cannot give a type", () => {
+  const lying = {
+    "~standard": {
+      version: 1 as const,
+      vendor: "test",
+      validate: (value: unknown) => ({ value }),
+      types: { input: { name: "" }, output: { name: "" } },
+    },
+  };
+
+  it("rejects a lying schema under a key that can also be null", () => {
+    const withSchema = Math.random() > 2;
+    // @ts-expect-error the validate result must be assignable to the declared output
+    expect(eventParserFrom({ chat: withSchema ? lying : null })).toBeTypeOf("function");
+  });
+
+  it("gives a client no type when the schema outputs any", () => {
+    const client = createPresenceClient({
+      transport: createInMemoryPair().a,
+      // @ts-expect-error a parser that returns any cannot meet the parser requirement
+      parseUser: parserFrom(v.any()),
+    });
+    expect(client.getStatus()).toBeTypeOf("string");
+    client.dispose();
   });
 });

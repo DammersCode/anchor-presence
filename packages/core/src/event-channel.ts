@@ -9,7 +9,7 @@ export type TypedRemoteEvent<TEvents extends object> = {
   [K in keyof TEvents & string]: { clientId: string; type: K; data: TEvents[K] };
 }[keyof TEvents & string];
 
-/** Checks one remote event. Returns the event to deliver it, or `undefined` to drop it. */
+/** Checks one remote event. Returns an event with `clientId`, `type`, and `data` to deliver it, or `undefined` to drop it. */
 export type EventParser<TEvents extends object> = (
   event: RemoteEvent,
 ) => TypedRemoteEvent<TEvents> | undefined;

@@ -27,24 +27,6 @@ export type InferSchemaOutput<Schema extends StandardSchemaV1> = NonNullable<
   Schema["~standard"]["types"]
 >["output"];
 
-/** The input type of a Standard Schema. */
-export type InferSchemaInput<Schema extends StandardSchemaV1> = NonNullable<
-  Schema["~standard"]["types"]
->["input"];
-
-type WithReadonlyArrays<T> = T extends readonly (infer Item)[]
-  ? readonly WithReadonlyArrays<Item>[]
-  : T extends object
-    ? { [Key in keyof T]: WithReadonlyArrays<T[Key]> }
-    : T;
-
-/** Resolves to `unknown` when a peer can parse what the schema outputs. A readonly array output fits a mutable array input. */
-export type SchemaRoundTrip<Schema extends StandardSchemaV1> = [InferSchemaOutput<Schema>] extends [
-  WithReadonlyArrays<InferSchemaInput<Schema>>,
-]
-  ? unknown
-  : { readonly "the schema output must be assignable to its input": never };
-
 /** A parser that fits `parseUser`, `parseContext`, and the data parsers of `createEventParser`. */
 export type SchemaParser<Schema extends StandardSchemaV1> = (
   value: unknown,
@@ -64,7 +46,7 @@ function isPromiseLike(value: unknown): value is PromiseLike<unknown> {
  * The parser returns `undefined` when the schema rejects the value, and when the schema validates asynchronously.
  */
 export function parserFrom<Schema extends StandardSchemaV1>(
-  schema: Schema & SchemaRoundTrip<Schema> & StandardSchemaV1<unknown, InferSchemaOutput<Schema>>,
+  schema: Schema & StandardSchemaV1<unknown, InferSchemaOutput<Schema>>,
   options: SchemaParserOptions = {},
 ): SchemaParser<Schema> {
   let warnedAsync = false;
@@ -104,7 +86,7 @@ type CheckedKey<Schema> = [NonNullable<Schema>] extends [never]
     : CheckedSchema<NonNullable<Schema>>;
 
 type CheckedSchema<Schema> = Schema extends StandardSchemaV1
-  ? SchemaRoundTrip<Schema> & StandardSchemaV1<unknown, InferSchemaOutput<Schema>>
+  ? StandardSchemaV1<unknown, InferSchemaOutput<Schema>>
   : unknown;
 
 /**

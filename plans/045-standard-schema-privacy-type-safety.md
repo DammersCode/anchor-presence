@@ -26,7 +26,6 @@ Status: in progress · Branch: `develop` · Advisor-reviewed design.
 - `RequiredParsers` tests exact identity (`IsExactly`), not `extends`. `any`, `{}`, `object`, an empty interface and `Record<string, any>` need their parser. Only `unknown` and `EventMap` need none.
 - `setUser` and `setContext` are properties with function types, so TypeScript checks them contravariantly. The standalone `PresenceProvider` takes only untyped clients and has no type parameters. A typed client goes through `createPresenceHooks(...).PresenceProvider`.
 - `RemotePresenceStore` needs no `in out` annotation: its private listener set already makes it invariant. A negative test pins this.
-- `parserFrom` requires the schema output to be assignable to its input.
 
 ## Steps
 
@@ -50,4 +49,5 @@ Status: in progress · Branch: `develop` · Advisor-reviewed design.
 - `event-channel.ts:63` and `standard-schema.ts:94`: the two named correlation boundaries stay.
 - Extra-key event parsers: it needs a caller-built object, and the data is still parsed. This is the one accepted leak.
 - An inference helper for `createPresenceHooks`: `InferSchemaOutput` covers it. The typed-hooks page shows it.
-- Exported helper types of the schema subpath (`SchemaRoundTrip`, `InferSchemaInput`, `InferSchemaOutput`, the Standard Schema interface types): they appear in public signatures, so they stay exported. Undocumented on purpose: users never write them.
+- Exported helper types of the schema subpath (`InferSchemaOutput` and the Standard Schema interface types): they appear in public signatures, so they stay exported. Undocumented on purpose: users never write them.
+- A type-level round-trip check (schema output assignable to its input): removed. It never guarded soundness, because the peer's schema validates the value and drops a bad one. A type cannot decide it: a transform that doubles a number passes, while readonly arrays and tuples each broke the check. It caused a finding in each of the last two review rounds. `onInvalid` shows the drops at run time.

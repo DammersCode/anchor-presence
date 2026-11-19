@@ -30,7 +30,7 @@ The demo uses short timeouts, so that you see the idle and leave steps in second
 </Callout>
 
 <Callout type="warn">
-  If you render `user` as HTML, another client can inject markup into your page. `user` is untrusted network
+  If you render `user` as HTML, another peer can inject markup into your page. `user` is untrusted network
   data. Render `user.name` as text, as the scene does.
 </Callout>
 
@@ -52,10 +52,10 @@ Try it: Move your pointer in one pane.
 
 <Cards>
   <Card icon={<Cpu />} title="Idle state" href="/docs/core/remote-presence#idle-state">
-    When another client is idle.
+    When another peer is idle.
   </Card>
   <Card icon={<Cpu />} title="Stale timeout" href="/docs/core/remote-presence#stale-timeout">
-    When the store removes another client.
+    When the store removes another peer.
   </Card>
   <Card icon={<Atom />} title="useRemoteUsers" href="/docs/react/remote-users">
     The hook and its render cost.

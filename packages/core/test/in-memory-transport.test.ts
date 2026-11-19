@@ -180,4 +180,21 @@ describe("createInMemoryPair", () => {
     expect(received).toEqual([4]);
     spy.mockRestore();
   });
+
+  it("dispose clears both sides after a status listener throws", () => {
+    const pair = createInMemoryPair();
+    void pair.a.connect();
+    void pair.b.connect();
+    let armed = false;
+    pair.a.subscribeStatus(() => {
+      if (armed) throw new Error("boom");
+    });
+    const seen: string[] = [];
+    pair.b.subscribeStatus((status) => seen.push(status));
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    armed = true;
+    expect(() => pair.dispose()).not.toThrow();
+    expect(seen).toEqual(["connected", "disconnected"]);
+    spy.mockRestore();
+  });
 });

@@ -91,7 +91,7 @@ A `WebSocketCtor` that throws reports the same close. If 4 sockets in a row clos
 - The backoff resets only after a connection stays open for `stableAfterMs` (default `5000`). A relay that accepts a connection and then closes it therefore sees growing delays, not a retry loop.
 - The transport never gives up and has no attempt cap. If 4 sockets in a row close before they open, it logs a development warning one time for each URL. Pass `shouldReconnect` to stop.
 - A close with code `1008` (policy), `4004` (origin), `4006` (room token), or `4007` (room name) stops the reconnect, and the status becomes `disconnected`.
-- When the default rule stops after a close code below `4000` (today only `1008`), the transport logs a development warning one time for each URL. A custom `shouldReconnect` never warns. A close with no code reconnects.
+- When the default rule stops after a close code below `4000` (only `1008`), the transport logs a development warning one time for each URL. A custom `shouldReconnect` never warns. A close with no code reconnects.
 - `random` replaces the source of the random wait. It defaults to `Math.random`. A test can pass a fixed function to get a fixed delay.
 
 While a connection is connecting or open, a second `connect()` call has no effect. It does not open a second socket.

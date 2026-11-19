@@ -123,6 +123,24 @@ describe("createInMemoryRoom", () => {
     expect(received).toEqual([]);
   });
 
+  it("dispose clears both sides after a status listener throws", () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const room = createInMemoryRoom();
+    const a = room.join();
+    const b = room.join();
+    const seen: string[] = [];
+    let armed = false;
+    a.subscribeStatus(() => {
+      if (armed) throw new Error("boom");
+    });
+    b.subscribeStatus((status) => seen.push(status));
+    armed = true;
+    room.dispose();
+    expect(seen).toEqual(["connected", "disconnected"]);
+    expect(b.getStatus()).toBe("disconnected");
+    spy.mockRestore();
+  });
+
   it("a disconnected side leaves the delivery set and connect rejoins it", () => {
     const room = createInMemoryRoom();
     const a = room.join();

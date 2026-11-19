@@ -265,11 +265,16 @@ afterAll(async () => {
 });
 
 describe("reference relay hardening", () => {
-  it("starts with the default limit when an option floors to zero", async () => {
+  it("accepts sockets when RELAY_MAX_ROOM_SOCKETS floors to zero", async () => {
     const port = await freePort();
     const child = startRelay(port, { RELAY_MAX_ROOM_SOCKETS: "0.5" });
     try {
       await waitForPort(port);
+      const room = randomUUID();
+      const first = await connect(`ws://127.0.0.1:${port}/?room=${room}`);
+      const second = await connect(`ws://127.0.0.1:${port}/?room=${room}`);
+      first.ws.close();
+      second.ws.close();
     } finally {
       child.kill();
     }

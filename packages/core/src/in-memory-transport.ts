@@ -54,10 +54,20 @@ function newSide(status: ConnectionStatus): Side {
   return { status, listeners: new Set(), statusListeners: new Set() };
 }
 
+function callAll<T>(listeners: Set<(value: T) => void>, value: T): void {
+  for (const listener of listeners) {
+    try {
+      listener(value);
+    } catch (error) {
+      reportListenerError(error);
+    }
+  }
+}
+
 function setStatus(side: Side, next: ConnectionStatus): void {
   if (side.status === next) return;
   side.status = next;
-  for (const listener of side.statusListeners) listener(next);
+  callAll(side.statusListeners, next);
 }
 
 function clearSide(side: Side): void {
@@ -140,13 +150,7 @@ export function createInMemoryPair(options: InMemoryPairOptions = {}): InMemoryP
 }
 
 function notify(to: Side, data: Uint8Array): void {
-  for (const listener of to.listeners) {
-    try {
-      listener(data);
-    } catch (error) {
-      reportListenerError(error);
-    }
-  }
+  callAll(to.listeners, data);
 }
 
 function receive(to: Side, data: Uint8Array): void {

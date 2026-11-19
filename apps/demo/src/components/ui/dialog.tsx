@@ -14,7 +14,7 @@ function mergeRefs<T>(...refs: Array<React.Ref<T> | undefined>): React.RefCallba
   return (value) => {
     for (const ref of refs) {
       if (typeof ref === "function") ref(value);
-      else if (ref !== null && ref !== undefined) (ref as React.RefObject<T | null>).current = value;
+      else if (ref && "current" in ref) ref.current = value;
     }
   };
 }

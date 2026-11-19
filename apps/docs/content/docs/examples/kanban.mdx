@@ -6,7 +6,7 @@ icon: kanban
 
 import { AppWindow, Eye, LayoutGrid, Ruler, TableProperties } from "lucide-react";
 
-When the pane shrinks, this layout keeps every card and column at the same size and position. The board scrolls instead of shrinking the columns. In this demo, both panes show the same five-column board. When the page is wide enough to place the panes side by side, the wide pane shows more columns than the narrow pane. The board scrolls to the rest.
+When the pane shrinks, this layout keeps every card and column in place. The board scrolls. In this demo, both panes show the same five-column board. When the page is wide enough to place the panes side by side, the wide pane shows more columns than the narrow pane. The board scrolls to the rest.
 
 <ExamplePreview scene="kanban" />
 
@@ -32,7 +32,6 @@ The demo shows peers on a card and the card that a peer selected. Mira and Theo 
 
 Try it: Select the colored button at the board edge to scroll the card into view.
 
-- The columns keep a fixed width in both panes. The board row is a horizontal scroll container.
 - The `+` button in a column header and the `X` button on a card mark the places of the actions. They carry anchors, but they do nothing in this demo.
 - The [tour](/docs/examples) points at a card in the third column. The narrow pane hides that card. A colored button at the board edge shows where the cursor is.
 - Columns and cards have the same size and position in both panes. A cursor on a visible card moves the same distance in both panes.

@@ -1,6 +1,7 @@
 {
   "title": "Backends",
   "icon": "server",
+  "defaultOpen": true,
   "pages": [
     "index",
     "relay-contract",

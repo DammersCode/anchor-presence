@@ -73,6 +73,8 @@ function PeerAnnouncer() {
 
 Render `PeerAnnouncer` once, inside `PresenceProvider`. Keep it mounted: a screen reader only announces text that changes inside a region that already exists. `sr-only` is the Tailwind class that hides the text from the eye and keeps it for screen readers. Use an equal CSS rule if you do not use Tailwind.
 
+## Behavior notes
+
 - The first change starts a 1 second window. Every later join or leave in that window joins the same message.
 - The component clears the region for 100 ms before it sets the text. Then two windows with the same text, like two "Ada joined" messages, are both announced.
 - A window with two or more changes says "3 people joined, 1 person left".

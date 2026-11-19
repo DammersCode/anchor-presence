@@ -96,7 +96,7 @@ The Bun, Node.js (ws), Hono, Elysia, and Socket.IO relays share one file of guar
 
 ## Identity binding
 
-A relay that does not decode messages cannot tell who sent a message. With identity binding, the `authCheck` hook returns a verified `{ clientId, user }`. The relay then writes that identity into every JSON frame of the connection. [Relay contract](/docs/examples/backends/relay-contract#identity) gives the rules and lists the relays that support it.
+A relay can write a verified identity into every JSON frame, so a peer cannot claim another `clientId`. [Relay contract](/docs/examples/backends/relay-contract#identity) gives the rules and lists the relays that support it.
 
 To try identity binding without your own auth, use the [demo identity mode](/docs/examples/backends/relay-contract#demo-identity-mode).
 

@@ -17,7 +17,7 @@ The recipe has two parts:
 
 ## Copy the code
 
-Copy this code:
+This file counts the peers on each card and renders the card with its selection:
 
 ```tsx
 import {
@@ -142,6 +142,8 @@ The `bg-fd-` and `border-fd-` classes are theme classes of this docs site. Repla
 Call `useCardPeers` once in the board, and pass the result to each `CardTile`. Then the board runs two selectors, not two per card.
 
 The selector runs on every cursor snapshot, and a snapshot arrives on every frame while a peer moves. A selector that returns a new object each time makes React rerender the board on every frame. `sameGroups` compares the old and new result. If they hold the same client IDs per anchor, the hook keeps the old object, and the board does not rerender. The compare works because `group` sorts the client IDs, so the same set always gives the same list. Define `whoIsOn`, `whoPicked`, and `sameGroups` outside the component, so that their identity stays stable.
+
+## Behavior notes
 
 - A card counts a peer only when the cursor resolves to the card anchor. A cursor over a child anchor, like the delete button of the kanban example, counts for the child.
 - `whoIsOn` skips cursors that the visibility policy hides.

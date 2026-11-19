@@ -429,7 +429,9 @@ describe("reference relay hardening", () => {
       stdio: "ignore",
       windowsHide: true,
     });
+    const killer = setTimeout(() => child.kill(), 12_000);
     const code = await new Promise((resolve) => child.once("exit", resolve));
+    clearTimeout(killer);
     expect(code).toBe(0);
   }, 15_000);
 });

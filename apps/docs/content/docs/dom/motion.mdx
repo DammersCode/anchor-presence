@@ -47,13 +47,12 @@ The [Interpolation styles](/docs/examples/interpolation-styles) example shows th
 
 ## When motion restarts instead of easing
 
-The resolver moves a cursor without an ease in three cases:
+The resolver moves a cursor without an ease in two cases:
 
 - The `clientId` of the cursor appears for the first time. The cursor starts at its first position.
 - The cursor had the `hidden` tier and resolves again. While the tier is `hidden`, the resolver calls the optional `reset` method of the interpolator, so the cursor jumps to its next position.
-- A local scroll or resize moves the anchor while no message arrives. The resolver calls `shift`, which moves the cursor and its target by the same distance.
 
-In all other cases, a new remote position eases the cursor from where it is.
+In all other cases, a new remote position eases the cursor from where it is. When a local scroll or resize moves the anchor and no message arrives, the resolver calls `shift`. It moves the cursor and its target by the same distance and keeps a running ease.
 
 ## Related
 

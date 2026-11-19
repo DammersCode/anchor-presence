@@ -24,6 +24,7 @@ describe("@anchor-presence/core public runtime API", () => {
       "createEventChannel",
       "createEventParser",
       "createInMemoryPair",
+      "createInMemoryRoom",
       "createPresenceClient",
       "isDevMode",
       "jsonCodec",

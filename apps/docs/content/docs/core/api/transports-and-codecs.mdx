@@ -1,6 +1,6 @@
 ---
 title: Transport and codec API
-description: PresenceTransport, TransportClose, createInMemoryPair, InMemoryTransport, PresenceCodec, and the shipped codecs.
+description: PresenceTransport, TransportClose, createInMemoryPair, createInMemoryRoom, InMemoryTransport, PresenceCodec, and the shipped codecs.
 icon: arrow-left-right
 ---
 
@@ -9,7 +9,7 @@ import { Binary, Cable, MemoryStick } from "lucide-react";
 This page lists the transport and codec exports of `@anchor-presence/core` with their types. Use it to look up a member. The guides explain the behavior. Import them from the package:
 
 ```ts
-import { binaryCodec, createInMemoryPair, jsonCodec } from "@anchor-presence/core";
+import { binaryCodec, createInMemoryPair, createInMemoryRoom, jsonCodec } from "@anchor-presence/core";
 import type { PresenceCodec, PresenceTransport, TransportClose } from "@anchor-presence/core";
 ```
 
@@ -34,6 +34,12 @@ import type { PresenceCodec, PresenceTransport, TransportClose } from "@anchor-p
 <AutoTypeTable path="../../packages/core/src/in-memory-transport.ts" name="InMemoryPair" />
 
 `InMemoryTransport` is the type of `a` and `b`. It is a `PresenceTransport` that always has `connect`, `disconnect`, `subscribeStatus`, and `getStatus`.
+
+## createInMemoryRoom
+
+`createInMemoryRoom(options?)` returns a room. Each `join()` returns a new `InMemoryTransport` that reaches every other joined transport. See [Test with more than two peers](/docs/core/in-memory-transport#test-with-more-than-two-peers).
+
+<AutoTypeTable path="../../packages/core/src/in-memory-transport.ts" name="InMemoryRoom" />
 
 ## PresenceCodec
 

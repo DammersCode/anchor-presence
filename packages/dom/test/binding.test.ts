@@ -323,6 +323,28 @@ describe("createDomBinding", () => {
     error.mockRestore();
   });
 
+  it("does not call a snapshot listener after it unsubscribes", () => {
+    const { raf, caf, flush } = makeRafStub();
+    const { client, pushRemote } = makeFakeClient();
+    const binding = createDomBinding(client, { environment: { raf, caf } });
+    const listener = vi.fn();
+    const unsubscribe = binding.subscribe(listener);
+    unsubscribe();
+
+    pushRemote([
+      {
+        version: 1,
+        clientId: "remote-1",
+        session: "s",
+        sequence: 1,
+        cursor: { anchors: [], viewport: { u: 0.5, v: 0.5 } },
+      },
+    ]);
+    flush();
+
+    expect(listener).not.toHaveBeenCalled();
+  });
+
   it("clears the local cursor on dispose, so a consumer-owned client leaves no ghost", () => {
     const { raf, caf } = makeRafStub();
     const { client } = makeFakeClient();
@@ -623,9 +645,9 @@ describe("createDomBinding", () => {
     expect(() => createDomBinding(client, { anchorAttribute: "not an attribute" })).toThrow(TypeError);
   });
 
-  it("throws for a non-integer maxAnchors", () => {
+  it("throws for a non-integer maxSentAnchors", () => {
     const { client } = makeFakeClient();
-    expect(() => createDomBinding(client, { maxAnchors: 2.5 })).toThrow(TypeError);
+    expect(() => createDomBinding(client, { maxSentAnchors: 2.5 })).toThrow(TypeError);
   });
 
   it("registers anchors from the default data-anchor attribute without manual registry access", () => {
@@ -668,12 +690,12 @@ describe("createDomBinding", () => {
     binding.dispose();
   });
 
-  it("clamps maxAnchors to the protocol range for the outbound chain", () => {
+  it("clamps maxSentAnchors to the protocol range for the outbound chain", () => {
     const deepest = buildNestedAnchors(9);
     const { raf, caf } = makeRafStub();
     const wide: (CursorPosition | null)[] = [];
     const wideClient = makeCapturingClient(wide);
-    const wideBinding = createDomBinding(wideClient, { maxAnchors: 10, environment: { raf, caf } });
+    const wideBinding = createDomBinding(wideClient, { maxSentAnchors: 10, environment: { raf, caf } });
 
     firePointerMove(deepest);
     expect(wide[0]?.anchors.map((a) => a.id)).toEqual([
@@ -694,7 +716,7 @@ describe("createDomBinding", () => {
     const narrow: (CursorPosition | null)[] = [];
     const narrowClient = makeCapturingClient(narrow);
     const narrowBinding = createDomBinding(narrowClient, {
-      maxAnchors: 0,
+      maxSentAnchors: 0,
       environment: { raf: raf2, caf: caf2 },
     });
 

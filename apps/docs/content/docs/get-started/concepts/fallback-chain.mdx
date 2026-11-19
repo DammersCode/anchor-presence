@@ -32,7 +32,7 @@ The fallback chain is the anchor, then its parent anchors, then the viewport pos
 
 1. The sender starts at the element under the pointer.
 2. It adds each registered anchor between that element and the document root, the nearest anchor first.
-3. It stops at `maxAnchors` entries. The default is 4, and the protocol allows at most 8. See [Binding](/docs/dom/binding).
+3. It stops at `maxSentAnchors` entries. The default is 4, and the protocol allows at most 8. See [Binding](/docs/dom/binding).
 
 The receiver walks the chain in order. It uses the first anchor that is connected to its DOM and has a size larger than zero.
 

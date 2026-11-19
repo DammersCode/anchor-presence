@@ -7,7 +7,7 @@ An **anchor** ID names what an element means, never where it sits. IDs survive r
 - Build IDs as dot-separated paths, from most general to most specific: `orders`, `orders.table`, `orders.row:42`, `orders.row:42.actions.delete`.
 - If rows reorder or paginate, give each row its domain identity (`orders.row:ORD-1042` or a database ID). Never use a render index.
 - One ID maps to one live element. A duplicate registration replaces the previous element and logs a development warning. This is correct for a remount. It is wrong for two elements that exist at the same time.
-- Mark a parent for every specific anchor. The sent **chain** carries up to `maxAnchors` IDs (default 4, at most 8), most specific first. The receiver resolves the first ID that it has.
+- Mark a parent for every specific anchor. The sent **chain** carries up to `maxSentAnchors` IDs (default 4, at most 8), most specific first. The receiver resolves the first ID that it has.
 
 ## How resolution degrades
 

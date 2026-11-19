@@ -402,6 +402,18 @@ describe("RemoteResolver (spec §10 + §13)", () => {
     expect(cursors).toHaveLength(0);
   });
 
+  it("drops the interpolator of a removed clientId, so a returning peer gets a new one", () => {
+    const factory = vi.fn<InterpolatorFactory>(spyInterpolator().factory);
+    const resolver = new RemoteResolver({ registry, interpolatorFactory: factory });
+    const state = readState(new Map<Element, Rect>([[el, { left: 0, top: 0, width: 100, height: 100 }]]));
+
+    resolver.resolveAll([presence()], state, 0);
+    resolver.resolveAll([], state, 16);
+    resolver.resolveAll([presence()], state, 32);
+
+    expect(factory).toHaveBeenCalledTimes(2);
+  });
+
   it("carries context and user through to the resolved output", () => {
     const rects = new Map<Element, Rect>([[el, { left: 0, top: 0, width: 100, height: 100 }]]);
     const resolver = new RemoteResolver({ registry });

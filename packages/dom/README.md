@@ -45,7 +45,7 @@ binding.subscribe(() => {
 ```ts
 type DomBindingOptions = {
   anchorAttribute?: string;
-  maxAnchors?: number;
+  maxSentAnchors?: number;
   resolution?: ResolutionOptions;
   environment?: EnvironmentOptions;
   capturePointer?: boolean;
@@ -68,7 +68,7 @@ An element is an anchor when it has a non-empty value for the configured attribu
 ```ts
 const binding = createDomBinding(client, {
   anchorAttribute: "data-presence",
-  maxAnchors: 4,
+  maxSentAnchors: 4,
   resolution: { hitTest: true },
   environment: { raf, caf },
 });

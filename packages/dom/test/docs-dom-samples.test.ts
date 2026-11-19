@@ -189,14 +189,14 @@ describe("binding docs", () => {
     peer.dispose();
   });
 
-  it("binding.mdx: throws a TypeError for a bad anchorAttribute or a non-integer maxAnchors", () => {
+  it("binding.mdx: throws a TypeError for a bad anchorAttribute or a non-integer maxSentAnchors", () => {
     const { a } = createInMemoryPair();
     const client = createPresenceClient({ transport: a });
     expect(() => createDomBinding(client, { anchorAttribute: "data_anchor" })).toThrow(TypeError);
     expect(() => createDomBinding(client, { anchorAttribute: "1-anchor" })).toThrow(TypeError);
-    expect(() => createDomBinding(client, { maxAnchors: 2.5 })).toThrow(TypeError);
-    expect(() => createDomBinding(client, { maxAnchors: Number.NaN })).toThrow(TypeError);
-    createDomBinding(client, { anchorAttribute: "anchor", maxAnchors: 20 }).dispose();
+    expect(() => createDomBinding(client, { maxSentAnchors: 2.5 })).toThrow(TypeError);
+    expect(() => createDomBinding(client, { maxSentAnchors: Number.NaN })).toThrow(TypeError);
+    createDomBinding(client, { anchorAttribute: "anchor", maxSentAnchors: 20 }).dispose();
     client.dispose();
   });
 

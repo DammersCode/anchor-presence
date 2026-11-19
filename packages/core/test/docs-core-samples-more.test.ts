@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { describe, expect, expectTypeOf, it, vi } from "vitest";
 import {
   createInMemoryPair,
+  createInMemoryRoom,
   createPresenceClient,
   binaryCodec,
   jsonCodec,
@@ -206,6 +207,19 @@ describe("build-a-framework-adapter.mdx: signal bridge", () => {
     };
     return { framework, cleanup: () => cleanups.forEach((fn) => fn()) };
   }
+
+  it("joins three clients to one in-memory room", () => {
+    vi.useFakeTimers();
+    const room = createInMemoryRoom();
+    const alice = createPresenceClient({ transport: room.join(), user: { name: "Alice" } });
+    const bob = createPresenceClient({ transport: room.join(), user: { name: "Bob" } });
+    const carol = createPresenceClient({ transport: room.join(), user: { name: "Carol" } });
+    alice.setLocalCursor({ anchors: [{ id: "doc", u: 0.5, v: 0.5 }] });
+    vi.advanceTimersByTime(100);
+    expect([bob, carol].map((client) => client.getRemotePresence().length)).toEqual([2, 2]);
+    for (const client of [alice, bob, carol]) client.dispose();
+    vi.useRealTimers();
+  });
 
   it("follows the client until cleanup", () => {
     vi.useFakeTimers();

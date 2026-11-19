@@ -67,7 +67,7 @@ export type DomBindingOptions<TContext = unknown, TUser = unknown> = {
   /** Attribute whose value is the anchor ID. Default `"data-anchor"`. */
   anchorAttribute?: string;
   /** Maximum anchors in the outbound fallback chain. Default `4`, clamped to `1` through `8`. */
-  maxAnchors?: number;
+  maxSentAnchors?: number;
   /** Settings for how remote cursors resolve. Omit for the defaults. */
   resolution?: ResolutionOptions<TContext, TUser>;
   /** The DOM and timing hosts the binding runs against. Omit for the browser globals. */
@@ -126,16 +126,18 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
   const anchorAttribute = options.anchorAttribute ?? DEFAULT_ANCHOR_ATTRIBUTE;
   if (!ANCHOR_ATTRIBUTE_PATTERN.test(anchorAttribute)) {
     throw new TypeError(
-      `anchorAttribute must be letters and digits in hyphen-separated groups, such as data-anchor, got "${anchorAttribute}"`,
+      `createDomBinding: anchorAttribute must be letters and digits in hyphen-separated groups, such as data-anchor, got "${anchorAttribute}"`,
     );
   }
 
-  let maxAnchors = DEFAULT_SENT_ANCHORS;
-  if (options.maxAnchors !== undefined) {
-    if (!Number.isInteger(options.maxAnchors) || !Number.isFinite(options.maxAnchors)) {
-      throw new TypeError(`maxAnchors must be a finite integer, got ${String(options.maxAnchors)}`);
+  let sentAnchors = DEFAULT_SENT_ANCHORS;
+  if (options.maxSentAnchors !== undefined) {
+    if (!Number.isInteger(options.maxSentAnchors) || !Number.isFinite(options.maxSentAnchors)) {
+      throw new TypeError(
+        `createDomBinding: maxSentAnchors must be a finite integer, got ${String(options.maxSentAnchors)}`,
+      );
     }
-    maxAnchors = Math.min(PROTOCOL_MAX_ANCHORS, Math.max(1, options.maxAnchors));
+    sentAnchors = Math.min(PROTOCOL_MAX_ANCHORS, Math.max(1, options.maxSentAnchors));
   }
 
   const registry = createAnchorRegistry();
@@ -220,7 +222,7 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
   const pointerHandle =
     options.capturePointer !== false
       ? attachPointerSource(client, registry, {
-          maxAnchors,
+          maxAnchors: sentAnchors,
           root: environment.root,
           window: environment.window,
           getCachedRect: (element) => scheduler.getCachedRect(element),

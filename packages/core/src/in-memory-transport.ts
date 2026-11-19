@@ -30,6 +30,14 @@ export type InMemoryPair = {
   dispose(): void;
 };
 
+/**
+ * Any number of in-memory transports that share one channel.
+ */
+export type InMemoryRoom = {
+  /** Returns a new connected transport. Each send reaches every other connected transport. */
+  join(): InMemoryTransport;
+};
+
 type Side = {
   status: ConnectionStatus;
   listeners: Set<(data: Uint8Array) => void>;
@@ -108,6 +116,64 @@ export function createInMemoryPair(options: InMemoryPairOptions = {}): InMemoryP
       b.listeners.clear();
       a.statusListeners.clear();
       b.statusListeners.clear();
+    },
+  };
+}
+
+/**
+ * Creates a room of in-memory transports.
+ * A send from one transport reaches every other connected transport, never the sender.
+ * @param options Optional settings. Omit for synchronous delivery.
+ * @returns A room. Call `join()` once per peer.
+ */
+export function createInMemoryRoom(options: InMemoryPairOptions = {}): InMemoryRoom {
+  const isAsync = options.async === true;
+  const sides = new Set<Side>();
+
+  function deliver(from: Side, data: Uint8Array): void {
+    if (from.status !== "connected") return;
+    for (const to of sides) {
+      if (to === from) continue;
+      const receive = (): void => {
+        if (to.status !== "connected") return;
+        for (const listener of to.listeners) listener(data);
+      };
+      if (isAsync) queueMicrotask(receive);
+      else receive();
+    }
+  }
+
+  return {
+    join() {
+      const self: Side = { status: "connected", listeners: new Set(), statusListeners: new Set() };
+      sides.add(self);
+      return {
+        connect() {
+          setStatus(self, "connected");
+        },
+        disconnect() {
+          setStatus(self, "disconnected");
+        },
+        send(data) {
+          deliver(self, data);
+        },
+        subscribe(listener) {
+          self.listeners.add(listener);
+          return () => {
+            self.listeners.delete(listener);
+          };
+        },
+        subscribeStatus(listener) {
+          listener(self.status);
+          self.statusListeners.add(listener);
+          return () => {
+            self.statusListeners.delete(listener);
+          };
+        },
+        getStatus() {
+          return self.status;
+        },
+      };
     },
   };
 }

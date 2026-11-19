@@ -39,8 +39,13 @@ export type { PresenceCodec } from "./codec.js";
 
 export type { PresenceTransport, TransportClose } from "./transport.js";
 
-export { createInMemoryPair } from "./in-memory-transport.js";
-export type { InMemoryPair, InMemoryPairOptions, InMemoryTransport } from "./in-memory-transport.js";
+export { createInMemoryPair, createInMemoryRoom } from "./in-memory-transport.js";
+export type {
+  InMemoryPair,
+  InMemoryPairOptions,
+  InMemoryRoom,
+  InMemoryTransport,
+} from "./in-memory-transport.js";
 
 export { createEventChannel, createEventParser } from "./event-channel.js";
 export type { EventChannel, EventMap, EventParsers, TypedRemoteEvent } from "./event-channel.js";

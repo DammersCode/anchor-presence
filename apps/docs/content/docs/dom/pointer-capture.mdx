@@ -18,7 +18,7 @@ const binding = createDomBinding(client, { captureFocus: true });
 
 On `pointermove`, `pointerdown`, and `pointerover`, the binding reads the event target, walks its anchor ancestors, and builds a `CursorPosition`. It ignores a touch or pen event whose `isPrimary` is `false`, for example a second finger on a touch screen. The `CursorPosition` has these fields:
 
-- `anchors`: the fallback chain, most specific first, up to `maxAnchors` entries. Each entry carries the anchor ID and the `u`/`v` position inside the rectangle of that anchor. The binding skips an anchor with a zero width or height.
+- `anchors`: the fallback chain, most specific first, up to `maxSentAnchors` entries. Each entry carries the anchor ID and the `u`/`v` position inside the rectangle of that anchor. The binding skips an anchor with a zero width or height.
 - `viewport`: the `u`/`v` position across the full window, when the window has a non-zero size.
 
 The binding rounds each `u` and `v` value to 4 decimal places. It reads each rectangle from the cache of the current frame when one exists, and calls `getBoundingClientRect()` otherwise. The cache is at most one frame old.

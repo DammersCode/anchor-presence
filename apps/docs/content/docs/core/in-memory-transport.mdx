@@ -1,6 +1,6 @@
 ---
 title: In-memory transport
-description: createInMemoryPair, two transports wired to each other for tests and prototypes.
+description: createInMemoryPair and createInMemoryRoom, in-process transports for tests and prototypes.
 icon: memory-stick
 ---
 
@@ -29,6 +29,21 @@ By default, a send reaches the other side at once, inside the `send` call. To de
 ```ts
 const { a, b } = createInMemoryPair({ async: true });
 ```
+
+## Test with more than two peers
+
+Use `createInMemoryRoom` when a test needs three or more clients. Call `join()` once per client:
+
+```ts
+import { createInMemoryRoom, createPresenceClient } from "@anchor-presence/core";
+
+const room = createInMemoryRoom();
+const alice = createPresenceClient({ transport: room.join(), user: { name: "Alice" } });
+const bob = createPresenceClient({ transport: room.join(), user: { name: "Bob" } });
+const carol = createPresenceClient({ transport: room.join(), user: { name: "Carol" } });
+```
+
+A send reaches every other joined transport and never the sender. `join()` returns a connected transport. Call `disconnect()` on a transport to leave the room. A disconnected transport receives nothing, and its sends are dropped. Call `connect()` to join again. The room takes the same `{ async: true }` option as the pair.
 
 ## Limits
 

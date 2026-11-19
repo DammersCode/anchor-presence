@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useSyncExternalStore } from "react";
-import { usePresenceContext } from "./use-presence-client.js";
+import { usePresenceProviderContext } from "./use-presence-client.js";
 import { getContextStore } from "../context-store.js";
 
 /**
@@ -11,7 +11,7 @@ export function useLocalContext<TContext = unknown>(): [
   TContext | undefined,
   (next: TContext | undefined) => void,
 ] {
-  const { client } = usePresenceContext<TContext, unknown>();
+  const { client } = usePresenceProviderContext<TContext, unknown>();
   const store = useMemo(() => (client !== null ? getContextStore(client) : null), [client]);
 
   const subscribe = useCallback(

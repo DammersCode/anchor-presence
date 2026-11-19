@@ -3,10 +3,10 @@
 export { PresenceProvider } from "./provider.js";
 export type { PresenceProviderConfig, PresenceProviderProps } from "./provider.js";
 
-export { PresenceContext } from "./context.js";
-export type { PresenceContextValue } from "./context.js";
+export { PresenceProviderContext } from "./context.js";
+export type { PresenceProviderValue } from "./context.js";
 
-export { usePresenceBinding } from "./hooks/use-presence-binding.js";
+export { useDomBinding } from "./hooks/use-dom-binding.js";
 export { usePresenceClient } from "./hooks/use-presence-client.js";
 export { useLocalContext } from "./hooks/use-local-context.js";
 export { useRemoteEvents } from "./hooks/use-remote-events.js";

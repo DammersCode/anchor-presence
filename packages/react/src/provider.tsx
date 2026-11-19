@@ -4,8 +4,8 @@ import { warnOnce } from "@anchor-presence/core";
 import type { PresenceClient } from "@anchor-presence/core";
 import { createDomBinding } from "@anchor-presence/dom";
 import type { DomBinding, DomBindingOptions } from "@anchor-presence/dom";
-import { PresenceContext } from "./context.js";
-import type { PresenceContextValue } from "./context.js";
+import { PresenceProviderContext } from "./context.js";
+import type { PresenceProviderValue } from "./context.js";
 
 /**
  * Every `PresenceProvider` prop except `children`.
@@ -163,10 +163,10 @@ export function PresenceProvider<TContext = unknown, TUser = unknown>(
   const activeBinding = providedBinding ?? ownBinding;
   const clientPending = factory !== undefined && providedClient === undefined && ownClient === null;
 
-  const value = useMemo<PresenceContextValue<TContext, TUser>>(
+  const value = useMemo<PresenceProviderValue<TContext, TUser>>(
     () => ({ client, binding: activeBinding, clientPending }),
     [client, activeBinding, clientPending],
   );
 
-  return <PresenceContext.Provider value={value}>{children}</PresenceContext.Provider>;
+  return <PresenceProviderContext.Provider value={value}>{children}</PresenceProviderContext.Provider>;
 }

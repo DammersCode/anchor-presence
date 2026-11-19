@@ -1,5 +1,5 @@
 import { useCallback, useSyncExternalStore } from "react";
-import { usePresenceContext } from "./use-presence-client.js";
+import { usePresenceProviderContext } from "./use-presence-client.js";
 
 /**
  * Reads the local user value and gives a setter.
@@ -7,7 +7,7 @@ import { usePresenceContext } from "./use-presence-client.js";
  * Returns `undefined` and a no-op setter without a client.
  */
 export function useLocalUser<TUser = unknown>(): [TUser | undefined, (next: TUser | undefined) => void] {
-  const { client } = usePresenceContext<unknown, TUser>();
+  const { client } = usePresenceProviderContext<unknown, TUser>();
   const subscribe = useCallback(
     (listener: () => void) => (client !== null ? client.subscribeUser(listener) : () => {}),
     [client],

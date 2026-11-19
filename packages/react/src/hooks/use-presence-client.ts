@@ -2,8 +2,8 @@ import { useContext } from "react";
 import type { ConnectionStatus, PresenceClient, RemotePresence } from "@anchor-presence/core";
 import type { ResolvedCursor } from "@anchor-presence/dom";
 import { warnOnce } from "@anchor-presence/core";
-import { PresenceContext, PresenceContextDefault } from "../context.js";
-import type { PresenceContextValue } from "../context.js";
+import { PresenceProviderContext, PresenceProviderContextDefault } from "../context.js";
+import type { PresenceProviderValue } from "../context.js";
 
 export const EMPTY_CURSORS: ResolvedCursor[] = [];
 export const EMPTY_PRESENCE: RemotePresence[] = [];
@@ -20,15 +20,15 @@ export function getServerStatus(): ConnectionStatus {
   return "disconnected";
 }
 
-export function usePresenceContext<TContext, TUser>(): PresenceContextValue<TContext, TUser> {
-  const value = useContext(PresenceContext);
-  if (value === PresenceContextDefault) {
+export function usePresenceProviderContext<TContext, TUser>(): PresenceProviderValue<TContext, TUser> {
+  const value = useContext(PresenceProviderContext);
+  if (value === PresenceProviderContextDefault) {
     warnOnce(
       "no-provider",
       "a hook or CursorLayer runs outside PresenceProvider, so it returns empty data. Wrap the tree in PresenceProvider.",
     );
   }
-  return value as PresenceContextValue<TContext, TUser>;
+  return value as PresenceProviderValue<TContext, TUser>;
 }
 
 /**
@@ -39,5 +39,5 @@ export function usePresenceClient<TContext = unknown, TUser = unknown>(): Presen
   TContext,
   TUser
 > | null {
-  return usePresenceContext<TContext, TUser>().client;
+  return usePresenceProviderContext<TContext, TUser>().client;
 }

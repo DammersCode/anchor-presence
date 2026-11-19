@@ -5,7 +5,7 @@ import { makeFakeClient } from "./test-utils";
 import { useSendEvent } from "../src/hooks/use-send-event";
 import {
   usePresenceClient,
-  usePresenceBinding,
+  useDomBinding,
   useLocalContext,
   useRemoteEvents,
   useRemotePresence,
@@ -23,7 +23,7 @@ function AllHooks() {
   const status = usePresenceStatus();
   const client = usePresenceClient();
   const [context] = useLocalContext();
-  const binding = usePresenceBinding();
+  const binding = useDomBinding();
   const [user] = useLocalUser();
   const users = useRemoteUsers();
   const count = useRemoteCursorsSelector((all) => all.length);

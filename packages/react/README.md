@@ -55,7 +55,7 @@ The package exports these hooks and components:
 | `useRemotePresence()`                        | Raw remote presence list, stable per peer (without `sequence`)                                                                    |
 | `usePresenceStatus()`                        | Connection status                                                                                                                 |
 | `usePresenceClient()`                        | The `PresenceClient` of the provider                                                                                              |
-| `usePresenceBinding()`                       | The `DomBinding` of the provider, for example to call `invalidate()`                                                              |
+| `useDomBinding()`                            | The `DomBinding` of the provider, for example to call `invalidate()`                                                              |
 | `useLocalContext()`                          | `[context, setContext]`                                                                                                           |
 | `useLocalUser()`                             | `[user, setUser]` for the local user value                                                                                        |
 | `useRemoteEvents(listener)`                  | Calls `listener` for each one-shot event from a peer                                                                              |

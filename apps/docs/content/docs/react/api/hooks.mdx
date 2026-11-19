@@ -79,10 +79,10 @@ function usePresenceClient<TContext = unknown, TUser = unknown>(): PresenceClien
 
 Returns the client of the nearest provider, or `null` without one. On the server, it returns the `client` prop of the provider. A provider with only a `factory` has no client on the server, so the hook returns `null`. Guide: [Client creation](/docs/react/client-creation).
 
-## usePresenceBinding
+## useDomBinding
 
 ```ts
-function usePresenceBinding<TContext = unknown, TUser = unknown>(): DomBinding<TContext, TUser> | null;
+function useDomBinding<TContext = unknown, TUser = unknown>(): DomBinding<TContext, TUser> | null;
 ```
 
 Returns the DOM binding of the nearest provider. It returns `null` before the provider creates the binding, and without a provider. On the server, it returns the `binding` prop of the provider, or `null` without that prop.
@@ -124,7 +124,7 @@ Returns a function that sends one event to every peer. The function returns the 
 ```ts
 function createPresenceHooks<TContext = unknown, TUser = unknown, TEvents extends object = EventMap>(): {
   PresenceProvider: (props: PresenceProviderProps<TContext, TUser>) => ReactNode;
-  usePresenceBinding: () => DomBinding<TContext, TUser> | null;
+  useDomBinding: () => DomBinding<TContext, TUser> | null;
   usePresenceClient: () => PresenceClient<TContext, TUser> | null;
   useLocalContext: () => [TContext | undefined, (next: TContext | undefined) => void];
   useRemoteEvents: (listener: (event: TypedRemoteEvent<TEvents>) => void) => void;

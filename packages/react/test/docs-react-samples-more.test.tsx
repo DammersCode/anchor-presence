@@ -24,14 +24,14 @@ import {
 } from "@anchor-presence/dom";
 import {
   createPresenceHooks as exportedCreatePresenceHooks,
-  PresenceContext,
+  PresenceProviderContext,
   PresenceProvider,
-  usePresenceBinding,
+  useDomBinding,
   usePresenceStatus,
   type PresenceProviderProps,
   type RemoteUser,
 } from "../src/index";
-import type { usePresenceBinding as exportedUseCursorBinding } from "../src/hooks/use-presence-binding";
+import type { useDomBinding as exportedUseDomBinding } from "../src/hooks/use-dom-binding";
 import { makeFakeBinding, makeFakeClient } from "./test-utils";
 
 // Verbatim copies of doc samples; the last test checks each copy against its .mdx source.
@@ -60,7 +60,7 @@ function DelayedConnectionBanner() {
 }
 
 function PresenceReady() {
-  const { client, binding } = useContext(PresenceContext);
+  const { client, binding } = useContext(PresenceProviderContext);
   return client !== null && binding !== null ? <p>Presence is ready.</p> : null;
 }
 
@@ -95,21 +95,21 @@ function setOpenDialog(next: string | null) {
 }
 
 function SyncOpenDialog({ dialog }: { dialog: string | null }) {
-  const cursorBinding = usePresenceBinding();
+  const domBinding = useDomBinding();
   useEffect(() => {
     openDialog = dialog;
-    cursorBinding?.invalidate("dialog-changed");
-  }, [cursorBinding, dialog]);
+    domBinding?.invalidate("dialog-changed");
+  }, [domBinding, dialog]);
   return null;
 }
 
 declare namespace Listing {
   // oxlint-disable-next-line eslint/no-shadow -- the listing keeps the exported name
-  function usePresenceBinding<TContext = unknown, TUser = unknown>(): DomBinding<TContext, TUser> | null;
+  function useDomBinding<TContext = unknown, TUser = unknown>(): DomBinding<TContext, TUser> | null;
 
   function createPresenceHooks<TContext = unknown, TUser = unknown, TEvents extends object = EventMap>(): {
     PresenceProvider: (props: PresenceProviderProps<TContext, TUser>) => ReactNode;
-    usePresenceBinding: () => DomBinding<TContext, TUser> | null;
+    useDomBinding: () => DomBinding<TContext, TUser> | null;
     usePresenceClient: () => PresenceClient<TContext, TUser> | null;
     useLocalContext: () => [TContext | undefined, (next: TContext | undefined) => void];
     useRemoteEvents: (listener: (event: TypedRemoteEvent<TEvents>) => void) => void;
@@ -217,7 +217,7 @@ describe("connection-status.mdx: DelayedConnectionBanner", () => {
   });
 });
 
-describe("api/components.mdx: PresenceContext", () => {
+describe("api/components.mdx: PresenceProviderContext", () => {
   it("shows the line only below a provider with a client and a binding", () => {
     const { client } = makeFakeClient();
     const view = render(<PresenceReady />);
@@ -286,17 +286,17 @@ describe("visibility-policy.mdx: run the policy again", () => {
   });
 });
 
-describe("api/hooks.mdx: usePresenceBinding and createPresenceHooks listings", () => {
+describe("api/hooks.mdx: useDomBinding and createPresenceHooks listings", () => {
   it("equal the exported signatures", () => {
     type Context = { page: string };
     type User = { name: string };
-    expectTypeOf<ReturnType<typeof Listing.usePresenceBinding<Context, User>>>().toEqualTypeOf<
-      ReturnType<typeof exportedUseCursorBinding<Context, User>>
+    expectTypeOf<ReturnType<typeof Listing.useDomBinding<Context, User>>>().toEqualTypeOf<
+      ReturnType<typeof exportedUseDomBinding<Context, User>>
     >();
     expectTypeOf<ReturnType<typeof Listing.createPresenceHooks<Context, User>>>().toEqualTypeOf<
       ReturnType<typeof exportedCreatePresenceHooks<Context, User>>
     >();
-    expect(Object.keys(exportedCreatePresenceHooks<Context, User>())).toContain("usePresenceBinding");
+    expect(Object.keys(exportedCreatePresenceHooks<Context, User>())).toContain("useDomBinding");
   });
 });
 
@@ -314,7 +314,7 @@ describe("doc sample sources", () => {
       docSample("get-started/concepts/ui-context.mdx", "const dialogAwarePolicy"),
       docSample("dom/visibility-policy.mdx", "function setOpenDialog"),
       docSample("dom/visibility-policy.mdx", "function SyncOpenDialog"),
-      docSample("react/api/hooks.mdx", "function usePresenceBinding"),
+      docSample("react/api/hooks.mdx", "function useDomBinding"),
       docSample("react/api/hooks.mdx", "function createPresenceHooks"),
     ];
     for (const sample of samples) expect(source).toContain(trimLines(sample));

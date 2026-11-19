@@ -128,17 +128,17 @@ An event map can be a `type` or an `interface`. For the parser rules, see [Typed
 
 ## What the result contains
 
-| Name                                      | Types that the result fixes                                          |
-| ----------------------------------------- | -------------------------------------------------------------------- |
-| `PresenceProvider`                        | context and user                                                     |
-| `usePresenceClient`, `usePresenceBinding` | context and user                                                     |
-| `useRemoteCursors`, `useRemotePresence`   | context and user                                                     |
-| `useRemoteCursorsSelector`                | context and user. It still takes the `TSelected` type of its result. |
-| `usePeerChanges`                          | context and user                                                     |
-| `useRemoteUsers`, `useLocalUser`          | user                                                                 |
-| `useLocalContext`                         | context                                                              |
-| `useRemoteEvents`, `useSendEvent`         | events                                                               |
-| `usePresenceStatus`                       | none                                                                 |
+| Name                                    | Types that the result fixes                                          |
+| --------------------------------------- | -------------------------------------------------------------------- |
+| `PresenceProvider`                      | context and user                                                     |
+| `usePresenceClient`, `useDomBinding`    | context and user                                                     |
+| `useRemoteCursors`, `useRemotePresence` | context and user                                                     |
+| `useRemoteCursorsSelector`              | context and user. It still takes the `TSelected` type of its result. |
+| `usePeerChanges`                        | context and user                                                     |
+| `useRemoteUsers`, `useLocalUser`        | user                                                                 |
+| `useLocalContext`                       | context                                                              |
+| `useRemoteEvents`, `useSendEvent`       | events                                                               |
+| `usePresenceStatus`                     | none                                                                 |
 
 Without `TEvents`, an event can have any `type`, and its `data` has the type `unknown`. `CursorLayer` and `DefaultCursor` are not in the result. Import them from `@anchor-presence/react`, and pass your types as type arguments, for example `<CursorLayer<Context, User> />`.
 

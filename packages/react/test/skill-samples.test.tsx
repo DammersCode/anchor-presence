@@ -5,7 +5,7 @@ import { createRoot } from "react-dom/client";
 import { describe, expect, it } from "vitest";
 import { createPresenceClient } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
-import { CursorLayer, PresenceProvider, usePresenceBinding, useLocalContext } from "../src/index";
+import { CursorLayer, PresenceProvider, useDomBinding, useLocalContext } from "../src/index";
 import { makeFakeBinding, makeFakeClient } from "./test-utils";
 
 // Verbatim copies of the tsx samples in skills/anchor-presence/SKILL.md; the test below keeps them in sync.
@@ -75,10 +75,10 @@ function ScopedPresenceRoot({
   );
 }
 
-// useLocalContext and usePresenceBinding work only below the provider.
+// useLocalContext and useDomBinding work only below the provider.
 function PublishPage({ page, pageRef }: { page: string; pageRef: { current: string } }) {
   const [, setContext] = useLocalContext<{ page: string }>();
-  const binding = usePresenceBinding();
+  const binding = useDomBinding();
   useEffect(() => setContext({ page }), [page, setContext]);
   useEffect(() => {
     pageRef.current = page;

@@ -1,4 +1,4 @@
-export { usePresenceBinding } from "./use-presence-binding.js";
+export { useDomBinding } from "./use-dom-binding.js";
 export { usePresenceClient } from "./use-presence-client.js";
 export { useLocalContext } from "./use-local-context.js";
 export { useRemoteEvents } from "./use-remote-events.js";

@@ -1,12 +1,12 @@
 ---
 title: Components API
-description: Prop types for PresenceProvider, CursorLayer, and DefaultCursor, and the PresenceContext value.
+description: Prop types for PresenceProvider, CursorLayer, and DefaultCursor, and the PresenceProviderContext value.
 icon: component
 ---
 
 import { Braces, MousePointer2, Paintbrush, Plug } from "lucide-react";
 
-This page lists the props of every component in `@anchor-presence/react`, and the value of `PresenceContext`. Use it to look up a prop type. For usage and examples, read the guide page that each section links to.
+This page lists the props of every component in `@anchor-presence/react`, and the value of `PresenceProviderContext`. Use it to look up a prop type. For usage and examples, read the guide page that each section links to.
 
 ## PresenceProvider
 
@@ -52,15 +52,15 @@ import { DefaultCursor } from "@anchor-presence/react";
 
 Guide: [Custom cursors](/docs/react/custom-cursors).
 
-## PresenceContext
+## PresenceProviderContext
 
-`PresenceContext` is the React context that `PresenceProvider` fills. Import it and its value type from `@anchor-presence/react`:
+`PresenceProviderContext` is the React context that `PresenceProvider` fills. Import it and its value type from `@anchor-presence/react`:
 
 ```ts
-import { PresenceContext, type PresenceContextValue } from "@anchor-presence/react";
+import { PresenceProviderContext, type PresenceProviderValue } from "@anchor-presence/react";
 ```
 
-<AutoTypeTable path="../../packages/react/src/context.ts" name="PresenceContextValue" />
+<AutoTypeTable path="../../packages/react/src/context.ts" name="PresenceProviderValue" />
 
 Outside a provider, both fields are `null`. A provider with a `factory` has a `null` client until the factory runs. In that time `clientPending` is `true`. It is `false` with `client={null}`, and absent without a provider. During server rendering, `binding` is the `binding` prop of the provider, or `null` without that prop. The hooks read this context for you, so most apps never read it directly.
 
@@ -68,10 +68,10 @@ This component reads the context directly and shows a line when the client and t
 
 ```tsx
 import { useContext } from "react";
-import { PresenceContext } from "@anchor-presence/react";
+import { PresenceProviderContext } from "@anchor-presence/react";
 
 function PresenceReady() {
-  const { client, binding } = useContext(PresenceContext);
+  const { client, binding } = useContext(PresenceProviderContext);
   return client !== null && binding !== null ? <p>Presence is ready.</p> : null;
 }
 ```

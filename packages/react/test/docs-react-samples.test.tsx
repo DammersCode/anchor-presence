@@ -19,7 +19,7 @@ import {
   useRemoteEvents,
   useSendEvent,
 } from "../src/index";
-import { PresenceContext } from "../src/context";
+import { PresenceProviderContext } from "../src/context";
 import { docSample, missingSamples } from "./doc-source";
 
 class FakeSocket implements WebSocketLike {
@@ -43,7 +43,7 @@ const seenBindings: (DomBinding | null)[] = [];
 const seenClients: (PresenceClient | null)[] = [];
 
 function Dashboard() {
-  const { client, binding } = useContext(PresenceContext);
+  const { client, binding } = useContext(PresenceProviderContext);
   seenBindings.push(binding);
   seenClients.push(client);
   return <main data-anchor="dashboard" />;

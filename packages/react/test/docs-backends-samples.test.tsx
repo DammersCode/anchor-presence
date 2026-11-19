@@ -6,7 +6,7 @@ import { afterEach, describe, expect, expectTypeOf, it, vi } from "vitest";
 import { createPresenceClient } from "@anchor-presence/core";
 import type { PresenceClient } from "@anchor-presence/core";
 import { PresenceProvider } from "../src/index";
-import { PresenceContext } from "../src/context";
+import { PresenceProviderContext } from "../src/context";
 import { createSignalRTransport } from "../../../examples/signalr/transport";
 import { createSocketIoTransport } from "../../../examples/socketio/transport";
 // The test does not import @microsoft/signalr: it is a dependency of examples/signalr only, so the root cannot resolve it.
@@ -112,7 +112,7 @@ function fakeConnection() {
 
 const seenClients: (PresenceClient | null)[] = [];
 function Dashboard() {
-  seenClients.push(useContext(PresenceContext).client);
+  seenClients.push(useContext(PresenceProviderContext).client);
   return <main data-anchor="dashboard" />;
 }
 

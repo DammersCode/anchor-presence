@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState, useSyncExternalStore } from "react";
 import type { ResolvedCursor } from "@anchor-presence/dom";
-import { EMPTY_CURSORS, getServerCursors, usePresenceContext } from "./use-presence-client.js";
+import { EMPTY_CURSORS, getServerCursors, usePresenceProviderContext } from "./use-presence-client.js";
 
 /**
  * Returns the resolved remote cursors.
@@ -8,7 +8,7 @@ import { EMPTY_CURSORS, getServerCursors, usePresenceContext } from "./use-prese
  * Returns an empty list on the server or without a binding.
  */
 export function useRemoteCursors<TContext = unknown, TUser = unknown>(): ResolvedCursor<TContext, TUser>[] {
-  const { binding } = usePresenceContext<TContext, TUser>();
+  const { binding } = usePresenceProviderContext<TContext, TUser>();
   const subscribe = useCallback(
     (listener: () => void) => (binding !== null ? binding.subscribe(listener) : () => {}),
     [binding],
@@ -32,7 +32,7 @@ export function useRemoteCursorsSelector<TSelected, TContext = unknown, TUser = 
   select: (cursors: ResolvedCursor<TContext, TUser>[]) => TSelected,
   isEqual: (a: TSelected, b: TSelected) => boolean = Object.is,
 ): TSelected {
-  const { binding } = usePresenceContext<TContext, TUser>();
+  const { binding } = usePresenceProviderContext<TContext, TUser>();
   const selectedRef = useRef<{ value: TSelected } | null>(null);
   // caches select's output by input array and callbacks, so a repeat snapshot probe skips select() entirely
   const lastInputRef = useRef<{

@@ -1,7 +1,7 @@
 import { act, useContext } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, describe, expect, it } from "vitest";
-import { PresenceContext } from "../src/context";
+import { PresenceProviderContext } from "../src/context";
 import { PresenceProvider } from "../src/provider";
 import { makeFakeClient } from "./test-utils";
 
@@ -18,7 +18,7 @@ describe("PresenceProvider bindingKey", () => {
     const bindings: unknown[] = [];
     const clients: unknown[] = [];
     function Probe() {
-      const value = useContext(PresenceContext);
+      const value = useContext(PresenceProviderContext);
       bindings.push(value.binding);
       clients.push(value.client);
       return null;
@@ -114,14 +114,14 @@ describe("PresenceProvider clientKey", () => {
   });
 });
 
-describe("usePresenceBinding", () => {
+describe("useDomBinding", () => {
   it("returns the binding of the provider, and null without one", async () => {
-    const { usePresenceBinding } = await import("../src/hooks/use-presence-binding");
+    const { useDomBinding } = await import("../src/hooks/use-dom-binding");
     const { client } = makeFakeClient();
     const { binding } = (await import("./test-utils")).makeFakeBinding();
     const seen: unknown[] = [];
     function Probe() {
-      seen.push(usePresenceBinding());
+      seen.push(useDomBinding());
       return null;
     }
     const container = document.createElement("div");

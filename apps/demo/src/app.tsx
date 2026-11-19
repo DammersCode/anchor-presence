@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocalContext } from "@anchor-presence/react";
-import { usePresenceBinding } from "./cursors/hooks";
+import { useDomBinding } from "./cursors/hooks";
 import { Sidebar } from "./components/dashboard/sidebar";
 import { Topbar } from "./components/dashboard/topbar";
 import { SettingsDialog } from "./components/dashboard/settings-dialog";
@@ -28,7 +28,7 @@ export default function App({ localViewState, interpolatorStyle, onInterpolatorS
   const [page, navigate] = usePageRoute();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [, setContext] = useLocalContext<DemoContext>();
-  const binding = usePresenceBinding();
+  const binding = useDomBinding();
 
   // Single writer for both the published context and the local state the visibility policy reads.
   useEffect(() => {

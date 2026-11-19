@@ -112,7 +112,7 @@ Call `createPresenceSignals` inside the owner scope, so that `onCleanup` runs wh
 - If you pass no `binding` prop, it creates one `DomBinding` with `createDomBinding(client, bindingOptions)` in an effect. The cleanup of that effect calls `binding.dispose()`.
 - It creates a new binding when the `client` or the `bindingKey` prop changes. A `bindingOptions` change alone creates no new binding.
 - Outside the browser, it creates no client from `factory` and no binding.
-- It exposes `{ client, binding }` through `PresenceContext`.
+- It exposes `{ client, binding }` through `PresenceProviderContext`.
 
 The hooks read that context. `useRemoteCursors` subscribes to `binding.subscribe` through `useSyncExternalStore` and returns an empty array without a binding. No hook stores cursor data in React state. See the [React overview](/docs/react).
 

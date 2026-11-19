@@ -4,7 +4,7 @@ import type { DemoContext, DemoEvents, DemoUser } from "./setup";
 /** One typed set of hooks for the whole demo: wrong user, context or event types do not compile. */
 export const {
   PresenceProvider,
-  usePresenceBinding,
+  useDomBinding,
   useRemoteEvents,
   useLocalUser,
   usePeerChanges,

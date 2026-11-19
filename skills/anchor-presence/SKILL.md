@@ -101,7 +101,7 @@ This step applies when one anchor ID can appear in different app states (pages, 
 import { useEffect, useRef } from "react";
 import { createPresenceClient } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
-import { CursorLayer, PresenceProvider, usePresenceBinding, useLocalContext } from "@anchor-presence/react";
+import { CursorLayer, PresenceProvider, useDomBinding, useLocalContext } from "@anchor-presence/react";
 
 export function PresenceRoot({
   room,
@@ -143,10 +143,10 @@ export function PresenceRoot({
   );
 }
 
-// useLocalContext and usePresenceBinding work only below the provider.
+// useLocalContext and useDomBinding work only below the provider.
 function PublishPage({ page, pageRef }: { page: string; pageRef: { current: string } }) {
   const [, setContext] = useLocalContext<{ page: string }>();
-  const binding = usePresenceBinding();
+  const binding = useDomBinding();
   useEffect(() => setContext({ page }), [page, setContext]);
   useEffect(() => {
     pageRef.current = page;

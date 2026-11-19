@@ -2,14 +2,14 @@ import type { ReactNode } from "react";
 import type { ResolvedCursor } from "@anchor-presence/dom";
 import { PresenceProvider } from "./provider.js";
 import type { PresenceProviderProps } from "./provider.js";
-import { usePresenceBinding } from "./hooks/use-presence-binding.js";
+import { useDomBinding } from "./hooks/use-dom-binding.js";
 import { usePresenceClient } from "./hooks/use-presence-client.js";
 import { useLocalContext } from "./hooks/use-local-context.js";
 import { createEventChannel } from "@anchor-presence/core";
 import { useEffect, useRef } from "react";
 import type { EventChannel, EventMap, PeerChange, TypedRemoteEvent } from "@anchor-presence/core";
 
-import { usePresenceContext } from "./hooks/use-presence-client.js";
+import { usePresenceProviderContext } from "./hooks/use-presence-client.js";
 import { useLocalUser } from "./hooks/use-local-user.js";
 import { usePeerChanges } from "./hooks/use-peer-changes.js";
 import { useSendEvent } from "./hooks/use-send-event.js";
@@ -29,11 +29,11 @@ export function createPresenceHooks<
 >() {
   return {
     PresenceProvider: PresenceProvider as (props: PresenceProviderProps<TContext, TUser>) => ReactNode,
-    usePresenceBinding: () => usePresenceBinding<TContext, TUser>(),
+    useDomBinding: () => useDomBinding<TContext, TUser>(),
     usePresenceClient: () => usePresenceClient<TContext, TUser>(),
     useLocalContext: () => useLocalContext<TContext>(),
     useRemoteEvents: (listener: (event: TypedRemoteEvent<TEvents>) => void): void => {
-      const { client } = usePresenceContext<TContext, TUser>();
+      const { client } = usePresenceProviderContext<TContext, TUser>();
       const listenerRef = useRef(listener);
       useEffect(() => {
         listenerRef.current = listener;

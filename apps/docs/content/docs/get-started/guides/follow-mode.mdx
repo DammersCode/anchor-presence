@@ -6,9 +6,9 @@ icon: footprints
 
 import { Crosshair, Gauge, LocateFixed, MousePointer, Users } from "lucide-react";
 
-In a long page, a user wants to see what another user looks at. Follow mode makes one client, the follower, track the cursor of a peer, the leader. When the leader's cursor leaves the follower's window, the follower's page scrolls the leader's anchor into view. Follow mode stops when the follower scrolls, when the follower presses Escape, or when the leader leaves the room. The recipe uses only public APIs: `useRemoteCursorsSelector`, `ResolvedCursor`, `element.scrollIntoView` and `client.subscribePeers`.
+In a long page, a user wants to see what another user looks at. Follow mode makes one client, the follower, track the cursor of a peer, the leader. When the leader's cursor leaves the follower's window, the follower's page scrolls the leader's anchor into view. Follow mode stops when the follower scrolls, when the follower presses Escape, or when the leader leaves the room. The recipe uses only public APIs: `useRemoteCursorsSelector`, `ResolvedCursor`, `element.scrollIntoView` and `usePeerChanges`.
 
-The demo runs this recipe in the narrow pane:
+The demo runs this recipe in the narrow pane, with a pane-local scroll in place of `scrollIntoView`:
 
 <ExamplePreview scene="follow" />
 
@@ -23,7 +23,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   CursorLayer,
   LiveCursorProvider,
-  useCursorClient,
+  usePeerChanges,
   useRemoteCursorsSelector,
   useRemoteUsers,
 } from "@anchor-presence/react";
@@ -57,9 +57,11 @@ export function useFollowMode(): {
   follow: (clientId: string) => void;
   stop: () => void;
 } {
-  const client = useCursorClient();
   const [leaderId, setLeaderId] = useState<string | null>(null);
   const stop = useCallback(() => setLeaderId(null), []);
+  usePeerChanges((change) => {
+    if (change.type === "leave" && change.clientId === leaderId) stop();
+  });
 
   const selectTarget = useCallback(
     (cursors: ResolvedCursor[]) => {
@@ -83,16 +85,12 @@ export function useFollowMode(): {
     window.addEventListener("wheel", stop, { passive: true });
     window.addEventListener("touchmove", stop, { passive: true });
     window.addEventListener("keydown", onKeyDown);
-    const unsubscribe = client?.subscribePeers((change) => {
-      if (change.type === "leave" && change.clientId === leaderId) stop();
-    });
     return () => {
       window.removeEventListener("wheel", stop);
       window.removeEventListener("touchmove", stop);
       window.removeEventListener("keydown", onKeyDown);
-      unsubscribe?.();
     };
-  }, [client, leaderId, stop]);
+  }, [leaderId, stop]);
 
   return { leaderId, follow: setLeaderId, stop };
 }
@@ -148,7 +146,7 @@ export function FollowApp({ client }: { client: PresenceClient<unknown, User> })
 - **Scroll position.** `scrollIntoView` centers the anchor element, not the point. If the anchor is taller than the window, the point can stay off-screen. The page scrolls again when the leader moves to another anchor, or after the point was on-screen once.
 - **Viewport tier.** If the leader's cursor resolves through the viewport tier, `anchorId` is `null`. The page does not scroll then.
 - **Stop on scroll.** `scrollIntoView` fires `scroll` events, so the recipe does not listen for `scroll`. It stops on `wheel`, on `touchmove` and on the scroll keys. A drag on the scrollbar fires none of these events. For this case, the controls show the stop button.
-- **Stop on leave.** `subscribePeers` reports a `leave` each time the store removes the leader. The causes are a leave message, the stale timeout, the reconnect expiry, and a `store.remove` call. A leader without a cursor is not a leave, so follow mode continues.
+- **Stop on leave.** `usePeerChanges` reports a `leave` each time the store removes the leader. The causes are a leave message, the stale timeout, the reconnect expiry, and a `store.remove` call. A leader without a cursor is not a leave, so follow mode continues.
 - **Anchor attribute.** `findAnchor` reads `data-anchor`. If you set `anchorAttribute` in the binding options, read that attribute instead.
 
 ## Related

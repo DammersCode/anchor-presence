@@ -69,7 +69,7 @@ const clientB = createPresenceClient({ transport: b, user: { name: "Bob" } });
 `@anchor-presence/core` imports no DOM library, no framework, and no transport or codec library. `@anchor-presence/dom` adds the browser side, and `@anchor-presence/react` adds the React components:
 
 <Mermaid
-  chart={`flowchart LR
+  chart={`flowchart TD
   react["@anchor-presence/react"] --> dom["@anchor-presence/dom"]
   dom --> core["@anchor-presence/core"]
   react --> core`}

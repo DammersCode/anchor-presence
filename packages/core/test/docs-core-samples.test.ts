@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest";
 import {
   binaryCodec,
@@ -602,7 +604,8 @@ describe("presence client docs: setup samples", () => {
 
     // Copied from apps/docs/content/docs/core/presence-client.mdx (Connect the transport).
     const client = createPresenceClient({ transport: myTransport, autoConnect: false });
-    void myTransport.connect();
+    // oxlint-disable-next-line typescript/no-floating-promises -- the doc sample calls connect() without void
+    myTransport.connect();
 
     expect(connect).toHaveBeenCalledTimes(1);
     client.dispose();
@@ -836,5 +839,41 @@ describe("in-memory transport docs", () => {
     expect(clientB.getRemotePresence()[0]?.user).toEqual({ name: "Alice" });
     clientA.dispose();
     clientB.dispose();
+  });
+});
+
+const readRepoFile = (file: string) =>
+  readFileSync(join(process.cwd(), file), "utf8").replaceAll("\r\n", "\n");
+
+// Leading whitespace differs between a sample and its copy inside a block, so compare trimmed lines.
+const trimLines = (text: string) =>
+  text
+    .split("\n")
+    .map((line) => line.trim())
+    .join("\n");
+
+// Returns the ts block of `page` that contains `marker`, without import lines.
+function docSample(page: string, marker: string): string {
+  const markdown = readRepoFile(`apps/docs/content/docs/${page}`);
+  const blocks = [...markdown.matchAll(/```tsx?\n([\s\S]*?)```/gu)].map(([, body = ""]) =>
+    body
+      .split("\n")
+      .filter((line) => !line.startsWith("import "))
+      .join("\n")
+      .trim(),
+  );
+  const block = blocks.find((body) => body.includes(marker));
+  if (block === undefined) throw new Error(`no sample with "${marker}" in ${page}`);
+  return block;
+}
+
+describe("doc sample sources", () => {
+  it("match the copies in this file", () => {
+    const source = trimLines(readRepoFile("packages/core/test/docs-core-samples.test.ts"))
+      .split("\n")
+      .filter((line) => !line.includes("oxlint-disable"))
+      .join("\n");
+    const sample = docSample("core/presence-client.mdx", "autoConnect: false });");
+    expect(source).toContain(trimLines(sample));
   });
 });

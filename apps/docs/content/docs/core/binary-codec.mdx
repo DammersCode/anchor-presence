@@ -56,7 +56,7 @@ The `context` and `user` values stay JSON inside the binary frame. Only the curs
 - The cursor has more than 255 anchors.
 - `sequence` is not a safe integer from 0 to `DEFAULT_MAX_SEQUENCE`.
 - `pointer.type` is not `mouse`, `pen`, or `touch`.
-- `JSON.stringify` cannot serialize `context` or `user`.
+- `JSON.stringify` cannot serialize `context` or `user`. A BigInt or a cycle makes it throw its own `TypeError`.
 
 The protocol limits on the [Validation](/docs/core/validation#validationlimits) page are tighter than these frame limits. For example, the protocol allows 8 anchors and the frame allows 255. A message inside the protocol limits never reaches a frame limit. If an encode error comes from `user` or `context`, the client encodes the message again without them. See [Development mode](/docs/core/presence-client#development-mode). In all other cases, the client loses the message and continues.
 

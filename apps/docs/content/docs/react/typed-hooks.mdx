@@ -6,27 +6,32 @@ icon: braces
 
 import { Braces, Plug, Users, Zap } from "lucide-react";
 
-`createPresenceHooks<TContext, TUser, TEvents>()` returns a provider, every hook, and a `CursorLayer` with your types fixed. The hooks that you import from `@anchor-presence/react` return `unknown` for `user`, `context`, and event `data`, because a type argument cannot prove what a peer sends. The hooks of the result read only the provider of the same call, and that provider accepts only a client with the same `user` and `context` types and an event map that fits yours. Use it in every app that has a known shape for its context, user, or event values. `TEvents` is optional.
+`createPresenceHooks<TContext, TUser, TEvents>()` returns a provider, every hook, and a `CursorLayer` with your types fixed. The hooks that you import from `@anchor-presence/react` return `unknown` for `user`, `context`, and event `data`, because a type argument cannot prove what a peer sends. The hooks of the result read only the provider of the same call. That provider accepts only a client with the same `user` and `context` types and an event map that fits yours. Use it in every app that knows the shape of its context, user, or event values. `TEvents` is optional.
 
 ## Usage
 
-Call `createPresenceHooks` one time, at module level, and export the result:
+Call `createPresenceHooks` one time for the whole app, at module level, and export the result. An app has one `presence.ts`. The recipes and the other React pages import from this module:
 
 ```ts
 // presence.ts
 import { createPresenceHooks } from "@anchor-presence/react";
 
 export type User = { name: string; color: string };
-export type Context = { pageId: string };
-export type Events = { reaction: { emoji: string }; ping: undefined };
+export type Context = { pageId?: string; typingIn?: string | null; away?: boolean; selection?: string[] };
+export type Events = { reaction: { emoji: string }; chat: { text: string }; ping: undefined };
 
 export const {
+  CursorLayer,
   PresenceProvider,
-  usePresenceClient,
+  useDomBinding,
   useLocalContext,
-  useRemoteEvents,
   useLocalUser,
+  usePeerChanges,
+  usePresenceClient,
   useRemoteCursors,
+  useRemoteCursorsSelector,
+  useRemoteEvents,
+  useRemotePresence,
   useRemoteUsers,
   useSendEvent,
 } = createPresenceHooks<Context, User, Events>();
@@ -104,6 +109,10 @@ const parseEvent = createEventParser<Events>({
     const emoji = typeof data === "object" && data !== null && "emoji" in data ? data.emoji : undefined;
     return typeof emoji === "string" ? { emoji } : undefined;
   },
+  chat: (data) => {
+    const text = typeof data === "object" && data !== null && "text" in data ? data.text : undefined;
+    return typeof text === "string" ? { text } : undefined;
+  },
   ping: null,
 });
 
@@ -166,9 +175,9 @@ Pass `parserFrom(userSchema)` and `parserFrom(contextSchema)` to `createPresence
 
 Without `TEvents`, an event can have any `type`, and its `data` has the type `unknown`. `DefaultCursor` is not in the result. Import it from `@anchor-presence/react`.
 
-The hooks of the result read only the provider of the same call. A hook from the result under another `PresenceProvider`, for example the one that you import from `@anchor-presence/react`, finds no client and returns its empty value.
+An app has one `createPresenceHooks` call. If you need more types, add them to this call. A hook from the result under another `PresenceProvider`, for example the one that you import from `@anchor-presence/react`, finds no client and shows empty data. The reverse also holds: a hook from `@anchor-presence/react` under the provider of the result shows empty data.
 
-In development mode, a hook outside the provider writes a console warning. If you use the provider from your own module, the warning still names `PresenceProvider`.
+In development mode, a hook outside its provider writes a console warning. Outside development mode, it writes none. If you use the provider from your own module, the warning still names `PresenceProvider`.
 
 ## Related
 

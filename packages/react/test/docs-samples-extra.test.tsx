@@ -4,7 +4,10 @@ import { createRoot } from "react-dom/client";
 import type { Root } from "react-dom/client";
 import { afterEach, describe, expect, it } from "vitest";
 import { createInMemoryPair, createPresenceClient } from "@anchor-presence/core";
-import type { ResolvedCursor } from "@anchor-presence/dom";
+import { parserFrom } from "@anchor-presence/core/standard-schema";
+import { createDomBinding } from "@anchor-presence/dom";
+import type { DomBinding, ResolvedCursor, VisibilityPolicy } from "@anchor-presence/dom";
+import * as v from "valibot";
 import {
   CursorLayer,
   DefaultCursor,
@@ -400,6 +403,40 @@ describe("default cursor appearance", () => {
   });
 });
 
+const myTransport = createInMemoryPair().a;
+const hideStaffCursors: VisibilityPolicy<{ role: string }> = ({ presence }) =>
+  presence.context?.role === "staff" ? "hide" : "show";
+
+describe("dom docs samples", () => {
+  it("visibility-policy.mdx: a client with a context schema accepts the policy", () => {
+    // visibility-policy.mdx: Write a custom policy
+    const client = createPresenceClient({
+      transport: myTransport,
+      parseContext: parserFrom(v.object({ role: v.string() })),
+    });
+    const binding = createDomBinding(client, {
+      resolution: { visibilityPolicy: hideStaffCursors },
+    });
+    expect(binding.getSnapshot()).toEqual([]);
+    binding.dispose();
+    client.dispose();
+  });
+
+  it("binding.mdx: scrollToAnchor scrolls the anchor element", () => {
+    // binding.mdx: getAnchorElement
+    function scrollToAnchor(binding: DomBinding, anchorId: string): void {
+      binding.getAnchorElement(anchorId)?.scrollIntoView({ block: "center" });
+    }
+    const element = document.createElement("div");
+    let options: unknown;
+    element.scrollIntoView = (arg) => {
+      options = arg;
+    };
+    scrollToAnchor({ getAnchorElement: () => element } as unknown as DomBinding, "card");
+    expect(options).toEqual({ block: "center" });
+  });
+});
+
 describe("doc sample sources", () => {
   it("match the copies in this file", () => {
     expect(
@@ -408,6 +445,7 @@ describe("doc sample sources", () => {
         docSample("react/custom-cursors.mdx", "function ActiveCursorLayer"),
         docSample("react/remote-cursors.mdx", "function CursorCount"),
         docSample("react/remote-presence.mdx", "function ViewportOnlyBadge"),
+        docSample("dom/binding.mdx", "function scrollToAnchor"),
       ]),
     ).toEqual([]);
     expect(
@@ -421,6 +459,12 @@ describe("doc sample sources", () => {
     ).toEqual([]);
     expect(
       missingLines("docs-samples-extra.test.tsx", docSample("react/custom-cursors.mdx", 'size": "28px')),
+    ).toEqual([]);
+    expect(
+      missingLines(
+        "docs-samples-extra.test.tsx",
+        docSample("dom/visibility-policy.mdx", "const binding = createDomBinding"),
+      ),
     ).toEqual([]);
     const labelLayer = docSample("react/cursor-layer.mdx", "const safeColor").split("\n\n").at(-1) ?? "";
     expect(

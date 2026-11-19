@@ -22,7 +22,7 @@ Pass exactly one of `client` and `factory`.
 
 `PresenceProviderProps` is `PresenceProviderConfig & { children }`. Use `PresenceProviderConfig`, the props without `children`, to type a wrapper that forwards its props to the provider.
 
-The types of `client` or `factory` give the provider its types. The hooks that you import from `@anchor-presence/react` still return `unknown`. The provider of a `createPresenceHooks` result accepts only a client of its own types.
+This provider takes only an untyped client, and the hooks that you import from `@anchor-presence/react` return `unknown`. A typed client goes to the `PresenceProvider` of a [`createPresenceHooks`](/docs/react/typed-hooks) result.
 
 Guide: [PresenceProvider](/docs/react/presence-provider). For `bindingKey`, see [Rebuild the binding](/docs/react/presence-provider#rebuild-the-binding). For `clientKey`, see [Switch rooms](/docs/react/presence-provider#switch-rooms).
 

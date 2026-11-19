@@ -28,8 +28,7 @@ If an element has pointer capture, the event target stays the element where the 
 The binding also sends the pointer type, `mouse`, `pen`, or `touch`, from the `pointerType` of the event.
 
 <Callout type="warn">
-  If the browser reports another pointer type, the binding sends no new type, and peers keep the last pointer
-  type that they received.
+  If the browser reports another pointer type, the binding sends the cursor with no pointer type.
 </Callout>
 
 ## When the cursor clears

@@ -45,6 +45,7 @@ binding.subscribe(() => {
 ```ts
 type DomBindingOptions = {
   anchorAttribute?: string;
+  privateAttribute?: string;
   maxSentAnchors?: number;
   resolution?: ResolutionOptions;
   environment?: EnvironmentOptions;
@@ -54,6 +55,8 @@ type DomBindingOptions = {
 ```
 
 The `anchorAttribute` field names the attribute whose value is the anchor ID. The default is `"data-anchor"`. The name must start with a letter and contain only letters, digits, and single hyphens, for example `"id"` or `"data-presence"`. For another name, such as `"data_anchor"`, `createDomBinding` throws a `TypeError`.
+
+The `privateAttribute` field names the attribute that keeps the cursor private. The default is `"data-anchor-private"`. Over an element with it, and over its descendants, the binding sends no cursor. It follows the same name rule as `anchorAttribute`.
 
 The `resolution` group (`ResolutionOptions`) controls how remote cursors turn into screen positions. It holds `visibilityPolicy`, `interpolatorFactory`, and `hitTest`.
 

@@ -10,7 +10,7 @@ An event is a one-shot message to every peer, for example a reaction or a ping. 
 
 ## Usage
 
-This component sends a reaction with `client.sendEvent` and shows the last reaction from a peer:
+This component sends a reaction with `client.sendEvent` and shows the last reaction from a peer. It needs the `PresenceProvider` from `@anchor-presence/react`:
 
 ```tsx
 import { useState } from "react";
@@ -45,7 +45,7 @@ function Reactions() {
 
 The `useSendEvent` that you import from `@anchor-presence/react` sends any event `type`, with `data` of the type `unknown`. For a function that sends only the events of one event map, call `createPresenceHooks` with the event map as its third type argument and export `useSendEvent` from the result. See [Typed hooks](/docs/react/typed-hooks). A misspelled `type` or a `data` value of the wrong type then does not compile. Without a client, the function sends nothing and returns `false`.
 
-This button sends a typed reaction. The `PresenceProvider` above it comes from the same `createPresenceHooks` call:
+This button sends a typed reaction. The `PresenceProvider` above it must come from `./presence`, the module of [Typed hooks](/docs/react/typed-hooks#usage):
 
 ```tsx
 import { useSendEvent } from "./presence";
@@ -53,7 +53,7 @@ import { useSendEvent } from "./presence";
 function WaveButton() {
   const sendEvent = useSendEvent();
   return (
-    <button type="button" onClick={() => sendEvent("reaction", "wave")}>
+    <button type="button" onClick={() => sendEvent("reaction", { emoji: "wave" })}>
       Wave
     </button>
   );

@@ -113,9 +113,9 @@ A peer can fill every slot with new `clientId` values. Real clients then stay ou
 
 A **room token** is a secret that the relay checks before it accepts a connection. If `RELAY_AUTH_TOKEN` is set, the reference relay requires a matching [room token](/docs/dom/websocket-transport#room-token). It closes a connection with a missing or wrong token with code `4006`.
 
-- To limit who can connect by origin, set `RELAY_ALLOWED_ORIGINS`. The relay closes a connection from another origin with code `4004`. See [Set the environment variables](/docs/get-started/guides/deploy-relay#set-the-environment-variables).
+- To limit who can connect by origin, set `RELAY_ALLOWED_ORIGINS`. The relay closes a connection from another origin, or with no `Origin` header, with code `4004`. See [Set the environment variables](/docs/get-started/guides/deploy-relay#set-the-environment-variables).
 - The room token controls who can connect. It does not prove the identity inside a message.
-- The reference relay and the example relays compare all connections with one `RELAY_AUTH_TOKEN`, so one token opens every room.
+- The reference relay and the example relays, except the SignalR hub, compare all connections with one `RELAY_AUTH_TOKEN`, so one token opens every room.
 - To limit a token to one room, check the `room` field in your own [`authCheck` hook](/docs/examples/backends/relay-contract#identity).
 - The transport sends the token in the `token` query parameter. Proxies and servers often write the full URL into their access logs.
 

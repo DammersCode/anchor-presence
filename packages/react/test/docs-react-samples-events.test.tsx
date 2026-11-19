@@ -15,7 +15,6 @@ import {
   type TypedRemoteEvent,
 } from "@anchor-presence/core";
 import {
-  createPresenceHooks,
   PresenceProvider as PlainProvider,
   usePeerChanges,
   type useSendEvent as exportedUseSendEvent,
@@ -23,26 +22,16 @@ import {
 import type { useLocalUser as exportedUseLocalUser } from "../src/hooks/use-local-user";
 import type { usePeerChanges as exportedUsePeerChanges } from "../src/hooks/use-peer-changes";
 import { createWebSocketTransport } from "@anchor-presence/dom";
+import {
+  PresenceProvider,
+  useLocalUser as useTypedLocalUser,
+  useRemoteEvents,
+  useSendEvent,
+} from "./doc-presence";
+import type { Context, Events, User } from "./doc-presence";
 import { makeFakeBinding, parserOf } from "./test-utils";
 
 // Verbatim copies of doc samples; the last test checks each copy against its .mdx source.
-
-// presence.ts
-
-export type User = { name: string; color: string };
-export type Context = { pageId: string };
-export type Events = { reaction: { emoji: string }; ping: undefined };
-
-export const {
-  PresenceProvider,
-  usePresenceClient,
-  useLocalContext,
-  useRemoteEvents,
-  useLocalUser: useTypedLocalUser,
-  useRemoteCursors,
-  useRemoteUsers,
-  useSendEvent,
-} = createPresenceHooks<Context, User, Events>();
 
 function Reactions() {
   const sendEvent = useSendEvent();
@@ -69,6 +58,10 @@ const parseEvent = createEventParser<Events>({
   reaction: (data) => {
     const emoji = typeof data === "object" && data !== null && "emoji" in data ? data.emoji : undefined;
     return typeof emoji === "string" ? { emoji } : undefined;
+  },
+  chat: (data) => {
+    const text = typeof data === "object" && data !== null && "text" in data ? data.text : undefined;
+    return typeof text === "string" ? { text } : undefined;
   },
   ping: null,
 });
@@ -98,9 +91,7 @@ function JoinNotice() {
   return notice !== null ? <p role="status">{notice}</p> : null;
 }
 
-type MyUser = { name: string; color: string };
-const userHooks = createPresenceHooks<unknown, MyUser>();
-const { useLocalUser } = userHooks;
+const useLocalUser = useTypedLocalUser;
 
 function NameField() {
   const [user, setUser] = useLocalUser();
@@ -219,12 +210,12 @@ describe("remote-users.mdx: peer changes", () => {
 
 describe("local-context.mdx: local user", () => {
   it("shows the local user and sends a typed name to the client", () => {
-    const { local } = connectedPair<MyUser>({ name: "Ada", color: "#000000" });
+    const { local } = connectedPair<User, Context, Events>({ name: "Ada", color: "#000000" });
     act(() =>
       root.render(
-        <userHooks.PresenceProvider client={local} binding={makeFakeBinding<unknown, MyUser>().binding}>
+        <PresenceProvider client={local} binding={makeFakeBinding<Context, User>().binding}>
           <NameField />
-        </userHooks.PresenceProvider>,
+        </PresenceProvider>,
       ),
     );
     const input = container.querySelector("input");
@@ -304,11 +295,5 @@ describe("doc sample sources", () => {
       docSample("react/api/hooks.mdx", "function useSendEvent"),
     ];
     for (const sample of samples) expect(source).toContain(trimLines(sample));
-  });
-
-  it("match the presence module, apart from the renamed useLocalUser", () => {
-    const source = trimLines(readRepoFile("packages/react/test/docs-react-samples-events.test.tsx"));
-    const sample = docSample("react/typed-hooks.mdx", "createPresenceHooks<Context, User, Events>");
-    expect(source).toContain(trimLines(sample).replace("useLocalUser,", "useLocalUser: useTypedLocalUser,"));
   });
 });

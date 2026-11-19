@@ -5,7 +5,9 @@ import { act } from "react";
 import { createRoot } from "react-dom/client";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createPresenceHooks, type PeerChange, type ResolvedCursor } from "../src/index";
+import type { PeerChange, ResolvedCursor } from "../src/index";
+import * as presenceHooks from "./doc-presence";
+import type { Context, Events, User } from "./doc-presence";
 import { docSample, missingLines, readRepoFile, trimLines } from "./doc-source";
 import { makeFakeBinding, makeFakeClient } from "./test-utils";
 
@@ -14,12 +16,10 @@ import { makeFakeBinding, makeFakeClient } from "./test-utils";
 const safeColor = (color: string | undefined, fallback: string) =>
   color !== undefined && /^#[0-9a-f]{6}$/iu.test(color) ? color : fallback;
 
-type User = { name: string; color: string };
-type Context = { selection?: string[] };
 type Groups = Record<string, string[]>;
 type Placement = { anchorId: string; clientId: string };
 type Cursor = ResolvedCursor<Context, User>;
-const cardHooks = createPresenceHooks<Context, User>();
+const cardHooks = presenceHooks;
 
 function group(placements: Placement[]): Groups {
   const groups: Groups = {};
@@ -137,15 +137,14 @@ function TestBoard() {
 
 // join-leave-announcer.mdx
 
-type Person = { name: string };
-const announceHooks = createPresenceHooks<unknown, Person>();
+const announceHooks = presenceHooks;
 
 const BURST_MS = 1000;
 const CLEAR_MS = 100;
 
 const people = (count: number) => `${count} ${count === 1 ? "person" : "people"}`;
 
-function describeChanges(changes: PeerChange<unknown, Person>[]): string {
+function describeChanges(changes: PeerChange<Context, User>[]): string {
   const [only] = changes;
   if (changes.length === 1 && only !== undefined)
     return `${only.user?.name ?? "Someone"} ${only.type === "join" ? "joined" : "left"}`;
@@ -159,7 +158,7 @@ function describeChanges(changes: PeerChange<unknown, Person>[]): string {
 function PeerAnnouncer() {
   const { usePeerChanges } = announceHooks;
   const [message, setMessage] = useState("");
-  const pending = useRef<PeerChange<unknown, Person>[]>([]);
+  const pending = useRef<PeerChange<Context, User>[]>([]);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const announceTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
@@ -193,12 +192,11 @@ function PeerAnnouncer() {
 
 // typing-and-away.mdx
 
-type Status = { typingIn: string | null; away: boolean };
-const statusHooks = createPresenceHooks<Status, Person>();
+const statusHooks = presenceHooks;
 
 const TYPING_STOP_MS = 2000;
 
-function useStatus(): (patch: Partial<Status>) => void {
+function useStatus(): (patch: Partial<Context>) => void {
   const { useLocalContext } = statusHooks;
   const [context, setContext] = useLocalContext();
   const latest = useRef(context);
@@ -208,7 +206,7 @@ function useStatus(): (patch: Partial<Status>) => void {
   }, [context]);
 
   const publish = useCallback(
-    (patch: Partial<Status>) => {
+    (patch: Partial<Context>) => {
       const current = { typingIn: null, away: false, ...latest.current };
       const next = { ...current, ...patch };
       if (next.typingIn === current.typingIn && next.away === current.away) return;
@@ -228,7 +226,7 @@ function useStatus(): (patch: Partial<Status>) => void {
   return publish;
 }
 
-function CommentBox({ anchorId, publish }: { anchorId: string; publish: (patch: Partial<Status>) => void }) {
+function CommentBox({ anchorId, publish }: { anchorId: string; publish: (patch: Partial<Context>) => void }) {
   const stopTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const stopTyping = () => {
@@ -260,7 +258,7 @@ function Comments() {
 function TypingHint({ anchorId }: { anchorId: string }) {
   const { useRemotePresence } = statusHooks;
   const names = useRemotePresence()
-    .filter(({ context }) => context?.typingIn === anchorId && !context.away)
+    .filter(({ context }) => context?.typingIn === anchorId && context.away !== true)
     .map(({ user }) => user?.name ?? "Someone");
 
   return names.length === 0 ? null : <p>{names.join(", ")} typing…</p>;
@@ -297,7 +295,7 @@ describe("doc recipes for ui context", () => {
   });
 
   it("shows peers on their card, rings a picked card, and skips rerenders for equal groups", () => {
-    const { client, pushRemote } = makeFakeClient<Context, User>();
+    const { client, pushRemote } = makeFakeClient<Context, User, Events>();
     const fake = makeFakeBinding<Context, User>();
     const setContext = vi.spyOn(client, "setContext");
     act(() =>
@@ -338,20 +336,20 @@ describe("doc recipes for ui context", () => {
 
   it("collapses a burst of joins and leaves into one polite message", () => {
     vi.useFakeTimers();
-    const { client } = makeFakeClient<unknown, Person>();
-    const listeners = new Set<(change: PeerChange<unknown, Person>) => void>();
+    const { client } = makeFakeClient<Context, User, Events>();
+    const listeners = new Set<(change: PeerChange<Context, User>) => void>();
     client.subscribePeers = (listener) => {
       listeners.add(listener);
       return () => listeners.delete(listener);
     };
-    const emit = (change: PeerChange<unknown, Person>) => {
+    const emit = (change: PeerChange<Context, User>) => {
       act(() => {
         for (const listener of listeners) listener(change);
       });
     };
     act(() =>
       root.render(
-        <announceHooks.PresenceProvider client={client} binding={makeFakeBinding<unknown, Person>().binding}>
+        <announceHooks.PresenceProvider client={client} binding={makeFakeBinding<Context, User>().binding}>
           <PeerAnnouncer />
         </announceHooks.PresenceProvider>,
       ),
@@ -359,8 +357,8 @@ describe("doc recipes for ui context", () => {
     const region = container.querySelector('[role="status"]');
     expect(region?.getAttribute("aria-live")).toBe("polite");
 
-    emit({ type: "join", clientId: "a", user: { name: "Ada" } });
-    emit({ type: "update", clientId: "a", user: { name: "Ada B" } });
+    emit({ type: "join", clientId: "a", user: { name: "Ada", color: "#000000" } });
+    emit({ type: "update", clientId: "a", user: { name: "Ada B", color: "#000000" } });
     const flush = () =>
       act(() => {
         vi.advanceTimersByTime(BURST_MS);
@@ -374,7 +372,7 @@ describe("doc recipes for ui context", () => {
     settle();
     expect(region?.textContent).toBe("Ada joined");
 
-    emit({ type: "join", clientId: "a", user: { name: "Ada" } });
+    emit({ type: "join", clientId: "a", user: { name: "Ada", color: "#000000" } });
     flush();
     expect(region?.textContent).toBe("");
     settle();
@@ -382,7 +380,7 @@ describe("doc recipes for ui context", () => {
 
     emit({ type: "join", clientId: "b" });
     emit({ type: "join", clientId: "c" });
-    emit({ type: "leave", clientId: "a", user: { name: "Ada" } });
+    emit({ type: "leave", clientId: "a", user: { name: "Ada", color: "#000000" } });
     expect(region?.textContent).toBe("Ada joined");
     flush();
     settle();
@@ -390,14 +388,14 @@ describe("doc recipes for ui context", () => {
   });
 
   it("sends typing and away together, once per change, and shows the typing hint", () => {
-    const sender = makeFakeClient<Status, Person>();
+    const sender = makeFakeClient<Context, User, Events>();
     const setContext = vi.spyOn(sender.client, "setContext");
     const sent = () => setContext.mock.calls.map(([next]) => next);
     act(() =>
       root.render(
         <statusHooks.PresenceProvider
           client={sender.client}
-          binding={makeFakeBinding<Status, Person>().binding}
+          binding={makeFakeBinding<Context, User>().binding}
         >
           <Comments />
         </statusHooks.PresenceProvider>,
@@ -428,24 +426,24 @@ describe("doc recipes for ui context", () => {
     expect(sent().at(-1)).toEqual({ typingIn: null, away: true });
     vi.restoreAllMocks();
 
-    const receiver = makeFakeClient<Status, Person>();
+    const receiver = makeFakeClient<Context, User, Events>();
     act(() =>
       root.render(
         <statusHooks.PresenceProvider
           client={receiver.client}
-          binding={makeFakeBinding<Status, Person>().binding}
+          binding={makeFakeBinding<Context, User>().binding}
         >
           <TypingHint anchorId="comments.box" />
         </statusHooks.PresenceProvider>,
       ),
     );
-    const peer = (clientId: string, context: Status) => ({
+    const peer = (clientId: string, context: Context) => ({
       version: 1 as const,
       clientId,
       session: "s",
       sequence: 1,
       cursor: null,
-      user: { name: clientId },
+      user: { name: clientId, color: "#000000" },
       context,
     });
     act(() =>

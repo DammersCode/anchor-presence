@@ -60,7 +60,7 @@ The SignalR hub has no `authCheck` hook and binds no identity. The reference rel
 
 ### Demo identity mode
 
-The entry files of the Bun, Node.js (ws), Hono and Elysia relays have a demo identity mode. To turn it on, set `RELAY_DEMO_IDENTITY=1` before you start the relay:
+The entry files of the reference relay and of the Bun, Node.js (ws), Hono and Elysia relays have a demo identity mode. To turn it on, set `RELAY_DEMO_IDENTITY=1` before you start the relay:
 
 ```sh
 RELAY_DEMO_IDENTITY=1 bun relay.ts
@@ -109,6 +109,7 @@ The conformance suite `examples/_shared/relay-conformance-suite.ts` runs in vite
 - A client in another room receives nothing.
 - The sender does not receive its own frame.
 - The relay drops a binary frame and a text frame above the size cap, and it keeps relaying.
+- The relay relays a text frame unchanged, even when it looks like JSON.
 - The relay closes a connection with an invalid room name with code `4007`, and never merges it into `main`.
 - The relay closes a connection from an origin outside the allowlist with code `4004`, and accepts a listed origin.
 - The relay closes a connection without the room token with code `4006`, and accepts a connection with it.
@@ -119,7 +120,7 @@ The conformance suite `examples/_shared/relay-conformance-suite.ts` runs in vite
 
 The suite does not check the codes `4001`, `4002`, `4003` and `4005`.
 
-To test a relay of your own, copy `relay-conformance-suite.ts` and `relay-test-helpers.ts` from `examples/_shared`. Then call `defineRelayConformance(name, start, options)` in a vitest file. The only option is `identity`: `{ identity?: boolean }`, default `false`. Set it to `true` to add the identity checks. In this repo, `bunx vitest run examples/_shared/relay-conformance.test.ts` runs it against the five example relays. The `start(env)` function starts your relay with the given environment variables. It returns `{ baseUrl, stop }`: the `ws://` base URL of the relay and a function that stops it.
+To test a relay of your own, copy `relay-conformance-suite.ts` and `relay-test-helpers.ts` from `examples/_shared`. Then call `defineRelayConformance(name, start, options)` in a vitest file. The only option is `identity`: `{ identity?: boolean }`, default `false`. Set it to `true` to add the identity checks. In this repo, `bunx vitest run examples/_shared/relay-conformance.test.ts` runs it against the reference relay and the four example relays. The `start(env)` function starts your relay with the given environment variables. It returns `{ baseUrl, stop }`: the `ws://` base URL of the relay and a function that stops it.
 
 Your relay must read these environment variables:
 

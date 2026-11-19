@@ -8,7 +8,7 @@ import { Braces, Component, Gauge } from "lucide-react";
 
 This page lists the signature of every hook in `@anchor-presence/react`, and of `createPresenceHooks`. Use it to look up a type. For usage, render cost, and examples, read the guide page that each section links to.
 
-Every hook reads the nearest `PresenceProvider`. A hook that you import from `@anchor-presence/react` takes no type argument and returns `unknown` for `user`, `context`, and event `data`. A type never comes from a claim. To get typed values, call [`createPresenceHooks`](#createpresencehooks) and use its hooks. Without a provider, each hook returns its empty value, and in development mode one console warning appears. For the empty values, see [Server-safe values](/docs/react/ssr-and-strict-mode#server-safe-values).
+Every hook reads the nearest `PresenceProvider`. A hook that you import from `@anchor-presence/react` takes no type argument and returns `unknown` for `user`, `context`, and event `data`. A type argument cannot prove what a peer sends. To get typed values, call [`createPresenceHooks`](#createpresencehooks) and use its hooks. Without a provider, each hook returns its empty value, and in development mode one console warning appears. For the empty values, see [Server-safe values](/docs/react/ssr-and-strict-mode#server-safe-values).
 
 ## useRemoteCursors
 
@@ -45,7 +45,7 @@ Guide: [Remote users](/docs/react/remote-users).
 function useRemotePresence(): readonly RemotePresence[];
 ```
 
-Returns the raw presence of every peer, in the coordinates of the sender. Guide: [Remote presence](/docs/react/remote-presence).
+Returns the raw presence of every peer, in the coordinates of the sender. Guide: [Raw presence](/docs/react/remote-presence).
 
 ## useLocalUser
 
@@ -77,7 +77,7 @@ Returns `"connecting"`, `"connected"`, `"reconnecting"`, or `"disconnected"`. Gu
 function usePresenceClient(): PresenceClient | null;
 ```
 
-Returns the client of the nearest provider, or `null` without one. On the server, it returns the `client` prop of the provider. A provider with only a `factory` has no client on the server, so the hook returns `null`. Guide: [Client creation](/docs/react/client-creation).
+Returns the client of the nearest provider, or `null` without one. On the server, it returns the `client` prop of the provider. A provider with only a `factory` has no client on the server, so the hook returns `null`. Guide: [Create the client](/docs/react/client-creation).
 
 ## useDomBinding
 

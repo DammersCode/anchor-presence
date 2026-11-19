@@ -41,7 +41,7 @@ A `PresenceEvent` is a one-shot event that `client.sendEvent` sends.
 
 <AutoTypeTable path="../../packages/core/src/protocol.ts" name="PresenceEvent" />
 
-`RemoteEvent` is a `PresenceEvent` plus the `clientId` of the sender. `client.subscribeEvents` gives a `RemoteEvent` to its listener.
+`RemoteEvent` is a `PresenceEvent` plus the `clientId` of the sender. `client.subscribeEvents` gives a `TypedRemoteEvent<TEvents>` to its listener. It is a `RemoteEvent` with the types of your event map.
 
 ## PeerChange
 

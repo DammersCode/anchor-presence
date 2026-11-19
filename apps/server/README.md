@@ -40,7 +40,7 @@ The example relays under `examples/` read the room from the `room` query paramet
 
 ## Identity
 
-The relay has no `authCheck` hook and binds no identity. Any client in a room can claim any `clientId`. The relay checks only the shared room token of `RELAY_AUTH_TOKEN`. For identity binding, use an example relay with an `authCheck` hook.
+By default, the relay binds no identity. Any client in a room can claim any `clientId`. The relay checks only the shared room token of `RELAY_AUTH_TOKEN`. For identity binding, pass an `authCheck` hook to `startReferenceRelay`, or set `RELAY_DEMO_IDENTITY=1`.
 
 ## Defaults are open
 

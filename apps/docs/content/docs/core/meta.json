@@ -25,6 +25,7 @@
     "build-a-framework-adapter",
     "---[braces]API reference---",
     "api/client",
+    "api/standard-schema",
     "api/protocol",
     "api/transports-and-codecs"
   ]

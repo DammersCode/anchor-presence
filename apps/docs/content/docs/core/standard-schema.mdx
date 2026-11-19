@@ -4,7 +4,7 @@ description: Check the user, the context, and the events of remote peers with Va
 icon: badge-check
 ---
 
-import { Braces, Code, ShieldCheck, Zap } from "lucide-react";
+import { Braces, ShieldCheck, Zap } from "lucide-react";
 
 Remote data is untrusted. The client checks its size and structure, but it cannot know the shape of your `user`, your `context`, or your events. Use a schema to check that shape. Valibot, Zod, and ArkType are tested. Other libraries that implement [Standard Schema](https://standardschema.dev) fit the same interface. No test covers them.
 
@@ -90,7 +90,7 @@ const parseUser = parserFrom(User, {
 ## Related
 
 <Cards>
-  <Card icon={<Code />} title="Standard schema API" href="/docs/core/api/standard-schema">
+  <Card icon={<Braces />} title="Standard schema API" href="/docs/core/api/standard-schema">
     The signatures of `parserFrom` and `eventParserFrom`.
   </Card>
   <Card icon={<Braces />} title="Typed hooks" href="/docs/react/typed-hooks#infer-the-types-from-schemas">

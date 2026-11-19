@@ -267,21 +267,21 @@ type IsExactly<A, B> = (<X>() => X extends A ? 1 : 2) extends <X>() => X extends
 type IsAny<T> = 0 extends 1 & T ? true : false;
 
 /** `any` can never be checked, so a parser that returns it cannot meet the requirement. */
-type Unmeetable = { readonly parser: never };
+type ParserMustReturnACheckedType = { readonly "the parser must return a checked type, not any": never };
 
 /** A `user`, `context` or event map other than the default needs the parser that checks it. */
 export type RequiredParsers<TContext, TUser, TEvents extends object = EventMap> = (IsAny<TUser> extends true
-  ? { parseUser: Unmeetable }
+  ? { parseUser: ParserMustReturnACheckedType }
   : IsExactly<TUser, unknown> extends true
     ? unknown
     : { parseUser: (value: unknown) => TUser | undefined }) &
   (IsAny<TContext> extends true
-    ? { parseContext: Unmeetable }
+    ? { parseContext: ParserMustReturnACheckedType }
     : IsExactly<TContext, unknown> extends true
       ? unknown
       : { parseContext: (value: unknown) => TContext | undefined }) &
   (IsAny<TEvents> extends true
-    ? { parseEvent: Unmeetable }
+    ? { parseEvent: ParserMustReturnACheckedType }
     : IsExactly<TEvents, EventMap> extends true
       ? unknown
       : { parseEvent: EventParser<TEvents> });

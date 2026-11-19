@@ -1,5 +1,7 @@
 import { createPresenceClient } from "@anchor-presence/core";
 import type { AnchorPoint, CursorPosition, PresenceClient } from "@anchor-presence/core";
+
+type TourClient = PresenceClient<TourContext, TourUser>;
 import { createBroadcastChannelTransport } from "@anchor-presence/dom";
 
 export type TourUser = { name: string; color: string };
@@ -26,7 +28,7 @@ export function parseTourUser(value: unknown): TourUser | undefined {
 
 export type TourStep =
   | { kind: "point"; anchor: string; u?: number; v?: number; dwellMs?: number }
-  | { kind: "context"; value: unknown; dwellMs?: number }
+  | { kind: "context"; value: TourContext | undefined; dwellMs?: number }
   | { kind: "event"; type: string; data?: unknown; dwellMs?: number }
   | { kind: "quiet"; ms: number }
   | { kind: "leave"; ms: number };
@@ -94,7 +96,7 @@ export function startTour(options: {
   const { channel, tracks, reducedMotion, onChange } = options;
   const reasons = new Set<PauseReason>();
   const timers = new Set<ReturnType<typeof setTimeout>>();
-  const clients = new Set<PresenceClient>();
+  const clients = new Set<TourClient>();
   let waiters: (() => void)[] = [];
   let disposed = false;
 
@@ -119,27 +121,30 @@ export function startTour(options: {
     for (const resolve of ready) resolve();
   }
 
-  function join(user: TourUser): PresenceClient {
+  function join(user: TourUser): TourClient {
     const transport = createBroadcastChannelTransport(channel);
-    // A huge heartbeat keeps a quiet step quiet, so receivers can mark the user idle.
+    // A huge heartbeat keeps a quiet step quiet, so receivers can mark the user idle. The stale timeout stays above twice the heartbeat.
     const client = createPresenceClient({
       transport,
       user,
       clientId: `tour-${user.name}`,
       heartbeatIntervalMs: 3_600_000,
+      staleTimeoutMs: 7_200_001,
+      parseUser: parseTourUser,
+      parseContext: parseTourContext,
     });
     clients.add(client);
     return client;
   }
 
-  function leave(client: PresenceClient): void {
+  function leave(client: TourClient): void {
     clients.delete(client);
     client.dispose();
   }
 
   async function runTrack(track: TourTrack): Promise<void> {
     const glide = track.motion !== "jump" && !reducedMotion;
-    let client: PresenceClient | null = null;
+    let client: TourClient | null = null;
     let at: Point | null = null;
     await sleep(track.delayMs ?? 0);
     while (!disposed) {

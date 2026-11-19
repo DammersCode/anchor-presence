@@ -10,5 +10,5 @@
     "types": [],
     "verbatimModuleSyntax": true
   },
-  "include": ["untyped.ts", "typed.ts"]
+  "include": ["untyped.ts", "typed.ts", "schema.ts"]
 }

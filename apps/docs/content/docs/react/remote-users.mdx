@@ -42,7 +42,7 @@ For a full presence list with avatars, see the [Presence list](/docs/examples/pr
 
 ## User shape
 
-If the client has a local `user` and no `parseUser`, it checks each remote `user` against the shape of your local `user` value. If a remote value does not fit, the client drops it, and the entry keeps the previous `user` value. In development mode, the client then warns one time and names `parseUser`. A `null` inside a remote `user` fits every key, so give each field a fallback when you render it. For the rules, see [Remote user and context](/docs/core/validation#remote-user-and-context).
+If the client has a local `user` and no `parseUser`, it checks each remote `user` against the shape of your local `user` value. If a remote value does not fit, the client drops it, and the entry keeps the previous `user` value. In development mode, the client then warns one time and names `parseUser`. A `null` inside a remote `user` fits every key, so give each field a fallback when you render it. For the rules, see [Remote user and context](/docs/core/validation#remote-user-and-context). To build `parseUser` from a schema, see [Validate with a schema](/docs/core/standard-schema).
 
 ## Render cost
 

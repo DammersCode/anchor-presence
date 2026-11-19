@@ -35,7 +35,20 @@ The reference relay (`apps/server`) also reads a room from the path. It uses the
 
 A relay that does not decode messages cannot tell who sent one. Any peer can claim another `clientId`, or send a `leave` for another peer. To prevent this, make `authCheck` return a verified `{ clientId, user }`. The relay then writes that identity into every JSON frame of the connection.
 
-`authCheck` receives `{ token, room, origin, headers }`. It can be async. It returns `true` to admit, `false` to refuse, or `{ clientId, user }` to admit and bind that identity. A throw or a rejection counts as a refusal.
+`authCheck` receives `{ token, room, origin, headers }`. It can be async. It returns `true` to admit, `false` to refuse, or `{ clientId, user }` to admit and bind that identity. A throw or a rejection counts as a refusal. This Node.js (ws) relay admits the tokens of a session table and binds the identity of each session:
+
+```ts
+import { createNodeWsRelay } from "./server";
+
+const sessions = new Map([["ada-token", { id: "ada", name: "Ada" }]]);
+
+const relay = await createNodeWsRelay(8788, {
+  authCheck: async ({ token }) => {
+    const session = sessions.get(token);
+    return session === undefined ? false : { clientId: session.id, user: { name: session.name } };
+  },
+});
+```
 
 These relays have an `authCheck` hook and bind the identity that it returns:
 
@@ -120,7 +133,9 @@ The conformance suite `examples/_shared/relay-conformance-suite.ts` runs in vite
 
 The suite does not check the codes `4001`, `4002`, `4003` and `4005`.
 
-To test a relay of your own, copy `relay-conformance-suite.ts` and `relay-test-helpers.ts` from `examples/_shared`. Then call `defineRelayConformance(name, start, options)` in a vitest file. The only option is `identity`: `{ identity?: boolean }`, default `false`. Set it to `true` to add the identity checks. In this repo, `bunx vitest run examples/_shared/relay-conformance.test.ts` runs it against the reference relay and the four example relays. The `start(env)` function starts your relay with the given environment variables. It returns `{ baseUrl, stop }`: the `ws://` base URL of the relay and a function that stops it.
+To test a relay of your own, copy `relay-conformance-suite.ts` and `relay-test-helpers.ts` from `examples/_shared`. Then call `defineRelayConformance(name, start, options)` in a vitest file. The only option is `identity`: `{ identity?: boolean }`, default `false`. Set it to `true` to add the identity checks.
+
+In this repo, `bunx vitest run examples/_shared/relay-conformance.test.ts` runs it against the reference relay and the four example relays. The `start(env)` function starts your relay with the given environment variables. It returns `{ baseUrl, stop }`: the `ws://` base URL of the relay and a function that stops it.
 
 Your relay must read these environment variables:
 

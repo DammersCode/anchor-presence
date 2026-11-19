@@ -25,7 +25,7 @@ Read the code and record:
 - where the current user's display name comes from.
 - which views get live cursors.
 
-**Done when** every item has an answer. Ask the user only for items the code cannot answer, usually the target views and, when no real-time channel exists, where a **relay** may run.
+**Done when** every item has an answer. Ask the user only for items the code cannot answer, usually the target views and, when no real-time channel exists, where a **relay** can run.
 
 ### 2. Choose the transport and relay
 

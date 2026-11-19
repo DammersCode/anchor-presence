@@ -114,7 +114,7 @@ export type DomBinding<TContext = unknown, TUser = unknown> = {
    * @param reason An optional name for the trigger.
    */
   invalidate(reason?: string): void;
-  /** Returns the latest resolved cursors. */
+  /** Returns the last resolved cursors. */
   getSnapshot(): readonly ResolvedCursor<TContext, TUser>[];
   /** Returns the element the resolver uses for an anchor id: the newest one when ids repeat, `null` when none is connected. */
   getAnchorElement(anchorId: string): Element | null;

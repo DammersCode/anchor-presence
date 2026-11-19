@@ -6,7 +6,7 @@ icon: life-buoy
 
 import { Gauge, LayoutDashboard, Eye, Radio } from "lucide-react";
 
-Most cursor problems have one of three causes: a missing anchor, a connection that is not open, or a layout change that the binding cannot see. Find your symptom below. Read the [development warnings](#development-warnings) in the browser console first, because they name most causes.
+Most cursor problems have one of three causes: a missing anchor, a closed connection, or a layout change that the binding cannot see. Find your symptom below. Read the [development warnings](#development-warnings) in the browser console first. They name most causes.
 
 ## No cursor at all
 
@@ -45,6 +45,7 @@ Make sure that both clients use the same room and the same codec.
 If other cursors appear but one peer does not, check these causes:
 
 - The window of the peer is not active, or two tabs share one window. See [Cursor not visible](#cursor-not-visible).
+- Two tabs use one `clientId`. See [Two tabs share one clientId](#two-tabs-share-one-clientid).
 - Clients of one room connect to different relay processes. See [Keep each room on one process](/docs/get-started/guides/deploy-relay#keep-each-room-on-one-process).
 - The store drops new peers above `maxRemoteClients`. See [maxRemoteClients](/docs/core/remote-presence#maxremoteclients).
 - The relay drops a frame above the size cap or the rate limit, and keeps the socket open. See [Set the environment variables](/docs/get-started/guides/deploy-relay#set-the-environment-variables).

@@ -39,7 +39,7 @@ const { a, b } = createInMemoryPair({ async: true });
 
 ## Test with more than two peers
 
-Use `createInMemoryRoom` when a test needs three or more clients. Call `join()` once per client:
+If a test needs three or more clients, use `createInMemoryRoom`. Call `join()` once per client:
 
 ```ts
 import { createInMemoryRoom, createPresenceClient } from "@anchor-presence/core";

@@ -26,6 +26,11 @@ it("the markdown export strips MDX icon imports before it inlines scene sources"
   );
 });
 
+it("the markdown export inlines sources after the tab dedent, so inlined code keeps its indentation", () => {
+  const source = readRepoFile("apps/docs/lib/source.ts");
+  expect(source.indexOf(".replace(CODE_FROM_SOURCE")).toBeGreaterThan(source.indexOf(".replace(TAB_BODY"));
+});
+
 it("the kanban scene source keeps its lucide import for the markdown export", () => {
   expect(readRepoFile("apps/docs/components/examples/kanban.tsx")).toMatch(
     /^import \{[^}]*\} from "lucide-react";$/mu,

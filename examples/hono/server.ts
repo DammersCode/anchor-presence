@@ -29,7 +29,7 @@ export type HonoRelayOptions = {
   /** Seconds without a message or a pong before Bun closes the socket. Bun sends a ping before it closes. */
   idleTimeoutSeconds?: number;
   allowedOrigins?: Set<string>;
-  /** Auth hook placeholder: verify a token query param. Default accepts every token. */
+  /** Auth hook. Default: the `RELAY_AUTH_TOKEN` check, which admits everyone when the variable is unset. */
   authCheck?: AuthCheck;
 };
 

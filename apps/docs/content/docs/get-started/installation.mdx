@@ -42,8 +42,8 @@ Pick the tab that matches your app. Each tab installs only the packages that the
 <Callout type="warn">
   If the install command returns a 404, the packages are not published to npm. Build them from the repository,
   then install them from their folders. The `react` and `dom` packages depend on the other packages by
-  version, so your app needs an override block that points those names to the folders. The key is `overrides`
-  for bun and npm, `pnpm.overrides` for pnpm, and `resolutions` for yarn.
+  version. Your app needs an override block that points those names to the folders. The key is `overrides` for
+  bun and npm, `pnpm.overrides` for pnpm, and `resolutions` for yarn.
 </Callout>
 
 Build the packages in a clone of the repository:

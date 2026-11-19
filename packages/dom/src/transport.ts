@@ -66,7 +66,7 @@ export type WebSocketTransportOptions = {
   random?: (() => number) | undefined;
   /** How long a connection must stay open before the backoff resets, in milliseconds. Default `5000`. */
   stableAfterMs?: number | undefined;
-  /** Return `false` to stop reconnecting after a close. Default: reconnect unless the close code is 1008, 4004 (origin), 4006 (auth) or 4007 (room). If the token function or the WebSocket constructor fails, it passes no `code` and the reason "connection attempt failed". A socket that cannot reach the relay closes with 1006. */
+  /** Return `false` to stop reconnecting after a close. Default: reconnect unless the close code is 1008, 4004 (origin), 4006 (room token) or 4007 (room name). If the token function or the WebSocket constructor fails, it passes no `code` and the reason "connection attempt failed". A socket that cannot reach the relay closes with 1006. */
   shouldReconnect?: ((close: { code?: number; reason?: string }) => boolean) | undefined;
   /** A WebSocket constructor to use. Default: `globalThis.WebSocket`. */
   WebSocketCtor?: WebSocketCtor | undefined;

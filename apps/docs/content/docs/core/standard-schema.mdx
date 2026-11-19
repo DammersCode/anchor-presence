@@ -4,11 +4,11 @@ description: Check the user, the context, and the events of remote peers with Va
 icon: badge-check
 ---
 
-import { ShieldCheck, Zap } from "lucide-react";
+import { Braces, Code, ShieldCheck, Zap } from "lucide-react";
 
 Remote data is untrusted. The client checks its size and structure, but it cannot know the shape of your `user`, your `context`, or your events. Use a schema to check that shape. Valibot, Zod, and ArkType are tested. Other libraries that implement [Standard Schema](https://standardschema.dev) fit the same interface. No test covers them.
 
-The schema support is optional. Without it, `user` and `context` stay `unknown`, and the client keeps its default shape check. Core adds no dependency. The helper lives in its own entry point, `@anchor-presence/core/standard-schema`, so an app that does not import it pays nothing.
+The schema support is optional. Without it, `user` and `context` stay `unknown`, and the client keeps its default shape check. Core adds no dependency. The helper lives in its own entry point, `@anchor-presence/core/standard-schema`, so an app that does not import it pays nothing. The [API reference](/docs/core/api/standard-schema) lists the signatures.
 
 ## Check the user and the context
 
@@ -90,6 +90,12 @@ const parseUser = parserFrom(User, {
 ## Related
 
 <Cards>
+  <Card icon={<Code />} title="Standard schema API" href="/docs/core/api/standard-schema">
+    The signatures of `parserFrom` and `eventParserFrom`.
+  </Card>
+  <Card icon={<Braces />} title="Typed hooks" href="/docs/react/typed-hooks#infer-the-types-from-schemas">
+    Take the types of the React hooks from the same schemas.
+  </Card>
   <Card icon={<ShieldCheck />} title="Validation" href="/docs/core/validation">
     The limits and the shape check that run before a schema.
   </Card>

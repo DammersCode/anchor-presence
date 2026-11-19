@@ -26,7 +26,7 @@ function ViewportOnlyBadge() {
 
 ## Entries
 
-Each entry is a [`RemotePresence`](/docs/core/api/protocol#remotepresence): the presence message of the peer without its `sequence` field, plus `idle`. A `user` or `context` of `null` stays `null` here. `useRemoteUsers` turns it into `undefined`.
+Each entry is a [`RemotePresence`](/docs/core/api/protocol#remotepresence): the presence message of the peer without its `sequence` field, plus `idle`. A `null` `user` or `context` on the wire clears the field, so the entry has no such key.
 
 The hook rerenders only when the `cursor`, `context`, `user`, `pointer`, `session`, or `idle` field of a peer changes, or when a peer joins or leaves. A message that only advances `sequence` does not rerender it.
 

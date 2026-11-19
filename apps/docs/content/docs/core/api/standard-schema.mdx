@@ -1,0 +1,73 @@
+---
+title: Standard schema API
+description: parserFrom, eventParserFrom, SchemaParserOptions, InferSchemaOutput, and EventsFromSchemas from the standard-schema entry point of @anchor-presence/core.
+icon: code
+---
+
+import { BadgeCheck, Code, Zap } from "lucide-react";
+
+This page lists the exports of `@anchor-presence/core/standard-schema` with their types. Use it to look up a signature. The [guide](/docs/core/standard-schema) explains the behavior. Import them from the entry point:
+
+```ts
+import { eventParserFrom, parserFrom } from "@anchor-presence/core/standard-schema";
+```
+
+## parserFrom and eventParserFrom
+
+`parserFrom` and `eventParserFrom` have these signatures:
+
+```ts
+type SchemaParser<Schema extends StandardSchemaV1> = (
+  value: unknown,
+) => InferSchemaOutput<Schema> | undefined;
+
+function parserFrom<Schema extends StandardSchemaV1>(
+  schema: Schema,
+  options?: SchemaParserOptions,
+): SchemaParser<Schema>;
+
+type EventSchemas = Record<string, StandardSchemaV1 | null>;
+
+function eventParserFrom<Schemas extends EventSchemas>(
+  schemas: Schemas,
+  options?: SchemaParserOptions,
+): EventParser<EventsFromSchemas<Schemas>>;
+```
+
+`parserFrom` returns a function for the `parseUser` or `parseContext` option. The function returns `undefined` when the schema rejects the value or validates asynchronously. `eventParserFrom` returns a function for the `parseEvent` option. Use `null` as the schema of an event without data.
+
+## SchemaParserOptions
+
+`SchemaParserOptions` is the shape of the second argument of both functions. See [See why a value was dropped](/docs/core/standard-schema#see-why-a-value-was-dropped).
+
+<AutoTypeTable path="../../packages/core/src/standard-schema.ts" name="SchemaParserOptions" />
+
+## InferSchemaOutput and EventsFromSchemas
+
+`InferSchemaOutput` and `EventsFromSchemas` have these definitions:
+
+```ts
+type InferSchemaOutput<Schema extends StandardSchemaV1> = NonNullable<Schema["~standard"]["types"]>["output"];
+
+type EventsFromSchemas<Schemas extends EventSchemas> = {
+  [Type in keyof Schemas]: Schemas[Type] extends StandardSchemaV1
+    ? InferSchemaOutput<Schemas[Type]>
+    : undefined;
+};
+```
+
+`InferSchemaOutput` is the type that a schema produces. `EventsFromSchemas` is the event map that a set of event schemas describes. Use it as the `Events` type of the typed hooks and `createEventChannel`.
+
+## Related
+
+<Cards>
+  <Card icon={<BadgeCheck />} title="Validate with a schema" href="/docs/core/standard-schema">
+    The guide to schema checks.
+  </Card>
+  <Card icon={<Code />} title="Client API" href="/docs/core/api/client">
+    The options that take these parsers.
+  </Card>
+  <Card icon={<Zap />} title="Events" href="/docs/core/events">
+    Send and receive typed events.
+  </Card>
+</Cards>

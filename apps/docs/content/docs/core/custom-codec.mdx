@@ -6,7 +6,7 @@ icon: file-cog
 
 import { Binary, FileDigit } from "lucide-react";
 
-A custom codec is your own `PresenceCodec`. Write one when you need a wire format that `jsonCodec` and `binaryCodec` do not cover, for example MessagePack. A codec that wraps another codec also lets you log the traffic of `binaryCodec` during development.
+A custom codec is your own `PresenceCodec`. If you need a wire format that `jsonCodec` and `binaryCodec` do not cover, for example MessagePack, write one. A codec that wraps another codec also lets you log the traffic of `binaryCodec` during development.
 
 ## MessagePack sketch
 

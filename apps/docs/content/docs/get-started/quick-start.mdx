@@ -109,7 +109,9 @@ Open your app in two browser windows of different widths. Move the pointer in on
 
 ## Test with more users
 
-Each extra window is one more user. Only the window under the pointer sends a cursor, so each window shows one moving remote cursor at a time. To see two at once, add a second device, for example a phone. To open the app on a phone, start the dev server with `bun run dev --host`, and open the network address on a phone that uses the same network. Then use a relay, because a `BroadcastChannel` never leaves the browser. For tests with no browser, see [Test with more than two peers](/docs/core/in-memory-transport#test-with-more-than-two-peers).
+Each extra window is one more user. Only the window under the pointer sends a cursor, so each window shows one moving remote cursor at a time. To see two at once, add a second device, for example a phone.
+
+To open the app on a phone, start the dev server with `bun run dev --host`. Then open the network address on a phone on the same network. Use a relay, because a `BroadcastChannel` never leaves the browser. For tests with no browser, see [Test with more than two peers](/docs/core/in-memory-transport#test-with-more-than-two-peers).
 
 ## Without React
 

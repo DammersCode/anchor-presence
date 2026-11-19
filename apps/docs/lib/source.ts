@@ -102,10 +102,6 @@ async function inlineComponents(markdown: string): Promise<string> {
       (_tag, packages: string | undefined) =>
         `${FENCE}sh\nnpm install ${packages ?? installPackages}\n${FENCE}`,
     )
-    .replace(CODE_FROM_SOURCE, (_tag, kind: string, file: string, lang: string) => {
-      const code = kind === "repo" ? readExampleSource(file) : readDocsSource(file);
-      return `${FENCE}${lang}\n${code.trimEnd()}\n${FENCE}`;
-    })
     .replace(
       MERMAID,
       (_tag, chart: string) =>
@@ -119,6 +115,10 @@ async function inlineComponents(markdown: string): Promise<string> {
     .replace(STEP_BODY, dedentBody)
     .replace(TAB_BODY, dedentBody)
     .replace(ACCORDION_BODY, dedentBody)
+    .replace(CODE_FROM_SOURCE, (_tag, kind: string, file: string, lang: string) => {
+      const code = kind === "repo" ? readExampleSource(file) : readDocsSource(file);
+      return `${FENCE}${lang}\n${code.trimEnd()}\n${FENCE}`;
+    })
     .replace(ACCORDION, (_tag, title: string) => `**${title}**\n`)
     .replace(STRUCTURE_TAGS, "")
     .replace(TAB, (_tag, name: string) => `\n**${name}**\n\n`);

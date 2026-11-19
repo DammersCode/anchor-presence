@@ -33,7 +33,7 @@ export type NodeWsRelayOptions = {
   slowPeerHardBytes?: number;
   slowPeerResumeBytes?: number;
   allowedOrigins?: Set<string>;
-  /** Auth hook placeholder: verify a token query param. Default accepts every token. */
+  /** Auth hook. Default: the `RELAY_AUTH_TOKEN` check, which admits everyone when the variable is unset. */
   authCheck?: AuthCheck;
 };
 

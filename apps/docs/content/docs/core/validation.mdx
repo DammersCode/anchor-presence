@@ -4,9 +4,9 @@ description: validatePresence, ValidationLimits, the shape check for remote user
 icon: shield-check
 ---
 
-import { ShieldCheck, Users, FileCode } from "lucide-react";
+import { BadgeCheck, ShieldCheck, Users, FileCode } from "lucide-react";
 
-`validatePresence` turns an untrusted decoded value into a `PresenceMessage` or `null`. The client passes the output of every codec `decode` through it before the value reaches the store. Call it yourself only when you process presence data outside a `PresenceClient`, for example on a relay.
+`validatePresence` turns an untrusted decoded value into a `PresenceMessage` or `null`. The client passes the output of every codec `decode` through it before the value reaches the store. If you process presence data outside a `PresenceClient`, for example on a relay, call it yourself.
 
 ## Use validatePresence directly
 
@@ -58,7 +58,7 @@ The client runs these steps on each inbound message, in this order:
 7. It checks `user` and `context` with `parseUser` and `parseContext`, or with the shape check when no parser is set.
 8. It gives the message to the store.
 
-A codec does not check limits. Its job is to turn bytes into a value and back. `decode` never throws. `validatePresence` checks the decoded value against the protocol limits.
+A codec does not check the protocol limits. Its job is to turn bytes into a value and back. `decode` never throws. `validatePresence` checks the decoded value against the protocol limits.
 
 ## ValidationLimits
 
@@ -133,6 +133,8 @@ const viewer = createPresenceClient<{ page: string }>({
 });
 ```
 
+To build these parsers from a Valibot, Zod, or ArkType schema, see [Validate with a schema](/docs/core/standard-schema).
+
 A dropped field does not clear the stored value. The receiver keeps the previous value of the same session. A `null` field value clears the field, and no check runs on it.
 
 <Callout type="warn">
@@ -161,6 +163,9 @@ As a result, a bad event never reaches the store as a message that clears the cu
   </Card>
   <Card icon={<ShieldCheck />} title="Security" href="/docs/get-started/guides/security">
     The risks that each limit covers.
+  </Card>
+  <Card icon={<BadgeCheck />} title="Validate with a schema" href="/docs/core/standard-schema">
+    Build the parsers from a Valibot, Zod, or ArkType schema.
   </Card>
   <Card icon={<FileCode />} title="Protocol types" href="/docs/core/api/protocol">
     The shape of `PresenceMessage`.

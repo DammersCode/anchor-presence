@@ -55,7 +55,7 @@ y = viewport.v * window.innerHeight
 `binding.getSnapshot()` returns an array of `ResolvedCursor` values. [ResolvedCursor](/docs/dom/api/resolution#resolvedcursor) lists every field. These notes cover the fields that need context:
 
 - `x` and `y` are the eased position. See [Motion](/docs/dom/motion).
-- `visible` is the decision of the [visibility policy](/docs/dom/visibility-policy). Render the cursor only when it is `true`.
+- `visible` is the decision of the [visibility policy](/docs/dom/visibility-policy). If it is `false`, do not render the cursor.
 - `pointVisible` is `true` when the point is inside the visible part of the anchor, after the clip of every scroll container. See [Occlusion and scroll](/docs/dom/occlusion-and-scroll).
 - `pointerType` is absent when the sender sent no pointer type.
 

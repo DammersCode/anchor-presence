@@ -167,7 +167,7 @@ import { isDevMode } from "@anchor-presence/core";
 if (isDevMode()) console.debug("[presence] debug overlay on");
 ```
 
-The client reads development mode one time, at creation. In development mode, it writes console warnings that start with `[anchor-presence]`. A receiver drops a bad message or field without a warning in production. The one exception is `parserFrom`, which warns once about an async schema in every mode.
+Most warnings of the client read development mode one time, at creation. In development mode, it writes console warnings that start with `[anchor-presence]`. A receiver drops a bad message or field without a warning in production. The one exception is `parserFrom`, which warns once about an async schema in every mode.
 
 <Accordions>
   <Accordion title="Warnings of the client">

@@ -605,7 +605,7 @@ describe("presence client docs: setup samples", () => {
     // Copied from apps/docs/content/docs/core/presence-client.mdx (Connect the transport).
     const client = createPresenceClient({ transport: myTransport, autoConnect: false });
     // oxlint-disable-next-line typescript/no-floating-promises -- the doc sample calls connect() without void
-    myTransport.connect();
+    myTransport.connect?.();
 
     expect(connect).toHaveBeenCalledTimes(1);
     client.dispose();

@@ -1,4 +1,4 @@
-// Type-checked copies of the recipes in examples/kanban.mdx, examples/presence-list.mdx and concepts/ui-context.mdx.
+// Type-checked copies of the recipes in guides/card-occupancy.mdx, guides/join-leave-announcer.mdx and guides/typing-and-away.mdx.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { act } from "react";
 import { createRoot } from "react-dom/client";
@@ -17,7 +17,7 @@ import {
 import { docSample, missingLines, readRepoFile, trimLines } from "./doc-source";
 import { makeFakeBinding, makeFakeClient } from "./test-utils";
 
-// kanban.mdx
+// card-occupancy.mdx
 
 const safeColor = (color: string | undefined, fallback: string) =>
   color !== undefined && /^#[0-9a-f]{6}$/iu.test(color) ? color : fallback;
@@ -141,7 +141,7 @@ function TestBoard() {
   );
 }
 
-// presence-list.mdx
+// join-leave-announcer.mdx
 
 type Person = { name: string };
 
@@ -195,7 +195,7 @@ function PeerAnnouncer() {
   );
 }
 
-// ui-context.mdx
+// typing-and-away.mdx
 
 type Status = { typingIn: string | null; away: boolean };
 
@@ -455,9 +455,9 @@ describe("doc recipes for ui context", () => {
 
   it("keeps the page samples in step with these copies and the kanban scene", () => {
     const pages = [
-      ["examples/kanban.mdx", "function useCardPeers"],
-      ["examples/presence-list.mdx", "function PeerAnnouncer"],
-      ["get-started/concepts/ui-context.mdx", "function useStatus"],
+      ["get-started/guides/card-occupancy.mdx", "function useCardPeers"],
+      ["get-started/guides/join-leave-announcer.mdx", "function PeerAnnouncer"],
+      ["get-started/guides/typing-and-away.mdx", "function useStatus"],
     ] as const;
     const withoutImports = (sample: string) => sample.replaceAll(/^\} from "[^"]+";\n/gmu, "");
     const samples = pages.map(([page, marker]) => withoutImports(docSample(page, marker)));

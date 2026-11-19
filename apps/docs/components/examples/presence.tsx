@@ -84,7 +84,7 @@ function WhoIsOnline({ compact }: { compact: boolean }) {
             {(user?.name ?? "?").charAt(0)}
           </span>
           {user?.name ?? "Guest"}
-          {idle ? <span className="text-fd-muted-foreground">away</span> : null}
+          {idle ? <span className="text-fd-muted-foreground">idle</span> : null}
         </li>
       ))}
     </ul>

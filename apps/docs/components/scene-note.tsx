@@ -2,7 +2,7 @@ import { Callout } from "fumadocs-ui/components/callout";
 
 export function SceneNote() {
   return (
-    <Callout type="warn">
+    <Callout type="info">
       The scene takes <code>client</code>, <code>layout</code>, and <code>children</code> from the preview. In
       your app, create the client through the provider&apos;s <code>factory</code> with a real transport, and
       render your own status bar as <code>children</code>. The scene also uses docs theme classes such as{" "}

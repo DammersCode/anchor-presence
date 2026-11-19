@@ -92,13 +92,13 @@ If a pair scores moderate or high, the agent proposes fixes with the file and li
 
 Each sub-score goes from 0 to 100. It is 0 at or below the first value, 100 at or above the second, and linear in between:
 
-| Sub-score | Weight | What it measures                                                         | 0 at        | 100 at                          |
-| --------- | :----: | ------------------------------------------------------------------------ | ----------- | ------------------------------- |
-| Jump      |  35%   | How far apart two neighboring anchors land in the other view (90th pct.) | 40 px       | 240 px                          |
-| Gap       |  25%   | Share of a container where the pointer has no anchored parent            | 5%          | 40%                             |
-| Depth     |  15%   | How many levels an anchor falls back in the other view                   | 0           | `maxAnchors` levels (default 4) |
-| Aspect    |  15%   | How much an anchor's width-to-height ratio changes (90th pct.)           | 1.3 × ratio | 3 × ratio                       |
-| Parity    |  10%   | Share of anchor IDs that exist in one view only                          | 0%          | 100%                            |
+| Sub-score | Weight | What it measures                                                               | 0 at        | 100 at                          |
+| --------- | :----: | ------------------------------------------------------------------------------ | ----------- | ------------------------------- |
+| Jump      |  35%   | How far apart two neighboring anchors land in the other view (90th percentile) | 40 px       | 240 px                          |
+| Gap       |  25%   | Share of a container where the pointer has no anchored parent                  | 5%          | 40%                             |
+| Depth     |  15%   | How many levels an anchor falls back in the other view                         | 0           | `maxAnchors` levels (default 4) |
+| Aspect    |  15%   | How much an anchor's width-to-height ratio changes (90th percentile)           | 1.3 × ratio | 3 × ratio                       |
+| Parity    |  10%   | Share of anchor IDs that exist in one view only                                | 0%          | 100%                            |
 
 `maxAnchors` is the audit config key for the length of the anchor chain that the app's binding sends. Set it to the `maxSentAnchors` option of your binding. At depth `maxAnchors`, the anchor falls back to the viewport.
 

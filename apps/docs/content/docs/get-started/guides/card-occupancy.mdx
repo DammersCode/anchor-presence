@@ -1,0 +1,143 @@
+---
+title: Card occupancy
+description: "Show the peers that are on a card, and the card that a peer selected."
+icon: kanban
+---
+
+A card can show the peers whose cursor is on it, and a highlight for the card that a peer selected. The [kanban example](/docs/examples/kanban#show-who-is-on-a-card) runs this recipe: Mira and Theo show as small avatars on the card under their cursor, and a card that Mira selects gets a tint in her color and a "Selected by Mira" label. The outline around the card under a cursor is an aid of that demo, not part of the recipe.
+
+The recipe has two parts:
+
+- **Occupancy.** `ResolvedCursor.anchorId` names the anchor under each remote cursor. Group the client IDs by anchor ID.
+- **Selection.** Each client puts `selection`, a list of anchor IDs, in its `context` with `useLocalContext`. The receiver reads it from `ResolvedCursor.context`.
+
+Copy this code:
+
+```tsx
+import {
+  useLocalContext,
+  useRemoteCursorsSelector,
+  useRemoteUsers,
+  type ResolvedCursor,
+} from "@anchor-presence/react";
+
+const safeColor = (color: string | undefined, fallback: string) =>
+  color !== undefined && /^#[0-9a-f]{6}$/iu.test(color) ? color : fallback;
+
+type User = { name: string; color: string };
+type Context = { selection?: string[] };
+type Groups = Record<string, string[]>;
+type Placement = { anchorId: string; clientId: string };
+type Cursor = ResolvedCursor<Context, User>;
+
+function group(placements: Placement[]): Groups {
+  const groups: Groups = {};
+  for (const { anchorId, clientId } of placements) (groups[anchorId] ??= []).push(clientId);
+  for (const clientIds of Object.values(groups)) clientIds.sort();
+  return groups;
+}
+
+function selectedIds(context: Context | undefined): string[] {
+  const selection: unknown = context?.selection;
+  return Array.isArray(selection) ? selection.filter((id): id is string => typeof id === "string") : [];
+}
+
+const whoIsOn = (cursors: Cursor[]) =>
+  group(
+    cursors.flatMap(({ anchorId, clientId, visible }) =>
+      visible && anchorId !== null ? [{ anchorId, clientId }] : [],
+    ),
+  );
+
+const whoPicked = (cursors: Cursor[]) =>
+  group(
+    cursors.flatMap(({ clientId, context }) =>
+      selectedIds(context).map((anchorId) => ({ anchorId, clientId })),
+    ),
+  );
+
+function sameGroups(a: Groups, b: Groups): boolean {
+  const keys = Object.keys(a);
+  return keys.length === Object.keys(b).length && keys.every((key) => a[key]?.join() === b[key]?.join());
+}
+
+function useCardPeers() {
+  const here = useRemoteCursorsSelector(whoIsOn, sameGroups);
+  const picked = useRemoteCursorsSelector(whoPicked, sameGroups);
+  const users = useRemoteUsers<User>();
+  const [context, setContext] = useLocalContext<Context>();
+  const mine = selectedIds(context);
+  const byClient = (clientIds: string[] = []) => users.filter(({ clientId }) => clientIds.includes(clientId));
+
+  return {
+    peersOn: (anchorId: string) => byClient(here[anchorId]),
+    peerPicking: (anchorId: string) => byClient(picked[anchorId])[0],
+    isSelected: (anchorId: string) => mine.includes(anchorId),
+    toggle: (anchorId: string) =>
+      setContext({ ...context, selection: mine.includes(anchorId) ? [] : [anchorId] }),
+  };
+}
+
+type CardPeers = ReturnType<typeof useCardPeers>;
+
+function CardTile({ id, title, peers }: { id: string; title: string; peers: CardPeers }) {
+  const anchorId = `board.card:${id}`;
+  const picker = peers.peerPicking(anchorId);
+  const pickerColor = safeColor(picker?.user?.color, "#4f46e5");
+  const selected = peers.isSelected(anchorId);
+
+  return (
+    <div
+      data-anchor={anchorId}
+      className={`flex flex-col gap-1 rounded-md border bg-fd-background px-2 py-1.5 shadow-xs ${selected ? "border-fd-primary" : "border-fd-border"}`}
+      style={
+        picker !== undefined
+          ? { backgroundColor: `color-mix(in srgb, ${pickerColor} 22%, var(--color-fd-background))` }
+          : undefined
+      }
+    >
+      <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          aria-pressed={selected}
+          onClick={() => peers.toggle(anchorId)}
+          className="min-w-0 flex-1 truncate text-left text-xs font-medium focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-fd-ring"
+        >
+          {title}
+        </button>
+        <span className="flex -space-x-1">
+          {peers.peersOn(anchorId).map(({ clientId, user }) => (
+            <span
+              key={clientId}
+              title={user?.name ?? "Guest"}
+              className="grid size-4 place-items-center rounded-full text-[8px] font-semibold text-white ring-2 ring-fd-background"
+              style={{ backgroundColor: safeColor(user?.color, "#6b7280") }}
+            >
+              {(user?.name ?? "?").charAt(0)}
+            </span>
+          ))}
+        </span>
+      </div>
+      {picker !== undefined && (
+        <span
+          className="w-fit rounded px-1 text-[9px] font-semibold text-white"
+          style={{ backgroundColor: pickerColor }}
+        >
+          Selected by {picker.user?.name ?? "Guest"}
+        </span>
+      )}
+    </div>
+  );
+}
+```
+
+The `bg-fd-` and `border-fd-` classes are theme classes of this docs site. Replace them with your own styles.
+
+Call `useCardPeers` once in the board, and pass the result to each `CardTile`. Then the board runs two selectors, not two per card.
+
+The selector runs on every cursor snapshot, and a snapshot arrives on every frame while a peer moves. A selector that returns a new object each time makes React rerender the board on every frame. `sameGroups` compares the old and new result. If they hold the same client IDs per anchor, the hook keeps the old object, and the board does not rerender. The compare works because `group` sorts the client IDs, so the same set always gives the same list. Define `whoIsOn`, `whoPicked`, and `sameGroups` outside the component, so that their identity stays stable.
+
+- A card counts a peer only when the cursor resolves to the card anchor. A cursor over a child anchor, like the delete button of the kanban example, counts for the child.
+- `whoIsOn` skips cursors that the visibility policy hides.
+- `selection` is untrusted network data. `selectedIds` drops everything that is not a string, and the card compares the IDs only. See [Security](/docs/get-started/guides/security).
+- `setContext` replaces the whole context. `toggle` spreads the current local `context` first, so other fields of your context stay. See [Typing and away](/docs/get-started/guides/typing-and-away).

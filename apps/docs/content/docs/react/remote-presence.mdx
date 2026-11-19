@@ -6,19 +6,19 @@ icon: radar
 
 import { Braces, Crosshair, Users } from "lucide-react";
 
-`useRemotePresence` returns the raw presence of each peer. This is the data that the DOM binding later resolves into cursors. Use it only for a field that a resolved cursor does not carry, such as `pointer.type`. To draw cursors, use [Remote cursors](/docs/react/remote-cursors). For a list of people, use [Remote users](/docs/react/remote-users).
+`useRemotePresence` returns the raw presence of each peer. This is the data that the DOM binding later resolves into cursors. Use it only for a field that a resolved cursor does not carry, such as `session` or the anchor chain of the sender. To draw cursors, use [Remote cursors](/docs/react/remote-cursors). For a list of people, use [Remote users](/docs/react/remote-users).
 
 ## Usage
 
-This component counts the peers that use a touch pointer:
+This component counts the peers whose cursor has no anchor, so the receiver can place it only by viewport position:
 
 ```tsx
 import { useRemotePresence } from "@anchor-presence/react";
 
-function PointerTypeBadge() {
+function ViewportOnlyBadge() {
   const presence = useRemotePresence();
-  const touchCount = presence.filter((p) => p.pointer?.type === "touch").length;
-  return <span>{touchCount} touch users</span>;
+  const count = presence.filter((p) => p.cursor !== null && p.cursor.anchors.length === 0).length;
+  return <span>{count} viewport-only cursors</span>;
 }
 ```
 

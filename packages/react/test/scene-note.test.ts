@@ -5,7 +5,7 @@ it("SCENE_NOTE_TEXT in lib/source.ts equals the text of components/scene-note.ts
   const source = readRepoFile("apps/docs/lib/source.ts");
   const declared = /const SCENE_NOTE_TEXT =\s*"([^"]+)";/u.exec(source)?.[1];
   const component = readRepoFile("apps/docs/components/scene-note.tsx");
-  const body = /<Callout type="warn">([\s\S]*?)<\/Callout>/u.exec(component)?.[1] ?? "";
+  const body = /<Callout type="info">([\s\S]*?)<\/Callout>/u.exec(component)?.[1] ?? "";
   const rendered = body
     .replaceAll(/<code>([^<]*)<\/code>/gu, "`$1`")
     .replaceAll('{" "}', " ")

@@ -36,7 +36,7 @@ Try it: Select an interpolator in the narrow pane.
 
 - The dots behind the cursor show its last path. The labels `none` and `linear` in the narrow pane select `noneInterpolator` and `linearInterpolator`. With `none`, the cursor jumps. With `linear`, it moves in a straight line. With the spring, it moves past the target and then comes back.
 - The next jump uses the selected interpolator.
-- The tour sends only one update per target, so all motion in the narrow pane comes from the interpolator.
+- The [tour](/docs/examples#the-tour) sends only one update per target, so all motion in the narrow pane comes from the interpolator.
 - If your system asks for reduced motion, the narrow pane starts with `none`.
 
 ## Related
@@ -67,6 +67,6 @@ Try it: Select an interpolator in the narrow pane.
     Change how a cursor looks, not how it moves.
   </Card>
   <Card icon={<Gauge />} title="Performance" href="/docs/get-started/guides/performance">
-    The render cost of cursor motion.
+    How the scheduler measures anchors, and what a cursor update costs per frame.
   </Card>
 </Cards>

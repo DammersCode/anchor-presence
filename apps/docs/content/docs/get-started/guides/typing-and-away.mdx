@@ -1,0 +1,96 @@
+---
+title: Typing and away
+description: "Show who types in a field and who left the tab, with useLocalContext and useRemotePresence."
+icon: eye-off
+---
+
+Two common states fit in `context`: the anchor where the user types, and whether the tab is hidden. The sender sets both with `useLocalContext`. The receiver reads them with `useRemotePresence`.
+
+`setContext` replaces the whole context. The hook below merges each change into the current local context, so a change of one field never drops the other. It sends a new context only when a field changes. Call `useStatus` once, in a parent, and pass `publish` to each box. Then one `visibilitychange` listener serves every box:
+
+```tsx
+import { useLocalContext, useRemotePresence } from "@anchor-presence/react";
+import { useCallback, useEffect, useRef } from "react";
+
+type Person = { name: string };
+type Status = { typingIn: string | null; away: boolean };
+
+const TYPING_STOP_MS = 2000;
+
+function useStatus(): (patch: Partial<Status>) => void {
+  const [context, setContext] = useLocalContext<Status>();
+  const latest = useRef(context);
+
+  useEffect(() => {
+    latest.current = context;
+  }, [context]);
+
+  const publish = useCallback(
+    (patch: Partial<Status>) => {
+      const current = { typingIn: null, away: false, ...latest.current };
+      const next = { ...current, ...patch };
+      if (next.typingIn === current.typingIn && next.away === current.away) return;
+      latest.current = next;
+      setContext(next);
+    },
+    [setContext],
+  );
+
+  useEffect(() => {
+    const sync = () => publish({ away: document.visibilityState === "hidden" });
+    sync();
+    document.addEventListener("visibilitychange", sync);
+    return () => document.removeEventListener("visibilitychange", sync);
+  }, [publish]);
+
+  return publish;
+}
+
+function CommentBox({ anchorId, publish }: { anchorId: string; publish: (patch: Partial<Status>) => void }) {
+  const stopTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const stopTyping = () => {
+    clearTimeout(stopTimer.current);
+    publish({ typingIn: null });
+  };
+
+  useEffect(() => () => clearTimeout(stopTimer.current), []);
+
+  return (
+    <textarea
+      data-anchor={anchorId}
+      aria-label="Comment"
+      onChange={() => {
+        publish({ typingIn: anchorId });
+        clearTimeout(stopTimer.current);
+        stopTimer.current = setTimeout(stopTyping, TYPING_STOP_MS);
+      }}
+      onBlur={stopTyping}
+    />
+  );
+}
+
+function Comments() {
+  const publish = useStatus();
+  return <CommentBox anchorId="comments.box" publish={publish} />;
+}
+
+function TypingHint({ anchorId }: { anchorId: string }) {
+  const names = useRemotePresence<Status, Person>()
+    .filter(({ context }) => context?.typingIn === anchorId && !context.away)
+    .map(({ user }) => user?.name ?? "Someone");
+
+  return names.length === 0 ? null : <p>{names.join(", ")} typing…</p>;
+}
+```
+
+Render `<TypingHint anchorId="comments.box" />` next to `<Comments />`. Both read the same anchor ID. If your app puts more fields in the context, for example a `selection` from the [card occupancy recipe](/docs/get-started/guides/card-occupancy), use one context type with all fields. Both recipes spread the current context before they change a field, so neither drops the other's field.
+
+`away` is a visibility flag that the sender sets on `visibilitychange`. It is true at once when the tab is hidden, and false at once when the tab shows again. A peer with `away: true` does not show as typing, even if its last typing state was never cleared. The receiver treats `typingIn` and `away` as untrusted: it compares them, and renders only `user.name` as text.
+
+### Idle or away
+
+The store sets `idle` on a peer whose presence did not change for `idleAfterMs`, 15 seconds by default. It needs no code in the sender, and it cannot tell a tab in the background from a user who reads. A context change ends the idle state, so a sender that sets `away` also resets the idle timer.
+
+- Use `idle` to dim a cursor that stopped. `CursorLayer` and `useRemoteUsers` already give it.
+- Use `away` when you need to know at once, and for a reason you can name, like a hidden tab.

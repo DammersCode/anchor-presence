@@ -15,9 +15,8 @@ type Name = (typeof NAMES)[number];
 
 const COLORS: Record<Name, string> = { Ada: "#2563eb", Bo: "#dc2626", Cy: "#16a34a" };
 
-function nameOf(user: unknown): Name {
-  const name = (user as { name?: Name } | undefined)?.name;
-  return name ?? "Ada";
+function nameOf(user: { name: Name } | undefined): Name {
+  return user?.name ?? "Ada";
 }
 
 function ContextProbe({ name }: { name: Name }) {
@@ -65,7 +64,7 @@ function Pane({ name, room }: { name: Name; room: InMemoryRoom }) {
         />
         <ContextProbe name={name} />
         <Events name={name} />
-        <CursorLayer
+        <CursorLayer<unknown, { name: Name }>
           getLabel={(cursor) => nameOf(cursor.user)}
           getColor={(cursor) => COLORS[nameOf(cursor.user)]}
           getCursorProps={(cursor) => ({ id: `cursor-${name}-${nameOf(cursor.user)}` })}

@@ -81,9 +81,7 @@ Each setting is an environment variable. The factory options `maxMessageBytes`, 
 
 ### Limits
 
-The rate limit is a token bucket: a socket can send a burst of 80 messages, then 40 messages per second.
-
-The relay reads the limits, the defaults, and the codes on [Deploy a relay](/docs/get-started/guides/deploy-relay#set-the-environment-variables). The hard frame size is enforced through the `maxPayload` of `ws`: four times `MAX_MESSAGE_BYTES`, at least 1 MiB.
+The relay reads the limits, the defaults, and the codes on [Deploy a relay](/docs/get-started/guides/deploy-relay#set-the-environment-variables). The hard frame size is enforced through the `maxPayload` of `ws`.
 
 The relay reads the send buffer of a receiver from `bufferedAmount`.
 

@@ -104,19 +104,17 @@ Each setting is an environment variable. The factory options `maxMessageBytes`, 
 
 ### Limits
 
-The rate limit is a token bucket: a socket can send a burst of 80 messages, then 40 messages per second.
-
-The relay reads the limits, the defaults, and the codes on [Deploy a relay](/docs/get-started/guides/deploy-relay#set-the-environment-variables). The hard frame size is enforced through `maxHttpBufferSize`: four times `MAX_MESSAGE_BYTES`, at least 1 MiB.
+The relay reads the limits, the defaults, and the codes on [Deploy a relay](/docs/get-started/guides/deploy-relay#set-the-environment-variables). The hard frame size is enforced through `maxHttpBufferSize`.
 
 ### Auth
 
-| Check            | Setting                                                                              | On refusal                                               |
-| ---------------- | ------------------------------------------------------------------------------------ | -------------------------------------------------------- |
-| Origin           | `RELAY_ALLOWED_ORIGINS`, comma-separated. Empty allows every origin.                 | `io.use` fails the handshake with code `4004`.           |
-| Room token       | `RELAY_AUTH_TOKEN`. Compares the `token` handshake query. Empty turns the check off. | `connect_error` with code `4006`.                        |
-| `authCheck` hook | Factory option. Replaces the room token check.                                       | `connect_error` with code `4006` on `false` or an error. |
-| Identity binding | `authCheck` returns `{ clientId, user }`.                                            | Closes the sender with code `1008`.                      |
-| Check order      | Origin, then room name, then the hook.                                               | The hook never runs for a refused origin or room.        |
+| Check            | Setting                                                                              | On refusal                                                  |
+| ---------------- | ------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
+| Origin           | `RELAY_ALLOWED_ORIGINS`, comma-separated. Empty allows every origin.                 | `io.use` fails the handshake with code `4004`.              |
+| Room token       | `RELAY_AUTH_TOKEN`. Compares the `token` handshake query. Empty turns the check off. | `connect_error` with code `4006`.                           |
+| `authCheck` hook | Factory option. Replaces the room token check.                                       | `connect_error` with code `4006` on `false` or an error.    |
+| Identity binding | `authCheck` returns `{ clientId, user }`.                                            | Sends a `refused` event with code `1008`, then disconnects. |
+| Check order      | Origin, then room name, then the hook.                                               | The hook never runs for a refused origin or room.           |
 
 See [Identity binding](/docs/examples/backends#identity-binding) for the rules. The relay never parses a payload without identity binding. The validation in the receiving client is then the only check between the wire and the store. See [Security](/docs/get-started/guides/security).
 

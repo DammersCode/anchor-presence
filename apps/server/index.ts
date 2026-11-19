@@ -102,6 +102,13 @@ export function closePeerAboveHardLimit(
   return true;
 }
 
+function positiveInteger(name: string, value: number): number {
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new TypeError(`createReferenceRelay: ${name} must be a positive integer, received ${value}`);
+  }
+  return value;
+}
+
 export type ReferenceRelayOptions = {
   authCheck?: AuthCheck;
   /** Overrides `RELAY_MAX_ROOM_SOCKETS`. */
@@ -113,8 +120,8 @@ export type ReferenceRelayOptions = {
 /** Starts the relay on `port`. `authCheck` defaults to the `RELAY_AUTH_TOKEN` check; an identity result binds each frame to that identity. */
 export function createReferenceRelay(port: number, options: ReferenceRelayOptions = {}) {
   const authCheck = safeAuthCheck(options.authCheck ?? tokenAuthCheck(AUTH_TOKEN));
-  const maxRoomSockets = options.maxRoomSockets ?? MAX_ROOM_SOCKETS;
-  const maxTotalSockets = options.maxTotalSockets ?? MAX_TOTAL_SOCKETS;
+  const maxRoomSockets = positiveInteger("maxRoomSockets", options.maxRoomSockets ?? MAX_ROOM_SOCKETS);
+  const maxTotalSockets = positiveInteger("maxTotalSockets", options.maxTotalSockets ?? MAX_TOTAL_SOCKETS);
   const rooms = new Map<string, Set<RoomSocket>>();
   let totalSockets = 0;
   const server = Bun.serve({

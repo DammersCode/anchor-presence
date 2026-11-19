@@ -13,6 +13,10 @@ export const DEMO_REACTIONS = [
 ] as const;
 export const MAX_CHAT_LENGTH = 80;
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
 /** The events the demo sends, by type. */
 export type DemoEvents = { reaction: { emoji: string }; chat: { text: string } };
 
@@ -20,30 +24,39 @@ export type DemoEvent = { type: "reaction"; emoji: string } | { type: "chat"; te
 
 /** Accepts only the two events the demo sends, with an allowed emoji or a capped text. */
 export function parseDemoEvent(event: { type: string; data?: unknown }): DemoEvent | undefined {
-  const data = event.data as { emoji?: unknown; text?: unknown } | undefined;
-  if (event.type === "reaction" && DEMO_REACTIONS.some((reaction) => reaction.symbol === data?.emoji)) {
-    return { type: "reaction", emoji: String(data?.emoji) };
+  if (!isRecord(event.data)) return undefined;
+  const { emoji, text } = event.data;
+  if (
+    event.type === "reaction" &&
+    typeof emoji === "string" &&
+    DEMO_REACTIONS.some((r) => r.symbol === emoji)
+  ) {
+    return { type: "reaction", emoji };
   }
-  if (event.type === "chat" && typeof data?.text === "string" && data.text.length <= MAX_CHAT_LENGTH) {
-    return { type: "chat", text: data.text };
+  if (event.type === "chat" && typeof text === "string" && text.length <= MAX_CHAT_LENGTH) {
+    return { type: "chat", text };
   }
   return undefined;
 }
 
 export function parseDemoUser(value: unknown): DemoUser | undefined {
-  if (typeof value !== "object" || value === null) return undefined;
-  const { name, color } = value as Record<string, unknown>;
+  if (!isRecord(value)) return undefined;
+  const { name, color } = value;
   if (typeof name !== "string" || typeof color !== "string") return undefined;
   return { name: name.slice(0, 40), color };
 }
 
-const PAGE_IDS: readonly string[] = ["dashboard", "orders", "customers", "products"];
+const PAGE_IDS: readonly PageId[] = ["dashboard", "orders", "customers", "products"];
+
+function isPageId(value: unknown): value is PageId {
+  return PAGE_IDS.some((id) => id === value);
+}
 
 export function parseDemoContext(value: unknown): DemoContext | undefined {
-  if (typeof value !== "object" || value === null) return undefined;
-  const { page, dialog } = value as Record<string, unknown>;
+  if (!isRecord(value)) return undefined;
+  const { page, dialog } = value;
   const parsed: DemoContext = {};
-  if (typeof page === "string" && PAGE_IDS.includes(page)) parsed.page = page as PageId;
+  if (isPageId(page)) parsed.page = page;
   if (dialog === "settings") parsed.dialog = dialog;
   return parsed;
 }

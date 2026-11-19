@@ -50,7 +50,7 @@ A `ResizeObserver` alone cannot see an element that moves without a size change.
 
 ### When to call invalidate() yourself
 
-Some layout changes trigger none of the signals. One example is a rule from `insertRule()` that moves an anchor without resizing it: it changes layout and writes no attribute. Another example is a layout that a canvas drives. After such a change, call `binding.invalidate()`. Do not call it on every render: the call is cheap, but it adds nothing. See [invalidate](/docs/dom/binding#invalidate).
+Some layout changes trigger none of the signals, like a rule from `insertRule()` or a layout that a canvas drives. After such a change, call `binding.invalidate()`. See [Cursor drifts](/docs/get-started/guides/troubleshooting#cursor-drifts) and [invalidate](/docs/dom/binding#invalidate).
 
 ## Idle behavior
 
@@ -63,7 +63,7 @@ While no remote cursor is active, no `requestAnimationFrame` loop runs. The sche
 - A stationary pointer sends only a heartbeat, every `heartbeatIntervalMs` (default 10 000 ms). The heartbeat carries every field, so a late peer gets the current values.
 - The client sends a changed `context` or `user` once. Later messages leave out the fields that did not change.
 - The `adaptivePublish` option slows the publish rate while the send buffer of the transport grows. See [Publish rate](/docs/core/presence-client#publish-rate).
-- Minified and gzipped, `@anchor-presence/core` is about 10 KB, `@anchor-presence/dom` about 9 KB, and `@anchor-presence/react` about 3 KB. Each size excludes React and the other Anchor Presence packages.
+- Minified and gzipped, `@anchor-presence/core` is about 10 KB, `@anchor-presence/dom` about 9 KB, and `@anchor-presence/react` about 3.5 KB. Each size excludes React and the other Anchor Presence packages.
 
 ## Scaling limits
 
@@ -77,7 +77,7 @@ For a large room, use one or more of these measures:
 
 The reference relay (`apps/server`) caps the sockets per room and per server, the bytes per message, and the message rate per socket. See the [environment variables](/docs/get-started/guides/deploy-relay) for the defaults.
 
-It also checks the origin, checks an optional [room token](/docs/dom/websocket-transport#room-token), and pings each socket. Bun closes a connection with a frame above `maxPayloadLength`: four times `MAX_MESSAGE_BYTES`, or at least 1 MiB.
+It also checks the origin, checks an optional [room token](/docs/dom/websocket-transport#room-token), and pings each socket. The frame size cap is on [Deploy a relay](/docs/get-started/guides/deploy-relay#pick-a-runtime).
 
 Scaling across servers and identity checks belong to your server, not to the transport. Each relay keeps its rooms in the memory of one process, so one room must live on one relay process. See [Deploy a relay](/docs/get-started/guides/deploy-relay) and [Identity](/docs/examples/backends/relay-contract#identity).
 
@@ -93,7 +93,7 @@ A cursor message with 4 anchors is 292 bytes with `jsonCodec` and 144 bytes with
 To lower the load of a room:
 
 - Use `binaryCodec` instead of the default `jsonCodec`. See [Codecs](/docs/core/codecs).
-- Split a large room into smaller rooms.
+- Use fewer clients in each room. See [Scaling limits](#scaling-limits).
 - If a room holds more than 64 clients, raise `maxRemoteClients`. See [Remote presence](/docs/core/remote-presence#maxremoteclients).
 
 **Anchor guidance.** Give each element one long-lived anchor ID. Do not create a new ID on each render. In a long list, anchor only the visible rows, and use the list container as the anchor for the rest. Each anchor adds a registry entry and `MutationObserver` work.

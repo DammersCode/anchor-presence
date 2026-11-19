@@ -44,7 +44,7 @@ import type {
 
 `createInMemoryRoom(options?)` returns a room. Each `join()` returns a new `InMemoryTransport` that reaches every other joined transport. See [Test with more than two peers](/docs/core/in-memory-transport#test-with-more-than-two-peers).
 
-`InMemoryRoomOptions` is `InMemoryPairOptions`. After `dispose()`, `join()` returns a transport that stays `disconnected`, and `connect()` and `send()` do nothing.
+`InMemoryRoomOptions` is `InMemoryPairOptions`. For the rule of `dispose()`, see [Test with more than two peers](/docs/core/in-memory-transport#test-with-more-than-two-peers).
 
 <AutoTypeTable path="../../packages/core/src/in-memory-transport.ts" name="InMemoryRoom" />
 

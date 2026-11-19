@@ -34,14 +34,14 @@ function TierBadge({ clientId }: { clientId: string }) {
 | [useRemoteCursorsSelector](/docs/react/remote-cursors#select-a-smaller-value) | its `select` output changes under `isEqual`                                                         |
 | [useRemoteUsers](/docs/react/remote-users)                                    | a peer joins or leaves, or the `user`, `session`, or `idle` field of a peer changes                 |
 | [useRemotePresence](/docs/react/remote-presence)                              | a peer joins or leaves, or its `cursor`, `context`, `user`, `pointer`, `session`, or `idle` changes |
-| [useSendEvent](/docs/react/remote-events)                                     | the provider value changes (client, binding, or the pending flag)                                   |
+| [useSendEvent](/docs/react/remote-events)                                     | the provider value changes (client, binding, or the `clientPending` flag)                           |
 | [usePresenceStatus](/docs/react/connection-status)                            | the connection status changes                                                                       |
 | [useLocalContext](/docs/react/local-context#local-context)                    | the local context value changes                                                                     |
 | [useLocalUser](/docs/react/local-context#local-user)                          | the local user value changes                                                                        |
 | [usePeerChanges](/docs/react/remote-users#peer-changes)                       | never by itself: it calls its listener and returns nothing                                          |
 | [useRemoteEvents](/docs/react/remote-events)                                  | never by itself: it calls its listener and returns nothing                                          |
-| [usePresenceClient](/docs/react/api/hooks#usepresenceclient)                  | the provider value changes (client, binding, or the pending flag)                                   |
-| [useDomBinding](/docs/react/api/hooks#usedombinding)                          | the provider value changes (client, binding, or the pending flag)                                   |
+| [usePresenceClient](/docs/react/api/hooks#usepresenceclient)                  | the provider value changes (client, binding, or the `clientPending` flag)                           |
+| [useDomBinding](/docs/react/api/hooks#usedombinding)                          | the provider value changes (client, binding, or the `clientPending` flag)                           |
 
 A peer that turns idle or expires also changes the values that hooks return, so hooks can rerender in a room with no inbound messages. When a factory finishes creating its client, every hook rerenders once.
 

@@ -35,7 +35,7 @@ export type InMemoryPair = {
  * Any number of in-memory transports that share one channel.
  */
 export type InMemoryRoom = {
-  /** Returns a new connected transport. Each send reaches every other connected transport. */
+  /** Returns a new connected transport, or a disconnected one after `dispose()`. Each send reaches every other connected transport. */
   join(): InMemoryTransport;
   /** Disconnects every joined transport, clears their listeners and stops delivery. */
   dispose(): void;
@@ -119,9 +119,16 @@ export function createInMemoryPair(options: InMemoryPairOptions = {}): InMemoryP
     }
   }
 
+  const guarded = (transport: InMemoryTransport): InMemoryTransport => ({
+    ...transport,
+    connect() {
+      if (!disposed) void transport.connect();
+    },
+  });
+
   return {
-    a: buildTransport(a, (data) => deliver(b, data)),
-    b: buildTransport(b, (data) => deliver(a, data)),
+    a: guarded(buildTransport(a, (data) => deliver(b, data))),
+    b: guarded(buildTransport(b, (data) => deliver(a, data))),
     dispose() {
       disposed = true;
       clearSide(a);
@@ -168,7 +175,7 @@ export function createInMemoryRoom(options: InMemoryRoomOptions = {}): InMemoryR
         self,
         (data) => {
           if (disposed || self.status !== "connected" || !all.has(self)) return;
-          for (const to of connected) {
+          for (const to of Array.from(connected)) {
             if (to === self) continue;
             if (isAsync) queueMicrotask(() => receive(to, data));
             else receive(to, data);

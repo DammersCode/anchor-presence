@@ -104,6 +104,8 @@
 
 ### Changed
 
+- `@anchor-presence/dom`: the dev warning "does not reconnect" no longer fires when your own `shouldReconnect` declines a close code.
+- `@anchor-presence/core`: a transport that joins an in-memory room while a message is delivered does not receive that message. `createInMemoryPair` ignores `connect()` after `dispose()`, as the room does.
 - `@anchor-presence/dom`: a pointer event with an unknown `pointerType` clears the pointer info a peer sees instead of keeping the last one.
 - Reference relay: `createReferenceRelay(port, options)` returns `{ url, close }`, and the origin check runs before `authCheck`.
 - `@anchor-presence/dom`: `createWebSocketTransport` throws a `TypeError` for a `baseBackoffMs` or `maxBackoffMs` that is not a positive finite number, and when `maxBackoffMs` is below `baseBackoffMs`. A failed connection attempt that throws before a socket exists (a URL without a scheme, a rejecting `token` function) counts toward the dev warning after 4 failures in a row.

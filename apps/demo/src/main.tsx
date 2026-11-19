@@ -4,6 +4,7 @@ import { createPresenceClient } from "@anchor-presence/core";
 import "./index.css";
 import App from "./app";
 import { InMemoryRoomPage } from "./fixtures/in-memory-room-page";
+import { CorePrimitivesPage } from "./fixtures/core-primitives-page";
 import { BenchPage } from "./bench/bench-page";
 import { ReflowBenchPage } from "./reflow/reflow-bench-page";
 import { createBackendTransport } from "./cursors/backends";
@@ -26,6 +27,8 @@ const visibilityPolicy = createVisibilityPolicy(() => localViewState);
 
 const isInMemoryRoomRoute = new URLSearchParams(window.location.search).get("page") === "in-memory-room";
 
+const isCorePrimitivesRoute = new URLSearchParams(window.location.search).get("page") === "core-primitives";
+
 function createDemoClient() {
   const { transport, codec } = createBackendTransport(backendId, localRoom);
   return createPresenceClient<DemoContext, DemoUser>({
@@ -41,6 +44,7 @@ function createDemoClient() {
 function Root() {
   const [interpolatorStyle, selectInterpolatorStyle] = useInterpolatorStyle();
   if (isInMemoryRoomRoute) return <InMemoryRoomPage />;
+  if (isCorePrimitivesRoute) return <CorePrimitivesPage />;
   if (isBenchRoute) return <BenchPage />;
   if (isReflowBenchRoute) return <ReflowBenchPage />;
 

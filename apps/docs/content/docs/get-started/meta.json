@@ -23,6 +23,9 @@
     "---[list-checks]Recipes---",
     "guides/cursor-chat",
     "guides/follow-mode",
-    "guides/offscreen-hints"
+    "guides/offscreen-hints",
+    "guides/typing-and-away",
+    "guides/join-leave-announcer",
+    "guides/card-occupancy"
   ]
 }

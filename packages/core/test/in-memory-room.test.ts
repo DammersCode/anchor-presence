@@ -179,18 +179,39 @@ describe("createInMemoryRoom", () => {
     expect(received).toEqual([]);
   });
 
-  it("async delivery skips a receiver that disconnects or is disposed before the microtask", async () => {
+  it("async delivery skips a receiver that disconnects before the microtask", async () => {
     const room = createInMemoryRoom({ async: true });
     const a = room.join();
     const leaving = room.join();
-    const disposed = room.join();
     const received: string[] = [];
     leaving.subscribe(() => received.push("leaving"));
-    disposed.subscribe(() => received.push("disposed"));
     void a.send(bytes(1));
     void leaving.disconnect();
+    await Promise.resolve();
+    expect(received).toEqual([]);
+  });
+
+  it("async delivery skips a receiver that is disposed before the microtask", async () => {
+    const room = createInMemoryRoom({ async: true });
+    const a = room.join();
+    const disposed = room.join();
+    const received: string[] = [];
+    disposed.subscribe(() => received.push("disposed"));
+    void a.send(bytes(1));
     room.dispose();
     await Promise.resolve();
     expect(received).toEqual([]);
+  });
+
+  it("a transport joined by a listener during delivery misses the message in flight", () => {
+    const room = createInMemoryRoom();
+    const a = room.join();
+    const b = room.join();
+    const late: number[] = [];
+    b.subscribe(() => {
+      room.join().subscribe((data) => late.push(data[0]!));
+    });
+    void a.send(bytes(1));
+    expect(late).toEqual([]);
   });
 });

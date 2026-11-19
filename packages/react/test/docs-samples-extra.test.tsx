@@ -41,10 +41,10 @@ function ContextReader() {
 }
 
 // remote-presence.mdx: Usage
-function PointerTypeBadge() {
+function ViewportOnlyBadge() {
   const presence = useRemotePresence();
-  const touchCount = presence.filter((p) => p.pointer?.type === "touch").length;
-  return <span>{touchCount} touch users</span>;
+  const count = presence.filter((p) => p.cursor !== null && p.cursor.anchors.length === 0).length;
+  return <span>{count} viewport-only cursors</span>;
 }
 
 // remote-users.mdx: Usage
@@ -204,20 +204,32 @@ describe("extra docs samples", () => {
     client.dispose();
   });
 
-  it("remote-presence.mdx: PointerTypeBadge counts touch pointers", () => {
+  it("remote-presence.mdx: ViewportOnlyBadge counts cursors with no anchor", () => {
     const { client, pushRemote } = makeFakeClient();
     const view = mount(
       <PresenceProvider client={client}>
-        <PointerTypeBadge />
+        <ViewportOnlyBadge />
       </PresenceProvider>,
     );
     act(() =>
       pushRemote([
-        { version: 1, clientId: "a", session: "sa", sequence: 0, cursor: null, pointer: { type: "touch" } },
-        { version: 1, clientId: "b", session: "sb", sequence: 0, cursor: null, pointer: { type: "mouse" } },
+        {
+          version: 1,
+          clientId: "a",
+          session: "sa",
+          sequence: 0,
+          cursor: { anchors: [], viewport: { u: 0.5, v: 0.5 } },
+        },
+        {
+          version: 1,
+          clientId: "b",
+          session: "sb",
+          sequence: 0,
+          cursor: { anchors: [{ id: "x", u: 0, v: 0 }] },
+        },
       ]),
     );
-    expect(view.textContent).toBe("1 touch users");
+    expect(view.textContent).toBe("1 viewport-only cursors");
   });
 
   it("remote-users.mdx: PresenceList shows names and dims idle users", () => {
@@ -381,7 +393,7 @@ describe("doc sample sources", () => {
       missingSamples("docs-samples-extra.test.tsx", [
         docSample("react/custom-cursors.mdx", "function TouchRingLayer"),
         docSample("react/remote-cursors.mdx", "function CursorCount"),
-        docSample("react/remote-presence.mdx", "function PointerTypeBadge"),
+        docSample("react/remote-presence.mdx", "function ViewportOnlyBadge"),
       ]),
     ).toEqual([]);
     expect(

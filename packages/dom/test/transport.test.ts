@@ -308,6 +308,32 @@ describe("createWebSocketTransport", () => {
     expect(String(warn.mock.calls[0]?.[0])).toContain("does not reconnect");
   });
 
+  it("keeps the no-reconnect warning silent for codes from 4000, reconnect:false, disconnect() and a custom shouldReconnect", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const closeWith = (name: string, options: Record<string, unknown>, code: number): void => {
+      const transport = createWebSocketTransport({
+        url: "ws://silent-" + name + ".test/?room=main",
+        WebSocketCtor: FakeWebSocket,
+        ...options,
+      });
+      void transport.connect?.();
+      FakeWebSocket.fire(lastSocket(), "close", { code });
+    };
+    closeWith("app-code", {}, 4001);
+    closeWith("no-reconnect", { reconnect: false }, 1008);
+    closeWith("custom-rule", { shouldReconnect: () => false }, 1000);
+    const transport = createWebSocketTransport({
+      url: "ws://silent-disconnect.test/?room=main",
+      WebSocketCtor: FakeWebSocket,
+    });
+    void transport.connect?.();
+    void transport.disconnect?.();
+    const noReconnectWarnings = warn.mock.calls.filter((call) =>
+      String(call[0]).includes("does not reconnect"),
+    );
+    expect(noReconnectWarnings).toEqual([]);
+  });
+
   it("treats connect() after disconnect() as a no-op and warns in dev", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     const transport = make();

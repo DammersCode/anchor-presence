@@ -17,6 +17,15 @@ afterEach(() => {
 });
 
 describe("createInMemoryPair", () => {
+  it("connect() after dispose() keeps both sides disconnected", () => {
+    const pair = createInMemoryPair();
+    pair.dispose();
+    void pair.a.connect();
+    void pair.b.connect();
+    expect(pair.a.getStatus()).toBe("disconnected");
+    expect(pair.b.getStatus()).toBe("disconnected");
+  });
+
   it("delivers client A's cursor to client B end to end (decode+validate runs on the other side)", () => {
     const { a, b } = createInMemoryPair();
     const clientA = createPresenceClient({ transport: a, clientId: "A" });

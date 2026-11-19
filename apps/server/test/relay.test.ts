@@ -408,7 +408,7 @@ describe("reference relay hardening", () => {
     expect(bucket.tokens).toBe(2);
   });
 
-  it("keeps the room count per relay instance", async () => {
+  it("keeps the room count per relay instance, enforces both caps and rejects invalid cap options", async () => {
     const child = spawn("bun", ["apps/server/test/two-relays-fixture.ts"], {
       cwd: repoRoot,
       stdio: "ignore",

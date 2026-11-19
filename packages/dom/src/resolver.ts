@@ -39,7 +39,7 @@ export type ResolvedCursor<TContext = unknown, TUser = unknown> = {
   user?: TUser;
   /** `true` when the remote cursor has not changed for a while. */
   idle: boolean;
-  /** The pointer type that moved the remote cursor. `undefined` when the sender sent no pointer info. */
+  /** The pointer type that moved the remote cursor. `undefined` when the sender sent no pointer type. */
   pointerType?: PointerType;
 };
 

@@ -18,7 +18,7 @@ The relay listens on port `8787`.
 | Variable                     | Default          | Meaning                                                                                                                                                                                                                                                                      |
 | ---------------------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `PORT`                       | `8787`           | The port of the relay.                                                                                                                                                                                                                                                       |
-| `RELAY_ALLOWED_ORIGINS`      | unset (no check) | A comma-separated list of allowed `Origin` header values. If it is unset, the relay accepts every origin. A foreign origin closes with code `4004`.                                                                                                                          |
+| `RELAY_ALLOWED_ORIGINS`      | unset (no check) | A comma-separated list of allowed `Origin` header values. If it is unset, the relay accepts every origin. A foreign origin closes with code `4004`. If the list is set, a request without an `Origin` header also closes with `4004`.                                        |
 | `RELAY_AUTH_TOKEN`           | unset (no check) | If it is set, every upgrade must carry a matching `token` query parameter, the room token. Otherwise, the relay closes the socket with code `4006`.                                                                                                                          |
 | `MAX_MESSAGE_BYTES`          | `32768`          | The maximum size of one inbound message, in bytes. The relay drops a larger message and keeps the socket open. A frame above the WebSocket payload limit (four times this size, at least 1 MiB) closes the socket of the sender.                                             |
 | `RATE_CAPACITY`              | `80`             | The token-bucket capacity of the rate limit per socket.                                                                                                                                                                                                                      |
@@ -40,7 +40,7 @@ The example relays under `examples/` read the room from the `room` query paramet
 
 ## Identity
 
-By default, the relay binds no identity. Any client in a room can claim any `clientId`. The relay checks only the shared room token of `RELAY_AUTH_TOKEN`. For identity binding, pass an `authCheck` hook to `startReferenceRelay`, or set `RELAY_DEMO_IDENTITY=1`.
+By default, the relay binds no identity. Any client in a room can claim any `clientId`. The relay checks only the shared room token of `RELAY_AUTH_TOKEN`. For identity binding, pass an `authCheck` hook to `startReferenceRelay`, or set `RELAY_DEMO_IDENTITY=1`. With `RELAY_DEMO_IDENTITY=1`, the relay turns off the `RELAY_AUTH_TOKEN` check and admits any non-empty token. Use it only for demos.
 
 ## Defaults are open
 

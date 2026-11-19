@@ -12,7 +12,7 @@ A screen reader user cannot see a peer join or leave. `CursorLayer` cannot help:
 
 The recipe imports its hooks and types from the `./presence` module of [Typed hooks](/docs/react/typed-hooks#usage). The app has one `createPresenceHooks` call, so add no second module.
 
-`usePeerChanges` calls your listener for each join, leave, and `user` or `context` update. If ten peers join in one second, ten messages would queue up in the screen reader. The component below collects the changes for 1 second and announces one message:
+`usePeerChanges` calls your listener for each join, leave, and `user` or `context` update. If ten peers join in one second, ten messages queue up in the screen reader. The component below collects the changes for 1 second and announces one message:
 
 ```tsx
 import type { PeerChange } from "@anchor-presence/react";

@@ -13,6 +13,7 @@ export const {
   useLocalUser,
   usePeerChanges,
   usePresenceClient,
+  usePresenceStatus,
   useRemoteCursors,
   useRemoteCursorsSelector,
   useRemoteEvents,

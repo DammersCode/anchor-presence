@@ -53,7 +53,7 @@ export type WebSocketTransportOptions = {
   /**
    * Room token for the relay auth check.
    * The transport URL-encodes the token and adds it to the URL as `token=...`.
-   * A function runs before every connection attempt, so an expiring token stays fresh. It may return a promise.
+   * A function runs before every connection attempt, so an expiring token stays fresh. It can return a promise.
    */
   token?: (string | (() => string | Promise<string>)) | undefined;
   /** Enables automatic reconnect with exponential backoff. Default `true`. */

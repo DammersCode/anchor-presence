@@ -6,7 +6,7 @@ icon: crosshair
 
 import { Braces, Eye, Move, Waypoints } from "lucide-react";
 
-Resolution is the process that turns the presence of one peer into a screen position on the receiver. The binding resolves every peer on each frame while it is active. Read this page to understand the `tier`, `x`, `y`, and `idle` fields of a `ResolvedCursor`.
+Resolution is the process that turns the presence of one peer into a screen position on the receiver. The binding resolves every peer on each frame that a change or a running ease requests. Read this page to understand the `tier`, `x`, `y`, and `idle` fields of a `ResolvedCursor`.
 
 This sample logs each cursor that falls back to the viewport position:
 
@@ -57,7 +57,7 @@ y = viewport.v * window.innerHeight
 - `x` and `y` are the eased position. See [Motion](/docs/dom/motion).
 - `visible` is the decision of the [visibility policy](/docs/dom/visibility-policy). Render the cursor only when it is `true`.
 - `pointVisible` is `true` when the point is inside the visible part of the anchor, after the clip of every scroll container. See [Occlusion and scroll](/docs/dom/occlusion-and-scroll).
-- `pointerType` is absent when the sender sent no pointer info.
+- `pointerType` is absent when the sender sent no pointer type.
 
 The core store sets `idle`. See [Idle state](/docs/core/remote-presence#idle-state). The binding copies the flag and runs no idle timer of its own. A renderer can use `idle` to fade a cursor or hide its label.
 

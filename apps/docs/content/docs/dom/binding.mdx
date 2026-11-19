@@ -55,8 +55,8 @@ Each `environment` field defaults to the matching browser global. A test can rep
 
 <Callout type="warn">
   If you use a same-origin iframe, set `root` to its `contentDocument` and `window` to its `contentWindow`.
-  The binding identifies an element by its `nodeType`, so the elements of the iframe pass that check. The
-  tests cover only a root in the same document as the binding code, so an iframe root is not tested.
+  The binding identifies an element by its `nodeType`, so the elements of the iframe pass that check. A jsdom
+  unit test covers pointer capture with an iframe root. No test runs the full binding there.
 </Callout>
 
 `createDomBinding` throws a `TypeError` for a bad `anchorAttribute` or `privateAttribute`, or a `maxSentAnchors` that is not an integer. See the [binding API](/docs/dom/api/binding#createdombinding).

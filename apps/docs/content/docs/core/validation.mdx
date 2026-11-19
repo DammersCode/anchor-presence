@@ -58,7 +58,7 @@ The client runs these steps on each inbound message, in this order:
 7. It checks `user` and `context` with `parseUser` and `parseContext`, or with the shape check when no parser is set.
 8. It gives the message to the store.
 
-A codec does not check limits. Its job is to turn bytes into a value and back, without a throw. `validatePresence` checks the decoded value against the protocol limits.
+A codec does not check limits. Its job is to turn bytes into a value and back. `decode` never throws. `validatePresence` checks the decoded value against the protocol limits.
 
 ## ValidationLimits
 
@@ -111,7 +111,7 @@ When a part of the remote value does not fit, the client drops the whole field. 
     - A remote `null` always fits, at every level. For example, a key with a local string value accepts a remote `null`. As a result, a key typed `T | null` stays valid.
     - A key of the local object must have the type of the local value, or be `null`. A remote object can omit a key.
     - An extra key is a key that the local object does not have. An extra key stays when its value is a string, a number, a boolean, or `null`. The check removes an extra key that holds an object or an array. This rule also applies to an empty local object.
-    - The check removes a `__proto__` key at every level.
+    - The check removes a `__proto__` key at every level. It also removes an extra key that has the name of an `Object.prototype` member, such as `constructor` or `toString`.
     - An array must be an array. Each item must have the shape of the first local item, or be `null`. An empty local array accepts an array of strings, numbers, booleans, or `null` values.
     - A string, a number, or a boolean must have the type of the local value, or be `null`.
     - A local `null` value, or a local `undefined` value inside an object, accepts a string, a number, a boolean, or `null`. It never accepts an object or an array.

@@ -67,7 +67,7 @@ The package exports these hooks and components:
 
 ## Hooks and render cost
 
-Every hook rerenders its component only when the value that it returns changes. Pick the hook that matches the value that you need.
+A hook rerenders its component when the value that it returns changes, or when the provider value changes. `useSendEvent`, `usePresenceClient`, and `useDomBinding` rerender on any change of the provider value. Pick the hook that matches the value that you need.
 
 | Hook                                         | Rerenders when                                                                                           |
 | -------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
@@ -109,7 +109,7 @@ function OnlineBar() {
 }
 ```
 
-`user` is the value that each peer passed to `createPresenceClient`. It has the type `unknown`, because a peer can send any value. This sample needs the provider of `@anchor-presence/react`. For a typed `user`, use the hooks of `createPresenceHooks` with the provider of the same call. Without `getLabel`, `CursorLayer` shows `user.name` when it is a string that is not empty. Without `getColor`, it picks one color per `clientId` from a palette of 8 colors. Check `user` before you render it.
+`user` is the value that each peer passed to `createPresenceClient`, and it has the type `unknown` because a peer can send any value. This sample needs the provider of `@anchor-presence/react`. For a typed `user`, use the hooks of `createPresenceHooks` with the provider of the same call. Without `getLabel`, `CursorLayer` shows `user.name` when it is a string that is not empty. Without `getColor`, it picks one color per `clientId` from a palette of 8 colors. Check `user` before you render it.
 
 ## CursorLayer
 

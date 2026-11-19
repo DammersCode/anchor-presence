@@ -43,7 +43,7 @@ function Reactions() {
 
 ## Send typed events
 
-The `useSendEvent` that you import from `@anchor-presence/react` sends any event `type`, with `data` of the type `unknown`. For a function that sends only the events of one event map, call `createPresenceHooks` with the event map as its third type argument and export `useSendEvent` from the result. See [Typed hooks](/docs/react/typed-hooks). A misspelled `type` or a `data` value of the wrong type then does not compile. Without a client, the function sends nothing and returns `false`.
+The `useSendEvent` that you import from `@anchor-presence/react` sends any event `type`, with `data` of the type `unknown`. To send only the events of one event map, pass the map as the third type argument of `createPresenceHooks`. Export `useSendEvent` from the result. See [Typed hooks](/docs/react/typed-hooks). A misspelled `type` or a `data` value of the wrong type then does not compile. Without a client, the function sends nothing and returns `false`.
 
 This button sends a typed reaction. The `PresenceProvider` above it must come from `./presence`, the module of [Typed hooks](/docs/react/typed-hooks#usage):
 

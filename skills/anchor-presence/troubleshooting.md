@@ -38,7 +38,9 @@ A cross-origin iframe needs its own client. For a same-origin iframe, pass its `
 
 ## A cursor turns faint, then stays after a user leaves
 
-A peer is idle when its presence does not change for `idleAfterMs` (default 15 s). This is true even while its heartbeats arrive. `CursorLayer` dims an idle cursor. Presence expires when no heartbeat arrives for the stale timeout (default 70 s). If the pointer leaves or the window blurs, the client sends `cursor: null`, and the cursor hides immediately. An abrupt disconnect waits for expiry. If you shorten `staleTimeoutMs`, keep it above 60 s. Browsers limit timers in hidden tabs to one run per minute, so a lower value makes users in background tabs flicker.
+A peer is idle when its presence does not change for `idleAfterMs` (default 15 s). This is true even while its heartbeats arrive. `CursorLayer` dims an idle cursor.
+
+Presence expires when no heartbeat arrives for the stale timeout (default 70 s). If the pointer leaves or the window blurs, the client sends `cursor: null`, and the cursor hides immediately. An abrupt disconnect waits for expiry. If you shorten `staleTimeoutMs`, keep it above 60 s. Browsers limit timers in hidden tabs to one run per minute, so a lower value makes users in background tabs flicker.
 
 ## Cursors jump instead of gliding
 

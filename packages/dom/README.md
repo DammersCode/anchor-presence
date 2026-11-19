@@ -24,19 +24,19 @@ binding.subscribe(() => {
 
 ## Boundary rule
 
-`@anchor-presence/dom` is the only package that calls browser APIs: `getBoundingClientRect`, `ResizeObserver`, `MutationObserver`, `requestAnimationFrame`, and pointer events. `@anchor-presence/core` stays DOM-free. Framework adapters read from `@anchor-presence/dom`, never from the browser directly.
+`@anchor-presence/dom` is the package that reads the DOM layout and the pointer with `getBoundingClientRect`, `ResizeObserver`, `MutationObserver`, `requestAnimationFrame`, and pointer events. `@anchor-presence/core` has no DOM code and listens only for `visibilitychange`. Framework adapters read from `@anchor-presence/dom`, never from the browser directly.
 
 ## Main exports
 
-| Export                                                         | What it does                                                                                                                                               |
-| -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `createDomBinding(client, options?)`                           | Connects anchor auto-registration, pointer sampling, geometry scheduling, and remote resolution to a `PresenceClient`. Returns a `DomBinding`.             |
-| `DomBinding`                                                   | `invalidate(reason?)` marks the layout dirty for the next frame. `getSnapshot()`, `subscribe(listener)`, and `dispose()` read and manage resolved cursors. |
-| `createWebSocketTransport(options?)`                           | Native WebSocket transport for the bundled relay or a compatible relay. It has `bufferedBytes()` and reconnect jitter.                                     |
-| `createBroadcastChannelTransport(channelName)`                 | `BroadcastChannel` transport for the tabs and iframes of one origin. It needs no server.                                                                   |
-| `DomBindingOptions`, `ResolutionOptions`, `EnvironmentOptions` | Binding configuration types                                                                                                                                |
-| `WebSocketTransportOptions`                                    | WebSocket transport configuration types                                                                                                                    |
-| `ResolvedCursor`, `ResolutionTier`, `VisibilityPolicy`         | Resolution types                                                                                                                                           |
+| Export                                                         | What it does                                                                                                                                                                                                                         |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `createDomBinding(client, options?)`                           | Connects anchor auto-registration, pointer sampling, geometry scheduling, and remote resolution to a `PresenceClient`. Returns a `DomBinding`.                                                                                       |
+| `DomBinding`                                                   | `invalidate(reason?)` marks the layout dirty for the next frame. `getSnapshot()`, `subscribe(listener)`, and `dispose()` read and manage resolved cursors. `getAnchorElement(anchorId)` returns the element of an anchor, or `null`. |
+| `createWebSocketTransport(options?)`                           | Native WebSocket transport for the bundled relay or a compatible relay. It has `bufferedBytes()` and a random delay between reconnect attempts.                                                                                      |
+| `createBroadcastChannelTransport(channelName)`                 | `BroadcastChannel` transport for the tabs and iframes of one origin. It needs no server.                                                                                                                                             |
+| `DomBindingOptions`, `ResolutionOptions`, `EnvironmentOptions` | Binding configuration types                                                                                                                                                                                                          |
+| `WebSocketTransportOptions`                                    | WebSocket transport configuration types                                                                                                                                                                                              |
+| `ResolvedCursor`, `ResolutionTier`, `VisibilityPolicy`         | Resolution types                                                                                                                                                                                                                     |
 
 ## Binding options
 
@@ -60,7 +60,7 @@ The `privateAttribute` field names the attribute that keeps the cursor private. 
 
 The `resolution` group (`ResolutionOptions`) controls how remote cursors turn into screen positions. It holds `visibilityPolicy`, `interpolatorFactory`, and `hitTest`.
 
-The `environment` group (`EnvironmentOptions`) supplies the DOM and timing hosts: `root`, `window`, `raf`, `caf`, `ResizeObserverCtor`, and `MutationObserverCtor`. Each field defaults to the ambient browser global. Tests can replace one host without touching the others.
+The `environment` group (`EnvironmentOptions`) supplies the DOM and timing hosts: `root`, `window`, `raf`, `caf`, `ResizeObserverCtor`, and `MutationObserverCtor`. Each field defaults to the matching browser global. Tests can replace one host without touching the others.
 
 `capturePointer` defaults to `true`. If it is `false`, the local pointer publishes no cursor, and context and user still reach peers (other clients in the same room). `captureFocus` defaults to `false`. If it is `true` and local capture is on, a focus change publishes a cursor at the center of the focused element.
 

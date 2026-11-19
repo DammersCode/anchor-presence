@@ -16,8 +16,13 @@ import {
   useRemotePresence,
   useRemoteCursors,
   useRemoteCursorsSelector,
-  createPresenceHooks,
 } from "../src/index";
+import {
+  CursorLayer as TypedCursorLayer,
+  PresenceProvider as TypedProvider,
+  useRemoteUsers,
+} from "./doc-presence";
+import type { Context, Events, User } from "./doc-presence";
 import { docSample, missingLines, missingSamples } from "./doc-source";
 import { makeFakeBinding, makeFakeClient } from "./test-utils";
 
@@ -53,12 +58,8 @@ function ViewportOnlyBadge() {
 }
 
 // remote-users.mdx: Usage
-type MyUser = { name: string; color: string };
-const userHooks = createPresenceHooks<unknown, MyUser>();
-const { useRemoteUsers: useTypedRemoteUsers } = userHooks;
-
 function PresenceList() {
-  const users = useTypedRemoteUsers();
+  const users = useRemoteUsers();
   return (
     <ul>
       {users.map((entry) => (
@@ -154,10 +155,6 @@ function ActiveCursorLayer() {
 void ActiveCursorLayer;
 
 // cursor-layer.mdx: Label and color
-type LayerUser = { name: string; color?: string };
-const layerHooks = createPresenceHooks<unknown, LayerUser>();
-const { CursorLayer: TypedCursorLayer } = layerHooks;
-
 const safeColor = (color?: string) =>
   color !== undefined && /^#[0-9a-f]{6}$/iu.test(color) ? color : "#6b7280";
 
@@ -170,8 +167,11 @@ function LabeledLayer() {
   );
 }
 
-function makeCursor<TUser = unknown>(clientId: string, extra: Partial<ResolvedCursor<unknown, TUser>> = {}) {
-  const base: ResolvedCursor<unknown, TUser> = {
+function makeCursor<TUser = unknown, TContext = unknown>(
+  clientId: string,
+  extra: Partial<ResolvedCursor<TContext, TUser>> = {},
+) {
+  const base: ResolvedCursor<TContext, TUser> = {
     clientId,
     x: 10,
     y: 20,
@@ -249,11 +249,11 @@ describe("extra docs samples", () => {
   });
 
   it("remote-users.mdx: PresenceList shows names and dims idle users", () => {
-    const { client, pushRemote } = makeFakeClient<unknown, MyUser>();
+    const { client, pushRemote } = makeFakeClient<Context, User, Events>();
     const view = mount(
-      <userHooks.PresenceProvider client={client}>
+      <TypedProvider client={client}>
         <PresenceList />
-      </userHooks.PresenceProvider>,
+      </TypedProvider>,
     );
     act(() =>
       pushRemote(
@@ -346,17 +346,17 @@ describe("extra docs samples", () => {
   });
 
   it("cursor-layer.mdx: getLabel and getColor read the typed user", () => {
-    const { client } = makeFakeClient<unknown, LayerUser>();
-    const { binding, publish } = makeFakeBinding<unknown, LayerUser>();
+    const { client } = makeFakeClient<Context, User, Events>();
+    const { binding, publish } = makeFakeBinding<Context, User>();
     const view = mount(
-      <layerHooks.PresenceProvider client={client} binding={binding}>
+      <TypedProvider client={client} binding={binding}>
         <LabeledLayer />
-      </layerHooks.PresenceProvider>,
+      </TypedProvider>,
     );
     act(() =>
       publish([
-        makeCursor<LayerUser>("a", { user: { name: "Ada", color: "#ff0000" } }),
-        makeCursor<LayerUser>("b"),
+        makeCursor<User, Context>("a", { user: { name: "Ada", color: "#ff0000" } }),
+        makeCursor<User, Context>("b"),
       ]),
     );
     const labels = [...view.querySelectorAll("[data-anchor-presence-client-id] span > span")];
@@ -446,6 +446,8 @@ describe("doc sample sources", () => {
         docSample("react/remote-cursors.mdx", "function CursorCount"),
         docSample("react/remote-presence.mdx", "function ViewportOnlyBadge"),
         docSample("dom/binding.mdx", "function scrollToAnchor"),
+        docSample("react/remote-users.mdx", "function PresenceList"),
+        docSample("react/local-context.mdx", "function SettingsDialog"),
       ]),
     ).toEqual([]);
     expect(

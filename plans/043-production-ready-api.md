@@ -5,7 +5,7 @@ Status: done. Steps 1 and 2 done. Steps 3 and 4 ran for nine scoring rounds and 
 Steps, each with its completion criterion:
 
 1. Docs page actions: copy and "Open in" popover with GitHub, Markdown, Scira, ChatGPT, Claude, Cursor. Criterion: popover lists six links in the browser, docs typecheck green.
-2. Vercel `ignoreCommand`: skip builds when no docs, package, example or lockfile change. Criterion: a plans-only commit exits 0, a packages commit exits 1.
+2. Vercel `ignoreCommand`: skip builds when no docs, package, example or lockfile change. Criterion: a plans-only commit exits 0, a packages commit exits 1. Removed later: the owner manages the build settings in Vercel.
 3. Scoring loop for areas A and B: fresh opus scorer, gap list, fixes, demo use, rescore. Criterion: all dimensions 9 or more or a stop rule fires.
 4. Scoring loop for area C after the API settles. Criterion: same.
 

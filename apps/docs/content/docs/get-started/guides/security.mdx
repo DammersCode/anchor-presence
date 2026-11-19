@@ -88,6 +88,10 @@ Check every URL and CSS value from a peer before you use it. A peer can send a `
 
 In development mode, the client warns when no check applies to a remote value, and when the shape check drops a value.
 
+## Cursor position over private fields
+
+Your cursor position can show what you look at. Add `data-anchor-private` to a sensitive field or region, for example a password input or a payment form. Over it, and inside it, the binding sends no cursor. See [Skip part of the page](/docs/dom/pointer-capture#skip-part-of-the-page).
+
 ## Identity is not authenticated
 
 `clientId` and `session` are plain fields on the wire. Any peer can send any value. The store accepts a new session for a known `clientId` with no proof that the same person sent both.

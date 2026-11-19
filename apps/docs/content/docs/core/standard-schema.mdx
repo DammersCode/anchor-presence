@@ -1,0 +1,85 @@
+---
+title: Validate with a schema
+description: Check the user, the context, and the events of remote peers with Valibot, Zod, ArkType, or any Standard Schema library.
+icon: badge-check
+---
+
+import { ShieldCheck, Zap } from "lucide-react";
+
+Remote data is untrusted. The client checks its size and structure, but it cannot know the shape of your `user`, your `context`, or your events. Use a schema to check that shape. Any library that implements [Standard Schema](https://standardschema.dev) works, for example Valibot, Zod, and ArkType.
+
+The schema support is optional. Without it, `user` and `context` stay `unknown`, and the client keeps its default shape check. Core adds no dependency. The helper lives in its own entry point, `@anchor-presence/core/standard-schema`, so an app that does not import it pays nothing.
+
+## Check the user and the context
+
+This client drops a remote `user` or `context` that the schema rejects:
+
+```ts
+import { createPresenceClient } from "@anchor-presence/core";
+import { parserFrom } from "@anchor-presence/core/standard-schema";
+import * as v from "valibot";
+
+const User = v.object({ name: v.string(), color: v.string() });
+const Context = v.object({ typingIn: v.nullable(v.string()) });
+
+const client = createPresenceClient({
+  transport,
+  user: { name: "Ada", color: "#4f46e5" },
+  parseUser: parserFrom(User),
+  parseContext: parserFrom(Context),
+});
+```
+
+`parserFrom` returns a function for the `parseUser` or `parseContext` option. The client takes its types from these two functions. `client.getRemotePresence()` returns the `user` and `context` with the output types of the schemas.
+
+The local `user` that you pass must have the output type of its schema.
+
+## Check the events
+
+This client drops an event with an unknown type, or with data that its schema rejects:
+
+```ts
+import { createPresenceClient } from "@anchor-presence/core";
+import { eventParserFrom } from "@anchor-presence/core/standard-schema";
+import { z } from "zod";
+
+const parseEvent = eventParserFrom({
+  chat: z.object({ text: z.string().max(200) }),
+  wave: null,
+});
+
+const client = createPresenceClient({ transport, parseEvent });
+```
+
+Use `null` for an event without data. The events that `client.subscribeEvents` delivers have the types of the schemas. For a typed `send`, see [Events](/docs/core/events).
+
+## See why a value was dropped
+
+When the schema rejects a value, the client drops that field or event. A peer that runs an older version of your app can lose its `user` this way. The cursor of that peer stays. To see the drops, pass `onInvalid`:
+
+```ts
+const parseUser = parserFrom(User, {
+  onInvalid: (issues) => console.warn("dropped a user", issues[0]?.message),
+});
+```
+
+## Limits
+
+- The schema must validate in a synchronous way. A schema that returns a promise drops every value, and `parserFrom` warns once.
+- The client runs your schema after `validatePresence`. A schema never sees a message above the size and depth limits. See [Validation](/docs/core/validation).
+- A value that a schema turns into `undefined` counts as rejected, because `undefined` means a drop.
+- The entry point has no `node10` module resolution. Use `node16`, `nodenext`, or `bundler`.
+
+## Related
+
+<Cards>
+  <Card icon={<ShieldCheck />} title="Validation" href="/docs/core/validation">
+    The limits and the shape check that run before a schema.
+  </Card>
+  <Card icon={<Zap />} title="Events" href="/docs/core/events">
+    Send and receive events with types.
+  </Card>
+  <Card icon={<ShieldCheck />} title="Security" href="/docs/get-started/guides/security">
+    Why a client must treat peer data as untrusted.
+  </Card>
+</Cards>

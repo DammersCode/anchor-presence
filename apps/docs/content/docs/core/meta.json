@@ -10,6 +10,7 @@
     "events",
     "remote-presence",
     "validation",
+    "standard-schema",
     "interpolation",
     "---[cable]Transports---",
     "transports",

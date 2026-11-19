@@ -21,6 +21,10 @@ Sometimes the receiver does not have the exact anchor. Examples are a virtualize
 
 Mark anchors on: navigation items, cards, table rows and their action cells, dialog bodies and their controls, and any element a user would say "look here" about. Skip decorative wrappers. One meaningful parent in the chain is better than four vague ones.
 
+## Private regions
+
+Mark a sensitive element with `data-anchor-private` (or the name in the `privateAttribute` option). Over it and its descendants the binding sends no cursor, not even the parent anchor.
+
 ## Registration mechanics
 
 Declare anchors with the binding's anchor attribute. The default is `data-anchor`. A binding can set another attribute with `anchorAttribute`. A row anchor looks like this:

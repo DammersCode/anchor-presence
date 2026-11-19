@@ -432,6 +432,17 @@ function docSample(page: string, marker: string): string {
   return block;
 }
 
+describe("pointer-capture.mdx private attribute sample", () => {
+  it("compiles and creates a binding", () => {
+    const { a: transport } = createInMemoryPair();
+    const client = createPresenceClient({ transport });
+    const binding = createDomBinding(client, { privateAttribute: "data-no-cursor" });
+    expect(binding.getSnapshot()).toEqual([]);
+    binding.dispose();
+    client.dispose();
+  });
+});
+
 describe("doc sample sources", () => {
   it("match the copies in this file", () => {
     const source = trimLines(readRepoFile("packages/dom/test/docs-dom-samples.test.ts"));
@@ -442,6 +453,7 @@ describe("doc sample sources", () => {
       docSample("dom/websocket-transport.mdx", "const NO_RETRY_CODES"),
       docSample("dom/websocket-transport.mdx", "room=room-42"),
       docSample("dom/motion.mdx", "interpolatorFactory: mySpringInterpolatorFactory"),
+      docSample("dom/pointer-capture.mdx", "privateAttribute"),
     ];
     for (const sample of samples) expect(source).toContain(trimLines(sample));
   });

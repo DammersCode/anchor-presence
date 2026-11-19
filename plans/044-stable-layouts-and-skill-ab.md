@@ -31,4 +31,4 @@ Status: done · Branch: `develop` · Builds on [028](028-layout-audit-skill.md) 
 - Skill: `scan.mjs`, `ANCHOR_AUDIT_BROWSER`, the band table in `SKILL.md`, and a warning about fixes that only lower the score.
 - A/B and token score: [research/skill-ab/results.md](research/skill-ab/results.md). No skill file was cut, because one run per cell cannot show a file is dead weight.
 - Docs navigation: [rubric](research/docs-navigation-rubric.md). Beginner and expert both reached 9.0 in every dimension after nine fix rounds. The first six reader reports are in `research/docs-nav/`.
-- Open idea: a per-element opt-out for pointer capture. The binding has no such option today, and the docs state the limit.
+- Per-element opt-out for pointer capture: done, see plan 045 (`data-anchor-private`).

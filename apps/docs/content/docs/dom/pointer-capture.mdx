@@ -61,7 +61,21 @@ The binding adds its listeners to the document and the window, not to each ancho
 
 ## Skip part of the page
 
-The binding has no option to skip one element or region. It sends the cursor from every part of the document. Over an element with no anchor, it sends the nearest anchored parent. Set `capturePointer: false` to stop sending for the whole page.
+Add `data-anchor-private` to an element to keep the pointer over it private. Over that element and everything inside it, the binding sends no cursor. Peers see your cursor disappear, not move to a parent anchor.
+
+```html
+<input type="password" data-anchor-private />
+```
+
+The rule also holds for an element inside a shadow root. With `captureFocus`, focus that moves into the element clears the cursor in the same way. The cursor comes back when the pointer or the focus moves to an element outside it.
+
+To use another attribute name, set `privateAttribute`. The name follows the same rules as `anchorAttribute`:
+
+```ts
+const binding = createDomBinding(client, { privateAttribute: "data-no-cursor" });
+```
+
+Over an element with no anchor and no private mark, the binding sends the nearest anchored parent. Set `capturePointer: false` to stop sending for the whole page.
 
 ## Touch behavior
 

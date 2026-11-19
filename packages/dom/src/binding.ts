@@ -53,6 +53,7 @@ export type EnvironmentOptions = {
 
 const ANCHOR_ATTRIBUTE_PATTERN = /^[A-Za-z][A-Za-z0-9]*(-[A-Za-z0-9]+)*$/u;
 const DEFAULT_ANCHOR_ATTRIBUTE = "data-anchor";
+const DEFAULT_PRIVATE_ATTRIBUTE = "data-anchor-private";
 const DEFAULT_SENT_ANCHORS = 4;
 const PROTOCOL_MAX_ANCHORS = 8;
 
@@ -75,6 +76,11 @@ export type DomBindingOptions<TContext = unknown, TUser = unknown> = {
    * @default "data-anchor"
    */
   anchorAttribute?: string;
+  /**
+   * Attribute that keeps the cursor private: over the element and its descendants the binding sends no cursor.
+   * @default "data-anchor-private"
+   */
+  privateAttribute?: string;
   /**
    * Maximum anchors in the outbound fallback chain, clamped to `1` through `8`.
    * @default 4
@@ -142,6 +148,13 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
   if (!ANCHOR_ATTRIBUTE_PATTERN.test(anchorAttribute)) {
     throw new TypeError(
       `createDomBinding: anchorAttribute must be letters and digits in hyphen-separated groups, such as data-anchor, got "${anchorAttribute}"`,
+    );
+  }
+
+  const privateAttribute = options.privateAttribute ?? DEFAULT_PRIVATE_ATTRIBUTE;
+  if (!ANCHOR_ATTRIBUTE_PATTERN.test(privateAttribute)) {
+    throw new TypeError(
+      `createDomBinding: privateAttribute must be letters and digits in hyphen-separated groups, such as data-anchor-private, got "${privateAttribute}"`,
     );
   }
 
@@ -242,6 +255,7 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
           window: environment.window,
           getCachedRect: (element) => scheduler.getCachedRect(element),
           captureFocus: options.captureFocus ?? false,
+          privateAttribute,
         })
       : { detach() {} };
 

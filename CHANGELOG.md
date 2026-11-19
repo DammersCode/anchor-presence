@@ -39,6 +39,8 @@
 
 ### Added
 
+- `@anchor-presence/core/standard-schema`: `parserFrom` and `eventParserFrom` turn any Standard Schema (Valibot, Zod, ArkType) into `parseUser`, `parseContext`, and `parseEvent`. The client takes its types from the schemas. Types stay optional. The core entry point gains no bytes.
+- `@anchor-presence/dom`: an element with `data-anchor-private`, or the attribute named by the new `privateAttribute` binding option, never publishes a cursor. Over it and its descendants the client sends `null`, also for focus with `captureFocus`.
 - Layout audit skill: `scan.mjs` lists anchors, routes, breakpoints, toggles, and reflow patterns before you measure. `ANCHOR_AUDIT_BROWSER` points `measure.mjs` at a Chrome or Chromium executable.
 - Stable layout example that scores low in the layout audit, and a note on every example whose demo breaks the layout rules on purpose.
 - `@anchor-presence/dom`: `ResolvedCursor` has `pointerType` (`"mouse"`, `"pen"` or `"touch"`), and `@anchor-presence/react`: `CursorRenderProps` passes it to `renderCursor`. A change of pointer type alone updates the cursor.

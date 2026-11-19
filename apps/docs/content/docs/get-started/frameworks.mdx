@@ -19,19 +19,19 @@ Every framework below uses this provider module. It creates the client in the `f
 import type { ReactNode } from "react";
 import { createPresenceClient } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
-import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
+import { CursorLayer, PresenceProvider } from "@anchor-presence/react";
 
 function createClient() {
   const transport = createWebSocketTransport({ port: 8788, path: "/?room=main" });
   return createPresenceClient({ transport, user: { name: `Guest ${Math.floor(Math.random() * 100)}` } });
 }
 
-export function PresenceProvider({ children }: { children: ReactNode }) {
+export function AppPresenceProvider({ children }: { children: ReactNode }) {
   return (
-    <LiveCursorProvider factory={createClient}>
+    <PresenceProvider factory={createClient}>
       {children}
       <CursorLayer />
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }
 ```
@@ -45,7 +45,7 @@ Render the provider in a component that stays mounted across navigation. Then th
 <Tabs items={["Vite", "Next", "TanStack", "React Router", "Astro"]}>
 <Tab value="Vite">
 
-Render `PresenceProvider` around your app in the entry file. A single-page app renders nothing on the server, so it needs no other step.
+Render `AppPresenceProvider` around your app in the entry file. A single-page app renders nothing on the server, so it needs no other step.
 
 </Tab>
 <Tab value="Next">
@@ -55,13 +55,13 @@ Keep `"use client"` at the top of the provider module. A Server Component cannot
 ```tsx
 // app/layout.tsx
 import type { ReactNode } from "react";
-import { PresenceProvider } from "./presence-provider";
+import { AppPresenceProvider } from "./presence-provider";
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body>
-        <PresenceProvider>{children}</PresenceProvider>
+        <AppPresenceProvider>{children}</AppPresenceProvider>
       </body>
     </html>
   );
@@ -76,13 +76,13 @@ Render the provider in the component of the root route, around `<Outlet />`. Thi
 ```tsx
 // src/routes/__root.tsx
 import { createRootRoute, Outlet } from "@tanstack/react-router";
-import { PresenceProvider } from "../presence-provider";
+import { AppPresenceProvider } from "../presence-provider";
 
 export const Route = createRootRoute({
   component: () => (
-    <PresenceProvider>
+    <AppPresenceProvider>
       <Outlet />
-    </PresenceProvider>
+    </AppPresenceProvider>
   ),
 });
 ```
@@ -93,7 +93,7 @@ TanStack Start also renders the root route on the server. There, the root route 
 // src/routes/__root.tsx
 import type { ReactNode } from "react";
 import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
-import { PresenceProvider } from "../presence-provider";
+import { AppPresenceProvider } from "../presence-provider";
 
 export const Route = createRootRoute({
   shellComponent: ({ children }: { children: ReactNode }) => (
@@ -108,9 +108,9 @@ export const Route = createRootRoute({
     </html>
   ),
   component: () => (
-    <PresenceProvider>
+    <AppPresenceProvider>
       <Outlet />
-    </PresenceProvider>
+    </AppPresenceProvider>
   ),
 });
 ```
@@ -125,13 +125,13 @@ Render the provider in the root route module, around `<Outlet />`:
 ```tsx
 // app/root.tsx
 import { Outlet } from "react-router";
-import { PresenceProvider } from "./presence-provider";
+import { AppPresenceProvider } from "./presence-provider";
 
 export default function App() {
   return (
-    <PresenceProvider>
+    <AppPresenceProvider>
       <Outlet />
-    </PresenceProvider>
+    </AppPresenceProvider>
   );
 }
 ```
@@ -146,12 +146,12 @@ Render the provider as a React island. Use `client:only="react"` to skip the ser
 ```astro
 ---
 // src/pages/index.astro
-import { PresenceProvider } from "../components/presence-provider";
+import { AppPresenceProvider } from "../components/presence-provider";
 ---
 
-<PresenceProvider client:only="react">
+<AppPresenceProvider client:only="react">
   <button data-anchor="nav.dashboard">Dashboard</button>
-</PresenceProvider>
+</AppPresenceProvider>
 ```
 
 The binding registers every `data-anchor` element in the document, so elements outside the island are anchors too. Each island has its own React tree. A hook or a `CursorLayer` in another island has no provider and returns empty data.
@@ -184,7 +184,7 @@ The tests do not cover React 18 with a router.
   <Card icon={<Server />} title="SSR and Strict Mode" href="/docs/react/ssr-and-strict-mode">
     Why the client lives in `factory`.
   </Card>
-  <Card icon={<Atom />} title="LiveCursorProvider" href="/docs/react/live-cursor-provider">
+  <Card icon={<Atom />} title="PresenceProvider" href="/docs/react/presence-provider">
     Every prop of the provider.
   </Card>
 </Cards>

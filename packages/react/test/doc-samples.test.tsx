@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { createPresenceClient, type PresenceClient } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
 import type { ResolvedCursor } from "@anchor-presence/dom";
-import { LiveCursorProvider } from "../src/provider";
+import { PresenceProvider } from "../src/provider";
 import { CursorLayer } from "../src/cursor";
 import { useRemoteCursorsSelector } from "../src/hooks/use-remote-cursors";
 import { docSample, missingSamples } from "./doc-source";
@@ -21,7 +21,7 @@ function DashboardButton() {
 
 function App() {
   return (
-    <LiveCursorProvider
+    <PresenceProvider
       factory={() => {
         const transport = createWebSocketTransport({ port: 8788, path: "/?room=main" });
         return createPresenceClient({ transport });
@@ -29,7 +29,7 @@ function App() {
     >
       <DashboardButton />
       <CursorLayer />
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }
 
@@ -68,9 +68,9 @@ function OwnClientApp() {
     return () => created.dispose();
   }, []);
   return (
-    <LiveCursorProvider client={client}>
+    <PresenceProvider client={client}>
       <CursorLayer />
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }
 
@@ -91,9 +91,9 @@ describe("doc samples compile and render", () => {
 
   it("renders the TierBadge sample as hidden without cursors", () => {
     const html = renderToString(
-      <LiveCursorProvider client={null}>
+      <PresenceProvider client={null}>
         <TierBadge clientId="peer" />
-      </LiveCursorProvider>,
+      </PresenceProvider>,
     );
     expect(html).toContain("hidden");
   });
@@ -105,9 +105,9 @@ describe("doc samples compile and render", () => {
 
   it("renders the CursorLayer sample from packages/react/README.md", () => {
     const html = renderToString(
-      <LiveCursorProvider client={null}>
+      <PresenceProvider client={null}>
         <CursorLayerSample />
-      </LiveCursorProvider>,
+      </PresenceProvider>,
     );
     expect(html).not.toBeNull();
   });

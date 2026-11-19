@@ -4,14 +4,14 @@ import { warnOnce } from "@anchor-presence/core";
 import type { PresenceClient } from "@anchor-presence/core";
 import { createDomBinding } from "@anchor-presence/dom";
 import type { DomBinding, DomBindingOptions } from "@anchor-presence/dom";
-import { LiveCursorContext } from "./context.js";
-import type { LiveCursorContextValue } from "./context.js";
+import { PresenceContext } from "./context.js";
+import type { PresenceContextValue } from "./context.js";
 
 /**
- * Every `LiveCursorProvider` prop except `children`.
- * Use it for a wrapper component: `Omit` on `LiveCursorProviderProps` loses the `client` or `factory` rule.
+ * Every `PresenceProvider` prop except `children`.
+ * Use it for a wrapper component: `Omit` on `PresenceProviderProps` loses the `client` or `factory` rule.
  */
-export type LiveCursorProviderConfig<TContext = unknown, TUser = unknown> = (
+export type PresenceProviderConfig<TContext = unknown, TUser = unknown> = (
   | {
       /** A client you own; the provider never disposes it. `null` provides no client. */
       client: PresenceClient<TContext, TUser> | null;
@@ -45,9 +45,9 @@ export type LiveCursorProviderConfig<TContext = unknown, TUser = unknown> = (
   };
 
 /**
- * Props for `LiveCursorProvider`.
+ * Props for `PresenceProvider`.
  */
-export type LiveCursorProviderProps<TContext = unknown, TUser = unknown> = LiveCursorProviderConfig<
+export type PresenceProviderProps<TContext = unknown, TUser = unknown> = PresenceProviderConfig<
   TContext,
   TUser
 > & {
@@ -65,8 +65,8 @@ function isBrowser(): boolean {
  * The provider creates a DOM binding when you do not pass one.
  * The provider reads `bindingOptions` when it creates the binding. Change `bindingKey` to create a new binding with the latest options, without touching the client.
  */
-export function LiveCursorProvider<TContext = unknown, TUser = unknown>(
-  props: LiveCursorProviderProps<TContext, TUser>,
+export function PresenceProvider<TContext = unknown, TUser = unknown>(
+  props: PresenceProviderProps<TContext, TUser>,
 ): ReactNode {
   const {
     factory,
@@ -95,7 +95,7 @@ export function LiveCursorProvider<TContext = unknown, TUser = unknown>(
     if (create === undefined) return;
     if (typeof create !== "function") {
       throw new TypeError(
-        "LiveCursorProvider: factory must be a function that returns a client; pass a client with the client prop",
+        "PresenceProvider: factory must be a function that returns a client; pass a client with the client prop",
       );
     }
     if (!isBrowser()) return;
@@ -113,19 +113,19 @@ export function LiveCursorProvider<TContext = unknown, TUser = unknown>(
   if (factory === undefined && providedClient === undefined) {
     warnOnce(
       "provider-without-client",
-      "LiveCursorProvider got neither `client` nor `factory`, so it renders without presence.",
+      "PresenceProvider got neither `client` nor `factory`, so it renders without presence.",
     );
   }
   if (factory !== undefined && providedClient !== undefined) {
     warnOnce(
       "provider-client-and-factory",
-      "LiveCursorProvider got both `client` and `factory`; it ignores `factory`.",
+      "PresenceProvider got both `client` and `factory`; it ignores `factory`.",
     );
   }
   if (providedBinding !== undefined && bindingOptions !== undefined) {
     warnOnce(
       "binding-and-options",
-      "LiveCursorProvider got both `binding` and `bindingOptions`; it ignores `bindingOptions`.",
+      "PresenceProvider got both `binding` and `bindingOptions`; it ignores `bindingOptions`.",
     );
   }
 
@@ -163,10 +163,10 @@ export function LiveCursorProvider<TContext = unknown, TUser = unknown>(
   const activeBinding = providedBinding ?? ownBinding;
   const clientPending = factory !== undefined && providedClient === undefined && ownClient === null;
 
-  const value = useMemo<LiveCursorContextValue<TContext, TUser>>(
+  const value = useMemo<PresenceContextValue<TContext, TUser>>(
     () => ({ client, binding: activeBinding, clientPending }),
     [client, activeBinding, clientPending],
   );
 
-  return <LiveCursorContext.Provider value={value}>{children}</LiveCursorContext.Provider>;
+  return <PresenceContext.Provider value={value}>{children}</PresenceContext.Provider>;
 }

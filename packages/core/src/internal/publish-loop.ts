@@ -1,4 +1,4 @@
-import type { CursorPosition, CursorPresence } from "../protocol.js";
+import type { CursorPosition, PresenceMessage } from "../protocol.js";
 import { warnOnce } from "./dev-warnings.js";
 import { validatePresence } from "../validate.js";
 import type { PresenceClientState } from "./types.js";
@@ -52,8 +52,8 @@ export function createPublishLoop<TContext, TUser>(state: PresenceClientState<TC
     cursor: CursorPosition | null,
     includeFull: boolean,
     leave: boolean,
-  ): CursorPresence<TContext, TUser> {
-    const message: CursorPresence<TContext, TUser> = {
+  ): PresenceMessage<TContext, TUser> {
+    const message: PresenceMessage<TContext, TUser> = {
       version: 1,
       clientId: state.clientId,
       session: state.session,
@@ -73,7 +73,7 @@ export function createPublishLoop<TContext, TUser>(state: PresenceClientState<TC
   let warnedSendFailure = false;
 
   // a `user` or `context` that cannot encode must not silence the cursor: resend without them
-  function encodeOrDropProfile(message: CursorPresence<TContext, TUser>): Uint8Array {
+  function encodeOrDropProfile(message: PresenceMessage<TContext, TUser>): Uint8Array {
     try {
       return state.codec.encode(message);
     } catch (error) {
@@ -87,7 +87,7 @@ export function createPublishLoop<TContext, TUser>(state: PresenceClientState<TC
   }
 
   // drop one field at a time so a bad `user` keeps a good `context`
-  function encodeWithoutFailingField(message: CursorPresence<TContext, TUser>): Uint8Array {
+  function encodeWithoutFailingField(message: PresenceMessage<TContext, TUser>): Uint8Array {
     const { context, user, ...rest } = message;
     for (const candidate of [
       { ...rest, ...(user === undefined ? {} : { user }) },
@@ -135,7 +135,7 @@ export function createPublishLoop<TContext, TUser>(state: PresenceClientState<TC
   function sendEvent(type: string, data?: unknown): boolean {
     if (state.status !== "connected") return false;
     try {
-      const message: CursorPresence<TContext, TUser> = {
+      const message: PresenceMessage<TContext, TUser> = {
         version: 1,
         clientId: state.clientId,
         session: state.session,

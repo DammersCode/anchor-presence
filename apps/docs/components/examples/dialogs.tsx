@@ -2,7 +2,7 @@
 
 import type { PresenceClient } from "@anchor-presence/core";
 import type { VisibilityPolicy } from "@anchor-presence/dom";
-import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
+import { CursorLayer, PresenceProvider } from "@anchor-presence/react";
 import { UserPlus, X } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { MIRA } from "./_preview/scenes";
@@ -73,7 +73,7 @@ export function DialogsScene({ client, layout, children }: Props) {
   const takeControl = (open: boolean) => setReaderOpen(open);
 
   return (
-    <LiveCursorProvider<DialogContext, User>
+    <PresenceProvider<DialogContext, User>
       client={typedClient}
       bindingOptions={{ resolution: { visibilityPolicy: policy } }}
     >
@@ -152,6 +152,6 @@ export function DialogsScene({ client, layout, children }: Props) {
         getColor={(cursor) => safeColor(cursor.user?.color, "#4f46e5")}
       />
       {children}
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }

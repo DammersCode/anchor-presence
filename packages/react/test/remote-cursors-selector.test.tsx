@@ -2,7 +2,7 @@ import { act, useCallback, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ResolvedCursor } from "@anchor-presence/dom";
-import { LiveCursorProvider } from "../src/provider";
+import { PresenceProvider } from "../src/provider";
 import { useRemoteCursorsSelector } from "../src/hooks";
 import { makeFakeBinding, makeFakeClient } from "./test-utils";
 
@@ -59,9 +59,9 @@ describe("useRemoteCursorsSelector", () => {
 
     act(() => {
       root.render(
-        <LiveCursorProvider client={client} binding={binding}>
+        <PresenceProvider client={client} binding={binding}>
           <CountReader />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
     expect(renders.at(-1)).toBe(0);
@@ -83,9 +83,9 @@ describe("useRemoteCursorsSelector", () => {
 
     act(() => {
       root.render(
-        <LiveCursorProvider client={client} binding={binding}>
+        <PresenceProvider client={client} binding={binding}>
           <CountReader />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
 
@@ -113,9 +113,9 @@ describe("useRemoteCursorsSelector", () => {
 
     act(() => {
       root.render(
-        <LiveCursorProvider client={client} binding={binding}>
+        <PresenceProvider client={client} binding={binding}>
           <IdReader />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
 
@@ -149,9 +149,9 @@ describe("useRemoteCursorsSelector", () => {
     const root = createRoot(container);
     act(() => {
       root.render(
-        <LiveCursorProvider client={client} binding={binding}>
+        <PresenceProvider client={client} binding={binding}>
           <Reader />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
 
@@ -181,9 +181,9 @@ describe("useRemoteCursorsSelector", () => {
 
     act(() => {
       root.render(
-        <LiveCursorProvider client={client}>
+        <PresenceProvider client={client}>
           <CountReader />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
 
@@ -216,9 +216,9 @@ describe("useRemoteCursorsSelector", () => {
 
     act(() => {
       createRoot(container).render(
-        <LiveCursorProvider client={client} binding={fake.binding}>
+        <PresenceProvider client={client} binding={fake.binding}>
           <Probe />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
     act(() => setOnlyA(true));

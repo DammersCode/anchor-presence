@@ -6,7 +6,7 @@ icon: shield-check
 
 import { Code, Shield, Users } from "lucide-react";
 
-`validatePresence` turns an untrusted decoded value into a `CursorPresence` or `null`. The client passes the output of every codec `decode` through it before the value reaches the store. Call it yourself only when you process presence data outside a `PresenceClient`, for example on a relay.
+`validatePresence` turns an untrusted decoded value into a `PresenceMessage` or `null`. The client passes the output of every codec `decode` through it before the value reaches the store. Call it yourself only when you process presence data outside a `PresenceClient`, for example on a relay.
 
 ## Use validatePresence directly
 
@@ -21,7 +21,7 @@ function inspect(frame: Uint8Array) {
 }
 ```
 
-`inspect` returns a well-formed `CursorPresence`, or `null` for a message to drop. `validatePresence` never throws. It clamps anchor and viewport coordinates into the range `0` to `1`.
+`inspect` returns a well-formed `PresenceMessage`, or `null` for a message to drop. `validatePresence` never throws. It clamps anchor and viewport coordinates into the range `0` to `1`.
 
 <Callout type="warn">
   If a relay calls `validatePresence`, cap the frame size before the decode. `validatePresence` ignores
@@ -157,6 +157,6 @@ As a result, a bad event never reaches the store as a message that clears the cu
     The risks that each limit covers.
   </Card>
   <Card icon={<Code />} title="Protocol types" href="/docs/core/api/protocol">
-    The shape of `CursorPresence`.
+    The shape of `PresenceMessage`.
   </Card>
 </Cards>

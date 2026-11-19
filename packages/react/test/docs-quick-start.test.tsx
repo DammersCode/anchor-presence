@@ -6,7 +6,7 @@ import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { createPresenceClient } from "@anchor-presence/core";
 import { createBroadcastChannelTransport, createWebSocketTransport } from "@anchor-presence/dom";
-import { CursorLayer, LiveCursorProvider } from "../src/index";
+import { CursorLayer, PresenceProvider } from "../src/index";
 
 // Verbatim copies of the quick start and deploy-relay samples; the last test checks each copy against its source.
 
@@ -17,10 +17,10 @@ function createClient() {
 
 export function App() {
   return (
-    <LiveCursorProvider factory={createClient}>
+    <PresenceProvider factory={createClient}>
       <button data-anchor="nav.dashboard">Dashboard</button>
       <CursorLayer />
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }
 

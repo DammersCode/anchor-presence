@@ -1,15 +1,15 @@
-import type { CursorCodec } from "../codec.js";
+import type { PresenceCodec } from "../codec.js";
 import type {
   ConnectionStatus,
   CursorPosition,
-  CursorPresence,
+  PresenceMessage,
   PeerChange,
   PointerInfo,
   RemoteEvent,
   RemotePresence,
 } from "../protocol.js";
 import type { RemotePresenceStore } from "../store.js";
-import type { LiveCursorTransport, TransportClose } from "../transport.js";
+import type { PresenceTransport, TransportClose } from "../transport.js";
 import type { ValidationLimits } from "../validate.js";
 
 /** Handle for one scheduled timer. */
@@ -45,9 +45,9 @@ export type AdaptivePublishOptions = {
  */
 export type PresenceClientOptions<TContext = unknown, TUser = unknown> = {
   /** The transport the client sends and receives over. */
-  transport: LiveCursorTransport;
+  transport: PresenceTransport;
   /** The codec for message bytes. Default `jsonCodec`. */
-  codec?: CursorCodec;
+  codec?: PresenceCodec;
   /** A stable ID for this client. Default: a new random ID. */
   clientId?: string;
   /** Publish interval, in milliseconds. Default `DEFAULT_PUBLISH_INTERVAL_MS`. */
@@ -178,7 +178,7 @@ export interface PresenceClient<TContext = unknown, TUser = unknown> {
    * The client returns a new array when it accepts a message.
    * @remarks Returns a new array per accepted message; use getRemotePresence() for rendering.
    */
-  getRemoteSnapshot(): CursorPresence<TContext, TUser>[];
+  getRemoteSnapshot(): PresenceMessage<TContext, TUser>[];
   /**
    * Returns the stable remote snapshot, without `sequence`.
    * The client keeps the array identity while nothing observable changes.
@@ -214,8 +214,8 @@ export interface PresenceClient<TContext = unknown, TUser = unknown> {
  * The facade builds it; the internal modules read and update it.
  */
 export type PresenceClientState<TContext, TUser> = {
-  transport: LiveCursorTransport;
-  codec: CursorCodec;
+  transport: PresenceTransport;
+  codec: PresenceCodec;
   scheduler: SchedulerLike;
   clientId: string;
   session: string;

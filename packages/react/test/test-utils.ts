@@ -1,4 +1,9 @@
-import type { ConnectionStatus, CursorPresence, PresenceClient, RemotePresence } from "@anchor-presence/core";
+import type {
+  ConnectionStatus,
+  PresenceMessage,
+  PresenceClient,
+  RemotePresence,
+} from "@anchor-presence/core";
 import type { DomBinding, ResolvedCursor } from "@anchor-presence/dom";
 
 // react's `act` needs this flag set; every jsdom test importing testUtils gets it without a shared vitest setupFiles entry.
@@ -6,10 +11,10 @@ import type { DomBinding, ResolvedCursor } from "@anchor-presence/dom";
 
 export function makeFakeClient<TContext = unknown, TUser = unknown>(): {
   client: PresenceClient<TContext, TUser>;
-  pushRemote: (next: CursorPresence<TContext, TUser>[], idleClientIds?: Set<string>) => void;
+  pushRemote: (next: PresenceMessage<TContext, TUser>[], idleClientIds?: Set<string>) => void;
   setStatus: (status: ConnectionStatus) => void;
 } {
-  let remoteSnapshot: CursorPresence<TContext, TUser>[] = [];
+  let remoteSnapshot: PresenceMessage<TContext, TUser>[] = [];
   let remotePresence: RemotePresence<TContext, TUser>[] = [];
   const remoteListeners = new Set<() => void>();
   const statusListeners = new Set<(status: ConnectionStatus) => void>();

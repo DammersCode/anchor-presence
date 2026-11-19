@@ -1,12 +1,12 @@
 ---
 title: Transports
-description: The LiveCursorTransport contract, connect and disconnect ownership, connection status, and close reasons.
+description: The PresenceTransport contract, connect and disconnect ownership, connection status, and close reasons.
 icon: cable
 ---
 
 import { AppWindow, MemoryStick, Plug, RadioTower, Server } from "lucide-react";
 
-A transport is the byte channel between a presence client and the network. `@anchor-presence/core` imports no transport library. You give the client an object that implements `LiveCursorTransport`. Read this page before you write a transport. It also explains the connection status and the close reasons.
+A transport is the byte channel between a presence client and the network. `@anchor-presence/core` imports no transport library. You give the client an object that implements `PresenceTransport`. Read this page before you write a transport. It also explains the connection status and the close reasons.
 
 ## Use a transport
 
@@ -36,12 +36,12 @@ These transports ship in the packages:
   </Card>
 </Cards>
 
-## The LiveCursorTransport interface
+## The PresenceTransport interface
 
-`@anchor-presence/core` exports `LiveCursorTransport`, `ConnectionStatus`, and `TransportClose` with these shapes:
+`@anchor-presence/core` exports `PresenceTransport`, `ConnectionStatus`, and `TransportClose` with these shapes:
 
 ```ts
-interface LiveCursorTransport {
+interface PresenceTransport {
   connect?(): Promise<void> | void;
   disconnect?(): Promise<void> | void;
   send(data: Uint8Array): Promise<void> | void;

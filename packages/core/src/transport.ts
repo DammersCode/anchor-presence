@@ -14,7 +14,7 @@ export type TransportClose = {
  * Byte channel that moves messages between the client and a network.
  * A transport never validates messages. The client runs `validatePresence` on inbound data.
  */
-export interface LiveCursorTransport {
+export interface PresenceTransport {
   /** Opens the connection. */
   connect?(): Promise<void> | void;
   /** Closes the connection. */

@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { binaryCodec, type CursorCodec, type CursorPresence } from "@anchor-presence/core";
+import { binaryCodec, type PresenceCodec, type PresenceMessage } from "@anchor-presence/core";
 
 // Copied verbatim from apps/docs/content/docs/core/custom-codec.mdx (Debugging, option B).
-const debugCodec: CursorCodec = {
+const debugCodec: PresenceCodec = {
   encode(message) {
     console.debug("[presence out]", message);
     return binaryCodec.encode(message);
@@ -14,7 +14,7 @@ const debugCodec: CursorCodec = {
   },
 };
 
-const message: CursorPresence = {
+const message: PresenceMessage = {
   version: 1,
   clientId: "client-1",
   session: "session-1",
@@ -33,7 +33,7 @@ describe("codecs docs: debugCodec", () => {
   it("round-trips a message through binaryCodec and logs both directions", () => {
     const debug = vi.spyOn(console, "debug").mockImplementation(() => {});
 
-    const decoded = debugCodec.decode(debugCodec.encode(message)) as CursorPresence;
+    const decoded = debugCodec.decode(debugCodec.encode(message)) as PresenceMessage;
 
     const { cursor, ...rest } = decoded;
     const { cursor: _sentCursor, ...sentRest } = message;
@@ -50,7 +50,7 @@ describe("codecs docs: debugCodec", () => {
 
   it("keeps a float32 coordinate within 1e-7 of the sent value", () => {
     vi.spyOn(console, "debug").mockImplementation(() => {});
-    const decoded = debugCodec.decode(debugCodec.encode(message)) as CursorPresence;
+    const decoded = debugCodec.decode(debugCodec.encode(message)) as PresenceMessage;
     const u = decoded.cursor?.anchors[0]?.u;
     expect(u).not.toBe(0.1);
     expect(u).toBeCloseTo(0.1, 7);

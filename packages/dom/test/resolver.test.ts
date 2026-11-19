@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { CursorPresence, Interpolator, InterpolatorFactory } from "@anchor-presence/core";
+import type { PresenceMessage, Interpolator, InterpolatorFactory } from "@anchor-presence/core";
 import { noneInterpolator } from "@anchor-presence/core";
 import { createAnchorRegistry } from "../src/registry";
 import type { AnchorRegistry } from "../src/registry";
@@ -8,7 +8,7 @@ import { readClientRect } from "../src/occlusion";
 import type { Rect, ViewportSize } from "../src/geometry";
 import type { SchedulerReadState } from "../src/scheduler";
 
-function presence(overrides: Partial<CursorPresence> = {}): CursorPresence {
+function presence(overrides: Partial<PresenceMessage> = {}): PresenceMessage {
   return {
     version: 1,
     clientId: "remote-1",

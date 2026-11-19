@@ -1,12 +1,12 @@
 ---
 title: Codecs
-description: The CursorCodec interface, jsonCodec, and how to choose a codec for a room.
+description: The PresenceCodec interface, jsonCodec, and how to choose a codec for a room.
 icon: binary
 ---
 
 import { FileCode, FileDigit, Shield } from "lucide-react";
 
-A codec turns a `CursorPresence` message into bytes for the wire, and turns bytes back into a value. `@anchor-presence/core` ships `jsonCodec`, the default, and `binaryCodec`, a compact codec with a fixed layout. When you set up a room, choose a codec. All clients in the room must use the same one.
+A codec turns a `PresenceMessage` message into bytes for the wire, and turns bytes back into a value. `@anchor-presence/core` ships `jsonCodec`, the default, and `binaryCodec`, a compact codec with a fixed layout. When you set up a room, choose a codec. All clients in the room must use the same one.
 
 ## Use a codec
 
@@ -31,25 +31,25 @@ The sample message has 4 anchors with two-letter IDs and coordinates with one de
 
 The relay forwards bytes and does not convert between `jsonCodec` and `binaryCodec` frames. A client that decodes the bytes of another codec gets `null`, and `validatePresence` drops the message. In development mode, the client warns one time about the dropped messages.
 
-## CursorCodec
+## PresenceCodec
 
-`@anchor-presence/core` exports `CursorCodec` with this shape:
+`@anchor-presence/core` exports `PresenceCodec` with this shape:
 
 ```ts
-interface CursorCodec {
-  encode(message: CursorPresence): Uint8Array;
+interface PresenceCodec {
+  encode(message: PresenceMessage): Uint8Array;
   decode(data: Uint8Array): unknown;
 }
 ```
 
-`decode` returns `unknown`, not `CursorPresence`, because the client checks the value after the decode. A codec must never throw from `decode`. For malformed input, `decode` returns a value that fails validation, for example `null`.
+`decode` returns `unknown`, not `PresenceMessage`, because the client checks the value after the decode. A codec must never throw from `decode`. For malformed input, `decode` returns a value that fails validation, for example `null`.
 
 ## jsonCodec
 
 `jsonCodec` works like this code:
 
 ```ts
-const jsonCodec: CursorCodec = {
+const jsonCodec: PresenceCodec = {
   encode(message) {
     return new TextEncoder().encode(JSON.stringify(message));
   },

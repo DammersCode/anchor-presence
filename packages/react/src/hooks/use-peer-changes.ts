@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import type { PeerChange } from "@anchor-presence/core";
-import { useLiveCursorContext } from "./use-cursor-client.js";
+import { usePresenceContext } from "./use-presence-client.js";
 
 /**
  * Calls `listener` when a remote client joins, leaves, or changes its `user` or `context`.
@@ -9,7 +9,7 @@ import { useLiveCursorContext } from "./use-cursor-client.js";
 export function usePeerChanges<TContext = unknown, TUser = unknown>(
   listener: (change: PeerChange<TContext, TUser>) => void,
 ): void {
-  const { client } = useLiveCursorContext<TContext, TUser>();
+  const { client } = usePresenceContext<TContext, TUser>();
   const listenerRef = useRef(listener);
   useEffect(() => {
     listenerRef.current = listener;

@@ -20,7 +20,7 @@ In React, use the [`useLocalContext`](/docs/react/local-context) hook. On the re
 
 ## What the client sends
 
-The `context` field of `CursorPresence` is opaque: `@anchor-presence/core` gives it no meaning.
+The `context` field of `PresenceMessage` is opaque: `@anchor-presence/core` gives it no meaning.
 
 - The client sends a changed context once. Later messages leave the field out, which means "unchanged".
 - Reconnect and heartbeat messages carry the current context, so a late peer gets it.
@@ -35,14 +35,14 @@ A visibility policy is a pure function that decides whether a resolved cursor sh
 
 ```ts
 type VisibilityPolicy<TContext = unknown, TUser = unknown> = (input: {
-  presence: CursorPresence<TContext, TUser>;
+  presence: PresenceMessage<TContext, TUser>;
   resolution: { tier: ResolutionTier; anchorId: string | null; pointVisible: boolean };
 }) => "show" | "hide";
 ```
 
 `ResolutionTier` is `"anchor" | "viewport" | "hidden"`. The default policy hides only the `hidden` tier. `pointVisible` is `false` when a scroll container clips the point. See [Occlusion and scroll](/docs/dom/occlusion-and-scroll).
 
-Pass a custom policy in `resolution.visibilityPolicy` of the binding options. In React, pass it in `bindingOptions` of `LiveCursorProvider`. [Visibility policy](/docs/dom/visibility-policy) has the full reference.
+Pass a custom policy in `resolution.visibilityPolicy` of the binding options. In React, pass it in `bindingOptions` of `PresenceProvider`. [Visibility policy](/docs/dom/visibility-policy) has the full reference.
 
 ## Dialog mismatch handling
 

@@ -8,18 +8,18 @@ import {
   jsonCodec,
   linearInterpolator,
   type ConnectionStatus,
-  type CursorCodec as ExportedCursorCodec,
-  type CursorPresence,
+  type PresenceCodec as ExportedPresenceCodec,
+  type PresenceMessage,
   type Interpolator as ExportedInterpolator,
   type InterpolatorFactory as ExportedInterpolatorFactory,
-  type LiveCursorTransport,
+  type PresenceTransport,
   type PresenceClient,
   type RemotePresence,
 } from "@anchor-presence/core";
 
 // Verbatim copies of doc samples; the last test checks each copy against its .mdx source.
 
-function createBroadcastChannelTransport(channelName: string): LiveCursorTransport {
+function createBroadcastChannelTransport(channelName: string): PresenceTransport {
   const listeners = new Set<(data: Uint8Array) => void>();
   const statusListeners = new Set<(status: ConnectionStatus) => void>();
   let channel: BroadcastChannel | null = null;
@@ -99,8 +99,8 @@ interface Interpolator {
 
 type InterpolatorFactory = () => Interpolator;
 
-interface CursorCodec {
-  encode(message: CursorPresence): Uint8Array;
+interface PresenceCodec {
+  encode(message: PresenceMessage): Uint8Array;
   decode(data: Uint8Array): unknown;
 }
 
@@ -122,7 +122,7 @@ function docSample(page: string, marker: string): string {
   return block;
 }
 
-const samplePresence: CursorPresence = {
+const samplePresence: PresenceMessage = {
   version: 1,
   clientId: "a",
   session: "s",
@@ -161,10 +161,10 @@ describe("interpolation.mdx: Interpolator listing", () => {
   });
 });
 
-describe("codecs.mdx: CursorCodec listing", () => {
+describe("codecs.mdx: PresenceCodec listing", () => {
   it("equals the exported type, and both codecs round-trip through it", () => {
-    expectTypeOf<CursorCodec>().toEqualTypeOf<ExportedCursorCodec>();
-    const codecs: CursorCodec[] = [jsonCodec, binaryCodec];
+    expectTypeOf<PresenceCodec>().toEqualTypeOf<ExportedPresenceCodec>();
+    const codecs: PresenceCodec[] = [jsonCodec, binaryCodec];
     for (const codec of codecs)
       expect(codec.decode(codec.encode(samplePresence))).toMatchObject(samplePresence);
   });
@@ -172,7 +172,7 @@ describe("codecs.mdx: CursorCodec listing", () => {
 
 describe("codecs.mdx and performance.mdx: wire sizes", () => {
   it("a 4-anchor message with a small user is 292 JSON bytes and 144 binary bytes", () => {
-    const message: CursorPresence = {
+    const message: PresenceMessage = {
       version: 1,
       clientId: "bench-client",
       session: "bench-client-s",
@@ -247,7 +247,7 @@ describe("doc sample sources", () => {
     const samples = [
       docSample("core/custom-transport.mdx", "function createBroadcastChannelTransport"),
       docSample("core/interpolation.mdx", "interface Interpolator"),
-      docSample("core/codecs.mdx", "interface CursorCodec"),
+      docSample("core/codecs.mdx", "interface PresenceCodec"),
       docSample("core/build-a-framework-adapter.mdx", "function createPresenceSignals"),
     ];
     for (const sample of samples) expect(source).toContain(sample);

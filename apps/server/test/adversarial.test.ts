@@ -8,8 +8,8 @@ import {
   binaryCodec,
   createPresenceClient,
   type ConnectionStatus,
-  type CursorPresence,
-  type LiveCursorTransport,
+  type PresenceMessage,
+  type PresenceTransport,
   type PresenceClient,
 } from "@anchor-presence/core";
 import { createAnchorRegistry } from "../../../packages/dom/src/registry";
@@ -173,15 +173,15 @@ async function waitUntil(predicate: () => boolean, timeoutMs: number, what: stri
   throw new Error(`timed out waiting for ${what}`);
 }
 
-function entryFor(client: PresenceClient, clientId: string): CursorPresence | undefined {
+function entryFor(client: PresenceClient, clientId: string): PresenceMessage | undefined {
   return client.getRemoteSnapshot().find((p) => p.clientId === clientId);
 }
 
 // The receiver side runs a REAL presence client on node. The client half needs a
-// LiveCursorTransport over a raw WebSocket (the dom package's createWebSocketTransport is
+// PresenceTransport over a raw WebSocket (the dom package's createWebSocketTransport is
 // not exported for this purpose in the server project, and a local helper keeps the
 // test self-contained).
-class SocketTransport implements LiveCursorTransport {
+class SocketTransport implements PresenceTransport {
   private readonly ws: WebSocket;
   private readonly dataListeners = new Set<(data: Uint8Array) => void>();
   private readonly statusListeners = new Set<(status: ConnectionStatus) => void>();
@@ -534,7 +534,7 @@ describe("adversarial relay e2e", () => {
       ownerDocument: { documentElement },
     } as unknown as Element;
     const unregister = registry.register("registered-anchor", stub);
-    const registeredPresence: CursorPresence = {
+    const registeredPresence: PresenceMessage = {
       ...presence,
       cursor: { anchors: [{ id: "registered-anchor", u: 0.25, v: 0.5 }] },
     };

@@ -22,10 +22,10 @@ import {
 } from "react-router";
 import { afterEach, describe, expect, it } from "vitest";
 import { createInMemoryPair, createPresenceClient } from "@anchor-presence/core";
-import { CursorLayer, LiveCursorProvider, useCursorStatus } from "../src";
+import { CursorLayer, PresenceProvider, usePresenceStatus } from "../src";
 
 function Shell() {
-  const status = useCursorStatus();
+  const status = usePresenceStatus();
   return (
     <div>
       <span data-testid="status">{status}</span>
@@ -58,11 +58,11 @@ describe("TanStack Router (also the router of TanStack Start)", () => {
   function buildRouter(factory: () => ReturnType<typeof createPresenceClient>, url: string) {
     const rootRoute = createRootRoute({
       component: () => (
-        <LiveCursorProvider factory={factory}>
+        <PresenceProvider factory={factory}>
           <Shell />
           <Link to="/other">other</Link>
           <Outlet />
-        </LiveCursorProvider>
+        </PresenceProvider>
       ),
     });
     const home = createRoute({ getParentRoute: () => rootRoute, path: "/", component: () => <p>home</p> });
@@ -130,12 +130,12 @@ describe("React Router (also the router of Remix)", () => {
   it("renders on the server inside a router", () => {
     const html = renderToString(
       <MemoryRouter initialEntries={["/"]}>
-        <LiveCursorProvider client={null}>
+        <PresenceProvider client={null}>
           <Shell />
           <Routes>
             <Route path="/" element={<p>home</p>} />
           </Routes>
-        </LiveCursorProvider>
+        </PresenceProvider>
       </MemoryRouter>,
     );
     expect(html).toContain("disconnected");
@@ -149,11 +149,11 @@ describe("React Router (also the router of Remix)", () => {
         {
           path: "/",
           element: (
-            <LiveCursorProvider factory={factory}>
+            <PresenceProvider factory={factory}>
               <Shell />
               <RrLink to="/other">other</RrLink>
               <RrOutlet />
-            </LiveCursorProvider>
+            </PresenceProvider>
           ),
           children: [
             { index: true, element: <p>home</p> },

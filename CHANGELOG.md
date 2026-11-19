@@ -9,6 +9,7 @@
 - `@anchor-presence/core`: `binaryCodec.encode` throws for a coordinate outside the float32 range and for an event message that carries a cursor. The client drops such a message.
 - `@anchor-presence/dom`: `createWebSocketTransport` throws a `TypeError` for a `path` that does not start with `/` or `?`.
 - `@anchor-presence/core`: the client option `onRemoteClientDrop` is `onRemoteClientRejected`, and the store option `onDropNewClient` is `onRemoteClientRejected`. Both run when a full store refuses a new peer, and receive `{ clientId }`.
+- Renames, so that `Presence` names the connection and `Cursor` names what you see: `LiveCursorProvider` is `PresenceProvider`, `LiveCursorContext` is `PresenceContext`, `LiveCursorTransport` is `PresenceTransport`, `CursorPresence` is `PresenceMessage`, `CursorCodec` is `PresenceCodec`, `useCursorClient` is `usePresenceClient`, `useCursorStatus` is `usePresenceStatus`, `useCursorBinding` is `usePresenceBinding`, and `useCursorEvents` is `useRemoteEvents`.
 - Renames, for names that say what they do: `useCursorContext` is `useLocalContext`, `useCursorPresence` is `useRemotePresence`, `client.updateLocalCursor` is `setLocalCursor`, the option `heartbeatMs` is `heartbeatIntervalMs` (and `DEFAULT_HEARTBEAT_MS` is `DEFAULT_HEARTBEAT_INTERVAL_MS`), and the binding option `localCursorCapture` is `capturePointer`.
 - `@anchor-presence/core`: `createPresenceClient` throws a `TypeError` for a non-finite `publishIntervalMs`, `heartbeatIntervalMs`, `staleTimeoutMs`, `idleAfterMs`, `maxRemoteClients` or adaptive-publish option, instead of running with a broken timer.
 - `@anchor-presence/core`: `PeerChange` is generic and carries the peer's `user` and `context`. For a `leave`, they hold the last known values.
@@ -26,12 +27,12 @@
 - Example relays: the `authCheck` option now takes a request (`{ token, room, origin, headers }`) and may be async, so it can verify a JWT or authorize per room. It replaces the token-only signature.
 - `@anchor-presence/dom`: the binding hides remote cursors while the client status is `reconnecting` or `disconnected`, and shows them again when the connection returns.
 - `@anchor-presence/core`: `RemotePresence.idle` now measures the time since the last change, not since the last message. A still peer goes idle while its heartbeats keep arriving.
-- `@anchor-presence/core`: `CursorPresence` gains an optional `leave` field. A relay that validates messages must pass it through.
-- `@anchor-presence/react`: `usePresenceClient` is removed. Pass `LiveCursorProvider` a `factory` prop instead. The provider runs it once per mount, in a browser-only effect, and disposes the client it created on unmount. The `client` prop stays as bring-your-own: the provider never disposes a client you pass, and it wins over `factory` when both are set.
+- `@anchor-presence/core`: `PresenceMessage` gains an optional `leave` field. A relay that validates messages must pass it through.
+- `@anchor-presence/react`: `usePresenceClient` is removed. Pass `PresenceProvider` a `factory` prop instead. The provider runs it once per mount, in a browser-only effect, and disposes the client it created on unmount. The `client` prop stays as bring-your-own: the provider never disposes a client you pass, and it wins over `factory` when both are set.
 - `@anchor-presence/core`: `createPresenceClient` now defaults `autoConnect` to `true`. The client calls `transport.connect()` itself, once, during creation, after it subscribes to the transport's messages and status. Pass `autoConnect: false` to connect the transport yourself.
 
 - `@anchor-presence/core`: `createPresenceClient` throws a `TypeError` when `options.transport` is missing, or when `clientId` is not 1 to 128 characters. Every option error message starts with `createPresenceClient:`.
-- `@anchor-presence/react`: the `LiveCursorProvider` props type needs `client` (or `null`) or `factory`, and rejects `binding` together with `bindingOptions`.
+- `@anchor-presence/react`: the `PresenceProvider` props type needs `client` (or `null`) or `factory`, and rejects `binding` together with `bindingOptions`.
 - Example relays and the reference relay: a repeated `room` query value closes the socket with `4007`, and a repeated `token` value with `4006`.
 
 ### Added
@@ -56,27 +57,27 @@
 - `@anchor-presence/dom`: the pointer source resolves the anchor under the pointer while the pointer is captured.
 - CI and gates: `check:package` (publint and are-the-types-wrong), `check:unused` (knip), and `test:bun-runtime` runs a Node relay and a Bun relay with real clients under Bun.
 - `@anchor-presence/dom`: `createBroadcastChannelTransport(channelName)` connects the tabs and iframes of one origin with no server.
-- Development warnings, once each, for a hook outside `LiveCursorProvider`, a provider with neither `client` nor `factory`, `binding` together with `bindingOptions`, a dropped inbound message, a duplicate `clientId`, and a `staleTimeoutMs` of at most twice `heartbeatIntervalMs`. The WebSocket transport warns on each relay close with a code of 4000 or more.
+- Development warnings, once each, for a hook outside `PresenceProvider`, a provider with neither `client` nor `factory`, `binding` together with `bindingOptions`, a dropped inbound message, a duplicate `clientId`, and a `staleTimeoutMs` of at most twice `heartbeatIntervalMs`. The WebSocket transport warns on each relay close with a code of 4000 or more.
 - `@anchor-presence/core`: `createEventChannel<TEvents>(client)` gives typed `send` and `subscribe` for events. The client option `eventRateLimit` sets the per-sender burst and rate and a total rate for all senders. `client.subscribeUser(listener)` reports local `setUser` changes.
-- `@anchor-presence/react`: `useLocalUser()`, `usePeerChanges(listener)`, and a third type parameter on `createPresenceHooks<TContext, TUser, TEvents>()` that types `useCursorEvents` and adds `useSendEvent()`.
+- `@anchor-presence/react`: `useLocalUser()`, `usePeerChanges(listener)`, and a third type parameter on `createPresenceHooks<TContext, TUser, TEvents>()` that types `useRemoteEvents` and adds `useSendEvent()`.
 - The demo has live reactions and chat built on events, with end-to-end tests for events, leaving and peer notices.
-- `@anchor-presence/react`: `useCursorBinding()` returns the DOM binding, so a component can call `binding.invalidate()` when state that a `visibilityPolicy` reads changes.
+- `@anchor-presence/react`: `usePresenceBinding()` returns the DOM binding, so a component can call `binding.invalidate()` when state that a `visibilityPolicy` reads changes.
 - Example transports: the Socket.IO and SignalR transports implement `subscribeClose`. The relays send a `refused` event with the close code (4001, 4002, 4006, 4007) before they disconnect a client.
 - `defineRelayConformance` also checks the origin allowlist (close code 4004).
 - `@anchor-presence/core`: `createPresenceClient` takes `parseEvent`. It checks, rewrites or drops each remote event, so event data gets the same protection as `user` and `context`.
-- `@anchor-presence/dom`: `binding.dispose({ keepLocalCursor: true })` keeps the local cursor on peers. `LiveCursorProvider` uses it when only `bindingKey` changes.
+- `@anchor-presence/dom`: `binding.dispose({ keepLocalCursor: true })` keeps the local cursor on peers. `PresenceProvider` uses it when only `bindingKey` changes.
 - Example Elysia client: `createElysiaClient(baseUrl, room, token?)` sends the room token.
 - `@anchor-presence/core`: `subscribePeers` also reports an `update` when a remote `user` or `context` changes. A sender that floods events is limited to a burst of 20 and 10 per second.
 - Example relays: an `authCheck` can return `{ clientId, user }`. The node-ws relay then rewrites those fields in every JSON frame, so a peer cannot claim another identity or send a leave for another client. `defineRelayConformance` in `examples/_shared` tests any relay.
 - `bun run perf:score` measures bundle size, wire size, core hot paths, heap per message and, with `--relay`, relay latency, and scores each against a budget.
-- `@anchor-presence/react`: `LiveCursorProvider` takes `clientKey`. Change it to dispose the client the factory made and create a new one, for example to switch rooms without remounting the subtree.
+- `@anchor-presence/react`: `PresenceProvider` takes `clientKey`. Change it to dispose the client the factory made and create a new one, for example to switch rooms without remounting the subtree.
 - `@anchor-presence/core`: after a reconnect the client marks every remote client unconfirmed. An entry that no heartbeat refreshes within `2 * heartbeatIntervalMs + 5 s` is removed, so peers that left during the outage do not linger.
-- `@anchor-presence/react`: `LiveCursorProvider` takes `bindingKey`. Change it to rebuild the binding with the current `bindingOptions` while the client stays connected. The demo uses it for the interpolator switch.
-- `@anchor-presence/core`: `LiveCursorTransport.subscribeClose` and `client.subscribeClose` report why a connection closed (close code, reason and whether the transport reconnects). `createWebSocketTransport` implements it.
+- `@anchor-presence/react`: `PresenceProvider` takes `bindingKey`. Change it to rebuild the binding with the current `bindingOptions` while the client stays connected. The demo uses it for the interpolator switch.
+- `@anchor-presence/core`: `PresenceTransport.subscribeClose` and `client.subscribeClose` report why a connection closed (close code, reason and whether the transport reconnects). `createWebSocketTransport` implements it.
 - `@anchor-presence/core`: `client.leave()` tells peers the client left; the next publish or heartbeat announces it again. `createDomBinding` calls it on `pagehide`, so a closed tab disappears at once.
-- `@anchor-presence/core`: `client.sendEvent(type, data?)` and `client.subscribeEvents(listener)` carry one-shot events such as reactions or pings. Events are never stored or resent. Both codecs support them (binary cursor tag 3). `CursorPresence` gains an optional `event` field.
+- `@anchor-presence/core`: `client.sendEvent(type, data?)` and `client.subscribeEvents(listener)` carry one-shot events such as reactions or pings. Events are never stored or resent. Both codecs support them (binary cursor tag 3). `PresenceMessage` gains an optional `event` field.
 - `@anchor-presence/core`: `client.subscribePeers(listener)` reports remote clients that join or leave.
-- `@anchor-presence/react`: `useCursorEvents(listener)` subscribes to remote events.
+- `@anchor-presence/react`: `useRemoteEvents(listener)` subscribes to remote events.
 - `@anchor-presence/core`: a client answers a first message from an unknown peer, or a known `clientId` with a new session, with one full publish after up to 500 ms.
 - `@anchor-presence/dom`: `createWebSocketTransport` takes a `token` function that runs before every connection attempt and may return a promise.
 - `@anchor-presence/react`: `createPresenceHooks<TContext, TUser>()` returns the provider and every hook with the generics fixed, so `useRemoteUsers<Wrong>()` no longer compiles.
@@ -86,7 +87,7 @@
 - `@anchor-presence/core`: the store keeps the identity of `user` and `context` when a heartbeat repeats an equal value, so memoized renders stay stable.
 - `@anchor-presence/dom`: `createWebSocketTransport` throws a clear error when no `url` is given and `window` is missing.
 - `@anchor-presence/dom`: `WebSocketLike` accepts the platform `WebSocket` constructor without a cast.
-- `@anchor-presence/react`: `LiveCursorProvider` takes a `factory` prop that creates the client it owns.
+- `@anchor-presence/react`: `PresenceProvider` takes a `factory` prop that creates the client it owns.
 - `@anchor-presence/react`: `CursorLayer` takes a `zIndex` prop. Cursors default to `z-index: 9999`, so they stay above most app UI. A native modal `<dialog>` and a `popover` render in the top layer, above every `z-index`.
 - `@anchor-presence/dom`: `createDomBinding` takes `capturePointer` (default `true`). Set it to `false` for a read-only presence client that publishes no pointer input.
 - `@anchor-presence/dom`: `createDomBinding` takes `captureFocus` (default `false`). When `true`, the client publishes a cursor at the center of the focused element on `focusin` and clears it on `focusout`.
@@ -98,12 +99,12 @@
 
 - `@anchor-presence/dom`: `createWebSocketTransport` throws a `TypeError` for a `baseBackoffMs` or `maxBackoffMs` that is not a positive finite number, and when `maxBackoffMs` is below `baseBackoffMs`. A failed connection attempt that throws before a socket exists (a URL without a scheme, a rejecting `token` function) counts toward the dev warning after 4 failures in a row.
 - `@anchor-presence/core`: `createPresenceClient` throws a `TypeError` for a transport without `subscribe`, and for a `maxRemoteClients` that is not an integer of at least 1.
-- `@anchor-presence/react`: `LiveCursorProvider` throws a `TypeError` when `factory` is not a function, for example a client object. Pass a client with the `client` prop.
+- `@anchor-presence/react`: `PresenceProvider` throws a `TypeError` when `factory` is not a function, for example a client object. Pass a client with the `client` prop.
 - Example relays: the Elysia relay checks size and rate on the raw frame, so a text frame reaches peers unchanged. Hono and Bun do not call the auth hook for a request without an `Upgrade` header. The Socket.IO relay refuses an origin outside the allowlist with code `4004` in `connect_error`, so the client stops retrying.
 - `@anchor-presence/dom`: a failed connection attempt (a rejecting `token` function or a throwing `WebSocketCtor`) asks `shouldReconnect` like a close does. A `false` answer stops the retries.
 - `@anchor-presence/dom`: `connect()` during the reconnect backoff cancels the pending timer, so it no longer opens a second socket. `WebSocketTransport` types `subscribeStatus`, `getStatus`, `subscribeClose` and `bufferedBytes` as required.
 - `@anchor-presence/core`: the `clientId` length check uses `validationLimits.maxClientIdLength`. `createPresenceClient` throws a `TypeError` when `idFactory` returns a session of 0 or more than 64 characters.
-- `@anchor-presence/react`: `LiveCursorProvider` warns in dev when a caller passes both `client` and `factory`; `client` wins.
+- `@anchor-presence/react`: `PresenceProvider` warns in dev when a caller passes both `client` and `factory`; `client` wins.
 - `@anchor-presence/react`: `CursorLayer` without `getLabel` labels a cursor with `user.name` when it is a string that is not empty. Without `getColor`, each client gets one color from a palette of 8 colors, picked from its `clientId`.
 - `@anchor-presence/react`: the package entry starts with `"use client"`, so React Server Components frameworks treat it as client code.
 - `@anchor-presence/dom`: `createWebSocketTransport` stops reconnecting after a close with code `4007` (room name not valid).
@@ -111,9 +112,9 @@
 - `@anchor-presence/dom`: the resolver reuses its per-frame containers and samples interpolators into scratch boxes, so a frame with no new work allocates nothing.
 - `@anchor-presence/core`: a client created on an already connected transport announces its user and context at once, without waiting for a cursor or the first heartbeat.
 - `@anchor-presence/core`: `validationLimits.maxSessionLength` also applies to the local `session` that `createPresenceClient` checks.
-- `@anchor-presence/react`: `LiveCursorProviderConfig` is the provider props without `children`, so a wrapper component can pass them through and keep the `client` or `factory` rule.
+- `@anchor-presence/react`: `PresenceProviderConfig` is the provider props without `children`, so a wrapper component can pass them through and keep the `client` or `factory` rule.
 - `@anchor-presence/dom`: a throwing `binding.subscribe` listener no longer stops the other listeners or the frame loop. Transitions of `opacity`, `color`, `background-color`, `box-shadow` and `filter`, and transitions inside a cursor element, no longer re-measure anchors.
-- `@anchor-presence/react`: `useCursorStatus` returns `"connecting"`, not `"disconnected"`, while a provider `factory` has not created its client, so the server and first render do not flash a disconnected state.
+- `@anchor-presence/react`: `usePresenceStatus` returns `"connecting"`, not `"disconnected"`, while a provider `factory` has not created its client, so the server and first render do not flash a disconnected state.
 - `@anchor-presence/react`: the default cursor label is cut at 32 characters by grapheme cluster, so a flag or family emoji at the limit stays whole.
 
 ## 0.1.0 - 2026-09-26

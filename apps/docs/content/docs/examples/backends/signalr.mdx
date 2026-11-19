@@ -38,7 +38,7 @@ The client wraps a `HubConnection` as a transport. The hub forwards messages, an
 
   </Tab>
   <Tab value="Transport">
-    `createSignalRTransport` takes a plain `@microsoft/signalr` `HubConnection` and wraps it as a `LiveCursorTransport`:
+    `createSignalRTransport` takes a plain `@microsoft/signalr` `HubConnection` and wraps it as a `PresenceTransport`:
 
 <CodeFromSource repo="examples/signalr/transport.ts" lang="ts" />
 
@@ -92,21 +92,21 @@ export const { SignalRProvider, useSignalR } = createSignalRClient({
 });
 ```
 
-`useSignalR` gives access to the raw `HubConnection` through `getConnection`. This component creates the presence client on that connection, in the `factory` of a `LiveCursorProvider`:
+`useSignalR` gives access to the raw `HubConnection` through `getConnection`. This component creates the presence client on that connection, in the `factory` of a `PresenceProvider`:
 
 ```tsx
 import type { ReactNode } from "react";
 import { createPresenceClient } from "@anchor-presence/core";
-import { LiveCursorProvider } from "@anchor-presence/react";
+import { PresenceProvider } from "@anchor-presence/react";
 import { createSignalRTransport } from "./transport";
 import { useSignalR } from "./signalr";
 
-function PresenceProvider({ children }: { children: ReactNode }) {
+function AppPresenceProvider({ children }: { children: ReactNode }) {
   const { getConnection } = useSignalR();
   const connection = getConnection("/hubs/presence");
   if (connection === null) return children;
   return (
-    <LiveCursorProvider
+    <PresenceProvider
       clientKey={connection}
       factory={() => {
         // use-signalr owns the connection, so disposing the client must not stop it
@@ -115,7 +115,7 @@ function PresenceProvider({ children }: { children: ReactNode }) {
       }}
     >
       {children}
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }
 ```

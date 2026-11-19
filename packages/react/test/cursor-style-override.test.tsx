@@ -1,7 +1,7 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { expect, it } from "vitest";
-import { LiveCursorProvider } from "../src/provider";
+import { PresenceProvider } from "../src/provider";
 import { CursorLayer } from "../src/cursor";
 import { makeFakeBinding, makeFakeClient } from "./test-utils";
 
@@ -13,9 +13,9 @@ it("lets a consumer transition replace the default", () => {
   const root = createRoot(container);
   act(() => {
     root.render(
-      <LiveCursorProvider client={client} binding={binding}>
+      <PresenceProvider client={client} binding={binding}>
         <CursorLayer getCursorProps={() => ({ style: { transition: "none" } })} />
-      </LiveCursorProvider>,
+      </PresenceProvider>,
     );
   });
   act(() => {

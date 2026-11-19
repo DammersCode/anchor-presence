@@ -5,7 +5,7 @@ import { createRoot } from "react-dom/client";
 import { describe, expect, it } from "vitest";
 import { createPresenceClient } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
-import { CursorLayer, LiveCursorProvider, useCursorBinding, useLocalContext } from "../src/index";
+import { CursorLayer, PresenceProvider, usePresenceBinding, useLocalContext } from "../src/index";
 import { makeFakeBinding, makeFakeClient } from "./test-utils";
 
 // Verbatim copies of the tsx samples in skills/anchor-presence/SKILL.md; the test below keeps them in sync.
@@ -20,7 +20,7 @@ export function PresenceRoot({
   children: React.ReactNode;
 }) {
   return (
-    <LiveCursorProvider<unknown, { name: string }>
+    <PresenceProvider<unknown, { name: string }>
       clientKey={room}
       factory={() => {
         const transport = createWebSocketTransport({
@@ -31,7 +31,7 @@ export function PresenceRoot({
     >
       {children}
       <CursorLayer />
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }
 
@@ -50,7 +50,7 @@ function ScopedPresenceRoot({
   const pageRef = useRef(currentPage);
 
   return (
-    <LiveCursorProvider<{ page: string }, { name: string }>
+    <PresenceProvider<{ page: string }, { name: string }>
       clientKey={room}
       factory={() => {
         const transport = createWebSocketTransport({
@@ -71,14 +71,14 @@ function ScopedPresenceRoot({
       <PublishPage page={currentPage} pageRef={pageRef} />
       {children}
       <CursorLayer />
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }
 
-// useLocalContext and useCursorBinding work only below the provider.
+// useLocalContext and usePresenceBinding work only below the provider.
 function PublishPage({ page, pageRef }: { page: string; pageRef: { current: string } }) {
   const [, setContext] = useLocalContext<{ page: string }>();
-  const binding = useCursorBinding();
+  const binding = usePresenceBinding();
   useEffect(() => setContext({ page }), [page, setContext]);
   useEffect(() => {
     pageRef.current = page;
@@ -127,9 +127,9 @@ describe("skills/anchor-presence/SKILL.md samples", () => {
     const render = (page: string) =>
       act(() =>
         root.render(
-          <LiveCursorProvider client={client} binding={binding}>
+          <PresenceProvider client={client} binding={binding}>
             <PublishPage page={page} pageRef={pageRef} />
-          </LiveCursorProvider>,
+          </PresenceProvider>,
         ),
       );
 

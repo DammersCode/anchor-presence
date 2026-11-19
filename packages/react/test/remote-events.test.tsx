@@ -2,11 +2,11 @@ import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, describe, expect, it } from "vitest";
 import type { RemoteEvent } from "@anchor-presence/core";
-import { LiveCursorProvider } from "../src/provider";
-import { useCursorEvents } from "../src/hooks/use-cursor-events";
+import { PresenceProvider } from "../src/provider";
+import { useRemoteEvents } from "../src/hooks/use-remote-events";
 import { makeFakeBinding, makeFakeClient } from "./test-utils";
 
-describe("useCursorEvents", () => {
+describe("useRemoteEvents", () => {
   let container: HTMLDivElement | null = null;
 
   afterEach(() => {
@@ -23,7 +23,7 @@ describe("useCursorEvents", () => {
     };
     const seen: string[] = [];
     function Probe({ tag }: { tag: string }) {
-      useCursorEvents((event) => seen.push(`${tag}:${event.type}`));
+      useRemoteEvents((event) => seen.push(`${tag}:${event.type}`));
       return null;
     }
 
@@ -31,9 +31,9 @@ describe("useCursorEvents", () => {
     document.body.append(container);
     const root = createRoot(container);
     const tree = (tag: string) => (
-      <LiveCursorProvider client={client} binding={makeFakeBinding().binding}>
+      <PresenceProvider client={client} binding={makeFakeBinding().binding}>
         <Probe tag={tag} />
-      </LiveCursorProvider>
+      </PresenceProvider>
     );
     act(() => root.render(tree("a")));
     expect(handlers.size).toBe(1);

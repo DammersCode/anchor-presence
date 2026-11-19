@@ -2,7 +2,7 @@
 
 import { linearInterpolator, noneInterpolator } from "@anchor-presence/core";
 import type { Interpolator, InterpolatorFactory, PresenceClient } from "@anchor-presence/core";
-import { CursorLayer, LiveCursorProvider, useRemoteCursors } from "@anchor-presence/react";
+import { CursorLayer, PresenceProvider, useRemoteCursors } from "@anchor-presence/react";
 import { useEffect, useState, type ReactNode } from "react";
 
 const safeColor = (color: string | undefined, fallback: string) =>
@@ -129,7 +129,7 @@ export function InterpolationScene({ client, layout, children }: Props) {
   const [style, setStyle] = useState<Style>(() => (wide || prefersReducedMotion() ? "none" : "spring"));
 
   return (
-    <LiveCursorProvider
+    <PresenceProvider
       client={client}
       bindingKey={style}
       bindingOptions={{ resolution: { interpolatorFactory: INTERPOLATORS[style] } }}
@@ -171,6 +171,6 @@ export function InterpolationScene({ client, layout, children }: Props) {
         getColor={(cursor) => safeColor(cursor.user?.color, "#4f46e5")}
       />
       {children}
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }

@@ -1,6 +1,6 @@
 ---
 title: Transport and codec API
-description: LiveCursorTransport, TransportClose, createInMemoryPair, InMemoryTransport, CursorCodec, and the shipped codecs.
+description: PresenceTransport, TransportClose, createInMemoryPair, InMemoryTransport, PresenceCodec, and the shipped codecs.
 icon: arrow-left-right
 ---
 
@@ -10,14 +10,14 @@ This page lists the transport and codec exports of `@anchor-presence/core` with 
 
 ```ts
 import { binaryCodec, createInMemoryPair, jsonCodec } from "@anchor-presence/core";
-import type { CursorCodec, LiveCursorTransport, TransportClose } from "@anchor-presence/core";
+import type { PresenceCodec, PresenceTransport, TransportClose } from "@anchor-presence/core";
 ```
 
-## LiveCursorTransport
+## PresenceTransport
 
-`LiveCursorTransport` is the interface that every transport implements. See [Transports](/docs/core/transports) for the contract.
+`PresenceTransport` is the interface that every transport implements. See [Transports](/docs/core/transports) for the contract.
 
-<AutoTypeTable path="../../packages/core/src/transport.ts" name="LiveCursorTransport" />
+<AutoTypeTable path="../../packages/core/src/transport.ts" name="PresenceTransport" />
 
 ## TransportClose
 
@@ -33,13 +33,13 @@ import type { CursorCodec, LiveCursorTransport, TransportClose } from "@anchor-p
 
 <AutoTypeTable path="../../packages/core/src/in-memory-transport.ts" name="InMemoryPair" />
 
-`InMemoryTransport` is the type of `a` and `b`. It is a `LiveCursorTransport` that always has `connect`, `disconnect`, `subscribeStatus`, and `getStatus`.
+`InMemoryTransport` is the type of `a` and `b`. It is a `PresenceTransport` that always has `connect`, `disconnect`, `subscribeStatus`, and `getStatus`.
 
-## CursorCodec
+## PresenceCodec
 
-`CursorCodec` is the interface that every codec implements. See [Codecs](/docs/core/codecs#cursorcodec) for the rules.
+`PresenceCodec` is the interface that every codec implements. See [Codecs](/docs/core/codecs#cursorcodec) for the rules.
 
-<AutoTypeTable path="../../packages/core/src/codec.ts" name="CursorCodec" />
+<AutoTypeTable path="../../packages/core/src/codec.ts" name="PresenceCodec" />
 
 ## jsonCodec and binaryCodec
 

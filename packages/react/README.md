@@ -17,7 +17,7 @@ The samples connect to the Bun relay of the [quick start](https://anchor-presenc
 ```tsx
 import { createPresenceClient } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
-import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
+import { CursorLayer, PresenceProvider } from "@anchor-presence/react";
 
 function DashboardButton() {
   return <button data-anchor="nav.dashboard">Dashboard</button>;
@@ -25,7 +25,7 @@ function DashboardButton() {
 
 function App() {
   return (
-    <LiveCursorProvider
+    <PresenceProvider
       factory={() => {
         const transport = createWebSocketTransport({ port: 8788, path: "/?room=main" });
         return createPresenceClient({ transport });
@@ -33,7 +33,7 @@ function App() {
     >
       <DashboardButton />
       <CursorLayer />
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }
 ```
@@ -48,17 +48,17 @@ The package exports these hooks and components:
 
 | Hook or component                            | What it does                                                                                                                      |
 | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `LiveCursorProvider`                         | Creates the client through `factory` or accepts one through `client`, and provides it with its `DomBinding` to the component tree |
+| `PresenceProvider`                           | Creates the client through `factory` or accepts one through `client`, and provides it with its `DomBinding` to the component tree |
 | `useRemoteUsers()`                           | One entry per peer (another client in the same room): `clientId`, `user`, `session`, and `idle`                                   |
 | `useRemoteCursors()`                         | Resolved cursor snapshot for rendering                                                                                            |
 | `useRemoteCursorsSelector(select, isEqual?)` | A derived value that rerenders only when it changes                                                                               |
 | `useRemotePresence()`                        | Raw remote presence list, stable per peer (without `sequence`)                                                                    |
-| `useCursorStatus()`                          | Connection status                                                                                                                 |
-| `useCursorClient()`                          | The `PresenceClient` of the provider                                                                                              |
-| `useCursorBinding()`                         | The `DomBinding` of the provider, for example to call `invalidate()`                                                              |
+| `usePresenceStatus()`                        | Connection status                                                                                                                 |
+| `usePresenceClient()`                        | The `PresenceClient` of the provider                                                                                              |
+| `usePresenceBinding()`                       | The `DomBinding` of the provider, for example to call `invalidate()`                                                              |
 | `useLocalContext()`                          | `[context, setContext]`                                                                                                           |
 | `useLocalUser()`                             | `[user, setUser]` for the local user value                                                                                        |
-| `useCursorEvents(listener)`                  | Calls `listener` for each one-shot event from a peer                                                                              |
+| `useRemoteEvents(listener)`                  | Calls `listener` for each one-shot event from a peer                                                                              |
 | `usePeerChanges(listener)`                   | Calls `listener` when a peer joins, leaves, or changes its `user` or `context`                                                    |
 | `useSendEvent<TEvents>()`                    | A function that sends one-shot events of the event map `TEvents`                                                                  |
 | `createPresenceHooks()`                      | Returns the provider and every hook with your context, user, and event types fixed                                                |
@@ -75,7 +75,7 @@ Every hook rerenders its component only when the value that it returns changes. 
 | `useRemoteCursorsSelector(select, isEqual?)` | only when the `select` output changes under `isEqual`                                                    |
 | `useRemoteUsers()`                           | only when the set of peers, or the `user`, `session`, or `idle` field of one peer, changes               |
 | `useRemotePresence()`                        | only when the `cursor`, `context`, `user`, `pointer`, `session`, `idle`, or membership of a peer changes |
-| `useCursorStatus()`                          | only when the connection status changes                                                                  |
+| `usePresenceStatus()`                        | only when the connection status changes                                                                  |
 | `useLocalContext()`                          | only when the local context value changes                                                                |
 | `useLocalUser()`                             | only when the local user value changes                                                                   |
 
@@ -88,7 +88,7 @@ Two more rules apply:
 
 ## Client lifecycle
 
-Pass `LiveCursorProvider` a `factory`. The provider runs it once per mount, in an effect, and disposes the client that it created on unmount. It runs the factory only in the browser, so a server render creates no client. In development, React Strict Mode mounts the provider twice. The provider then creates two clients in sequence and disposes the first, so one live client remains. Before the effect runs, the provider renders its children with a `null` client, and every hook returns its server-safe value.
+Pass `PresenceProvider` a `factory`. The provider runs it once per mount, in an effect, and disposes the client that it created on unmount. It runs the factory only in the browser, so a server render creates no client. In development, React Strict Mode mounts the provider twice. The provider then creates two clients in sequence and disposes the first, so one live client remains. Before the effect runs, the provider renders its children with a `null` client, and every hook returns its server-safe value.
 
 The sample in [Install](#install) creates the client in the factory.
 

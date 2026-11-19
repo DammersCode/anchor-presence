@@ -1,7 +1,7 @@
 "use client";
 
 import type { PresenceClient } from "@anchor-presence/core";
-import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
+import { CursorLayer, PresenceProvider } from "@anchor-presence/react";
 import type { ReactNode } from "react";
 
 const safeColor = (color: string | undefined, fallback: string) =>
@@ -127,7 +127,7 @@ function InvoiceCards() {
 
 export function TableAndCardsScene({ client, layout, children }: Props) {
   return (
-    <LiveCursorProvider client={client}>
+    <PresenceProvider client={client}>
       <div data-anchor="invoices" className="h-full p-2.5">
         {layout === "wide" ? <InvoiceTable /> : <InvoiceCards />}
       </div>
@@ -136,6 +136,6 @@ export function TableAndCardsScene({ client, layout, children }: Props) {
         getColor={(cursor) => safeColor(cursor.user?.color, "#4f46e5")}
       />
       {children}
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }

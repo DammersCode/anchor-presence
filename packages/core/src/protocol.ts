@@ -51,7 +51,7 @@ export type RemoteEvent = PresenceEvent & { clientId: string };
  * `clientId` names the client instance (tab or connection), not the user.
  * For `context` and `user`, `null` clears the field, and a missing field keeps the previous same-session value.
  */
-export type CursorPresence<TContext = unknown, TUser = unknown> = {
+export type PresenceMessage<TContext = unknown, TUser = unknown> = {
   version: 1;
   clientId: string;
   session: string;
@@ -72,7 +72,7 @@ export type CursorPresence<TContext = unknown, TUser = unknown> = {
  * The list keeps entry and array identity while nothing observable changes.
  */
 export type RemotePresence<TContext = unknown, TUser = unknown> = Omit<
-  CursorPresence<TContext, TUser>,
+  PresenceMessage<TContext, TUser>,
   "sequence"
 > & {
   /** `true` when this client's presence has not changed for `idleAfterMs`, even while heartbeats arrive. */

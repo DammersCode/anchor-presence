@@ -23,7 +23,7 @@ A managed service (Supabase Realtime, Ably, Pusher, Liveblocks) works through a 
 
 ## The transport interface
 
-`LiveCursorTransport` from `@anchor-presence/core`. Read its `.d.ts` for the full contract:
+`PresenceTransport` from `@anchor-presence/core`. Read its `.d.ts` for the full contract:
 
 - `send(data: Uint8Array)` and `subscribe(listener)` are required.
 - `connect`, `disconnect`, `subscribeStatus`, `subscribeClose`, `getStatus`, and `bufferedBytes` are optional. Implement `subscribeStatus` and `getStatus` so the UI can show the connection state. `subscribeClose` reports each close with its code, reason, and `willReconnect`.

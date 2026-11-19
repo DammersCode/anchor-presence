@@ -1,28 +1,28 @@
 ---
 title: Components API
-description: Prop types for LiveCursorProvider, CursorLayer, and DefaultCursor, and the LiveCursorContext value.
+description: Prop types for PresenceProvider, CursorLayer, and DefaultCursor, and the PresenceContext value.
 icon: component
 ---
 
 import { Braces, MousePointer2, Paintbrush, Plug } from "lucide-react";
 
-This page lists the props of every component in `@anchor-presence/react`, and the value of `LiveCursorContext`. Use it to look up a prop type. For usage and examples, read the guide page that each section links to.
+This page lists the props of every component in `@anchor-presence/react`, and the value of `PresenceContext`. Use it to look up a prop type. For usage and examples, read the guide page that each section links to.
 
-## LiveCursorProvider
+## PresenceProvider
 
-Import `LiveCursorProvider` from `@anchor-presence/react`:
+Import `PresenceProvider` from `@anchor-presence/react`:
 
 ```ts
-import { LiveCursorProvider } from "@anchor-presence/react";
+import { PresenceProvider } from "@anchor-presence/react";
 ```
 
-<AutoTypeTable path="../../packages/react/src/provider.tsx" name="LiveCursorProviderProps" />
+<AutoTypeTable path="../../packages/react/src/provider.tsx" name="PresenceProviderProps" />
 
 Pass exactly one of `client` and `factory`.
 
-`LiveCursorProviderProps` is `LiveCursorProviderConfig & { children }`. Use `LiveCursorProviderConfig`, the props without `children`, to type a wrapper that forwards its props to the provider.
+`PresenceProviderProps` is `PresenceProviderConfig & { children }`. Use `PresenceProviderConfig`, the props without `children`, to type a wrapper that forwards its props to the provider.
 
-Guide: [LiveCursorProvider](/docs/react/live-cursor-provider). For `bindingKey`, see [Rebuild the binding](/docs/react/live-cursor-provider#rebuild-the-binding). For `clientKey`, see [Switch rooms](/docs/react/live-cursor-provider#switch-rooms).
+Guide: [PresenceProvider](/docs/react/presence-provider). For `bindingKey`, see [Rebuild the binding](/docs/react/presence-provider#rebuild-the-binding). For `clientKey`, see [Switch rooms](/docs/react/presence-provider#switch-rooms).
 
 ## CursorLayer
 
@@ -52,15 +52,15 @@ import { DefaultCursor } from "@anchor-presence/react";
 
 Guide: [Custom cursors](/docs/react/custom-cursors).
 
-## LiveCursorContext
+## PresenceContext
 
-`LiveCursorContext` is the React context that `LiveCursorProvider` fills. Import it and its value type from `@anchor-presence/react`:
+`PresenceContext` is the React context that `PresenceProvider` fills. Import it and its value type from `@anchor-presence/react`:
 
 ```ts
-import { LiveCursorContext, type LiveCursorContextValue } from "@anchor-presence/react";
+import { PresenceContext, type PresenceContextValue } from "@anchor-presence/react";
 ```
 
-<AutoTypeTable path="../../packages/react/src/context.ts" name="LiveCursorContextValue" />
+<AutoTypeTable path="../../packages/react/src/context.ts" name="PresenceContextValue" />
 
 Outside a provider, both fields are `null`. A provider with a `factory` has a `null` client until the factory runs. In that time `clientPending` is `true`. It is `false` with `client={null}`, and absent without a provider. During server rendering, `binding` is the `binding` prop of the provider, or `null` without that prop. The hooks read this context for you, so most apps never read it directly.
 
@@ -68,10 +68,10 @@ This component reads the context directly and shows a line when the client and t
 
 ```tsx
 import { useContext } from "react";
-import { LiveCursorContext } from "@anchor-presence/react";
+import { PresenceContext } from "@anchor-presence/react";
 
 function PresenceReady() {
-  const { client, binding } = useContext(LiveCursorContext);
+  const { client, binding } = useContext(PresenceContext);
   return client !== null && binding !== null ? <p>Presence is ready.</p> : null;
 }
 ```
@@ -79,7 +79,7 @@ function PresenceReady() {
 ## Related
 
 <Cards>
-  <Card icon={<Plug />} title="LiveCursorProvider" href="/docs/react/live-cursor-provider">
+  <Card icon={<Plug />} title="PresenceProvider" href="/docs/react/presence-provider">
     How the provider creates the client and the binding.
   </Card>
   <Card icon={<MousePointer2 />} title="CursorLayer" href="/docs/react/cursor-layer">

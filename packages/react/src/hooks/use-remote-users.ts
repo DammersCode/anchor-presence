@@ -1,6 +1,6 @@
 import { useCallback, useRef, useSyncExternalStore } from "react";
 import type { RemotePresence } from "@anchor-presence/core";
-import { EMPTY_PRESENCE, useLiveCursorContext } from "./use-cursor-client.js";
+import { EMPTY_PRESENCE, usePresenceContext } from "./use-presence-client.js";
 
 /**
  * One remote user, keyed by client.
@@ -81,7 +81,7 @@ function projectRemoteUsers<TUser>(
  * The list, and each entry, keep identity across a presence snapshot that changes no user-relevant field.
  */
 export function useRemoteUsers<TUser = unknown>(): RemoteUser<TUser>[] {
-  const { client } = useLiveCursorContext<unknown, TUser>();
+  const { client } = usePresenceContext<unknown, TUser>();
   const previousUsersRef = useRef<RemoteUser<TUser>[]>([]);
   const byClientIdRef = useRef(new Map<string, RemoteUser<TUser>>());
 

@@ -3,10 +3,10 @@ import { createRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import type { PresenceClient } from "@anchor-presence/core";
-import { LiveCursorProvider, useCursorClient, useCursorStatus } from "../src";
+import { PresenceProvider, usePresenceClient, usePresenceStatus } from "../src";
 import { makeFakeClient } from "./test-utils";
 
-describe("LiveCursorProvider factory", () => {
+describe("PresenceProvider factory", () => {
   let container: HTMLDivElement;
 
   beforeEach(() => {
@@ -22,23 +22,23 @@ describe("LiveCursorProvider factory", () => {
     const factory = vi.fn(() => makeFakeClient().client);
     const seen: (PresenceClient | null)[] = [];
     function Comp() {
-      seen.push(useCursorClient());
+      seen.push(usePresenceClient());
       return null;
     }
     const root = createRoot(container);
 
     act(() => {
       root.render(
-        <LiveCursorProvider factory={factory}>
+        <PresenceProvider factory={factory}>
           <Comp />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
     act(() => {
       root.render(
-        <LiveCursorProvider factory={factory}>
+        <PresenceProvider factory={factory}>
           <Comp />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
 
@@ -55,16 +55,16 @@ describe("LiveCursorProvider factory", () => {
     const fake = makeFakeClient();
     const seen: string[] = [];
     function Comp() {
-      seen.push(useCursorStatus());
+      seen.push(usePresenceStatus());
       return null;
     }
     const root = createRoot(container);
 
     act(() => {
       root.render(
-        <LiveCursorProvider factory={() => fake.client}>
+        <PresenceProvider factory={() => fake.client}>
           <Comp />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
 
@@ -80,9 +80,9 @@ describe("LiveCursorProvider factory", () => {
 
     act(() => {
       root.render(
-        <LiveCursorProvider factory={() => fake.client}>
+        <PresenceProvider factory={() => fake.client}>
           <div />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
     expect(disposeSpy).not.toHaveBeenCalled();
@@ -101,9 +101,9 @@ describe("LiveCursorProvider factory", () => {
     act(() => {
       root.render(
         // @ts-expect-error the types forbid factory with client; the runtime still lets client win
-        <LiveCursorProvider factory={factory} client={fake.client}>
+        <PresenceProvider factory={factory} client={fake.client}>
           <div />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
 
@@ -118,7 +118,7 @@ describe("LiveCursorProvider factory", () => {
     const factory = vi.fn(() => makeFakeClient().client);
     const seen: (PresenceClient | null)[] = [];
     function Comp() {
-      seen.push(useCursorClient());
+      seen.push(usePresenceClient());
       return null;
     }
     const root = createRoot(container);
@@ -126,9 +126,9 @@ describe("LiveCursorProvider factory", () => {
     act(() => {
       root.render(
         // @ts-expect-error the types forbid factory with client; the runtime still lets client win
-        <LiveCursorProvider factory={factory} client={null}>
+        <PresenceProvider factory={factory} client={null}>
           <Comp />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
 
@@ -150,7 +150,7 @@ describe("LiveCursorProvider factory", () => {
     });
     const seen: (PresenceClient | null)[] = [];
     function Comp() {
-      seen.push(useCursorClient());
+      seen.push(usePresenceClient());
       return null;
     }
     const root = createRoot(container);
@@ -158,9 +158,9 @@ describe("LiveCursorProvider factory", () => {
     act(() => {
       root.render(
         <StrictMode>
-          <LiveCursorProvider factory={factory}>
+          <PresenceProvider factory={factory}>
             <Comp />
-          </LiveCursorProvider>
+          </PresenceProvider>
         </StrictMode>,
       );
     });
@@ -186,7 +186,7 @@ describe("LiveCursorProvider factory", () => {
     window.addEventListener("error", listener);
     try {
       act(() => {
-        root.render(<LiveCursorProvider factory={client as never} />);
+        root.render(<PresenceProvider factory={client as never} />);
       });
     } catch (error) {
       errors.push(error);
@@ -200,14 +200,14 @@ describe("LiveCursorProvider factory", () => {
     const factory = vi.fn(() => makeFakeClient().client);
     const seen: (PresenceClient | null)[] = [];
     function Comp() {
-      seen.push(useCursorClient());
+      seen.push(usePresenceClient());
       return null;
     }
 
     renderToString(
-      <LiveCursorProvider factory={factory}>
+      <PresenceProvider factory={factory}>
         <Comp />
-      </LiveCursorProvider>,
+      </PresenceProvider>,
     );
 
     expect(factory).not.toHaveBeenCalled();

@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { jsonCodec } from "../src/codec";
-import type { CursorPresence } from "../src/protocol";
+import type { PresenceMessage } from "../src/protocol";
 
 describe("jsonCodec", () => {
   it("round-trips a valid message", () => {
-    const message: CursorPresence = {
+    const message: PresenceMessage = {
       version: 1,
       clientId: "client-1",
       session: "session-1",

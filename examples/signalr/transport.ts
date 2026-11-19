@@ -1,7 +1,7 @@
 import {
   jsonCodec,
   type ConnectionStatus,
-  type LiveCursorTransport,
+  type PresenceTransport,
   type TransportClose,
 } from "@anchor-presence/core";
 import { HubConnectionState, type HubConnection } from "@microsoft/signalr";
@@ -53,7 +53,7 @@ export function mapStatus(state: HubConnectionState): ConnectionStatus {
 }
 
 /**
- * `LiveCursorTransport` over a `@microsoft/signalr` `HubConnection`.
+ * `PresenceTransport` over a `@microsoft/signalr` `HubConnection`.
  *
  * - `connect` calls `connection.start()`; a no-op while already starting or connected.
  * - `send` drops the payload while the hub is not `connected`, otherwise base64-encodes
@@ -67,7 +67,7 @@ export function mapStatus(state: HubConnectionState): ConnectionStatus {
 export function createSignalRTransport(
   connection: HubConnection,
   options: { stopConnection?: boolean } = {},
-): LiveCursorTransport {
+): PresenceTransport {
   const stopConnection = options.stopConnection ?? true;
   const statusListeners = new Set<(status: ConnectionStatus) => void>();
   const dataListeners = new Set<(data: Uint8Array) => void>();

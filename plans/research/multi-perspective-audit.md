@@ -69,7 +69,7 @@ Bench guard: none of the shipped steps move the gated baseline in `scripts/bench
 
 ### API design
 
-- P0 [033] Four ways to create a client, with confusing names: `usePresenceClient` is the creator (module-level global `Map` registry), `useCursorClient` is the getter, the provider `client` prop is a third way, and the demo uses a module singleton. Fix: the provider owns creation through a `factory` prop; the `client` prop stays as bring-your-own; `usePresenceClient` is removed (breaking).
+- P0 [033] Four ways to create a client, with confusing names: `usePresenceClient` is the creator (module-level global `Map` registry), `usePresenceClient` is the getter, the provider `client` prop is a third way, and the demo uses a module singleton. Fix: the provider owns creation through a `factory` prop; the `client` prop stays as bring-your-own; `usePresenceClient` is removed (breaking).
 - P0 [032] `autoConnect` default `false` to `true`.
 - P1 [deferred] The remaining API P1 findings (F3-F8) were truncated in the review pass; revisit when the provider factory lands.
 

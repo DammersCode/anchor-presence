@@ -1,5 +1,5 @@
 import { useCallback, useSyncExternalStore } from "react";
-import { useLiveCursorContext } from "./use-cursor-client.js";
+import { usePresenceContext } from "./use-presence-client.js";
 
 /**
  * Reads the local user value and gives a setter.
@@ -7,7 +7,7 @@ import { useLiveCursorContext } from "./use-cursor-client.js";
  * Returns `undefined` and a no-op setter without a client.
  */
 export function useLocalUser<TUser = unknown>(): [TUser | undefined, (next: TUser | undefined) => void] {
-  const { client } = useLiveCursorContext<unknown, TUser>();
+  const { client } = usePresenceContext<unknown, TUser>();
   const subscribe = useCallback(
     (listener: () => void) => (client !== null ? client.subscribeUser(listener) : () => {}),
     [client],

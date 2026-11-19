@@ -1,7 +1,7 @@
 "use client";
 
 import type { PresenceClient } from "@anchor-presence/core";
-import { CursorLayer, LiveCursorProvider, type CursorRenderProps } from "@anchor-presence/react";
+import { CursorLayer, PresenceProvider, type CursorRenderProps } from "@anchor-presence/react";
 import { useState, type ReactNode } from "react";
 
 const safeColor = (color: string | undefined, fallback: string) =>
@@ -68,7 +68,7 @@ export function CustomCursorsScene({ client, layout, children }: Props) {
   const [renderer, setRenderer] = useState<Renderer>(wide ? "pill" : "avatar");
 
   return (
-    <LiveCursorProvider client={client}>
+    <PresenceProvider client={client}>
       <div className="flex h-full flex-col gap-2 p-2.5">
         <label className="flex items-center justify-between gap-2 text-[11px] text-fd-muted-foreground">
           Remote cursor style
@@ -122,6 +122,6 @@ export function CustomCursorsScene({ client, layout, children }: Props) {
         renderCursor={RENDERERS[renderer].render}
       />
       {children}
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }

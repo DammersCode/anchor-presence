@@ -2,7 +2,7 @@
 
 import { createPresenceClient } from "@anchor-presence/core";
 import { createBroadcastChannelTransport, type VisibilityPolicy } from "@anchor-presence/dom";
-import { CursorLayer, LiveCursorProvider, useLocalContext } from "@anchor-presence/react";
+import { CursorLayer, PresenceProvider, useLocalContext } from "@anchor-presence/react";
 import { useEffect, useRef, useState } from "react";
 
 const safeColor = (color: string | undefined, fallback: string) =>
@@ -34,7 +34,7 @@ export function InviteBoard() {
   };
 
   return (
-    <LiveCursorProvider<DialogContext, User>
+    <PresenceProvider<DialogContext, User>
       factory={() =>
         createPresenceClient<DialogContext, User>({
           transport: createBroadcastChannelTransport("invite-board"),
@@ -68,6 +68,6 @@ export function InviteBoard() {
         getLabel={(cursor) => cursor.user?.name ?? null}
         getColor={(cursor) => safeColor(cursor.user?.color, "#4f46e5")}
       />
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }

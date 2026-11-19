@@ -15,18 +15,18 @@ This app connects to the Bun relay of the [Quick start](/docs/get-started/quick-
 ```tsx
 import { createPresenceClient } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
-import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
+import { CursorLayer, PresenceProvider } from "@anchor-presence/react";
 
 function App() {
   return (
-    <LiveCursorProvider
+    <PresenceProvider
       factory={() =>
         createPresenceClient({ transport: createWebSocketTransport({ port: 8788, path: "/?room=main" }) })
       }
     >
       <Dashboard />
       <CursorLayer />
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }
 ```

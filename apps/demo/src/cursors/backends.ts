@@ -1,6 +1,6 @@
 // Picks which relay backend the demo talks to, at runtime, via ?backend= or VITE_BACKEND.
 // Every backend but socketio/signalr is a plain WebSocket relay: same transport, different port.
-import { binaryCodec, jsonCodec, type CursorCodec, type LiveCursorTransport } from "@anchor-presence/core";
+import { binaryCodec, jsonCodec, type PresenceCodec, type PresenceTransport } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
 import { io } from "socket.io-client";
 import { createSocketIoTransport } from "../../../../examples/socketio/transport";
@@ -54,7 +54,7 @@ const NATIVE_WS_PORTS: Record<"bun" | "bun-native" | "node-ws" | "hono" | "elysi
 export function createBackendTransport(
   backend: BackendId,
   room: string,
-): { transport: LiveCursorTransport; codec: CursorCodec } {
+): { transport: PresenceTransport; codec: PresenceCodec } {
   if (backend === "socketio") {
     const socket = io("http://localhost:5001", { query: { room }, transports: ["websocket"] });
     return { transport: createSocketIoTransport(socket), codec: jsonCodec };

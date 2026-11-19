@@ -6,7 +6,7 @@
   "pages": [
     "index",
     "---[settings]Setup---",
-    "live-cursor-provider",
+    "presence-provider",
     "client-creation",
     "ssr-and-strict-mode",
     "---[layers]Rendering---",
@@ -16,7 +16,7 @@
     "remote-users",
     "local-context",
     "connection-status",
-    "cursor-events",
+    "remote-events",
     "remote-cursors",
     "remote-presence",
     "typed-hooks",

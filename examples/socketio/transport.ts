@@ -1,4 +1,4 @@
-import type { ConnectionStatus, LiveCursorTransport, TransportClose } from "@anchor-presence/core";
+import type { ConnectionStatus, PresenceTransport, TransportClose } from "@anchor-presence/core";
 import type { Socket } from "socket.io-client";
 
 /** Normalizes Socket.IO's binary payload shape across Node and browser clients. */
@@ -8,7 +8,7 @@ function toUint8Array(data: unknown): Uint8Array | null {
   return null;
 }
 
-export function createSocketIoTransport(socket: Socket): LiveCursorTransport {
+export function createSocketIoTransport(socket: Socket): PresenceTransport {
   const statusListeners = new Set<(status: ConnectionStatus) => void>();
   let status: ConnectionStatus = socket.connected ? "connected" : "connecting";
 

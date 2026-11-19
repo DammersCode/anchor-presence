@@ -1,8 +1,8 @@
-import type { CursorCodec } from "./codec.js";
+import type { PresenceCodec } from "./codec.js";
 import {
   DEFAULT_MAX_SEQUENCE,
   type CursorPosition,
-  type CursorPresence,
+  type PresenceMessage,
   type PointerInfo,
 } from "./protocol.js";
 
@@ -80,7 +80,7 @@ function pointerFromTag(tag: number): PointerInfo | undefined {
   }
 }
 
-function encodeMessage(message: CursorPresence): Uint8Array {
+function encodeMessage(message: PresenceMessage): Uint8Array {
   if (message.version !== 1) throw new Error("binaryCodec: unsupported protocol version");
 
   const clientIdBytes = encoder.encode(message.clientId);
@@ -321,8 +321,8 @@ function decodeMessage(data: Uint8Array): unknown {
  * Codec that encodes messages as compact binary frames.
  * The `encode` method throws when a message breaks the frame limits.
  */
-export const binaryCodec: CursorCodec = {
-  encode(message: CursorPresence): Uint8Array {
+export const binaryCodec: PresenceCodec = {
+  encode(message: PresenceMessage): Uint8Array {
     return encodeMessage(message);
   },
   decode(data: Uint8Array): unknown {

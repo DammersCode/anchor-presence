@@ -26,11 +26,11 @@ import {
   RemotePresenceStore,
   validatePresence,
   type ConnectionStatus,
-  type CursorCodec,
-  type CursorPresence,
+  type PresenceCodec,
+  type PresenceMessage,
   type Interpolator,
   type InterpolatorFactory,
-  type LiveCursorTransport,
+  type PresenceTransport,
   type PeerChange,
   type RemoteEvent,
   type TransportClose,
@@ -162,7 +162,7 @@ describe("presence client docs: leave and close", () => {
   it("reports a close reason through subscribeClose", () => {
     const pair = createInMemoryPair();
     const closeListeners = new Set<(close: TransportClose) => void>();
-    const transport: LiveCursorTransport = {
+    const transport: PresenceTransport = {
       ...pair.a,
       subscribeClose(listener) {
         closeListeners.add(listener);
@@ -371,8 +371,8 @@ describe("custom transport docs: close reasons", () => {
 });
 
 describe("transports docs: interface listing", () => {
-  // Copied from apps/docs/content/docs/core/transports.mdx (The LiveCursorTransport interface).
-  interface DocLiveCursorTransport {
+  // Copied from apps/docs/content/docs/core/transports.mdx (The PresenceTransport interface).
+  interface DocPresenceTransport {
     connect?(): Promise<void> | void;
     disconnect?(): Promise<void> | void;
     send(data: Uint8Array): Promise<void> | void;
@@ -387,8 +387,8 @@ describe("transports docs: interface listing", () => {
 
   it("matches the exported types in both directions", () => {
     const { a } = createInMemoryPair();
-    const fromDoc: LiveCursorTransport = a satisfies DocLiveCursorTransport;
-    const toDoc: DocLiveCursorTransport = fromDoc;
+    const fromDoc: PresenceTransport = a satisfies DocPresenceTransport;
+    const toDoc: DocPresenceTransport = fromDoc;
     const close: TransportClose = { willReconnect: false } satisfies DocTransportClose;
     const docClose: DocTransportClose = close;
     expect(toDoc).toBe(a);
@@ -438,7 +438,7 @@ describe("parseEvent doc sample", () => {
   });
 });
 
-const presenceMessage: CursorPresence = {
+const presenceMessage: PresenceMessage = {
   version: 1,
   clientId: "peer",
   session: "s1",
@@ -708,19 +708,19 @@ describe("interpolation docs", () => {
 });
 
 describe("codec docs", () => {
-  // Copied from apps/docs/content/docs/core/codecs.mdx (CursorCodec).
-  interface DocCursorCodec {
-    encode(message: CursorPresence): Uint8Array;
+  // Copied from apps/docs/content/docs/core/codecs.mdx (PresenceCodec).
+  interface DocPresenceCodec {
+    encode(message: PresenceMessage): Uint8Array;
     decode(data: Uint8Array): unknown;
   }
 
-  it("matches the exported CursorCodec", () => {
-    expectTypeOf<DocCursorCodec>().toEqualTypeOf<CursorCodec>();
+  it("matches the exported PresenceCodec", () => {
+    expectTypeOf<DocPresenceCodec>().toEqualTypeOf<PresenceCodec>();
   });
 
   it("the jsonCodec listing behaves like jsonCodec", () => {
     // Copied from apps/docs/content/docs/core/codecs.mdx (jsonCodec).
-    const docJsonCodec: CursorCodec = {
+    const docJsonCodec: PresenceCodec = {
       encode(message) {
         return new TextEncoder().encode(JSON.stringify(message));
       },
@@ -741,7 +741,7 @@ describe("codec docs", () => {
     const { a: myTransport } = createInMemoryPair();
     const myCodec = binaryCodec;
 
-    // Copied from apps/docs/content/docs/core/codecs.mdx (CursorCodec).
+    // Copied from apps/docs/content/docs/core/codecs.mdx (PresenceCodec).
     const client = createPresenceClient({ transport: myTransport, codec: myCodec });
 
     // Copied from apps/docs/content/docs/core/binary-codec.mdx.
@@ -769,7 +769,7 @@ describe("codec docs", () => {
 describe("custom transport docs: BroadcastChannel sketch", () => {
   it("tracks its status through connect and disconnect", () => {
     // Copied from apps/docs/content/docs/core/custom-transport.mdx (BroadcastChannel sketch).
-    function createBroadcastChannelTransport(channelName: string): LiveCursorTransport {
+    function createBroadcastChannelTransport(channelName: string): PresenceTransport {
       const listeners = new Set<(data: Uint8Array) => void>();
       const statusListeners = new Set<(status: ConnectionStatus) => void>();
       let channel: BroadcastChannel | null = null;

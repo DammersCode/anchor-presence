@@ -1,7 +1,7 @@
 "use client";
 
 import type { PresenceClient } from "@anchor-presence/core";
-import { CursorLayer, LiveCursorProvider, useRemoteUsers } from "@anchor-presence/react";
+import { CursorLayer, PresenceProvider, useRemoteUsers } from "@anchor-presence/react";
 import type { ReactNode } from "react";
 
 const safeColor = (color: string | undefined, fallback: string) =>
@@ -95,7 +95,7 @@ export function PresenceScene({ client, layout, children }: Props) {
   const wide = layout === "wide";
 
   return (
-    <LiveCursorProvider client={client}>
+    <PresenceProvider client={client}>
       <div data-anchor="board" className="flex h-full flex-col gap-2 p-2.5">
         <header className="flex min-h-7 items-center justify-between gap-2 border-b border-fd-border pb-2">
           <h3 className="font-display flex-none text-sm font-semibold">Roadmap</h3>
@@ -131,6 +131,6 @@ export function PresenceScene({ client, layout, children }: Props) {
         getColor={(cursor) => safeColor(cursor.user?.color, "#4f46e5")}
       />
       {children}
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }

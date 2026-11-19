@@ -18,7 +18,7 @@ import {
   Zap,
 } from "lucide-react";
 
-Live cursors need a relay: a server that forwards each message to the peers of the sender. `@anchor-presence/core` imports no transport library, so any channel that implements `LiveCursorTransport` works. This section has one tested relay for each common backend.
+Live cursors need a relay: a server that forwards each message to the peers of the sender. `@anchor-presence/core` imports no transport library, so any channel that implements `PresenceTransport` works. This section has one tested relay for each common backend.
 
 ## Relays by backend
 
@@ -77,7 +77,7 @@ sender.send(bytes) -> relay -> every other socket in the same room -> receiver.s
 
 The relay never reads the `anchors`, `context`, or `user` field of a message. It only decodes a message when [identity binding](#identity-binding) is on. Every relay page has the same three behavior tables: what the relay does, its limits, and its auth checks. [Relay contract](/docs/examples/backends/relay-contract) gives the rules that every relay must obey. [Performance](/docs/get-started/guides/performance#scaling-limits) shows how the load of a relay grows with the size of a room.
 
-Every transport implements `LiveCursorTransport`. Only `send` and `subscribe` are required. See [Transports](/docs/core/transports) for the full interface.
+Every transport implements `PresenceTransport`. Only `send` and `subscribe` are required. See [Transports](/docs/core/transports) for the full interface.
 
 ## Shared guard helpers
 
@@ -126,7 +126,7 @@ In this mode, the [room token](/docs/dom/websocket-transport#room-token) names t
     The client side of the Bun, Node.js, Hono and Elysia relays.
   </Card>
   <Card icon={<Cpu />} title="Transports" href="/docs/core/transports">
-    The `LiveCursorTransport` interface and its contract.
+    The `PresenceTransport` interface and its contract.
   </Card>
   <Card icon={<Gauge />} title="Performance" href="/docs/get-started/guides/performance">
     How relay load grows with the size of a room.

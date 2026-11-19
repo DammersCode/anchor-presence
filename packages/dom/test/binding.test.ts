@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ConnectionStatus, PresenceClient, CursorPresence, CursorPosition } from "@anchor-presence/core";
+import type {
+  ConnectionStatus,
+  PresenceClient,
+  PresenceMessage,
+  CursorPosition,
+} from "@anchor-presence/core";
 import { linearInterpolator } from "@anchor-presence/core";
 import { createDomBinding } from "../src/binding";
 
@@ -25,7 +30,7 @@ function makeRafStub() {
 }
 
 function makeFakeClient() {
-  let remoteSnapshot: CursorPresence[] = [];
+  let remoteSnapshot: PresenceMessage[] = [];
   let idleClientIds = new Set<string>();
   const remoteListeners = new Set<() => void>();
   const teardowns: Array<() => void> = [];
@@ -68,7 +73,7 @@ function makeFakeClient() {
     },
   };
 
-  function pushRemote(next: CursorPresence[], nextIdleClientIds: Set<string> = new Set()): void {
+  function pushRemote(next: PresenceMessage[], nextIdleClientIds: Set<string> = new Set()): void {
     remoteSnapshot = next;
     idleClientIds = nextIdleClientIds;
     for (const listener of remoteListeners) listener();
@@ -367,7 +372,7 @@ describe("createDomBinding", () => {
     const { client, pushRemote } = makeFakeClient();
     const binding = createDomBinding(client, { environment: { raf, caf } });
 
-    const presence: CursorPresence = {
+    const presence: PresenceMessage = {
       version: 1,
       clientId: "remote-1",
       session: "s",

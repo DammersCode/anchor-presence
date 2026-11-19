@@ -6,7 +6,7 @@ icon: file-code
 
 import { Binary, FileDigit } from "lucide-react";
 
-A custom codec is your own `CursorCodec`. Write one when you need a wire format that `jsonCodec` and `binaryCodec` do not cover, for example MessagePack. A codec that wraps another codec also lets you log the traffic of `binaryCodec` during development.
+A custom codec is your own `PresenceCodec`. Write one when you need a wire format that `jsonCodec` and `binaryCodec` do not cover, for example MessagePack. A codec that wraps another codec also lets you log the traffic of `binaryCodec` during development.
 
 ## MessagePack sketch
 
@@ -14,9 +14,9 @@ MessagePack makes smaller payloads than JSON for the same data. This sketch uses
 
 ```ts
 import { encode, decode } from "@msgpack/msgpack";
-import type { CursorCodec } from "@anchor-presence/core";
+import type { PresenceCodec } from "@anchor-presence/core";
 
-export const messagePackCodec: CursorCodec = {
+export const messagePackCodec: PresenceCodec = {
   encode(message) {
     return encode(message);
   },
@@ -50,9 +50,9 @@ The network tab of the browser DevTools cannot show the content of `binaryCodec`
     This wrapper logs every message and keeps `binaryCodec` on the wire:
 
 ```ts
-import { binaryCodec, type CursorCodec } from "@anchor-presence/core";
+import { binaryCodec, type PresenceCodec } from "@anchor-presence/core";
 
-const debugCodec: CursorCodec = {
+const debugCodec: PresenceCodec = {
   encode(message) {
     console.debug("[presence out]", message);
     return binaryCodec.encode(message);

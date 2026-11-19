@@ -1,7 +1,7 @@
 "use client";
 
 import type { PresenceClient } from "@anchor-presence/core";
-import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
+import { CursorLayer, PresenceProvider } from "@anchor-presence/react";
 import type { ReactNode } from "react";
 
 const safeColor = (color: string | undefined, fallback: string) =>
@@ -76,7 +76,7 @@ export function ResponsiveGridScene({ client, layout, children }: Props) {
   const compact = layout === "narrow";
 
   return (
-    <LiveCursorProvider client={client}>
+    <PresenceProvider client={client}>
       <div data-anchor="metrics" className={`grid h-full gap-1.5 p-2.5 ${spans.grid}`}>
         <div
           data-anchor="metrics.revenue"
@@ -135,6 +135,6 @@ export function ResponsiveGridScene({ client, layout, children }: Props) {
         getColor={(cursor) => safeColor(cursor.user?.color, "#4f46e5")}
       />
       {children}
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }

@@ -1,4 +1,4 @@
-import type { CursorPresence } from "../protocol.js";
+import type { PresenceMessage } from "../protocol.js";
 import type { PresenceClientState } from "./types.js";
 
 /**
@@ -60,7 +60,7 @@ export function createOversizedWarning<TContext, TUser>(
           `[anchor-presence] outbound user exceeds maxFieldBytes (${state.maxFieldBytes}); receivers will drop the field`,
         );
       }
-      const probe: CursorPresence<TContext, TUser> = {
+      const probe: PresenceMessage<TContext, TUser> = {
         version: 1,
         clientId: state.clientId,
         session: state.session,

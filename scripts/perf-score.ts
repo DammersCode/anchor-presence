@@ -9,7 +9,7 @@ import { Bench } from "tinybench";
 import { registerHotPathCases } from "../packages/core/bench/hotpath.bench";
 import { binaryCodec } from "../packages/core/src/binary-codec";
 import { jsonCodec } from "../packages/core/src/codec";
-import type { CursorPresence } from "../packages/core/src/protocol";
+import type { PresenceMessage } from "../packages/core/src/protocol";
 import { RemotePresenceStore } from "../packages/core/src/store";
 
 const rootDir = dirname(import.meta.dirname);
@@ -58,7 +58,7 @@ async function bundleSizes(): Promise<void> {
   }
 }
 
-const steady: CursorPresence = {
+const steady: PresenceMessage = {
   version: 1,
   clientId: "Qm3xT9vLk2Zp",
   session: "H7sWc1eYb0Nd",
@@ -82,7 +82,7 @@ function heapPerMessage(): void {
   const clients = 200;
   const rounds = 500;
   const store = new RemotePresenceStore({ maxRemoteClients: clients });
-  const messages: CursorPresence[] = [];
+  const messages: PresenceMessage[] = [];
   for (let id = 0; id < clients; id += 1) {
     messages.push({ ...steady, clientId: `client-${id}`, sequence: 0 });
   }

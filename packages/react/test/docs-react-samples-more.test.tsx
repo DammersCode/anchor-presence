@@ -11,7 +11,7 @@ import {
   type PeerChange,
   type TypedRemoteEvent,
   type ConnectionStatus,
-  type CursorPresence,
+  type PresenceMessage,
   type PresenceClient,
   type RemotePresence,
 } from "@anchor-presence/core";
@@ -24,26 +24,26 @@ import {
 } from "@anchor-presence/dom";
 import {
   createPresenceHooks as exportedCreatePresenceHooks,
-  LiveCursorContext,
-  LiveCursorProvider,
-  useCursorBinding,
-  useCursorStatus,
-  type LiveCursorProviderProps,
+  PresenceContext,
+  PresenceProvider,
+  usePresenceBinding,
+  usePresenceStatus,
+  type PresenceProviderProps,
   type RemoteUser,
 } from "../src/index";
-import type { useCursorBinding as exportedUseCursorBinding } from "../src/hooks/use-cursor-binding";
+import type { usePresenceBinding as exportedUseCursorBinding } from "../src/hooks/use-presence-binding";
 import { makeFakeBinding, makeFakeClient } from "./test-utils";
 
 // Verbatim copies of doc samples; the last test checks each copy against its .mdx source.
 
 function ConnectionBanner() {
-  const status = useCursorStatus();
+  const status = usePresenceStatus();
   if (status === "connected") return null;
   return <div role="status">{status}</div>;
 }
 
 function DelayedConnectionBanner() {
-  const status = useCursorStatus();
+  const status = usePresenceStatus();
   const connected = status === "connected";
   const [show, setShow] = useState(false);
 
@@ -60,12 +60,12 @@ function DelayedConnectionBanner() {
 }
 
 function PresenceReady() {
-  const { client, binding } = useContext(LiveCursorContext);
+  const { client, binding } = useContext(PresenceContext);
   return client !== null && binding !== null ? <p>Presence is ready.</p> : null;
 }
 
 type VisibilityPolicy<TContext = unknown, TUser = unknown> = (input: {
-  presence: CursorPresence<TContext, TUser>;
+  presence: PresenceMessage<TContext, TUser>;
   resolution: { tier: ResolutionTier; anchorId: string | null; pointVisible: boolean };
 }) => "show" | "hide";
 
@@ -95,7 +95,7 @@ function setOpenDialog(next: string | null) {
 }
 
 function SyncOpenDialog({ dialog }: { dialog: string | null }) {
-  const cursorBinding = useCursorBinding();
+  const cursorBinding = usePresenceBinding();
   useEffect(() => {
     openDialog = dialog;
     cursorBinding?.invalidate("dialog-changed");
@@ -105,16 +105,16 @@ function SyncOpenDialog({ dialog }: { dialog: string | null }) {
 
 declare namespace Listing {
   // oxlint-disable-next-line eslint/no-shadow -- the listing keeps the exported name
-  function useCursorBinding<TContext = unknown, TUser = unknown>(): DomBinding<TContext, TUser> | null;
+  function usePresenceBinding<TContext = unknown, TUser = unknown>(): DomBinding<TContext, TUser> | null;
 
   function createPresenceHooks<TContext = unknown, TUser = unknown, TEvents extends object = EventMap>(): {
-    LiveCursorProvider: (props: LiveCursorProviderProps<TContext, TUser>) => ReactNode;
-    useCursorBinding: () => DomBinding<TContext, TUser> | null;
-    useCursorClient: () => PresenceClient<TContext, TUser> | null;
+    PresenceProvider: (props: PresenceProviderProps<TContext, TUser>) => ReactNode;
+    usePresenceBinding: () => DomBinding<TContext, TUser> | null;
+    usePresenceClient: () => PresenceClient<TContext, TUser> | null;
     useLocalContext: () => [TContext | undefined, (next: TContext | undefined) => void];
-    useCursorEvents: (listener: (event: TypedRemoteEvent<TEvents>) => void) => void;
+    useRemoteEvents: (listener: (event: TypedRemoteEvent<TEvents>) => void) => void;
     useRemotePresence: () => RemotePresence<TContext, TUser>[];
-    useCursorStatus: () => ConnectionStatus;
+    usePresenceStatus: () => ConnectionStatus;
     useRemoteCursors: () => ResolvedCursor<TContext, TUser>[];
     useRemoteCursorsSelector: <TSelected>(
       select: (cursors: ResolvedCursor<TContext, TUser>[]) => TSelected,
@@ -168,7 +168,7 @@ function render(node: ReactNode) {
 }
 
 const atAnchor = { tier: "anchor" as const, anchorId: "nav", pointVisible: true };
-const fromSender = (context?: { dialog?: string }): CursorPresence<{ dialog?: string }> => ({
+const fromSender = (context?: { dialog?: string }): PresenceMessage<{ dialog?: string }> => ({
   version: 1,
   clientId: "peer",
   session: "s",
@@ -181,9 +181,9 @@ describe("connection-status.mdx: ConnectionBanner", () => {
   it("renders nothing while connected and the status otherwise", () => {
     const { client, setStatus } = makeFakeClient();
     const view = render(
-      <LiveCursorProvider client={client} binding={makeFakeBinding().binding}>
+      <PresenceProvider client={client} binding={makeFakeBinding().binding}>
         <ConnectionBanner />
-      </LiveCursorProvider>,
+      </PresenceProvider>,
     );
     expect(view.container.textContent).toBe("");
     act(() => setStatus("reconnecting"));
@@ -197,9 +197,9 @@ describe("connection-status.mdx: DelayedConnectionBanner", () => {
     vi.useFakeTimers();
     const { client, setStatus } = makeFakeClient();
     const view = render(
-      <LiveCursorProvider client={client} binding={makeFakeBinding().binding}>
+      <PresenceProvider client={client} binding={makeFakeBinding().binding}>
         <DelayedConnectionBanner />
-      </LiveCursorProvider>,
+      </PresenceProvider>,
     );
     act(() => setStatus("reconnecting"));
     act(() => {
@@ -217,15 +217,15 @@ describe("connection-status.mdx: DelayedConnectionBanner", () => {
   });
 });
 
-describe("api/components.mdx: LiveCursorContext", () => {
+describe("api/components.mdx: PresenceContext", () => {
   it("shows the line only below a provider with a client and a binding", () => {
     const { client } = makeFakeClient();
     const view = render(<PresenceReady />);
     expect(view.container.textContent).toBe("");
     view.rerender(
-      <LiveCursorProvider client={client} binding={makeFakeBinding().binding}>
+      <PresenceProvider client={client} binding={makeFakeBinding().binding}>
         <PresenceReady />
-      </LiveCursorProvider>,
+      </PresenceProvider>,
     );
     expect(view.container.textContent).toBe("Presence is ready.");
     view.unmount();
@@ -273,9 +273,9 @@ describe("visibility-policy.mdx: run the policy again", () => {
     const fake = makeFakeBinding().binding;
     const invalidate = vi.spyOn(fake, "invalidate");
     const tree = (dialog: string | null) => (
-      <LiveCursorProvider client={client} binding={fake}>
+      <PresenceProvider client={client} binding={fake}>
         <SyncOpenDialog dialog={dialog} />
-      </LiveCursorProvider>
+      </PresenceProvider>
     );
     const view = render(tree(null));
     view.rerender(tree(null));
@@ -286,17 +286,17 @@ describe("visibility-policy.mdx: run the policy again", () => {
   });
 });
 
-describe("api/hooks.mdx: useCursorBinding and createPresenceHooks listings", () => {
+describe("api/hooks.mdx: usePresenceBinding and createPresenceHooks listings", () => {
   it("equal the exported signatures", () => {
     type Context = { page: string };
     type User = { name: string };
-    expectTypeOf<ReturnType<typeof Listing.useCursorBinding<Context, User>>>().toEqualTypeOf<
+    expectTypeOf<ReturnType<typeof Listing.usePresenceBinding<Context, User>>>().toEqualTypeOf<
       ReturnType<typeof exportedUseCursorBinding<Context, User>>
     >();
     expectTypeOf<ReturnType<typeof Listing.createPresenceHooks<Context, User>>>().toEqualTypeOf<
       ReturnType<typeof exportedCreatePresenceHooks<Context, User>>
     >();
-    expect(Object.keys(exportedCreatePresenceHooks<Context, User>())).toContain("useCursorBinding");
+    expect(Object.keys(exportedCreatePresenceHooks<Context, User>())).toContain("usePresenceBinding");
   });
 });
 
@@ -314,7 +314,7 @@ describe("doc sample sources", () => {
       docSample("get-started/concepts/ui-context.mdx", "const dialogAwarePolicy"),
       docSample("dom/visibility-policy.mdx", "function setOpenDialog"),
       docSample("dom/visibility-policy.mdx", "function SyncOpenDialog"),
-      docSample("react/api/hooks.mdx", "function useCursorBinding"),
+      docSample("react/api/hooks.mdx", "function usePresenceBinding"),
       docSample("react/api/hooks.mdx", "function createPresenceHooks"),
     ];
     for (const sample of samples) expect(source).toContain(trimLines(sample));

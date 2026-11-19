@@ -106,13 +106,13 @@ Call `createPresenceSignals` inside the owner scope, so that `onCleanup` runs wh
 
 ## What the React adapter does
 
-`LiveCursorProvider` is the one stateful part of `@anchor-presence/react`:
+`PresenceProvider` is the one stateful part of `@anchor-presence/react`:
 
 - It creates the client from a `factory` prop in a mount effect, and disposes it on unmount. The factory runs again each time the `clientKey` prop changes. A client from the `client` prop belongs to the app, and the provider never disposes it.
 - If you pass no `binding` prop, it creates one `DomBinding` with `createDomBinding(client, bindingOptions)` in an effect. The cleanup of that effect calls `binding.dispose()`.
 - It creates a new binding when the `client` or the `bindingKey` prop changes. A `bindingOptions` change alone creates no new binding.
 - Outside the browser, it creates no client from `factory` and no binding.
-- It exposes `{ client, binding }` through `LiveCursorContext`.
+- It exposes `{ client, binding }` through `PresenceContext`.
 
 The hooks read that context. `useRemoteCursors` subscribes to `binding.subscribe` through `useSyncExternalStore` and returns an empty array without a binding. No hook stores cursor data in React state. See the [React overview](/docs/react).
 

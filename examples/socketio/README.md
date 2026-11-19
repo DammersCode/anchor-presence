@@ -4,7 +4,7 @@ This relay is for demos and local development. Read the production notes before 
 
 This example adds a Socket.IO transport to the demo. A peer is another client in the same room. The example has three parts:
 
-- `transport.ts` wraps a Socket.IO client socket as a `LiveCursorTransport`.
+- `transport.ts` wraps a Socket.IO client socket as a `PresenceTransport`.
 - `server.ts` and `relay.ts` are a Socket.IO server. It relays `"presence"` events to the peers of the sender.
 - `apps/demo` is the shared demo client. Open it with `?backend=socketio` to connect through this transport.
 

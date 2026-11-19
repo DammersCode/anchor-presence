@@ -1,6 +1,6 @@
 "use client";
 
-import { useCursorClient, useRemoteCursors, type ResolvedCursor } from "@anchor-presence/react";
+import { usePresenceClient, useRemoteCursors, type ResolvedCursor } from "@anchor-presence/react";
 import { useLayoutEffect, useMemo, useRef } from "react";
 import type { TourUser } from "./tour";
 
@@ -119,7 +119,7 @@ function ResolvedOutline({ cursor, dashed }: { cursor: Cursor | null; dashed: bo
 /** Outlines the element the focused remote cursor resolved to, and shows tier and anchor in a status bar. */
 export function ResolutionInsight() {
   const cursors = useRemoteCursors<unknown, TourUser>();
-  const client = useCursorClient<unknown, TourUser>();
+  const client = usePresenceClient<unknown, TourUser>();
   const trackerRef = useRef<Tracker>({ tick: 0, seen: new Map() });
   // The insight mirrors what the pane renders; a policy-hidden cursor must not outline its element.
   const shown = useMemo(() => cursors.filter((cursor) => cursor.visible), [cursors]);

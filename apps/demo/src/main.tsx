@@ -11,7 +11,7 @@ import { parseDemoContext, parseDemoEvent, parseDemoUser } from "./cursors/setup
 import type { DemoContext, DemoUser } from "./cursors/setup";
 import { createVisibilityPolicy } from "./cursors/visibility-policy";
 import type { LocalViewState } from "./cursors/visibility-policy";
-import { LiveCursorProvider } from "./cursors/hooks";
+import { PresenceProvider } from "./cursors/hooks";
 import { interpolatorRegistry } from "./cursors/interpolators";
 import { useInterpolatorStyle } from "./use-interpolator-style";
 
@@ -41,7 +41,7 @@ function Root() {
   if (isReflowBenchRoute) return <ReflowBenchPage />;
 
   return (
-    <LiveCursorProvider
+    <PresenceProvider
       bindingKey={interpolatorStyle}
       factory={createDemoClient}
       bindingOptions={{
@@ -57,7 +57,7 @@ function Root() {
         interpolatorStyle={interpolatorStyle}
         onInterpolatorStyleChange={selectInterpolatorStyle}
       />
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }
 

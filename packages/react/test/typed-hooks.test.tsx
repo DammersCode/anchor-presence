@@ -7,7 +7,7 @@ import { makeFakeBinding, makeFakeClient } from "./test-utils";
 type TestUser = { name: string };
 type TestContext = { route: string };
 
-const { LiveCursorProvider, useRemoteUsers, useCursorClient } = createPresenceHooks<TestContext, TestUser>();
+const { PresenceProvider, useRemoteUsers, usePresenceClient } = createPresenceHooks<TestContext, TestUser>();
 
 describe("createPresenceHooks", () => {
   let container: HTMLDivElement | null = null;
@@ -22,7 +22,7 @@ describe("createPresenceHooks", () => {
     let names = "";
     function Probe() {
       const users = useRemoteUsers();
-      const typedClient = useCursorClient();
+      const typedClient = usePresenceClient();
       // @ts-expect-error a wrong user shape must not compile
       const wrong: string = users[0]?.user?.age;
       names = `${users.map((u) => u.user?.name ?? "").join(",")}${wrong ?? ""}${typedClient === null ? "" : "!"}`;
@@ -32,9 +32,9 @@ describe("createPresenceHooks", () => {
     document.body.append(container);
     act(() => {
       createRoot(container!).render(
-        <LiveCursorProvider client={client} binding={makeFakeBinding<TestContext, TestUser>().binding}>
+        <PresenceProvider client={client} binding={makeFakeBinding<TestContext, TestUser>().binding}>
           <Probe />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
     expect(names).toBe("!");

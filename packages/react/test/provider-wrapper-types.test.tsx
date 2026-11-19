@@ -1,14 +1,14 @@
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { LiveCursorProvider, type LiveCursorProviderConfig } from "../src";
+import { PresenceProvider, type PresenceProviderConfig } from "../src";
 import { makeFakeClient } from "./test-utils";
 
-function Wrapper(props: LiveCursorProviderConfig & { label: string }) {
+function Wrapper(props: PresenceProviderConfig & { label: string }) {
   const { label, ...providerProps } = props;
-  return <LiveCursorProvider {...providerProps}>{label}</LiveCursorProvider>;
+  return <PresenceProvider {...providerProps}>{label}</PresenceProvider>;
 }
 
-describe("LiveCursorProviderConfig", () => {
+describe("PresenceProviderConfig", () => {
   it("lets a wrapper pass the provider props through", () => {
     const { client } = makeFakeClient();
     expect(renderToString(<Wrapper client={client} label="inside" />)).toContain("inside");

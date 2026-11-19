@@ -51,7 +51,7 @@ Create the client in the provider's `factory`, in a client component. The factor
 "use client";
 import { createPresenceClient } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
-import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
+import { CursorLayer, PresenceProvider } from "@anchor-presence/react";
 
 export function PresenceRoot({
   room,
@@ -63,7 +63,7 @@ export function PresenceRoot({
   children: React.ReactNode;
 }) {
   return (
-    <LiveCursorProvider<unknown, { name: string }>
+    <PresenceProvider<unknown, { name: string }>
       clientKey={room}
       factory={() => {
         const transport = createWebSocketTransport({
@@ -74,7 +74,7 @@ export function PresenceRoot({
     >
       {children}
       <CursorLayer />
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }
 ```
@@ -101,7 +101,7 @@ This step applies when one anchor ID can appear in different app states (pages, 
 import { useEffect, useRef } from "react";
 import { createPresenceClient } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
-import { CursorLayer, LiveCursorProvider, useCursorBinding, useLocalContext } from "@anchor-presence/react";
+import { CursorLayer, PresenceProvider, usePresenceBinding, useLocalContext } from "@anchor-presence/react";
 
 export function PresenceRoot({
   room,
@@ -118,7 +118,7 @@ export function PresenceRoot({
   const pageRef = useRef(currentPage);
 
   return (
-    <LiveCursorProvider<{ page: string }, { name: string }>
+    <PresenceProvider<{ page: string }, { name: string }>
       clientKey={room}
       factory={() => {
         const transport = createWebSocketTransport({
@@ -139,14 +139,14 @@ export function PresenceRoot({
       <PublishPage page={currentPage} pageRef={pageRef} />
       {children}
       <CursorLayer />
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }
 
-// useLocalContext and useCursorBinding work only below the provider.
+// useLocalContext and usePresenceBinding work only below the provider.
 function PublishPage({ page, pageRef }: { page: string; pageRef: { current: string } }) {
   const [, setContext] = useLocalContext<{ page: string }>();
-  const binding = useCursorBinding();
+  const binding = usePresenceBinding();
   useEffect(() => setContext({ page }), [page, setContext]);
   useEffect(() => {
     pageRef.current = page;

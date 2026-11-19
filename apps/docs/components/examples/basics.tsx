@@ -1,7 +1,7 @@
 "use client";
 
 import type { PresenceClient } from "@anchor-presence/core";
-import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
+import { CursorLayer, PresenceProvider } from "@anchor-presence/react";
 import type { ReactNode } from "react";
 
 const safeColor = (color: string | undefined, fallback: string) =>
@@ -22,7 +22,7 @@ export function BasicsScene({ client, layout, children }: Props) {
   const wide = layout === "wide";
 
   return (
-    <LiveCursorProvider client={client}>
+    <PresenceProvider client={client}>
       <div className="grid h-full place-items-center p-4">
         <section
           data-anchor="post"
@@ -62,6 +62,6 @@ export function BasicsScene({ client, layout, children }: Props) {
         getColor={(cursor) => safeColor(cursor.user?.color, "#4f46e5")}
       />
       {children}
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }

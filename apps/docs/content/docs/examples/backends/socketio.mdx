@@ -33,7 +33,7 @@ The client wraps a Socket.IO socket as a transport. The server file exports a fa
 
   </Tab>
   <Tab value="Transport">
-    `createSocketIoTransport` wraps a Socket.IO client socket as a `LiveCursorTransport`:
+    `createSocketIoTransport` wraps a Socket.IO client socket as a `PresenceTransport`:
 
 <CodeFromSource repo="examples/socketio/transport.ts" lang="ts" />
 
@@ -138,7 +138,7 @@ See [Identity binding](/docs/examples/backends#identity-binding) for the rules. 
     The rules, the close codes, and the conformance suite.
   </Card>
   <Card icon={<Cpu />} title="Transports" href="/docs/core/transports">
-    The `LiveCursorTransport` interface that the transport implements.
+    The `PresenceTransport` interface that the transport implements.
   </Card>
   <Card icon={<ShieldCheck />} title="Security" href="/docs/get-started/guides/security">
     Why a payload from the network is untrusted.

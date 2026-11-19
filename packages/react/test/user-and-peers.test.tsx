@@ -2,7 +2,7 @@ import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, describe, expect, it } from "vitest";
 import type { PeerChange } from "@anchor-presence/core";
-import { LiveCursorProvider } from "../src/provider";
+import { PresenceProvider } from "../src/provider";
 import { useLocalUser } from "../src/hooks/use-local-user";
 import { usePeerChanges } from "../src/hooks/use-peer-changes";
 import { createPresenceHooks } from "../src/typed-hooks";
@@ -40,7 +40,7 @@ describe("useLocalUser, usePeerChanges and the typed event hooks", () => {
       return true;
     };
 
-    const { LiveCursorProvider: TypedProvider, useSendEvent } = createPresenceHooks<
+    const { PresenceProvider: TypedProvider, useSendEvent } = createPresenceHooks<
       unknown,
       { name: string },
       { reaction: { emoji: string } }
@@ -101,6 +101,6 @@ describe("useLocalUser, usePeerChanges and the typed event hooks", () => {
     expect(result?.[0]).toBeUndefined();
     expect(() => result?.[1]({ name: "x" })).not.toThrow();
     act(() => root.unmount());
-    void LiveCursorProvider;
+    void PresenceProvider;
   });
 });

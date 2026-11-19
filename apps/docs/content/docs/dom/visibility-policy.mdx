@@ -78,14 +78,14 @@ function setOpenDialog(next: string | null) {
 }
 ```
 
-In React, `useCursorBinding` returns the binding of the nearest `LiveCursorProvider`. This component writes the open dialog into the variable of the policy, then calls `invalidate`:
+In React, `usePresenceBinding` returns the binding of the nearest `PresenceProvider`. This component writes the open dialog into the variable of the policy, then calls `invalidate`:
 
 ```tsx
 import { useEffect } from "react";
-import { useCursorBinding } from "@anchor-presence/react";
+import { usePresenceBinding } from "@anchor-presence/react";
 
 function SyncOpenDialog({ dialog }: { dialog: string | null }) {
-  const cursorBinding = useCursorBinding();
+  const cursorBinding = usePresenceBinding();
   useEffect(() => {
     openDialog = dialog;
     cursorBinding?.invalidate("dialog-changed");
@@ -108,7 +108,7 @@ If a policy throws, the binding keeps the last snapshot. See [Errors in a policy
   <Card icon={<Braces />} title="Resolution types" href="/docs/dom/api/resolution">
     The type of `VisibilityPolicy`.
   </Card>
-  <Card icon={<Webhook />} title="useCursorBinding" href="/docs/react/api/hooks#usecursorbinding">
+  <Card icon={<Webhook />} title="usePresenceBinding" href="/docs/react/api/hooks#usecursorbinding">
     The React hook that returns the binding.
   </Card>
 </Cards>

@@ -9,7 +9,7 @@ import {
   DEFAULT_MAX_SESSION_LENGTH,
   MAX_EVENT_TYPE_LENGTH,
 } from "./protocol.js";
-import type { AnchorPoint, CursorPosition, CursorPresence, PresenceEvent } from "./protocol.js";
+import type { AnchorPoint, CursorPosition, PresenceMessage, PresenceEvent } from "./protocol.js";
 
 /**
  * Limits for `validatePresence`.
@@ -173,7 +173,7 @@ function validateEvent(input: unknown, limits: ResolvedLimits): PresenceEvent | 
 }
 
 /**
- * Returns a validated `CursorPresence` from one decoded message, or `null`.
+ * Returns a validated `PresenceMessage` from one decoded message, or `null`.
  * The function enforces the limits of the decoded message and never throws.
  * The client checks `maxMessageBytes` on the wire bytes before it decodes.
  * It clamps anchor and viewport values into the `0` to `1` range.
@@ -184,7 +184,7 @@ function validateEvent(input: unknown, limits: ResolvedLimits): PresenceEvent | 
 export function validatePresence<TContext = unknown, TUser = unknown>(
   input: unknown,
   limits?: ValidationLimits,
-): CursorPresence<TContext, TUser> | null {
+): PresenceMessage<TContext, TUser> | null {
   try {
     // whole-message 32 KiB limit is enforced on wire bytes by the client, before decode (spec §4.2)
     if (!isPlainObject(input)) return null;
@@ -212,7 +212,7 @@ export function validatePresence<TContext = unknown, TUser = unknown>(
     const cursor = validateCursor(input.cursor, resolved);
     if (cursor === undefined) return null;
 
-    const message: CursorPresence<TContext, TUser> = {
+    const message: PresenceMessage<TContext, TUser> = {
       version: 1,
       clientId,
       session,

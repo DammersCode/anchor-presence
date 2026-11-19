@@ -1,8 +1,8 @@
 import { reportListenerError, warnOnce } from "@anchor-presence/core";
-import type { ConnectionStatus, LiveCursorTransport } from "@anchor-presence/core";
+import type { ConnectionStatus, PresenceTransport } from "@anchor-presence/core";
 
 /** A transport that connects and disconnects on demand, with required status members. */
-export type BroadcastChannelTransport = LiveCursorTransport & {
+export type BroadcastChannelTransport = PresenceTransport & {
   connect(): void;
   disconnect(): void;
   subscribeStatus(listener: (status: ConnectionStatus) => void): () => void;
@@ -15,7 +15,7 @@ function toBytes(value: unknown): Uint8Array | null {
 }
 
 /**
- * Creates a `LiveCursorTransport` over `BroadcastChannel`. It links tabs and iframes of one origin, with no server.
+ * Creates a `PresenceTransport` over `BroadcastChannel`. It links tabs and iframes of one origin, with no server.
  * Each transport ignores its own messages, so two clients in one tab need two transports.
  * Any script of the same origin can post on the channel, so keep the default shape check on.
  */

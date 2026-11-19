@@ -40,10 +40,10 @@ Anchor Presence is a live-cursor library for web apps. It shows where your teamm
 Mark an element as an anchor, and render the cursor layer inside the provider:
 
 ```tsx
-<LiveCursorProvider factory={createClient}>
+<PresenceProvider factory={createClient}>
   <button data-anchor="nav.dashboard">Dashboard</button>
   <CursorLayer />
-</LiveCursorProvider>
+</PresenceProvider>
 ```
 
 [Quick start](/docs/get-started/quick-start) shows the full file, with the `createClient` function.

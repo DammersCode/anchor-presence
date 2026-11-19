@@ -8,7 +8,7 @@ import { Box, Footprints, MousePointer, ShieldCheck, Zap } from "lucide-react";
 
 Users on one page want to say a few words without a separate chat panel. Cursor chat puts a short text bubble next to the cursor. The local user presses `/`, types a message, and presses Enter. The client sends the text as a one-shot event with `client.sendEvent("chat", { text })`.
 
-Each peer receives the event through `useCursorEvents` and shows the text as the label of the remote cursor of the sender. After 5 seconds, the bubble disappears on both sides.
+Each peer receives the event through `useRemoteEvents` and shows the text as the label of the remote cursor of the sender. After 5 seconds, the bubble disappears on both sides.
 
 The demo runs this recipe in both panes:
 
@@ -26,9 +26,9 @@ import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import {
   CursorLayer,
   DefaultCursor,
-  LiveCursorProvider,
-  useCursorClient,
-  useCursorEvents,
+  PresenceProvider,
+  usePresenceClient,
+  useRemoteEvents,
 } from "@anchor-presence/react";
 import type { PresenceClient } from "@anchor-presence/react";
 
@@ -63,7 +63,7 @@ export function useRemoteChat(): Record<string, string> {
   const [messages, setMessages] = useState<Record<string, string>>({});
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
 
-  useCursorEvents((event) => {
+  useRemoteEvents((event) => {
     if (event.type !== "chat") return;
     const text = readChatText(event.data);
     if (text === null) return;
@@ -131,7 +131,7 @@ function isTextField(target: EventTarget | null): boolean {
 }
 
 export function ChatComposer() {
-  const client = useCursorClient();
+  const client = usePresenceClient();
   const pointer = useRef({ x: 0, y: 0 });
   const bubble = useRef<HTMLDivElement>(null);
   const [origin, setOrigin] = useState({ x: 0, y: 0 });
@@ -200,11 +200,11 @@ Render both components inside the provider:
 ```tsx
 export function ChatApp({ client }: { client: PresenceClient<unknown, User> }) {
   return (
-    <LiveCursorProvider client={client}>
+    <PresenceProvider client={client}>
       <main>{/* your app */}</main>
       <ChatCursorLayer />
       <ChatComposer />
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }
 ```
@@ -235,7 +235,7 @@ The last two commands keep running, so run each one in its own terminal. Open `h
 ## Related
 
 <Cards>
-  <Card icon={<Zap />} title="Cursor events" href="/docs/react/cursor-events">
+  <Card icon={<Zap />} title="Remote events" href="/docs/react/remote-events">
     Send and receive one-shot events in React.
   </Card>
   <Card icon={<MousePointer />} title="CursorLayer" href="/docs/react/cursor-layer">

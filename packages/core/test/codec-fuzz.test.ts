@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { binaryCodec } from "../src/binary-codec";
 import { jsonCodec } from "../src/codec";
-import type { CursorPresence } from "../src/protocol";
+import type { PresenceMessage } from "../src/protocol";
 import { validatePresence } from "../src/validate";
 
 // Reproduce a failure with FUZZ_SEED=<seed>; raise FUZZ_RUNS for a longer local run.
@@ -48,8 +48,8 @@ function json(r: Rng, depth = 0): unknown {
   return record;
 }
 
-function presence(r: Rng): CursorPresence {
-  const message: CursorPresence = {
+function presence(r: Rng): PresenceMessage {
+  const message: PresenceMessage = {
     version: 1,
     clientId: str(r, 1, 40),
     session: str(r, 1, 30),
@@ -76,7 +76,7 @@ function presence(r: Rng): CursorPresence {
 }
 
 // binary frames carry float32 coordinates
-function fround(message: CursorPresence | null): CursorPresence | null {
+function fround(message: PresenceMessage | null): PresenceMessage | null {
   if (message?.cursor == null) return message;
   const cursor = {
     ...message.cursor,
@@ -92,7 +92,7 @@ function fround(message: CursorPresence | null): CursorPresence | null {
 }
 
 const codecs = {
-  json: { codec: jsonCodec, normalize: (message: CursorPresence | null) => message },
+  json: { codec: jsonCodec, normalize: (message: PresenceMessage | null) => message },
   binary: { codec: binaryCodec, normalize: fround },
 } as const;
 
@@ -151,9 +151,9 @@ describe(`codec properties (seed ${SEED}, ${RUNS} runs)`, () => {
 });
 
 describe("codec edge probes", () => {
-  const base: CursorPresence = { version: 1, clientId: "c", session: "s", sequence: 1, cursor: null };
-  const viaJson = (message: CursorPresence) => validatePresence(jsonCodec.decode(jsonCodec.encode(message)));
-  const viaBinary = (message: CursorPresence) =>
+  const base: PresenceMessage = { version: 1, clientId: "c", session: "s", sequence: 1, cursor: null };
+  const viaJson = (message: PresenceMessage) => validatePresence(jsonCodec.decode(jsonCodec.encode(message)));
+  const viaBinary = (message: PresenceMessage) =>
     validatePresence(binaryCodec.decode(binaryCodec.encode(message)));
 
   it("binary: refuses a finite coordinate above the float32 range", () => {

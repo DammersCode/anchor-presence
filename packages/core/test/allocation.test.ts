@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import { jsonCodec } from "../src/codec";
 import { RemotePresenceStore } from "../src/store";
 import { validatePresence } from "../src/validate";
-import type { CursorPresence } from "../src/protocol";
+import type { PresenceMessage } from "../src/protocol";
 
-function message(clientId: string, sequence: number): CursorPresence {
+function message(clientId: string, sequence: number): PresenceMessage {
   return {
     version: 1,
     clientId,

@@ -2,7 +2,7 @@
 
 import type { PresenceClient } from "@anchor-presence/core";
 import type { VisibilityPolicy } from "@anchor-presence/dom";
-import { CursorLayer, LiveCursorProvider, useRemoteCursors } from "@anchor-presence/react";
+import { CursorLayer, PresenceProvider, useRemoteCursors } from "@anchor-presence/react";
 import { Plus, X } from "lucide-react";
 import { useRef, type ReactNode, type RefObject } from "react";
 
@@ -97,7 +97,7 @@ export function KanbanScene({ client, layout, children }: Props) {
   const boardRef = useRef<HTMLDivElement>(null);
 
   return (
-    <LiveCursorProvider client={client} bindingOptions={bindingOptions}>
+    <PresenceProvider client={client} bindingOptions={bindingOptions}>
       <div data-anchor="board" className="flex h-full flex-col p-2.5">
         <h3 className="font-display px-1 pb-1.5 text-sm font-semibold">Board</h3>
         <div className="relative min-h-0 flex-1">
@@ -154,6 +154,6 @@ export function KanbanScene({ client, layout, children }: Props) {
         getColor={(cursor) => safeColor(cursor.user?.color, "#4f46e5")}
       />
       {children}
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }

@@ -4,14 +4,14 @@ import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createPresenceClient } from "@anchor-presence/core";
-import type { LiveCursorTransport } from "@anchor-presence/core";
-import { LiveCursorProvider } from "../src/provider";
+import type { PresenceTransport } from "@anchor-presence/core";
+import { PresenceProvider } from "../src/provider";
 import { useLocalContext } from "../src/hooks";
 import { makeFakeBinding } from "./test-utils";
 
 type TestContext = { route: string };
 
-function makeStubTransport(): LiveCursorTransport {
+function makeStubTransport(): PresenceTransport {
   return {
     send: () => {},
     subscribe: () => () => {},
@@ -51,9 +51,9 @@ describe("useLocalContext", () => {
 
     act(() => {
       root.render(
-        <LiveCursorProvider client={client} binding={binding}>
+        <PresenceProvider client={client} binding={binding}>
           <Reader />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
     expect(renders.at(-1)).toEqual({ route: "/home" });
@@ -71,9 +71,9 @@ describe("useLocalContext", () => {
 
     act(() => {
       root.render(
-        <LiveCursorProvider client={client} binding={binding}>
+        <PresenceProvider client={client} binding={binding}>
           <Reader />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
     expect(renders.at(-1)).toBeUndefined();
@@ -97,9 +97,9 @@ describe("useLocalContext", () => {
 
     act(() => {
       root.render(
-        <LiveCursorProvider client={client} binding={binding}>
+        <PresenceProvider client={client} binding={binding}>
           <Reader />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
     expect(renders.at(-1)).toBeUndefined();
@@ -124,7 +124,7 @@ describe("useLocalContext", () => {
 describe("index re-exports", () => {
   const foreignTypes = [
     "ConnectionStatus",
-    "CursorPresence",
+    "PresenceMessage",
     "PresenceClient",
     "DomBinding",
     "DomBindingOptions",

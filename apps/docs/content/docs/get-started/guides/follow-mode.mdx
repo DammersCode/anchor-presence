@@ -22,7 +22,7 @@ The recipe is one file, `follow-mode.tsx`. It starts with the imports, the off-s
 import { useCallback, useEffect, useState } from "react";
 import {
   CursorLayer,
-  LiveCursorProvider,
+  PresenceProvider,
   usePeerChanges,
   useRemoteCursorsSelector,
   useRemoteUsers,
@@ -131,11 +131,11 @@ Render the controls inside the provider:
 ```tsx
 export function FollowApp({ client }: { client: PresenceClient<unknown, User> }) {
   return (
-    <LiveCursorProvider client={client}>
+    <PresenceProvider client={client}>
       <FollowControls />
       <main>{/* your app, with data-anchor elements */}</main>
       <CursorLayer />
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }
 ```

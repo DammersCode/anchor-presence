@@ -1,7 +1,7 @@
 "use client";
 
 import type { PresenceClient } from "@anchor-presence/core";
-import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
+import { CursorLayer, PresenceProvider } from "@anchor-presence/react";
 import { useState, type ReactNode } from "react";
 
 const safeColor = (color: string | undefined, fallback: string) =>
@@ -65,7 +65,7 @@ export function FallbacksScene({ client, layout, children }: Props) {
   const [showOrders, setShowOrders] = useState(true);
 
   return (
-    <LiveCursorProvider client={client}>
+    <PresenceProvider client={client}>
       <div data-anchor="shop" className="flex h-full flex-col gap-2 p-3">
         <div className="flex items-center justify-between gap-2">
           <h3 className="font-display text-sm font-semibold">{wide ? "All orders" : "Recent orders"}</h3>
@@ -110,6 +110,6 @@ export function FallbacksScene({ client, layout, children }: Props) {
         getColor={(cursor) => safeColor(cursor.user?.color, "#4f46e5")}
       />
       {children}
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }

@@ -3,19 +3,19 @@ import { createRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import { createPresenceClient } from "@anchor-presence/core";
-import type { LiveCursorTransport } from "@anchor-presence/core";
-import { LiveCursorProvider } from "../src/provider";
+import type { PresenceTransport } from "@anchor-presence/core";
+import { PresenceProvider } from "../src/provider";
 import { useRemoteUsers } from "../src/hooks";
 import type { RemoteUser } from "../src/hooks";
 import { makeFakeBinding, makeFakeClient } from "./test-utils";
 
 type TestUser = { name: string };
 
-function makePeerPair(): { transportA: LiveCursorTransport; transportB: LiveCursorTransport } {
+function makePeerPair(): { transportA: PresenceTransport; transportB: PresenceTransport } {
   const aListeners = new Set<(data: Uint8Array) => void>();
   const bListeners = new Set<(data: Uint8Array) => void>();
 
-  const transportA: LiveCursorTransport = {
+  const transportA: PresenceTransport = {
     // 2-peer relay: each side's bytes go to the other peer's subscribers only
     send: (data) => {
       for (const listener of bListeners) listener(data);
@@ -26,7 +26,7 @@ function makePeerPair(): { transportA: LiveCursorTransport; transportB: LiveCurs
     },
   };
 
-  const transportB: LiveCursorTransport = {
+  const transportB: PresenceTransport = {
     send: (data) => {
       for (const listener of aListeners) listener(data);
     },
@@ -62,9 +62,9 @@ describe("useRemoteUsers", () => {
 
     act(() => {
       root.render(
-        <LiveCursorProvider client={client} binding={makeFakeBinding().binding}>
+        <PresenceProvider client={client} binding={makeFakeBinding().binding}>
           <Probe />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
     expect(seen.at(-1)).toEqual([]);
@@ -96,9 +96,9 @@ describe("useRemoteUsers", () => {
 
     act(() => {
       root.render(
-        <LiveCursorProvider client={client} binding={makeFakeBinding().binding}>
+        <PresenceProvider client={client} binding={makeFakeBinding().binding}>
           <Probe />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
 
@@ -124,9 +124,9 @@ describe("useRemoteUsers", () => {
 
     act(() => {
       root.render(
-        <LiveCursorProvider client={client} binding={makeFakeBinding().binding}>
+        <PresenceProvider client={client} binding={makeFakeBinding().binding}>
           <Probe />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
 
@@ -177,9 +177,9 @@ describe("useRemoteUsers", () => {
 
     act(() => {
       root.render(
-        <LiveCursorProvider client={client} binding={makeFakeBinding().binding}>
+        <PresenceProvider client={client} binding={makeFakeBinding().binding}>
           <Probe />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
 
@@ -222,9 +222,9 @@ describe("useRemoteUsers", () => {
 
     act(() => {
       root.render(
-        <LiveCursorProvider client={clientA} binding={makeFakeBinding().binding}>
+        <PresenceProvider client={clientA} binding={makeFakeBinding().binding}>
           <Probe />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
     expect(container.querySelector("[data-testid=count]")?.textContent).toBe("0");

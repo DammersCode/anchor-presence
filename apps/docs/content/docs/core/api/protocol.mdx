@@ -1,6 +1,6 @@
 ---
 title: Protocol types
-description: CursorPresence, leave and event messages, PresenceEvent, PeerChange, RemotePresence, validatePresence, ValidationLimits, and the protocol constants.
+description: PresenceMessage, leave and event messages, PresenceEvent, PeerChange, RemotePresence, validatePresence, ValidationLimits, and the protocol constants.
 icon: file-code
 ---
 
@@ -9,14 +9,14 @@ import { Code, ShieldCheck, Users } from "lucide-react";
 These types describe the wire protocol that the client sends, checks, and stores. `@anchor-presence/core` exports every name on this page. Use the page when you write a relay, a codec, or code that reads raw messages. Import them from the package:
 
 ```ts
-import type { CursorPresence, RemotePresence } from "@anchor-presence/core";
+import type { PresenceMessage, RemotePresence } from "@anchor-presence/core";
 ```
 
-## CursorPresence
+## PresenceMessage
 
-`CursorPresence` is the wire format of one presence message.
+`PresenceMessage` is the wire format of one presence message.
 
-<AutoTypeTable path="../../packages/core/src/protocol.ts" name="CursorPresence" />
+<AutoTypeTable path="../../packages/core/src/protocol.ts" name="PresenceMessage" />
 
 A missing `user` or `context` field keeps the previous value of the same session. A `null` value clears it.
 
@@ -79,7 +79,7 @@ A `RemotePresence` is a stored presence message without the `sequence` field and
 
 ## validatePresence
 
-`validatePresence(input: unknown, limits?: ValidationLimits): CursorPresence | null` checks one decoded message. It returns the checked message, or `null` for a message to drop. It never throws, and it does not check `maxMessageBytes`. See [Use validatePresence directly](/docs/core/validation#use-validatepresence-directly).
+`validatePresence(input: unknown, limits?: ValidationLimits): PresenceMessage | null` checks one decoded message. It returns the checked message, or `null` for a message to drop. It never throws, and it does not check `maxMessageBytes`. See [Use validatePresence directly](/docs/core/validation#use-validatepresence-directly).
 
 ## ValidationLimits
 

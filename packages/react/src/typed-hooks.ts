@@ -1,20 +1,20 @@
 import type { ReactNode } from "react";
 import type { ResolvedCursor } from "@anchor-presence/dom";
-import { LiveCursorProvider } from "./provider.js";
-import type { LiveCursorProviderProps } from "./provider.js";
-import { useCursorBinding } from "./hooks/use-cursor-binding.js";
-import { useCursorClient } from "./hooks/use-cursor-client.js";
+import { PresenceProvider } from "./provider.js";
+import type { PresenceProviderProps } from "./provider.js";
+import { usePresenceBinding } from "./hooks/use-presence-binding.js";
+import { usePresenceClient } from "./hooks/use-presence-client.js";
 import { useLocalContext } from "./hooks/use-local-context.js";
 import { createEventChannel } from "@anchor-presence/core";
 import { useEffect, useRef } from "react";
 import type { EventChannel, EventMap, PeerChange, TypedRemoteEvent } from "@anchor-presence/core";
 
-import { useLiveCursorContext } from "./hooks/use-cursor-client.js";
+import { usePresenceContext } from "./hooks/use-presence-client.js";
 import { useLocalUser } from "./hooks/use-local-user.js";
 import { usePeerChanges } from "./hooks/use-peer-changes.js";
 import { useSendEvent } from "./hooks/use-send-event.js";
 import { useRemotePresence } from "./hooks/use-remote-presence.js";
-import { useCursorStatus } from "./hooks/use-cursor-status.js";
+import { usePresenceStatus } from "./hooks/use-presence-status.js";
 import { useRemoteCursors, useRemoteCursorsSelector } from "./hooks/use-remote-cursors.js";
 import { useRemoteUsers } from "./hooks/use-remote-users.js";
 
@@ -28,12 +28,12 @@ export function createPresenceHooks<
   TEvents extends object = EventMap,
 >() {
   return {
-    LiveCursorProvider: LiveCursorProvider as (props: LiveCursorProviderProps<TContext, TUser>) => ReactNode,
-    useCursorBinding: () => useCursorBinding<TContext, TUser>(),
-    useCursorClient: () => useCursorClient<TContext, TUser>(),
+    PresenceProvider: PresenceProvider as (props: PresenceProviderProps<TContext, TUser>) => ReactNode,
+    usePresenceBinding: () => usePresenceBinding<TContext, TUser>(),
+    usePresenceClient: () => usePresenceClient<TContext, TUser>(),
     useLocalContext: () => useLocalContext<TContext>(),
-    useCursorEvents: (listener: (event: TypedRemoteEvent<TEvents>) => void): void => {
-      const { client } = useLiveCursorContext<TContext, TUser>();
+    useRemoteEvents: (listener: (event: TypedRemoteEvent<TEvents>) => void): void => {
+      const { client } = usePresenceContext<TContext, TUser>();
       const listenerRef = useRef(listener);
       useEffect(() => {
         listenerRef.current = listener;
@@ -51,7 +51,7 @@ export function createPresenceHooks<
     usePeerChanges: (listener: (change: PeerChange<TContext, TUser>) => void) =>
       usePeerChanges<TContext, TUser>(listener),
     useRemotePresence: () => useRemotePresence<TContext, TUser>(),
-    useCursorStatus,
+    usePresenceStatus,
     useRemoteCursors: () => useRemoteCursors<TContext, TUser>(),
     useRemoteCursorsSelector: <TSelected>(
       select: (cursors: ResolvedCursor<TContext, TUser>[]) => TSelected,

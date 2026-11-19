@@ -1,33 +1,33 @@
 import { renderToString } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
-import { LiveCursorProvider } from "../src/provider";
+import { PresenceProvider } from "../src/provider";
 import { makeFakeClient } from "./test-utils";
 import { useSendEvent } from "../src/hooks/use-send-event";
 import {
-  useCursorClient,
-  useCursorBinding,
+  usePresenceClient,
+  usePresenceBinding,
   useLocalContext,
-  useCursorEvents,
+  useRemoteEvents,
   useRemotePresence,
   useLocalUser,
   usePeerChanges,
   useRemoteCursorsSelector,
   useRemoteUsers,
-  useCursorStatus,
+  usePresenceStatus,
   useRemoteCursors,
 } from "../src/hooks";
 
 function AllHooks() {
   const cursors = useRemoteCursors();
   const presence = useRemotePresence();
-  const status = useCursorStatus();
-  const client = useCursorClient();
+  const status = usePresenceStatus();
+  const client = usePresenceClient();
   const [context] = useLocalContext();
-  const binding = useCursorBinding();
+  const binding = usePresenceBinding();
   const [user] = useLocalUser();
   const users = useRemoteUsers();
   const count = useRemoteCursorsSelector((all) => all.length);
-  useCursorEvents(() => {});
+  useRemoteEvents(() => {});
   usePeerChanges(() => {});
   const sent = useSendEvent()("ping", {});
   return (
@@ -46,18 +46,18 @@ function AllHooks() {
 describe("SSR safety", () => {
   it("renders children with client=null", () => {
     const html = renderToString(
-      <LiveCursorProvider client={null}>
+      <PresenceProvider client={null}>
         <div>hello</div>
-      </LiveCursorProvider>,
+      </PresenceProvider>,
     );
     expect(html).toContain("hello");
   });
 
   it("renderToString works for a tree using every hook, with server-safe snapshots", () => {
     const html = renderToString(
-      <LiveCursorProvider client={null}>
+      <PresenceProvider client={null}>
         <AllHooks />
-      </LiveCursorProvider>,
+      </PresenceProvider>,
     );
     expect(html).toContain("disconnected");
     expect(html).toContain("null");
@@ -68,9 +68,9 @@ describe("SSR safety", () => {
   it("reports connecting on the server while a provider factory has not created its client", () => {
     const factory = vi.fn(() => makeFakeClient().client);
     const html = renderToString(
-      <LiveCursorProvider factory={factory}>
+      <PresenceProvider factory={factory}>
         <AllHooks />
-      </LiveCursorProvider>,
+      </PresenceProvider>,
     );
     expect(html).toContain(">connecting<");
     expect(html).not.toContain("disconnected");
@@ -83,7 +83,7 @@ describe("dev warnings", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     renderToString(<AllHooks />);
     renderToString(<AllHooks />);
-    const calls = warn.mock.calls.filter(([text]) => String(text).includes("outside LiveCursorProvider"));
+    const calls = warn.mock.calls.filter(([text]) => String(text).includes("outside PresenceProvider"));
     expect(calls.length).toBeLessThanOrEqual(1);
     warn.mockRestore();
   });

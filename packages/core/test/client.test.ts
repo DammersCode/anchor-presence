@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createPresenceClient } from "../src/client";
 import { createInMemoryPair } from "../src/in-memory-transport";
 import { jsonCodec } from "../src/codec";
-import type { LiveCursorTransport } from "../src/transport";
+import type { PresenceTransport } from "../src/transport";
 import type { ConnectionStatus } from "../src/protocol";
 
 function makeTransport(withStatus = false, initialStatus?: ConnectionStatus) {
@@ -11,7 +11,7 @@ function makeTransport(withStatus = false, initialStatus?: ConnectionStatus) {
   const statusListeners = new Set<(status: ConnectionStatus) => void>();
   const disconnect = vi.fn();
 
-  const transport: LiveCursorTransport = {
+  const transport: PresenceTransport = {
     send: vi.fn((data: Uint8Array) => {
       sent.push(data);
     }),
@@ -48,7 +48,7 @@ function decodeSent(bytes: Uint8Array) {
   return JSON.parse(new TextDecoder().decode(bytes));
 }
 
-function makeBufferedTransport(sent: Uint8Array[], bufferedByCall: number[]): LiveCursorTransport {
+function makeBufferedTransport(sent: Uint8Array[], bufferedByCall: number[]): PresenceTransport {
   let calls = 0;
   let buffered = 0;
   return {
@@ -203,7 +203,7 @@ describe("createPresenceClient publishing", () => {
   });
 
   it("swallows send errors", () => {
-    const transport: LiveCursorTransport = {
+    const transport: PresenceTransport = {
       send: vi.fn(() => {
         throw new Error("boom");
       }),
@@ -657,7 +657,7 @@ describe("createPresenceClient adaptive publish rate", () => {
   it("uses the slow interval while the transport reports buffered bytes above the high watermark", () => {
     const sent: Uint8Array[] = [];
     let buffered = 0;
-    const transport: LiveCursorTransport = {
+    const transport: PresenceTransport = {
       send: vi.fn((data: Uint8Array) => {
         sent.push(data);
         buffered += 100;
@@ -781,7 +781,7 @@ describe("createPresenceClient dirty-flag publishing", () => {
     send.mockImplementationOnce(() => {
       throw new Error("boom");
     });
-    const transport: LiveCursorTransport = {
+    const transport: PresenceTransport = {
       send,
       subscribe: vi.fn(() => () => {}),
     };
@@ -806,7 +806,7 @@ describe("createPresenceClient publish retry backoff", () => {
     const send = vi.fn(() => {
       if (failing) throw new Error("boom");
     });
-    const transport: LiveCursorTransport = { send, subscribe: vi.fn(() => () => {}) };
+    const transport: PresenceTransport = { send, subscribe: vi.fn(() => () => {}) };
     return {
       transport,
       send,
@@ -980,7 +980,7 @@ describe("createPresenceClient autoConnect", () => {
     const connect = vi.fn(() => {
       calls.push("connect");
     });
-    const transport: LiveCursorTransport = {
+    const transport: PresenceTransport = {
       connect,
       disconnect: vi.fn(),
       send: vi.fn(),
@@ -1669,7 +1669,7 @@ describe("option shape validation", () => {
 
   it("rejects a transport without subscribe", () => {
     const transport = { send: () => {}, connect: () => {}, disconnect: () => {} };
-    expect(() => createPresenceClient({ transport: transport as unknown as LiveCursorTransport })).toThrow(
+    expect(() => createPresenceClient({ transport: transport as unknown as PresenceTransport })).toThrow(
       "createPresenceClient: transport.subscribe must be a function",
     );
   });

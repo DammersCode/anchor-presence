@@ -1,7 +1,7 @@
 "use client";
 
 import type { PresenceClient } from "@anchor-presence/core";
-import { CursorLayer, LiveCursorProvider, useCursorClient, useCursorEvents } from "@anchor-presence/react";
+import { CursorLayer, PresenceProvider, usePresenceClient, useRemoteEvents } from "@anchor-presence/react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { READER } from "./_preview/scenes";
@@ -34,7 +34,7 @@ function useRemoteChat(): Record<string, string> {
   const [messages, setMessages] = useState<Record<string, string>>({});
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
 
-  useCursorEvents((event) => {
+  useRemoteEvents((event) => {
     if (event.type !== "chat") return;
     const text = readChatText(event.data);
     if (text === null) return;
@@ -82,7 +82,7 @@ function isTextField(target: EventTarget | null): boolean {
 }
 
 function ChatComposer() {
-  const client = useCursorClient();
+  const client = usePresenceClient();
   const pointer = useRef({ x: 0, y: 0 });
   const bubble = useRef<HTMLDivElement>(null);
   const [origin, setOrigin] = useState({ x: 0, y: 0 });
@@ -159,11 +159,11 @@ function ChatComposer() {
 
 export function ChatScene({ client, children }: Props) {
   return (
-    <LiveCursorProvider client={client}>
+    <PresenceProvider client={client}>
       <LongPage layout="wide" />
       <ChatCursorLayer />
       <ChatComposer />
       {children}
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }

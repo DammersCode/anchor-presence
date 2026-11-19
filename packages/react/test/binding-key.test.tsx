@@ -1,11 +1,11 @@
 import { act, useContext } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, describe, expect, it } from "vitest";
-import { LiveCursorContext } from "../src/context";
-import { LiveCursorProvider } from "../src/provider";
+import { PresenceContext } from "../src/context";
+import { PresenceProvider } from "../src/provider";
 import { makeFakeClient } from "./test-utils";
 
-describe("LiveCursorProvider bindingKey", () => {
+describe("PresenceProvider bindingKey", () => {
   let container: HTMLDivElement | null = null;
 
   afterEach(() => {
@@ -18,7 +18,7 @@ describe("LiveCursorProvider bindingKey", () => {
     const bindings: unknown[] = [];
     const clients: unknown[] = [];
     function Probe() {
-      const value = useContext(LiveCursorContext);
+      const value = useContext(PresenceContext);
       bindings.push(value.binding);
       clients.push(value.client);
       return null;
@@ -29,9 +29,9 @@ describe("LiveCursorProvider bindingKey", () => {
     const render = (key: string) =>
       act(() =>
         root.render(
-          <LiveCursorProvider client={client} bindingKey={key}>
+          <PresenceProvider client={client} bindingKey={key}>
             <Probe />
-          </LiveCursorProvider>,
+          </PresenceProvider>,
         ),
       );
 
@@ -49,7 +49,7 @@ describe("LiveCursorProvider bindingKey", () => {
   });
 });
 
-describe("LiveCursorProvider local cursor on teardown", () => {
+describe("PresenceProvider local cursor on teardown", () => {
   it("keeps the local cursor when the binding is rebuilt and clears it on unmount", () => {
     const { client } = makeFakeClient();
     const updates: unknown[] = [];
@@ -62,9 +62,9 @@ describe("LiveCursorProvider local cursor on teardown", () => {
     const render = (key: string) =>
       act(() =>
         root.render(
-          <LiveCursorProvider client={client} bindingKey={key}>
+          <PresenceProvider client={client} bindingKey={key}>
             {null}
-          </LiveCursorProvider>,
+          </PresenceProvider>,
         ),
       );
 
@@ -78,7 +78,7 @@ describe("LiveCursorProvider local cursor on teardown", () => {
   });
 });
 
-describe("LiveCursorProvider clientKey", () => {
+describe("PresenceProvider clientKey", () => {
   it("disposes the old client and runs the factory again when the key changes", () => {
     const made: ReturnType<typeof makeFakeClient>[] = [];
     const disposed: boolean[] = [];
@@ -96,9 +96,9 @@ describe("LiveCursorProvider clientKey", () => {
     const render = (key: string) =>
       act(() =>
         root.render(
-          <LiveCursorProvider factory={factory} clientKey={key}>
+          <PresenceProvider factory={factory} clientKey={key}>
             {null}
-          </LiveCursorProvider>,
+          </PresenceProvider>,
         ),
       );
 
@@ -114,14 +114,14 @@ describe("LiveCursorProvider clientKey", () => {
   });
 });
 
-describe("useCursorBinding", () => {
+describe("usePresenceBinding", () => {
   it("returns the binding of the provider, and null without one", async () => {
-    const { useCursorBinding } = await import("../src/hooks/use-cursor-binding");
+    const { usePresenceBinding } = await import("../src/hooks/use-presence-binding");
     const { client } = makeFakeClient();
     const { binding } = (await import("./test-utils")).makeFakeBinding();
     const seen: unknown[] = [];
     function Probe() {
-      seen.push(useCursorBinding());
+      seen.push(usePresenceBinding());
       return null;
     }
     const container = document.createElement("div");
@@ -130,9 +130,9 @@ describe("useCursorBinding", () => {
     act(() => root.render(<Probe />));
     act(() =>
       root.render(
-        <LiveCursorProvider client={client} binding={binding}>
+        <PresenceProvider client={client} binding={binding}>
           <Probe />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       ),
     );
     expect(seen[0]).toBeNull();

@@ -8,7 +8,7 @@ import type { ResolvedCursor } from "@anchor-presence/dom";
 import {
   CursorLayer,
   DefaultCursor,
-  LiveCursorProvider,
+  PresenceProvider,
   useLocalContext,
   useRemotePresence,
   useRemoteCursors,
@@ -166,10 +166,10 @@ describe("extra docs samples", () => {
     const { a } = createInMemoryPair();
     const client = createPresenceClient<{ dialog?: string }>({ transport: a });
     const view = mount(
-      <LiveCursorProvider client={client}>
+      <PresenceProvider client={client}>
         <SettingsDialog open />
         <ContextReader />
-      </LiveCursorProvider>,
+      </PresenceProvider>,
     );
     expect(client.getContext()).toEqual({ dialog: "settings" });
     expect(view.querySelector("[role=dialog]")).not.toBeNull();
@@ -182,9 +182,9 @@ describe("extra docs samples", () => {
   it("remote-presence.mdx: PointerTypeBadge counts touch pointers", () => {
     const { client, pushRemote } = makeFakeClient();
     const view = mount(
-      <LiveCursorProvider client={client}>
+      <PresenceProvider client={client}>
         <PointerTypeBadge />
-      </LiveCursorProvider>,
+      </PresenceProvider>,
     );
     act(() =>
       pushRemote([
@@ -198,9 +198,9 @@ describe("extra docs samples", () => {
   it("remote-users.mdx: PresenceList shows names and dims idle users", () => {
     const { client, pushRemote } = makeFakeClient<unknown, MyUser>();
     const view = mount(
-      <LiveCursorProvider client={client}>
+      <PresenceProvider client={client}>
         <PresenceList />
-      </LiveCursorProvider>,
+      </PresenceProvider>,
     );
     act(() =>
       pushRemote(
@@ -227,9 +227,9 @@ describe("extra docs samples", () => {
     const { client } = makeFakeClient();
     const { binding, publish } = makeFakeBinding();
     const view = mount(
-      <LiveCursorProvider client={client} binding={binding}>
+      <PresenceProvider client={client} binding={binding}>
         <CursorCount />
-      </LiveCursorProvider>,
+      </PresenceProvider>,
     );
     act(() => publish([makeCursor("a"), makeCursor("b", { visible: false, tier: "hidden" })]));
     expect(view.textContent).toBe("1 cursors visible");
@@ -239,9 +239,9 @@ describe("extra docs samples", () => {
     const { client } = makeFakeClient();
     const { binding, publish } = makeFakeBinding();
     const view = mount(
-      <LiveCursorProvider client={client} binding={binding}>
+      <PresenceProvider client={client} binding={binding}>
         <PresencePill />
-      </LiveCursorProvider>,
+      </PresenceProvider>,
     );
     act(() => publish([makeCursor("a", { pointVisible: false }), makeCursor("b")]));
     expect(view.textContent).toBe("1 out of view");
@@ -256,9 +256,9 @@ describe("extra docs samples", () => {
     const { client } = makeFakeClient();
     const { binding, publish } = makeFakeBinding();
     const view = mount(
-      <LiveCursorProvider client={client} binding={binding}>
+      <PresenceProvider client={client} binding={binding}>
         <GlyphLayer />
-      </LiveCursorProvider>,
+      </PresenceProvider>,
     );
     act(() => publish([makeCursor("a")]));
     expect(
@@ -270,9 +270,9 @@ describe("extra docs samples", () => {
     const { client } = makeFakeClient();
     const { binding, publish } = makeFakeBinding();
     const view = mount(
-      <LiveCursorProvider client={client} binding={binding}>
+      <PresenceProvider client={client} binding={binding}>
         <CursorLayer />
-      </LiveCursorProvider>,
+      </PresenceProvider>,
     );
     act(() => publish([{ ...makeCursor("a"), user: { name: "Ada" } }, makeCursor("b")]));
     expect(view.textContent).toContain("Ada");
@@ -283,9 +283,9 @@ describe("extra docs samples", () => {
     const { client } = makeFakeClient();
     const { binding, publish } = makeFakeBinding();
     const view = mount(
-      <LiveCursorProvider client={client} binding={binding}>
+      <PresenceProvider client={client} binding={binding}>
         <LargeCursorLayer />
-      </LiveCursorProvider>,
+      </PresenceProvider>,
     );
     act(() => publish([makeCursor("a")]));
     const outer = view.querySelector<HTMLElement>("[data-anchor-presence-client-id=a] > span");
@@ -296,9 +296,9 @@ describe("extra docs samples", () => {
     const { client } = makeFakeClient<unknown, LayerUser>();
     const { binding, publish } = makeFakeBinding<unknown, LayerUser>();
     const view = mount(
-      <LiveCursorProvider client={client} binding={binding}>
+      <PresenceProvider client={client} binding={binding}>
         <LabeledLayer />
-      </LiveCursorProvider>,
+      </PresenceProvider>,
     );
     act(() =>
       publish([
@@ -338,9 +338,9 @@ describe("default cursor appearance", () => {
     const root = createRoot(host);
     act(() =>
       root.render(
-        <LiveCursorProvider client={client} binding={binding}>
+        <PresenceProvider client={client} binding={binding}>
           <CursorLayer />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       ),
     );
     act(() => publish([{ ...makeCursor("a"), user: { name: "x".repeat(500) } }]));

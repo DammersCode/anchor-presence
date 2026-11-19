@@ -16,7 +16,7 @@ import {
 } from "@anchor-presence/core";
 import {
   createPresenceHooks,
-  LiveCursorProvider as PlainProvider,
+  PresenceProvider as PlainProvider,
   useLocalUser,
   usePeerChanges,
   type useSendEvent as exportedUseSendEvent,
@@ -35,10 +35,10 @@ export type Context = { pageId: string };
 export type Events = { reaction: { emoji: string }; ping: undefined };
 
 export const {
-  LiveCursorProvider,
-  useCursorClient,
+  PresenceProvider,
+  usePresenceClient,
   useLocalContext,
-  useCursorEvents,
+  useRemoteEvents,
   useLocalUser: useTypedLocalUser,
   useRemoteCursors,
   useRemoteUsers,
@@ -49,7 +49,7 @@ function Reactions() {
   const sendEvent = useSendEvent();
   const [lastEmoji, setLastEmoji] = useState<string | null>(null);
 
-  useCursorEvents((event) => {
+  useRemoteEvents((event) => {
     if (event.type === "reaction") setLastEmoji(event.data.emoji);
   });
 
@@ -73,7 +73,7 @@ const parseEvent = createEventParser<Events>({
 
 function App() {
   return (
-    <LiveCursorProvider
+    <PresenceProvider
       factory={() =>
         createPresenceClient({
           transport: createWebSocketTransport({ port: 8788, path: "/?room=main" }),
@@ -82,7 +82,7 @@ function App() {
       }
     >
       <Reactions />
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }
 
@@ -157,9 +157,9 @@ describe("typed-hooks.mdx: typed events", () => {
     peer.subscribeEvents((event) => peerEvents.push(event));
     act(() =>
       root.render(
-        <LiveCursorProvider client={local} binding={makeFakeBinding<Context, User>().binding}>
+        <PresenceProvider client={local} binding={makeFakeBinding<Context, User>().binding}>
           <Reactions />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       ),
     );
 

@@ -28,7 +28,7 @@ A `VisibilityPolicy` is a function that decides whether one resolved cursor rend
 
 ```ts
 type VisibilityPolicy<TContext = unknown, TUser = unknown> = (input: {
-  presence: CursorPresence<TContext, TUser>;
+  presence: PresenceMessage<TContext, TUser>;
   resolution: { tier: ResolutionTier; anchorId: string | null; pointVisible: boolean };
 }) => "show" | "hide";
 ```

@@ -31,11 +31,11 @@ This app connects to the Bun relay of the [Quick start](/docs/get-started/quick-
 ```tsx
 import { createPresenceClient } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
-import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
+import { CursorLayer, PresenceProvider } from "@anchor-presence/react";
 
 function App() {
   return (
-    <LiveCursorProvider
+    <PresenceProvider
       factory={() => {
         const transport = createWebSocketTransport({ port: 8788, path: "/?room=main" });
         return createPresenceClient({ transport });
@@ -43,7 +43,7 @@ function App() {
     >
       <Dashboard />
       <CursorLayer />
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }
 ```
@@ -53,7 +53,7 @@ Until the factory runs, the provider renders its children with no cursors. For t
 ## Set up
 
 <Cards>
-  <Card icon={<Plug />} title="LiveCursorProvider" href="/docs/react/live-cursor-provider">
+  <Card icon={<Plug />} title="PresenceProvider" href="/docs/react/presence-provider">
     Share one client and its DOM binding with the tree.
   </Card>
   <Card icon={<Factory />} title="Create the client" href="/docs/react/client-creation">
@@ -87,7 +87,7 @@ Until the factory runs, the provider renders its children with no cursors. For t
   <Card icon={<Wifi />} title="Connection status" href="/docs/react/connection-status">
     Show a banner while the connection is down.
   </Card>
-  <Card icon={<Zap />} title="Cursor events" href="/docs/react/cursor-events">
+  <Card icon={<Zap />} title="Remote events" href="/docs/react/remote-events">
     Send one-shot events, such as reactions.
   </Card>
   <Card icon={<Crosshair />} title="Remote cursors" href="/docs/react/remote-cursors">

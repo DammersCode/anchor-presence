@@ -1,7 +1,7 @@
 // oxlint-disable unicorn/prefer-add-event-listener -- WebSocketLike only exposes on* handlers
 
 import { isDevMode, reportListenerError, warnOnce } from "@anchor-presence/core";
-import type { ConnectionStatus, LiveCursorTransport, TransportClose } from "@anchor-presence/core";
+import type { ConnectionStatus, PresenceTransport, TransportClose } from "@anchor-presence/core";
 
 type Handler<Event> = { bivarianceHack(event: Event): void }["bivarianceHack"];
 
@@ -28,8 +28,8 @@ export type WebSocketLike = {
 
 export type WebSocketCtor = new (url: string) => WebSocketLike;
 
-/** A `LiveCursorTransport` whose lifecycle, status, and close members are always present, not optional. */
-export type WebSocketTransport = LiveCursorTransport & {
+/** A `PresenceTransport` whose lifecycle, status, and close members are always present, not optional. */
+export type WebSocketTransport = PresenceTransport & {
   connect(): void;
   disconnect(): void;
   subscribeStatus(listener: (status: ConnectionStatus) => void): () => void;

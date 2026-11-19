@@ -1,22 +1,22 @@
 ---
 title: Connection status
-description: Read the connection status of the client with useCursorStatus, and the close reasons with subscribeClose.
+description: Read the connection status of the client with usePresenceStatus, and the close reasons with subscribeClose.
 icon: wifi
 ---
 
 import { Braces, Cable, Gauge } from "lucide-react";
 
-`useCursorStatus` returns the connection status of the client from the nearest provider. Use it to show a reconnect banner, or to disable UI that needs presence while the connection is down.
+`usePresenceStatus` returns the connection status of the client from the nearest provider. Use it to show a reconnect banner, or to disable UI that needs presence while the connection is down.
 
 ## Usage
 
 This component shows the status while the client is not connected:
 
 ```tsx
-import { useCursorStatus } from "@anchor-presence/react";
+import { usePresenceStatus } from "@anchor-presence/react";
 
 function ConnectionBanner() {
-  const status = useCursorStatus();
+  const status = usePresenceStatus();
   if (status === "connected") return null;
   return <div role="status">{status}</div>;
 }
@@ -37,10 +37,10 @@ This component waits 1.5 seconds before it shows the banner:
 
 ```tsx
 import { useEffect, useState } from "react";
-import { useCursorStatus } from "@anchor-presence/react";
+import { usePresenceStatus } from "@anchor-presence/react";
 
 function DelayedConnectionBanner() {
-  const status = useCursorStatus();
+  const status = usePresenceStatus();
   const connected = status === "connected";
   const [show, setShow] = useState(false);
 
@@ -69,10 +69,10 @@ This component shows an error when the relay rejects the [room token](/docs/dom/
 
 ```tsx
 import { useEffect, useState } from "react";
-import { useCursorClient } from "@anchor-presence/react";
+import { usePresenceClient } from "@anchor-presence/react";
 
 function TokenError() {
-  const client = useCursorClient();
+  const client = usePresenceClient();
   const [closeCode, setCloseCode] = useState<number | null>(null);
 
   useEffect(
@@ -98,6 +98,6 @@ function TokenError() {
     Which hook rerenders when.
   </Card>
   <Card icon={<Braces />} title="Hooks API" href="/docs/react/api/hooks#usecursorstatus">
-    The signature of useCursorStatus.
+    The signature of usePresenceStatus.
   </Card>
 </Cards>

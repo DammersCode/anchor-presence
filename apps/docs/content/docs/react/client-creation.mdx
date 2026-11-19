@@ -18,18 +18,18 @@ The samples connect to the Bun relay of the [Quick start](/docs/get-started/quic
 ```tsx
 import { createPresenceClient } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
-import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
+import { CursorLayer, PresenceProvider } from "@anchor-presence/react";
 
 function App() {
   return (
-    <LiveCursorProvider
+    <PresenceProvider
       factory={() => {
         const transport = createWebSocketTransport({ port: 8788, path: "/?room=main" });
         return createPresenceClient({ transport });
       }}
     >
       <CursorLayer />
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }
 ```
@@ -41,7 +41,7 @@ function App() {
 import { useEffect, useState } from "react";
 import { createPresenceClient, type PresenceClient } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
-import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
+import { CursorLayer, PresenceProvider } from "@anchor-presence/react";
 
 function OwnClientApp() {
   const [client, setClient] = useState<PresenceClient | null>(null);
@@ -53,9 +53,9 @@ function OwnClientApp() {
     return () => created.dispose();
   }, []);
   return (
-    <LiveCursorProvider client={client}>
+    <PresenceProvider client={client}>
       <CursorLayer />
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }
 ```
@@ -66,7 +66,7 @@ function OwnClientApp() {
 ## The factory path
 
 - The provider runs `factory` one time per mount, in an effect. A server render never runs it.
-- The provider runs `factory` again each time `clientKey` changes. See [Switch rooms](/docs/react/live-cursor-provider#switch-rooms).
+- The provider runs `factory` again each time `clientKey` changes. See [Switch rooms](/docs/react/presence-provider#switch-rooms).
 - The provider disposes the client on unmount and before each new `factory` run.
 - `client.dispose()` also disconnects the transport.
 
@@ -87,7 +87,7 @@ function OwnClientApp() {
 ## Related
 
 <Cards>
-  <Card icon={<Plug />} title="LiveCursorProvider" href="/docs/react/live-cursor-provider">
+  <Card icon={<Plug />} title="PresenceProvider" href="/docs/react/presence-provider">
     Every prop of the provider.
   </Card>
   <Card icon={<Server />} title="SSR and Strict Mode" href="/docs/react/ssr-and-strict-mode">

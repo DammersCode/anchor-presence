@@ -4,8 +4,8 @@ import type { PresenceClient } from "@anchor-presence/core";
 import type { VisibilityPolicy } from "@anchor-presence/dom";
 import {
   CursorLayer,
-  LiveCursorProvider,
-  useCursorClient,
+  PresenceProvider,
+  usePresenceClient,
   useRemoteCursorsSelector,
 } from "@anchor-presence/react";
 import type { ResolvedCursor } from "@anchor-presence/react";
@@ -55,7 +55,7 @@ function useFollowMode(): {
   follow: (clientId: string) => void;
   stop: () => void;
 } {
-  const client = useCursorClient();
+  const client = usePresenceClient();
   const [leaderId, setLeaderId] = useState<string | null>(null);
   const stop = useCallback(() => setLeaderId(null), []);
 
@@ -107,7 +107,7 @@ const bannerButton =
   "flex-none rounded-md px-2 py-0.5 text-[11px] font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fd-ring";
 
 function FollowBanner() {
-  const client = useCursorClient();
+  const client = usePresenceClient();
   const { leaderId, follow, stop } = useFollowMode();
 
   // Follows Mira again each time the tour brings her back.
@@ -149,13 +149,13 @@ function FollowBanner() {
 
 export function FollowScene({ client, layout, children }: Props) {
   return (
-    <LiveCursorProvider client={client} bindingOptions={bindingOptions}>
+    <PresenceProvider client={client} bindingOptions={bindingOptions}>
       <LongPage layout={layout} header={layout === "narrow" ? <FollowBanner /> : null} />
       <CursorLayer<unknown, User>
         getLabel={(cursor) => cursor.user?.name ?? null}
         getColor={(cursor) => safeColor(cursor.user?.color, MIRA.color)}
       />
       {children}
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }

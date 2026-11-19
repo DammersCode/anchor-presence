@@ -2,7 +2,7 @@ import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { ResolvedCursor } from "@anchor-presence/dom";
-import { LiveCursorProvider } from "../src/provider";
+import { PresenceProvider } from "../src/provider";
 import { useRemoteCursors } from "../src/hooks";
 import { makeFakeBinding, makeFakeClient } from "./test-utils";
 
@@ -46,9 +46,9 @@ describe("useRemoteCursors", () => {
 
     act(() => {
       root.render(
-        <LiveCursorProvider client={client} binding={binding}>
+        <PresenceProvider client={client} binding={binding}>
           <Reader />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
     expect(renders.at(-1)).toEqual([]);
@@ -70,9 +70,9 @@ describe("useRemoteCursors", () => {
 
     act(() => {
       root.render(
-        <LiveCursorProvider client={client} binding={binding}>
+        <PresenceProvider client={client} binding={binding}>
           <Reader />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
     const first = renders.at(-1);
@@ -80,9 +80,9 @@ describe("useRemoteCursors", () => {
     act(() => {
       // trigger an unrelated re-render; empty snapshot identity must not change
       root.render(
-        <LiveCursorProvider client={client} binding={binding}>
+        <PresenceProvider client={client} binding={binding}>
           <Reader />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
     const second = renders.at(-1);
@@ -101,9 +101,9 @@ describe("useRemoteCursors", () => {
 
     act(() => {
       root.render(
-        <LiveCursorProvider client={client}>
+        <PresenceProvider client={client}>
           <Reader />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
     expect(renders.at(-1)).toEqual([]);

@@ -7,8 +7,8 @@ import {
   createEventParser,
   createInMemoryPair,
   createPresenceClient,
-  type CursorCodec,
-  type CursorPresence,
+  type PresenceCodec,
+  type PresenceMessage,
   type EventChannel as ExportedEventChannel,
   type EventMap as ExportedEventMap,
   type EventParsers as ExportedEventParsers,
@@ -23,7 +23,7 @@ import {
 const encode = (value: unknown) => new TextEncoder().encode(JSON.stringify(value));
 const decode = (data: Uint8Array): unknown => JSON.parse(new TextDecoder().decode(data));
 
-export const messagePackCodec: CursorCodec = {
+export const messagePackCodec: PresenceCodec = {
   encode(message) {
     return encode(message);
   },
@@ -193,7 +193,7 @@ describe("api/client.mdx: createEventChannel listing", () => {
 
 describe("custom-codec.mdx: MessagePack sketch", () => {
   it("round-trips a message and returns null for a malformed buffer", () => {
-    const message: CursorPresence = { version: 1, clientId: "a", session: "s", sequence: 1, cursor: null };
+    const message: PresenceMessage = { version: 1, clientId: "a", session: "s", sequence: 1, cursor: null };
     expect(messagePackCodec.decode(messagePackCodec.encode(message))).toEqual(message);
     expect(messagePackCodec.decode(new Uint8Array([0x7b, 0x22]))).toBeNull();
   });

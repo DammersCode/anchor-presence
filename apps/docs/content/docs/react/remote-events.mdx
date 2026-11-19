@@ -1,12 +1,12 @@
 ---
-title: Cursor events
-description: Send one-shot events such as reactions with client.sendEvent, and receive them with useCursorEvents.
+title: Remote events
+description: Send one-shot events such as reactions with client.sendEvent, and receive them with useRemoteEvents.
 icon: zap
 ---
 
 import { Braces, Wifi, Zap } from "lucide-react";
 
-An event is a one-shot message to every peer, for example a reaction or a ping. It has a `type` and an optional `data` value. `useCursorEvents` calls a listener for each event that a peer sends. Use events for things that happen one time. For state that a late peer must also see, use the [local user or context](/docs/react/local-context).
+An event is a one-shot message to every peer, for example a reaction or a ping. It has a `type` and an optional `data` value. `useRemoteEvents` calls a listener for each event that a peer sends. Use events for things that happen one time. For state that a late peer must also see, use the [local user or context](/docs/react/local-context).
 
 ## Usage
 
@@ -14,13 +14,13 @@ This component sends a reaction with `client.sendEvent` and shows the last react
 
 ```tsx
 import { useState } from "react";
-import { useCursorClient, useCursorEvents } from "@anchor-presence/react";
+import { usePresenceClient, useRemoteEvents } from "@anchor-presence/react";
 
 function Reactions() {
-  const client = useCursorClient();
+  const client = usePresenceClient();
   const [lastReaction, setLastReaction] = useState<string | null>(null);
 
-  useCursorEvents((event) => {
+  useRemoteEvents((event) => {
     if (event.type === "reaction" && typeof event.data === "string") {
       setLastReaction(`${event.clientId}: ${event.data}`);
     }

@@ -1,7 +1,7 @@
 "use client";
 
 import type { PresenceClient } from "@anchor-presence/core";
-import { CursorLayer, LiveCursorProvider, useRemoteCursors } from "@anchor-presence/react";
+import { CursorLayer, PresenceProvider, useRemoteCursors } from "@anchor-presence/react";
 import type { ResolvedCursor } from "@anchor-presence/react";
 import type { ReactNode } from "react";
 import { LongPage } from "./long-page";
@@ -61,7 +61,7 @@ function OffscreenHints() {
 
 export function EdgeArrowsScene({ client, layout, children }: Props) {
   return (
-    <LiveCursorProvider client={client}>
+    <PresenceProvider client={client}>
       <LongPage layout={layout} />
       <CursorLayer<unknown, User>
         getLabel={(cursor) => cursor.user?.name ?? null}
@@ -69,6 +69,6 @@ export function EdgeArrowsScene({ client, layout, children }: Props) {
       />
       {/* The arrows take the status bar's place at the window edge. */}
       {layout === "narrow" ? <OffscreenHints /> : children}
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }

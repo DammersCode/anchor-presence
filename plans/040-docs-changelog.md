@@ -13,7 +13,7 @@ Goal: every doc, sample, and the changelog match the new API. Prose in `simple-e
 - `apps/docs/content/docs/react/index.mdx`: replace the `usePresenceClient` table row with the provider `factory`.
 - `apps/docs/content/docs/react/use-presence-client.mdx`: replace the page content with "Creating the client" (provider `factory` as the standard path, `client` prop as bring-your-own, `createPresenceClient` for manual control; drop the registry/key story). Rename the file to `client-creation.mdx`, update `apps/docs/content/docs/meta.json` and every link to the old page.
 - `apps/docs/content/docs/react/ssr-and-strict-mode.mdx`: factory-in-provider pattern; drop the module-registry explanation.
-- `apps/docs/content/docs/react/live-cursor-provider.mdx`: document `factory` and the `client` prop (client wins when both are set; the provider disposes clients it created).
+- `apps/docs/content/docs/react/presence-provider.mdx`: document `factory` and the `client` prop (client wins when both are set; the provider disposes clients it created).
 - `apps/docs/content/docs/core/presence-client.mdx`: `autoConnect` default `true`.
 - `apps/docs/content/docs/react/api/hooks.mdx`: drop the `usePresenceClient` section.
 - `apps/docs/content/docs/core/build-a-framework-adapter.mdx`: replace the `usePresenceClient` mention with the provider `factory`.

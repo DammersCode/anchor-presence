@@ -10,9 +10,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   CursorLayer,
   DefaultCursor,
-  LiveCursorProvider,
-  useCursorClient,
-  useCursorEvents,
+  PresenceProvider,
+  usePresenceClient,
+  useRemoteEvents,
   usePeerChanges,
   useRemoteCursors,
   useRemoteCursorsSelector,
@@ -47,7 +47,7 @@ function useRemoteChat(): Record<string, string> {
   const [messages, setMessages] = useState<Record<string, string>>({});
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
 
-  useCursorEvents((event) => {
+  useRemoteEvents((event) => {
     if (event.type !== "chat") return;
     const text = readChatText(event.data);
     if (text === null) return;
@@ -102,7 +102,7 @@ function isTextField(target: EventTarget | null): boolean {
 }
 
 function ChatComposer() {
-  const client = useCursorClient();
+  const client = usePresenceClient();
   const pointer = useRef({ x: 0, y: 0 });
   const bubble = useRef<HTMLDivElement>(null);
   const [origin, setOrigin] = useState({ x: 0, y: 0 });
@@ -167,11 +167,11 @@ function ChatComposer() {
 
 function ChatApp({ client }: { client: PresenceClient<unknown, User> }) {
   return (
-    <LiveCursorProvider client={client}>
+    <PresenceProvider client={client}>
       <main>{/* your app */}</main>
       <ChatCursorLayer />
       <ChatComposer />
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }
 
@@ -259,11 +259,11 @@ function FollowControls() {
 
 function FollowApp({ client }: { client: PresenceClient<unknown, User> }) {
   return (
-    <LiveCursorProvider client={client}>
+    <PresenceProvider client={client}>
       <FollowControls />
       <main>{/* your app, with data-anchor elements */}</main>
       <CursorLayer />
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }
 
@@ -312,11 +312,11 @@ function OffscreenHints() {
 
 function HintsApp({ client }: { client: PresenceClient }) {
   return (
-    <LiveCursorProvider client={client}>
+    <PresenceProvider client={client}>
       <main>{/* your app */}</main>
       <CursorLayer />
       <OffscreenHints />
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }
 
@@ -380,9 +380,9 @@ describe("cursor chat recipe", () => {
     };
     act(() =>
       root.render(
-        <LiveCursorProvider client={client} binding={makeFakeBinding().binding}>
+        <PresenceProvider client={client} binding={makeFakeBinding().binding}>
           <ChatComposer />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       ),
     );
 
@@ -415,9 +415,9 @@ describe("cursor chat recipe", () => {
     const fake = makeFakeBinding<unknown, User>();
     act(() =>
       root.render(
-        <LiveCursorProvider client={client} binding={fake.binding}>
+        <PresenceProvider client={client} binding={fake.binding}>
           <ChatCursorLayer />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       ),
     );
     act(() => fake.publish([{ ...cursorAt("peer"), user: { name: "Ada" } }]));
@@ -456,9 +456,9 @@ describe("follow mode recipe", () => {
 
     act(() =>
       root.render(
-        <LiveCursorProvider client={client} binding={fake.binding}>
+        <PresenceProvider client={client} binding={fake.binding}>
           <FollowControls />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       ),
     );
     act(() =>
@@ -523,9 +523,9 @@ describe("off-screen hint recipe", () => {
     const fake = makeFakeBinding();
     act(() =>
       root.render(
-        <LiveCursorProvider client={makeFakeClient().client} binding={fake.binding}>
+        <PresenceProvider client={makeFakeClient().client} binding={fake.binding}>
           <OffscreenHints />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       ),
     );
     act(() =>

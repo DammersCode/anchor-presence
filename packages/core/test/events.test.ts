@@ -3,7 +3,7 @@ import { binaryCodec } from "../src/binary-codec";
 import { jsonCodec } from "../src/codec";
 import { createPresenceClient } from "../src/client";
 import { createInMemoryPair } from "../src/in-memory-transport";
-import type { CursorPresence, PeerChange, RemoteEvent } from "../src/protocol";
+import type { PresenceMessage, PeerChange, RemoteEvent } from "../src/protocol";
 import { RemotePresenceStore } from "../src/store";
 import { validatePresence } from "../src/validate";
 
@@ -15,7 +15,7 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-const eventMessage: CursorPresence = {
+const eventMessage: PresenceMessage = {
   version: 1,
   clientId: "c",
   session: "s",
@@ -161,8 +161,8 @@ describe("peer changes", () => {
     const message = (
       clientId: string,
       sequence: number,
-      extra: Partial<CursorPresence> = {},
-    ): CursorPresence => ({
+      extra: Partial<PresenceMessage> = {},
+    ): PresenceMessage => ({
       version: 1,
       clientId,
       session: "s",

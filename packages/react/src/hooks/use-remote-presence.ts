@@ -1,6 +1,6 @@
 import { useCallback, useSyncExternalStore } from "react";
 import type { RemotePresence } from "@anchor-presence/core";
-import { EMPTY_PRESENCE, getServerPresence, useLiveCursorContext } from "./use-cursor-client.js";
+import { EMPTY_PRESENCE, getServerPresence, usePresenceContext } from "./use-presence-client.js";
 
 /**
  * Returns the stable list of remote presences, without `sequence`.
@@ -8,7 +8,7 @@ import { EMPTY_PRESENCE, getServerPresence, useLiveCursorContext } from "./use-c
  * Watch `sequence` with `client.getRemoteSnapshot()` and `client.subscribeRemote()`.
  */
 export function useRemotePresence<TContext = unknown, TUser = unknown>(): RemotePresence<TContext, TUser>[] {
-  const { client } = useLiveCursorContext<TContext, TUser>();
+  const { client } = usePresenceContext<TContext, TUser>();
   const subscribe = useCallback(
     (listener: () => void) => (client !== null ? client.subscribeRemote(listener) : () => {}),
     [client],

@@ -1,5 +1,5 @@
 import type { ConnectionStatus } from "./protocol.js";
-import type { LiveCursorTransport } from "./transport.js";
+import type { PresenceTransport } from "./transport.js";
 
 /**
  * Options for `createInMemoryPair`.
@@ -9,8 +9,8 @@ export type InMemoryPairOptions = {
   async?: boolean;
 };
 
-/** A `LiveCursorTransport` whose optional lifecycle and status members are always present. */
-export type InMemoryTransport = LiveCursorTransport & {
+/** A `PresenceTransport` whose optional lifecycle and status members are always present. */
+export type InMemoryTransport = PresenceTransport & {
   connect(): void;
   disconnect(): void;
   subscribeStatus(listener: (status: ConnectionStatus) => void): () => void;

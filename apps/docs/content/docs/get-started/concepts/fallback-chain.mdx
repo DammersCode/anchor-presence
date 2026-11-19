@@ -4,7 +4,7 @@ description: How a cursor falls back from the exact anchor to a parent anchor, t
 icon: waypoints
 ---
 
-import { Anchor, Crosshair, EyeOff, LayoutDashboard } from "lucide-react";
+import { Anchor, Crosshair, LayoutDashboard, Eye } from "lucide-react";
 
 The fallback chain lets a receiver place a cursor when the exact element is missing on its screen. One example is a table row that exists on the sender but not in a shorter table on the receiver. The cursor then moves to the nearest parent anchor that the receiver has, and not to a random place.
 
@@ -61,10 +61,14 @@ After this step, a **visibility policy** decides whether the cursor shows. The d
   <Card icon={<Crosshair />} title="Resolution" href="/docs/dom/resolution">
     The pixel formula of each tier.
   </Card>
-  <Card icon={<EyeOff />} title="UI context" href="/docs/get-started/concepts/ui-context">
+  <Card icon={<Eye />} title="UI context" href="/docs/get-started/concepts/ui-context">
     Hide a cursor with a visibility policy.
   </Card>
-  <Card icon={<LayoutDashboard />} title="Layout design" href="/docs/get-started/guides/layout-design">
+  <Card
+    icon={<LayoutDashboard />}
+    title="Layout design for presence"
+    href="/docs/get-started/guides/layout-design"
+  >
     Anchor each level so that the fallback lands one step up.
   </Card>
 </Cards>

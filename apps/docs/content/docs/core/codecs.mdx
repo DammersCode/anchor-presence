@@ -4,7 +4,7 @@ description: The PresenceCodec interface, jsonCodec, and how to choose a codec f
 icon: binary
 ---
 
-import { FileCode, FileDigit, Shield } from "lucide-react";
+import { FileCog, FileDigit, ShieldCheck } from "lucide-react";
 
 A codec turns a `PresenceMessage` into bytes for the wire, and turns bytes back into a value. `@anchor-presence/core` ships `jsonCodec`, the default, and `binaryCodec`, a compact codec with a fixed layout. When you set up a room, choose a codec. All clients in the room must use the same one.
 
@@ -71,10 +71,10 @@ const jsonCodec: PresenceCodec = {
   <Card icon={<FileDigit />} title="Binary codec" href="/docs/core/binary-codec">
     The wire layout and the encode limits.
   </Card>
-  <Card icon={<FileCode />} title="Custom codec" href="/docs/core/custom-codec">
+  <Card icon={<FileCog />} title="Custom codec" href="/docs/core/custom-codec">
     Write your own codec, and debug binary traffic.
   </Card>
-  <Card icon={<Shield />} title="Security" href="/docs/get-started/guides/security">
+  <Card icon={<ShieldCheck />} title="Security" href="/docs/get-started/guides/security">
     The limits that every decoded message must meet.
   </Card>
 </Cards>

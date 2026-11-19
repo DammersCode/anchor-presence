@@ -4,7 +4,7 @@ description: Find the cause of a missing, hidden, drifting, or jumping cursor, a
 icon: life-buoy
 ---
 
-import { Box, Gauge, LayoutDashboard, Eye } from "lucide-react";
+import { Gauge, LayoutDashboard, Eye, Radio } from "lucide-react";
 
 Most cursor problems have one of three causes: a missing anchor, a connection that is not open, or a layout change that the binding cannot see. Find your symptom below. Read the [development warnings](#development-warnings) in the browser console first, because they name most causes.
 
@@ -40,17 +40,29 @@ Make sure that both clients use the same room and the same codec.
 </Step>
 </Steps>
 
+## A peer is missing
+
+If other cursors appear but one peer does not, check these causes:
+
+- The window of the peer is not active, or two tabs share one window. See [Cursor not visible](#cursor-not-visible).
+- Clients of one room connect to different relay processes. See [Keep each room on one process](/docs/get-started/guides/deploy-relay#keep-each-room-on-one-process).
+- The store drops new peers above `maxRemoteClients`. See [maxRemoteClients](/docs/core/remote-presence#maxremoteclients).
+- The relay drops a frame above the size cap or the rate limit, and keeps the socket open. See [Set the environment variables](/docs/get-started/guides/deploy-relay#set-the-environment-variables).
+- An example relay answers a room in the URL path with HTTP `404`, not a close code. See [Room from the URL](/docs/examples/backends/relay-contract#room-from-the-url).
+
 ## Cursor not visible
 
-Four causes give the same symptom.
+Five causes give the same symptom.
 
-**The sender is not active.** When its window loses focus or the pointer leaves the page, the sender clears its cursor. Two tabs in one window never show each other a cursor. To test on one computer, open two windows side by side. See [When the cursor clears](/docs/dom/pointer-capture#when-the-cursor-clears).
+**The sender is not active.** When its window loses focus or the pointer leaves the page, the sender clears its cursor. Two tabs in one window never show each other a cursor. See [When the cursor clears](/docs/dom/pointer-capture#when-the-cursor-clears).
 
 **The anchor is not registered.** The sender can point at an element that has no matching anchor ID on the receiver. If the fallback chain and the viewport position both miss, the tier is `hidden`. Make sure that both clients render the same anchor ID for the same element.
 
 **A visibility policy hides it.** A custom policy can return `"hide"` for a cursor that the default policy shows. The default policy hides only the `hidden` tier. Check the policy in `resolution.visibilityPolicy` of the binding options. See [UI context](/docs/get-started/concepts/ui-context).
 
 **The peer is idle or stale.** A peer is **idle** after `idleAfterMs` with no change. `CursorLayer` dims an idle cursor. A heartbeat that changes nothing does not end the idle state. A peer is **stale** after `staleTimeoutMs` with no message, and the store then removes it. A background tab still sends a heartbeat every `heartbeatIntervalMs`. A browser can slow the timers of a hidden tab to one run per minute, so a long background period can still remove the peer. See [Remote presence](/docs/core/remote-presence) for the defaults.
+
+**A second finger starts a pinch.** On a touch screen, the sender clears its cursor. See [Touch behavior](/docs/dom/pointer-capture#touch-behavior).
 
 ## Cursor is outside the window
 
@@ -80,6 +92,8 @@ See [Invalidation signals](/docs/get-started/guides/performance#invalidation-sig
 
 If the pointer crosses a gap with no anchored parent, the cursor falls back to the viewport position. On a receiver with another layout, that position is at another place, so the cursor jumps. Give the parent container its own anchor, for example `data-anchor="nav"` on a sidebar.
 
+If the cursor jumps between messages, not between elements, see [Motion](/docs/dom/motion).
+
 Two neighbors can also be far apart in the other layout. [Layout design for presence](/docs/get-started/guides/layout-design) gives the rules for both cases, and a skill that measures them.
 
 ## Two tabs share one clientId
@@ -94,7 +108,7 @@ The client works on plain HTTP. The default `idFactory` builds each ID from 72 r
 
 ## Tests in jsdom
 
-jsdom has no layout. `getBoundingClientRect()` returns zeros unless a test mocks it, and `ResizeObserver` can be missing. A jsdom test can check your own logic with mocked rectangles. For wrapping, sidebar states, and element sizes, use a real browser, for example Playwright on Chromium, Firefox, and WebKit. If a behavior is correct in jsdom but wrong in a browser, suspect a jsdom gap first.
+jsdom has no layout. `getBoundingClientRect()` returns zeros unless a test mocks it, and `ResizeObserver` can be missing. A jsdom test can check your own logic with mocked rectangles. For wrapping, sidebar states, and element sizes, use a real browser, for example Playwright on Chromium, Firefox, and WebKit. If a behavior is correct in jsdom but wrong in a browser, suspect a jsdom gap first. To test with several users and no browser, use [`createInMemoryRoom`](/docs/core/in-memory-transport#test-with-more-than-two-peers).
 
 ## Development warnings
 
@@ -120,7 +134,11 @@ Outside production builds, the library writes warnings to the console with the p
 ## Related
 
 <Cards>
-  <Card icon={<LayoutDashboard />} title="Layout design" href="/docs/get-started/guides/layout-design">
+  <Card
+    icon={<LayoutDashboard />}
+    title="Layout design for presence"
+    href="/docs/get-started/guides/layout-design"
+  >
     Layout rules that prevent jumps.
   </Card>
   <Card icon={<Gauge />} title="Performance" href="/docs/get-started/guides/performance">
@@ -129,7 +147,7 @@ Outside production builds, the library writes warnings to the console with the p
   <Card icon={<Eye />} title="UI context" href="/docs/get-started/concepts/ui-context">
     Visibility policies.
   </Card>
-  <Card icon={<Box />} title="Presence client" href="/docs/core/presence-client">
+  <Card icon={<Radio />} title="Presence client" href="/docs/core/presence-client">
     Client options, close reasons, and development mode.
   </Card>
 </Cards>

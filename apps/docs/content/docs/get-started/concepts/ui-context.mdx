@@ -4,19 +4,13 @@ description: Send app state with the cursor, and show or hide remote cursors wit
 icon: eye
 ---
 
-import { Eye, ScanEye, ShieldCheck, Waypoints } from "lucide-react";
+import { Eye, ShieldCheck, Waypoints, Layers } from "lucide-react";
 
 UI context is app state that a sender attaches to its cursor, for example the open dialog or the route. A visibility policy on the receiver reads that context and shows or hides the cursor. Use context when the anchor alone cannot tell whether a cursor makes sense on the receiver. Anchor Presence never changes the UI state of the receiver.
 
-## Set the context
+## Where context comes from
 
-Call `setContext` on the client:
-
-```ts
-client.setContext({ route: "/settings", dialog: "invite" });
-```
-
-In React, use the [`useLocalContext`](/docs/react/local-context) hook. On the receiver, the context reaches the visibility policy and the `context` field of each `ResolvedCursor`.
+The sender sets it with `setContext` on the client, or with `useLocalContext` in React. The steps are on [Local context and user](/docs/react/local-context), and the [Typing and away](/docs/get-started/guides/typing-and-away) recipe has a full example. On the receiver, the context reaches the visibility policy and the `context` field of each `ResolvedCursor`.
 
 ## What the client sends
 
@@ -64,10 +58,6 @@ const dialogAwarePolicy: VisibilityPolicy<{ dialog?: string }> = ({ presence, re
 
 The client needs the same context type as the policy, for example `createPresenceClient<{ dialog?: string }>`. The binding cannot see the open dialog of the receiver. When it changes, call `binding.invalidate()` to run the policy again. See [Run the policy again after a state change](/docs/dom/visibility-policy#run-the-policy-again-after-a-state-change).
 
-## Share typing and away
-
-Put the anchor where the user types, and a flag for a hidden tab, in `context`. The [Typing and away](/docs/get-started/guides/typing-and-away) recipe has the code.
-
 ## Never change the receiver UI
 
 A remote cursor only gives information. It must not change a route, open or close a dialog, expand a sidebar, or scroll the page of the receiver. If a cursor points into UI that is closed on the receiver, fall back or hide the cursor.
@@ -83,8 +73,11 @@ Do not change local UI state as a reaction to `useRemoteCursors()` or `useRemote
   <Card icon={<Eye />} title="Visibility policy" href="/docs/dom/visibility-policy">
     The full policy reference.
   </Card>
-  <Card icon={<ScanEye />} title="Occlusion and scroll" href="/docs/dom/occlusion-and-scroll">
+  <Card icon={<Layers />} title="Occlusion and scroll" href="/docs/dom/occlusion-and-scroll">
     How `pointVisible` works, and its limits.
+  </Card>
+  <Card icon={<Layers />} title="Dialogs and layers" href="/docs/examples/dialogs-and-layers">
+    A live demo of a visibility policy while a dialog is open.
   </Card>
   <Card icon={<ShieldCheck />} title="Security" href="/docs/get-started/guides/security">
     Render remote context as text.

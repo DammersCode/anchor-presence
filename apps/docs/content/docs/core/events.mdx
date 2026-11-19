@@ -4,7 +4,7 @@ description: sendEvent and subscribeEvents, the limits of an event, parseEvent, 
 icon: zap
 ---
 
-import { Code, MousePointerClick, Radio, ShieldCheck } from "lucide-react";
+import { Code, Radio, ShieldCheck, Zap } from "lucide-react";
 
 An event is a one-shot message to every peer, for example a reaction or a ping. Use an event for a short action that peers see one time. Use `setContext` for a state that peers keep, such as a selection. See [Lifecycle](/docs/core/presence-client#lifecycle).
 
@@ -142,7 +142,7 @@ const unsubscribe = events.subscribe((event) => {
   <Card icon={<ShieldCheck />} title="Validation" href="/docs/core/validation#events-and-leave-messages">
     The checks on each inbound event.
   </Card>
-  <Card icon={<MousePointerClick />} title="Remote events in React" href="/docs/react/remote-events">
+  <Card icon={<Zap />} title="Remote events" href="/docs/react/remote-events">
     Send and receive events from React components.
   </Card>
   <Card icon={<Code />} title="Client API" href="/docs/core/api/client#createeventchannel">

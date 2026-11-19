@@ -4,7 +4,7 @@ description: createBroadcastChannelTransport and BroadcastChannelTransport.
 icon: app-window
 ---
 
-import { AppWindow, Cable } from "lucide-react";
+import { AppWindow, ArrowLeftRight } from "lucide-react";
 
 This page lists `createBroadcastChannelTransport` and its type. The [BroadcastChannel transport](/docs/dom/broadcast-channel-transport) guide explains the behavior. Import them from the package:
 
@@ -27,7 +27,11 @@ import type { BroadcastChannelTransport } from "@anchor-presence/dom";
   <Card icon={<AppWindow />} title="BroadcastChannel transport" href="/docs/dom/broadcast-channel-transport">
     The guide to the transport.
   </Card>
-  <Card icon={<Cable />} title="Transport API" href="/docs/core/api/transports-and-codecs#presencetransport">
+  <Card
+    icon={<ArrowLeftRight />}
+    title="Transport API"
+    href="/docs/core/api/transports-and-codecs#presencetransport"
+  >
     The `PresenceTransport` contract.
   </Card>
 </Cards>

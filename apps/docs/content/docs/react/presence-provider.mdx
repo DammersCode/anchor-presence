@@ -4,7 +4,7 @@ description: Share a presence client and its DOM binding with the tree below.
 icon: plug
 ---
 
-import { Component, Factory, Layers, Server } from "lucide-react";
+import { Component, Factory, Server, Link } from "lucide-react";
 
 `PresenceProvider` shares a presence client and its DOM binding with every hook and component below it. The DOM binding is the object from `@anchor-presence/dom` that turns remote presence into screen positions. Every app that uses `@anchor-presence/react` wraps its cursor-aware tree in one provider.
 
@@ -138,7 +138,7 @@ If `factory` is set and is not a function, and you pass no `client`, the provide
   <Card icon={<Component />} title="Components API" href="/docs/react/api/components">
     Every prop with its type.
   </Card>
-  <Card icon={<Layers />} title="Binding" href="/docs/dom/binding">
+  <Card icon={<Link />} title="Binding" href="/docs/dom/binding">
     What the DOM binding does with remote presence.
   </Card>
 </Cards>

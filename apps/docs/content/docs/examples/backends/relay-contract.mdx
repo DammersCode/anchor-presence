@@ -4,7 +4,7 @@ description: What every relay must do, the close codes, and the conformance suit
 icon: file-check
 ---
 
-import { Cable, Server, ShieldCheck } from "lucide-react";
+import { Cable, FileCode, RadioTower, Server, ShieldCheck } from "lucide-react";
 
 A relay forwards bytes between the clients of one room. A relay must obey these rules so that `createWebSocketTransport` works with it.
 
@@ -17,7 +17,7 @@ A relay forwards bytes between the clients of one room. A relay must obey these 
 - Treat a repeated `room` parameter as an invalid room name: close the connection with code `4007`.
 - Never map an invalid room name to `main`. Otherwise, two different rooms share one stream.
 - If the relay checks a [room token](/docs/dom/websocket-transport#room-token), read it from the `token` query parameter. A repeated `token` parameter fails the check: close the connection with code `4006`.
-- Drop a frame above the size cap and keep the socket open. The default cap is 32 KiB (`MAX_MESSAGE_BYTES`). This rule applies to binary and to text frames.
+- Drop a frame above the size cap and keep the socket open. The [`MAX_MESSAGE_BYTES`](/docs/get-started/guides/deploy-relay#set-the-environment-variables) environment variable sets the cap. This rule applies to binary and to text frames.
 - Keep serving other connections after a malformed request line, a reset during the handshake, or an oversized header.
 
 ## Room from the URL
@@ -34,6 +34,8 @@ The reference relay (`apps/server`) also reads a room from the path. It uses the
 ## Identity
 
 A relay that does not decode messages cannot tell who sent one. Any peer can claim another `clientId`, or send a `leave` for another peer. To prevent this, make `authCheck` return a verified `{ clientId, user }`. The relay then writes that identity into every JSON frame of the connection.
+
+`authCheck` receives `{ token, room, origin, headers }`. It may be async. It returns `true` to admit, `false` to refuse, or `{ clientId, user }` to admit and bind that identity. A throw or a rejection counts as a refusal.
 
 These relays have an `authCheck` hook and bind the identity that it returns:
 
@@ -117,7 +119,7 @@ The conformance suite `examples/_shared/relay-conformance-suite.ts` runs in vite
 
 The suite does not check the codes `4001`, `4002`, `4003` and `4005`.
 
-To test a relay of your own, copy `relay-conformance-suite.ts` and `relay-test-helpers.ts` from `examples/_shared`. Then call `defineRelayConformance(name, start, options)` in a vitest file. The `start(env)` function starts your relay with the given environment variables. It returns `{ baseUrl, stop }`: the `ws://` base URL of the relay and a function that stops it.
+To test a relay of your own, copy `relay-conformance-suite.ts` and `relay-test-helpers.ts` from `examples/_shared`. Then call `defineRelayConformance(name, start, options)` in a vitest file. The only option is `identity`: `{ identity?: boolean }`, default `false`. Set it to `true` to add the identity checks. In this repo, `bunx vitest run examples/_shared/relay-conformance.test.ts` runs it against the five example relays. The `start(env)` function starts your relay with the given environment variables. It returns `{ baseUrl, stop }`: the `ws://` base URL of the relay and a function that stops it.
 
 Your relay must read these environment variables:
 
@@ -135,10 +137,16 @@ In the demo identity mode, make `authCheck` return the user that [Demo identity 
   <Card icon={<Server />} title="Backends" href="/docs/examples/backends">
     Pick a tested relay for your server.
   </Card>
-  <Card icon={<Cable />} title="WebSocket transport" href="/docs/dom/websocket-transport">
+  <Card icon={<RadioTower />} title="WebSocket transport" href="/docs/dom/websocket-transport">
     The client side of the contract: reconnect and `shouldReconnect`.
   </Card>
   <Card icon={<ShieldCheck />} title="Security" href="/docs/get-started/guides/security">
     Why a relay without identity binding trusts every `clientId`.
+  </Card>
+  <Card icon={<Cable />} title="Transports" href="/docs/core/transports">
+    The client side: how a transport carries the frames.
+  </Card>
+  <Card icon={<FileCode />} title="Protocol types" href="/docs/core/api/protocol">
+    The frames that the relay forwards.
   </Card>
 </Cards>

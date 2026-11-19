@@ -4,7 +4,7 @@ description: Read the connection status of the client with usePresenceStatus, an
 icon: wifi
 ---
 
-import { Braces, Cable, Gauge } from "lucide-react";
+import { Braces, Gauge, RadioTower } from "lucide-react";
 
 `usePresenceStatus` returns the connection status of the client from the nearest provider. Use it to show a reconnect banner, or to disable UI that needs presence while the connection is down.
 
@@ -91,7 +91,7 @@ function TokenError() {
 ## Related
 
 <Cards>
-  <Card icon={<Cable />} title="WebSocket transport" href="/docs/dom/websocket-transport#close-reasons">
+  <Card icon={<RadioTower />} title="WebSocket transport" href="/docs/dom/websocket-transport#close-reasons">
     Close codes and the reconnect rules.
   </Card>
   <Card icon={<Gauge />} title="Rerenders" href="/docs/react/rerenders">

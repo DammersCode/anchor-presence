@@ -6,12 +6,18 @@ icon: book-open
 
 import {
   Anchor,
+  Braces,
+  Code,
+  PlugZap,
   Atom,
   Blocks,
   Bot,
   Box,
   Download,
+  FileCheck,
+  FileCode,
   FlaskConical,
+  Link,
   MousePointer,
   Rocket,
   Server,
@@ -70,13 +76,13 @@ Anchor Presence sends an element ID and a point inside that element, not a scree
 The library has three packages. Each package adds one layer. `@anchor-presence/react` depends on `@anchor-presence/dom`, and `@anchor-presence/dom` depends on `@anchor-presence/core`.
 
 <Cards>
-  <Card icon={<Box />} title="@anchor-presence/core" href="/docs/core">
+  <Card icon={<Box />} title="Core overview" href="/docs/core">
     Protocol, validation, presence store, and the client. No DOM, no React, no dependencies.
   </Card>
-  <Card icon={<MousePointer />} title="@anchor-presence/dom" href="/docs/dom">
+  <Card icon={<MousePointer />} title="DOM overview" href="/docs/dom">
     Anchors, pointer capture, layout measurement, resolver, and the WebSocket transport.
   </Card>
-  <Card icon={<Atom />} title="@anchor-presence/react" href="/docs/react">
+  <Card icon={<Atom />} title="React overview" href="/docs/react">
     The provider, hooks, and cursor components.
   </Card>
 </Cards>
@@ -92,6 +98,32 @@ The library has three packages. Each package adds one layer. `@anchor-presence/r
   </Card>
   <Card icon={<Bot />} title="Skills" href="/docs/skills">
     Agent skills that install Anchor Presence and audit layouts.
+  </Card>
+</Cards>
+
+## Reference
+
+<Cards>
+  <Card icon={<FileCode />} title="Protocol types" href="/docs/core/api/protocol">
+    The message types, validation limits, and where each limit lives.
+  </Card>
+  <Card icon={<FileCode />} title="Wire frames" href="/docs/core/api/protocol#wire-frames">
+    The JSON of a cursor, event, and leave frame.
+  </Card>
+  <Card icon={<Code />} title="Client API" href="/docs/core/api/client">
+    Every method of the presence client.
+  </Card>
+  <Card icon={<PlugZap />} title="WebSocket transport API" href="/docs/dom/api/websocket-transport">
+    The options and states of the WebSocket transport.
+  </Card>
+  <Card icon={<Braces />} title="Hooks API" href="/docs/react/api/hooks">
+    The signature of every React hook.
+  </Card>
+  <Card icon={<FileCheck />} title="Relay contract" href="/docs/examples/backends/relay-contract">
+    The rules that every relay obeys, with close codes.
+  </Card>
+  <Card icon={<Link />} title="Binding options" href="/docs/dom/binding#options">
+    Every option of createDomBinding, with defaults.
   </Card>
 </Cards>
 

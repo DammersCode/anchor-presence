@@ -267,3 +267,23 @@ describe("doc sample sources", () => {
     for (const sample of samples) expect(source).toContain(sample);
   });
 });
+
+describe("performance.mdx: measure a message", () => {
+  it("documents the byteLength line that the codec supports", () => {
+    const page = readFileSync(
+      join(process.cwd(), "apps/docs/content/docs/get-started/guides/performance.mdx"),
+      "utf8",
+    );
+    expect(page).toContain("const bytes = codec.encode(message).byteLength;");
+    const codec: PresenceCodec = jsonCodec;
+    const message: PresenceMessage = {
+      version: 1,
+      clientId: "c",
+      session: "s",
+      sequence: 1,
+      cursor: { anchors: [], viewport: { u: 0, v: 0 } },
+    };
+    const bytes = codec.encode(message).byteLength;
+    expect(bytes).toBeGreaterThan(0);
+  });
+});

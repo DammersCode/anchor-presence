@@ -4,11 +4,18 @@ description: Replace the default arrow with a name pill, an avatar, or a crossha
 icon: brush
 ---
 
-import { Atom, Code, Palette, Spline, Users } from "lucide-react";
+import { Spline, Users, Paintbrush, MousePointer2 } from "lucide-react";
 
 `CursorLayer` renders `DefaultCursor` by default. `renderCursor` replaces the visual, and `CursorLayer` keeps control of the position and the pointer events. In this demo, the same remote cursor shows as a name pill in the wide pane and as an avatar in the narrow pane.
 
 <ExamplePreview scene="custom-cursors" />
+
+<Callout type="info">
+  This demo breaks the layout rules on purpose, so you can see how a cursor moves. The hero card moves from a
+  left column to a full-width row. In your app, keep neighbors, sizes, and shapes alike. See the [layout
+  design guide](/docs/get-started/guides/layout-design) and the [Stable layout](/docs/examples/stable-layout)
+  example.
+</Callout>
 
 ## Code
 
@@ -41,13 +48,13 @@ Try it: Select a renderer in either pane.
 ## Related
 
 <Cards>
-  <Card icon={<Atom />} title="renderCursor" href="/docs/react/custom-cursors#usage">
+  <Card icon={<Paintbrush />} title="renderCursor" href="/docs/react/custom-cursors#usage">
     The props that a renderer gets.
   </Card>
-  <Card icon={<Code />} title="Root attributes" href="/docs/react/custom-cursors#root-attributes">
+  <Card icon={<Paintbrush />} title="Root attributes" href="/docs/react/custom-cursors#root-attributes">
     The attributes on each cursor root, for selectors and tests.
   </Card>
-  <Card icon={<Palette />} title="Label and color" href="/docs/react/cursor-layer#label-and-color">
+  <Card icon={<MousePointer2 />} title="Label and color" href="/docs/react/cursor-layer#label-and-color">
     `getLabel` and `getColor`.
   </Card>
   <Card icon={<Users />} title="Presence list" href="/docs/examples/presence-list">

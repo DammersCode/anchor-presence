@@ -1,0 +1,776 @@
+{
+  "baseUrl": "http://localhost:5173",
+  "anchorAttribute": "data-anchor",
+  "maxAnchors": 4,
+  "jumpScale": "viewport",
+  "views": [
+    {
+      "page": "dashboard-jumpy",
+      "name": "390",
+      "url": "/?page=field-test&ui=dashboard&variant=jumpy",
+      "width": 390,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='dash']"
+        }
+      ]
+    },
+    {
+      "page": "dashboard-jumpy",
+      "name": "768",
+      "url": "/?page=field-test&ui=dashboard&variant=jumpy",
+      "width": 768,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='dash']"
+        }
+      ]
+    },
+    {
+      "page": "dashboard-jumpy",
+      "name": "1280",
+      "url": "/?page=field-test&ui=dashboard&variant=jumpy",
+      "width": 1280,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='dash']"
+        }
+      ]
+    },
+    {
+      "page": "dashboard-jumpy",
+      "name": "1440",
+      "url": "/?page=field-test&ui=dashboard&variant=jumpy",
+      "width": 1440,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='dash']"
+        }
+      ]
+    },
+    {
+      "page": "dashboard-stable",
+      "name": "390",
+      "url": "/?page=field-test&ui=dashboard&variant=stable",
+      "width": 390,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='dash']"
+        }
+      ]
+    },
+    {
+      "page": "dashboard-stable",
+      "name": "768",
+      "url": "/?page=field-test&ui=dashboard&variant=stable",
+      "width": 768,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='dash']"
+        }
+      ]
+    },
+    {
+      "page": "dashboard-stable",
+      "name": "1280",
+      "url": "/?page=field-test&ui=dashboard&variant=stable",
+      "width": 1280,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='dash']"
+        }
+      ]
+    },
+    {
+      "page": "dashboard-stable",
+      "name": "1440",
+      "url": "/?page=field-test&ui=dashboard&variant=stable",
+      "width": 1440,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='dash']"
+        }
+      ]
+    },
+    {
+      "page": "settings-jumpy",
+      "name": "390",
+      "url": "/?page=field-test&ui=settings&variant=jumpy",
+      "width": 390,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='sett']"
+        }
+      ]
+    },
+    {
+      "page": "settings-jumpy",
+      "name": "768",
+      "url": "/?page=field-test&ui=settings&variant=jumpy",
+      "width": 768,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='sett']"
+        }
+      ]
+    },
+    {
+      "page": "settings-jumpy",
+      "name": "1280",
+      "url": "/?page=field-test&ui=settings&variant=jumpy",
+      "width": 1280,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='sett']"
+        }
+      ]
+    },
+    {
+      "page": "settings-jumpy",
+      "name": "1440",
+      "url": "/?page=field-test&ui=settings&variant=jumpy",
+      "width": 1440,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='sett']"
+        }
+      ]
+    },
+    {
+      "page": "settings-stable",
+      "name": "390",
+      "url": "/?page=field-test&ui=settings&variant=stable",
+      "width": 390,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='sett']"
+        }
+      ]
+    },
+    {
+      "page": "settings-stable",
+      "name": "768",
+      "url": "/?page=field-test&ui=settings&variant=stable",
+      "width": 768,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='sett']"
+        }
+      ]
+    },
+    {
+      "page": "settings-stable",
+      "name": "1280",
+      "url": "/?page=field-test&ui=settings&variant=stable",
+      "width": 1280,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='sett']"
+        }
+      ]
+    },
+    {
+      "page": "settings-stable",
+      "name": "1440",
+      "url": "/?page=field-test&ui=settings&variant=stable",
+      "width": 1440,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='sett']"
+        }
+      ]
+    },
+    {
+      "page": "pricing-jumpy",
+      "name": "390",
+      "url": "/?page=field-test&ui=pricing&variant=jumpy",
+      "width": 390,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='pric']"
+        }
+      ]
+    },
+    {
+      "page": "pricing-jumpy",
+      "name": "768",
+      "url": "/?page=field-test&ui=pricing&variant=jumpy",
+      "width": 768,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='pric']"
+        }
+      ]
+    },
+    {
+      "page": "pricing-jumpy",
+      "name": "1280",
+      "url": "/?page=field-test&ui=pricing&variant=jumpy",
+      "width": 1280,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='pric']"
+        }
+      ]
+    },
+    {
+      "page": "pricing-jumpy",
+      "name": "1440",
+      "url": "/?page=field-test&ui=pricing&variant=jumpy",
+      "width": 1440,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='pric']"
+        }
+      ]
+    },
+    {
+      "page": "pricing-stable",
+      "name": "390",
+      "url": "/?page=field-test&ui=pricing&variant=stable",
+      "width": 390,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='pric']"
+        }
+      ]
+    },
+    {
+      "page": "pricing-stable",
+      "name": "768",
+      "url": "/?page=field-test&ui=pricing&variant=stable",
+      "width": 768,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='pric']"
+        }
+      ]
+    },
+    {
+      "page": "pricing-stable",
+      "name": "1280",
+      "url": "/?page=field-test&ui=pricing&variant=stable",
+      "width": 1280,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='pric']"
+        }
+      ]
+    },
+    {
+      "page": "pricing-stable",
+      "name": "1440",
+      "url": "/?page=field-test&ui=pricing&variant=stable",
+      "width": 1440,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='pric']"
+        }
+      ]
+    },
+    {
+      "page": "article-jumpy",
+      "name": "390",
+      "url": "/?page=field-test&ui=article&variant=jumpy",
+      "width": 390,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='arti']"
+        }
+      ]
+    },
+    {
+      "page": "article-jumpy",
+      "name": "768",
+      "url": "/?page=field-test&ui=article&variant=jumpy",
+      "width": 768,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='arti']"
+        }
+      ]
+    },
+    {
+      "page": "article-jumpy",
+      "name": "1280",
+      "url": "/?page=field-test&ui=article&variant=jumpy",
+      "width": 1280,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='arti']"
+        }
+      ]
+    },
+    {
+      "page": "article-jumpy",
+      "name": "1440",
+      "url": "/?page=field-test&ui=article&variant=jumpy",
+      "width": 1440,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='arti']"
+        }
+      ]
+    },
+    {
+      "page": "article-stable",
+      "name": "390",
+      "url": "/?page=field-test&ui=article&variant=stable",
+      "width": 390,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='arti']"
+        }
+      ]
+    },
+    {
+      "page": "article-stable",
+      "name": "768",
+      "url": "/?page=field-test&ui=article&variant=stable",
+      "width": 768,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='arti']"
+        }
+      ]
+    },
+    {
+      "page": "article-stable",
+      "name": "1280",
+      "url": "/?page=field-test&ui=article&variant=stable",
+      "width": 1280,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='arti']"
+        }
+      ]
+    },
+    {
+      "page": "article-stable",
+      "name": "1440",
+      "url": "/?page=field-test&ui=article&variant=stable",
+      "width": 1440,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='arti']"
+        }
+      ]
+    },
+    {
+      "page": "gallery-jumpy",
+      "name": "390",
+      "url": "/?page=field-test&ui=gallery&variant=jumpy",
+      "width": 390,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='gall']"
+        }
+      ]
+    },
+    {
+      "page": "gallery-jumpy",
+      "name": "768",
+      "url": "/?page=field-test&ui=gallery&variant=jumpy",
+      "width": 768,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='gall']"
+        }
+      ]
+    },
+    {
+      "page": "gallery-jumpy",
+      "name": "1280",
+      "url": "/?page=field-test&ui=gallery&variant=jumpy",
+      "width": 1280,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='gall']"
+        }
+      ]
+    },
+    {
+      "page": "gallery-jumpy",
+      "name": "1440",
+      "url": "/?page=field-test&ui=gallery&variant=jumpy",
+      "width": 1440,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='gall']"
+        }
+      ]
+    },
+    {
+      "page": "gallery-stable",
+      "name": "390",
+      "url": "/?page=field-test&ui=gallery&variant=stable",
+      "width": 390,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='gall']"
+        }
+      ]
+    },
+    {
+      "page": "gallery-stable",
+      "name": "768",
+      "url": "/?page=field-test&ui=gallery&variant=stable",
+      "width": 768,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='gall']"
+        }
+      ]
+    },
+    {
+      "page": "gallery-stable",
+      "name": "1280",
+      "url": "/?page=field-test&ui=gallery&variant=stable",
+      "width": 1280,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='gall']"
+        }
+      ]
+    },
+    {
+      "page": "gallery-stable",
+      "name": "1440",
+      "url": "/?page=field-test&ui=gallery&variant=stable",
+      "width": 1440,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='gall']"
+        }
+      ]
+    },
+    {
+      "page": "chat-jumpy",
+      "name": "390",
+      "url": "/?page=field-test&ui=chat&variant=jumpy",
+      "width": 390,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='chat']"
+        }
+      ]
+    },
+    {
+      "page": "chat-jumpy",
+      "name": "768",
+      "url": "/?page=field-test&ui=chat&variant=jumpy",
+      "width": 768,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='chat']"
+        }
+      ]
+    },
+    {
+      "page": "chat-jumpy",
+      "name": "1280",
+      "url": "/?page=field-test&ui=chat&variant=jumpy",
+      "width": 1280,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='chat']"
+        }
+      ]
+    },
+    {
+      "page": "chat-jumpy",
+      "name": "1440",
+      "url": "/?page=field-test&ui=chat&variant=jumpy",
+      "width": 1440,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='chat']"
+        }
+      ]
+    },
+    {
+      "page": "chat-stable",
+      "name": "390",
+      "url": "/?page=field-test&ui=chat&variant=stable",
+      "width": 390,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='chat']"
+        }
+      ]
+    },
+    {
+      "page": "chat-stable",
+      "name": "768",
+      "url": "/?page=field-test&ui=chat&variant=stable",
+      "width": 768,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='chat']"
+        }
+      ]
+    },
+    {
+      "page": "chat-stable",
+      "name": "1280",
+      "url": "/?page=field-test&ui=chat&variant=stable",
+      "width": 1280,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='chat']"
+        }
+      ]
+    },
+    {
+      "page": "chat-stable",
+      "name": "1440",
+      "url": "/?page=field-test&ui=chat&variant=stable",
+      "width": 1440,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='chat']"
+        }
+      ]
+    },
+    {
+      "page": "shop-jumpy",
+      "name": "390",
+      "url": "/?page=field-test&ui=shop&variant=jumpy",
+      "width": 390,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='shop']"
+        }
+      ]
+    },
+    {
+      "page": "shop-jumpy",
+      "name": "768",
+      "url": "/?page=field-test&ui=shop&variant=jumpy",
+      "width": 768,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='shop']"
+        }
+      ]
+    },
+    {
+      "page": "shop-jumpy",
+      "name": "1280",
+      "url": "/?page=field-test&ui=shop&variant=jumpy",
+      "width": 1280,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='shop']"
+        }
+      ]
+    },
+    {
+      "page": "shop-jumpy",
+      "name": "1440",
+      "url": "/?page=field-test&ui=shop&variant=jumpy",
+      "width": 1440,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='shop']"
+        }
+      ]
+    },
+    {
+      "page": "shop-stable",
+      "name": "390",
+      "url": "/?page=field-test&ui=shop&variant=stable",
+      "width": 390,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='shop']"
+        }
+      ]
+    },
+    {
+      "page": "shop-stable",
+      "name": "768",
+      "url": "/?page=field-test&ui=shop&variant=stable",
+      "width": 768,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='shop']"
+        }
+      ]
+    },
+    {
+      "page": "shop-stable",
+      "name": "1280",
+      "url": "/?page=field-test&ui=shop&variant=stable",
+      "width": 1280,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='shop']"
+        }
+      ]
+    },
+    {
+      "page": "shop-stable",
+      "name": "1440",
+      "url": "/?page=field-test&ui=shop&variant=stable",
+      "width": 1440,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='shop']"
+        }
+      ]
+    },
+    {
+      "page": "admin-jumpy",
+      "name": "390",
+      "url": "/?page=field-test&ui=admin&variant=jumpy",
+      "width": 390,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='admi']"
+        }
+      ]
+    },
+    {
+      "page": "admin-jumpy",
+      "name": "768",
+      "url": "/?page=field-test&ui=admin&variant=jumpy",
+      "width": 768,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='admi']"
+        }
+      ]
+    },
+    {
+      "page": "admin-jumpy",
+      "name": "1280",
+      "url": "/?page=field-test&ui=admin&variant=jumpy",
+      "width": 1280,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='admi']"
+        }
+      ]
+    },
+    {
+      "page": "admin-jumpy",
+      "name": "1440",
+      "url": "/?page=field-test&ui=admin&variant=jumpy",
+      "width": 1440,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='admi']"
+        }
+      ]
+    },
+    {
+      "page": "admin-stable",
+      "name": "390",
+      "url": "/?page=field-test&ui=admin&variant=stable",
+      "width": 390,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='admi']"
+        }
+      ]
+    },
+    {
+      "page": "admin-stable",
+      "name": "768",
+      "url": "/?page=field-test&ui=admin&variant=stable",
+      "width": 768,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='admi']"
+        }
+      ]
+    },
+    {
+      "page": "admin-stable",
+      "name": "1280",
+      "url": "/?page=field-test&ui=admin&variant=stable",
+      "width": 1280,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='admi']"
+        }
+      ]
+    },
+    {
+      "page": "admin-stable",
+      "name": "1440",
+      "url": "/?page=field-test&ui=admin&variant=stable",
+      "width": 1440,
+      "height": 900,
+      "steps": [
+        {
+          "wait": "[data-anchor='admi']"
+        }
+      ]
+    }
+  ]
+}

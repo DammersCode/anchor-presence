@@ -4,9 +4,11 @@ description: Use Anchor Presence with Vite, Next.js, TanStack Start and Router, 
 icon: workflow
 ---
 
-import { Atom, Rocket, Server } from "lucide-react";
+import { Rocket, Server, Plug, Puzzle } from "lucide-react";
 
 `@anchor-presence/react` is built for any React framework. This page shows where to put the provider in each framework. The provider and `CursorLayer` run only in the browser. On the server, the provider renders its children with a `null` client and creates no client.
+
+For Vue, Solid, Svelte, or plain DOM code, see [Build a framework adapter](/docs/core/build-a-framework-adapter).
 
 ## Create a provider module
 
@@ -182,7 +184,10 @@ The tests do not cover React 18 with a router.
   <Card icon={<Server />} title="SSR and Strict Mode" href="/docs/react/ssr-and-strict-mode">
     Why the client lives in `factory`.
   </Card>
-  <Card icon={<Atom />} title="PresenceProvider" href="/docs/react/presence-provider">
+  <Card icon={<Plug />} title="PresenceProvider" href="/docs/react/presence-provider">
     Every prop of the provider.
+  </Card>
+  <Card icon={<Puzzle />} title="Build a framework adapter" href="/docs/core/build-a-framework-adapter">
+    Use presence from Vue, Solid, Svelte, or plain DOM code.
   </Card>
 </Cards>

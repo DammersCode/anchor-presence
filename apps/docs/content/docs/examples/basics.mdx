@@ -4,11 +4,18 @@ description: The smallest setup that shows a remote cursor on the same button in
 icon: mouse-pointer-2
 ---
 
-import { AppWindow, Atom, BookOpen, LayoutGrid, ListTree } from "lucide-react";
+import { LayoutGrid, ListTree, Anchor, MousePointer2 } from "lucide-react";
 
 A live cursor needs three things: a client, a provider, and at least one anchor. In this demo, the same three buttons sit in a row in the wide pane and in a column in the narrow pane. A cursor on a button in one pane lands on the same button in the other pane.
 
 <ExamplePreview scene="basics" />
+
+<Callout type="info">
+  This demo breaks the layout rules on purpose, so you can see how a cursor moves. The buttons change size and
+  shape between the panes. In your app, keep neighbors, sizes, and shapes alike. See the [layout design
+  guide](/docs/get-started/guides/layout-design) and the [Stable layout](/docs/examples/stable-layout)
+  example.
+</Callout>
 
 ## Code
 
@@ -38,17 +45,17 @@ Try it: Move your pointer over a button or a line of text in one pane.
 ## Related
 
 <Cards>
-  <Card icon={<BookOpen />} title="Anchors" href="/docs/get-started/concepts/anchors">
+  <Card icon={<Anchor />} title="Anchors" href="/docs/get-started/concepts/anchors">
     What an anchor ID is, and how `u` and `v` place the cursor inside it.
   </Card>
   <Card
-    icon={<AppWindow />}
+    icon={<Anchor />}
     title="The anchor attribute"
     href="/docs/dom/anchor-registration#the-anchor-attribute"
   >
     How the binding finds anchors without a registration call.
   </Card>
-  <Card icon={<Atom />} title="CursorLayer" href="/docs/react/cursor-layer">
+  <Card icon={<MousePointer2 />} title="CursorLayer" href="/docs/react/cursor-layer">
     Which cursors the layer renders, and where.
   </Card>
   <Card icon={<LayoutGrid />} title="Responsive grid" href="/docs/examples/responsive-grid">

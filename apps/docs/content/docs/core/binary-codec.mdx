@@ -4,7 +4,7 @@ description: The binaryCodec wire layout, coordinate precision, and encode limit
 icon: file-digit
 ---
 
-import { Binary, FileCode, Shield } from "lucide-react";
+import { FileCog, Binary, FileCode, ShieldCheck } from "lucide-react";
 
 `binaryCodec` is a compact codec with a fixed binary layout. It sends about half the bytes of `jsonCodec` for a typical message. If bandwidth matters more than readable traffic, use it. See [Choose a codec](/docs/core/codecs#choose-a-codec).
 
@@ -68,10 +68,13 @@ The protocol limits on the [Validation](/docs/core/validation#validationlimits) 
   <Card icon={<Binary />} title="Codecs" href="/docs/core/codecs">
     The codec contract and how to choose a codec.
   </Card>
-  <Card icon={<FileCode />} title="Custom codec" href="/docs/core/custom-codec">
+  <Card icon={<FileCog />} title="Custom codec" href="/docs/core/custom-codec">
     Log binary traffic during development.
   </Card>
-  <Card icon={<Shield />} title="Security" href="/docs/get-started/guides/security">
+  <Card icon={<ShieldCheck />} title="Security" href="/docs/get-started/guides/security">
     The limits that every decoded message must meet.
+  </Card>
+  <Card icon={<FileCode />} title="Protocol types" href="/docs/core/api/protocol">
+    The messages that the codec encodes.
   </Card>
 </Cards>

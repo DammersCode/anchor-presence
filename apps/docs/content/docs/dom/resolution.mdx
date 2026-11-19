@@ -4,7 +4,7 @@ description: How the resolver turns a remote presence into a ResolvedCursor in r
 icon: crosshair
 ---
 
-import { BookOpen, Braces, Eye, Move } from "lucide-react";
+import { Braces, Eye, Move, Waypoints } from "lucide-react";
 
 Resolution is the process that turns the presence of one peer into a screen position on the receiver. The binding resolves every peer on each frame while it is active. Read this page to understand the `tier`, `x`, `y`, and `idle` fields of a `ResolvedCursor`.
 
@@ -77,7 +77,7 @@ When nothing about a cursor changed, the resolver keeps the same `ResolvedCursor
   <Card icon={<Braces />} title="Resolution types" href="/docs/dom/api/resolution">
     The types of the result.
   </Card>
-  <Card icon={<BookOpen />} title="Fallback chain" href="/docs/get-started/concepts/fallback-chain">
+  <Card icon={<Waypoints />} title="Fallback chain" href="/docs/get-started/concepts/fallback-chain">
     How the sender builds the chain.
   </Card>
 </Cards>

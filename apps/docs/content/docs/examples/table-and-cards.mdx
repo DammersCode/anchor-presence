@@ -4,11 +4,18 @@ description: A cursor on a table cell lands on the same field when the row turns
 icon: table-properties
 ---
 
-import { AppWindow, BookOpen, LayoutGrid, ListTree } from "lucide-react";
+import { LayoutGrid, ListTree, Anchor, Waypoints, Crosshair } from "lucide-react";
 
 A list can show as a table on a wide screen and as a stack of cards on a narrow screen. The fields of one record move to different places. In this demo, the wide pane shows invoices as table rows. The narrow pane shows each invoice as a card. A cursor on the status cell of a row lands on the status pill of the same card.
 
 <ExamplePreview scene="table-and-cards" />
+
+<Callout type="info">
+  This demo breaks the layout rules on purpose, so you can see how a cursor moves. The fields of one record
+  move to other places in the card. In your app, keep neighbors, sizes, and shapes alike. See the [layout
+  design guide](/docs/get-started/guides/layout-design) and the [Stable layout](/docs/examples/stable-layout)
+  example.
+</Callout>
 
 ## Code
 
@@ -37,17 +44,17 @@ Try it: Move your pointer down the amount column in the wide pane.
 ## Related
 
 <Cards>
-  <Card icon={<BookOpen />} title="Anchor IDs" href="/docs/get-started/concepts/anchors#anchor-ids">
+  <Card icon={<Anchor />} title="Anchor IDs" href="/docs/get-started/concepts/anchors#anchor-ids">
     How to name anchors, so that they stay stable across layouts.
   </Card>
   <Card
-    icon={<BookOpen />}
+    icon={<Waypoints />}
     title="How the chain works"
     href="/docs/get-started/concepts/fallback-chain#how-the-chain-works"
   >
     Why a cursor between two fields lands on the record.
   </Card>
-  <Card icon={<AppWindow />} title="The three tiers" href="/docs/dom/resolution#the-three-tiers">
+  <Card icon={<Crosshair />} title="The three tiers" href="/docs/dom/resolution#the-three-tiers">
     The tiers that the status bar shows.
   </Card>
   <Card icon={<LayoutGrid />} title="Responsive grid" href="/docs/examples/responsive-grid">

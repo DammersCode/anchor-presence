@@ -4,7 +4,7 @@ description: How the resolver detects a point that a scroll container clips, poi
 icon: layers
 ---
 
-import { Crosshair, Eye, Play } from "lucide-react";
+import { Crosshair, Eye, EyeOff } from "lucide-react";
 
 An anchor inside a scrollable panel can have a real size and position while the panel clips the resolved point out of view. The resolver detects this case and reports it in `pointVisible`. `pointVisible` is separate from the `show`/`hide` decision of the visibility policy. Read it in a policy to hide a cursor that the user cannot see.
 
@@ -57,8 +57,8 @@ The browser tests of the clip check run in Chromium only, in CI and locally. Uni
 
 <Cards>
   <Card
-    icon={<Play />}
-    title="Occlusion and scroll containers example"
+    icon={<EyeOff />}
+    title="Occlusion and scroll containers"
     href="/docs/examples/occlusion-and-scroll-containers"
   >
     A live demo of clipped and covered cursors.

@@ -4,7 +4,7 @@ description: Render on the server and under React Strict Mode with exactly one l
 icon: server
 ---
 
-import { Factory, Plug, Rocket } from "lucide-react";
+import { Factory, Plug, Workflow } from "lucide-react";
 
 Server rendering (SSR) and React Strict Mode both break a client that you create in the wrong place. If your app renders on the server, or runs in development with `<StrictMode>`, read this page. The rule is short: create the client in the provider `factory` or in an effect. Never create it at module scope or in a component body.
 
@@ -71,7 +71,7 @@ The package entry starts with `"use client"`, so its exports are Client Componen
   <Card icon={<Plug />} title="PresenceProvider" href="/docs/react/presence-provider">
     Every prop of the provider.
   </Card>
-  <Card icon={<Rocket />} title="Frameworks" href="/docs/get-started/frameworks">
+  <Card icon={<Workflow />} title="Frameworks" href="/docs/get-started/frameworks">
     Provider modules for Next.js, Vite, TanStack, React Router, and Astro.
   </Card>
 </Cards>

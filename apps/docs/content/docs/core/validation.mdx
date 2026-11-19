@@ -4,7 +4,7 @@ description: validatePresence, ValidationLimits, the shape check for remote user
 icon: shield-check
 ---
 
-import { Code, Shield, Users } from "lucide-react";
+import { ShieldCheck, Users, FileCode } from "lucide-react";
 
 `validatePresence` turns an untrusted decoded value into a `PresenceMessage` or `null`. The client passes the output of every codec `decode` through it before the value reaches the store. Call it yourself only when you process presence data outside a `PresenceClient`, for example on a relay.
 
@@ -153,10 +153,10 @@ As a result, a bad event never reaches the store as a message that clears the cu
   <Card icon={<Users />} title="Remote presence" href="/docs/core/remote-presence">
     What the store does with a checked message.
   </Card>
-  <Card icon={<Shield />} title="Security" href="/docs/get-started/guides/security">
+  <Card icon={<ShieldCheck />} title="Security" href="/docs/get-started/guides/security">
     The risks that each limit covers.
   </Card>
-  <Card icon={<Code />} title="Protocol types" href="/docs/core/api/protocol">
+  <Card icon={<FileCode />} title="Protocol types" href="/docs/core/api/protocol">
     The shape of `PresenceMessage`.
   </Card>
 </Cards>

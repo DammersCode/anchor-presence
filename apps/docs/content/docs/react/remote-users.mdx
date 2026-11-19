@@ -1,10 +1,10 @@
 ---
 title: Remote users
-description: Read the remote user values with useRemoteUsers, and react to joins and leaves with usePeerChanges.
+description: Show who is online with useRemoteUsers, which reads the remote user values, and react to joins and leaves with usePeerChanges.
 icon: users
 ---
 
-import { Gauge, LayoutList, UserPen, Braces } from "lucide-react";
+import { Gauge, UserPen, Braces, Users } from "lucide-react";
 
 `useRemoteUsers` returns one entry for each peer. An entry holds the `user` value of the peer, its session, and its idle state. Use it for a presence list or an avatar stack. These lists need one row per client (tab), and they do not rerender when cursors move.
 
@@ -75,6 +75,7 @@ function JoinNotice() {
 - A cursor move never calls the listener. For the rules of each `type`, see [Peer changes](/docs/core/remote-presence#peer-changes).
 - The hook subscribes one time per client. An inline listener does not subscribe again on each render, and the hook always calls the listener of the last render.
 - The hook returns nothing, so it adds no rerender of its own. Without a client, it calls nothing.
+- A peer that loses its connection sends no leave message. The store removes it after `staleTimeoutMs`, 70 seconds by default, and the listener then gets a `"leave"`. See [Stale timeout](/docs/core/remote-presence#stale-timeout).
 
 ## Related
 
@@ -82,7 +83,7 @@ function JoinNotice() {
   <Card icon={<UserPen />} title="Local context and user" href="/docs/react/local-context">
     Set the user value that peers see.
   </Card>
-  <Card icon={<LayoutList />} title="Presence list example" href="/docs/examples/presence-list">
+  <Card icon={<Users />} title="Presence list" href="/docs/examples/presence-list">
     A live list with avatars and idle states.
   </Card>
   <Card icon={<Gauge />} title="Rerenders" href="/docs/react/rerenders">

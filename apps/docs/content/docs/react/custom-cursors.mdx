@@ -4,7 +4,7 @@ description: Replace the cursor content that CursorLayer renders, or style the b
 icon: paintbrush
 ---
 
-import { Component, MousePointer2, Users } from "lucide-react";
+import { Component, MousePointer2, Brush, Users } from "lucide-react";
 
 `CursorLayer` places one root element per remote cursor. `renderCursor` replaces what that root shows, and `DefaultCursor` is the arrow that it shows by default. Use them to change the look of a cursor. The position always stays with `CursorLayer`.
 
@@ -111,6 +111,14 @@ A peer is idle when its presence does not change for `idleAfterMs`. See [Idle st
 }
 ```
 
+To hide an idle cursor, return `false` from `filterCursor`:
+
+```tsx
+function ActiveCursorLayer() {
+  return <CursorLayer filterCursor={(cursor) => !cursor.idle} />;
+}
+```
+
 To show the idle state next to a name in a list, use [Remote users](/docs/react/remote-users).
 
 ## Related
@@ -118,6 +126,9 @@ To show the idle state next to a name in a list, use [Remote users](/docs/react/
 <Cards>
   <Card icon={<MousePointer2 />} title="CursorLayer" href="/docs/react/cursor-layer">
     Labels, colors, filters, and accessibility.
+  </Card>
+  <Card icon={<Brush />} title="Custom cursor rendering" href="/docs/examples/custom-cursor-rendering">
+    A live demo of custom cursors.
   </Card>
   <Card icon={<Users />} title="Remote users" href="/docs/react/remote-users">
     Show the idle state in a presence list.

@@ -4,7 +4,7 @@ description: Pick a relay runtime, keep each room on one process, put TLS in fro
 icon: cloud-upload
 ---
 
-import { Cable, FileCheck, Gauge, Server, ShieldCheck } from "lucide-react";
+import { FileCheck, Gauge, LifeBuoy, RadioTower, Server, ShieldCheck } from "lucide-react";
 
 A relay forwards each message to the other clients in a room. This page tells you how to run a WebSocket relay outside local development. It covers the reference relay in `apps/server` and the Bun, Node.js (ws), Hono and Elysia relays in [Backends](/docs/examples/backends). Read it before your users connect from other networks.
 
@@ -33,8 +33,6 @@ The relays differ in what they do with a slow receiver. A slow receiver is a cli
 | Bun, Hono, Elysia | Bun                            | Bun closes the receiver above `RELAY_SLOW_PEER_HARD_BYTES`, its `backpressureLimit`. The relay skips no sends.                                                               |
 | Node.js (ws)      | Node.js 22.18 or later, or Bun | The relay skips sends above `RELAY_SLOW_PEER_SOFT_BYTES`. It closes the receiver with code `4003` above `RELAY_SLOW_PEER_HARD_BYTES`.                                        |
 
-On every Bun relay, Bun closes the sender of a frame above `maxPayloadLength`: four times `MAX_MESSAGE_BYTES`, at least 1 MiB. The Node.js (ws) relay has the same cap through the `maxPayload` of `ws`, and the Socket.IO relay through `maxHttpBufferSize`.
-
 If your server runs Node.js, use the Node.js (ws) relay. If your server runs Bun, any relay works. If a slow receiver must stay connected and skip frames, use the Node.js (ws) relay.
 
 ## Keep each room on one process
@@ -60,20 +58,20 @@ The room token travels in the query string. For this reason, the token can appea
 
 The relays read their limits from environment variables. The "Read by" column names the relays that read each variable, including the [Socket.IO](/docs/examples/backends/socketio) and [SignalR](/docs/examples/backends/signalr) relays. Set at least the first two before you go live:
 
-| Variable                       | Default      | Read by                          | Purpose                                                                                                                                                                                                          |
-| ------------------------------ | ------------ | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `RELAY_ALLOWED_ORIGINS`        | empty        | All                              | The origins that can connect, comma-separated. Empty allows every origin. On SignalR, the default is `http://localhost:5173`.                                                                                    |
-| `RELAY_AUTH_TOKEN`             | empty        | All except SignalR               | The shared room token. Empty turns the check off.                                                                                                                                                                |
-| `MAX_MESSAGE_BYTES`            | 32 KiB       | All except SignalR               | The largest message. The relay drops a larger message. SignalR has a fixed limit of 32 KiB (about 24 KiB of payload).                                                                                            |
-| `RATE_CAPACITY`                | 80           | All except SignalR               | The burst of messages per socket.                                                                                                                                                                                |
-| `RATE_REFILL_PER_SECOND`       | 40           | All except SignalR               | The messages per second per socket after the burst.                                                                                                                                                              |
-| `RELAY_MAX_ROOM_SOCKETS`       | 64           | All except SignalR               | The sockets in one room. The relay closes a new socket above it with `4001`.                                                                                                                                     |
-| `RELAY_MAX_TOTAL_SOCKETS`      | 10,000       | All except SignalR               | The sockets in one process. The relay closes a new socket above it with `4002`.                                                                                                                                  |
-| `RELAY_SLOW_PEER_HARD_BYTES`   | 8 MiB        | All except Socket.IO and SignalR | The send buffer of a receiver above which the relay closes it. Only the Node.js (ws) factory also takes the option `slowPeerHardBytes`. See [Close codes](/docs/examples/backends/relay-contract#close-codes).   |
-| `RELAY_SLOW_PEER_SOFT_BYTES`   | 1 MiB        | Reference relay, Node.js (ws)    | The send buffer of a receiver above which the relay skips or drops frames.                                                                                                                                       |
-| `RELAY_SLOW_PEER_RESUME_BYTES` | 512 KiB      | Node.js (ws)                     | The send buffer of a receiver below which the relay sends again.                                                                                                                                                 |
-| `RELAY_IDLE_TIMEOUT_SECONDS`   | 60           | Bun, Node.js (ws), Hono, Elysia  | On Bun, Hono, and Elysia: the seconds with no message or pong before Bun closes the socket. On Node.js (ws): the relay pings every half of it and terminates a socket that answered no ping, with no close code. |
-| `PORT`                         | 8787 or 8789 | Reference relay, Node.js (ws)    | The port: 8787 for the reference relay, 8789 for Node.js (ws). SignalR reads `ASPNETCORE_URLS`. The other relays take the port as the first argument.                                                            |
+| Variable                       | Default      | Read by                          | Purpose                                                                                                                                                                                                                                                                                            |
+| ------------------------------ | ------------ | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `RELAY_ALLOWED_ORIGINS`        | empty        | All                              | The origins that can connect, comma-separated. Empty allows every origin. On SignalR, the default is `http://localhost:5173`.                                                                                                                                                                      |
+| `RELAY_AUTH_TOKEN`             | empty        | All except SignalR               | The shared room token. Empty turns the check off.                                                                                                                                                                                                                                                  |
+| `MAX_MESSAGE_BYTES`            | 32 KiB       | All except SignalR               | The largest message. The relay drops a larger message. The hard frame cap closes the sender of a frame above 4 times this value, at least 1 MiB: `maxPayloadLength` on Bun, `maxPayload` on `ws`, `maxHttpBufferSize` on Socket.IO. SignalR has a fixed limit of 32 KiB (about 24 KiB of payload). |
+| `RATE_CAPACITY`                | 80           | All except SignalR               | The burst of messages per socket.                                                                                                                                                                                                                                                                  |
+| `RATE_REFILL_PER_SECOND`       | 40           | All except SignalR               | The messages per second per socket after the burst.                                                                                                                                                                                                                                                |
+| `RELAY_MAX_ROOM_SOCKETS`       | 64           | All except SignalR               | The sockets in one room. The relay closes a new socket above it with `4001`.                                                                                                                                                                                                                       |
+| `RELAY_MAX_TOTAL_SOCKETS`      | 10,000       | All except SignalR               | The sockets in one process. The relay closes a new socket above it with `4002`.                                                                                                                                                                                                                    |
+| `RELAY_SLOW_PEER_HARD_BYTES`   | 8 MiB        | All except Socket.IO and SignalR | The send buffer of a receiver above which the relay closes it. Only the Node.js (ws) factory also takes the option `slowPeerHardBytes`. See [Close codes](/docs/examples/backends/relay-contract#close-codes).                                                                                     |
+| `RELAY_SLOW_PEER_SOFT_BYTES`   | 1 MiB        | Reference relay, Node.js (ws)    | The send buffer of a receiver above which the relay skips or drops frames.                                                                                                                                                                                                                         |
+| `RELAY_SLOW_PEER_RESUME_BYTES` | 512 KiB      | Node.js (ws)                     | The send buffer of a receiver below which the relay sends again.                                                                                                                                                                                                                                   |
+| `RELAY_IDLE_TIMEOUT_SECONDS`   | 60           | Bun, Node.js (ws), Hono, Elysia  | On Bun, Hono, and Elysia: the seconds with no message or pong before Bun closes the socket. On Node.js (ws): the relay pings every half of it and terminates a socket that answered no ping, with no close code.                                                                                   |
+| `PORT`                         | 8787 or 8789 | Reference relay, Node.js (ws)    | The port: 8787 for the reference relay, 8789 for Node.js (ws). SignalR reads `ASPNETCORE_URLS`. The other relays take the port as the first argument.                                                                                                                                              |
 
 The rate limit is a token bucket: a socket can send `RATE_CAPACITY` messages at once, then `RATE_REFILL_PER_SECOND` messages per second.
 
@@ -81,7 +79,7 @@ The reference relay pings every 30 seconds, and closes a socket with no pong for
 
 The SignalR relay has no room token check, no rate limit, and no socket caps. If you deploy it, add these checks to the hub first.
 
-The room token of `RELAY_AUTH_TOKEN` opens every room, and it does not name a user. To check a token for each user, write an `authCheck` hook in an example relay. See [Identity binding](/docs/examples/backends#identity-binding) and the [demo identity mode](/docs/examples/backends/relay-contract#demo-identity-mode).
+The room token of `RELAY_AUTH_TOKEN` opens every room, and it does not name a user. To check a token for each user, write an `authCheck` hook in an example relay. See [Identity](/docs/examples/backends/relay-contract#identity) and the [demo identity mode](/docs/examples/backends/relay-contract#demo-identity-mode).
 
 <Callout type="warn">
   If `RELAY_DEMO_IDENTITY` is set in production, any client can claim any user name. Leave it unset, and
@@ -103,7 +101,14 @@ The room token of `RELAY_AUTH_TOKEN` opens every room, and it does not name a us
   <Card icon={<Gauge />} title="Performance" href="/docs/get-started/guides/performance#scaling-limits">
     How relay load grows with the size of a room.
   </Card>
-  <Card icon={<Cable />} title="WebSocket transport" href="/docs/dom/websocket-transport">
+  <Card
+    icon={<LifeBuoy />}
+    title="Troubleshooting"
+    href="/docs/get-started/guides/troubleshooting#a-peer-is-missing"
+  >
+    Find why a peer is missing.
+  </Card>
+  <Card icon={<RadioTower />} title="WebSocket transport" href="/docs/dom/websocket-transport">
     The client transport: reconnect, backoff, and room tokens.
   </Card>
 </Cards>

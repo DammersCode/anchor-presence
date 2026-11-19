@@ -17,7 +17,7 @@
     "---[cable]Transports---",
     "websocket-transport",
     "broadcast-channel-transport",
-    "---[book-open]API reference---",
+    "---[braces]API reference---",
     "api/binding",
     "api/resolution",
     "api/websocket-transport",

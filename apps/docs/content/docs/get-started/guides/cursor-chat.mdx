@@ -4,7 +4,7 @@ description: Type a short message and show it next to your cursor on every peer'
 icon: message-square-text
 ---
 
-import { Box, Footprints, MousePointer, ShieldCheck, Zap } from "lucide-react";
+import { ExternalLink, Footprints, ShieldCheck, Zap, MousePointer2 } from "lucide-react";
 
 Users on one page want to say a few words without a separate chat panel. Cursor chat puts a short text bubble next to the cursor. The local user presses `/`, types a message, and presses Enter. The client sends the text as a one-shot event with `client.sendEvent("chat", { text })`.
 
@@ -219,29 +219,16 @@ export function ChatApp({ client }: { client: PresenceClient<unknown, User> }) {
 - **Length.** The input `maxLength` counts UTF-16 code units, and the receiver cuts the text to `CHAT_MAX_LENGTH` graphemes. The client limit for one field is 8 KiB (`DEFAULT_MAX_FIELD_BYTES`).
 - **Rate.** A receiver drops the events of a sender above the event rate limit. See [Events](/docs/core/events) for the limit.
 
-## Run the full demo app
-
-The repository has a demo app with live reactions and a one-line chat. Both use one-shot events. The chat of the demo app is not this recipe: it shows each message in a small box for 3 seconds. The [demo README](https://github.com/DammersCode/anchor-presence/tree/main/apps/demo) lists all steps. To run the demo, clone the repository and run these commands from its root:
-
-```sh
-bun install
-bunx tsc --build packages/react
-bun run --cwd apps/server dev
-bun run --cwd apps/demo dev
-```
-
-The last two commands keep running, so run each one in its own terminal. Open `http://localhost:5173/?name=Ari&room=demo` and `http://localhost:5173/?name=Bo&room=demo` in two windows. Press `/` in one window, type a message, and press Enter.
-
 ## Related
 
 <Cards>
   <Card icon={<Zap />} title="Remote events" href="/docs/react/remote-events">
     Send and receive one-shot events in React.
   </Card>
-  <Card icon={<MousePointer />} title="CursorLayer" href="/docs/react/cursor-layer">
+  <Card icon={<MousePointer2 />} title="CursorLayer" href="/docs/react/cursor-layer">
     Labels, colors, and the `getLabel` prop.
   </Card>
-  <Card icon={<Box />} title="Events" href="/docs/core/events">
+  <Card icon={<Zap />} title="Events" href="/docs/core/events">
     The event API and its rate limit.
   </Card>
   <Card icon={<ShieldCheck />} title="Security" href="/docs/get-started/guides/security">
@@ -249,5 +236,12 @@ The last two commands keep running, so run each one in its own terminal. Open `h
   </Card>
   <Card icon={<Footprints />} title="Follow mode" href="/docs/get-started/guides/follow-mode">
     Follow the cursor of one peer.
+  </Card>
+  <Card
+    icon={<ExternalLink />}
+    title="Demo app"
+    href="https://github.com/DammersCode/anchor-presence/tree/main/apps/demo"
+  >
+    The demo README lists the steps to run the demo with live reactions and a one-line chat.
   </Card>
 </Cards>

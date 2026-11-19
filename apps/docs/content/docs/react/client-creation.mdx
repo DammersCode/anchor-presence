@@ -4,7 +4,7 @@ description: Let the provider create the client with factory, or pass a client t
 icon: factory
 ---
 
-import { Plug, Server, Wifi } from "lucide-react";
+import { Plug, Server, Radio } from "lucide-react";
 
 The provider gets its presence client in one of two ways. Pass a `factory`, and the provider creates and disposes the client. Pass `client`, and you own the client. If your app already creates the client in its own setup code, pass `client`. Otherwise, use `factory`.
 
@@ -93,7 +93,7 @@ function OwnClientApp() {
   <Card icon={<Server />} title="SSR and Strict Mode" href="/docs/react/ssr-and-strict-mode">
     Why the client lives in an effect.
   </Card>
-  <Card icon={<Wifi />} title="Presence client" href="/docs/core/presence-client">
+  <Card icon={<Radio />} title="Presence client" href="/docs/core/presence-client">
     Client options, lifecycle, and status.
   </Card>
 </Cards>

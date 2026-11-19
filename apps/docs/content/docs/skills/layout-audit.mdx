@@ -4,7 +4,7 @@ description: The agent skill that scores a running app for cursor-jump risk betw
 icon: scan-search
 ---
 
-import { BookOpen, LayoutGrid, Plug, Ruler } from "lucide-react";
+import { LayoutGrid, Plug, LayoutDashboard, Scaling } from "lucide-react";
 
 The layout audit skill measures how far a remote cursor can jump when the layout of your app changes. Examples are a sidebar that collapses, a table that becomes cards, and a breakpoint that reflows a grid. To use it, install the skill and ask your agent to audit your layouts. The agent opens your running app in a real browser. It gives back a score for each view pair, with concrete fixes.
 
@@ -34,12 +34,13 @@ If a pair scores moderate or high, the agent proposes fixes with the file and li
 
 ## Prerequisites
 
-| Requirement            | Detail                                                                                                           |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Running app            | A local or deployed URL that answers with HTTP 200.                                                              |
-| Playwright             | The skill checks for Playwright. If it is missing, the skill gives the install command for your package manager. |
-| Node                   | Version 20 or later.                                                                                             |
-| Anchors already placed | The audit measures the anchors that your app already has. If your app has none, run the integration skill first. |
+| Requirement            | Detail                                                                                                                          |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Running app            | A local or deployed URL that answers with HTTP 200.                                                                             |
+| Playwright             | The skill checks for Playwright. If it is missing, the skill gives the install command for your package manager.                |
+| Node                   | Version 20 or later.                                                                                                            |
+| Browser                | Playwright's Chromium. If Playwright has no browser, set `ANCHOR_AUDIT_BROWSER` to the path of a Chrome or Chromium executable. |
+| Anchors already placed | The audit measures the anchors that your app already has. If your app has none, run the integration skill first.                |
 
 ## What it asks you
 
@@ -54,8 +55,9 @@ If a pair scores moderate or high, the agent proposes fixes with the file and li
 
 <Steps>
   <Step>
-    **Scan.** The agent finds every `data-anchor` in your code and the routes that render them. It also finds
-    your breakpoints and the toggles that change which anchors show or where they sit.
+    **Scan.** The `scan.mjs` script lists every `data-anchor` in your code and the routes that render them. It
+    also lists your breakpoints, the toggles that change which anchors show, and the code patterns that reflow
+    a layout. The agent checks the list against the code.
   </Step>
   <Step>
     **Propose a matrix.** It builds views from routes, viewport widths, and states. The widths are a base set
@@ -147,10 +149,14 @@ One route, at one viewport width, in one UI state. For example, the orders page 
   <Card icon={<Plug />} title="Integration skill" href="/docs/skills/integration">
     Run it first to place anchors. Then the audit measures them.
   </Card>
-  <Card icon={<Ruler />} title="Layout design for presence" href="/docs/get-started/guides/layout-design">
+  <Card
+    icon={<LayoutDashboard />}
+    title="Layout design for presence"
+    href="/docs/get-started/guides/layout-design"
+  >
     The layout rule behind every sub-score, with its fix.
   </Card>
-  <Card icon={<BookOpen />} title="Responsive layouts" href="/docs/get-started/concepts/responsive-layouts">
+  <Card icon={<Scaling />} title="Responsive layouts" href="/docs/get-started/concepts/responsive-layouts">
     How the resolver behaves across breakpoints.
   </Card>
   <Card icon={<LayoutGrid />} title="Responsive grid" href="/docs/examples/responsive-grid">

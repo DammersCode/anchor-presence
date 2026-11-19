@@ -4,7 +4,7 @@ description: A room-broadcast relay built on the .ws() route of Elysia for Bun, 
 icon: sparkles
 ---
 
-import { Cable, FileCheck, Hexagon, Zap } from "lucide-react";
+import { FileCheck, Hexagon, RadioTower, Zap } from "lucide-react";
 
 You want a relay on the route API of [Elysia](https://elysiajs.com) instead of raw `Bun.serve`. This example uses the `.ws()` route of Elysia on Bun. Each room is one Bun topic, as in the [Bun relay](/docs/examples/backends/bun-native). The relay types its query with a schema. The client connects through Eden, the typed client of Elysia, so a wrong query parameter is a compile error on the client.
 
@@ -79,7 +79,7 @@ Each setting is an environment variable. The factory options `maxMessageBytes`, 
 
 ### Limits
 
-[Deploy a relay](/docs/get-started/guides/deploy-relay#set-the-environment-variables) lists the limits and their defaults. [Close codes](/docs/examples/backends/relay-contract#close-codes) lists the codes. The relay sets the hard frame size with Bun's `maxPayloadLength`.
+[Deploy a relay](/docs/get-started/guides/deploy-relay#set-the-environment-variables) lists the limits and their defaults. [Close codes](/docs/examples/backends/relay-contract#close-codes) lists the codes. The relay sets the hard frame size with Bun's `maxPayloadLength`. The cap is in the `MAX_MESSAGE_BYTES` row of that table.
 
 Bun does not expose the send buffer of each subscriber. For this reason, the relay cannot skip sends to a slow receiver, as the [Node.js (ws)](/docs/examples/backends/node-ws) relay does.
 
@@ -113,7 +113,7 @@ See [Demo identity mode](/docs/examples/backends/relay-contract#demo-identity-mo
   <Card icon={<FileCheck />} title="Relay contract" href="/docs/examples/backends/relay-contract">
     The rules, the close codes, and the conformance suite.
   </Card>
-  <Card icon={<Cable />} title="WebSocket transport" href="/docs/dom/websocket-transport">
+  <Card icon={<RadioTower />} title="WebSocket transport" href="/docs/dom/websocket-transport">
     The `token` function and the `WebSocketCtor` option.
   </Card>
 </Cards>

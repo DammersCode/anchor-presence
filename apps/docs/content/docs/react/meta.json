@@ -21,7 +21,7 @@
     "remote-presence",
     "typed-hooks",
     "rerenders",
-    "---[book-open]API reference---",
+    "---[braces]API reference---",
     "api/components",
     "api/hooks"
   ]

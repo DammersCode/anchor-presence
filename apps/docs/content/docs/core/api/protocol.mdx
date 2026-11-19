@@ -1,10 +1,10 @@
 ---
 title: Protocol types
-description: PresenceMessage, leave and event messages, PresenceEvent, PeerChange, RemotePresence, validatePresence, ValidationLimits, and the protocol constants.
+description: PresenceMessage, leave and event messages, wire frames, PresenceEvent, PeerChange, RemotePresence, validatePresence, ValidationLimits, the protocol constants, and where each limit lives.
 icon: file-code
 ---
 
-import { Code, ShieldCheck, Users } from "lucide-react";
+import { Code, FileCheck, ShieldCheck, Users, FileDigit } from "lucide-react";
 
 These types describe the wire protocol that the client sends, checks, and stores. `@anchor-presence/core` exports every name on this page. Use the page when you write a relay, a codec, or code that reads raw messages. Import them from the package:
 
@@ -105,21 +105,68 @@ import {
 } from "@anchor-presence/core";
 ```
 
-The `DEFAULT_` constants are the defaults of `ValidationLimits`. See [ValidationLimits](/docs/core/validation#validationlimits) for what each limit checks.
+The `DEFAULT_` constants are the defaults of `ValidationLimits`. See [ValidationLimits](/docs/core/validation#validationlimits) for each value and what it checks.
 
-| Constant                       | Value        |
-| ------------------------------ | ------------ |
-| `DEFAULT_MAX_CLIENT_ID_LENGTH` | `128`        |
-| `DEFAULT_MAX_SESSION_LENGTH`   | `64`         |
-| `DEFAULT_MAX_SEQUENCE`         | `2147483647` |
-| `DEFAULT_MAX_ANCHORS`          | `8`          |
-| `DEFAULT_MAX_ANCHOR_ID_LENGTH` | `256`        |
-| `DEFAULT_MAX_FIELD_BYTES`      | `8192`       |
-| `DEFAULT_MAX_FIELD_DEPTH`      | `8`          |
-| `DEFAULT_MAX_MESSAGE_BYTES`    | `32768`      |
-| `MAX_EVENT_TYPE_LENGTH`        | `64`         |
+`MAX_EVENT_TYPE_LENGTH` is the maximum length of an event `type`. `ValidationLimits` cannot change it. See [Limits of an event](/docs/core/events#limits-of-an-event).
 
-`MAX_EVENT_TYPE_LENGTH` is the maximum length of an event `type`. `ValidationLimits` cannot change it.
+## Wire frames
+
+A `jsonCodec` frame is the UTF-8 JSON of one `PresenceMessage`. A relay forwards these bytes unchanged. This frame moves a cursor over two anchors and a viewport position:
+
+```json
+{
+  "version": 1,
+  "clientId": "client-1",
+  "session": "session-1",
+  "sequence": 1,
+  "cursor": {
+    "anchors": [
+      { "id": "board.card-12", "u": 0.25, "v": 0.5 },
+      { "id": "board", "u": 0.5, "v": 0.25 }
+    ],
+    "viewport": { "u": 0.4, "v": 0.3 }
+  },
+  "pointer": { "type": "mouse" }
+}
+```
+
+This frame sends one event:
+
+```json
+{
+  "version": 1,
+  "clientId": "client-1",
+  "session": "session-1",
+  "sequence": 2,
+  "cursor": null,
+  "event": { "type": "reaction", "data": { "emoji": "party" } }
+}
+```
+
+This frame tells peers that the client left:
+
+```json
+{ "version": 1, "clientId": "client-1", "session": "session-1", "sequence": 3, "cursor": null, "leave": true }
+```
+
+The cursor frame has no `user` field, because the user did not change. See [Remote presence](/docs/core/remote-presence) for how the store keeps the last value.
+
+## Where each limit lives
+
+Each limit has one home page. Read the number there.
+
+| Limit                                      | Home                                                                                         |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| Checks on each inbound message             | [ValidationLimits](/docs/core/validation#validationlimits)                                   |
+| Event `type`, `data`, and size             | [Limits of an event](/docs/core/events#limits-of-an-event)                                   |
+| Event rate                                 | [Event rate limit](/docs/core/events#event-rate-limit)                                       |
+| Binary frame                               | [Encode limits](/docs/core/binary-codec#encode-limits)                                       |
+| Relay rate, socket, and slow-peer caps     | [Environment variables](/docs/get-started/guides/deploy-relay#set-the-environment-variables) |
+| Relay frame size cap (`MAX_MESSAGE_BYTES`) | [Environment variables](/docs/get-started/guides/deploy-relay#set-the-environment-variables) |
+| Peers in the store (`maxRemoteClients`)    | [maxRemoteClients](/docs/core/remote-presence#maxremoteclients)                              |
+| Publish rate                               | [Publish rate](/docs/core/presence-client#publish-rate)                                      |
+| Room name (256 characters)                 | [Rules](/docs/examples/backends/relay-contract#rules)                                        |
+| Sent anchors (`maxSentAnchors`, 1 to 8)    | [Options](/docs/dom/binding#options)                                                         |
 
 ## Related
 
@@ -132,5 +179,11 @@ The `DEFAULT_` constants are the defaults of `ValidationLimits`. See [Validation
   </Card>
   <Card icon={<Code />} title="Client API" href="/docs/core/api/client">
     The client that sends these messages.
+  </Card>
+  <Card icon={<FileDigit />} title="Binary codec" href="/docs/core/binary-codec">
+    The compact wire layout of the same messages.
+  </Card>
+  <Card icon={<FileCheck />} title="Relay contract" href="/docs/examples/backends/relay-contract">
+    What a relay does with these frames.
   </Card>
 </Cards>

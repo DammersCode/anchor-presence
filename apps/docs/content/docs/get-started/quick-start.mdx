@@ -4,7 +4,7 @@ description: See live cursors in two browser windows with no backend, then conne
 icon: rocket
 ---
 
-import { Anchor, Cable, FlaskConical, MousePointer, Server, Workflow } from "lucide-react";
+import { Anchor, Cable, LayoutDashboard, Server, Workflow, Paintbrush, MousePointer2 } from "lucide-react";
 
 This page takes you from an empty React app to live cursors in two steps. First, you connect two windows of one browser with no server. Then you connect two browsers through a relay. Install the packages first. See [Installation](/docs/get-started/installation).
 
@@ -51,7 +51,7 @@ When its window loses focus or the pointer leaves the page, the sender clears it
 </Step>
 </Steps>
 
-`CursorLayer` shows `user.name` as the label. It gives each client one of 8 colors.
+`CursorLayer` shows `user.name` as the label. It gives each client [one of 8 colors](/docs/react/cursor-layer#label-and-color).
 
 <Callout type="warn">
   If you create the client at module scope, the server also runs that code, and all requests share one client.
@@ -107,6 +107,10 @@ Open your app in two browser windows of different widths. Move the pointer in on
 </Step>
 </Steps>
 
+## Test with more users
+
+Each extra window is one more user. Only the window under the pointer sends a cursor, so each window shows one moving remote cursor at a time. To see two at once, add a second device, for example a phone. To open the app on a phone, start the dev server with `bun run dev --host`, and open the network address on a phone that uses the same network. Then use a relay, because a `BroadcastChannel` never leaves the browser. For tests with no browser, see [Test with more than two peers](/docs/core/in-memory-transport#test-with-more-than-two-peers).
+
 ## Without React
 
 `@anchor-presence/core` and `@anchor-presence/dom` work with no React. `createDomBinding` gives the resolved cursors, and you render them with plain DOM code or another framework. See [Draw cursors without React](/docs/dom/binding#draw-cursors-without-react). To connect the binding to another framework, see [Build a framework adapter](/docs/core/build-a-framework-adapter).
@@ -114,6 +118,13 @@ Open your app in two browser windows of different widths. Move the pointer in on
 ## Related
 
 <Cards>
+  <Card
+    icon={<LayoutDashboard />}
+    title="Next: Layout design for presence"
+    href="/docs/get-started/guides/layout-design"
+  >
+    Design a layout that holds on a narrow screen and on a phone.
+  </Card>
   <Card icon={<Workflow />} title="Frameworks" href="/docs/get-started/frameworks">
     Put the provider in Next.js, TanStack, React Router, Remix, or Astro.
   </Card>
@@ -126,10 +137,10 @@ Open your app in two browser windows of different widths. Move the pointer in on
   <Card icon={<Server />} title="Backends" href="/docs/examples/backends">
     Relays for Bun, Node.js, and other servers.
   </Card>
-  <Card icon={<MousePointer />} title="Custom cursors" href="/docs/react/custom-cursors">
+  <Card icon={<Paintbrush />} title="Custom cursors" href="/docs/react/custom-cursors">
     Draw your own cursor component.
   </Card>
-  <Card icon={<FlaskConical />} title="Basics example" href="/docs/examples/basics">
+  <Card icon={<MousePointer2 />} title="Basics" href="/docs/examples/basics">
     Live demos of different layouts.
   </Card>
 </Cards>

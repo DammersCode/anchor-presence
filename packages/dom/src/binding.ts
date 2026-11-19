@@ -15,14 +15,20 @@ import type { ResolvedCursor, VisibilityPolicy } from "./resolver.js";
  * How remote cursors turn into screen positions.
  */
 export type ResolutionOptions<TContext = unknown, TUser = unknown> = {
-  /** Shows or hides one cursor. Default: hide a cursor that does not resolve. */
+  /**
+   * Shows or hides one cursor.
+   * @default hides a cursor that does not resolve
+   */
   visibilityPolicy?: VisibilityPolicy<TContext, TUser>;
   /**
    * Creates the interpolator per remote client.
-   * Default: `linearInterpolator`, or `noneInterpolator` when the OS prefers reduced motion.
+   * @default `linearInterpolator`, or `noneInterpolator` when the OS prefers reduced motion
    */
   interpolatorFactory?: InterpolatorFactory;
-  /** Runs a DOM hit test on the resolved point. Default `false`. */
+  /**
+   * Runs a DOM hit test on the resolved point.
+   * @default false
+   */
   hitTest?: boolean;
 };
 
@@ -64,9 +70,15 @@ function defaultInterpolatorFactory(win: Window | undefined): InterpolatorFactor
  * Options for `createDomBinding`.
  */
 export type DomBindingOptions<TContext = unknown, TUser = unknown> = {
-  /** Attribute whose value is the anchor ID. Default `"data-anchor"`. */
+  /**
+   * Attribute whose value is the anchor ID.
+   * @default "data-anchor"
+   */
   anchorAttribute?: string;
-  /** Maximum anchors in the outbound fallback chain. Default `4`, clamped to `1` through `8`. */
+  /**
+   * Maximum anchors in the outbound fallback chain, clamped to `1` through `8`.
+   * @default 4
+   */
   maxSentAnchors?: number;
   /** Settings for how remote cursors resolve. Omit for the defaults. */
   resolution?: ResolutionOptions<TContext, TUser>;
@@ -75,12 +87,13 @@ export type DomBindingOptions<TContext = unknown, TUser = unknown> = {
   /**
    * Whether the local pointer publishes a cursor.
    * When `false` the client stays presence-only: context and user still flow, no local cursor.
-   * Default `true`.
+   * @default true
    */
   capturePointer?: boolean;
   /**
    * Publish a cursor at the focused element's center on focus changes.
-   * Ignored when `capturePointer` is `false`. Default `false`.
+   * Ignored when `capturePointer` is `false`.
+   * @default false
    */
   captureFocus?: boolean;
 };

@@ -4,7 +4,7 @@ description: Compare no easing, linear easing, and a custom spring on the same c
 icon: spline
 ---
 
-import { AppWindow, Brush, Cpu, Gauge, RotateCcw } from "lucide-react";
+import { Brush, Gauge, Spline, Move } from "lucide-react";
 
 A remote cursor arrives as a series of positions. An interpolator decides how the cursor moves between them. The library ships `noneInterpolator` and `linearInterpolator`, and a spring is application code on the public `Interpolator` interface. In this demo, the remote cursor jumps between four far-apart targets. The wide pane shows each update with no easing. In the narrow pane, you select the interpolator.
 
@@ -43,21 +43,21 @@ Try it: Select an interpolator in the narrow pane.
 
 <Cards>
   <Card
-    icon={<Cpu />}
+    icon={<Spline />}
     title="The Interpolator interface"
     href="/docs/core/interpolation#the-interpolator-interface"
   >
     `target`, `shift`, `sample`, and `reset`.
   </Card>
   <Card
-    icon={<AppWindow />}
+    icon={<Move />}
     title="Choose a custom interpolator"
     href="/docs/dom/motion#choose-a-custom-interpolator"
   >
     Where to pass the factory.
   </Card>
   <Card
-    icon={<RotateCcw />}
+    icon={<Move />}
     title="When motion restarts instead of easing"
     href="/docs/dom/motion#when-motion-restarts-instead-of-easing"
   >

@@ -4,7 +4,7 @@ description: createWebSocketTransport, the default URL, the room token, reconnec
 icon: radio-tower
 ---
 
-import { Cable, PlugZap, Shield } from "lucide-react";
+import { Cable, PlugZap, ShieldCheck } from "lucide-react";
 
 `createWebSocketTransport` builds a `PresenceTransport` over the native browser `WebSocket`. It works with any relay that follows the [relay contract](/docs/examples/backends/relay-contract). Use it to connect clients on different machines. For tabs of one origin with no server, use the [BroadcastChannel transport](/docs/dom/broadcast-channel-transport).
 
@@ -94,6 +94,8 @@ A `WebSocketCtor` that throws reports the same close. If 4 sockets in a row clos
 - When the default rule stops after a close code below `4000` (only `1008`), the transport logs a development warning one time for each URL. A custom `shouldReconnect` never warns. A close with no code reconnects.
 - `random` replaces the source of the random wait. It defaults to `Math.random`. A test can pass a fixed function to get a fixed delay.
 
+After a reconnect, the client publishes its state again and expires peers that stay silent. See [After a reconnect](/docs/core/remote-presence#after-a-reconnect).
+
 While a connection is connecting or open, a second `connect()` call has no effect. It does not open a second socket.
 
 <Callout type="warn">
@@ -156,7 +158,7 @@ The transport does not replay a past close to a new listener. A close after your
   <Card icon={<PlugZap />} title="WebSocket transport API" href="/docs/dom/api/websocket-transport">
     Every option, with its type.
   </Card>
-  <Card icon={<Shield />} title="Security" href="/docs/get-started/guides/security">
+  <Card icon={<ShieldCheck />} title="Security" href="/docs/get-started/guides/security">
     The room token and the relay checks.
   </Card>
 </Cards>

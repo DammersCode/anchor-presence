@@ -12,3 +12,4 @@ TODO-*.md
 apps/docs/.next/
 apps/docs/.source/
 apps/docs/next-env.d.ts
+.anchor-audit/

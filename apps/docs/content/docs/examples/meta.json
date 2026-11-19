@@ -10,6 +10,7 @@
     "responsive-grid",
     "table-and-cards",
     "kanban",
+    "stable-layout",
     "---[list-tree]Resolution---",
     "anchors-and-fallbacks",
     "occlusion-and-scroll-containers",
@@ -18,7 +19,8 @@
     "presence-list",
     "custom-cursor-rendering",
     "interpolation-styles",
-    "---[server]Servers---",
+    "---[signpost]Recipes and backends---",
+    "[Recipes](/docs/get-started/guides/recipes)",
     "backends"
   ]
 }

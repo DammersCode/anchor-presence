@@ -4,7 +4,7 @@ description: An ASP.NET Core SignalR hub and a client transport for it.
 icon: signal
 ---
 
-import { Atom, FileCheck, Radio, ShieldCheck } from "lucide-react";
+import { FileCheck, Radio, ShieldCheck, Factory } from "lucide-react";
 
 Your app runs on ASP.NET Core, and you want presence without a second WebSocket server. `examples/signalr` relays presence through a SignalR hub. The hub forwards each message to the peers of the sender and never parses the payload. The tests of this example use `@microsoft/signalr` 10.0.11 and .NET 10 (`net10.0`).
 
@@ -204,7 +204,7 @@ See [Security](/docs/get-started/guides/security) for the risks of a relay witho
   <Card icon={<FileCheck />} title="Relay contract" href="/docs/examples/backends/relay-contract">
     The rules, the close codes, and the conformance suite.
   </Card>
-  <Card icon={<Atom />} title="Create the client" href="/docs/react/client-creation">
+  <Card icon={<Factory />} title="Create the client" href="/docs/react/client-creation">
     The rules of `factory` and `clientKey` in the provider.
   </Card>
   <Card icon={<ShieldCheck />} title="Security" href="/docs/get-started/guides/security">

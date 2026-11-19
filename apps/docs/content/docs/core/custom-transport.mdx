@@ -4,7 +4,7 @@ description: A teaching sketch of a custom transport, with the interface, the st
 icon: plug
 ---
 
-import { AppWindow, Cable, MemoryStick, Server } from "lucide-react";
+import { AppWindow, Cable, FileCheck, MemoryStick, Server } from "lucide-react";
 
 A custom transport connects the client to a byte channel that the packages do not ship, for example the SDK of a managed real-time service. A transport only moves bytes. It never checks or reads them.
 
@@ -140,5 +140,8 @@ Do a test of your transport with these cases:
   </Card>
   <Card icon={<Server />} title="Backends" href="/docs/examples/backends">
     Relays and transports for other servers.
+  </Card>
+  <Card icon={<FileCheck />} title="Relay contract" href="/docs/examples/backends/relay-contract">
+    The rules that every relay obeys.
   </Card>
 </Cards>

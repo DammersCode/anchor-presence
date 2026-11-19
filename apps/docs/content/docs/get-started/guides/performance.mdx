@@ -4,7 +4,7 @@ description: What the layout measurement costs, what a room costs on the wire, a
 icon: gauge
 ---
 
-import { Binary, Blocks, Crosshair, LifeBuoy } from "lucide-react";
+import { Binary, Blocks, LifeBuoy, Link } from "lucide-react";
 
 Anchor Presence touches layout in one place: the geometry scheduler. The scheduler measures each active anchor at most once per frame, and it does no work while no remote cursor is active. Read this page to plan the size of a room, or to find out why a cursor does not follow a layout change.
 
@@ -77,13 +77,17 @@ For a large room, use one or more of these measures:
 
 The reference relay (`apps/server`) caps the sockets per room and per server, the bytes per message, and the message rate per socket. See the [environment variables](/docs/get-started/guides/deploy-relay#set-the-environment-variables) for the defaults.
 
-It also checks the origin, checks an optional [room token](/docs/dom/websocket-transport#room-token), and pings each socket. The frame size cap is on [Deploy a relay](/docs/get-started/guides/deploy-relay#pick-a-runtime).
+It also checks the origin, checks an optional [room token](/docs/dom/websocket-transport#room-token), and pings each socket.
 
 Scaling across servers and identity checks belong to your server, not to the transport. Each relay keeps its rooms in the memory of one process, so one room must live on one relay process. See [Deploy a relay](/docs/get-started/guides/deploy-relay) and [Identity](/docs/examples/backends/relay-contract#identity).
 
 ## Capacity planning
 
-A cursor message with 4 anchors is 292 bytes with `jsonCodec` and 144 bytes with `binaryCodec`. That test message has two-letter anchor IDs, coordinates with one decimal place, and a small `user`. Real coordinates have more decimal places, so a real JSON message is larger. Measure your own messages before you plan.
+A cursor message with 4 anchors is 292 bytes with `jsonCodec` and 144 bytes with `binaryCodec`. That test message has two-letter anchor IDs, coordinates with one decimal place, and a small `user`. Real coordinates have more decimal places, so a real JSON message is larger. Measure your own messages before you plan. Encode a message with your codec and read its length:
+
+```ts
+const bytes = codec.encode(message).byteLength;
+```
 
 **Worked example.** A room has 50 clients on `binaryCodec`. 10 of them move the pointer at the same time:
 
@@ -144,7 +148,7 @@ The load test starts the reference relay and opens N WebSocket clients in one ro
   <Card icon={<Blocks />} title="How it works" href="/docs/get-started/concepts/how-it-works">
     The package layers and the invariants.
   </Card>
-  <Card icon={<Crosshair />} title="Binding" href="/docs/dom/binding">
+  <Card icon={<Link />} title="Binding" href="/docs/dom/binding">
     `invalidate` and the other binding methods.
   </Card>
   <Card icon={<Binary />} title="Codecs" href="/docs/core/codecs">

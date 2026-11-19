@@ -9,6 +9,7 @@ export type SceneName =
   | "responsive-grid"
   | "table-and-cards"
   | "kanban"
+  | "stable-layout"
   | "dialogs"
   | "fallbacks"
   | "scroll"
@@ -107,6 +108,33 @@ export const SCENES: Record<SceneName, SceneMeta> = {
         steps: [
           { kind: "point", anchor: "board.card:search", u: 0.6, v: 0.45 },
           { kind: "point", anchor: "board.card:cache", u: 0.35, v: 0.6 },
+          { kind: "quiet", ms: 6000 },
+        ],
+      },
+    ],
+  },
+  "stable-layout": {
+    panes: {
+      wide: { label: "Wide", detail: "Card and a side panel" },
+      narrow: { label: "Narrow", detail: "Same card, no side panel" },
+    },
+    tour: [
+      {
+        user: MIRA,
+        steps: [
+          { kind: "point", anchor: "release.step:build", u: 0.5, v: 0.5 },
+          { kind: "point", anchor: "release.step:test", u: 0.5, v: 0.5 },
+          { kind: "point", anchor: "release.step:docs", u: 0.5, v: 0.5 },
+          { kind: "point", anchor: "release.step:review", u: 0.5, v: 0.5 },
+          { kind: "point", anchor: "release.publish", u: 0.5, v: 0.5, dwellMs: 2000 },
+        ],
+      },
+      {
+        user: THEO,
+        delayMs: 700,
+        steps: [
+          { kind: "point", anchor: "release.title", u: 0.4, v: 0.5 },
+          { kind: "point", anchor: "release.save", u: 0.5, v: 0.5 },
           { kind: "quiet", ms: 6000 },
         ],
       },

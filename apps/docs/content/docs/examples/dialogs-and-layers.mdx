@@ -4,7 +4,7 @@ description: A cursor belongs to the layer its anchor sits in. A visibility poli
 icon: layers
 ---
 
-import { AppWindow, Atom, BookOpen, EyeOff } from "lucide-react";
+import { EyeOff, Eye, MousePointer2 } from "lucide-react";
 
 A dialog covers the layout behind it, but a remote cursor can belong to either layer. Two cases need a rule. In the first case, the cursor of a peer is on a card behind your open dialog. In the second case, your cursor is inside a dialog that is closed for the peer. This demo runs that rule with a visibility policy. The cursor itself always paints above the dialog, because `CursorLayer` defaults to `z-index: 9999`.
 
@@ -38,20 +38,16 @@ Try it: Select the Invite button to open the dialog. Select its close button to 
 
 <Cards>
   <Card
-    icon={<BookOpen />}
+    icon={<Eye />}
     title="Dialog mismatch handling"
     href="/docs/get-started/concepts/ui-context#dialog-mismatch-handling"
   >
     The hide rule this demo applies.
   </Card>
-  <Card
-    icon={<AppWindow />}
-    title="Write a custom policy"
-    href="/docs/dom/visibility-policy#write-a-custom-policy"
-  >
+  <Card icon={<Eye />} title="Write a custom policy" href="/docs/dom/visibility-policy#write-a-custom-policy">
     The policy shape and its inputs.
   </Card>
-  <Card icon={<Atom />} title="CursorLayer" href="/docs/react/cursor-layer#extra-props-on-the-root">
+  <Card icon={<MousePointer2 />} title="CursorLayer" href="/docs/react/cursor-layer#extra-props-on-the-root">
     The z-index default and the `zIndex` prop.
   </Card>
   <Card

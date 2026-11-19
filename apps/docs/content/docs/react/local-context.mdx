@@ -4,7 +4,7 @@ description: Read and set the local context value and the local user value that 
 icon: user-pen
 ---
 
-import { Braces, Compass, Users } from "lucide-react";
+import { Braces, Users, Eye } from "lucide-react";
 
 Your client sends two values to each peer together with the cursor. The `user` value says who you are, for example a name and a color. The context value carries small facts about what you do, for example the panel that you have open. `useLocalUser` and `useLocalContext` read these values and give a setter for each. For what context is for, see [UI context](/docs/get-started/concepts/ui-context).
 
@@ -63,7 +63,7 @@ Both setters keep their identity while the client stays the same. You can list t
 ## Related
 
 <Cards>
-  <Card icon={<Compass />} title="UI context" href="/docs/get-started/concepts/ui-context">
+  <Card icon={<Eye />} title="UI context" href="/docs/get-started/concepts/ui-context">
     What context is for and how peers use it.
   </Card>
   <Card icon={<Users />} title="Remote users" href="/docs/react/remote-users">

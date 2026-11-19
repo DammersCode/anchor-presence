@@ -5,6 +5,7 @@ import "./index.css";
 import App from "./app";
 import { InMemoryRoomPage } from "./fixtures/in-memory-room-page";
 import { CorePrimitivesPage } from "./fixtures/core-primitives-page";
+import { FieldTestPage } from "./field-test";
 import { BenchPage } from "./bench/bench-page";
 import { ReflowBenchPage } from "./reflow/reflow-bench-page";
 import { createBackendTransport } from "./cursors/backends";
@@ -19,6 +20,7 @@ import { useInterpolatorStyle } from "./use-interpolator-style";
 
 // Query-param routing (?page=bench) — no router dependency, per requirement 7.
 const isBenchRoute = new URLSearchParams(window.location.search).get("page") === "bench";
+const isFieldTestRoute = new URLSearchParams(window.location.search).get("page") === "field-test";
 const isReflowBenchRoute = new URLSearchParams(window.location.search).get("page") === "reflow-bench";
 
 // App's context effect is the single writer; the policy reads it synchronously each resolution.
@@ -45,6 +47,7 @@ function Root() {
   const [interpolatorStyle, selectInterpolatorStyle] = useInterpolatorStyle();
   if (isInMemoryRoomRoute) return <InMemoryRoomPage />;
   if (isCorePrimitivesRoute) return <CorePrimitivesPage />;
+  if (isFieldTestRoute) return <FieldTestPage />;
   if (isBenchRoute) return <BenchPage />;
   if (isReflowBenchRoute) return <ReflowBenchPage />;
 

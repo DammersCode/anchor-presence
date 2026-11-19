@@ -1,26 +1,26 @@
 ---
-title: Pick a relay
+title: Backends
 description: Pick a relay for your server, and learn what every relay does, checks, and limits.
 icon: server
 ---
 
 import {
-  Cable,
   CloudUpload,
-  Cpu,
   FileCheck,
   Flame,
   Gauge,
   Hexagon,
   Radio,
+  RadioTower,
   Signal,
   Sparkles,
   Zap,
+  Cable,
 } from "lucide-react";
 
 Live cursors need a relay: a server that forwards each message to the peers of the sender. `@anchor-presence/core` imports no transport library, so any channel that implements `PresenceTransport` works. This section has one tested relay for each common backend.
 
-## Relays by backend
+## Pick a relay
 
 <Cards>
   <Card icon={<Zap />} title="Bun" href="/docs/examples/backends/bun-native">
@@ -64,8 +64,8 @@ Every relay has an integration test that starts the real server and connects two
 
 Two transports need no relay:
 
-- `createInMemoryPair` from `@anchor-presence/core` connects two transports in one process. Use it for tests and prototypes. Most tests and some samples use it.
-- `createBroadcastChannelTransport` from `@anchor-presence/dom` connects tabs and iframes on the same origin. The live demos of this site use it.
+- [`createInMemoryPair`](/docs/core/in-memory-transport) from `@anchor-presence/core` connects two transports in one process. Use it for tests and prototypes. Most tests and some samples use it.
+- [`createBroadcastChannelTransport`](/docs/dom/broadcast-channel-transport) from `@anchor-presence/dom` connects tabs and iframes on the same origin. The live demos of this site use it.
 
 ## What a relay does
 
@@ -75,7 +75,7 @@ A relay does not read the presence protocol. It forwards bytes between the socke
 sender.send(bytes) -> relay -> every other socket in the same room -> receiver.subscribe(listener)
 ```
 
-The relay never reads the `anchors`, `context`, or `user` field of a message. It only decodes a message when [identity binding](#identity-binding) is on. Every relay page has the same three behavior tables: what the relay does, its limits, and its auth checks. [Relay contract](/docs/examples/backends/relay-contract) gives the rules that every relay must obey. [Performance](/docs/get-started/guides/performance#scaling-limits) shows how the load of a relay grows with the size of a room.
+The relay never reads the `anchors`, `context`, or `user` field of a message. It only decodes a message when [identity binding](#identity-binding) is on. Every relay page has the same three behavior sections: what the relay does, its limits, and its auth checks. [Relay contract](/docs/examples/backends/relay-contract) gives the rules that every relay must obey. [Performance](/docs/get-started/guides/performance#scaling-limits) shows how the load of a relay grows with the size of a room.
 
 Every transport implements `PresenceTransport`. Only `send` and `subscribe` are required. See [Transports](/docs/core/transports) for the full interface.
 
@@ -110,16 +110,16 @@ To try identity binding without your own auth, use the [demo identity mode](/doc
   <Card icon={<FileCheck />} title="Relay contract" href="/docs/examples/backends/relay-contract">
     The rules, the close codes, and the conformance suite.
   </Card>
-  <Card icon={<Cable />} title="WebSocket transport" href="/docs/dom/websocket-transport">
+  <Card icon={<RadioTower />} title="WebSocket transport" href="/docs/dom/websocket-transport">
     The client side of the Bun, Node.js, Hono and Elysia relays.
   </Card>
-  <Card icon={<Cpu />} title="Transports" href="/docs/core/transports">
+  <Card icon={<Cable />} title="Transports" href="/docs/core/transports">
     The `PresenceTransport` interface and its contract.
   </Card>
   <Card icon={<Gauge />} title="Performance" href="/docs/get-started/guides/performance">
     How relay load grows with the size of a room.
   </Card>
   <Card icon={<CloudUpload />} title="Deploy a relay" href="/docs/get-started/guides/deploy-relay">
-    Pick a relay runtime, then run it behind TLS with one process per room.
+    Pick a relay runtime, then run it behind TLS, and keep each room on one process.
   </Card>
 </Cards>

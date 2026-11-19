@@ -4,7 +4,7 @@ description: Which hook rerenders when, so you can pick the smallest one for eac
 icon: gauge
 ---
 
-import { Activity, Crosshair, Users } from "lucide-react";
+import { Crosshair, Users, Gauge } from "lucide-react";
 
 Each hook in `@anchor-presence/react` rerenders its component only when the value that it returns changes. Use this page to pick the hook with the smallest value that a component needs. Then an unrelated update does not rerender the component.
 
@@ -58,7 +58,7 @@ A peer that turns idle or expires also changes the values that hooks return, so 
   <Card icon={<Users />} title="Remote users" href="/docs/react/remote-users">
     A list that ignores cursor moves.
   </Card>
-  <Card icon={<Activity />} title="Performance" href="/docs/get-started/guides/performance">
+  <Card icon={<Gauge />} title="Performance" href="/docs/get-started/guides/performance">
     Costs across the whole stack.
   </Card>
 </Cards>

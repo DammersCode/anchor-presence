@@ -4,11 +4,18 @@ description: Mark a button, its row, the table, and the page, and watch the curs
 icon: list-tree
 ---
 
-import { AppWindow, BookOpen, EyeOff, TableProperties } from "lucide-react";
+import { EyeOff, TableProperties, Waypoints, Crosshair, Pointer } from "lucide-react";
 
 A receiver can show less than the sender. A filter can remove a row, and a small screen can drop an action column. If you anchor one element per level, the cursor falls back to the nearest ancestor that exists. In this demo, the wide pane shows 8 orders with refund buttons. The narrow pane shows 4 orders and no buttons.
 
 <ExamplePreview scene="fallbacks" />
+
+<Callout type="info">
+  This demo breaks the layout rules on purpose, so you can see how a cursor moves. The narrow pane hides some
+  anchors. In your app, keep neighbors, sizes, and shapes alike. See the [layout design
+  guide](/docs/get-started/guides/layout-design) and the [Stable layout](/docs/examples/stable-layout)
+  example.
+</Callout>
 
 ## Code
 
@@ -42,24 +49,24 @@ Try it: Turn off "Show orders" in the narrow pane.
 
 <Cards>
   <Card
-    icon={<BookOpen />}
+    icon={<Waypoints />}
     title="How the chain works"
     href="/docs/get-started/concepts/fallback-chain#how-the-chain-works"
   >
     How the sender builds the chain, and how the receiver walks it.
   </Card>
   <Card
-    icon={<BookOpen />}
+    icon={<Waypoints />}
     title="Viewport fallback"
     href="/docs/get-started/concepts/fallback-chain#viewport-fallback"
   >
     What happens when no anchor in the chain exists.
   </Card>
-  <Card icon={<AppWindow />} title="The three tiers" href="/docs/dom/resolution#the-three-tiers">
+  <Card icon={<Crosshair />} title="The three tiers" href="/docs/dom/resolution#the-three-tiers">
     `anchor`, `viewport`, and `hidden`.
   </Card>
   <Card
-    icon={<AppWindow />}
+    icon={<Pointer />}
     title="What the binding sends"
     href="/docs/dom/pointer-capture#what-the-binding-sends"
   >

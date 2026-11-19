@@ -139,6 +139,13 @@ function TouchRingLayer() {
 
 void TouchRingLayer;
 
+// custom-cursors.mdx: Idle cursors
+function ActiveCursorLayer() {
+  return <CursorLayer filterCursor={(cursor) => !cursor.idle} />;
+}
+
+void ActiveCursorLayer;
+
 // cursor-layer.mdx: Label and color
 type LayerUser = { name: string; color?: string };
 
@@ -392,6 +399,7 @@ describe("doc sample sources", () => {
     expect(
       missingSamples("docs-samples-extra.test.tsx", [
         docSample("react/custom-cursors.mdx", "function TouchRingLayer"),
+        docSample("react/custom-cursors.mdx", "function ActiveCursorLayer"),
         docSample("react/remote-cursors.mdx", "function CursorCount"),
         docSample("react/remote-presence.mdx", "function ViewportOnlyBadge"),
       ]),

@@ -6,7 +6,7 @@ compatibility: Requires Node 20+, playwright with Chromium, and a running instan
 
 Anchor-presence resolves each remote cursor against the receiver's own layout. A cursor **jumps** when a short pointer move on the sender's screen becomes a long move on the receiver's screen. The cause is always a difference between the two layouts. Neighbors can sit apart in the other layout. Gaps can have no anchored parent. Anchors can change shape. Anchors can exist in one layout only.
 
-This skill measures that risk in the running app. A **view** is one route at one viewport in one UI state. Every **view pair** of the same page gets a score from 0 to 100. Higher is worse. For sub-scores, formula, and bands, see [scoring.md](scoring.md). For the fix catalogue, see [fixes.md](fixes.md).
+This skill measures that risk in the running app. A **view** is one route at one viewport in one UI state. Every **view pair** of the same page gets a score from 0 to 100. Higher is worse. Bands: 0–20 low, 21–50 moderate, 51–100 high. For sub-scores, formula, and bands, see [scoring.md](scoring.md). For the fix catalogue, see [fixes.md](fixes.md).
 
 The scripts do the heavy work and print short summaries. The JSON and the report files stay on disk. Read only a summary, a table, or one pair's section.
 
@@ -14,7 +14,8 @@ The scripts are in `scripts/` next to this file. They need Node 20+ and one depe
 
 - `node <skill>/scripts/measure.mjs` measures and scores. It reads `.anchor-audit/audit.config.json` and writes `.anchor-audit/anchor-audit.json`. `--config` and `--out` change the paths. It exits with code 1 when a view cannot be measured, and with code 2 when the config is unreadable or another error stops the run. `--check` tests the Playwright setup. `--fail-above <score>` also exits with code 1 when a pair scores above it, for the user's own CI.
 - `node <skill>/scripts/report.mjs --format table|markdown|mermaid|all` renders a report from `.anchor-audit/anchor-audit.json` into `.anchor-audit/anchor-audit.md`. `--in` and `--out` change the paths. `--format` also takes a comma list. `--before <json>` prints only a before/after table and writes no file.
-- Both scripts print their usage with `--help`.
+- `node <skill>/scripts/scan.mjs` scans the source for step 1 and prints a short summary. `--root`, `--attribute`, `--max`, and `--json` change what it prints.
+- Every script prints its usage with `--help`. Set `ANCHOR_AUDIT_BROWSER` to the path of a Chrome or Chromium executable when Playwright has no browser of its own.
 
 Keep every audit file in `.anchor-audit/` in the app root.
 
@@ -22,7 +23,7 @@ Keep every audit file in `.anchor-audit/` in the app root.
 
 ### 1. Scan the code
 
-Search the source and record each finding with its file and line:
+Run `node <skill>/scripts/scan.mjs` from the app root. Read its summary, then check the lists below against it. Search the source for anything it missed, and record each finding with its file and line:
 
 - **Anchors**: every `data-anchor` attribute. If the code passes `anchorAttribute` to the provider or binding, search for that attribute too. Mark anchors that render only under a condition, such as `cond ? … : null`, `hidden md:block`, or a breakpoint hook.
 - **Routes**: the routes that render anchors. File routes (`app/**/page.*`, `pages/**`, `routes/**`) or router config (`path:`, `<Route path=`). An app without a router may switch views by query string or hash (`?page=orders`, `#/orders`). Use those URLs as routes.

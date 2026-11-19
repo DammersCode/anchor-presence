@@ -4,7 +4,7 @@ description: How the binding eases a remote cursor between positions, and the re
 icon: move
 ---
 
-import { Crosshair, Link, Spline } from "lucide-react";
+import { Crosshair, Plug, Link, Spline } from "lucide-react";
 
 Motion is the ease of a remote cursor from its last position to its new one. Without it, a cursor jumps on each message. The binding uses one interpolator for each peer, from a factory that you choose when you create the binding.
 
@@ -19,6 +19,8 @@ const binding = createDomBinding(client, {
   resolution: { interpolatorFactory: mySpringInterpolatorFactory },
 });
 ```
+
+In React, pass the same `resolution` object in `bindingOptions` of `PresenceProvider`. See [Rebuild the binding](/docs/react/presence-provider#rebuild-the-binding).
 
 Write the factory against the `Interpolator` interface. See [Interpolation](/docs/core/interpolation#the-interpolator-interface) for the interface and the `settled` flag.
 
@@ -65,5 +67,8 @@ In all other cases, a new remote position eases the cursor from where it is. Whe
   </Card>
   <Card icon={<Link />} title="Binding" href="/docs/dom/binding">
     The `resolution` option.
+  </Card>
+  <Card icon={<Plug />} title="PresenceProvider" href="/docs/react/presence-provider">
+    Pass binding options from React.
   </Card>
 </Cards>

@@ -4,9 +4,9 @@ description: "Show the peers that are on a card, and the card that a peer select
 icon: kanban
 ---
 
-import { Compass, Kanban, Shield, Users } from "lucide-react";
+import { Kanban, ShieldCheck, Users, Eye } from "lucide-react";
 
-A card can show the peers whose cursor is on it, and a highlight for the card that a peer selected. The [kanban example](/docs/examples/kanban#show-who-is-on-a-card) runs this recipe. Mira and Theo show as small avatars on the card under their cursor. A card that Mira selects gets a tint in her color and a "Selected by Mira" label. The outline around the card under a cursor is an aid of that demo, not part of the recipe.
+A card can show the peers whose cursor is on it, and a highlight for the card that a peer selected. The [kanban example](/docs/examples/kanban) runs this recipe. Mira and Theo show as small avatars on the card under their cursor. A card that Mira selects gets a tint in her color and a "Selected by Mira" label. The outline around the card under a cursor is an aid of that demo, not part of the recipe.
 
 ## The two parts
 
@@ -153,16 +153,16 @@ The selector runs on every cursor snapshot, and a snapshot arrives on every fram
 ## Related
 
 <Cards>
-  <Card icon={<Kanban />} title="Kanban example" href="/docs/examples/kanban#show-who-is-on-a-card">
+  <Card icon={<Kanban />} title="Kanban board" href="/docs/examples/kanban">
     The recipe, live.
   </Card>
-  <Card icon={<Compass />} title="UI context" href="/docs/get-started/concepts/ui-context">
+  <Card icon={<Eye />} title="UI context" href="/docs/get-started/concepts/ui-context">
     What `context` is for.
   </Card>
   <Card icon={<Users />} title="Remote users" href="/docs/react/remote-users">
     `useRemoteUsers` and `usePeerChanges`.
   </Card>
-  <Card icon={<Shield />} title="Security" href="/docs/get-started/guides/security">
+  <Card icon={<ShieldCheck />} title="Security" href="/docs/get-started/guides/security">
     Treat `context` as untrusted data.
   </Card>
 </Cards>

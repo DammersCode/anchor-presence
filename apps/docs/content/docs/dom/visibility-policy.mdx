@@ -4,7 +4,7 @@ description: VisibilityPolicy, the default policy, how to write a custom one, an
 icon: eye
 ---
 
-import { Braces, Crosshair, Layers, Webhook } from "lucide-react";
+import { Braces, Crosshair, Layers } from "lucide-react";
 
 A `VisibilityPolicy` is a function that decides whether a resolved cursor renders. It returns `"show"` or `"hide"`, and the result goes into `ResolvedCursor.visible`. A custom policy can hide cursors by role, by UI mode, or for a point that a scroll container clips.
 
@@ -105,10 +105,13 @@ If a policy throws, the binding keeps the last snapshot. See [Errors in a policy
   <Card icon={<Layers />} title="Occlusion and scroll" href="/docs/dom/occlusion-and-scroll">
     Hide a cursor that a scroll container clips.
   </Card>
+  <Card icon={<Layers />} title="Dialogs and layers" href="/docs/examples/dialogs-and-layers">
+    A live demo of a visibility policy while a dialog is open.
+  </Card>
   <Card icon={<Braces />} title="Resolution types" href="/docs/dom/api/resolution">
     The type of `VisibilityPolicy`.
   </Card>
-  <Card icon={<Webhook />} title="useDomBinding" href="/docs/react/api/hooks#usedombinding">
+  <Card icon={<Braces />} title="useDomBinding" href="/docs/react/api/hooks#usedombinding">
     The React hook that returns the binding.
   </Card>
 </Cards>

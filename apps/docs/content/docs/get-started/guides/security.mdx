@@ -4,7 +4,7 @@ description: What the client validates, why anchor IDs are safe, and how to rend
 icon: shield-check
 ---
 
-import { Box, Eye, Handshake, ListChecks } from "lucide-react";
+import { Eye, ShieldCheck, FileCheck, Users } from "lucide-react";
 
 Every inbound message comes from a peer, so treat it as untrusted. This page lists what the library protects, and what your app and your relay must protect. Read it before you put Anchor Presence in production.
 
@@ -30,7 +30,7 @@ The client checks each inbound message in two steps:
   contract](/docs/examples/backends/relay-contract).
 </Callout>
 
-Each receiver also limits the rate of inbound events with the `eventRateLimit` option. See [Event rate limit](/docs/core/events#event-rate-limit). This limit protects one receiver only. A sender can still flood the room, so the rate limit per socket on the relay is the real control.
+Each receiver also limits the rate of inbound events with the `eventRateLimit` option. See [Event rate limit](/docs/core/events#event-rate-limit). This limit protects one receiver only. A sender can still flood the room, so the [rate limit per socket](/docs/get-started/guides/deploy-relay#set-the-environment-variables) on the relay is the real control.
 
 ## Why anchor IDs never touch selectors
 
@@ -96,17 +96,18 @@ If your app must know who sent a message, bind the identity on your server. The 
 
 ## maxRemoteClients
 
-`maxRemoteClients` caps the store entries, resolved cursors, and observed anchors that network data causes. The default is 64. The [event rate limit](/docs/core/events#event-rate-limit) has a separate cap: it tracks at most 512 senders. When the store is full, it drops new clients and calls `onRemoteClientRejected`.
+`maxRemoteClients` caps the store entries, resolved cursors, and observed anchors that network data causes. The default is on [Remote presence](/docs/core/remote-presence#maxremoteclients). The [event rate limit](/docs/core/events#event-rate-limit) has a separate cap: it tracks at most 512 senders.
 
-A peer can fill every slot with new `clientId` values. Real clients then stay out until those entries expire after `staleTimeoutMs`. Set `maxRemoteClients` to the number of sessions that you expect at the same time. See [maxRemoteClients](/docs/core/remote-presence#maxremoteclients).
+A peer can fill every slot with new `clientId` values. Real clients then stay out until those entries expire after `staleTimeoutMs`. Set `maxRemoteClients` to the number of sessions that you expect at the same time.
 
 ## Room token
 
 A **room token** is a secret that the relay checks before it accepts a connection. If `RELAY_AUTH_TOKEN` is set, the reference relay requires a matching [room token](/docs/dom/websocket-transport#room-token). It closes a connection with a missing or wrong token with code `4006`.
 
+- To limit who can connect by origin, set `RELAY_ALLOWED_ORIGINS`. The relay closes a connection from another origin with code `4004`. See [Set the environment variables](/docs/get-started/guides/deploy-relay#set-the-environment-variables).
 - The room token controls who can connect. It does not prove the identity inside a message.
 - The reference relay and the example relays compare all connections with one `RELAY_AUTH_TOKEN`, so one token opens every room.
-- To limit a token to one room, check the `room` field in your own `authCheck` hook.
+- To limit a token to one room, check the `room` field in your own [`authCheck` hook](/docs/examples/backends/relay-contract#identity).
 - The transport sends the token in the `token` query parameter. Proxies and servers often write the full URL into their access logs.
 
 <Callout type="warn">
@@ -118,13 +119,13 @@ A **room token** is a secret that the relay checks before it accepts a connectio
 ## Related
 
 <Cards>
-  <Card icon={<ListChecks />} title="Validation" href="/docs/core/validation">
+  <Card icon={<ShieldCheck />} title="Validation" href="/docs/core/validation">
     Every limit and its default.
   </Card>
-  <Card icon={<Handshake />} title="Relay contract" href="/docs/examples/backends/relay-contract">
+  <Card icon={<FileCheck />} title="Relay contract" href="/docs/examples/backends/relay-contract">
     What a relay must check, and the close codes.
   </Card>
-  <Card icon={<Box />} title="Remote presence" href="/docs/core/remote-presence">
+  <Card icon={<Users />} title="Remote presence" href="/docs/core/remote-presence">
     The store, the stale timeout, and the client cap.
   </Card>
   <Card icon={<Eye />} title="UI context" href="/docs/get-started/concepts/ui-context">

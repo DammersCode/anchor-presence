@@ -4,7 +4,7 @@ description: "Show who types in a field and who left the tab, with useLocalConte
 icon: eye-off
 ---
 
-import { Compass, Eye, Kanban, Users } from "lucide-react";
+import { Eye, Kanban, MousePointer2, Users, Radar } from "lucide-react";
 
 Two common states fit in `context`: the anchor where the user types, and whether the tab is hidden. The sender sets both with `useLocalContext`. The receiver reads them with `useRemotePresence`.
 
@@ -90,27 +90,32 @@ function TypingHint({ anchorId }: { anchorId: string }) {
 
 Render `<TypingHint anchorId="comments.box" />` next to `<Comments />`. Both read the same anchor ID. If your app puts more fields in the context, for example a `selection` from the [card occupancy recipe](/docs/get-started/guides/card-occupancy), use one context type with all fields. Both recipes spread the current context before they change a field, so neither drops the other's field.
 
+To show the name tag of a peer only while that peer types, return `cursor.user?.name` from `getLabel` when `cursor.context?.typingIn` is set, and `null` otherwise. See [Label and color](/docs/react/cursor-layer#label-and-color).
+
+## Idle or away
+
+The store sets `idle` on a peer whose presence did not change for `idleAfterMs`. See [Idle state](/docs/core/remote-presence#idle-state). It needs no code in the sender, and it cannot tell a tab in the background from a user who reads. A context change ends the idle state, so a sender that sets `away` also resets the idle timer.
+
+- Use `idle` to dim a cursor that stopped. [`CursorLayer`](/docs/react/custom-cursors#idle-cursors) and `useRemoteUsers` already give it.
+- Use `away` when you need to know at once, and for a reason you can name, like a hidden tab.
+
 ## Behavior notes
 
 - `away` is a visibility flag that the sender sets on `visibilitychange`. It is true at once when the tab is hidden, and false at once when the tab shows again.
 - A peer with `away: true` does not show as typing, even if its last typing state was never cleared.
 - The receiver treats `typingIn` and `away` as untrusted: it compares them, and renders only `user.name` as text.
 
-## Idle or away
-
-The store sets `idle` on a peer whose presence did not change for `idleAfterMs`. See [Idle state](/docs/core/remote-presence#idle-state). It needs no code in the sender, and it cannot tell a tab in the background from a user who reads. A context change ends the idle state, so a sender that sets `away` also resets the idle timer.
-
-- Use `idle` to dim a cursor that stopped. `CursorLayer` and `useRemoteUsers` already give it.
-- Use `away` when you need to know at once, and for a reason you can name, like a hidden tab.
-
 ## Related
 
 <Cards>
-  <Card icon={<Compass />} title="UI context" href="/docs/get-started/concepts/ui-context">
+  <Card icon={<Eye />} title="UI context" href="/docs/get-started/concepts/ui-context">
     What `context` is for.
   </Card>
-  <Card icon={<Eye />} title="Remote presence" href="/docs/react/remote-presence">
+  <Card icon={<Radar />} title="Raw presence" href="/docs/react/remote-presence">
     Read the `user` and `context` of each peer.
+  </Card>
+  <Card icon={<MousePointer2 />} title="CursorLayer" href="/docs/react/cursor-layer">
+    Label and color each remote cursor.
   </Card>
   <Card icon={<Kanban />} title="Card occupancy" href="/docs/get-started/guides/card-occupancy">
     Show who is on a card.

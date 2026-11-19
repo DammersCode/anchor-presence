@@ -1,12 +1,12 @@
 ---
 title: Layout design for presence
-description: Rules that keep remote cursors steady when two users see different layouts.
+description: Rules that keep remote cursors steady when two users see different layouts, for example a wide screen and a narrow or mobile screen.
 icon: layout-dashboard
 ---
 
-import { Bot, FlaskConical, Scaling, Waypoints } from "lucide-react";
+import { LifeBuoy, Pointer, Scaling, Waypoints, ScanSearch, ListTree } from "lucide-react";
 
-A cursor on an element lands on the same element on every screen. Between two elements, the result depends on the layout. A short move for one user can become a large jump for another user. Follow the rules on this page when you design a page that shows presence. The audit skill measures five of these rules in your running app.
+A cursor on an element lands on the same element on every screen. Between two elements, the result depends on the layout. A short move for one user can become a large jump for another user. Follow the rules on this page when you design a page that shows presence, especially for narrow and mobile screens. The audit skill measures five of these rules in your running app.
 
 ## A minimal example
 
@@ -131,14 +131,16 @@ To install and run the skill, see the [layout audit skill](/docs/skills/layout-a
   <Card icon={<Waypoints />} title="Fallback chain" href="/docs/get-started/concepts/fallback-chain">
     The order of the fallback steps.
   </Card>
-  <Card icon={<Bot />} title="Layout audit skill" href="/docs/skills/layout-audit">
+  <Card icon={<ScanSearch />} title="Layout audit skill" href="/docs/skills/layout-audit">
     Measure these rules in your app.
   </Card>
-  <Card
-    icon={<FlaskConical />}
-    title="Anchors and fallbacks example"
-    href="/docs/examples/anchors-and-fallbacks"
-  >
+  <Card icon={<ListTree />} title="Anchors and fallbacks" href="/docs/examples/anchors-and-fallbacks">
     The fallback chain, live.
+  </Card>
+  <Card icon={<Pointer />} title="Touch behavior" href="/docs/dom/pointer-capture#touch-behavior">
+    How the binding treats touch input and pinch gestures.
+  </Card>
+  <Card icon={<LifeBuoy />} title="Troubleshooting" href="/docs/get-started/guides/troubleshooting">
+    Find the cause of a missing, hidden, drifting, or jumping cursor.
   </Card>
 </Cards>

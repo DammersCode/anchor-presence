@@ -4,7 +4,7 @@ description: How the React adapter sits on core and dom, and what a Solid or Vue
 icon: puzzle
 ---
 
-import { Atom, Code, Link, Network } from "lucide-react";
+import { Atom, Code, Blocks } from "lucide-react";
 
 A framework adapter connects the DOM binding to the reactivity of one UI framework. `@anchor-presence/react` is the adapter for React. Read this page to write an adapter for Solid, Vue, or another framework. The adapter copies the shape of the React adapter.
 
@@ -136,7 +136,7 @@ No third-party framework code lives inside `@anchor-presence/core` or `@anchor-p
 ## Related
 
 <Cards>
-  <Card icon={<Network />} title="How it works" href="/docs/get-started/concepts/how-it-works">
+  <Card icon={<Blocks />} title="How it works" href="/docs/get-started/concepts/how-it-works">
     The full picture and the invariants.
   </Card>
   <Card icon={<Atom />} title="React overview" href="/docs/react">
@@ -145,7 +145,7 @@ No third-party framework code lives inside `@anchor-presence/core` or `@anchor-p
   <Card icon={<Code />} title="Client API" href="/docs/core/api/client">
     Every method of `PresenceClient`.
   </Card>
-  <Card icon={<Link />} title="Binding API" href="/docs/dom/api/binding">
+  <Card icon={<Code />} title="Binding API" href="/docs/dom/api/binding">
     Every method of `DomBinding`.
   </Card>
 </Cards>

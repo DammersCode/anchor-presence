@@ -4,7 +4,7 @@ description: What the binding sends on pointer and focus activity, and when it c
 icon: pointer
 ---
 
-import { Anchor, BookOpen, Link, Play } from "lucide-react";
+import { Anchor, Link, Waypoints, MousePointer2 } from "lucide-react";
 
 Pointer capture is the part of the binding that turns local pointer events into the local cursor. The binding listens on the document and calls `client.setLocalCursor` on each relevant event. It is on by default. Set `capturePointer: false` for a client that only shows remote cursors.
 
@@ -59,6 +59,10 @@ By default, the binding ignores keyboard focus. With `captureFocus: true`, the b
 
 The binding adds its listeners to the document and the window, not to each anchor. `pointerover` and `pointermove` bubble, so one listener on the document covers every element.
 
+## Skip part of the page
+
+The binding has no option to skip one element or region. It sends the cursor from every part of the document. Over an element with no anchor, it sends the nearest anchored parent. Set `capturePointer: false` to stop sending for the whole page.
+
 ## Touch behavior
 
 A touch pointer fires the same `pointermove`, `pointerdown`, and `pointerover` events as a mouse. The binding does not separate a touch scroll from a touch drag, and it has no option to ignore touch pointers.
@@ -78,10 +82,10 @@ CI runs the browser tests of pointer and focus capture in Chromium, with Playwri
   <Card icon={<Link />} title="Binding" href="/docs/dom/binding">
     The `capturePointer` and `captureFocus` options.
   </Card>
-  <Card icon={<BookOpen />} title="Fallback chain" href="/docs/get-started/concepts/fallback-chain">
+  <Card icon={<Waypoints />} title="Fallback chain" href="/docs/get-started/concepts/fallback-chain">
     Why the chain has more than one anchor.
   </Card>
-  <Card icon={<Play />} title="Basics example" href="/docs/examples/basics">
+  <Card icon={<MousePointer2 />} title="Basics" href="/docs/examples/basics">
     A live demo of one cursor in two layouts.
   </Card>
 </Cards>

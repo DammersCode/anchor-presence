@@ -72,3 +72,10 @@ A breakpoint that turns a 4-column grid into 1 column changes every card's shape
 ## Keep the parent of a hidden anchor anchored
 
 If one view drops an anchor, the cursor falls back to the nearest ancestor that remains. A narrow table without its action column or a filtered list can drop an anchor. Give the remaining parent its own anchor, for example `orders.row:<id>`, then `orders`. Then the fallback lands one step up and not on the viewport.
+
+## Fixes that only lower the score
+
+Two changes lower the score and leave the cursors as jumpy as before. Do not propose them.
+
+- A gap wider than `adjacencyPx`. Neighbors that sit further apart do not count as neighbors, but a move between them is still long.
+- A layout that does not adapt at all. The score is low because nothing changes, but the layout then wastes the room of wide screens. Keep sizes and neighbors, and use the extra room for extra content beside them.

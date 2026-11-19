@@ -4,7 +4,7 @@ description: A Socket.IO relay and a tested client transport for it.
 icon: radio
 ---
 
-import { Cpu, FileCheck, ShieldCheck, Signal } from "lucide-react";
+import { FileCheck, ShieldCheck, Signal, Cable } from "lucide-react";
 
 Your app already uses Socket.IO for other real-time features, and you want presence on the same connection. `examples/socketio` has a Socket.IO relay and a client transport for it. The relay forwards each `"presence"` event to the peers of the sender and never reads the payload. Every `@anchor-presence/react` hook works the same way as on a WebSocket relay.
 
@@ -104,7 +104,7 @@ Each setting is an environment variable. The factory options `maxMessageBytes`, 
 
 ### Limits
 
-[Deploy a relay](/docs/get-started/guides/deploy-relay#set-the-environment-variables) lists the limits and their defaults. [Close codes](/docs/examples/backends/relay-contract#close-codes) lists the codes. The relay sets the hard frame size with `maxHttpBufferSize`.
+[Deploy a relay](/docs/get-started/guides/deploy-relay#set-the-environment-variables) lists the limits and their defaults. [Close codes](/docs/examples/backends/relay-contract#close-codes) lists the codes. The relay sets the hard frame size with `maxHttpBufferSize`. The cap is in the `MAX_MESSAGE_BYTES` row of that table.
 
 ### Auth
 
@@ -136,7 +136,7 @@ See [Identity binding](/docs/examples/backends#identity-binding) for the rules. 
   <Card icon={<FileCheck />} title="Relay contract" href="/docs/examples/backends/relay-contract">
     The rules, the close codes, and the conformance suite.
   </Card>
-  <Card icon={<Cpu />} title="Transports" href="/docs/core/transports">
+  <Card icon={<Cable />} title="Transports" href="/docs/core/transports">
     The `PresenceTransport` interface that the transport implements.
   </Card>
   <Card icon={<ShieldCheck />} title="Security" href="/docs/get-started/guides/security">

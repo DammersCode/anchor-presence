@@ -4,7 +4,7 @@ description: "A live region that tells screen reader users when a peer joins or 
 icon: users
 ---
 
-import { Compass, Eye, Shield, Users } from "lucide-react";
+import { Eye, ShieldCheck, Users, Radar } from "lucide-react";
 
 A screen reader user cannot see a peer join or leave. `CursorLayer` cannot help: each cursor root has `aria-hidden="true"`, so screen readers skip it. Add a live region that says when a peer joins or leaves.
 
@@ -87,13 +87,13 @@ Render `PeerAnnouncer` once, inside `PresenceProvider`. Keep it mounted: a scree
   <Card icon={<Users />} title="Remote users" href="/docs/react/remote-users">
     `useRemoteUsers` and `usePeerChanges`.
   </Card>
-  <Card icon={<Eye />} title="Remote presence" href="/docs/react/remote-presence">
+  <Card icon={<Radar />} title="Raw presence" href="/docs/react/remote-presence">
     Read the `user` and `context` of each peer.
   </Card>
-  <Card icon={<Compass />} title="UI context" href="/docs/get-started/concepts/ui-context">
+  <Card icon={<Eye />} title="UI context" href="/docs/get-started/concepts/ui-context">
     What `context` is for.
   </Card>
-  <Card icon={<Shield />} title="Security" href="/docs/get-started/guides/security">
+  <Card icon={<ShieldCheck />} title="Security" href="/docs/get-started/guides/security">
     Treat `user.name` as untrusted data.
   </Card>
 </Cards>

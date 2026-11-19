@@ -4,7 +4,7 @@ description: The agent skill that adds anchor-presence live cursors to a React a
 icon: plug
 ---
 
-import { LifeBuoy, Rocket, Ruler, ScanSearch } from "lucide-react";
+import { LifeBuoy, Rocket, ScanSearch, LayoutDashboard } from "lucide-react";
 
 The integration skill teaches a coding agent to add Anchor Presence to your app. It also teaches the agent to fix live cursors that misbehave. The skill is named `anchor-presence`. To install only this skill, run:
 
@@ -129,7 +129,11 @@ Everything else comes from your code. If you ask for a who-is-online list, the s
   <Card icon={<LifeBuoy />} title="Troubleshooting" href="/docs/get-started/guides/troubleshooting">
     The fixes that the skill applies to a broken integration.
   </Card>
-  <Card icon={<Ruler />} title="Layout design for presence" href="/docs/get-started/guides/layout-design">
+  <Card
+    icon={<LayoutDashboard />}
+    title="Layout design for presence"
+    href="/docs/get-started/guides/layout-design"
+  >
     The rules behind anchor placement.
   </Card>
 </Cards>

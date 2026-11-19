@@ -4,7 +4,7 @@ description: Follow the cursor of one peer and scroll its anchor into view.
 icon: footprints
 ---
 
-import { Crosshair, Gauge, LocateFixed, MousePointer, Users } from "lucide-react";
+import { Crosshair, Gauge, LocateFixed, Users } from "lucide-react";
 
 In a long page, a user wants to see what another user looks at. Follow mode makes one client, the follower, track the cursor of a peer, the leader. When the leader's cursor leaves the follower's window, the follower's page scrolls the leader's anchor into view. Follow mode stops when the follower scrolls, when the follower presses Escape, or when the leader leaves the room. The recipe uses only public APIs: `useRemoteCursorsSelector`, `useDomBinding`, `binding.getAnchorElement`, `ResolvedCursor`, `element.scrollIntoView` and `usePeerChanges`.
 
@@ -148,7 +148,7 @@ export function FollowApp({ client }: { client: PresenceClient<unknown, User> })
 ## Related
 
 <Cards>
-  <Card icon={<MousePointer />} title="Remote cursors" href="/docs/react/remote-cursors">
+  <Card icon={<Crosshair />} title="Remote cursors" href="/docs/react/remote-cursors">
     `useRemoteCursors` and `useRemoteCursorsSelector`.
   </Card>
   <Card icon={<Users />} title="Remote users" href="/docs/react/remote-users">

@@ -39,6 +39,8 @@
 
 ### Added
 
+- Layout audit skill: `scan.mjs` lists anchors, routes, breakpoints, toggles, and reflow patterns before you measure. `ANCHOR_AUDIT_BROWSER` points `measure.mjs` at a Chrome or Chromium executable.
+- Stable layout example that scores low in the layout audit, and a note on every example whose demo breaks the layout rules on purpose.
 - `@anchor-presence/dom`: `ResolvedCursor` has `pointerType` (`"mouse"`, `"pen"` or `"touch"`), and `@anchor-presence/react`: `CursorRenderProps` passes it to `renderCursor`. A change of pointer type alone updates the cursor.
 - `@anchor-presence/core`: `room.dispose()` on `createInMemoryRoom` disconnects and forgets every side, a disconnected side leaves the delivery set until `connect()`, a throwing listener no longer throws into the sender or stops later peers, and the type `InMemoryRoomOptions` is exported.
 - `@anchor-presence/dom` and `@anchor-presence/react`: the `PointerType` type is exported.

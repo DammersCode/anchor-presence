@@ -68,7 +68,7 @@ The relay listens on `http://localhost:5001`. To use a different port, give the 
 
 ## Close reasons
 
-Socket.IO has no close codes. For this reason, the relay sends the code in one of two ways. The `io.use` middleware checks the handshake: first the room name, then the `authCheck` hook. If a check fails, the client gets a `connect_error` with the code in `error.data.code`. After the handshake, the relay sends a `refused` event with a code and a reason, and then it disconnects the socket. The transport reports the code of both ways through `subscribeClose`:
+Socket.IO has no close codes. For this reason, the relay sends the code in one of two ways. The `io.use` middleware checks the handshake: first the origin, then the room name, then the `authCheck` hook. If a check fails, the client gets a `connect_error` with the code in `error.data.code`. After the handshake, the relay sends a `refused` event with a code and a reason, and then it disconnects the socket. The transport reports the code of both ways through `subscribeClose`:
 
 | Code   | Meaning                             | How the relay sends it             |
 | ------ | ----------------------------------- | ---------------------------------- |

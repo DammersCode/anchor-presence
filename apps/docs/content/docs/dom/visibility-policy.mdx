@@ -85,11 +85,11 @@ import { useEffect } from "react";
 import { usePresenceBinding } from "@anchor-presence/react";
 
 function SyncOpenDialog({ dialog }: { dialog: string | null }) {
-  const cursorBinding = usePresenceBinding();
+  const presenceBinding = usePresenceBinding();
   useEffect(() => {
     openDialog = dialog;
-    cursorBinding?.invalidate("dialog-changed");
-  }, [cursorBinding, dialog]);
+    presenceBinding?.invalidate("dialog-changed");
+  }, [presenceBinding, dialog]);
   return null;
 }
 ```
@@ -108,7 +108,7 @@ If a policy throws, the binding keeps the last snapshot. See [Errors in a policy
   <Card icon={<Braces />} title="Resolution types" href="/docs/dom/api/resolution">
     The type of `VisibilityPolicy`.
   </Card>
-  <Card icon={<Webhook />} title="usePresenceBinding" href="/docs/react/api/hooks#usecursorbinding">
+  <Card icon={<Webhook />} title="usePresenceBinding" href="/docs/react/api/hooks#usepresencebinding">
     The React hook that returns the binding.
   </Card>
 </Cards>

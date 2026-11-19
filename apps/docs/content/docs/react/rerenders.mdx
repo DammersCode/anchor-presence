@@ -40,8 +40,8 @@ function TierBadge({ clientId }: { clientId: string }) {
 | [useLocalUser](/docs/react/local-context#local-user)                          | the local user value changes                                                                        |
 | [usePeerChanges](/docs/react/remote-users#peer-changes)                       | never by itself: it calls its listener and returns nothing                                          |
 | [useRemoteEvents](/docs/react/remote-events)                                  | never by itself: it calls its listener and returns nothing                                          |
-| [usePresenceClient](/docs/react/api/hooks#usecursorclient)                    | the provider value changes (client, binding, or the pending flag)                                   |
-| [usePresenceBinding](/docs/react/api/hooks#usecursorbinding)                  | the provider value changes (client, binding, or the pending flag)                                   |
+| [usePresenceClient](/docs/react/api/hooks#usepresenceclient)                    | the provider value changes (client, binding, or the pending flag)                                   |
+| [usePresenceBinding](/docs/react/api/hooks#usepresencebinding)                  | the provider value changes (client, binding, or the pending flag)                                   |
 
 A peer that turns idle or expires also changes the values that hooks return, so hooks can rerender in a room with no inbound messages. When a factory finishes creating its client, every hook rerenders once.
 

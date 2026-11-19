@@ -28,7 +28,7 @@
 - `@anchor-presence/dom`: the binding hides remote cursors while the client status is `reconnecting` or `disconnected`, and shows them again when the connection returns.
 - `@anchor-presence/core`: `RemotePresence.idle` now measures the time since the last change, not since the last message. A still peer goes idle while its heartbeats keep arriving.
 - `@anchor-presence/core`: `PresenceMessage` gains an optional `leave` field. A relay that validates messages must pass it through.
-- `@anchor-presence/react`: `usePresenceClient` is removed. Pass `PresenceProvider` a `factory` prop instead. The provider runs it once per mount, in a browser-only effect, and disposes the client it created on unmount. The `client` prop stays as bring-your-own: the provider never disposes a client you pass, and it wins over `factory` when both are set.
+- `@anchor-presence/react`: The old hook that created a client inside the tree is removed. Pass `PresenceProvider` a `factory` prop instead. The provider runs it once per mount, in a browser-only effect, and disposes the client it created on unmount. The `client` prop stays as bring-your-own: the provider never disposes a client you pass, and it wins over `factory` when both are set.
 - `@anchor-presence/core`: `createPresenceClient` now defaults `autoConnect` to `true`. The client calls `transport.connect()` itself, once, during creation, after it subscribes to the transport's messages and status. Pass `autoConnect: false` to connect the transport yourself.
 
 - `@anchor-presence/core`: `createPresenceClient` throws a `TypeError` when `options.transport` is missing, or when `clientId` is not 1 to 128 characters. Every option error message starts with `createPresenceClient:`.

@@ -18,10 +18,6 @@
     "presence-list",
     "custom-cursor-rendering",
     "interpolation-styles",
-    "---[list-checks]Recipes---",
-    "[message-square-text][Cursor chat](/docs/get-started/guides/cursor-chat)",
-    "[footprints][Follow mode](/docs/get-started/guides/follow-mode)",
-    "[locate-fixed][Off-screen hints](/docs/get-started/guides/offscreen-hints)",
     "---[server]Servers---",
     "backends"
   ]

@@ -43,33 +43,33 @@ export type WebSocketTransport = PresenceTransport & {
  */
 export type WebSocketTransportOptions = {
   /** WebSocket URL. Defaults to `ws(s)://<current host>:<relay port><path>` when omitted. */
-  url?: string;
+  url?: string | undefined;
   /** The host used when building the default URL. Default: `window.location.hostname`. */
-  host?: string;
+  host?: string | undefined;
   /** The path, including the query. Default: `/`. */
-  path?: string;
+  path?: string | undefined;
   /** The relay port used when building the default URL. Default: `8787`. */
-  port?: number;
+  port?: number | undefined;
   /**
    * Room token for the relay auth check.
    * The transport URL-encodes the token and adds it to the URL as `token=...`.
    * A function runs before every connection attempt, so an expiring token stays fresh. It may return a promise.
    */
-  token?: string | (() => string | Promise<string>);
+  token?: (string | (() => string | Promise<string>)) | undefined;
   /** Enables automatic reconnect with exponential backoff. Default `true`. */
-  reconnect?: boolean;
+  reconnect?: boolean | undefined;
   /** Base backoff, in milliseconds, before the first reconnect attempt. Default `500`. */
-  baseBackoffMs?: number;
+  baseBackoffMs?: number | undefined;
   /** Cap on the reconnect backoff, in milliseconds. Default `8000`. */
-  maxBackoffMs?: number;
+  maxBackoffMs?: number | undefined;
   /** Returns a value in `[0, 1)` for the random part of the reconnect wait. Default: `Math.random`. */
-  random?: () => number;
+  random?: (() => number) | undefined;
   /** How long a connection must stay open before the backoff resets, in milliseconds. Default `5000`. */
-  stableAfterMs?: number;
+  stableAfterMs?: number | undefined;
   /** Return `false` to stop reconnecting after a close. Default: reconnect unless the close code is 1008, 4004 (origin), 4006 (auth) or 4007 (room). If the token function or the WebSocket constructor fails, it passes no `code` and the reason "connection attempt failed". A socket that cannot reach the relay closes with 1006. */
-  shouldReconnect?: (close: { code?: number; reason?: string }) => boolean;
+  shouldReconnect?: ((close: { code?: number; reason?: string }) => boolean) | undefined;
   /** A WebSocket constructor to use. Default: `globalThis.WebSocket`. */
-  WebSocketCtor?: WebSocketCtor;
+  WebSocketCtor?: WebSocketCtor | undefined;
 };
 
 const NO_RETRY_CODES = new Set([1008, 4004, 4006, 4007]);
@@ -289,7 +289,7 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
       };
 
       ws.onmessage = (event) => {
-        const data = event.data;
+        const data: unknown = event.data;
         if (!(data instanceof ArrayBuffer)) return;
         const bytes = new Uint8Array(data);
         for (const listener of dataListeners) {

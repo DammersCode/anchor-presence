@@ -6,7 +6,7 @@ import { EMPTY_CURSORS, getServerCursors, usePresenceProviderContext } from "./u
 
 export function useRemoteCursorsIn<TContext, TUser, TEvents extends object>(
   context: PresenceContext<TContext, TUser, TEvents>,
-): ResolvedCursor<TContext, TUser>[] {
+): readonly ResolvedCursor<TContext, TUser>[] {
   const { binding } = usePresenceProviderContext(context);
   const subscribe = useCallback(
     (listener: () => void) => (binding !== null ? binding.subscribe(listener) : () => {}),
@@ -25,20 +25,20 @@ export function useRemoteCursorsIn<TContext, TUser, TEvents extends object>(
  * The hook rerenders on every new cursor snapshot.
  * Returns an empty list on the server or without a binding.
  */
-export function useRemoteCursors(): ResolvedCursor[] {
+export function useRemoteCursors(): readonly ResolvedCursor[] {
   return useRemoteCursorsIn(PresenceProviderContext);
 }
 
 export function useRemoteCursorsSelectorIn<TSelected, TContext, TUser, TEvents extends object>(
   context: PresenceContext<TContext, TUser, TEvents>,
-  select: (cursors: ResolvedCursor<TContext, TUser>[]) => TSelected,
+  select: (cursors: readonly ResolvedCursor<TContext, TUser>[]) => TSelected,
   isEqual: (a: TSelected, b: TSelected) => boolean = Object.is,
 ): TSelected {
   const { binding } = usePresenceProviderContext(context);
   const selectedRef = useRef<{ value: TSelected } | null>(null);
   // caches select's output by input array and callbacks, so a repeat snapshot probe skips select() entirely
   const lastInputRef = useRef<{
-    cursors: ResolvedCursor<TContext, TUser>[];
+    cursors: readonly ResolvedCursor<TContext, TUser>[];
     select: typeof select;
     isEqual: typeof isEqual;
     value: TSelected;
@@ -78,7 +78,7 @@ export function useRemoteCursorsSelectorIn<TSelected, TContext, TUser, TEvents e
  * The `user` and `context` of a cursor have the type `unknown`. For typed values, use `useRemoteCursorsSelector` from `createPresenceHooks`.
  */
 export function useRemoteCursorsSelector<TSelected>(
-  select: (cursors: ResolvedCursor[]) => TSelected,
+  select: (cursors: readonly ResolvedCursor[]) => TSelected,
   isEqual?: (a: TSelected, b: TSelected) => boolean,
 ): TSelected {
   return useRemoteCursorsSelectorIn(PresenceProviderContext, select, isEqual);

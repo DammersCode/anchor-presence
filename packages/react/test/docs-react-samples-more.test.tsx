@@ -115,14 +115,14 @@ declare namespace Listing {
     usePresenceClient: () => PresenceClient<TContext, TUser, TEvents> | null;
     useLocalContext: () => [TContext | undefined, (next: TContext | undefined) => void];
     useRemoteEvents: (listener: (event: TypedRemoteEvent<TEvents>) => void) => void;
-    useRemotePresence: () => RemotePresence<TContext, TUser>[];
+    useRemotePresence: () => readonly RemotePresence<TContext, TUser>[];
     usePresenceStatus: () => ConnectionStatus;
-    useRemoteCursors: () => ResolvedCursor<TContext, TUser>[];
+    useRemoteCursors: () => readonly ResolvedCursor<TContext, TUser>[];
     useRemoteCursorsSelector: <TSelected>(
-      select: (cursors: ResolvedCursor<TContext, TUser>[]) => TSelected,
+      select: (cursors: readonly ResolvedCursor<TContext, TUser>[]) => TSelected,
       isEqual?: (a: TSelected, b: TSelected) => boolean,
     ) => TSelected;
-    useRemoteUsers: () => RemoteUser<TUser>[];
+    useRemoteUsers: () => readonly RemoteUser<TUser>[];
     useLocalUser: () => [TUser | undefined, (next: TUser | undefined) => void];
     usePeerChanges: (listener: (change: PeerChange<TContext, TUser>) => void) => void;
     useSendEvent: () => EventChannel<TEvents>["send"];

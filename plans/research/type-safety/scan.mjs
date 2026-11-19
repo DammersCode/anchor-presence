@@ -63,6 +63,7 @@ const castRules = [
   ["L", /(signals|pointer|occlusion)\.ts:/],
   ["L", /transport\.ts:.*Uint8Array<ArrayBuffer>/],
   ["B", /standard-schema\.ts:.*value as \{ then/],
+  ["B", /ingest\.ts:.*(event as TypedRemoteEvent|presence as PresenceMessage<)/],
   ["B", /broadcast-transport\.ts:.*event\.data as /],
   ["B", /cursor\.tsx:.*cursor\.user as /],
 ];
@@ -157,12 +158,8 @@ const leaks = [
     ),
   ],
   [
-    "no parser and no local value: user/context pass unparsed",
-    /if \(sample === undefined\) return;/.test(read("packages/core/src/internal/ingest.ts")),
-  ],
-  [
-    "shape check stands in for a parser when a local value exists",
-    /fitShape\(sample, value\)/.test(read("packages/core/src/internal/ingest.ts")),
+    "accepted: a parsers object with extra runtime keys (amendment 3, L-d)",
+    /Object\.hasOwn\(parsers/.test(read("packages/core/src/event-channel.ts")),
   ],
   [
     "binary codec takes JSON.parse output as implicit any",

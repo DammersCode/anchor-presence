@@ -61,12 +61,14 @@ function ScopedPresenceRoot({
         const transport = createWebSocketTransport({
           url: `wss://relay.example.com/?room=${encodeURIComponent(room)}`,
         });
-        return createPresenceClient({ transport, user: { name: userName }, parseContext });
+        return createPresenceClient({ transport, user: { name: userName } });
       }}
       bindingOptions={{
         resolution: {
           visibilityPolicy: ({ presence, resolution }) =>
-            presence.context?.page !== pageRef.current || resolution.tier === "hidden" ? "hide" : "show",
+            parseContext(presence.context)?.page !== pageRef.current || resolution.tier === "hidden"
+              ? "hide"
+              : "show",
         },
       }}
     >

@@ -129,6 +129,26 @@ function App() {
 
 An event map can be a `type` or an `interface`. For the parser rules, see [Typed events](/docs/core/events#typed-events).
 
+## Infer the types from schemas
+
+If you check `user` and `context` with [Standard Schema](/docs/core/standard-schema) schemas, take the types from the same schemas with `InferSchemaOutput`:
+
+```ts
+import * as v from "valibot";
+import { createPresenceHooks } from "@anchor-presence/react";
+import type { InferSchemaOutput } from "@anchor-presence/core/standard-schema";
+
+const userSchema = v.object({ name: v.string(), color: v.string() });
+const contextSchema = v.object({ pageId: v.string() });
+
+export const schemaHooks = createPresenceHooks<
+  InferSchemaOutput<typeof contextSchema>,
+  InferSchemaOutput<typeof userSchema>
+>();
+```
+
+Pass `parserFrom(userSchema)` and `parserFrom(contextSchema)` to `createPresenceClient` as `parseUser` and `parseContext`. The client then has the types of the hooks.
+
 ## What the result contains
 
 | Name                                    | Types that the result fixes                                    |

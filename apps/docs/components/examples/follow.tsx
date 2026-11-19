@@ -55,7 +55,7 @@ function useFollowMode(): {
   const stop = useCallback(() => setLeaderId(null), []);
 
   const selectTarget = useCallback(
-    (cursors: ResolvedCursor[]) => {
+    (cursors: readonly ResolvedCursor[]) => {
       const leader = cursors.find((cursor) => cursor.clientId === leaderId);
       if (leader === undefined || leader.anchorId === null) return null;
       return isOffscreen(leader, window.innerWidth, window.innerHeight) ? leader.anchorId : null;

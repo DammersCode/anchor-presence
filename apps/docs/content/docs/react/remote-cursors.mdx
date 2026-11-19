@@ -39,7 +39,7 @@ This selector derives the set of clients whose cursor is clipped out of view:
 ```tsx
 import { type ResolvedCursor, useRemoteCursorsSelector } from "@anchor-presence/react";
 
-function selectClippedClientIds(cursors: ResolvedCursor[]): ReadonlySet<string> {
+function selectClippedClientIds(cursors: readonly ResolvedCursor[]): ReadonlySet<string> {
   const clipped = new Set<string>();
   for (const cursor of cursors) {
     if (cursor.tier === "anchor" && !cursor.pointVisible) clipped.add(cursor.clientId);

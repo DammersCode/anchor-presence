@@ -85,19 +85,19 @@ export type CursorRenderProps<TContext = unknown, TUser = unknown> = {
  */
 export type CursorLayerProps<TContext = unknown, TUser = unknown> = {
   /** Returns the label to show for one cursor. */
-  getLabel?: (cursor: ResolvedCursor<TContext, TUser>) => ReactNode;
+  getLabel?: ((cursor: ResolvedCursor<TContext, TUser>) => ReactNode) | undefined;
   /** Returns the color for one cursor. */
-  getColor?: (cursor: ResolvedCursor<TContext, TUser>) => string;
+  getColor?: ((cursor: ResolvedCursor<TContext, TUser>) => string) | undefined;
   /** Hides a cursor when it returns `false`. Default: show every visible cursor. */
-  filterCursor?: (cursor: ResolvedCursor<TContext, TUser>) => boolean;
+  filterCursor?: ((cursor: ResolvedCursor<TContext, TUser>) => boolean) | undefined;
   /** Returns extra props for the cursor element. */
-  getCursorProps?: (
-    cursor: ResolvedCursor<TContext, TUser>,
-  ) => Omit<ComponentPropsWithoutRef<"div">, "children">;
+  getCursorProps?:
+    | ((cursor: ResolvedCursor<TContext, TUser>) => Omit<ComponentPropsWithoutRef<"div">, "children">)
+    | undefined;
   /** Renders one cursor. Default: the `DefaultCursor` component. */
-  renderCursor?: (props: CursorRenderProps<TContext, TUser>) => ReactNode;
+  renderCursor?: ((props: CursorRenderProps<TContext, TUser>) => ReactNode) | undefined;
   /** The z-index for the cursor elements. Default `9999`. */
-  zIndex?: number;
+  zIndex?: number | undefined;
 };
 
 /**
@@ -107,23 +107,25 @@ export type DefaultCursorProps = {
   /** The label text to show next to the arrow. */
   label?: ReactNode;
   /** The arrow color. Default `#6b7280`. */
-  color?: string;
+  color?: string | undefined;
   /** A class name for the outer element. */
-  className?: string;
+  className?: string | undefined;
   /** Inline styles for the outer element. */
-  style?: CSSProperties &
-    Partial<
-      Record<
-        | "--anchor-presence-cursor-color"
-        | "--anchor-presence-cursor-size"
-        | "--anchor-presence-cursor-label-color",
-        string
-      >
-    >;
+  style?:
+    | (CSSProperties &
+        Partial<
+          Record<
+            | "--anchor-presence-cursor-color"
+            | "--anchor-presence-cursor-size"
+            | "--anchor-presence-cursor-label-color",
+            string
+          >
+        >)
+    | undefined;
   /** A class name for the label element. */
-  labelClassName?: string;
+  labelClassName?: string | undefined;
   /** Inline styles for the label element. */
-  labelStyle?: CSSProperties;
+  labelStyle?: CSSProperties | undefined;
 };
 
 /**
@@ -234,7 +236,7 @@ export function CursorLayerIn<TContext, TUser, TEvents extends object>(
   const { context, getLabel, getColor, filterCursor, getCursorProps, renderCursor, zIndex } = props;
 
   const select = useCallback(
-    (cursors: ResolvedCursor<TContext, TUser>[]) =>
+    (cursors: readonly ResolvedCursor<TContext, TUser>[]) =>
       cursors.filter((cursor) => cursor.visible && (filterCursor?.(cursor) ?? true)),
     [filterCursor],
   );

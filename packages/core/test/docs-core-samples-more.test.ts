@@ -75,7 +75,7 @@ interface Framework {
 }
 
 function createPresenceSignals(framework: Framework, client: PresenceClient) {
-  const [presence, setPresence] = framework.createSignal<RemotePresence[]>([]);
+  const [presence, setPresence] = framework.createSignal<readonly RemotePresence[]>([]);
   const [status, setStatus] = framework.createSignal<ConnectionStatus>("disconnected");
   if (framework.isServer) return { presence, status };
 

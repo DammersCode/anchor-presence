@@ -4,9 +4,9 @@ import type { MutationObserverCtor } from "./scheduler.js";
 
 export type AutoRegisterOptions = {
   attribute: string;
-  root?: ParentNode;
+  root?: ParentNode | undefined;
   registry: AnchorRegistry;
-  MutationObserverCtor?: MutationObserverCtor;
+  MutationObserverCtor?: MutationObserverCtor | undefined;
 };
 
 export type AutoRegisterHandle = {

@@ -84,6 +84,11 @@ const client = createPresenceClient<unknown, { name: string; avatar?: string }>(
 });
 ```
 
+The client above has a user type. In React, you have two routes:
+
+- Give the client to the `PresenceProvider` of [`createPresenceHooks`](/docs/react/typed-hooks). Its hooks return the user type.
+- Use the `PresenceProvider` of `@anchor-presence/react`. It takes only an untyped client, and its hooks return `unknown`. Create the client with `createPresenceClient<unknown, unknown>`. The `parseUser` still checks every peer value.
+
 Check every URL and CSS value from a peer before you use it. A peer can send a `javascript:` URL, or a string that breaks out of a CSS value. Allow only `https://` URLs. Allow only colors that match a fixed pattern, such as `/^#[0-9a-f]{6}$/i`, or that are in a list you own.
 
 In development mode, the client warns when no check applies to a remote value, and when the shape check drops a value.

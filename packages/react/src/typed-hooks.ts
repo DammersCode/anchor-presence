@@ -50,7 +50,7 @@ export function createPresenceHooks<
     usePresenceStatus: () => usePresenceStatusIn(context),
     useRemoteCursors: () => useRemoteCursorsIn(context),
     useRemoteCursorsSelector: <TSelected>(
-      select: (cursors: ResolvedCursor<TContext, TUser>[]) => TSelected,
+      select: (cursors: readonly ResolvedCursor<TContext, TUser>[]) => TSelected,
       isEqual?: (a: TSelected, b: TSelected) => boolean,
     ) => useRemoteCursorsSelectorIn(context, select, isEqual),
     useRemoteUsers: () => useRemoteUsersIn(context),

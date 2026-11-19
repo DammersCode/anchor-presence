@@ -4,6 +4,7 @@ import {
   createEventParser,
   createInMemoryPair,
   createPresenceClient,
+  RemotePresenceStore,
   validatePresence,
 } from "../src";
 import type { PresenceClient, PresenceMessage, TypedRemoteEvent } from "../src";
@@ -22,6 +23,7 @@ const parseContext = (value: unknown): Context | undefined =>
 
 type Events = { reaction: { emoji: string }; ping: undefined };
 type WrongEvents = { reaction: { emoji: number } };
+interface EmptyEvents {}
 
 const parseEvent = createEventParser<Events>({
   reaction: (data) =>
@@ -97,6 +99,37 @@ describe("createPresenceClient types", () => {
     expect(createPresenceClient<unknown, unknown, Events>({ transport })).toBeDefined();
   });
 
+  /* oxlint-disable typescript/no-explicit-any, typescript/ban-types -- these types are the probes */
+  it("requires a parser for any, {}, object, an empty interface and Record<string, any>", () => {
+    // @ts-expect-error any is not the unknown default
+    expect(createPresenceClient<unknown, any>({ transport })).toBeDefined();
+    // @ts-expect-error any is not the unknown default
+    expect(createPresenceClient<any>({ transport })).toBeDefined();
+    // @ts-expect-error {} is not the unknown default
+    expect(createPresenceClient<unknown, {}>({ transport })).toBeDefined();
+    // @ts-expect-error {} is not the default event map
+    expect(createPresenceClient<unknown, unknown, {}>({ transport })).toBeDefined();
+    // @ts-expect-error object is not the default event map
+    expect(createPresenceClient<unknown, unknown, object>({ transport })).toBeDefined();
+    // @ts-expect-error an empty interface is not the default event map
+    expect(createPresenceClient<unknown, unknown, EmptyEvents>({ transport })).toBeDefined();
+    // @ts-expect-error Record<string, any> is not the default event map
+    expect(createPresenceClient<unknown, unknown, Record<string, any>>({ transport })).toBeDefined();
+  });
+
+  /* oxlint-enable typescript/no-explicit-any, typescript/ban-types */
+
+  it("needs no parser for the unknown and EventMap defaults, and takes optional inputs as undefined", () => {
+    const client = createPresenceClient<unknown, unknown>({
+      transport,
+      parseUser,
+      user: undefined,
+      staleTimeoutMs: undefined,
+    });
+    expect(client.getUser()).toBeUndefined();
+    client.dispose();
+  });
+
   it("rejects a channel type that disagrees with the client", () => {
     const client = createPresenceClient({ transport, parseEvent });
     // @ts-expect-error the client delivers Events, not WrongEvents
@@ -110,5 +143,14 @@ describe("createPresenceClient types", () => {
     // @ts-expect-error without a parser the user and context stay unknown
     const typed: PresenceMessage<Context, User> | null = message;
     expect(typed).toBeNull();
+  });
+});
+
+describe("RemotePresenceStore variance", () => {
+  it("rejects a typed store where an untyped one is expected, with no variance annotation", () => {
+    const typed = new RemotePresenceStore<Context, User>();
+    // @ts-expect-error the listener set makes the store invariant in Context and User
+    const loose: RemotePresenceStore = typed;
+    expect(loose).toBe(typed);
   });
 });

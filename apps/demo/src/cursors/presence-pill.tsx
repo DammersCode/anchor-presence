@@ -5,7 +5,9 @@ import { Avatar } from "../components/ui/avatar";
 import { DEFAULT_CURSOR_COLOR, isKnownCursorColor } from "./setup";
 import type { DemoContext, DemoUser } from "./setup";
 
-function selectClippedClientIds(cursors: ResolvedCursor<DemoContext, DemoUser>[]): ReadonlySet<string> {
+function selectClippedClientIds(
+  cursors: readonly ResolvedCursor<DemoContext, DemoUser>[],
+): ReadonlySet<string> {
   const clipped = new Set<string>();
   for (const cursor of cursors) {
     if (cursor.tier === "anchor" && !cursor.pointVisible) clipped.add(cursor.clientId);

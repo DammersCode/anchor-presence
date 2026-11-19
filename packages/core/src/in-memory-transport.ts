@@ -7,7 +7,7 @@ import { reportListenerError } from "./internal/dev-warnings.js";
  */
 export type InMemoryPairOptions = {
   /** Deliver messages in a microtask instead of at once. Default `false` (synchronous). */
-  async?: boolean;
+  async?: boolean | undefined;
 };
 
 /** A `PresenceTransport` whose optional lifecycle and status members are always present. */

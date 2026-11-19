@@ -83,6 +83,7 @@ const parseUser = parserFrom(User, {
 
 - The schema must validate in a synchronous way. A schema that returns a promise drops every value, and `parserFrom` warns once.
 - The client runs your schema after `validatePresence`. A schema never sees a message above the size and depth limits. See [Validation](/docs/core/validation).
+- If a schema transforms its value, the output type must fit the input type of the same schema, because a peer parses what the sender sends. `parserFrom` does not compile for a schema that turns `{ n: string }` into `{ count: number }`.
 - A value that a schema turns into `undefined` counts as rejected, because `undefined` means a drop.
 - The entry point has no `node10` module resolution. Use `node16`, `nodenext`, or `bundler`.
 

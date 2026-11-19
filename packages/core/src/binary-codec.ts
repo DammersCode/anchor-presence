@@ -1,6 +1,7 @@
 import type { PresenceCodec } from "./codec.js";
 import {
   DEFAULT_MAX_SEQUENCE,
+  type AnchorPoint,
   type CursorPosition,
   type PresenceMessage,
   type PointerInfo,
@@ -271,7 +272,7 @@ function decodeMessage(data: Uint8Array): unknown {
     eventType = readString();
   } else if (cursorTag === CURSOR_PRESENT) {
     const anchorCount = dv.getUint8(offset++);
-    const anchors: CursorPosition["anchors"] = [];
+    const anchors: AnchorPoint[] = [];
     for (let i = 0; i < anchorCount; i++) {
       const id = readString();
       const u = dv.getFloat32(offset, true);

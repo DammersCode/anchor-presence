@@ -17,24 +17,24 @@ import type { AnchorPoint, CursorPosition, PresenceMessage, PresenceEvent } from
  */
 export type ValidationLimits = {
   /** Maximum `clientId` length. Default `DEFAULT_MAX_CLIENT_ID_LENGTH`. */
-  maxClientIdLength?: number;
+  maxClientIdLength?: number | undefined;
   /** Maximum `session` length. Default `DEFAULT_MAX_SESSION_LENGTH`. */
-  maxSessionLength?: number;
+  maxSessionLength?: number | undefined;
   /** Maximum `sequence` value. Default `DEFAULT_MAX_SEQUENCE`. */
-  maxSequence?: number;
+  maxSequence?: number | undefined;
   /** Maximum anchors in one cursor. Default `DEFAULT_MAX_ANCHORS`. */
-  maxAnchors?: number;
+  maxAnchors?: number | undefined;
   /** Maximum anchor `id` length. Default `DEFAULT_MAX_ANCHOR_ID_LENGTH`. */
-  maxAnchorIdLength?: number;
+  maxAnchorIdLength?: number | undefined;
   /** Maximum size of `context` or `user` as JSON, in bytes. Default `DEFAULT_MAX_FIELD_BYTES`. */
-  maxFieldBytes?: number;
+  maxFieldBytes?: number | undefined;
   /** Maximum nesting depth of `context` or `user`. Default `DEFAULT_MAX_FIELD_DEPTH`. */
-  maxFieldDepth?: number;
+  maxFieldDepth?: number | undefined;
   /** Maximum size of one encoded message, in bytes. Default `DEFAULT_MAX_MESSAGE_BYTES`. */
-  maxMessageBytes?: number;
+  maxMessageBytes?: number | undefined;
 };
 
-type ResolvedLimits = Required<ValidationLimits>;
+type ResolvedLimits = { [K in keyof ValidationLimits]-?: NonNullable<ValidationLimits[K]> };
 
 const DEFAULT_RESOLVED_LIMITS: ResolvedLimits = {
   maxClientIdLength: DEFAULT_MAX_CLIENT_ID_LENGTH,

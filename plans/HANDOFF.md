@@ -139,6 +139,12 @@ Final structure: five tabs (`get-started`, `core`, `dom`, `react`, `examples`), 
 - Accessibility: demo has zero axe violations (`e2e/a11y.spec.ts`). Open, owner's call: the light code theme (`github-light`) has one token color at 3.48:1; `github-light-high-contrast` would fix it.
 - `CHANGELOG.md` has `## 0.1.0 - 2026-09-26`. No tag yet: a `v*` tag runs `release.yml`, which publishes to npm.
 
+## Advisor decisions while AFK (type-safety round 2)
+
+- Exact-identity check in `RequiredParsers`, so `any`, `{}`, `object`, empty interfaces and `Record<string, any>` need a parser.
+- `setUser` and `setContext` are properties, not methods. The standalone `PresenceProvider` takes only untyped clients. A typed client uses `createPresenceHooks(...).PresenceProvider`.
+- Skips are listed in `plans/045-standard-schema-privacy-type-safety.md`.
+
 ## Next steps
 
 1. Owner: import the repo in Vercel (Root Directory `apps/docs`).

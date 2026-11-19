@@ -15,7 +15,10 @@ The core of every adapter is a bridge from `subscribe` and `getSnapshot` to a re
 ```ts
 import type { DomBinding, ResolvedCursor } from "@anchor-presence/dom";
 
-function observeCursors(binding: DomBinding, write: (cursors: ResolvedCursor[]) => void): () => void {
+function observeCursors(
+  binding: DomBinding,
+  write: (cursors: readonly ResolvedCursor[]) => void,
+): () => void {
   write(binding.getSnapshot());
   return binding.subscribe(() => write(binding.getSnapshot()));
 }
@@ -81,7 +84,7 @@ interface Framework {
 }
 
 function createPresenceSignals(framework: Framework, client: PresenceClient) {
-  const [presence, setPresence] = framework.createSignal<RemotePresence[]>([]);
+  const [presence, setPresence] = framework.createSignal<readonly RemotePresence[]>([]);
   const [status, setStatus] = framework.createSignal<ConnectionStatus>("disconnected");
   if (framework.isServer) return { presence, status };
 

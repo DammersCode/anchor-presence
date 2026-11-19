@@ -17,15 +17,15 @@ export const DEFAULT_IDLE_AFTER_MS = 15_000;
  */
 export type RemotePresenceStoreOptions = {
   /** Maximum number of remote clients. Default `DEFAULT_MAX_REMOTE_CLIENTS`. */
-  maxRemoteClients?: number;
+  maxRemoteClients?: number | undefined;
   /** Time before a client counts as stale, in milliseconds. Default `DEFAULT_STALE_TIMEOUT_MS`. */
-  staleTimeoutMs?: number;
+  staleTimeoutMs?: number | undefined;
   /** Time before a client counts as idle, in milliseconds. Default `DEFAULT_IDLE_AFTER_MS`, clamped below `staleTimeoutMs`. */
-  idleAfterMs?: number;
+  idleAfterMs?: number | undefined;
   /** Returns the current time in milliseconds. Default: `performance.now()`, or `Date.now()` without `performance`. */
-  now?: () => number;
+  now?: (() => number) | undefined;
   /** Runs when the store drops a new client because the store is full. */
-  onRemoteClientRejected?: (info: { clientId: string }) => void;
+  onRemoteClientRejected?: ((info: { clientId: string }) => void) | undefined;
 };
 
 type Entry<TContext, TUser> = {
@@ -244,7 +244,7 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
    * Returns the raw remote snapshot, including `sequence`.
    * The store returns a new array when it accepts a message.
    */
-  getSnapshot(): PresenceMessage<TContext, TUser>[] {
+  getSnapshot(): readonly PresenceMessage<TContext, TUser>[] {
     if (this.snapshotDirty) {
       this.snapshot = Array.from(this.entries.values(), (entry) => entry.presence);
       this.snapshotDirty = false;
@@ -257,7 +257,7 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
    * The store keeps the array and entry identity while nothing observable changes.
    * Use this for rendering. Use `getSnapshot()` to watch `sequence`.
    */
-  getStableSnapshot(): RemotePresence<TContext, TUser>[] {
+  getStableSnapshot(): readonly RemotePresence<TContext, TUser>[] {
     if (this.stableSnapshotDirty) {
       this.stableSnapshot = Array.from(this.entries.values(), (entry) => entry.projected);
       this.stableSnapshotDirty = false;

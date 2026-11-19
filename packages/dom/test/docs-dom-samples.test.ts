@@ -355,7 +355,10 @@ describe("dom docs samples: pages without a guide test", () => {
 
   it("build-a-framework-adapter.mdx: observeCursors writes the first and each later snapshot", () => {
     // Copied from apps/docs/content/docs/core/build-a-framework-adapter.mdx (The bridge).
-    function observeCursors(binding: DomBinding, write: (cursors: ResolvedCursor[]) => void): () => void {
+    function observeCursors(
+      binding: DomBinding,
+      write: (cursors: readonly ResolvedCursor[]) => void,
+    ): () => void {
       write(binding.getSnapshot());
       return binding.subscribe(() => write(binding.getSnapshot()));
     }
@@ -363,7 +366,7 @@ describe("dom docs samples: pages without a guide test", () => {
     const { a } = createInMemoryPair();
     const client = createPresenceClient({ transport: a });
     const binding = createDomBinding(client);
-    const writes: ResolvedCursor[][] = [];
+    const writes: (readonly ResolvedCursor[])[] = [];
     const stop = observeCursors(binding, (cursors) => writes.push(cursors));
     binding.invalidate();
     stop();

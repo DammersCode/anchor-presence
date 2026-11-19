@@ -29,13 +29,13 @@ export type PresenceProviderConfig<TContext = unknown, TUser = unknown, TEvents 
   (
     | {
         /** A binding you created. Omit to let the provider create one. */
-        binding?: DomBinding<TContext, TUser>;
+        binding?: DomBinding<TContext, TUser> | undefined;
         bindingOptions?: never;
       }
     | {
         binding?: never;
         /** Options for the binding the provider creates. */
-        bindingOptions?: DomBindingOptions<NoInfer<TContext>, NoInfer<TUser>>;
+        bindingOptions?: DomBindingOptions<NoInfer<TContext>, NoInfer<TUser>> | undefined;
       }
   ) & {
     /** Change this value to dispose the client `factory` made and create a new one, for example to join another room. */
@@ -170,11 +170,10 @@ export function usePresenceProviderValue<TContext, TUser, TEvents extends object
  * The provider creates and disposes the client from `factory`; a `client` prop stays yours to dispose.
  * The provider creates a DOM binding when you do not pass one.
  * The provider reads `bindingOptions` when it creates the binding. Change `bindingKey` to create a new binding with the latest options, without touching the client.
- * The hooks below it return `unknown` for `user`, `context` and event data. Use `createPresenceHooks` for typed access.
+ * The hooks below it return `unknown` for `user`, `context` and event data, and the provider takes only an untyped client.
+ * Use `createPresenceHooks` for typed access.
  */
-export function PresenceProvider<TContext = unknown, TUser = unknown, TEvents extends object = EventMap>(
-  props: PresenceProviderProps<TContext, TUser, TEvents>,
-): ReactNode {
+export function PresenceProvider(props: PresenceProviderProps): ReactNode {
   const value = usePresenceProviderValue(props);
   return <PresenceProviderContext.Provider value={value}>{props.children}</PresenceProviderContext.Provider>;
 }

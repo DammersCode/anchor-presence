@@ -9,8 +9,6 @@ import { useRemoteUsers } from "../src/hooks";
 import type { RemoteUser } from "../src/hooks";
 import { makeFakeBinding, makeFakeClient } from "./test-utils";
 
-type TestUser = { name: string };
-
 function makePeerPair(): { transportA: PresenceTransport; transportB: PresenceTransport } {
   const aListeners = new Set<(data: Uint8Array) => void>();
   const bListeners = new Set<(data: Uint8Array) => void>();
@@ -52,8 +50,8 @@ describe("useRemoteUsers", () => {
   });
 
   it("projects one entry per remote client with clientId, session, and user", () => {
-    const { client, pushRemote } = makeFakeClient<unknown, TestUser>();
-    const seen: RemoteUser[][] = [];
+    const { client, pushRemote } = makeFakeClient();
+    const seen: (readonly RemoteUser[])[] = [];
     function Probe() {
       seen.push(useRemoteUsers());
       return null;
@@ -86,8 +84,8 @@ describe("useRemoteUsers", () => {
   });
 
   it("carries the idle flag from the presence snapshot", () => {
-    const { client, pushRemote } = makeFakeClient<unknown, TestUser>();
-    const seen: RemoteUser[][] = [];
+    const { client, pushRemote } = makeFakeClient();
+    const seen: (readonly RemoteUser[])[] = [];
     function Probe() {
       seen.push(useRemoteUsers());
       return null;
@@ -112,8 +110,8 @@ describe("useRemoteUsers", () => {
   });
 
   it("keeps entry and list identity across a presence update that changes only cursor position", () => {
-    const { client, pushRemote } = makeFakeClient<unknown, TestUser>();
-    const seen: RemoteUser[][] = [];
+    const { client, pushRemote } = makeFakeClient();
+    const seen: (readonly RemoteUser[])[] = [];
     function Probe() {
       seen.push(useRemoteUsers());
       return null;
@@ -166,8 +164,8 @@ describe("useRemoteUsers", () => {
   });
 
   it("gives a changed client a new entry while an unrelated client keeps identity", () => {
-    const { client, pushRemote } = makeFakeClient<unknown, TestUser>();
-    const seen: RemoteUser[][] = [];
+    const { client, pushRemote } = makeFakeClient();
+    const seen: (readonly RemoteUser[])[] = [];
     function Probe() {
       seen.push(useRemoteUsers());
       return null;
@@ -212,7 +210,7 @@ describe("useRemoteUsers", () => {
     const { transportA, transportB } = makePeerPair();
     const clientA = createPresenceClient({ transport: transportA, clientId: "A" });
     const clientB = createPresenceClient({ transport: transportB, clientId: "B", publishIntervalMs: 50 });
-    const seen: RemoteUser[][] = [];
+    const seen: (readonly RemoteUser[])[] = [];
     function Probe() {
       const users = useRemoteUsers();
       seen.push(users);
@@ -246,7 +244,7 @@ describe("useRemoteUsers", () => {
   });
 
   it("returns an empty list without a provider (server snapshot)", () => {
-    const seen: RemoteUser[][] = [];
+    const seen: (readonly RemoteUser[])[] = [];
     function Probe() {
       seen.push(useRemoteUsers());
       return null;

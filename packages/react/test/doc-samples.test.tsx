@@ -80,7 +80,8 @@ function OwnClientApp() {
 // react/rerenders.mdx: Usage, verbatim
 function TierBadge({ clientId }: { clientId: string }) {
   const select = useCallback(
-    (cursors: ResolvedCursor[]) => cursors.find((cursor) => cursor.clientId === clientId)?.tier ?? "hidden",
+    (cursors: readonly ResolvedCursor[]) =>
+      cursors.find((cursor) => cursor.clientId === clientId)?.tier ?? "hidden",
     [clientId],
   );
   const tier = useRemoteCursorsSelector(select);

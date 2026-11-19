@@ -79,7 +79,7 @@ const [user] = hooks.useLocalUser();
 assertEqual<User | undefined, typeof user>(true);
 const [context] = hooks.useLocalContext();
 assertEqual<Ctx | undefined, typeof context>(true);
-assertEqual<RemoteUser<User>[], ReturnType<typeof hooks.useRemoteUsers>>(true);
+assertEqual<readonly RemoteUser<User>[], ReturnType<typeof hooks.useRemoteUsers>>(true);
 assertEqual<User | undefined, ReturnType<typeof hooks.useRemoteCursors>[number]["user"]>(true);
 hooks.useRemoteEvents((event) => {
   if (event.type === "reaction") assertEqual<{ emoji: string }, typeof event.data>(true);
@@ -97,7 +97,13 @@ hooks.PresenceProvider({
 // @ts-expect-error send rejects unknown events
 hooks.useSendEvent()("nope");
 
+// @ts-expect-error a typed client does not fit the standalone provider
 PresenceProvider({ client: inferred });
+PresenceProvider({ client: createPresenceClient({ transport: pair.a }) });
+PresenceProvider({ client: createPresenceClient<unknown, unknown>({ transport: pair.a, parseUser }) });
+
+// @ts-expect-error a channel cannot claim an event map that the client does not carry
+createEventChannel<Events>(createPresenceClient({ transport: pair.a }));
 
 const [, setUser] = hooks.useLocalUser();
 // @ts-expect-error the setter takes User, not a string

@@ -25,10 +25,10 @@ const EMPTY_USERS: never[] = [];
 // The per-client map is updated in place; the users array is rebuilt only when membership,
 // order, or a user-relevant field changes. Cursor-only probes allocate nothing.
 function projectRemoteUsers<TContext, TUser>(
-  snapshot: RemotePresence<TContext, TUser>[],
-  previousUsers: RemoteUser<TUser>[],
+  snapshot: readonly RemotePresence<TContext, TUser>[],
+  previousUsers: readonly RemoteUser<TUser>[],
   byClientId: Map<string, RemoteUser<TUser>>,
-): RemoteUser<TUser>[] {
+): readonly RemoteUser<TUser>[] {
   let structureChanged = snapshot.length !== previousUsers.length;
   if (!structureChanged) {
     for (let i = 0; i < snapshot.length; i++) {
@@ -80,9 +80,9 @@ function projectRemoteUsers<TContext, TUser>(
 
 export function useRemoteUsersIn<TContext, TUser, TEvents extends object>(
   context: PresenceContext<TContext, TUser, TEvents>,
-): RemoteUser<TUser>[] {
+): readonly RemoteUser<TUser>[] {
   const { client } = usePresenceProviderContext(context);
-  const previousUsersRef = useRef<RemoteUser<TUser>[]>([]);
+  const previousUsersRef = useRef<readonly RemoteUser<TUser>[]>([]);
   const byClientIdRef = useRef(new Map<string, RemoteUser<TUser>>());
 
   const subscribe = useCallback(
@@ -90,7 +90,7 @@ export function useRemoteUsersIn<TContext, TUser, TEvents extends object>(
     [client],
   );
 
-  const getSnapshot = useCallback((): RemoteUser<TUser>[] => {
+  const getSnapshot = useCallback((): readonly RemoteUser<TUser>[] => {
     const presence = client !== null ? client.getRemotePresence() : EMPTY_PRESENCE;
     const nextUsers = projectRemoteUsers(presence, previousUsersRef.current, byClientIdRef.current);
     previousUsersRef.current = nextUsers;
@@ -106,6 +106,6 @@ export function useRemoteUsersIn<TContext, TUser, TEvents extends object>(
  * Each `user` has the type `unknown`. For typed users, use `useRemoteUsers` from `createPresenceHooks`.
  * The list, and each entry, keep identity across a presence snapshot that changes no user-relevant field.
  */
-export function useRemoteUsers(): RemoteUser[] {
+export function useRemoteUsers(): readonly RemoteUser[] {
   return useRemoteUsersIn(PresenceProviderContext);
 }

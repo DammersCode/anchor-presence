@@ -1,6 +1,6 @@
 // Top-level wiring: registry, pointer, scheduler, and resolver. The React adapter consumes it.
 
-import type { InterpolatorFactory, PresenceClient } from "@anchor-presence/core";
+import type { EventMap, InterpolatorFactory, PresenceClient } from "@anchor-presence/core";
 import { linearInterpolator, noneInterpolator, reportListenerError } from "@anchor-presence/core";
 import { createAnchorRegistry } from "./registry.js";
 import { attachPointerSource } from "./pointer.js";
@@ -19,17 +19,17 @@ export type ResolutionOptions<TContext = unknown, TUser = unknown> = {
    * Shows or hides one cursor.
    * @default hides a cursor that does not resolve
    */
-  visibilityPolicy?: VisibilityPolicy<TContext, TUser>;
+  visibilityPolicy?: VisibilityPolicy<TContext, TUser> | undefined;
   /**
    * Creates the interpolator per remote client.
    * @default `linearInterpolator`, or `noneInterpolator` when the OS prefers reduced motion
    */
-  interpolatorFactory?: InterpolatorFactory;
+  interpolatorFactory?: InterpolatorFactory | undefined;
   /**
    * Runs a DOM hit test on the resolved point.
    * @default false
    */
-  hitTest?: boolean;
+  hitTest?: boolean | undefined;
 };
 
 /**
@@ -38,17 +38,17 @@ export type ResolutionOptions<TContext = unknown, TUser = unknown> = {
  */
 export type EnvironmentOptions = {
   /** The document root to watch. Default: the global `document`. */
-  root?: Document;
+  root?: Document | undefined;
   /** The window for pointer and scroll events. Default: the global `window`. */
-  window?: Window;
+  window?: Window | undefined;
   /** The requestAnimationFrame function to use. Default: the global one. */
-  raf?: RafLike;
+  raf?: RafLike | undefined;
   /** The cancelAnimationFrame function to use. Default: the global one. */
-  caf?: CafLike;
+  caf?: CafLike | undefined;
   /** The ResizeObserver constructor to use. Default: the global one. */
-  ResizeObserverCtor?: ResizeObserverCtor;
+  ResizeObserverCtor?: ResizeObserverCtor | undefined;
   /** The MutationObserver constructor to use. Default: the global one. */
-  MutationObserverCtor?: MutationObserverCtor;
+  MutationObserverCtor?: MutationObserverCtor | undefined;
 };
 
 const ANCHOR_ATTRIBUTE_PATTERN = /^[A-Za-z][A-Za-z0-9]*(-[A-Za-z0-9]+)*$/u;
@@ -75,33 +75,33 @@ export type DomBindingOptions<TContext = unknown, TUser = unknown> = {
    * Attribute whose value is the anchor ID.
    * @default "data-anchor"
    */
-  anchorAttribute?: string;
+  anchorAttribute?: string | undefined;
   /**
    * Attribute that keeps the cursor private: over the element and its descendants the binding sends no cursor.
    * @default "data-anchor-private"
    */
-  privateAttribute?: string;
+  privateAttribute?: string | undefined;
   /**
    * Maximum anchors in the outbound fallback chain, clamped to `1` through `8`.
    * @default 4
    */
-  maxSentAnchors?: number;
+  maxSentAnchors?: number | undefined;
   /** Settings for how remote cursors resolve. Omit for the defaults. */
-  resolution?: ResolutionOptions<TContext, TUser>;
+  resolution?: ResolutionOptions<TContext, TUser> | undefined;
   /** The DOM and timing hosts the binding runs against. Omit for the browser globals. */
-  environment?: EnvironmentOptions;
+  environment?: EnvironmentOptions | undefined;
   /**
    * Whether the local pointer publishes a cursor.
    * When `false` the client stays presence-only: context and user still flow, no local cursor.
    * @default true
    */
-  capturePointer?: boolean;
+  capturePointer?: boolean | undefined;
   /**
    * Publish a cursor at the focused element's center on focus changes.
    * Ignored when `capturePointer` is `false`.
    * @default false
    */
-  captureFocus?: boolean;
+  captureFocus?: boolean | undefined;
 };
 
 /**
@@ -115,7 +115,7 @@ export type DomBinding<TContext = unknown, TUser = unknown> = {
    */
   invalidate(reason?: string): void;
   /** Returns the latest resolved cursors. */
-  getSnapshot(): ResolvedCursor<TContext, TUser>[];
+  getSnapshot(): readonly ResolvedCursor<TContext, TUser>[];
   /** Returns the element the resolver uses for an anchor id: the newest one when ids repeat, `null` when none is connected. */
   getAnchorElement(anchorId: string): Element | null;
   /**
@@ -127,7 +127,7 @@ export type DomBinding<TContext = unknown, TUser = unknown> = {
    * Stops the binding, then sends one final empty snapshot to its listeners and clears them.
    * It also clears the local cursor on the client, unless you pass `keepLocalCursor`, for example when you rebuild the binding.
    */
-  dispose(options?: { keepLocalCursor?: boolean }): void;
+  dispose(options?: { keepLocalCursor?: boolean | undefined }): void;
 };
 
 const EMPTY_SNAPSHOT: never[] = [];
@@ -139,8 +139,8 @@ const EMPTY_SNAPSHOT: never[] = [];
  * @param options Optional binding settings.
  * @returns The binding.
  */
-export function createDomBinding<TContext = unknown, TUser = unknown>(
-  client: PresenceClient<TContext, TUser>,
+export function createDomBinding<TContext = unknown, TUser = unknown, TEvents extends object = EventMap>(
+  client: PresenceClient<TContext, TUser, TEvents>,
   options: DomBindingOptions<TContext, TUser> = {},
 ): DomBinding<TContext, TUser> {
   const { resolution = {}, environment = {} } = options;
@@ -266,7 +266,7 @@ export function createDomBinding<TContext = unknown, TUser = unknown>(
 
   let disposed = false;
   let unregisterTeardown: (() => void) | undefined;
-  function dispose(disposeOptions?: { keepLocalCursor?: boolean }): void {
+  function dispose(disposeOptions?: { keepLocalCursor?: boolean | undefined }): void {
     if (disposed) return;
     disposed = true;
     // a consumer-owned client stays alive: do not leave the last cursor on peers

@@ -26,7 +26,7 @@ export function usePresenceProviderContext<TContext, TUser, TEvents extends obje
   if (value === PresenceProviderContextDefault) {
     warnOnce(
       "no-provider",
-      "a hook or CursorLayer runs outside PresenceProvider, so it returns empty data. Wrap the tree in PresenceProvider.",
+      "a hook or CursorLayer runs outside PresenceProvider, so it returns empty data. Wrap the tree in PresenceProvider; hooks from createPresenceHooks need the provider of the same call.",
     );
   }
   return value;

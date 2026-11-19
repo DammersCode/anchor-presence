@@ -60,13 +60,22 @@ describe("parserFrom with each vendor", () => {
 });
 
 describe("parserFrom with a transforming schema", () => {
-  it("returns the transformed output", () => {
+  it("returns the transformed output when a peer can parse it", () => {
+    const schema = v.pipe(
+      v.object({ n: v.string() }),
+      v.transform((value) => ({ n: value.n.trim() })),
+    );
+    expect(parserFrom(schema)({ n: " 3 " })).toEqual({ n: "3" });
+    expectTypeOf(parserFrom(schema)).returns.toEqualTypeOf<{ n: string } | undefined>();
+  });
+
+  it("rejects a schema whose output is not assignable to its input", () => {
     const schema = v.pipe(
       v.object({ n: v.string() }),
       v.transform((value) => ({ count: Number(value.n) })),
     );
+    // @ts-expect-error a peer would parse { count: number } with a schema that expects { n: string }
     expect(parserFrom(schema)({ n: "3" })).toEqual({ count: 3 });
-    expectTypeOf(parserFrom(schema)).returns.toEqualTypeOf<{ count: number } | undefined>();
   });
 });
 
@@ -198,5 +207,17 @@ describe("the standard-schema entry point", () => {
     const root = await import("../src");
     expect("parserFrom" in root).toBe(false);
     expect("eventParserFrom" in root).toBe(false);
+  });
+});
+
+describe("eventParserFrom with a transforming schema", () => {
+  const transforming = v.pipe(
+    v.object({ n: v.string() }),
+    v.transform((value) => ({ count: Number(value.n) })),
+  );
+
+  it("rejects a schema whose output is not a valid input", () => {
+    // @ts-expect-error a peer parses what the sender's output sent, so the output must fit the input
+    expect(eventParserFrom({ count: transforming })).toBeTypeOf("function");
   });
 });

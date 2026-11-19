@@ -1,6 +1,6 @@
 // Pointer capture and target resolution — spec §9
 
-import type { CursorPosition, PointerInfo, PresenceClient } from "@anchor-presence/core";
+import type { AnchorPoint, CursorPosition, PointerInfo, PresenceClient } from "@anchor-presence/core";
 import type { AnchorRegistry } from "./registry.js";
 import type { Rect } from "./geometry.js";
 
@@ -62,7 +62,7 @@ function buildCursorPosition(
   win: Window,
   getCachedRect?: (element: Element) => Rect | undefined,
 ): CursorPosition {
-  const anchors: CursorPosition["anchors"] = [];
+  const anchors: AnchorPoint[] = [];
   for (const { id, element } of chain) {
     // cache is at most one frame old; every layout-changing signal invalidates it (spec §9 tolerance)
     const rect = getCachedRect?.(element) ?? element.getBoundingClientRect();
@@ -84,7 +84,7 @@ function buildCursorPosition(
 
 /** Listens for pointer activity and feeds outbound samples to the presence client — spec §9. */
 export function attachPointerSource(
-  client: PresenceClient,
+  client: Pick<PresenceClient, "setLocalCursor" | "registerTeardown">,
   registry: AnchorRegistry,
   options: PointerSourceOptions,
 ): PointerSourceHandle {

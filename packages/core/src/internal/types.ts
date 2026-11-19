@@ -32,11 +32,11 @@ export type SchedulerLike = {
  */
 export type AdaptivePublishOptions = {
   /** Buffered bytes that turn on slow mode. Default `64 KiB`. */
-  highWatermarkBytes?: number;
+  highWatermarkBytes?: number | undefined;
   /** Buffered bytes that turn off slow mode. Default half of `highWatermarkBytes`. */
-  lowWatermarkBytes?: number;
+  lowWatermarkBytes?: number | undefined;
   /** Publish interval in slow mode, in milliseconds. Default `max(publishIntervalMs * 4, 100)`. */
-  slowPublishIntervalMs?: number;
+  slowPublishIntervalMs?: number | undefined;
 };
 
 /**
@@ -47,21 +47,21 @@ export type PresenceClientOptions<TContext = unknown, TUser = unknown, TEvents e
   /** The transport the client sends and receives over. */
   transport: PresenceTransport;
   /** The codec for message bytes. Default `jsonCodec`. */
-  codec?: PresenceCodec;
+  codec?: PresenceCodec | undefined;
   /** A stable ID for this client. Default: a new random ID. */
-  clientId?: string;
+  clientId?: string | undefined;
   /** Publish interval, in milliseconds. Default `DEFAULT_PUBLISH_INTERVAL_MS`. */
-  publishIntervalMs?: number;
+  publishIntervalMs?: number | undefined;
   /** Time before a remote client counts as stale, in milliseconds. Default `DEFAULT_STALE_TIMEOUT_MS`, minimum `1000`. */
-  staleTimeoutMs?: number;
+  staleTimeoutMs?: number | undefined;
   /** Time before a remote client counts as idle, in milliseconds. Default `DEFAULT_IDLE_AFTER_MS`, clamped below `staleTimeoutMs`. */
-  idleAfterMs?: number;
+  idleAfterMs?: number | undefined;
   /** Heartbeat interval, in milliseconds. Default `DEFAULT_HEARTBEAT_INTERVAL_MS`. */
-  heartbeatIntervalMs?: number;
+  heartbeatIntervalMs?: number | undefined;
   /** Maximum remote clients in the store. Default `DEFAULT_MAX_REMOTE_CLIENTS`. */
-  maxRemoteClients?: number;
+  maxRemoteClients?: number | undefined;
   /** Runs when the store drops a new `clientId` because the store is full. */
-  onRemoteClientRejected?: (info: { clientId: string }) => void;
+  onRemoteClientRejected?: ((info: { clientId: string }) => void) | undefined;
   /** The user value the client sends to remote peers. */
   user?: NoInfer<TUser>;
   /** Checks the `user` of each remote message. Return `undefined` or throw to drop the field. Default: the value must have the shape of the local `user`. */
@@ -69,24 +69,24 @@ export type PresenceClientOptions<TContext = unknown, TUser = unknown, TEvents e
   /** Checks the `context` of each remote message. Return `undefined` or throw to drop the field. Default: the value must have the shape of the local `context`. */
   parseContext?: (value: unknown) => TContext | undefined;
   /** Checks each remote event. Return the event to deliver it, or `undefined` or throw to drop it. Default: deliver as is. */
-  parseEvent?: EventParser<TEvents>;
+  parseEvent?: EventParser<TEvents> | undefined;
   /** The context value the client sends to remote peers. */
   context?: NoInfer<TContext>;
   /** Returns a new random ID. The client uses it for `clientId` and `session`. */
-  idFactory?: () => string;
+  idFactory?: (() => string) | undefined;
   /** Returns the current time in milliseconds. Default: `performance.now()`, or `Date.now()` without `performance`. */
-  now?: () => number;
+  now?: (() => number) | undefined;
   /**
    * Limits for inbound events. `burst` and `perSecond` apply to each sender, `totalPerSecond` to all senders together.
    * Defaults: burst 20, 10 per second per sender, 100 per second in total.
    */
-  eventRateLimit?: { burst?: number; perSecond?: number; totalPerSecond?: number };
+  eventRateLimit?: { burst?: number; perSecond?: number; totalPerSecond?: number } | undefined;
   /** The timer surface for the client schedules. Default: the global timers. */
-  scheduler?: SchedulerLike;
+  scheduler?: SchedulerLike | undefined;
   /** Limits for inbound messages. Default: the protocol defaults. */
-  validationLimits?: ValidationLimits;
+  validationLimits?: ValidationLimits | undefined;
   /** Settings for the adaptive publish rate. Omit to keep the fixed rate. */
-  adaptivePublish?: AdaptivePublishOptions;
+  adaptivePublish?: AdaptivePublishOptions | undefined;
   /**
    * When `false`, you call `transport.connect()` yourself, before or right after creating the
    * client. By default the client calls `transport.connect()` itself, once, during creation.
@@ -94,7 +94,7 @@ export type PresenceClientOptions<TContext = unknown, TUser = unknown, TEvents e
    * `transport.disconnect()` when the transport provides one, regardless of this option.
    * @default true
    */
-  autoConnect?: boolean;
+  autoConnect?: boolean | undefined;
 };
 
 /**
@@ -150,7 +150,7 @@ export interface PresenceClient<TContext = unknown, TUser = unknown, TEvents ext
    * Sets the context value the client sends to remote peers.
    * `undefined` clears the value.
    */
-  setContext(context: TContext | undefined): void;
+  setContext: (context: TContext | undefined) => void;
   /** Returns the local context value. */
   getContext(): TContext | undefined;
   /**
@@ -163,7 +163,7 @@ export interface PresenceClient<TContext = unknown, TUser = unknown, TEvents ext
    * Sets the user value the client sends to remote peers.
    * `undefined` clears the value.
    */
-  setUser(user: TUser | undefined): void;
+  setUser: (user: TUser | undefined) => void;
   /** Returns the local user value. */
   getUser(): TUser | undefined;
   /** Returns the current connection status. */
@@ -178,13 +178,13 @@ export interface PresenceClient<TContext = unknown, TUser = unknown, TEvents ext
    * The client returns a new array when it accepts a message.
    * @remarks Returns a new array per accepted message; use getRemotePresence() for rendering.
    */
-  getRemoteSnapshot(): PresenceMessage<TContext, TUser>[];
+  getRemoteSnapshot(): readonly PresenceMessage<TContext, TUser>[];
   /**
    * Returns the stable remote snapshot, without `sequence`.
    * The client keeps the array identity while nothing observable changes.
    * Use this for rendering. Use `getRemoteSnapshot()` to watch `sequence`.
    */
-  getRemotePresence(): RemotePresence<TContext, TUser>[];
+  getRemotePresence(): readonly RemotePresence<TContext, TUser>[];
   /**
    * Returns whether at least one remote client currently has a cursor position.
    * O(1) on the client returned by `createPresenceClient`; optional so custom clients may omit it.
@@ -261,9 +261,17 @@ export type PresenceClientState<TContext, TUser, TEvents extends object> = {
   teardowns: Array<() => void>;
 };
 
+// oxlint-disable-next-line typescript/no-unnecessary-type-parameters -- the identity trick needs X in both signatures
+type IsExactly<A, B> = (<X>() => X extends A ? 1 : 2) extends <X>() => X extends B ? 1 : 2 ? true : false;
+
 /** A `user`, `context` or event map other than the default needs the parser that checks it. */
-export type RequiredParsers<TContext, TUser, TEvents extends object = EventMap> = (unknown extends TUser
+export type RequiredParsers<TContext, TUser, TEvents extends object = EventMap> = (IsExactly<
+  TUser,
+  unknown
+> extends true
   ? unknown
   : { parseUser: (value: unknown) => TUser | undefined }) &
-  (unknown extends TContext ? unknown : { parseContext: (value: unknown) => TContext | undefined }) &
-  ([EventMap] extends [TEvents] ? unknown : { parseEvent: EventParser<TEvents> });
+  (IsExactly<TContext, unknown> extends true
+    ? unknown
+    : { parseContext: (value: unknown) => TContext | undefined }) &
+  (IsExactly<TEvents, EventMap> extends true ? unknown : { parseEvent: EventParser<TEvents> });

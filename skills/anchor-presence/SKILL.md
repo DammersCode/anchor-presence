@@ -129,12 +129,14 @@ export function PresenceRoot({
         const transport = createWebSocketTransport({
           url: `wss://relay.example.com/?room=${encodeURIComponent(room)}`,
         });
-        return createPresenceClient({ transport, user: { name: userName }, parseContext });
+        return createPresenceClient({ transport, user: { name: userName } });
       }}
       bindingOptions={{
         resolution: {
           visibilityPolicy: ({ presence, resolution }) =>
-            presence.context?.page !== pageRef.current || resolution.tier === "hidden" ? "hide" : "show",
+            parseContext(presence.context)?.page !== pageRef.current || resolution.tier === "hidden"
+              ? "hide"
+              : "show",
         },
       }}
     >
@@ -158,7 +160,7 @@ function PublishPage({ page, pageRef }: { page: string; pageRef: { current: stri
 }
 ```
 
-`parseContext` is what gives `presence.context` the type `{ page: string }` in `bindingOptions`. Without it, the type stays `unknown`. The hooks below the provider return `unknown` for the context. For a typed `useLocalContext`, use `createPresenceHooks`. **Done when** a cursor shows only on clients whose current page matches the sender's page.
+`presence.context` and the hooks below the provider have the type `unknown`, so the policy runs `parseContext` on the value it reads. For typed values, use `createPresenceHooks`. **Done when** a cursor shows only on clients whose current page matches the sender's page.
 
 ### 7. Add a presence list
 

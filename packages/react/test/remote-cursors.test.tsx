@@ -21,7 +21,7 @@ function sampleCursor(clientId: string): ResolvedCursor {
 
 describe("useRemoteCursors", () => {
   let container: HTMLDivElement;
-  let renders: ResolvedCursor[][];
+  let renders: (readonly ResolvedCursor[])[];
 
   beforeEach(() => {
     container = document.createElement("div");

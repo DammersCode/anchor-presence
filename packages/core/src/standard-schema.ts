@@ -27,6 +27,18 @@ export type InferSchemaOutput<Schema extends StandardSchemaV1> = NonNullable<
   Schema["~standard"]["types"]
 >["output"];
 
+/** The input type of a Standard Schema. */
+export type InferSchemaInput<Schema extends StandardSchemaV1> = NonNullable<
+  Schema["~standard"]["types"]
+>["input"];
+
+/** Resolves to `unknown` when a peer can parse what the schema outputs. */
+export type SchemaRoundTrip<Schema extends StandardSchemaV1> = [InferSchemaOutput<Schema>] extends [
+  InferSchemaInput<Schema>,
+]
+  ? unknown
+  : { readonly "the schema output must be assignable to its input": never };
+
 /** A parser that fits `parseUser`, `parseContext`, and the data parsers of `createEventParser`. */
 export type SchemaParser<Schema extends StandardSchemaV1> = (
   value: unknown,
@@ -34,7 +46,7 @@ export type SchemaParser<Schema extends StandardSchemaV1> = (
 
 export type SchemaParserOptions = {
   /** Called with the issues when the schema rejects a value. The client then drops that field or event. */
-  onInvalid?: (issues: ReadonlyArray<StandardSchemaIssue>, value: unknown) => void;
+  onInvalid?: ((issues: ReadonlyArray<StandardSchemaIssue>, value: unknown) => void) | undefined;
 };
 
 function isPromiseLike(value: unknown): value is PromiseLike<unknown> {
@@ -46,7 +58,7 @@ function isPromiseLike(value: unknown): value is PromiseLike<unknown> {
  * The parser returns `undefined` when the schema rejects the value, and when the schema validates asynchronously.
  */
 export function parserFrom<Schema extends StandardSchemaV1>(
-  schema: Schema,
+  schema: Schema & SchemaRoundTrip<Schema>,
   options: SchemaParserOptions = {},
 ): SchemaParser<Schema> {
   let warnedAsync = false;
@@ -84,7 +96,11 @@ export type EventsFromSchemas<Schemas extends EventSchemas> = {
  * The client drops an event with an unknown type or data that its schema rejects.
  */
 export function eventParserFrom<Schemas extends EventSchemas>(
-  schemas: Schemas,
+  schemas: Schemas & {
+    [Type in keyof Schemas]: Schemas[Type] extends StandardSchemaV1
+      ? SchemaRoundTrip<Schemas[Type]>
+      : unknown;
+  },
   options: SchemaParserOptions = {},
 ): EventParser<EventsFromSchemas<Schemas>> {
   const parsers: Record<string, SchemaParser<StandardSchemaV1> | null> = {};

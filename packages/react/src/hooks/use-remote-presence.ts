@@ -6,7 +6,7 @@ import { EMPTY_PRESENCE, getServerPresence, usePresenceProviderContext } from ".
 
 export function useRemotePresenceIn<TContext, TUser, TEvents extends object>(
   context: PresenceContext<TContext, TUser, TEvents>,
-): RemotePresence<TContext, TUser>[] {
+): readonly RemotePresence<TContext, TUser>[] {
   const { client } = usePresenceProviderContext(context);
   const subscribe = useCallback(
     (listener: () => void) => (client !== null ? client.subscribeRemote(listener) : () => {}),
@@ -25,6 +25,6 @@ export function useRemotePresenceIn<TContext, TUser, TEvents extends object>(
  * The hook rerenders only when an observable field changes.
  * Watch `sequence` with `client.getRemoteSnapshot()` and `client.subscribeRemote()`.
  */
-export function useRemotePresence(): RemotePresence[] {
+export function useRemotePresence(): readonly RemotePresence[] {
   return useRemotePresenceIn(PresenceProviderContext);
 }

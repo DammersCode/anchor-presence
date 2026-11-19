@@ -19,9 +19,12 @@ import {
   usePresenceClient,
   useRemoteEvents,
 } from "../src/index";
+import type { RemoteUser } from "../src/index";
 import { PresenceProviderContext } from "../src/context";
 import { docSample, missingSamples } from "./doc-source";
 import { parserOf } from "./test-utils";
+import * as v from "valibot";
+import type { InferSchemaOutput } from "@anchor-presence/core/standard-schema";
 
 class FakeSocket implements WebSocketLike {
   static instances: FakeSocket[] = [];
@@ -169,7 +172,22 @@ function TypeErrors() {
   return <span>{String(age)}</span>;
 }
 
+// typed-hooks.mdx: Infer the types from schemas
+const userSchema = v.object({ name: v.string(), color: v.string() });
+const contextSchema = v.object({ pageId: v.string() });
+
+export const schemaHooks = createPresenceHooks<
+  InferSchemaOutput<typeof contextSchema>,
+  InferSchemaOutput<typeof userSchema>
+>();
+
 describe("react docs samples", () => {
+  it("typed-hooks.mdx: schema output types fix the hook types", () => {
+    expectTypeOf(schemaHooks.useRemoteUsers).returns.toEqualTypeOf<
+      readonly RemoteUser<{ name: string; color: string }>[]
+    >();
+  });
+
   it("typed-hooks.mdx: the result has every name the sample destructures", () => {
     for (const name of [
       "PresenceProvider",
@@ -335,6 +353,7 @@ describe("doc sample sources", () => {
         docSample("react/connection-status.mdx", "function TokenError"),
         docSample("react/remote-events.mdx", "function Reactions"),
         docSample("react/remote-events.mdx", "function WaveButton"),
+        docSample("react/typed-hooks.mdx", "export const schemaHooks"),
       ]),
     ).toEqual([]);
   });

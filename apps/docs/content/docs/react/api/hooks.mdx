@@ -8,12 +8,12 @@ import { Braces, Component, Gauge } from "lucide-react";
 
 This page lists the signature of every hook in `@anchor-presence/react`, and of `createPresenceHooks`. Use it to look up a type. For usage, render cost, and examples, read the guide page that each section links to.
 
-Every hook reads the nearest `PresenceProvider`. A hook that you import from `@anchor-presence/react` takes no type argument and returns `unknown` for `user`, `context`, and event `data`. A type never comes from a claim. To get typed values, call [`createPresenceHooks`](#createpresencehooks) and use its hooks, or pass a typed client to a provider and narrow the values in your code. Without a provider, each hook returns its empty value, and in development mode one console warning appears. For the empty values, see [Server-safe values](/docs/react/ssr-and-strict-mode#server-safe-values).
+Every hook reads the nearest `PresenceProvider`. A hook that you import from `@anchor-presence/react` takes no type argument and returns `unknown` for `user`, `context`, and event `data`. A type never comes from a claim. To get typed values, call [`createPresenceHooks`](#createpresencehooks) and use its hooks. Without a provider, each hook returns its empty value, and in development mode one console warning appears. For the empty values, see [Server-safe values](/docs/react/ssr-and-strict-mode#server-safe-values).
 
 ## useRemoteCursors
 
 ```ts
-function useRemoteCursors(): ResolvedCursor[];
+function useRemoteCursors(): readonly ResolvedCursor[];
 ```
 
 Returns the resolved cursor of every peer, hidden cursors included. While the client reconnects or is disconnected, the list is empty. Guide: [Remote cursors](/docs/react/remote-cursors).
@@ -22,7 +22,7 @@ Returns the resolved cursor of every peer, hidden cursors included. While the cl
 
 ```ts
 function useRemoteCursorsSelector<TSelected>(
-  select: (cursors: ResolvedCursor[]) => TSelected,
+  select: (cursors: readonly ResolvedCursor[]) => TSelected,
   isEqual?: (a: TSelected, b: TSelected) => boolean,
 ): TSelected;
 ```
@@ -32,7 +32,7 @@ Returns `select` applied to the resolved cursors. `isEqual` defaults to `Object.
 ## useRemoteUsers
 
 ```ts
-function useRemoteUsers(): RemoteUser[];
+function useRemoteUsers(): readonly RemoteUser[];
 ```
 
 Returns one `RemoteUser` per peer. For its fields, see [RemoteUser fields](/docs/react/remote-users#remoteuser-fields).
@@ -42,7 +42,7 @@ Guide: [Remote users](/docs/react/remote-users).
 ## useRemotePresence
 
 ```ts
-function useRemotePresence(): RemotePresence[];
+function useRemotePresence(): readonly RemotePresence[];
 ```
 
 Returns the raw presence of every peer, in the coordinates of the sender. Guide: [Remote presence](/docs/react/remote-presence).
@@ -127,14 +127,14 @@ function createPresenceHooks<TContext = unknown, TUser = unknown, TEvents extend
   usePresenceClient: () => PresenceClient<TContext, TUser, TEvents> | null;
   useLocalContext: () => [TContext | undefined, (next: TContext | undefined) => void];
   useRemoteEvents: (listener: (event: TypedRemoteEvent<TEvents>) => void) => void;
-  useRemotePresence: () => RemotePresence<TContext, TUser>[];
+  useRemotePresence: () => readonly RemotePresence<TContext, TUser>[];
   usePresenceStatus: () => ConnectionStatus;
-  useRemoteCursors: () => ResolvedCursor<TContext, TUser>[];
+  useRemoteCursors: () => readonly ResolvedCursor<TContext, TUser>[];
   useRemoteCursorsSelector: <TSelected>(
-    select: (cursors: ResolvedCursor<TContext, TUser>[]) => TSelected,
+    select: (cursors: readonly ResolvedCursor<TContext, TUser>[]) => TSelected,
     isEqual?: (a: TSelected, b: TSelected) => boolean,
   ) => TSelected;
-  useRemoteUsers: () => RemoteUser<TUser>[];
+  useRemoteUsers: () => readonly RemoteUser<TUser>[];
   useLocalUser: () => [TUser | undefined, (next: TUser | undefined) => void];
   usePeerChanges: (listener: (change: PeerChange<TContext, TUser>) => void) => void;
   useSendEvent: () => EventChannel<TEvents>["send"];

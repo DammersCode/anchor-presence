@@ -1,6 +1,7 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, describe, expect, expectTypeOf, it } from "vitest";
+import { createInMemoryPair, createPresenceClient } from "@anchor-presence/core";
 import type {
   EventChannel,
   EventMap,
@@ -43,11 +44,11 @@ declare const userOnly: PresenceClient<unknown, User>;
 
 describe("hooks from @anchor-presence/react", () => {
   it("return unknown and take no type argument", () => {
-    expectTypeOf(useRemoteUsers).returns.toEqualTypeOf<RemoteUser<unknown>[]>();
+    expectTypeOf(useRemoteUsers).returns.toEqualTypeOf<readonly RemoteUser<unknown>[]>();
     expectTypeOf(useLocalUser).returns.toEqualTypeOf<[unknown, (next: unknown) => void]>();
     expectTypeOf(useLocalContext).returns.toEqualTypeOf<[unknown, (next: unknown) => void]>();
-    expectTypeOf(useRemotePresence).returns.toEqualTypeOf<RemotePresence<unknown, unknown>[]>();
-    expectTypeOf(useRemoteCursors).returns.toEqualTypeOf<ResolvedCursor<unknown, unknown>[]>();
+    expectTypeOf(useRemotePresence).returns.toEqualTypeOf<readonly RemotePresence<unknown, unknown>[]>();
+    expectTypeOf(useRemoteCursors).returns.toEqualTypeOf<readonly ResolvedCursor<unknown, unknown>[]>();
     expectTypeOf(usePresenceClient).returns.toEqualTypeOf<PresenceClient | null>();
     expectTypeOf(useDomBinding).returns.toEqualTypeOf<DomBinding | null>();
     expectTypeOf(useSendEvent).returns.toEqualTypeOf<EventChannel<EventMap>["send"]>();
@@ -55,7 +56,7 @@ describe("hooks from @anchor-presence/react", () => {
     expectTypeOf(usePeerChanges).parameter(0).toEqualTypeOf<(change: PeerChange) => void>();
     expectTypeOf(useRemoteCursorsSelector<number>)
       .parameter(0)
-      .toEqualTypeOf<(cursors: ResolvedCursor[]) => number>();
+      .toEqualTypeOf<(cursors: readonly ResolvedCursor[]) => number>();
   });
 
   it("reject a type argument that no client proves", () => {
@@ -75,29 +76,46 @@ describe("hooks from @anchor-presence/react", () => {
     expect(Claims).toBeTypeOf("function");
   });
 
-  it("let a provider take a typed client without typing the hooks", () => {
+  it("take only an untyped client in the provider, so the shared context cannot hold a typed one", () => {
     function Tree() {
       return (
+        // @ts-expect-error a client with a user type does not fit the untyped provider
         <PresenceProvider client={userOnly}>
-          <CursorLayer getLabel={(cursor) => String(cursor.user)} />
+          <CursorLayer />
         </PresenceProvider>
       );
     }
+    function FactoryTree() {
+      // @ts-expect-error a client with every type does not fit the untyped provider
+      return <PresenceProvider factory={() => matching} />;
+    }
+    expect([Tree, FactoryTree]).toHaveLength(2);
+  });
+
+  it("take an unknown-typed client that has parsers", () => {
+    const client = createPresenceClient<unknown, unknown>({
+      transport: createInMemoryPair().a,
+      parseUser: (value) => value,
+    });
+    function Tree() {
+      return <PresenceProvider client={client} />;
+    }
     expect(Tree).toBeTypeOf("function");
+    client.dispose();
   });
 });
 
 describe("hooks from createPresenceHooks", () => {
   it("return the types of the factory call", () => {
-    expectTypeOf(typed.useRemoteUsers).returns.toEqualTypeOf<RemoteUser<User>[]>();
+    expectTypeOf(typed.useRemoteUsers).returns.toEqualTypeOf<readonly RemoteUser<User>[]>();
     expectTypeOf(typed.useLocalUser).returns.toEqualTypeOf<
       [User | undefined, (next: User | undefined) => void]
     >();
     expectTypeOf(typed.useLocalContext).returns.toEqualTypeOf<
       [Ctx | undefined, (next: Ctx | undefined) => void]
     >();
-    expectTypeOf(typed.useRemotePresence).returns.toEqualTypeOf<RemotePresence<Ctx, User>[]>();
-    expectTypeOf(typed.useRemoteCursors).returns.toEqualTypeOf<ResolvedCursor<Ctx, User>[]>();
+    expectTypeOf(typed.useRemotePresence).returns.toEqualTypeOf<readonly RemotePresence<Ctx, User>[]>();
+    expectTypeOf(typed.useRemoteCursors).returns.toEqualTypeOf<readonly ResolvedCursor<Ctx, User>[]>();
     expectTypeOf(typed.usePresenceClient).returns.toEqualTypeOf<PresenceClient<Ctx, User, Events> | null>();
     expectTypeOf(typed.useSendEvent).returns.toEqualTypeOf<EventChannel<Events>["send"]>();
     expectTypeOf(typed.useRemoteEvents)
@@ -169,9 +187,9 @@ describe("the context of createPresenceHooks", () => {
   }
 
   it("is empty for a hook of the result under the package provider", () => {
-    const { client } = makeFakeClient<Ctx, User, Events>();
+    const { client } = makeFakeClient();
     const seen: unknown[] = [];
-    const { binding } = makeFakeBinding<Ctx, User>();
+    const { binding } = makeFakeBinding();
     function Probe() {
       seen.push(typed.usePresenceClient());
       return null;

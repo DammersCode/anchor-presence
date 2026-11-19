@@ -20,7 +20,7 @@ function cursor(clientId: string, overrides: Partial<ResolvedCursor> = {}): Reso
   };
 }
 
-const selectClientIds = (cursors: ResolvedCursor[]): string[] => cursors.map((c) => c.clientId);
+const selectClientIds = (cursors: readonly ResolvedCursor[]): string[] => cursors.map((c) => c.clientId);
 
 function sameIds(a: string[], b: string[]): boolean {
   return a.length === b.length && a.every((id, index) => id === b[index]);
@@ -41,7 +41,9 @@ describe("useRemoteCursorsSelector", () => {
   });
 
   function CountReader() {
-    const count = useRemoteCursorsSelector(useCallback((cursors: ResolvedCursor[]) => cursors.length, []));
+    const count = useRemoteCursorsSelector(
+      useCallback((cursors: readonly ResolvedCursor[]) => cursors.length, []),
+    );
     renders.push(count);
     return <div>{count}</div>;
   }
@@ -138,7 +140,7 @@ describe("useRemoteCursorsSelector", () => {
   it("does not call select again for a snapshot probe on an unchanged cursors array", () => {
     const { client } = makeFakeClient();
     const { binding, publish, notify } = makeFakeBinding();
-    const selectSpy = vi.fn((cursors: ResolvedCursor[]) => cursors.length);
+    const selectSpy = vi.fn((cursors: readonly ResolvedCursor[]) => cursors.length);
 
     function Reader() {
       const count = useRemoteCursorsSelector(selectSpy);
@@ -206,7 +208,7 @@ describe("useRemoteCursorsSelector", () => {
       const [onlyA, setState] = useState(false);
       setOnlyA = setState;
       const select = useCallback(
-        (cursors: ResolvedCursor[]) =>
+        (cursors: readonly ResolvedCursor[]) =>
           cursors.filter((c) => !onlyA || c.clientId === "a").map((c) => c.clientId),
         [onlyA],
       );

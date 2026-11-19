@@ -23,6 +23,10 @@ Status: in progress · Branch: `develop` · Advisor-reviewed design.
 - React hooks and `CursorLayer` from the package take no type argument and return `unknown`: a type argument is a claim without a validator. `createPresenceHooks` creates a private React context, and its `PresenceProvider` accepts only a client of its own `PresenceClient<C, U, E>`, so the hook types follow from the provider. The result also carries a typed `CursorLayer`. A hook of the result under another provider finds no client.
 - Pointer privacy is an attribute, `data-anchor-private`, read through `composedPath()`. Over a private element the client sends `null`, not the nearest anchored parent, because that parent plus `u`/`v` still leaks the position. Focus capture follows the same rule.
 - The type-safety rubric and the task list are frozen before round 1.
+- `RequiredParsers` tests exact identity (`IsExactly`), not `extends`. `any`, `{}`, `object`, an empty interface and `Record<string, any>` need their parser. Only `unknown` and `EventMap` need none.
+- `setUser` and `setContext` are properties with function types, so TypeScript checks them contravariantly. The standalone `PresenceProvider` takes only untyped clients and has no type parameters. A typed client goes through `createPresenceHooks(...).PresenceProvider`.
+- `RemotePresenceStore` needs no `in out` annotation: its private listener set already makes it invariant. A negative test pins this.
+- `parserFrom` requires the schema output to be assignable to its input.
 
 ## Steps
 
@@ -37,3 +41,12 @@ Status: in progress · Branch: `develop` · Advisor-reviewed design.
 - Gates pass. Core stays within its size budget.
 - A fixture without any type argument compiles, and a fixture with a schema infers its types.
 - The type-safety score is at least 9 on the frozen rubric.
+
+## Decided skips (advisor, AFK)
+
+- Branded IDs: the wire gives plain strings, so every consumer would cast.
+- `PeerChange` as a discriminated union: no field differs by type.
+- `store.ts:317` casts: the guard that removes them costs core bytes.
+- `event-channel.ts:63` and `standard-schema.ts:94`: the two named correlation boundaries stay.
+- Extra-key event parsers: it needs a caller-built object, and the data is still parsed. This is the one accepted leak.
+- An inference helper for `createPresenceHooks`: `InferSchemaOutput` covers it. The typed-hooks page shows it.

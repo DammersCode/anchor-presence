@@ -101,6 +101,17 @@ describe("pointer privacy", () => {
     handle.detach();
   });
 
+  it("clears the cursor when focus enters a private element inside a shadow root", () => {
+    const host = document.createElement("div");
+    document.body.append(host);
+    const shadow = host.attachShadow({ mode: "open" });
+    shadow.innerHTML = `<div data-anchor-private><input id="deep" /></div>`;
+    const { samples, handle } = setup({ captureFocus: true });
+    shadow.querySelector("#deep")!.dispatchEvent(new Event("focusin", { bubbles: true, composed: true }));
+    expect(samples).toEqual([null]);
+    handle.detach();
+  });
+
   it("throws a TypeError for an invalid privateAttribute", () => {
     const { a: transport } = createInMemoryPair();
     const client = createPresenceClient({ transport });

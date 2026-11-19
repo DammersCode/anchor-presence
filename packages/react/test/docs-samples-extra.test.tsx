@@ -16,7 +16,7 @@ import {
   createPresenceHooks,
 } from "../src/index";
 import { docSample, missingLines, missingSamples } from "./doc-source";
-import { makeFakeBinding, makeFakeClient, parserOf } from "./test-utils";
+import { makeFakeBinding, makeFakeClient } from "./test-utils";
 
 function DialogBody() {
   return <div role="dialog" />;
@@ -75,7 +75,7 @@ function CursorCount() {
 }
 
 // remote-cursors.mdx: useRemoteCursorsSelector
-function selectClippedClientIds(cursors: ResolvedCursor[]): ReadonlySet<string> {
+function selectClippedClientIds(cursors: readonly ResolvedCursor[]): ReadonlySet<string> {
   const clipped = new Set<string>();
   for (const cursor of cursors) {
     if (cursor.tier === "anchor" && !cursor.pointVisible) clipped.add(cursor.clientId);
@@ -202,7 +202,7 @@ describe("extra docs samples", () => {
 
   it("local-context.mdx: SettingsDialog sets the context, and a direct setContext reaches the hook", () => {
     const { a } = createInMemoryPair();
-    const client = createPresenceClient({ transport: a, parseContext: parserOf<{ dialog?: string }>() });
+    const client = createPresenceClient({ transport: a });
     const view = mount(
       <PresenceProvider client={client}>
         <SettingsDialog open />

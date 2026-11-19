@@ -56,14 +56,14 @@ function selectedIds(context: Context | undefined): string[] {
   return Array.isArray(selection) ? selection.filter((id): id is string => typeof id === "string") : [];
 }
 
-const whoIsOn = (cursors: Cursor[]) =>
+const whoIsOn = (cursors: readonly Cursor[]) =>
   group(
     cursors.flatMap(({ anchorId, clientId, visible }) =>
       visible && anchorId !== null ? [{ anchorId, clientId }] : [],
     ),
   );
 
-const whoPicked = (cursors: Cursor[]) =>
+const whoPicked = (cursors: readonly Cursor[]) =>
   group(
     cursors.flatMap(({ clientId, context }) =>
       selectedIds(context).map((anchorId) => ({ anchorId, clientId })),

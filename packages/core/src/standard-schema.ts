@@ -1,6 +1,5 @@
 import { createEventParser } from "./event-channel.js";
-import type { EventParsers, TypedRemoteEvent } from "./event-channel.js";
-import type { RemoteEvent } from "./protocol.js";
+import type { EventParser, EventParsers } from "./event-channel.js";
 
 /** The Standard Schema interface (v1) that Valibot, Zod, ArkType, and other libraries implement. */
 export interface StandardSchemaV1<Input = unknown, Output = Input> {
@@ -87,7 +86,7 @@ export type EventsFromSchemas<Schemas extends EventSchemas> = {
 export function eventParserFrom<Schemas extends EventSchemas>(
   schemas: Schemas,
   options: SchemaParserOptions = {},
-): (event: RemoteEvent) => TypedRemoteEvent<EventsFromSchemas<Schemas>> | undefined {
+): EventParser<EventsFromSchemas<Schemas>> {
   const parsers: Record<string, SchemaParser<StandardSchemaV1> | null> = {};
   for (const [type, schema] of Object.entries(schemas)) {
     parsers[type] = schema === null ? null : parserFrom(schema, options);

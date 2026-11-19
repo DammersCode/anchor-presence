@@ -21,7 +21,7 @@ function inspect(frame: Uint8Array) {
 }
 ```
 
-`inspect` returns a well-formed `PresenceMessage`, or `null` for a message to drop. `validatePresence` never throws. It clamps anchor and viewport coordinates into the range `0` to `1`.
+`inspect` returns a well-formed `PresenceMessage`, or `null` for a message to drop. `validatePresence` never throws. The `user` and `context` of the result have the type `unknown`. It clamps anchor and viewport coordinates into the range `0` to `1`.
 
 <Callout type="warn">
   If a relay calls `validatePresence`, cap the frame size before the decode. `validatePresence` ignores

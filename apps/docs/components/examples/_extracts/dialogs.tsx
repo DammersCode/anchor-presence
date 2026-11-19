@@ -2,7 +2,7 @@
 
 import { createPresenceClient } from "@anchor-presence/core";
 import { createBroadcastChannelTransport, type VisibilityPolicy } from "@anchor-presence/dom";
-import { CursorLayer, PresenceProvider, useLocalContext } from "@anchor-presence/react";
+import { createPresenceHooks } from "@anchor-presence/react";
 import { useEffect, useRef, useState } from "react";
 
 const safeColor = (color: string | undefined, fallback: string) =>
@@ -10,6 +10,8 @@ const safeColor = (color: string | undefined, fallback: string) =>
 
 type User = { name: string; color: string };
 type DialogContext = { dialog?: "invite" };
+
+const { CursorLayer, PresenceProvider, useLocalContext } = createPresenceHooks<DialogContext, User>();
 
 function parseUser(value: unknown): User | undefined {
   const name = typeof value === "object" && value !== null && "name" in value ? value.name : undefined;
@@ -25,7 +27,7 @@ function parseContext(value: unknown): DialogContext | undefined {
 const INVITE_DIALOG = "team.dialog.invite";
 
 function PublishDialogContext({ open }: { open: boolean }) {
-  const [, setContext] = useLocalContext<DialogContext>();
+  const [, setContext] = useLocalContext();
   useEffect(() => {
     setContext(open ? { dialog: "invite" } : {});
   }, [open, setContext]);
@@ -45,7 +47,7 @@ export function InviteBoard() {
   };
 
   return (
-    <PresenceProvider<DialogContext, User>
+    <PresenceProvider
       factory={() =>
         createPresenceClient({
           transport: createBroadcastChannelTransport("invite-board"),
@@ -77,7 +79,7 @@ export function InviteBoard() {
           </div>
         ) : null}
       </div>
-      <CursorLayer<DialogContext, User>
+      <CursorLayer
         getLabel={(cursor) => cursor.user?.name ?? null}
         getColor={(cursor) => safeColor(cursor.user?.color, "#4f46e5")}
       />

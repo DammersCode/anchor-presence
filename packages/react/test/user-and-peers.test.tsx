@@ -2,9 +2,7 @@ import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, describe, expect, it } from "vitest";
 import type { PeerChange } from "@anchor-presence/core";
-import { PresenceProvider } from "../src/provider";
-import { useLocalUser } from "../src/hooks/use-local-user";
-import { usePeerChanges } from "../src/hooks/use-peer-changes";
+import { useLocalUser as useUntypedLocalUser } from "../src/hooks/use-local-user";
 import { createPresenceHooks } from "../src/typed-hooks";
 import { makeFakeBinding, makeFakeClient } from "./test-utils";
 
@@ -17,7 +15,7 @@ describe("useLocalUser, usePeerChanges and the typed event hooks", () => {
   });
 
   it("reads and sets the local user, reports peer changes and sends typed events", () => {
-    const { client } = makeFakeClient<unknown, { name: string }>();
+    const { client } = makeFakeClient<unknown, { name: string }, { reaction: { emoji: string } }>();
     let user: { name: string } | undefined = { name: "Ada" };
     const userListeners = new Set<() => void>();
     client.getUser = () => user;
@@ -40,17 +38,18 @@ describe("useLocalUser, usePeerChanges and the typed event hooks", () => {
       return true;
     };
 
-    const { PresenceProvider: TypedProvider, useSendEvent } = createPresenceHooks<
-      unknown,
-      { name: string },
-      { reaction: { emoji: string } }
-    >();
+    const {
+      PresenceProvider: TypedProvider,
+      useLocalUser,
+      usePeerChanges,
+      useSendEvent,
+    } = createPresenceHooks<unknown, { name: string }, { reaction: { emoji: string } }>();
     const seen: string[] = [];
     let setName: (name: string) => void = () => {};
     let send: ReturnType<typeof useSendEvent> = () => false;
 
     function Probe() {
-      const [current, setCurrent] = useLocalUser<{ name: string }>();
+      const [current, setCurrent] = useLocalUser();
       setName = (name) => setCurrent({ name });
       usePeerChanges((change) => seen.push(change.type + ":" + change.clientId));
       send = useSendEvent();
@@ -89,9 +88,9 @@ describe("useLocalUser, usePeerChanges and the typed event hooks", () => {
   });
 
   it("returns undefined and a no-op setter without a provider", () => {
-    let result: ReturnType<typeof useLocalUser> | undefined;
+    let result: ReturnType<typeof useUntypedLocalUser> | undefined;
     function Probe() {
-      result = useLocalUser();
+      result = useUntypedLocalUser();
       return null;
     }
     container = document.createElement("div");
@@ -101,6 +100,5 @@ describe("useLocalUser, usePeerChanges and the typed event hooks", () => {
     expect(result?.[0]).toBeUndefined();
     expect(() => result?.[1]({ name: "x" })).not.toThrow();
     act(() => root.unmount());
-    void PresenceProvider;
   });
 });

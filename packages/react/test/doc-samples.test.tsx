@@ -7,6 +7,7 @@ import type { ResolvedCursor } from "@anchor-presence/dom";
 import { PresenceProvider } from "../src/provider";
 import { CursorLayer } from "../src/cursor";
 import { useRemoteCursorsSelector } from "../src/hooks/use-remote-cursors";
+import { createPresenceHooks } from "../src/typed-hooks";
 import { docSample, missingSamples } from "./doc-source";
 
 // type-level proof that createWebSocketTransport has connect and disconnect
@@ -33,7 +34,7 @@ function App() {
   );
 }
 
-// packages/react/README.md CursorLayer sample; the README declares MyCursorGlyph, the test defines it
+// packages/react/README.md CursorLayer sample; the README declares MyCursorGlyph and takes CursorLayer from createPresenceHooks, the test defines both
 type MyContext = { pageId: string };
 type MyUser = { name: string; color?: string };
 function MyCursorGlyph(props: { color: string; children: React.ReactNode }): React.JSX.Element {
@@ -43,9 +44,11 @@ function MyCursorGlyph(props: { color: string; children: React.ReactNode }): Rea
 const safeColor = (color?: string) =>
   color !== undefined && /^#[0-9a-f]{6}$/iu.test(color) ? color : "#6b7280";
 
+const { CursorLayer: TypedCursorLayer } = createPresenceHooks<MyContext, MyUser>();
+
 function CursorLayerSample() {
   return (
-    <CursorLayer<MyContext, MyUser>
+    <TypedCursorLayer
       getLabel={(cursor) => cursor.user?.name ?? "Guest"}
       getColor={(cursor) => safeColor(cursor.user?.color)}
       filterCursor={(cursor) => cursor.tier !== "viewport"}

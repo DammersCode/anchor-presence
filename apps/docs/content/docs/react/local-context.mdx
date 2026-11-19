@@ -10,15 +10,13 @@ Your client sends two values to each peer together with the cursor. The `user` v
 
 ## Usage
 
-This component lets a user change the name that peers see:
+`useLocalUser` from `@anchor-presence/react` returns the `user` value as `unknown`. For a typed value, use the `useLocalUser` of a [`createPresenceHooks`](/docs/react/typed-hooks) result. This component lets a user change the name that peers see. Its `user` has the type `MyUser`, which `./presence` fixes:
 
 ```tsx
-import { useLocalUser } from "@anchor-presence/react";
-
-type MyUser = { name: string; color: string };
+import { useLocalUser } from "./presence";
 
 function NameField() {
-  const [user, setUser] = useLocalUser<MyUser>();
+  const [user, setUser] = useLocalUser();
   return (
     <input
       aria-label="Your name"
@@ -54,6 +52,7 @@ function SettingsDialog({ open }: { open: boolean }) {
 }
 ```
 
+- The value and the setter use the type `unknown`. For a typed context, use the `useLocalContext` of a `createPresenceHooks` result.
 - The setter calls `client.setContext()`, which sends the value to peers.
 - The hook rerenders when the value changes. A direct `client.setContext()` call also rerenders the hook.
 - On the server, and without a client, the hook returns `undefined` and a setter that does nothing.

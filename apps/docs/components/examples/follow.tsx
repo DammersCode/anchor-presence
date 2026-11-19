@@ -1,6 +1,7 @@
 "use client";
 
 import type { PresenceClient } from "@anchor-presence/core";
+import type { TourContext } from "./_preview/tour";
 import type { VisibilityPolicy } from "@anchor-presence/dom";
 import {
   CursorLayer,
@@ -8,7 +9,7 @@ import {
   useDomBinding,
   usePresenceClient,
   useRemoteCursorsSelector,
-} from "@anchor-presence/react";
+} from "./_preview/hooks";
 import type { ResolvedCursor } from "@anchor-presence/react";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { MIRA } from "./_preview/scenes";
@@ -20,7 +21,7 @@ const safeColor = (color: string | undefined, fallback: string) =>
 type User = { name: string; color: string };
 
 type Props = {
-  client: PresenceClient<unknown, User> | null;
+  client: PresenceClient<TourContext, User> | null;
   layout: "wide" | "narrow";
   children?: ReactNode;
 };
@@ -145,7 +146,7 @@ export function FollowScene({ client, layout, children }: Props) {
   return (
     <PresenceProvider client={client} bindingOptions={bindingOptions}>
       <LongPage layout={layout} header={layout === "narrow" ? <FollowBanner /> : null} />
-      <CursorLayer<unknown, User>
+      <CursorLayer
         getLabel={(cursor) => cursor.user?.name ?? null}
         getColor={(cursor) => safeColor(cursor.user?.color, MIRA.color)}
       />

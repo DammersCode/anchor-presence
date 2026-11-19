@@ -17,21 +17,29 @@ The recipe has two parts:
 
 ## Copy the code
 
+The hooks come from a `presence.ts` module. The module calls `createPresenceHooks` one time, so `user` and `context` have your types and not `unknown`:
+
+```ts
+// presence.ts
+import { createPresenceHooks } from "@anchor-presence/react";
+
+export type User = { name: string; color: string };
+export type Context = { selection?: string[] };
+
+export const { PresenceProvider, useLocalContext, useRemoteCursorsSelector, useRemoteUsers } =
+  createPresenceHooks<Context, User>();
+```
+
 This file counts the peers on each card and renders the card with its selection:
 
 ```tsx
-import {
-  useLocalContext,
-  useRemoteCursorsSelector,
-  useRemoteUsers,
-  type ResolvedCursor,
-} from "@anchor-presence/react";
+import type { ResolvedCursor } from "@anchor-presence/react";
+import { useLocalContext, useRemoteCursorsSelector, useRemoteUsers } from "./presence";
+import type { Context, User } from "./presence";
 
 const safeColor = (color: string | undefined, fallback: string) =>
   color !== undefined && /^#[0-9a-f]{6}$/iu.test(color) ? color : fallback;
 
-type User = { name: string; color: string };
-type Context = { selection?: string[] };
 type Groups = Record<string, string[]>;
 type Placement = { anchorId: string; clientId: string };
 type Cursor = ResolvedCursor<Context, User>;
@@ -70,8 +78,8 @@ function sameGroups(a: Groups, b: Groups): boolean {
 function useCardPeers() {
   const here = useRemoteCursorsSelector(whoIsOn, sameGroups);
   const picked = useRemoteCursorsSelector(whoPicked, sameGroups);
-  const users = useRemoteUsers<User>();
-  const [context, setContext] = useLocalContext<Context>();
+  const users = useRemoteUsers();
+  const [context, setContext] = useLocalContext();
   const mine = selectedIds(context);
   const byClient = (clientIds: string[] = []) => users.filter(({ clientId }) => clientIds.includes(clientId));
 

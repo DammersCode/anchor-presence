@@ -60,8 +60,8 @@ The package exports these hooks and components:
 | `useLocalUser()`                             | `[user, setUser]` for the local user value                                                                                        |
 | `useRemoteEvents(listener)`                  | Calls `listener` for each one-shot event from a peer                                                                              |
 | `usePeerChanges(listener)`                   | Calls `listener` when a peer joins, leaves, or changes its `user` or `context`                                                    |
-| `useSendEvent<TEvents>()`                    | A function that sends one-shot events of the event map `TEvents`                                                                  |
-| `createPresenceHooks()`                      | Returns the provider and every hook with your context, user, and event types fixed                                                |
+| `useSendEvent()`                             | A function that sends one-shot events                                                                                             |
+| `createPresenceHooks()`                      | Returns a provider, every hook, and a `CursorLayer` with your context, user, and event types fixed                                |
 | `CursorLayer`                                | Optional component that renders every visible remote cursor                                                                       |
 | `DefaultCursor`                              | Optional neutral cursor visual, used by `CursorLayer` by default                                                                  |
 
@@ -109,18 +109,21 @@ function OnlineBar() {
 }
 ```
 
-`user` is the `TUser` value that each peer passed to `createPresenceClient`. Without `getLabel`, `CursorLayer` shows `user.name` when it is a string that is not empty. Without `getColor`, it picks one color per `clientId` from a palette of 8 colors. Check `user` before you render it.
+`user` is the value that each peer passed to `createPresenceClient`. It has the type `unknown`, because a peer can send any value. For a typed `user`, use the hooks of `createPresenceHooks`. Without `getLabel`, `CursorLayer` shows `user.name` when it is a string that is not empty. Without `getColor`, it picks one color per `clientId` from a palette of 8 colors. Check `user` before you render it.
 
 ## CursorLayer
 
 `CursorLayer` is optional. It renders every visible remote cursor. You can style it with the props `getLabel`, `getColor`, `filterCursor`, and `getCursorProps`. You can replace its contents with `renderCursor`. This sample uses every prop:
 
 ```tsx
+import { createPresenceHooks } from "@anchor-presence/react";
+
 type MyContext = { pageId: string };
 type MyUser = { name: string; color?: string };
+const { CursorLayer } = createPresenceHooks<MyContext, MyUser>();
 declare function MyCursorGlyph(props: { color: string; children: React.ReactNode }): React.JSX.Element;
 
-<CursorLayer<MyContext, MyUser>
+<CursorLayer
   getLabel={(cursor) => cursor.user?.name ?? "Guest"}
   getColor={(cursor) => cursor.user?.color ?? "#6b7280"}
   filterCursor={(cursor) => cursor.tier !== "viewport"}

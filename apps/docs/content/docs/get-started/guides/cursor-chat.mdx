@@ -18,19 +18,29 @@ When Mira sends a message, the label of her cursor shows the text and moves with
 
 ## Read and cap the text
 
+The recipe reads the user type from a `presence.ts` module. The module calls `createPresenceHooks` one time, so `cursor.user` has the type `User` and not `unknown`:
+
+```ts
+// presence.ts
+import { createPresenceHooks } from "@anchor-presence/react";
+
+export type User = { name: string };
+
+export const { CursorLayer, PresenceProvider, usePresenceClient, useRemoteEvents } = createPresenceHooks<
+  unknown,
+  User
+>();
+```
+
 The recipe is one file, `cursor-chat.tsx`. It starts with the imports, the limits and the text check:
 
 ```tsx
 import { useEffect, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
-import {
-  CursorLayer,
-  DefaultCursor,
-  PresenceProvider,
-  usePresenceClient,
-  useRemoteEvents,
-} from "@anchor-presence/react";
+import { DefaultCursor } from "@anchor-presence/react";
 import type { PresenceClient } from "@anchor-presence/react";
+import { CursorLayer, PresenceProvider, usePresenceClient, useRemoteEvents } from "./presence";
+import type { User } from "./presence";
 
 export const CHAT_MAX_LENGTH = 100;
 export const CHAT_HIDE_MS = 5000;
@@ -93,12 +103,10 @@ export function useRemoteChat(): Record<string, string> {
   return messages;
 }
 
-type User = { name: string };
-
 export function ChatCursorLayer() {
   const messages = useRemoteChat();
   return (
-    <CursorLayer<unknown, User>
+    <CursorLayer
       getLabel={(cursor) =>
         messages[cursor.clientId] ??
         (typeof cursor.user?.name === "string" ? cutGraphemes(cursor.user.name, NAME_MAX_LENGTH) : undefined)

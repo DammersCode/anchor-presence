@@ -123,7 +123,7 @@ export function PresenceRoot({
   const pageRef = useRef(currentPage);
 
   return (
-    <PresenceProvider<{ page: string }>
+    <PresenceProvider
       clientKey={room}
       factory={() => {
         const transport = createWebSocketTransport({
@@ -147,7 +147,7 @@ export function PresenceRoot({
 
 // useLocalContext and useDomBinding work only below the provider.
 function PublishPage({ page, pageRef }: { page: string; pageRef: { current: string } }) {
-  const [, setContext] = useLocalContext<{ page: string }>();
+  const [, setContext] = useLocalContext();
   const binding = useDomBinding();
   useEffect(() => setContext({ page }), [page, setContext]);
   useEffect(() => {
@@ -158,7 +158,7 @@ function PublishPage({ page, pageRef }: { page: string; pageRef: { current: stri
 }
 ```
 
-`parseContext` is what gives `presence.context` the type `{ page: string }`. Without it, the type stays `unknown`. **Done when** a cursor shows only on clients whose current page matches the sender's page.
+`parseContext` is what gives `presence.context` the type `{ page: string }` in `bindingOptions`. Without it, the type stays `unknown`. The hooks below the provider return `unknown` for the context. For a typed `useLocalContext`, use `createPresenceHooks`. **Done when** a cursor shows only on clients whose current page matches the sender's page.
 
 ### 7. Add a presence list
 

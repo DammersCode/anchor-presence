@@ -10,15 +10,13 @@ import { Gauge, UserPen, Braces, Users } from "lucide-react";
 
 ## Usage
 
-This component lists the peers and dims the idle ones:
+`useRemoteUsers` from `@anchor-presence/react` returns each `user` as `unknown`. For a typed `user`, use the `useRemoteUsers` of a [`createPresenceHooks`](/docs/react/typed-hooks) result. This component lists the peers and dims the idle ones. Its `user` has the type `MyUser`, which `./presence` fixes:
 
 ```tsx
-import { useRemoteUsers } from "@anchor-presence/react";
-
-type MyUser = { name: string; color: string };
+import { useRemoteUsers } from "./presence";
 
 function PresenceList() {
-  const users = useRemoteUsers<MyUser>();
+  const users = useRemoteUsers();
   return (
     <ul>
       {users.map((entry) => (

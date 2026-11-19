@@ -28,6 +28,7 @@ import {
   PresenceProvider,
   useDomBinding,
   usePresenceStatus,
+  type CursorLayerProps,
   type PresenceProviderProps,
   type RemoteUser,
 } from "../src/index";
@@ -105,12 +106,13 @@ function SyncOpenDialog({ dialog }: { dialog: string | null }) {
 
 declare namespace Listing {
   // oxlint-disable-next-line eslint/no-shadow -- the listing keeps the exported name
-  function useDomBinding<TContext = unknown, TUser = unknown>(): DomBinding<TContext, TUser> | null;
+  function useDomBinding(): DomBinding | null;
 
   function createPresenceHooks<TContext = unknown, TUser = unknown, TEvents extends object = EventMap>(): {
-    PresenceProvider: (props: PresenceProviderProps<TContext, TUser>) => ReactNode;
+    PresenceProvider: (props: PresenceProviderProps<TContext, TUser, TEvents>) => ReactNode;
+    CursorLayer: (props: CursorLayerProps<TContext, TUser>) => ReactNode;
     useDomBinding: () => DomBinding<TContext, TUser> | null;
-    usePresenceClient: () => PresenceClient<TContext, TUser> | null;
+    usePresenceClient: () => PresenceClient<TContext, TUser, TEvents> | null;
     useLocalContext: () => [TContext | undefined, (next: TContext | undefined) => void];
     useRemoteEvents: (listener: (event: TypedRemoteEvent<TEvents>) => void) => void;
     useRemotePresence: () => RemotePresence<TContext, TUser>[];
@@ -293,8 +295,8 @@ describe("api/hooks.mdx: useDomBinding and createPresenceHooks listings", () => 
   it("equal the exported signatures", () => {
     type Context = { page: string };
     type User = { name: string };
-    expectTypeOf<ReturnType<typeof Listing.useDomBinding<Context, User>>>().toEqualTypeOf<
-      ReturnType<typeof exportedUseDomBinding<Context, User>>
+    expectTypeOf<ReturnType<typeof Listing.useDomBinding>>().toEqualTypeOf<
+      ReturnType<typeof exportedUseDomBinding>
     >();
     expectTypeOf<ReturnType<typeof Listing.createPresenceHooks<Context, User>>>().toEqualTypeOf<
       ReturnType<typeof exportedCreatePresenceHooks<Context, User>>

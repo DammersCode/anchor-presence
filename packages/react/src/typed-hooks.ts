@@ -1,25 +1,27 @@
+import { createElement } from "react";
 import type { ReactNode } from "react";
+import type { EventMap, PeerChange, TypedRemoteEvent } from "@anchor-presence/core";
 import type { ResolvedCursor } from "@anchor-presence/dom";
-import { PresenceProvider } from "./provider.js";
+import { createPresenceContext } from "./context.js";
+import { CursorLayerIn } from "./cursor.js";
+import type { CursorLayerProps } from "./cursor.js";
+import { usePresenceProviderValue } from "./provider.js";
 import type { PresenceProviderProps } from "./provider.js";
-import { useDomBinding } from "./hooks/use-dom-binding.js";
-import { usePresenceClient } from "./hooks/use-presence-client.js";
-import { useLocalContext } from "./hooks/use-local-context.js";
-import { createEventChannel } from "@anchor-presence/core";
-import { useEffect, useRef } from "react";
-import type { EventChannel, EventMap, PeerChange, TypedRemoteEvent } from "@anchor-presence/core";
-
-import { usePresenceProviderContext } from "./hooks/use-presence-client.js";
-import { useLocalUser } from "./hooks/use-local-user.js";
-import { usePeerChanges } from "./hooks/use-peer-changes.js";
-import { useSendEvent } from "./hooks/use-send-event.js";
-import { useRemotePresence } from "./hooks/use-remote-presence.js";
-import { usePresenceStatus } from "./hooks/use-presence-status.js";
-import { useRemoteCursors, useRemoteCursorsSelector } from "./hooks/use-remote-cursors.js";
-import { useRemoteUsers } from "./hooks/use-remote-users.js";
+import { useDomBindingIn } from "./hooks/use-dom-binding.js";
+import { useLocalContextIn } from "./hooks/use-local-context.js";
+import { useLocalUserIn } from "./hooks/use-local-user.js";
+import { usePeerChangesIn } from "./hooks/use-peer-changes.js";
+import { usePresenceClientIn } from "./hooks/use-presence-client.js";
+import { usePresenceStatusIn } from "./hooks/use-presence-status.js";
+import { useRemoteCursorsIn, useRemoteCursorsSelectorIn } from "./hooks/use-remote-cursors.js";
+import { useRemoteEventsIn } from "./hooks/use-remote-events.js";
+import { useRemotePresenceIn } from "./hooks/use-remote-presence.js";
+import { useRemoteUsersIn } from "./hooks/use-remote-users.js";
+import { useSendEventIn } from "./hooks/use-send-event.js";
 
 /**
- * Returns the provider and every hook with `TContext` and `TUser` fixed, so a wrong generic fails to compile.
+ * Returns a provider, the hooks and a `CursorLayer` whose types follow the client you give that provider.
+ * The hooks read only the provider of the same call, so a client of other types fails to compile.
  * Call it once at module level and export the result.
  */
 export function createPresenceHooks<
@@ -27,37 +29,30 @@ export function createPresenceHooks<
   TUser = unknown,
   TEvents extends object = EventMap,
 >() {
+  const context = createPresenceContext<TContext, TUser, TEvents>();
   return {
-    PresenceProvider: (props: PresenceProviderProps<TContext, TUser>): ReactNode =>
-      PresenceProvider<TContext, TUser>(props),
-    useDomBinding: () => useDomBinding<TContext, TUser>(),
-    usePresenceClient: () => usePresenceClient<TContext, TUser>(),
-    useLocalContext: () => useLocalContext<TContext>(),
-    useRemoteEvents: (listener: (event: TypedRemoteEvent<TEvents>) => void): void => {
-      const { client } = usePresenceProviderContext<TContext, TUser>();
-      const listenerRef = useRef(listener);
-      useEffect(() => {
-        listenerRef.current = listener;
-      });
-      useEffect(
-        () =>
-          client === null
-            ? undefined
-            : createEventChannel<TEvents>(client).subscribe((event) => listenerRef.current(event)),
-        [client],
-      );
+    PresenceProvider: (props: PresenceProviderProps<TContext, TUser, TEvents>): ReactNode => {
+      const value = usePresenceProviderValue(props);
+      return createElement(context.Provider, { value }, props.children);
     },
-    useSendEvent: (): EventChannel<TEvents>["send"] => useSendEvent<TEvents>(),
-    useLocalUser: () => useLocalUser<TUser>(),
-    usePeerChanges: (listener: (change: PeerChange<TContext, TUser>) => void) =>
-      usePeerChanges<TContext, TUser>(listener),
-    useRemotePresence: () => useRemotePresence<TContext, TUser>(),
-    usePresenceStatus,
-    useRemoteCursors: () => useRemoteCursors<TContext, TUser>(),
+    CursorLayer: (props: CursorLayerProps<TContext, TUser>): ReactNode =>
+      createElement(CursorLayerIn<TContext, TUser, TEvents>, { ...props, context }),
+    useDomBinding: () => useDomBindingIn(context),
+    usePresenceClient: () => usePresenceClientIn(context),
+    useLocalContext: () => useLocalContextIn(context),
+    useRemoteEvents: (listener: (event: TypedRemoteEvent<TEvents>) => void): void =>
+      useRemoteEventsIn(context, listener),
+    useSendEvent: () => useSendEventIn(context),
+    useLocalUser: () => useLocalUserIn(context),
+    usePeerChanges: (listener: (change: PeerChange<TContext, TUser>) => void): void =>
+      usePeerChangesIn(context, listener),
+    useRemotePresence: () => useRemotePresenceIn(context),
+    usePresenceStatus: () => usePresenceStatusIn(context),
+    useRemoteCursors: () => useRemoteCursorsIn(context),
     useRemoteCursorsSelector: <TSelected>(
       select: (cursors: ResolvedCursor<TContext, TUser>[]) => TSelected,
       isEqual?: (a: TSelected, b: TSelected) => boolean,
-    ) => useRemoteCursorsSelector<TSelected, TContext, TUser>(select, isEqual),
-    useRemoteUsers: () => useRemoteUsers<TUser>(),
+    ) => useRemoteCursorsSelectorIn(context, select, isEqual),
+    useRemoteUsers: () => useRemoteUsersIn(context),
   };
 }

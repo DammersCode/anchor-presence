@@ -6,8 +6,8 @@ type ContextStore<TContext> = {
   setContext(next: TContext | undefined): void;
 };
 
-export function getContextStore<TContext, TUser>(
-  client: PresenceClient<TContext, TUser>,
+export function getContextStore<TContext, TUser, TEvents extends object>(
+  client: PresenceClient<TContext, TUser, TEvents>,
 ): ContextStore<TContext> {
   // the client is the single notify source so a direct client.setContext() also reaches subscribers
   return {

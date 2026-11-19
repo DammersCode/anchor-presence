@@ -1,8 +1,9 @@
 "use client";
 
 import type { PresenceClient } from "@anchor-presence/core";
+import type { TourContext } from "./_preview/tour";
 import type { VisibilityPolicy } from "@anchor-presence/dom";
-import { CursorLayer, PresenceProvider, useRemoteCursors } from "@anchor-presence/react";
+import { CursorLayer, PresenceProvider, useRemoteCursors } from "./_preview/hooks";
 import { useRef, type ReactNode, type RefObject } from "react";
 
 const safeColor = (color: string | undefined, fallback: string) =>
@@ -11,7 +12,7 @@ const safeColor = (color: string | undefined, fallback: string) =>
 type User = { name: string; color: string };
 
 type Props = {
-  client: PresenceClient<unknown, User> | null;
+  client: PresenceClient<TourContext, User> | null;
   layout: "wide" | "narrow";
   children?: ReactNode;
 };
@@ -35,9 +36,7 @@ const clippedPointPolicy: VisibilityPolicy = ({ resolution }) =>
 const bindingOptions = { resolution: { visibilityPolicy: clippedPointPolicy } };
 
 function OutOfViewHint({ listRef }: { listRef: RefObject<HTMLUListElement | null> }) {
-  const clipped = useRemoteCursors<unknown, User>().find(
-    (cursor) => cursor.tier === "anchor" && !cursor.pointVisible,
-  );
+  const clipped = useRemoteCursors().find((cursor) => cursor.tier === "anchor" && !cursor.pointVisible);
   if (clipped === undefined || clipped.anchorId === null) return null;
 
   const anchorId = clipped.anchorId;
@@ -98,7 +97,7 @@ export function ScrollScene({ client, layout, children }: Props) {
           </p>
         )}
       </div>
-      <CursorLayer<unknown, User>
+      <CursorLayer
         getLabel={(cursor) => cursor.user?.name ?? null}
         getColor={(cursor) => safeColor(cursor.user?.color, "#4f46e5")}
       />

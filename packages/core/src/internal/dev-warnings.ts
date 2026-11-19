@@ -44,8 +44,8 @@ function jsonByteLength(value: unknown): number {
  * Returns a dev-mode warning for oversized outbound fields and messages.
  * Checked when context/user changes, not per message; receivers silently drop oversized fields.
  */
-export function createOversizedWarning<TContext, TUser>(
-  state: PresenceClientState<TContext, TUser>,
+export function createOversizedWarning<TContext, TUser, TEvents extends object>(
+  state: PresenceClientState<TContext, TUser, TEvents>,
 ): () => void {
   return () => {
     if (!state.devMode) return;

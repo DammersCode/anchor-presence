@@ -22,6 +22,7 @@ import {
 } from "react-router";
 import { afterEach, describe, expect, it } from "vitest";
 import { createInMemoryPair, createPresenceClient } from "@anchor-presence/core";
+import type { PresenceClient } from "@anchor-presence/core";
 import { CursorLayer, PresenceProvider, usePresenceStatus } from "../src";
 
 function Shell() {
@@ -55,7 +56,7 @@ afterEach(() => {
 });
 
 describe("TanStack Router (also the router of TanStack Start)", () => {
-  function buildRouter(factory: () => ReturnType<typeof createPresenceClient>, url: string) {
+  function buildRouter(factory: () => PresenceClient, url: string) {
     const rootRoute = createRootRoute({
       component: () => (
         <PresenceProvider factory={factory}>

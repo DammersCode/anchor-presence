@@ -1,7 +1,8 @@
 "use client";
 
 import type { PresenceClient } from "@anchor-presence/core";
-import { CursorLayer, PresenceProvider, usePresenceClient, useRemoteEvents } from "@anchor-presence/react";
+import type { TourContext } from "./_preview/tour";
+import { CursorLayer, PresenceProvider, usePresenceClient, useRemoteEvents } from "./_preview/hooks";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { READER } from "./_preview/scenes";
@@ -13,7 +14,7 @@ const safeColor = (color: string | undefined, fallback: string) =>
 type User = { name: string; color: string };
 
 type Props = {
-  client: PresenceClient<unknown, User> | null;
+  client: PresenceClient<TourContext, User> | null;
   layout: "wide" | "narrow";
   children?: ReactNode;
 };
@@ -66,7 +67,7 @@ function useRemoteChat(): Record<string, string> {
 function ChatCursorLayer() {
   const messages = useRemoteChat();
   return (
-    <CursorLayer<unknown, User>
+    <CursorLayer
       getLabel={(cursor) => messages[cursor.clientId] ?? cursor.user?.name}
       getColor={(cursor) => safeColor(cursor.user?.color, "#4f46e5")}
     />

@@ -1,11 +1,11 @@
 import type { PresenceCodec } from "../codec.js";
+import type { EventMap, EventParser, TypedRemoteEvent } from "../event-channel.js";
 import type {
   ConnectionStatus,
   CursorPosition,
   PresenceMessage,
   PeerChange,
   PointerInfo,
-  RemoteEvent,
   RemotePresence,
 } from "../protocol.js";
 import type { RemotePresenceStore } from "../store.js";
@@ -43,7 +43,7 @@ export type AdaptivePublishOptions = {
  * Options for `createPresenceClient`.
  * Only `transport` is required.
  */
-export type PresenceClientOptions<TContext = unknown, TUser = unknown> = {
+export type PresenceClientOptions<TContext = unknown, TUser = unknown, TEvents extends object = EventMap> = {
   /** The transport the client sends and receives over. */
   transport: PresenceTransport;
   /** The codec for message bytes. Default `jsonCodec`. */
@@ -69,7 +69,7 @@ export type PresenceClientOptions<TContext = unknown, TUser = unknown> = {
   /** Checks the `context` of each remote message. Return `undefined` or throw to drop the field. Default: the value must have the shape of the local `context`. */
   parseContext?: (value: unknown) => TContext | undefined;
   /** Checks each remote event. Return the event to deliver it, or `undefined` or throw to drop it. Default: deliver as is. */
-  parseEvent?: (event: RemoteEvent) => RemoteEvent | undefined;
+  parseEvent?: EventParser<TEvents>;
   /** The context value the client sends to remote peers. */
   context?: NoInfer<TContext>;
   /** Returns a new random ID. The client uses it for `clientId` and `session`. */
@@ -100,7 +100,7 @@ export type PresenceClientOptions<TContext = unknown, TUser = unknown> = {
 /**
  * The public surface of one presence client.
  */
-export interface PresenceClient<TContext = unknown, TUser = unknown> {
+export interface PresenceClient<TContext = unknown, TUser = unknown, TEvents extends object = EventMap> {
   /** The stable ID of this client. */
   readonly clientId: string;
   /** The session ID of this client. */
@@ -140,7 +140,7 @@ export interface PresenceClient<TContext = unknown, TUser = unknown> {
    * Adds a listener for events from remote peers.
    * @returns A function that removes the listener.
    */
-  subscribeEvents(listener: (event: RemoteEvent) => void): () => void;
+  subscribeEvents(listener: (event: TypedRemoteEvent<TEvents>) => void): () => void;
   /**
    * Adds a listener for remote clients that join or leave, or change their `user` or `context`.
    * @returns A function that removes the listener.
@@ -213,7 +213,7 @@ export interface PresenceClient<TContext = unknown, TUser = unknown> {
  * Shared state for one presence client.
  * The facade builds it; the internal modules read and update it.
  */
-export type PresenceClientState<TContext, TUser> = {
+export type PresenceClientState<TContext, TUser, TEvents extends object> = {
   transport: PresenceTransport;
   codec: PresenceCodec;
   scheduler: SchedulerLike;
@@ -234,7 +234,7 @@ export type PresenceClientState<TContext, TUser> = {
   context: TContext | undefined;
   user: TUser | undefined;
   onNewPeer: () => void;
-  parseEvent: ((event: RemoteEvent) => RemoteEvent | undefined) | undefined;
+  parseEvent: EventParser<TEvents> | undefined;
   parseUser: ((value: unknown) => TUser | undefined) | undefined;
   parseContext: ((value: unknown) => TContext | undefined) | undefined;
   contextDirty: boolean;
@@ -254,15 +254,16 @@ export type PresenceClientState<TContext, TUser> = {
   newPeerTimer: TimerHandle | null;
   status: ConnectionStatus;
   contextListeners: Set<() => void>;
-  eventListeners: Set<(event: RemoteEvent) => void>;
+  eventListeners: Set<(event: TypedRemoteEvent<TEvents>) => void>;
   userListeners: Set<() => void>;
   eventRate: { burst: number; perSecond: number; totalPerSecond: number };
   now: () => number;
   teardowns: Array<() => void>;
 };
 
-/** A `user` or `context` type other than `unknown` needs the parser that checks it. */
-export type RequiredParsers<TContext, TUser> = (unknown extends TUser
+/** A `user`, `context` or event map other than the default needs the parser that checks it. */
+export type RequiredParsers<TContext, TUser, TEvents extends object = EventMap> = (unknown extends TUser
   ? unknown
   : { parseUser: (value: unknown) => TUser | undefined }) &
-  (unknown extends TContext ? unknown : { parseContext: (value: unknown) => TContext | undefined });
+  (unknown extends TContext ? unknown : { parseContext: (value: unknown) => TContext | undefined }) &
+  ([EventMap] extends [TEvents] ? unknown : { parseEvent: EventParser<TEvents> });

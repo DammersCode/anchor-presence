@@ -1,19 +1,11 @@
+/* oxlint-disable react/hooks -- each copy takes its hooks from the createPresenceHooks result of its guide */
 // Type-checked copies of the recipes in guides/card-occupancy.mdx, guides/join-leave-announcer.mdx and guides/typing-and-away.mdx.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  PresenceProvider,
-  useLocalContext,
-  usePeerChanges,
-  useRemoteCursorsSelector,
-  useRemotePresence,
-  useRemoteUsers,
-  type PeerChange,
-  type ResolvedCursor,
-} from "../src/index";
+import { createPresenceHooks, type PeerChange, type ResolvedCursor } from "../src/index";
 import { docSample, missingLines, readRepoFile, trimLines } from "./doc-source";
 import { makeFakeBinding, makeFakeClient } from "./test-utils";
 
@@ -27,6 +19,7 @@ type Context = { selection?: string[] };
 type Groups = Record<string, string[]>;
 type Placement = { anchorId: string; clientId: string };
 type Cursor = ResolvedCursor<Context, User>;
+const cardHooks = createPresenceHooks<Context, User>();
 
 function group(placements: Placement[]): Groups {
   const groups: Groups = {};
@@ -60,10 +53,11 @@ function sameGroups(a: Groups, b: Groups): boolean {
 }
 
 function useCardPeers() {
+  const { useLocalContext, useRemoteCursorsSelector, useRemoteUsers } = cardHooks;
   const here = useRemoteCursorsSelector(whoIsOn, sameGroups);
   const picked = useRemoteCursorsSelector(whoPicked, sameGroups);
-  const users = useRemoteUsers<User>();
-  const [context, setContext] = useLocalContext<Context>();
+  const users = useRemoteUsers();
+  const [context, setContext] = useLocalContext();
   const mine = selectedIds(context);
   const byClient = (clientIds: string[] = []) => users.filter(({ clientId }) => clientIds.includes(clientId));
 
@@ -144,6 +138,7 @@ function TestBoard() {
 // join-leave-announcer.mdx
 
 type Person = { name: string };
+const announceHooks = createPresenceHooks<unknown, Person>();
 
 const BURST_MS = 1000;
 const CLEAR_MS = 100;
@@ -162,12 +157,13 @@ function describeChanges(changes: PeerChange<unknown, Person>[]): string {
 }
 
 function PeerAnnouncer() {
+  const { usePeerChanges } = announceHooks;
   const [message, setMessage] = useState("");
   const pending = useRef<PeerChange<unknown, Person>[]>([]);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const announceTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  usePeerChanges<unknown, Person>((change) => {
+  usePeerChanges((change) => {
     if (change.type === "update") return;
     pending.current.push(change);
     timer.current ??= setTimeout(() => {
@@ -198,11 +194,13 @@ function PeerAnnouncer() {
 // typing-and-away.mdx
 
 type Status = { typingIn: string | null; away: boolean };
+const statusHooks = createPresenceHooks<Status, Person>();
 
 const TYPING_STOP_MS = 2000;
 
 function useStatus(): (patch: Partial<Status>) => void {
-  const [context, setContext] = useLocalContext<Status>();
+  const { useLocalContext } = statusHooks;
+  const [context, setContext] = useLocalContext();
   const latest = useRef(context);
 
   useEffect(() => {
@@ -260,7 +258,8 @@ function Comments() {
 }
 
 function TypingHint({ anchorId }: { anchorId: string }) {
-  const names = useRemotePresence<Status, Person>()
+  const { useRemotePresence } = statusHooks;
+  const names = useRemotePresence()
     .filter(({ context }) => context?.typingIn === anchorId && !context.away)
     .map(({ user }) => user?.name ?? "Someone");
 
@@ -303,9 +302,9 @@ describe("doc recipes for ui context", () => {
     const setContext = vi.spyOn(client, "setContext");
     act(() =>
       root.render(
-        <PresenceProvider client={client} binding={fake.binding}>
+        <cardHooks.PresenceProvider client={client} binding={fake.binding}>
           <TestBoard />
-        </PresenceProvider>,
+        </cardHooks.PresenceProvider>,
       ),
     );
     act(() =>
@@ -352,9 +351,9 @@ describe("doc recipes for ui context", () => {
     };
     act(() =>
       root.render(
-        <PresenceProvider client={client} binding={makeFakeBinding().binding}>
+        <announceHooks.PresenceProvider client={client} binding={makeFakeBinding<unknown, Person>().binding}>
           <PeerAnnouncer />
-        </PresenceProvider>,
+        </announceHooks.PresenceProvider>,
       ),
     );
     const region = container.querySelector('[role="status"]');
@@ -396,9 +395,12 @@ describe("doc recipes for ui context", () => {
     const sent = () => setContext.mock.calls.map(([next]) => next);
     act(() =>
       root.render(
-        <PresenceProvider client={sender.client} binding={makeFakeBinding().binding}>
+        <statusHooks.PresenceProvider
+          client={sender.client}
+          binding={makeFakeBinding<Status, Person>().binding}
+        >
           <Comments />
-        </PresenceProvider>,
+        </statusHooks.PresenceProvider>,
       ),
     );
     const box = container.querySelector("textarea");
@@ -429,9 +431,12 @@ describe("doc recipes for ui context", () => {
     const receiver = makeFakeClient<Status, Person>();
     act(() =>
       root.render(
-        <PresenceProvider client={receiver.client} binding={makeFakeBinding().binding}>
+        <statusHooks.PresenceProvider
+          client={receiver.client}
+          binding={makeFakeBinding<Status, Person>().binding}
+        >
           <TypingHint anchorId="comments.box" />
-        </PresenceProvider>,
+        </statusHooks.PresenceProvider>,
       ),
     );
     const peer = (clientId: string, context: Status) => ({

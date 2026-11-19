@@ -15,10 +15,10 @@ import { ScrollScene } from "../scroll";
 import { StableLayoutScene } from "../stable-layout";
 import { TableAndCardsScene } from "../table-and-cards";
 import type { Layout, SceneName } from "./scenes";
-import type { TourUser } from "./tour";
+import type { TourContext, TourUser } from "./tour";
 
 type SceneProps = {
-  client: PresenceClient<unknown, TourUser> | null;
+  client: PresenceClient<TourContext, TourUser> | null;
   layout: Layout;
   children?: ReactNode;
 };

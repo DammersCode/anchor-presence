@@ -44,19 +44,19 @@ This preview shows `CursorLayer` in two layouts, with the label and the color fr
 
 ## Label and color
 
-`getLabel` and `getColor` run for each visible cursor. They replace the default label and the default color. The samples on this page pass inline callbacks for brevity. See [Keep the callbacks stable](#keep-the-callbacks-stable):
+`getLabel` and `getColor` run for each visible cursor. They replace the default label and the default color. The samples on this page pass inline callbacks for brevity. See [Keep the callbacks stable](#keep-the-callbacks-stable).
+
+`CursorLayer` from `@anchor-presence/react` gives `cursor.user` the type `unknown`. For a typed `cursor.user`, use the `CursorLayer` of a [`createPresenceHooks`](/docs/react/typed-hooks) result. This layer reads `name` and `color` from a `MyUser` that `./presence` fixes:
 
 ```tsx
-import { CursorLayer } from "@anchor-presence/react";
-
-type MyUser = { name: string; color?: string };
+import { CursorLayer } from "./presence";
 
 const safeColor = (color?: string) =>
   color !== undefined && /^#[0-9a-f]{6}$/iu.test(color) ? color : "#6b7280";
 
 function LabeledLayer() {
   return (
-    <CursorLayer<unknown, MyUser>
+    <CursorLayer
       getLabel={(cursor) => cursor.user?.name ?? "Guest"}
       getColor={(cursor) => safeColor(cursor.user?.color)}
     />

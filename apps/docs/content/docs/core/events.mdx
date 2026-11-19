@@ -21,7 +21,7 @@ client.sendEvent("wave");
 client.sendEvent("reaction", { emoji: "tada" });
 ```
 
-The listener receives a `RemoteEvent`: the `type`, the optional `data`, and the `clientId` of the sender. A client never receives its own events. `subscribeEvents` returns a function that removes the listener.
+The listener receives an event with the `type`, the `data`, and the `clientId` of the sender. Without `parseEvent`, `data` has the type `unknown`. A client never receives its own events. `subscribeEvents` returns a function that removes the listener.
 
 ## Delivery
 
@@ -92,17 +92,17 @@ The receiver keeps a burst for at most 512 senders. When a new sender arrives af
 
 ## Typed events
 
-`createEventChannel<TEvents>(client)` gives the events of a client a type. `TEvents` maps each event type to the type of its `data`. Declare it with `type` or with `interface`. The channel has two methods:
+`createEventChannel(client)` gives the events of a client a type. The type comes from the `parseEvent` option of the client. `TEvents` maps each event type to the type of its `data`. Declare it with `type` or with `interface`. The channel has two methods:
 
 - `send(type, data)` calls `client.sendEvent` and returns its result. A misspelled `type` or a `data` value of the wrong type does not compile. If the `data` type of an event includes `undefined`, `data` is optional.
 - `subscribe(listener)` calls `client.subscribeEvents` and returns a function that removes the listener. The listener receives a `TypedRemoteEvent<TEvents>`. A check of `event.type` narrows `event.data` to the type of that event.
 
 <Callout type="warn">
-  If a peer sends data of another type, the listener still receives it. The channel types only the code that
-  you write, and it does not check remote data. Pass a `parseEvent` that checks the same event types.
+  The channel types the events that you send. The client types the events that it receives, and only
+  `parseEvent` checks them. Without `parseEvent`, the data of a remote event has the type `unknown`.
 </Callout>
 
-`createEventParser<TEvents>(parsers)` builds this `parseEvent` from one parser for each event type. `parsers` is an `EventParsers<TEvents>` object:
+`createEventParser<TEvents>(parsers)` builds this `parseEvent` from one parser for each event type. The client infers `TEvents` from it. A `parseEvent` that you write by hand leaves the events `unknown`. To type them, pass `TEvents` to `createPresenceClient` as the third type argument. `parsers` is an `EventParsers<TEvents>` object:
 
 - A parser receives the remote `data` and returns the checked data, or `undefined` to drop the event.
 - For an event without data, use `null` in place of a parser. The client then drops the event if it carries data.
@@ -124,7 +124,7 @@ const parseEvent = createEventParser<Events>({
 });
 
 const client = createPresenceClient({ transport: myTransport, parseEvent });
-const events = createEventChannel<Events>(client);
+const events = createEventChannel(client);
 
 events.send("reaction", { emoji: "tada" });
 events.send("ping");

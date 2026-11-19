@@ -55,7 +55,7 @@ function ScopedPresenceRoot({
   const pageRef = useRef(currentPage);
 
   return (
-    <PresenceProvider<{ page: string }>
+    <PresenceProvider
       clientKey={room}
       factory={() => {
         const transport = createWebSocketTransport({
@@ -79,7 +79,7 @@ function ScopedPresenceRoot({
 
 // useLocalContext and useDomBinding work only below the provider.
 function PublishPage({ page, pageRef }: { page: string; pageRef: { current: string } }) {
-  const [, setContext] = useLocalContext<{ page: string }>();
+  const [, setContext] = useLocalContext();
   const binding = useDomBinding();
   useEffect(() => setContext({ page }), [page, setContext]);
   useEffect(() => {

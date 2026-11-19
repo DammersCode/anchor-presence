@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest";
 import {
+  createEventParser,
   createInMemoryPair,
   createPresenceClient,
   linearInterpolator,
@@ -17,7 +18,6 @@ import {
   createPresenceHooks,
   usePresenceClient,
   useRemoteEvents,
-  useSendEvent,
 } from "../src/index";
 import { PresenceProviderContext } from "../src/context";
 import { docSample, missingSamples } from "./doc-source";
@@ -125,11 +125,13 @@ function Reactions() {
   );
 }
 
-// remote-events.mdx: Send typed events
 type Events = { reaction: string };
+const eventHooks = createPresenceHooks<unknown, unknown, Events>();
+const { useSendEvent } = eventHooks;
 
+// remote-events.mdx: Send typed events
 function WaveButton() {
-  const sendEvent = useSendEvent<Events>();
+  const sendEvent = useSendEvent();
   return (
     <button type="button" onClick={() => sendEvent("reaction", "wave")}>
       Wave
@@ -267,12 +269,17 @@ describe("react docs samples", () => {
 
   it("WaveButton sends a typed reaction that the peer receives", () => {
     const { a, b } = createInMemoryPair();
-    const sender = createPresenceClient({ transport: a });
+    const sender = createPresenceClient({
+      transport: a,
+      parseEvent: createEventParser<Events>({
+        reaction: (data) => (typeof data === "string" ? data : undefined),
+      }),
+    });
     const receiver = createPresenceClient({ transport: b });
     const senderView = mount(
-      <PresenceProvider client={sender}>
+      <eventHooks.PresenceProvider client={sender}>
         <WaveButton />
-      </PresenceProvider>,
+      </eventHooks.PresenceProvider>,
     );
     const receiverView = mount(
       <PresenceProvider client={receiver}>

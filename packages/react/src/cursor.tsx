@@ -2,7 +2,9 @@ import { memo, useCallback } from "react";
 import type { ComponentPropsWithoutRef, CSSProperties, ReactNode } from "react";
 import type { PointerType } from "@anchor-presence/core";
 import { CURSOR_MARKER_ATTRIBUTE, type ResolvedCursor } from "@anchor-presence/dom";
-import { useRemoteCursorsSelector } from "./hooks/index.js";
+import { PresenceProviderContext } from "./context.js";
+import type { PresenceContext } from "./context.js";
+import { useRemoteCursorsSelectorIn } from "./hooks/use-remote-cursors.js";
 
 const DEFAULT_COLOR = "#6b7280";
 const MAX_DEFAULT_LABEL_LENGTH = 32;
@@ -31,7 +33,8 @@ function truncateLabel(name: string): string {
 }
 
 function defaultLabel(cursor: ResolvedCursor): string | null {
-  const name = (cursor.user as { name?: unknown } | undefined)?.name;
+  const user = cursor.user;
+  const name = typeof user === "object" && user !== null && "name" in user ? user.name : undefined;
   return typeof name === "string" && name !== "" ? truncateLabel(name) : null;
 }
 
@@ -221,21 +224,21 @@ function CursorItem<TContext = unknown, TUser = unknown>(props: CursorItemProps<
 // the resolver keeps result-object identity for unchanged cursors (spec §14.1), so memo skips static cursors for free
 const MemoizedCursorItem = memo(CursorItem) as typeof CursorItem;
 
-/**
- * Renders the visible remote cursors.
- * The layer places each cursor at its resolved position.
- */
-export function CursorLayer<TContext = unknown, TUser = unknown>(
-  props: CursorLayerProps<TContext, TUser>,
+type CursorLayerInProps<TContext, TUser, TEvents extends object> = CursorLayerProps<TContext, TUser> & {
+  context: PresenceContext<TContext, TUser, TEvents>;
+};
+
+export function CursorLayerIn<TContext, TUser, TEvents extends object>(
+  props: CursorLayerInProps<TContext, TUser, TEvents>,
 ): ReactNode {
-  const { getLabel, getColor, filterCursor, getCursorProps, renderCursor, zIndex } = props;
+  const { context, getLabel, getColor, filterCursor, getCursorProps, renderCursor, zIndex } = props;
 
   const select = useCallback(
     (cursors: ResolvedCursor<TContext, TUser>[]) =>
       cursors.filter((cursor) => cursor.visible && (filterCursor?.(cursor) ?? true)),
     [filterCursor],
   );
-  const filtered = useRemoteCursorsSelector(select, sameCursors);
+  const filtered = useRemoteCursorsSelectorIn(context, select, sameCursors);
 
   return (
     <>
@@ -252,4 +255,13 @@ export function CursorLayer<TContext = unknown, TUser = unknown>(
       ))}
     </>
   );
+}
+
+/**
+ * Renders the visible remote cursors.
+ * The layer places each cursor at its resolved position.
+ * The `user` and `context` of a cursor have the type `unknown`. For typed render props, use `CursorLayer` from `createPresenceHooks`.
+ */
+export function CursorLayer(props: CursorLayerProps): ReactNode {
+  return <CursorLayerIn {...props} context={PresenceProviderContext} />;
 }

@@ -1,6 +1,7 @@
 // Browser-only values — never imported by SSR/module-eval code paths.
 import { randomName, randomRoom } from "../lib/names";
 import { resolveBackendId } from "./backends";
+import { createEventParser } from "@anchor-presence/core";
 
 export type PageId = "dashboard" | "orders" | "customers" | "products";
 export type DemoContext = { page?: PageId; dialog?: "settings" };
@@ -38,6 +39,17 @@ export function parseDemoEvent(event: { type: string; data?: unknown }): DemoEve
   }
   return undefined;
 }
+
+export const parseDemoEvents = createEventParser<DemoEvents>({
+  reaction: (data) => {
+    const parsed = parseDemoEvent({ type: "reaction", data });
+    return parsed?.type === "reaction" ? { emoji: parsed.emoji } : undefined;
+  },
+  chat: (data) => {
+    const parsed = parseDemoEvent({ type: "chat", data });
+    return parsed?.type === "chat" ? { text: parsed.text } : undefined;
+  },
+});
 
 export function parseDemoUser(value: unknown): DemoUser | undefined {
   if (!isRecord(value)) return undefined;

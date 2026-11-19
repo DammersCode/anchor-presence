@@ -12,17 +12,27 @@ Two common states fit in `context`: the anchor where the user types, and whether
 
 `setContext` replaces the whole context. The hook below merges each change into the current local context, so a change of one field never drops the other. It sends a new context only when a field changes. Call `useStatus` once, in a parent, and pass `publish` to each box. Then one `visibilitychange` listener serves every box:
 
-```tsx
-import { useLocalContext, useRemotePresence } from "@anchor-presence/react";
-import { useCallback, useEffect, useRef } from "react";
+The hooks come from a `presence.ts` module. The module calls `createPresenceHooks` one time, so `context` and `user` have your types and not `unknown`:
 
-type Person = { name: string };
-type Status = { typingIn: string | null; away: boolean };
+```ts
+// presence.ts
+import { createPresenceHooks } from "@anchor-presence/react";
+
+export type Person = { name: string };
+export type Status = { typingIn: string | null; away: boolean };
+
+export const { PresenceProvider, useLocalContext, useRemotePresence } = createPresenceHooks<Status, Person>();
+```
+
+```tsx
+import { useCallback, useEffect, useRef } from "react";
+import { useLocalContext, useRemotePresence } from "./presence";
+import type { Status } from "./presence";
 
 const TYPING_STOP_MS = 2000;
 
 function useStatus(): (patch: Partial<Status>) => void {
-  const [context, setContext] = useLocalContext<Status>();
+  const [context, setContext] = useLocalContext();
   const latest = useRef(context);
 
   useEffect(() => {
@@ -80,7 +90,7 @@ function Comments() {
 }
 
 function TypingHint({ anchorId }: { anchorId: string }) {
-  const names = useRemotePresence<Status, Person>()
+  const names = useRemotePresence()
     .filter(({ context }) => context?.typingIn === anchorId && !context.away)
     .map(({ user }) => user?.name ?? "Someone");
 

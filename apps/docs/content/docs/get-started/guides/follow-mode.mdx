@@ -16,10 +16,29 @@ When Mira moves to a section outside the narrow pane, that pane scrolls to the s
 
 ## Find the target
 
+The recipe reads the user type from a `presence.ts` module. The module calls `createPresenceHooks` one time, so each `user` has the type `User` and not `unknown`:
+
+```ts
+// presence.ts
+import { createPresenceHooks } from "@anchor-presence/react";
+
+export type User = { name: string };
+
+export const {
+  CursorLayer,
+  PresenceProvider,
+  usePeerChanges,
+  useRemoteCursorsSelector,
+  useDomBinding,
+  useRemoteUsers,
+} = createPresenceHooks<unknown, User>();
+```
+
 The recipe is one file, `follow-mode.tsx`. It starts with the imports, the off-screen test and the anchor lookup:
 
 ```tsx
 import { useCallback, useEffect, useState } from "react";
+import type { PresenceClient, ResolvedCursor } from "@anchor-presence/react";
 import {
   CursorLayer,
   PresenceProvider,
@@ -27,10 +46,8 @@ import {
   useRemoteCursorsSelector,
   useDomBinding,
   useRemoteUsers,
-} from "@anchor-presence/react";
-import type { PresenceClient, ResolvedCursor } from "@anchor-presence/react";
-
-type User = { name: string };
+} from "./presence";
+import type { User } from "./presence";
 
 const SCROLL_KEYS = new Set(["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " "]);
 
@@ -98,7 +115,7 @@ The controls list the peers and show a stop button while follow mode is on:
 
 ```tsx
 export function FollowControls() {
-  const users = useRemoteUsers<User>();
+  const users = useRemoteUsers();
   const { leaderId, follow, stop } = useFollowMode();
 
   if (leaderId !== null) {

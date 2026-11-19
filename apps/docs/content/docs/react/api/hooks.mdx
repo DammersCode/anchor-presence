@@ -8,12 +8,12 @@ import { Braces, Component, Gauge } from "lucide-react";
 
 This page lists the signature of every hook in `@anchor-presence/react`, and of `createPresenceHooks`. Use it to look up a type. For usage, render cost, and examples, read the guide page that each section links to.
 
-Every hook reads the nearest `PresenceProvider`. Without a provider, each hook returns its empty value, and in development mode one console warning appears. For the empty values, see [Server-safe values](/docs/react/ssr-and-strict-mode#server-safe-values).
+Every hook reads the nearest `PresenceProvider`. A hook that you import from `@anchor-presence/react` takes no type argument and returns `unknown` for `user`, `context`, and event `data`. A type never comes from a claim. To get typed values, call [`createPresenceHooks`](#createpresencehooks) and use its hooks, or pass a typed client to a provider and narrow the values in your code. Without a provider, each hook returns its empty value, and in development mode one console warning appears. For the empty values, see [Server-safe values](/docs/react/ssr-and-strict-mode#server-safe-values).
 
 ## useRemoteCursors
 
 ```ts
-function useRemoteCursors<TContext = unknown, TUser = unknown>(): ResolvedCursor<TContext, TUser>[];
+function useRemoteCursors(): ResolvedCursor[];
 ```
 
 Returns the resolved cursor of every peer, hidden cursors included. While the client reconnects or is disconnected, the list is empty. Guide: [Remote cursors](/docs/react/remote-cursors).
@@ -21,8 +21,8 @@ Returns the resolved cursor of every peer, hidden cursors included. While the cl
 ## useRemoteCursorsSelector
 
 ```ts
-function useRemoteCursorsSelector<TSelected, TContext = unknown, TUser = unknown>(
-  select: (cursors: ResolvedCursor<TContext, TUser>[]) => TSelected,
+function useRemoteCursorsSelector<TSelected>(
+  select: (cursors: ResolvedCursor[]) => TSelected,
   isEqual?: (a: TSelected, b: TSelected) => boolean,
 ): TSelected;
 ```
@@ -32,7 +32,7 @@ Returns `select` applied to the resolved cursors. `isEqual` defaults to `Object.
 ## useRemoteUsers
 
 ```ts
-function useRemoteUsers<TUser = unknown>(): RemoteUser<TUser>[];
+function useRemoteUsers(): RemoteUser[];
 ```
 
 Returns one `RemoteUser` per peer. For its fields, see [RemoteUser fields](/docs/react/remote-users#remoteuser-fields).
@@ -42,7 +42,7 @@ Guide: [Remote users](/docs/react/remote-users).
 ## useRemotePresence
 
 ```ts
-function useRemotePresence<TContext = unknown, TUser = unknown>(): RemotePresence<TContext, TUser>[];
+function useRemotePresence(): RemotePresence[];
 ```
 
 Returns the raw presence of every peer, in the coordinates of the sender. Guide: [Remote presence](/docs/react/remote-presence).
@@ -50,7 +50,7 @@ Returns the raw presence of every peer, in the coordinates of the sender. Guide:
 ## useLocalUser
 
 ```ts
-function useLocalUser<TUser = unknown>(): [TUser | undefined, (next: TUser | undefined) => void];
+function useLocalUser(): [unknown, (next: unknown) => void];
 ```
 
 Returns the local `user` value and a setter that calls `client.setUser`. Guide: [Local user](/docs/react/local-context#local-user).
@@ -58,7 +58,7 @@ Returns the local `user` value and a setter that calls `client.setUser`. Guide: 
 ## useLocalContext
 
 ```ts
-function useLocalContext<TContext = unknown>(): [TContext | undefined, (next: TContext | undefined) => void];
+function useLocalContext(): [unknown, (next: unknown) => void];
 ```
 
 Returns the local context value and a setter that calls `client.setContext`. Guide: [Local context](/docs/react/local-context#local-context).
@@ -74,7 +74,7 @@ Returns `"connecting"`, `"connected"`, `"reconnecting"`, or `"disconnected"`. Gu
 ## usePresenceClient
 
 ```ts
-function usePresenceClient<TContext = unknown, TUser = unknown>(): PresenceClient<TContext, TUser> | null;
+function usePresenceClient(): PresenceClient | null;
 ```
 
 Returns the client of the nearest provider, or `null` without one. On the server, it returns the `client` prop of the provider. A provider with only a `factory` has no client on the server, so the hook returns `null`. Guide: [Client creation](/docs/react/client-creation).
@@ -82,7 +82,7 @@ Returns the client of the nearest provider, or `null` without one. On the server
 ## useDomBinding
 
 ```ts
-function useDomBinding<TContext = unknown, TUser = unknown>(): DomBinding<TContext, TUser> | null;
+function useDomBinding(): DomBinding | null;
 ```
 
 Returns the DOM binding of the nearest provider. It returns `null` before the provider creates the binding, and without a provider. On the server, it returns the `binding` prop of the provider, or `null` without that prop.
@@ -92,17 +92,15 @@ If state that a `visibilityPolicy` reads changes, call `binding.invalidate()`. S
 ## useRemoteEvents
 
 ```ts
-function useRemoteEvents(listener: (event: RemoteEvent) => void): void;
+function useRemoteEvents(listener: (event: TypedRemoteEvent<EventMap>) => void): void;
 ```
 
-Calls `listener` for each event that a peer sends with `client.sendEvent`. `RemoteEvent` has a `type`, an optional `data`, and the `clientId` of the sender. Guide: [Remote events](/docs/react/remote-events).
+Calls `listener` for each event that a peer sends with `client.sendEvent`. The event has a `type`, a `data` of the type `unknown`, and the `clientId` of the sender. Guide: [Remote events](/docs/react/remote-events).
 
 ## usePeerChanges
 
 ```ts
-function usePeerChanges<TContext = unknown, TUser = unknown>(
-  listener: (change: PeerChange<TContext, TUser>) => void,
-): void;
+function usePeerChanges(listener: (change: PeerChange) => void): void;
 ```
 
 Calls `listener` when a peer joins, leaves, or changes its `user` or `context`. Guide: [Peer changes](/docs/react/remote-users#peer-changes).
@@ -110,22 +108,23 @@ Calls `listener` when a peer joins, leaves, or changes its `user` or `context`. 
 ## useSendEvent
 
 ```ts
-function useSendEvent<TEvents extends object = EventMap>(): EventChannel<TEvents>["send"];
+function useSendEvent(): EventChannel<EventMap>["send"];
 ```
 
 Returns a function that sends one event to every peer. The function returns the result of `client.sendEvent`. Without a client, it sends nothing and returns `false`.
 
-`TEvents` is an event map. The default `EventMap` accepts any `type` and any `data`. The `useSendEvent` of the `createPresenceHooks` result takes no type argument, because the result fixes `TEvents`. Guides: [Remote events](/docs/react/remote-events#send-typed-events) and [Typed events](/docs/react/typed-hooks#typed-events).
+The function accepts any `type` and any `data`. The `useSendEvent` of the `createPresenceHooks` result accepts only the events of its event map `TEvents`. Guides: [Remote events](/docs/react/remote-events#send-typed-events) and [Typed events](/docs/react/typed-hooks#typed-events).
 
 ## createPresenceHooks
 
-`createPresenceHooks` returns the provider and the hooks with your types fixed:
+`createPresenceHooks` returns a provider, the hooks, and a `CursorLayer` with your types fixed. The hooks read only the provider of the same call:
 
 ```ts
 function createPresenceHooks<TContext = unknown, TUser = unknown, TEvents extends object = EventMap>(): {
-  PresenceProvider: (props: PresenceProviderProps<TContext, TUser>) => ReactNode;
+  PresenceProvider: (props: PresenceProviderProps<TContext, TUser, TEvents>) => ReactNode;
+  CursorLayer: (props: CursorLayerProps<TContext, TUser>) => ReactNode;
   useDomBinding: () => DomBinding<TContext, TUser> | null;
-  usePresenceClient: () => PresenceClient<TContext, TUser> | null;
+  usePresenceClient: () => PresenceClient<TContext, TUser, TEvents> | null;
   useLocalContext: () => [TContext | undefined, (next: TContext | undefined) => void];
   useRemoteEvents: (listener: (event: TypedRemoteEvent<TEvents>) => void) => void;
   useRemotePresence: () => RemotePresence<TContext, TUser>[];

@@ -36,7 +36,9 @@ export type PublishLoop = {
   wireVisibility: () => void;
 };
 
-export function createPublishLoop<TContext, TUser>(state: PresenceClientState<TContext, TUser>): PublishLoop {
+export function createPublishLoop<TContext, TUser, TEvents extends object>(
+  state: PresenceClientState<TContext, TUser, TEvents>,
+): PublishLoop {
   function updateSlowMode(): void {
     if (!state.adaptivePublish || typeof state.transport.bufferedBytes !== "function") return;
     try {

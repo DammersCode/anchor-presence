@@ -16,8 +16,8 @@ export type StatusMachine = {
   dispose: () => void;
 };
 
-export function createStatusMachine<TContext, TUser>(
-  state: PresenceClientState<TContext, TUser>,
+export function createStatusMachine<TContext, TUser, TEvents extends object>(
+  state: PresenceClientState<TContext, TUser, TEvents>,
   publish: Pick<PublishLoop, "markReconnected">,
 ): StatusMachine {
   const listeners = new Set<(status: ConnectionStatus) => void>();

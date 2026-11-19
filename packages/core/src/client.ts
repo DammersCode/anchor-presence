@@ -1,4 +1,5 @@
 import { jsonCodec } from "./codec.js";
+import type { EventMap } from "./event-channel.js";
 import { defaultNow } from "./internal/clock.js";
 import { createOversizedWarning, isDevMode, reportListenerError, warnOnce } from "./internal/dev-warnings.js";
 import { defaultIdFactory } from "./internal/ids.js";
@@ -71,9 +72,10 @@ function assertId(name: string, value: unknown, max: number): asserts value is s
  * @param options The client options. `transport` is required.
  * @returns The client.
  */
-export function createPresenceClient<TContext = unknown, TUser = unknown>(
-  options: PresenceClientOptions<TContext, TUser> & NoInfer<RequiredParsers<TContext, TUser>>,
-): PresenceClient<TContext, TUser> {
+export function createPresenceClient<TContext = unknown, TUser = unknown, TEvents extends object = EventMap>(
+  options: PresenceClientOptions<TContext, TUser, TEvents> &
+    NoInfer<RequiredParsers<TContext, TUser, TEvents>>,
+): PresenceClient<TContext, TUser, TEvents> {
   if (options?.transport === undefined || options.transport === null) {
     throw new TypeError("createPresenceClient: options.transport is required");
   }
@@ -165,7 +167,7 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     },
   });
 
-  const state: PresenceClientState<TContext, TUser> = {
+  const state: PresenceClientState<TContext, TUser, TEvents> = {
     transport,
     codec,
     scheduler,

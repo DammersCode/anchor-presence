@@ -181,10 +181,7 @@ function validateEvent(input: unknown, limits: ResolvedLimits): PresenceEvent | 
  * @param limits Optional limits. The defaults fill the fields you omit.
  * @returns A validated message, or `null` when the message is invalid.
  */
-export function validatePresence<TContext = unknown, TUser = unknown>(
-  input: unknown,
-  limits?: ValidationLimits,
-): PresenceMessage<TContext, TUser> | null {
+export function validatePresence(input: unknown, limits?: ValidationLimits): PresenceMessage | null {
   try {
     // whole-message 32 KiB limit is enforced on wire bytes by the client, before decode (spec §4.2)
     if (!isPlainObject(input)) return null;
@@ -212,7 +209,7 @@ export function validatePresence<TContext = unknown, TUser = unknown>(
     const cursor = validateCursor(input.cursor, resolved);
     if (cursor === undefined) return null;
 
-    const message: PresenceMessage<TContext, TUser> = {
+    const message: PresenceMessage = {
       version: 1,
       clientId,
       session,
@@ -236,7 +233,7 @@ export function validatePresence<TContext = unknown, TUser = unknown>(
       !exceedsMaxDepth(input.context, resolved.maxFieldDepth) &&
       jsonFieldFits(input.context, resolved.maxFieldBytes)
     ) {
-      message.context = input.context as TContext;
+      message.context = input.context;
     }
 
     if (
@@ -245,7 +242,7 @@ export function validatePresence<TContext = unknown, TUser = unknown>(
       !exceedsMaxDepth(input.user, resolved.maxFieldDepth) &&
       jsonFieldFits(input.user, resolved.maxFieldBytes)
     ) {
-      message.user = input.user as TUser;
+      message.user = input.user;
     }
 
     const pointer = input.pointer;

@@ -1,5 +1,6 @@
 import type {
   ConnectionStatus,
+  EventMap,
   PresenceMessage,
   PresenceClient,
   RemotePresence,
@@ -9,8 +10,8 @@ import type { DomBinding, ResolvedCursor } from "@anchor-presence/dom";
 // react's `act` needs this flag set; every jsdom test importing testUtils gets it without a shared vitest setupFiles entry.
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
-export function makeFakeClient<TContext = unknown, TUser = unknown>(): {
-  client: PresenceClient<TContext, TUser>;
+export function makeFakeClient<TContext = unknown, TUser = unknown, TEvents extends object = EventMap>(): {
+  client: PresenceClient<TContext, TUser, TEvents>;
   pushRemote: (next: PresenceMessage<TContext, TUser>[], idleClientIds?: Set<string>) => void;
   setStatus: (status: ConnectionStatus) => void;
 } {
@@ -23,7 +24,7 @@ export function makeFakeClient<TContext = unknown, TUser = unknown>(): {
   let user: TUser | undefined;
   const teardowns: Array<() => void> = [];
 
-  const client: PresenceClient<TContext, TUser> = {
+  const client: PresenceClient<TContext, TUser, TEvents> = {
     clientId: "local",
     session: "s",
     setLocalCursor: () => {},

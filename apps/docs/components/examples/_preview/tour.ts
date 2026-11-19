@@ -4,6 +4,20 @@ import { createBroadcastChannelTransport } from "@anchor-presence/dom";
 
 export type TourUser = { name: string; color: string };
 
+export type TourContext = { selection?: string[]; dialog?: "invite" | null };
+
+export function parseTourContext(value: unknown): TourContext | undefined {
+  if (typeof value !== "object" || value === null) return undefined;
+  const context: TourContext = {};
+  if ("selection" in value && Array.isArray(value.selection)) {
+    const ids: unknown[] = value.selection;
+    if (ids.every((id) => typeof id === "string")) context.selection = ids;
+  }
+  if ("dialog" in value && (value.dialog === "invite" || value.dialog === null))
+    context.dialog = value.dialog;
+  return context;
+}
+
 export function parseTourUser(value: unknown): TourUser | undefined {
   const name = typeof value === "object" && value !== null && "name" in value ? value.name : undefined;
   const color = typeof value === "object" && value !== null && "color" in value ? value.color : undefined;

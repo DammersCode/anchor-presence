@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createPresenceClient } from "../src/client";
+import type { PresenceClient } from "../src/client";
 import { createInMemoryRoom } from "../src/in-memory-transport";
 
 beforeEach(() => {
@@ -11,7 +12,7 @@ afterEach(() => {
 });
 
 const bytes = (...values: number[]): Uint8Array => Uint8Array.from(values);
-const ids = (client: ReturnType<typeof createPresenceClient>): string[] =>
+const ids = (client: PresenceClient): string[] =>
   client
     .getRemoteSnapshot()
     .map((peer) => peer.clientId)

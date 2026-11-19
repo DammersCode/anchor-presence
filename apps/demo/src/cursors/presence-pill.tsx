@@ -1,4 +1,4 @@
-import { useRemotePresence, usePresenceStatus, useRemoteCursorsSelector } from "@anchor-presence/react";
+import { useRemotePresence, usePresenceStatus, useRemoteCursorsSelector } from "./hooks";
 import type { ResolvedCursor } from "@anchor-presence/dom";
 import type { ConnectionStatus } from "@anchor-presence/core";
 import { Avatar } from "../components/ui/avatar";
@@ -33,7 +33,7 @@ const STATUS_DOT: Record<ConnectionStatus, string> = {
 
 export function PresencePill() {
   const status = usePresenceStatus();
-  const presence = useRemotePresence<DemoContext, DemoUser>();
+  const presence = useRemotePresence();
   const clippedClientIds = useRemoteCursorsSelector(selectClippedClientIds, sameClientIds);
 
   return (

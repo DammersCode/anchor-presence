@@ -2,7 +2,8 @@
 
 import { linearInterpolator, noneInterpolator } from "@anchor-presence/core";
 import type { Interpolator, InterpolatorFactory, PresenceClient } from "@anchor-presence/core";
-import { CursorLayer, PresenceProvider, useRemoteCursors } from "@anchor-presence/react";
+import type { TourContext } from "./_preview/tour";
+import { CursorLayer, PresenceProvider, useRemoteCursors } from "./_preview/hooks";
 import { useEffect, useState, type ReactNode } from "react";
 
 const safeColor = (color: string | undefined, fallback: string) =>
@@ -11,7 +12,7 @@ const safeColor = (color: string | undefined, fallback: string) =>
 type User = { name: string; color: string };
 
 type Props = {
-  client: PresenceClient<unknown, User> | null;
+  client: PresenceClient<TourContext, User> | null;
   layout: "wide" | "narrow";
   children?: ReactNode;
 };
@@ -96,7 +97,7 @@ const TRAIL_LENGTH = 28;
 
 /** Dots on the last positions of the first remote cursor, so the path of each glide stays visible. */
 function MotionTrail() {
-  const cursor = useRemoteCursors<unknown, User>().find((candidate) => candidate.visible);
+  const cursor = useRemoteCursors().find((candidate) => candidate.visible);
   const [trail, setTrail] = useState<{ x: number; y: number }[]>([]);
   const x = cursor?.x;
   const y = cursor?.y;
@@ -170,7 +171,7 @@ export function InterpolationScene({ client, layout, children }: Props) {
         </div>
       </div>
       <MotionTrail />
-      <CursorLayer<unknown, User>
+      <CursorLayer
         getLabel={(cursor) => cursor.user?.name ?? null}
         getColor={(cursor) => safeColor(cursor.user?.color, "#4f46e5")}
       />

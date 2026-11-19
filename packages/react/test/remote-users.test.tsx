@@ -53,9 +53,9 @@ describe("useRemoteUsers", () => {
 
   it("projects one entry per remote client with clientId, session, and user", () => {
     const { client, pushRemote } = makeFakeClient<unknown, TestUser>();
-    const seen: RemoteUser<TestUser>[][] = [];
+    const seen: RemoteUser[][] = [];
     function Probe() {
-      seen.push(useRemoteUsers<TestUser>());
+      seen.push(useRemoteUsers());
       return null;
     }
     const root = createRoot(container);
@@ -87,9 +87,9 @@ describe("useRemoteUsers", () => {
 
   it("carries the idle flag from the presence snapshot", () => {
     const { client, pushRemote } = makeFakeClient<unknown, TestUser>();
-    const seen: RemoteUser<TestUser>[][] = [];
+    const seen: RemoteUser[][] = [];
     function Probe() {
-      seen.push(useRemoteUsers<TestUser>());
+      seen.push(useRemoteUsers());
       return null;
     }
     const root = createRoot(container);
@@ -113,9 +113,9 @@ describe("useRemoteUsers", () => {
 
   it("keeps entry and list identity across a presence update that changes only cursor position", () => {
     const { client, pushRemote } = makeFakeClient<unknown, TestUser>();
-    const seen: RemoteUser<TestUser>[][] = [];
+    const seen: RemoteUser[][] = [];
     function Probe() {
-      seen.push(useRemoteUsers<TestUser>());
+      seen.push(useRemoteUsers());
       return null;
     }
     const root = createRoot(container);
@@ -167,9 +167,9 @@ describe("useRemoteUsers", () => {
 
   it("gives a changed client a new entry while an unrelated client keeps identity", () => {
     const { client, pushRemote } = makeFakeClient<unknown, TestUser>();
-    const seen: RemoteUser<TestUser>[][] = [];
+    const seen: RemoteUser[][] = [];
     function Probe() {
-      seen.push(useRemoteUsers<TestUser>());
+      seen.push(useRemoteUsers());
       return null;
     }
     const root = createRoot(container);

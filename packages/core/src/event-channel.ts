@@ -9,6 +9,11 @@ export type TypedRemoteEvent<TEvents extends object> = {
   [K in keyof TEvents & string]: { clientId: string; type: K; data: TEvents[K] };
 }[keyof TEvents & string];
 
+/** Checks one remote event. Returns the event to deliver it, or `undefined` to drop it. */
+export type EventParser<TEvents extends object> = (
+  event: RemoteEvent,
+) => TypedRemoteEvent<TEvents> | undefined;
+
 /** Sends and receives the events of one `EventMap`. */
 export type EventChannel<TEvents extends object> = {
   /** Sends an event. A misspelled type or data of the wrong type does not compile. */
@@ -26,11 +31,11 @@ export type EventChannel<TEvents extends object> = {
  * @param client The client whose events you type.
  */
 export function createEventChannel<TEvents extends object = EventMap>(
-  client: Pick<PresenceClient, "sendEvent" | "subscribeEvents">,
+  client: Pick<PresenceClient<unknown, unknown, TEvents>, "sendEvent" | "subscribeEvents">,
 ): EventChannel<TEvents> {
   return {
     send: (type, ...data) => client.sendEvent(type, data[0]),
-    subscribe: (listener) => client.subscribeEvents((event) => listener(event as TypedRemoteEvent<TEvents>)),
+    subscribe: (listener) => client.subscribeEvents(listener),
   };
 }
 
@@ -46,13 +51,15 @@ export type EventParsers<TEvents extends object> = {
  */
 export function createEventParser<TEvents extends object>(
   parsers: EventParsers<TEvents>,
-): (event: RemoteEvent) => TypedRemoteEvent<TEvents> | undefined {
+): EventParser<TEvents> {
+  const lookup: Readonly<Record<string, ((data: unknown) => unknown) | null>> = parsers;
   return (event) => {
     if (!Object.hasOwn(parsers, event.type)) return;
-    const parser = (parsers as Record<string, ((data: unknown) => unknown) | null>)[event.type];
+    const parser = lookup[event.type];
     const data = parser === null ? event.data : parser?.(event.data);
     if (data === undefined && parser !== null) return;
     if (parser === null && data !== undefined) return;
+    // TypeScript cannot correlate a type key with its data type across the mapped union
     return { clientId: event.clientId, type: event.type, data } as TypedRemoteEvent<TEvents>;
   };
 }

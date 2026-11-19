@@ -49,7 +49,7 @@ export type {
 } from "./in-memory-transport.js";
 
 export { createEventChannel, createEventParser } from "./event-channel.js";
-export type { EventChannel, EventMap, EventParsers, TypedRemoteEvent } from "./event-channel.js";
+export type { EventChannel, EventMap, EventParser, EventParsers, TypedRemoteEvent } from "./event-channel.js";
 
 export {
   createPresenceClient,

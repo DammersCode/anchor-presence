@@ -42,9 +42,9 @@ assertEqual<PresenceClient<Ctx, User>, typeof explicit>(true);
 createPresenceClient<Ctx, User>({ transport: pair.a });
 
 // @ts-expect-error user must match the type argument
-createPresenceClient<Ctx, User>({ transport: pair.a, user: { name: 1 } });
+createPresenceClient<Ctx, User>({ transport: pair.a, parseUser, parseContext, user: { name: 1 } });
 // @ts-expect-error parser result must match the type argument
-createPresenceClient<Ctx, User>({ transport: pair.a, parseUser: (_v: unknown) => 1 });
+createPresenceClient<Ctx, User>({ transport: pair.a, parseUser: (_v: unknown) => 1, parseContext });
 
 // events
 const parseEvent = createEventParser<Events>({
@@ -54,7 +54,8 @@ const parseEvent = createEventParser<Events>({
       ? { emoji: data.emoji }
       : undefined,
 });
-const channel = createEventChannel<Events>(inferred);
+const typedClient = createPresenceClient({ transport: pair.a, parseUser, parseContext, parseEvent });
+const channel = createEventChannel(typedClient);
 channel.send("ping");
 channel.send("reaction", { emoji: "x" });
 channel.subscribe((event) => {
@@ -79,13 +80,20 @@ assertEqual<User | undefined, typeof user>(true);
 const [context] = hooks.useLocalContext();
 assertEqual<Ctx | undefined, typeof context>(true);
 assertEqual<RemoteUser<User>[], ReturnType<typeof hooks.useRemoteUsers>>(true);
-assertEqual<User, ReturnType<typeof hooks.useRemoteCursors>[number]["user"] & User>(true);
+assertEqual<User | undefined, ReturnType<typeof hooks.useRemoteCursors>[number]["user"]>(true);
 hooks.useRemoteEvents((event) => {
   if (event.type === "reaction") assertEqual<{ emoji: string }, typeof event.data>(true);
 });
-hooks.PresenceProvider({ client: inferred });
-// @ts-expect-error provider client must match the hook generics
-hooks.PresenceProvider({ client: createPresenceClient<{ other: 1 }, User>({ transport: pair.a }) });
+hooks.PresenceProvider({ client: typedClient });
+hooks.PresenceProvider({
+  // @ts-expect-error provider client must match the hook generics
+  client: createPresenceClient({
+    transport: pair.a,
+    parseUser,
+    parseContext: (_v: unknown): { other: 1 } | undefined => undefined,
+    parseEvent,
+  }),
+});
 // @ts-expect-error send rejects unknown events
 hooks.useSendEvent()("nope");
 

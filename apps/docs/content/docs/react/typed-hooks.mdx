@@ -6,7 +6,7 @@ icon: braces
 
 import { Braces, Plug, Users, Zap } from "lucide-react";
 
-`createPresenceHooks<TContext, TUser, TEvents>()` returns the provider and every hook with your types fixed. Apart from `useRemoteCursorsSelector`, a hook from the result takes no type parameter, so a call with a wrong type does not compile. Use it in every app that has a known shape for its context, user, or event values. `TEvents` is optional.
+`createPresenceHooks<TContext, TUser, TEvents>()` returns a provider, every hook, and a `CursorLayer` with your types fixed. The hooks that you import from `@anchor-presence/react` return `unknown` for `user`, `context`, and event `data`, because a type argument cannot prove what a peer sends. The hooks of the result read only the provider of the same call, and that provider accepts only a client of the same types. Use it in every app that has a known shape for its context, user, or event values. `TEvents` is optional.
 
 ## Usage
 
@@ -49,7 +49,7 @@ function PresenceList() {
 }
 ```
 
-`entry.user` has the type `User | undefined`. A field that `User` does not have, for example `entry.user?.age`, is a type error. A type argument, for example `useRemoteUsers<OtherUser>()`, is also a type error.
+`entry.user` has the type `User | undefined`. A field that `User` does not have, for example `entry.user?.age`, is a type error. A type argument, for example `useRemoteUsers<OtherUser>()`, is also a type error. A client with other types than `Context`, `User`, and `Events`, given to this `PresenceProvider`, is a type error too.
 
 ## Typed events
 
@@ -131,19 +131,22 @@ An event map can be a `type` or an `interface`. For the parser rules, see [Typed
 
 ## What the result contains
 
-| Name                                    | Types that the result fixes                                          |
-| --------------------------------------- | -------------------------------------------------------------------- |
-| `PresenceProvider`                      | context and user                                                     |
-| `usePresenceClient`, `useDomBinding`    | context and user                                                     |
-| `useRemoteCursors`, `useRemotePresence` | context and user                                                     |
-| `useRemoteCursorsSelector`              | context and user. It still takes the `TSelected` type of its result. |
-| `usePeerChanges`                        | context and user                                                     |
-| `useRemoteUsers`, `useLocalUser`        | user                                                                 |
-| `useLocalContext`                       | context                                                              |
-| `useRemoteEvents`, `useSendEvent`       | events                                                               |
-| `usePresenceStatus`                     | none                                                                 |
+| Name                                    | Types that the result fixes                                    |
+| --------------------------------------- | -------------------------------------------------------------- |
+| `PresenceProvider`                      | context, user, and events of the client that it accepts        |
+| `CursorLayer`                           | context and user of its render props                           |
+| `usePresenceClient`, `useDomBinding`    | context and user                                               |
+| `useRemoteCursors`, `useRemotePresence` | context and user                                               |
+| `useRemoteCursorsSelector`              | context and user. It takes the `TSelected` type of its result. |
+| `usePeerChanges`                        | context and user                                               |
+| `useRemoteUsers`, `useLocalUser`        | user                                                           |
+| `useLocalContext`                       | context                                                        |
+| `useRemoteEvents`, `useSendEvent`       | events                                                         |
+| `usePresenceStatus`                     | none                                                           |
 
-Without `TEvents`, an event can have any `type`, and its `data` has the type `unknown`. `CursorLayer` and `DefaultCursor` are not in the result. Import them from `@anchor-presence/react`, and pass your types as type arguments, for example `<CursorLayer<Context, User> />`.
+Without `TEvents`, an event can have any `type`, and its `data` has the type `unknown`. `DefaultCursor` is not in the result. Import it from `@anchor-presence/react`.
+
+The hooks of the result read only the provider of the same call. A hook from the result under another `PresenceProvider`, for example the one that you import from `@anchor-presence/react`, finds no client and returns its empty value.
 
 In development mode, a hook outside the provider writes a console warning. If you use the provider from your own module, the warning still names `PresenceProvider`.
 

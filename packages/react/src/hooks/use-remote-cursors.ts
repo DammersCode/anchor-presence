@@ -1,14 +1,13 @@
 import { useCallback, useRef, useState, useSyncExternalStore } from "react";
 import type { ResolvedCursor } from "@anchor-presence/dom";
+import { PresenceProviderContext } from "../context.js";
+import type { PresenceContext } from "../context.js";
 import { EMPTY_CURSORS, getServerCursors, usePresenceProviderContext } from "./use-presence-client.js";
 
-/**
- * Returns the resolved remote cursors.
- * The hook rerenders on every new cursor snapshot.
- * Returns an empty list on the server or without a binding.
- */
-export function useRemoteCursors<TContext = unknown, TUser = unknown>(): ResolvedCursor<TContext, TUser>[] {
-  const { binding } = usePresenceProviderContext<TContext, TUser>();
+export function useRemoteCursorsIn<TContext, TUser, TEvents extends object>(
+  context: PresenceContext<TContext, TUser, TEvents>,
+): ResolvedCursor<TContext, TUser>[] {
+  const { binding } = usePresenceProviderContext(context);
   const subscribe = useCallback(
     (listener: () => void) => (binding !== null ? binding.subscribe(listener) : () => {}),
     [binding],
@@ -21,14 +20,21 @@ export function useRemoteCursors<TContext = unknown, TUser = unknown>(): Resolve
 }
 
 /**
- * Subscribes to the resolved-cursor snapshot through a selector, and rerenders only when the
- * selected value changes under `isEqual`. Keep `select` and `isEqual` stable across renders.
+ * Returns the resolved remote cursors.
+ * The `user` and `context` of a cursor have the type `unknown`. For typed values, use `useRemoteCursors` from `createPresenceHooks`.
+ * The hook rerenders on every new cursor snapshot.
+ * Returns an empty list on the server or without a binding.
  */
-export function useRemoteCursorsSelector<TSelected, TContext = unknown, TUser = unknown>(
+export function useRemoteCursors(): ResolvedCursor[] {
+  return useRemoteCursorsIn(PresenceProviderContext);
+}
+
+export function useRemoteCursorsSelectorIn<TSelected, TContext, TUser, TEvents extends object>(
+  context: PresenceContext<TContext, TUser, TEvents>,
   select: (cursors: ResolvedCursor<TContext, TUser>[]) => TSelected,
   isEqual: (a: TSelected, b: TSelected) => boolean = Object.is,
 ): TSelected {
-  const { binding } = usePresenceProviderContext<TContext, TUser>();
+  const { binding } = usePresenceProviderContext(context);
   const selectedRef = useRef<{ value: TSelected } | null>(null);
   // caches select's output by input array and callbacks, so a repeat snapshot probe skips select() entirely
   const lastInputRef = useRef<{
@@ -64,4 +70,16 @@ export function useRemoteCursorsSelector<TSelected, TContext = unknown, TUser = 
   const getServerSnapshot = useCallback(() => serverValue, [serverValue]);
 
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+}
+
+/**
+ * Subscribes to the resolved-cursor snapshot through a selector, and rerenders only when the
+ * selected value changes under `isEqual`. Keep `select` and `isEqual` stable across renders.
+ * The `user` and `context` of a cursor have the type `unknown`. For typed values, use `useRemoteCursorsSelector` from `createPresenceHooks`.
+ */
+export function useRemoteCursorsSelector<TSelected>(
+  select: (cursors: ResolvedCursor[]) => TSelected,
+  isEqual?: (a: TSelected, b: TSelected) => boolean,
+): TSelected {
+  return useRemoteCursorsSelectorIn(PresenceProviderContext, select, isEqual);
 }

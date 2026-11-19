@@ -43,6 +43,8 @@ declare namespace Listing {
     [K in keyof TEvents & string]: { clientId: string; type: K; data: TEvents[K] };
   }[keyof TEvents & string];
 
+  type EventParser<TEvents extends object> = (event: RemoteEvent) => TypedRemoteEvent<TEvents> | undefined;
+
   type EventChannel<TEvents extends object> = {
     send<K extends keyof TEvents & string>(
       type: K,
@@ -53,7 +55,7 @@ declare namespace Listing {
 
   // oxlint-disable-next-line eslint/no-shadow -- the listing keeps the exported name
   function createEventChannel<TEvents extends object>(
-    client: Pick<PresenceClient, "sendEvent" | "subscribeEvents">,
+    client: Pick<PresenceClient<unknown, unknown, TEvents>, "sendEvent" | "subscribeEvents">,
   ): EventChannel<TEvents>;
 
   type EventParsers<TEvents extends object> = {
@@ -62,9 +64,7 @@ declare namespace Listing {
   };
 
   // oxlint-disable-next-line eslint/no-shadow -- the listing keeps the exported name
-  function createEventParser<TEvents extends object>(
-    parsers: EventParsers<TEvents>,
-  ): (event: RemoteEvent) => TypedRemoteEvent<TEvents> | undefined;
+  function createEventParser<TEvents extends object>(parsers: EventParsers<TEvents>): EventParser<TEvents>;
 }
 
 type ListingEvents = { reaction: { emoji: string }; ping: undefined };
@@ -140,7 +140,7 @@ describe("events.mdx: typed events", () => {
     });
 
     const client = createPresenceClient({ transport: myTransport, parseEvent });
-    const events = createEventChannel<Events>(client);
+    const events = createEventChannel(client);
 
     events.send("reaction", { emoji: "tada" });
     events.send("ping");

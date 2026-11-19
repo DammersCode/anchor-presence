@@ -8,20 +8,30 @@ import { renderToString } from "react-dom/server";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  CursorLayer,
+  createPresenceHooks,
+  CursorLayer as PlainLayer,
   DefaultCursor,
+  PresenceProvider as PlainProvider,
+  useRemoteCursors,
+} from "../src/index";
+import type { EventMap, PeerChange, PresenceClient, ResolvedCursor, TypedRemoteEvent } from "../src/index";
+import { missingLines } from "./doc-source";
+import { makeFakeBinding, makeFakeClient } from "./test-utils";
+
+// cursor-chat.mdx and follow-mode.mdx: presence.ts
+
+type User = { name: string };
+
+const {
+  CursorLayer,
   PresenceProvider,
   usePresenceClient,
   useRemoteEvents,
   usePeerChanges,
-  useRemoteCursors,
   useRemoteCursorsSelector,
   useDomBinding,
   useRemoteUsers,
-} from "../src/index";
-import type { PeerChange, PresenceClient, RemoteEvent, ResolvedCursor } from "../src/index";
-import { missingLines } from "./doc-source";
-import { makeFakeBinding, makeFakeClient } from "./test-utils";
+} = createPresenceHooks<unknown, User>();
 
 // cursor-chat.mdx
 
@@ -78,12 +88,10 @@ function useRemoteChat(): Record<string, string> {
   return messages;
 }
 
-type User = { name: string };
-
 function ChatCursorLayer() {
   const messages = useRemoteChat();
   return (
-    <CursorLayer<unknown, User>
+    <CursorLayer
       getLabel={(cursor) =>
         messages[cursor.clientId] ??
         (typeof cursor.user?.name === "string" ? cutGraphemes(cursor.user.name, NAME_MAX_LENGTH) : undefined)
@@ -230,7 +238,7 @@ function useFollowMode(): {
 }
 
 function FollowControls() {
-  const users = useRemoteUsers<User>();
+  const users = useRemoteUsers();
   const { leaderId, follow, stop } = useFollowMode();
 
   if (leaderId !== null) {
@@ -306,7 +314,12 @@ function OffscreenHints() {
   );
 }
 
+// offscreen-hints.mdx uses the untyped provider, so this copy binds the two names to it
 function HintsApp({ client }: { client: PresenceClient }) {
+  // oxlint-disable-next-line eslint/no-shadow -- the copy keeps the names of the sample
+  const PresenceProvider = PlainProvider;
+  // oxlint-disable-next-line eslint/no-shadow -- the copy keeps the names of the sample
+  const CursorLayer = PlainLayer;
   return (
     <PresenceProvider client={client}>
       <main>{/* your app */}</main>
@@ -318,7 +331,10 @@ function HintsApp({ client }: { client: PresenceClient }) {
 
 // tests
 
-function cursorAt(clientId: string, overrides: Partial<ResolvedCursor> = {}): ResolvedCursor {
+function cursorAt(
+  clientId: string,
+  overrides: Partial<ResolvedCursor<unknown, User>> = {},
+): ResolvedCursor<unknown, User> {
   return {
     clientId,
     x: 100,
@@ -368,7 +384,7 @@ describe("cursor chat recipe", () => {
 
   it("sends the typed text as a chat event and hides the local bubble after the timeout", () => {
     vi.useFakeTimers();
-    const { client } = makeFakeClient();
+    const { client } = makeFakeClient<unknown, User>();
     const sent: Array<[string, unknown]> = [];
     client.sendEvent = (type, data) => {
       sent.push([type, data]);
@@ -376,7 +392,7 @@ describe("cursor chat recipe", () => {
     };
     act(() =>
       root.render(
-        <PresenceProvider client={client} binding={makeFakeBinding().binding}>
+        <PresenceProvider client={client} binding={makeFakeBinding<unknown, User>().binding}>
           <ChatComposer />
         </PresenceProvider>,
       ),
@@ -403,7 +419,7 @@ describe("cursor chat recipe", () => {
   it("shows a remote chat as plain text next to the remote cursor, then falls back to the name", () => {
     vi.useFakeTimers();
     const { client } = makeFakeClient<unknown, User>();
-    const listeners = new Set<(event: RemoteEvent) => void>();
+    const listeners = new Set<(event: TypedRemoteEvent<EventMap>) => void>();
     client.subscribeEvents = (listener) => {
       listeners.add(listener);
       return () => listeners.delete(listener);
@@ -443,7 +459,7 @@ describe("follow mode recipe", () => {
       peerListeners.add(listener);
       return () => peerListeners.delete(listener);
     };
-    const fake = makeFakeBinding();
+    const fake = makeFakeBinding<unknown, User>();
     const anchor = document.createElement("section");
     anchor.dataset.anchor = "orders";
     const scrollIntoView = vi.fn();
@@ -519,9 +535,9 @@ describe("off-screen hint recipe", () => {
     const fake = makeFakeBinding();
     act(() =>
       root.render(
-        <PresenceProvider client={makeFakeClient().client} binding={fake.binding}>
+        <PlainProvider client={makeFakeClient().client} binding={fake.binding}>
           <OffscreenHints />
-        </PresenceProvider>,
+        </PlainProvider>,
       ),
     );
     act(() =>

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { warnOnce } from "@anchor-presence/core";
-import type { PresenceClient } from "@anchor-presence/core";
+import type { EventMap, PresenceClient } from "@anchor-presence/core";
 import { createDomBinding } from "@anchor-presence/dom";
 import type { DomBinding, DomBindingOptions } from "@anchor-presence/dom";
 import { PresenceProviderContext } from "./context.js";
@@ -11,10 +11,10 @@ import type { PresenceProviderValue } from "./context.js";
  * Every `PresenceProvider` prop except `children`.
  * Use it for a wrapper component: `Omit` on `PresenceProviderProps` loses the `client` or `factory` rule.
  */
-export type PresenceProviderConfig<TContext = unknown, TUser = unknown> = (
+export type PresenceProviderConfig<TContext = unknown, TUser = unknown, TEvents extends object = EventMap> = (
   | {
       /** A client you own; the provider never disposes it. `null` provides no client. */
-      client: PresenceClient<TContext, TUser> | null;
+      client: PresenceClient<TContext, TUser, TEvents> | null;
       factory?: never;
     }
   | {
@@ -22,7 +22,7 @@ export type PresenceProviderConfig<TContext = unknown, TUser = unknown> = (
        * Creates the client the provider owns.
        * The provider runs it once per mount, in an effect, and disposes the client on unmount.
        */
-      factory: () => PresenceClient<TContext, TUser>;
+      factory: () => PresenceClient<TContext, TUser, TEvents>;
       client?: never;
     }
 ) &
@@ -35,7 +35,7 @@ export type PresenceProviderConfig<TContext = unknown, TUser = unknown> = (
     | {
         binding?: never;
         /** Options for the binding the provider creates. */
-        bindingOptions?: DomBindingOptions<TContext, TUser>;
+        bindingOptions?: DomBindingOptions<NoInfer<TContext>, NoInfer<TUser>>;
       }
   ) & {
     /** Change this value to dispose the client `factory` made and create a new one, for example to join another room. */
@@ -47,10 +47,11 @@ export type PresenceProviderConfig<TContext = unknown, TUser = unknown> = (
 /**
  * Props for `PresenceProvider`.
  */
-export type PresenceProviderProps<TContext = unknown, TUser = unknown> = PresenceProviderConfig<
-  TContext,
-  TUser
-> & {
+export type PresenceProviderProps<
+  TContext = unknown,
+  TUser = unknown,
+  TEvents extends object = EventMap,
+> = PresenceProviderConfig<TContext, TUser, TEvents> & {
   /** The tree below the provider. */
   children?: ReactNode;
 };
@@ -59,15 +60,9 @@ function isBrowser(): boolean {
   return typeof window !== "undefined" && typeof document !== "undefined";
 }
 
-/**
- * Provides the presence client and the binding to the tree below.
- * The provider creates and disposes the client from `factory`; a `client` prop stays yours to dispose.
- * The provider creates a DOM binding when you do not pass one.
- * The provider reads `bindingOptions` when it creates the binding. Change `bindingKey` to create a new binding with the latest options, without touching the client.
- */
-export function PresenceProvider<TContext = unknown, TUser = unknown>(
-  props: PresenceProviderProps<TContext, TUser>,
-): ReactNode {
+export function usePresenceProviderValue<TContext, TUser, TEvents extends object>(
+  props: PresenceProviderProps<TContext, TUser, TEvents>,
+): PresenceProviderValue<TContext, TUser, TEvents> {
   const {
     factory,
     client: providedClient,
@@ -75,10 +70,9 @@ export function PresenceProvider<TContext = unknown, TUser = unknown>(
     bindingOptions,
     bindingKey,
     clientKey,
-    children,
   } = props;
 
-  const [ownClient, setOwnClient] = useState<PresenceClient<TContext, TUser> | null>(null);
+  const [ownClient, setOwnClient] = useState<PresenceClient<TContext, TUser, TEvents> | null>(null);
   // The factory runs once per mount and once more each time clientKey changes. Other factory and client changes are ignored.
   const factoryRef = useRef(factory);
   const providedClientRef = useRef(providedClient);
@@ -163,10 +157,24 @@ export function PresenceProvider<TContext = unknown, TUser = unknown>(
   const activeBinding = providedBinding ?? ownBinding;
   const clientPending = factory !== undefined && providedClient === undefined && ownClient === null;
 
-  const value = useMemo<PresenceProviderValue<TContext, TUser>>(
+  const value = useMemo<PresenceProviderValue<TContext, TUser, TEvents>>(
     () => ({ client, binding: activeBinding, clientPending }),
     [client, activeBinding, clientPending],
   );
 
-  return <PresenceProviderContext.Provider value={value}>{children}</PresenceProviderContext.Provider>;
+  return value;
+}
+
+/**
+ * Provides the presence client and the binding to the tree below.
+ * The provider creates and disposes the client from `factory`; a `client` prop stays yours to dispose.
+ * The provider creates a DOM binding when you do not pass one.
+ * The provider reads `bindingOptions` when it creates the binding. Change `bindingKey` to create a new binding with the latest options, without touching the client.
+ * The hooks below it return `unknown` for `user`, `context` and event data. Use `createPresenceHooks` for typed access.
+ */
+export function PresenceProvider<TContext = unknown, TUser = unknown, TEvents extends object = EventMap>(
+  props: PresenceProviderProps<TContext, TUser, TEvents>,
+): ReactNode {
+  const value = usePresenceProviderValue(props);
+  return <PresenceProviderContext.Provider value={value}>{props.children}</PresenceProviderContext.Provider>;
 }

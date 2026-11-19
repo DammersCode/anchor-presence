@@ -1,7 +1,7 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, describe, expect, it } from "vitest";
-import type { RemoteEvent } from "@anchor-presence/core";
+import type { EventMap, TypedRemoteEvent } from "@anchor-presence/core";
 import { PresenceProvider } from "../src/provider";
 import { useRemoteEvents } from "../src/hooks/use-remote-events";
 import { makeFakeBinding, makeFakeClient } from "./test-utils";
@@ -16,7 +16,7 @@ describe("useRemoteEvents", () => {
 
   it("subscribes once per client, calls the latest listener and unsubscribes on unmount", () => {
     const { client } = makeFakeClient();
-    const handlers = new Set<(event: RemoteEvent) => void>();
+    const handlers = new Set<(event: TypedRemoteEvent<EventMap>) => void>();
     client.subscribeEvents = (listener) => {
       handlers.add(listener);
       return () => handlers.delete(listener);
@@ -40,7 +40,7 @@ describe("useRemoteEvents", () => {
 
     act(() => root.render(tree("b")));
     expect(handlers.size).toBe(1);
-    for (const handler of handlers) handler({ clientId: "p", type: "ping" });
+    for (const handler of handlers) handler({ clientId: "p", type: "ping", data: undefined });
     expect(seen).toEqual(["b:ping"]);
 
     act(() => root.unmount());

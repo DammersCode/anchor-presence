@@ -1,7 +1,9 @@
 "use client";
 
 import type { PresenceClient } from "@anchor-presence/core";
+import type { TourContext } from "./_preview/tour";
 import type { VisibilityPolicy } from "@anchor-presence/dom";
+import type { ResolvedCursor } from "@anchor-presence/react";
 import {
   CursorLayer,
   PresenceProvider,
@@ -9,8 +11,7 @@ import {
   useRemoteCursors,
   useRemoteCursorsSelector,
   useRemoteUsers,
-  type ResolvedCursor,
-} from "@anchor-presence/react";
+} from "./_preview/hooks";
 import { Plus, X } from "lucide-react";
 import { useRef, type ReactNode, type RefObject } from "react";
 
@@ -24,7 +25,7 @@ type Placement = { anchorId: string; clientId: string };
 type Cursor = ResolvedCursor<Context, User>;
 
 type Props = {
-  client: PresenceClient<unknown, User> | null;
+  client: PresenceClient<TourContext, User> | null;
   layout: "wide" | "narrow";
   children?: ReactNode;
 };
@@ -114,8 +115,8 @@ function sameGroups(a: Groups, b: Groups): boolean {
 function useCardPeers() {
   const here = useRemoteCursorsSelector(whoIsOn, sameGroups);
   const picked = useRemoteCursorsSelector(whoPicked, sameGroups);
-  const users = useRemoteUsers<User>();
-  const [context, setContext] = useLocalContext<Context>();
+  const users = useRemoteUsers();
+  const [context, setContext] = useLocalContext();
   const mine = selectedIds(context);
   const byClient = (clientIds: string[] = []) => users.filter(({ clientId }) => clientIds.includes(clientId));
 
@@ -188,9 +189,7 @@ function CardTile({ id, title, peers }: { id: string; title: string; peers: Card
 }
 
 function OutOfViewHint({ boardRef }: { boardRef: RefObject<HTMLDivElement | null> }) {
-  const clipped = useRemoteCursors<unknown, User>().find(
-    (cursor) => cursor.tier === "anchor" && !cursor.pointVisible,
-  );
+  const clipped = useRemoteCursors().find((cursor) => cursor.tier === "anchor" && !cursor.pointVisible);
   if (clipped === undefined || clipped.anchorId === null) return null;
 
   const anchorId = clipped.anchorId;
@@ -216,7 +215,7 @@ export function KanbanScene({ client, layout, children }: Props) {
   return (
     <PresenceProvider client={client} bindingOptions={bindingOptions}>
       <Board />
-      <CursorLayer<unknown, User>
+      <CursorLayer
         getLabel={(cursor) => cursor.user?.name ?? null}
         getColor={(cursor) => safeColor(cursor.user?.color, "#4f46e5")}
       />

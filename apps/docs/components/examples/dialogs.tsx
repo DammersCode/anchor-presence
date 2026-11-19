@@ -1,8 +1,9 @@
 "use client";
 
 import type { PresenceClient } from "@anchor-presence/core";
+import type { TourContext } from "./_preview/tour";
 import type { VisibilityPolicy } from "@anchor-presence/dom";
-import { CursorLayer, PresenceProvider } from "@anchor-presence/react";
+import { CursorLayer, PresenceProvider } from "./_preview/hooks";
 import { UserPlus, X } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { MIRA } from "./_preview/scenes";
@@ -20,7 +21,7 @@ function isInviteContext(context: unknown): boolean {
 }
 
 type Props = {
-  client: PresenceClient<unknown, User> | null;
+  client: PresenceClient<TourContext, User> | null;
   layout: "wide" | "narrow";
   children?: ReactNode;
 };
@@ -76,10 +77,7 @@ export function DialogsScene({ client, layout, children }: Props) {
   const takeControl = (open: boolean) => setReaderOpen(open);
 
   return (
-    <PresenceProvider<unknown, User>
-      client={client}
-      bindingOptions={{ resolution: { visibilityPolicy: policy } }}
-    >
+    <PresenceProvider client={client} bindingOptions={{ resolution: { visibilityPolicy: policy } }}>
       <div data-anchor="team" className="relative flex h-full flex-col gap-2 p-2.5">
         <header className="flex items-center justify-between gap-2 border-b border-fd-border pb-2">
           <h3 className="font-display text-sm font-semibold">Team</h3>
@@ -150,7 +148,7 @@ export function DialogsScene({ client, layout, children }: Props) {
           </div>
         ) : null}
       </div>
-      <CursorLayer<unknown, User>
+      <CursorLayer
         getLabel={(cursor) => cursor.user?.name ?? null}
         getColor={(cursor) => safeColor(cursor.user?.color, "#4f46e5")}
       />

@@ -43,17 +43,15 @@ function Reactions() {
 
 ## Send typed events
 
-`useSendEvent<TEvents>()` returns a function that sends only the events of the event map `TEvents`. A misspelled `type` or a `data` value of the wrong type does not compile. Without a client, the function sends nothing and returns `false`.
+The `useSendEvent` that you import from `@anchor-presence/react` sends any event `type`, with `data` of the type `unknown`. For a function that sends only the events of one event map, call `createPresenceHooks` with the event map as its third type argument and export `useSendEvent` from the result. See [Typed hooks](/docs/react/typed-hooks). A misspelled `type` or a `data` value of the wrong type then does not compile. Without a client, the function sends nothing and returns `false`.
 
-This button sends a typed reaction:
+This button sends a typed reaction. The `PresenceProvider` above it comes from the same `createPresenceHooks` call:
 
 ```tsx
-import { useSendEvent } from "@anchor-presence/react";
-
-type Events = { reaction: string };
+import { useSendEvent } from "./presence";
 
 function WaveButton() {
-  const sendEvent = useSendEvent<Events>();
+  const sendEvent = useSendEvent();
   return (
     <button type="button" onClick={() => sendEvent("reaction", "wave")}>
       Wave
@@ -62,7 +60,7 @@ function WaveButton() {
 }
 ```
 
-`useSendEvent` types only the events that you send. To give the received events types too, use [typed events](/docs/react/typed-hooks#typed-events).
+The typed `useRemoteEvents` of the same result types the events that you receive. See [typed events](/docs/react/typed-hooks#typed-events).
 
 ## Behavior
 

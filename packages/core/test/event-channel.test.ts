@@ -7,6 +7,14 @@ import { createInMemoryPair } from "../src/in-memory-transport";
 
 type Events = { reaction: { emoji: string }; ping: undefined };
 
+const parse = createEventParser<Events>({
+  reaction: (data) =>
+    typeof (data as { emoji?: unknown } | undefined)?.emoji === "string"
+      ? (data as { emoji: string })
+      : undefined,
+  ping: null,
+});
+
 beforeEach(() => {
   vi.useFakeTimers();
 });
@@ -19,8 +27,14 @@ function pair(
   options: { eventRateLimit?: { burst?: number; perSecond?: number; totalPerSecond?: number } } = {},
 ) {
   const { a, b } = createInMemoryPair();
-  const sender = createPresenceClient({ transport: a, clientId: "A", codec: binaryCodec });
-  const receiver = createPresenceClient({ transport: b, clientId: "B", codec: binaryCodec, ...options });
+  const sender = createPresenceClient({ transport: a, clientId: "A", codec: binaryCodec, parseEvent: parse });
+  const receiver = createPresenceClient({
+    transport: b,
+    clientId: "B",
+    codec: binaryCodec,
+    parseEvent: parse,
+    ...options,
+  });
   void a.connect?.();
   void b.connect?.();
   return { sender, receiver };
@@ -29,8 +43,8 @@ function pair(
 describe("createEventChannel", () => {
   it("sends typed events and delivers them typed", () => {
     const { sender, receiver } = pair();
-    const out = createEventChannel<Events>(sender);
-    const into = createEventChannel<Events>(receiver);
+    const out = createEventChannel(sender);
+    const into = createEventChannel(receiver);
     const seen: TypedRemoteEvent<Events>[] = [];
     into.subscribe((event) => seen.push(event));
 
@@ -131,14 +145,6 @@ describe("subscribeUser", () => {
 });
 
 describe("createEventParser", () => {
-  const parse = createEventParser<Events>({
-    reaction: (data) =>
-      typeof (data as { emoji?: unknown } | undefined)?.emoji === "string"
-        ? (data as { emoji: string })
-        : undefined,
-    ping: null,
-  });
-
   it("passes checked events and drops unknown types and bad data", () => {
     expect(parse({ clientId: "A", type: "reaction", data: { emoji: "🎉" } })).toEqual({
       clientId: "A",

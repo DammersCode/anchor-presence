@@ -5,11 +5,12 @@ import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createPresenceClient } from "@anchor-presence/core";
 import type { PresenceTransport } from "@anchor-presence/core";
-import { PresenceProvider } from "../src/provider";
-import { useLocalContext } from "../src/hooks";
+import { createPresenceHooks } from "../src/typed-hooks";
 import { makeFakeBinding, parserOf } from "./test-utils";
 
 type TestContext = { route: string };
+
+const { PresenceProvider, useLocalContext } = createPresenceHooks<TestContext>();
 
 function makeStubTransport(): PresenceTransport {
   return {
@@ -35,7 +36,7 @@ describe("useLocalContext", () => {
   });
 
   function Reader() {
-    const [context, setContext] = useLocalContext<TestContext>();
+    const [context, setContext] = useLocalContext();
     renders.push(context);
     lastSetContext = setContext;
     return null;

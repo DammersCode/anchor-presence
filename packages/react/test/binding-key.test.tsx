@@ -1,6 +1,7 @@
 import { act, useContext } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, describe, expect, it } from "vitest";
+import type { EventMap } from "@anchor-presence/core";
 import { PresenceProviderContext } from "../src/context";
 import { PresenceProvider } from "../src/provider";
 import { makeFakeClient } from "./test-utils";
@@ -80,7 +81,7 @@ describe("PresenceProvider local cursor on teardown", () => {
 
 describe("PresenceProvider clientKey", () => {
   it("disposes the old client and runs the factory again when the key changes", () => {
-    const made: ReturnType<typeof makeFakeClient>[] = [];
+    const made: ReturnType<typeof makeFakeClient<unknown, unknown, EventMap>>[] = [];
     const disposed: boolean[] = [];
     const factory = () => {
       const fake = makeFakeClient();

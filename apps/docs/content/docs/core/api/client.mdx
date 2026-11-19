@@ -60,6 +60,8 @@ type TypedRemoteEvent<TEvents extends object> = {
   [K in keyof TEvents & string]: { clientId: string; type: K; data: TEvents[K] };
 }[keyof TEvents & string];
 
+type EventParser<TEvents extends object> = (event: RemoteEvent) => TypedRemoteEvent<TEvents> | undefined;
+
 type EventChannel<TEvents extends object> = {
   send<K extends keyof TEvents & string>(
     type: K,
@@ -69,7 +71,7 @@ type EventChannel<TEvents extends object> = {
 };
 
 function createEventChannel<TEvents extends object>(
-  client: Pick<PresenceClient, "sendEvent" | "subscribeEvents">,
+  client: Pick<PresenceClient<unknown, unknown, TEvents>, "sendEvent" | "subscribeEvents">,
 ): EventChannel<TEvents>;
 ```
 
@@ -85,9 +87,7 @@ type EventParsers<TEvents extends object> = {
     ((data: unknown) => TEvents[K] | undefined) | (undefined extends TEvents[K] ? null : never);
 };
 
-function createEventParser<TEvents extends object>(
-  parsers: EventParsers<TEvents>,
-): (event: RemoteEvent) => TypedRemoteEvent<TEvents> | undefined;
+function createEventParser<TEvents extends object>(parsers: EventParsers<TEvents>): EventParser<TEvents>;
 ```
 
 `createEventParser` returns a function for the `parseEvent` option. `null` is legal only for an event whose data type includes `undefined`. The returned function drops an event in these cases:

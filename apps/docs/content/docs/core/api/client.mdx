@@ -70,7 +70,7 @@ type EventChannel<TEvents extends object> = {
   subscribe(listener: (event: TypedRemoteEvent<TEvents>) => void): () => void;
 };
 
-function createEventChannel<TEvents extends object>(
+function createEventChannel<TEvents extends object = EventMap>(
   client: Pick<PresenceClient<unknown, unknown, TEvents>, "sendEvent" | "subscribeEvents">,
 ): EventChannel<TEvents>;
 ```

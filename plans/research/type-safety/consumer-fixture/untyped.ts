@@ -1,6 +1,7 @@
 // No type arguments anywhere: user and context must be unknown, and an expect-error line must be checked.
 import {
   createEventChannel,
+  createEventParser,
   createPresenceClient,
   createInMemoryPair,
   type PresenceClient,
@@ -56,3 +57,14 @@ expectTrue<Equal<typeof context, unknown>>();
 expectTrue<Equal<(typeof users)[number]["user"], unknown>>();
 expectTrue<Equal<(typeof cursors)[number]["user"], unknown>>();
 expectTrue<Equal<(typeof cursors)[number]["context"], unknown>>();
+
+// an untyped event parser needs no type argument: each key takes its type from its parser
+const parseUntypedEvent = createEventParser({
+  ping: null,
+  hello: (data) => (typeof data === "string" ? data : undefined),
+});
+const parsed = parseUntypedEvent({ clientId: "p", type: "hello", data: "x" });
+if (parsed?.type === "hello") {
+  const text: string = parsed.data;
+  void text;
+}

@@ -264,14 +264,24 @@ export type PresenceClientState<TContext, TUser, TEvents extends object> = {
 // oxlint-disable-next-line typescript/no-unnecessary-type-parameters -- the identity trick needs X in both signatures
 type IsExactly<A, B> = (<X>() => X extends A ? 1 : 2) extends <X>() => X extends B ? 1 : 2 ? true : false;
 
+type IsAny<T> = 0 extends 1 & T ? true : false;
+
+/** `any` can never be checked, so a parser that returns it cannot meet the requirement. */
+type Unmeetable = { readonly parser: never };
+
 /** A `user`, `context` or event map other than the default needs the parser that checks it. */
-export type RequiredParsers<TContext, TUser, TEvents extends object = EventMap> = (IsExactly<
-  TUser,
-  unknown
-> extends true
-  ? unknown
-  : { parseUser: (value: unknown) => TUser | undefined }) &
-  (IsExactly<TContext, unknown> extends true
+export type RequiredParsers<TContext, TUser, TEvents extends object = EventMap> = (IsAny<TUser> extends true
+  ? { parseUser: Unmeetable }
+  : IsExactly<TUser, unknown> extends true
     ? unknown
-    : { parseContext: (value: unknown) => TContext | undefined }) &
-  (IsExactly<TEvents, EventMap> extends true ? unknown : { parseEvent: EventParser<TEvents> });
+    : { parseUser: (value: unknown) => TUser | undefined }) &
+  (IsAny<TContext> extends true
+    ? { parseContext: Unmeetable }
+    : IsExactly<TContext, unknown> extends true
+      ? unknown
+      : { parseContext: (value: unknown) => TContext | undefined }) &
+  (IsAny<TEvents> extends true
+    ? { parseEvent: Unmeetable }
+    : IsExactly<TEvents, EventMap> extends true
+      ? unknown
+      : { parseEvent: EventParser<TEvents> });

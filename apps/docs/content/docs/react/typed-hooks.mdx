@@ -6,7 +6,7 @@ icon: braces
 
 import { Braces, Plug, Users, Zap } from "lucide-react";
 
-`createPresenceHooks<TContext, TUser, TEvents>()` returns a provider, every hook, and a `CursorLayer` with your types fixed. The hooks that you import from `@anchor-presence/react` return `unknown` for `user`, `context`, and event `data`, because a type argument cannot prove what a peer sends. The hooks of the result read only the provider of the same call, and that provider accepts only a client of the same types. Use it in every app that has a known shape for its context, user, or event values. `TEvents` is optional.
+`createPresenceHooks<TContext, TUser, TEvents>()` returns a provider, every hook, and a `CursorLayer` with your types fixed. The hooks that you import from `@anchor-presence/react` return `unknown` for `user`, `context`, and event `data`, because a type argument cannot prove what a peer sends. The hooks of the result read only the provider of the same call, and that provider accepts only a client with the same `user` and `context` types and an event map that fits yours. Use it in every app that has a known shape for its context, user, or event values. `TEvents` is optional.
 
 ## Usage
 
@@ -49,7 +49,7 @@ function PresenceList() {
 }
 ```
 
-`entry.user` has the type `User | undefined`. A field that `User` does not have, for example `entry.user?.age`, is a type error. A type argument, for example `useRemoteUsers<OtherUser>()`, is also a type error. A client with other types than `Context`, `User`, and `Events`, given to this `PresenceProvider`, is a type error too.
+`entry.user` has the type `User | undefined`. A field that `User` does not have, for example `entry.user?.age`, is a type error. A type argument, for example `useRemoteUsers<OtherUser>()`, is also a type error. A client with other `Context` or `User` types, given to this `PresenceProvider`, is a type error too.
 
 ## Typed events
 
@@ -85,10 +85,10 @@ function Reactions() {
 
 ## Check remote events
 
-<Callout type="warn">
-  If a peer sends data of another type, `useRemoteEvents` still delivers it. The types check only the code
-  that you write. Build a `parseEvent` for the same event map with `createEventParser`, and pass it to the
-  client. See [Events](/docs/core/events).
+<Callout type="info">
+  `useRemoteEvents` delivers what the `parseEvent` of the client returns. The event map comes from
+  `parseEvent`, so a client with a typed event map always has the parser that checks it. Build it with
+  `createEventParser`. See [Events](/docs/core/events).
 </Callout>
 
 `createEventParser` from `@anchor-presence/core` builds this `parseEvent` from one parser per event type. For an event without data, use `null` as the parser. The client types `user` and `context` only through `parseUser` and `parseContext`, so pass them too. Pass the result to `createPresenceClient` in the provider `factory`:

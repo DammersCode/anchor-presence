@@ -50,3 +50,4 @@ Status: in progress · Branch: `develop` · Advisor-reviewed design.
 - `event-channel.ts:63` and `standard-schema.ts:94`: the two named correlation boundaries stay.
 - Extra-key event parsers: it needs a caller-built object, and the data is still parsed. This is the one accepted leak.
 - An inference helper for `createPresenceHooks`: `InferSchemaOutput` covers it. The typed-hooks page shows it.
+- Exported helper types of the schema subpath (`SchemaRoundTrip`, `InferSchemaInput`, `InferSchemaOutput`, the Standard Schema interface types): they appear in public signatures, so they stay exported. Undocumented on purpose: users never write them.

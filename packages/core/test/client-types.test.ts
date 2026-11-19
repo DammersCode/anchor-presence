@@ -154,3 +154,15 @@ describe("RemotePresenceStore variance", () => {
     expect(loose).toBe(typed);
   });
 });
+
+describe("a parser that returns any", () => {
+  it("does not give the client a type", () => {
+    const client = createPresenceClient({
+      transport: createInMemoryPair().a,
+      // @ts-expect-error a parser that returns any cannot meet the parser requirement
+      parseUser: (value: unknown) => JSON.parse(JSON.stringify(value)),
+    });
+    expect(client.getStatus()).toBeTypeOf("string");
+    client.dispose();
+  });
+});

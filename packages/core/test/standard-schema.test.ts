@@ -221,3 +221,19 @@ describe("eventParserFrom with a transforming schema", () => {
     expect(eventParserFrom({ count: transforming })).toBeTypeOf("function");
   });
 });
+
+describe("parserFrom with a schema whose declared output differs from its validate result", () => {
+  const schema = {
+    "~standard": {
+      version: 1 as const,
+      vendor: "test",
+      validate: (value: unknown) => ({ value }),
+      types: { input: { name: "" }, output: { name: "" } },
+    },
+  };
+
+  it("rejects the schema", () => {
+    // @ts-expect-error the validate result must be assignable to the declared output
+    expect(parserFrom(schema)).toBeTypeOf("function");
+  });
+});

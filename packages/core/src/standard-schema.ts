@@ -58,7 +58,7 @@ function isPromiseLike(value: unknown): value is PromiseLike<unknown> {
  * The parser returns `undefined` when the schema rejects the value, and when the schema validates asynchronously.
  */
 export function parserFrom<Schema extends StandardSchemaV1>(
-  schema: Schema & SchemaRoundTrip<Schema>,
+  schema: Schema & SchemaRoundTrip<Schema> & StandardSchemaV1<unknown, InferSchemaOutput<Schema>>,
   options: SchemaParserOptions = {},
 ): SchemaParser<Schema> {
   let warnedAsync = false;
@@ -98,7 +98,7 @@ export type EventsFromSchemas<Schemas extends EventSchemas> = {
 export function eventParserFrom<Schemas extends EventSchemas>(
   schemas: Schemas & {
     [Type in keyof Schemas]: Schemas[Type] extends StandardSchemaV1
-      ? SchemaRoundTrip<Schemas[Type]>
+      ? SchemaRoundTrip<Schemas[Type]> & StandardSchemaV1<unknown, InferSchemaOutput<Schemas[Type]>>
       : unknown;
   },
   options: SchemaParserOptions = {},

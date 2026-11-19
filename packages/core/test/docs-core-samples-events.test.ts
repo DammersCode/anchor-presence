@@ -54,7 +54,7 @@ declare namespace Listing {
   };
 
   // oxlint-disable-next-line eslint/no-shadow -- the listing keeps the exported name
-  function createEventChannel<TEvents extends object>(
+  function createEventChannel<TEvents extends object = EventMap>(
     client: Pick<PresenceClient<unknown, unknown, TEvents>, "sendEvent" | "subscribeEvents">,
   ): EventChannel<TEvents>;
 

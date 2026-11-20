@@ -97,8 +97,6 @@ jobs:
     name: Demo e2e (${{ matrix.browser }})
     runs-on: ubuntu-24.04
     timeout-minutes: 30
-    # Not yet proven green on CI; remove continue-on-error after the first clean run.
-    continue-on-error: true
     strategy:
       fail-fast: false
       matrix:
@@ -118,6 +116,25 @@ jobs:
         with:
           name: playwright-report-${{ matrix.browser }}
           path: test-results/
+
+  react-variants:
+    name: React tests (${{ matrix.variant }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [react-18, react-compiler]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - name: Install React 18
+        if: matrix.variant == 'react-18'
+        run: |
+          mkdir .react18
+          npm install --prefix .react18 react@18.3.1 react-dom@18.3.1
+      - name: Test
+        run: bun run test:${{ matrix.variant }}
 
   docs:
     name: Docs build (typecheck and next build)

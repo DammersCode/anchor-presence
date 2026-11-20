@@ -1,20 +1,41 @@
-# Anchor Presence
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./brand/lockup-on-dark.svg">
+    <img alt="Anchor Presence" src="./brand/lockup-on-light.svg" height="56">
+  </picture>
+</p>
 
-Semantic live cursors for the DOM: different layouts, same meaning.
+<p align="center">Live cursors for the DOM. A cursor tracks a named element, not a screen pixel, so it lands on the right element in every layout.</p>
 
-Each cursor tracks a named element, not a screen pixel. Every client resolves it against its own layout.
+<p align="center">
+  <a href="https://www.npmjs.com/package/@dammers/anchor-presence-core"><img alt="npm" src="https://img.shields.io/npm/v/@dammers/anchor-presence-core.svg"></a>
+  <a href="https://github.com/DammersCode/anchor-presence/actions/workflows/main.yml"><img alt="CI" src="https://github.com/DammersCode/anchor-presence/actions/workflows/main.yml/badge.svg"></a>
+  <a href="./LICENSE"><img alt="license" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
+  <img alt="React 18+" src="https://img.shields.io/badge/React-18%2B-blue?logo=react">
+  <a href="https://skills.sh"><img alt="Agent skill" src="https://skills.sh/b/DammersCode/anchor-presence"></a>
+  <a href="https://github.com/DammersCode/anchor-presence/stargazers"><img alt="stars" src="https://img.shields.io/github/stars/DammersCode/anchor-presence.svg?style=social"></a>
+</p>
+
+<p align="center"><a href="https://anchor-presence.vercel.app/docs"><b>Documentation</b></a> · <a href="https://anchor-presence.vercel.app/docs/get-started/quick-start">Quick start</a> · <a href="#transport-examples">Examples</a> · <a href="SPECIFICATION.md">Specification</a></p>
+
+<p align="center"><img alt="The same Checkout button in a wide and a narrow window, with the cursor of Ada on both" src="./brand/social-preview.png" width="860"></p>
+
+---
+
+A pointer position in pixels means nothing on another screen. Anchor Presence sends the element under the pointer and the point inside it. Each client resolves that against its own layout, so the cursor stays on the same button at any window size.
 
 Anchor Presence works with Next.js, TanStack Start and Router, Remix and React Router, Vite, and Astro. See [Frameworks](https://anchor-presence.vercel.app/docs/get-started/frameworks).
 
-These terms appear in this README:
+## Features
 
-- An **anchor** is an element with a `data-anchor` attribute. The attribute value is the anchor ID.
-- A **position** is a point inside an anchor, as a fraction from 0 to 1 of its width and of its height.
-- The **receiver layout** is the layout of the browser that shows a remote cursor.
-- The **fallback chain** is the anchor, its parent anchors, and a viewport position, in this order. The receiver uses the first entry that it can find.
-- A **relay** is a server that forwards each message to every other client in a room.
-
-[![MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![Agent skill](https://skills.sh/b/DammersCode/anchor-presence)](https://skills.sh)
+- **Same element, any layout.** Cursors track a named anchor, not a pixel. A phone and a desktop show the cursor on the same button.
+- **Receiver-authoritative.** Each client measures its own DOM. The sender never measures the receiver.
+- **Free repositioning.** A scroll or resize moves a stationary remote cursor with no network traffic.
+- **Fallback chain.** If an element is missing in a layout, the cursor falls back to its parent anchors, then to the viewport.
+- **Small.** The core is about 10 KB gzipped with no dependencies. The DOM package is about 9 KB, and the React adapter is about 3.5 KB.
+- **Any transport.** WebSocket, `BroadcastChannel`, Socket.IO, SignalR, or your own. The core imports no transport library.
+- **Framework-optional.** The core and DOM packages run without React. The React package is a thin adapter.
+- **Checked input.** Every inbound message passes size and shape limits first. Types come from your own parsers or Standard Schema schemas.
 
 ## Quick start
 
@@ -58,6 +79,16 @@ const transport = createWebSocketTransport({ port: 8788, path: "/?room=main" });
 
 `createWebSocketTransport` comes from `@dammers/anchor-presence-dom`. See the [quick start](https://anchor-presence.vercel.app/docs/get-started/quick-start) for the full steps.
 
+## Terms
+
+These terms appear in this README:
+
+- An **anchor** is an element with a `data-anchor` attribute. The attribute value is the anchor ID.
+- A **position** is a point inside an anchor, as a fraction from 0 to 1 of its width and of its height.
+- The **receiver layout** is the layout of the browser that shows a remote cursor.
+- The **fallback chain** is the anchor, its parent anchors, and a viewport position, in this order. The receiver uses the first entry that it can find.
+- A **relay** is a server that forwards each message to every other client in a room.
+
 ## Requirements
 
 | Requirement | Version                                                                                                              |
@@ -69,22 +100,13 @@ const transport = createWebSocketTransport({ port: 8788, path: "/?room=main" });
 
 ## Packages
 
-| Package                          | Description                                                                                                  | Link                                         |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------ | -------------------------------------------- |
-| `@dammers/anchor-presence-core`  | Protocol, validation, presence store, and the client. Zero dependencies, no DOM needed.                      | [`packages/core`](packages/core/README.md)   |
-| `@dammers/anchor-presence-dom`   | Anchor registry, pointer capture, layout measurement, resolver, WebSocket and `BroadcastChannel` transports. | [`packages/dom`](packages/dom/README.md)     |
-| `@dammers/anchor-presence-react` | Provider component and hooks, built on `useSyncExternalStore`.                                               | [`packages/react`](packages/react/README.md) |
-| `apps/demo`                      | React admin dashboard that shows correct cursors across layouts.                                             | [`apps/demo`](apps/demo/README.md)           |
-| `apps/server`                    | Bun WebSocket relay for the demo.                                                                            | [`apps/server`](apps/server)                 |
-
-## Features
-
-- **Layout-independent positioning.** Cursors track a semantic anchor, not a pixel.
-- **Receiver-authoritative.** Each client measures its own DOM.
-- **No network on reposition.** A scroll or resize moves a stationary remote cursor for free.
-- **Transport-agnostic.** `@dammers/anchor-presence-core` imports no transport library.
-- **Framework-optional.** `@dammers/anchor-presence-core` and `@dammers/anchor-presence-dom` run without React. `@dammers/anchor-presence-react` is a thin adapter.
-- **Checked input.** Every inbound message passes size and shape limits first.
+| Package                                                                                          | Description                                                                                                  | Link                                         |
+| ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ | -------------------------------------------- |
+| [`@dammers/anchor-presence-core`](https://www.npmjs.com/package/@dammers/anchor-presence-core)   | Protocol, validation, presence store, and the client. Zero dependencies, no DOM needed.                      | [`packages/core`](packages/core/README.md)   |
+| [`@dammers/anchor-presence-dom`](https://www.npmjs.com/package/@dammers/anchor-presence-dom)     | Anchor registry, pointer capture, layout measurement, resolver, WebSocket and `BroadcastChannel` transports. | [`packages/dom`](packages/dom/README.md)     |
+| [`@dammers/anchor-presence-react`](https://www.npmjs.com/package/@dammers/anchor-presence-react) | Provider component and hooks, built on `useSyncExternalStore`.                                               | [`packages/react`](packages/react/README.md) |
+| `apps/demo`                                                                                      | React admin dashboard that shows correct cursors across layouts.                                             | [`apps/demo`](apps/demo/README.md)           |
+| `apps/server`                                                                                    | Bun WebSocket relay for the demo.                                                                            | [`apps/server`](apps/server)                 |
 
 ## Docs
 

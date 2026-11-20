@@ -1,0 +1,1 @@
+The same Checkout button in a wide and a narrow window, with the cursor of Ada on both. Anchor Presence: live cursors that follow the element, not the pixel.

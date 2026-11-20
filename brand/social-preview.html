@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Anchor Presence social preview</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+      }
+      html,
+      body {
+        width: 1280px;
+        height: 640px;
+      }
+      body {
+        position: relative;
+        overflow: hidden;
+        background: #0b0b16;
+        color: #f4f4f8;
+        font-family:
+          Inter,
+          "Segoe UI",
+          system-ui,
+          -apple-system,
+          Helvetica,
+          Arial,
+          sans-serif;
+      }
+      .glow-a {
+        position: absolute;
+        left: -180px;
+        top: -220px;
+        width: 720px;
+        height: 720px;
+        border-radius: 50%;
+        background: radial-gradient(closest-side, rgba(79, 70, 229, 0.38), transparent);
+      }
+      .glow-b {
+        position: absolute;
+        right: -200px;
+        bottom: -280px;
+        width: 760px;
+        height: 760px;
+        border-radius: 50%;
+        background: radial-gradient(closest-side, rgba(34, 211, 238, 0.26), transparent);
+      }
+      .brand {
+        position: absolute;
+        left: 72px;
+        top: 64px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: -0.4px;
+      }
+      .brand svg {
+        width: 44px;
+        height: 44px;
+      }
+      h1 {
+        position: absolute;
+        left: 72px;
+        top: 178px;
+        width: 600px;
+        font-size: 62px;
+        line-height: 1.06;
+        font-weight: 800;
+        letter-spacing: -1.6px;
+      }
+      h1 em {
+        font-style: normal;
+        color: #22d3ee;
+      }
+      .sub {
+        position: absolute;
+        left: 72px;
+        top: 400px;
+        width: 540px;
+        font-size: 24px;
+        line-height: 1.4;
+        color: #aeb0c4;
+      }
+      .chips {
+        position: absolute;
+        left: 72px;
+        bottom: 64px;
+        display: flex;
+        gap: 12px;
+      }
+      .chip {
+        padding: 9px 18px;
+        border-radius: 999px;
+        border: 1px solid rgba(244, 244, 248, 0.2);
+        background: rgba(244, 244, 248, 0.06);
+        font-size: 19px;
+        font-weight: 600;
+        color: #e6e7f2;
+      }
+
+      .win {
+        position: absolute;
+        border-radius: 16px;
+        background: #14152a;
+        border: 1px solid rgba(244, 244, 248, 0.14);
+        box-shadow: 0 30px 70px rgba(0, 0, 0, 0.45);
+        overflow: hidden;
+      }
+      .bar {
+        height: 30px;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 0 14px;
+        background: #1b1c36;
+      }
+      .bar i {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: rgba(244, 244, 248, 0.25);
+      }
+      .body {
+        position: relative;
+        padding: 18px;
+      }
+      .line {
+        height: 10px;
+        border-radius: 5px;
+        background: rgba(244, 244, 248, 0.12);
+        margin-bottom: 12px;
+      }
+      .card {
+        border-radius: 10px;
+        background: rgba(244, 244, 248, 0.07);
+      }
+      .btn {
+        position: absolute;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #4f46e5, #22d3ee);
+        color: #fff;
+        font-weight: 700;
+        display: grid;
+        place-items: center;
+        box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.28);
+      }
+      .cursor {
+        position: absolute;
+        width: 26px;
+        height: 26px;
+      }
+      .tag {
+        position: absolute;
+        padding: 4px 11px;
+        border-radius: 8px;
+        background: #22d3ee;
+        color: #06222a;
+        font-size: 15px;
+        font-weight: 800;
+      }
+
+      .wide {
+        left: 676px;
+        top: 56px;
+        width: 540px;
+        height: 290px;
+      }
+      .narrow {
+        left: 972px;
+        top: 372px;
+        width: 244px;
+        height: 240px;
+      }
+      .caption {
+        position: absolute;
+        left: 676px;
+        top: 470px;
+        width: 250px;
+        font-size: 24px;
+        line-height: 1.35;
+        font-weight: 600;
+        color: #aeb0c4;
+      }
+      .caption b {
+        color: #f4f4f8;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="glow-a"></div>
+    <div class="glow-b"></div>
+
+    <div class="brand">
+      <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#818cf8" />
+            <stop offset="1" stop-color="#22d3ee" />
+          </linearGradient>
+        </defs>
+        <g stroke="#f4f4f8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 10V5h5" />
+          <path d="M22 5h5v5" />
+          <path d="M27 22v5h-5" />
+          <path d="M10 27H5v-5" />
+        </g>
+        <path
+          d="M0 0 L0 12 L3 9.3 L4.7 13 L6.9 12.1 L5.1 8.3 L8.2 7.5 Z"
+          transform="translate(11.9,6.9) scale(1.4)"
+          fill="url(#g)"
+        />
+      </svg>
+      Anchor Presence
+    </div>
+
+    <h1>Live cursors that follow the <em>element</em>, not the pixel.</h1>
+    <p class="sub">Each cursor tracks a named element. Every client resolves it in its own layout.</p>
+    <div class="chips">
+      <span class="chip">React</span><span class="chip">Vanilla DOM</span><span class="chip">TypeScript</span
+      ><span class="chip">10 KB core</span>
+    </div>
+
+    <p class="caption"><b>Same button.</b><br />Different layout.</p>
+
+    <div class="win wide">
+      <div class="bar"><i></i><i></i><i></i></div>
+      <div class="body">
+        <div class="line" style="width: 36%"></div>
+        <div class="line" style="width: 62%"></div>
+        <div style="display: flex; gap: 14px; margin-top: 18px">
+          <div class="card" style="flex: 1; height: 100px"></div>
+          <div class="card" style="flex: 1; height: 100px"></div>
+        </div>
+        <div class="btn" style="left: 352px; top: 176px; width: 150px; height: 44px; font-size: 18px">
+          Checkout
+        </div>
+        <svg class="cursor" style="left: 476px; top: 196px" viewBox="0 0 12 14">
+          <path
+            d="M0 0 L0 12 L3 9.3 L4.7 13 L6.9 12.1 L5.1 8.3 L8.2 7.5 Z"
+            fill="#22d3ee"
+            stroke="#06222a"
+            stroke-width="0.7"
+          />
+        </svg>
+        <div class="tag" style="left: 488px; top: 214px">Ada</div>
+      </div>
+    </div>
+
+    <div class="win narrow">
+      <div class="bar"><i></i><i></i><i></i></div>
+      <div class="body">
+        <div class="line" style="width: 56%"></div>
+        <div class="card" style="height: 36px; margin-top: 14px"></div>
+        <div class="card" style="height: 36px; margin-top: 12px"></div>
+        <div class="btn" style="left: 18px; top: 138px; width: 208px; height: 40px; font-size: 17px">
+          Checkout
+        </div>
+        <svg class="cursor" style="left: 176px; top: 158px" viewBox="0 0 12 14">
+          <path
+            d="M0 0 L0 12 L3 9.3 L4.7 13 L6.9 12.1 L5.1 8.3 L8.2 7.5 Z"
+            fill="#22d3ee"
+            stroke="#06222a"
+            stroke-width="0.7"
+          />
+        </svg>
+        <div class="tag" style="left: 190px; top: 174px">Ada</div>
+      </div>
+    </div>
+  </body>
+</html>

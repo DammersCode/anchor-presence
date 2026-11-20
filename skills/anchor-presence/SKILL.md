@@ -41,8 +41,6 @@ npm install @dammers/anchor-presence-core @dammers/anchor-presence-dom @dammers/
 
 Use the project's package manager. Install the relay dependencies from the chosen row too.
 
-If the install returns a 404, the packages are not on npm. Build a clone with `bun install && bun run build`. In the project's `package.json`, add an override block that maps `@dammers/anchor-presence-core` and `@dammers/anchor-presence-dom` to `file:<clone>/packages/core` and `file:<clone>/packages/dom`. The block is named `overrides` for bun and npm, `pnpm.overrides` for pnpm, and `resolutions` for yarn. Then run `bun add file:<clone>/packages/core file:<clone>/packages/dom file:<clone>/packages/react`.
-
 ### 4. Create the client and render the cursor layer
 
 Create the client in the provider's `factory`, in a client component. The factory creates the transport and returns the client. The client connects by default:

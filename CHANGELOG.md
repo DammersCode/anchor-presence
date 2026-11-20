@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.0.0 - 2026-11-20
+
 ### Breaking
 
 - A parser that returns `any` no longer gives a client its type, and `parserFrom` and `eventParserFrom` reject a schema whose `validate` result is not assignable to its declared output. Both are type-only checks.

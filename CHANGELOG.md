@@ -119,6 +119,7 @@
 
 ### Changed
 
+- `@anchor-presence/core`: `linearInterpolator` starts a new ease from the position at the time of the new target, not from the last sampled frame. A cursor that gets an update mid-ease moves at a steady speed instead of hitching at each update.
 - Optional fields of option bags and props accept an explicit `undefined`, so a project with `exactOptionalPropertyTypes` can pass `{ staleTimeoutMs: undefined }`. Types only.
 - `@anchor-presence/dom`: the dev warning "does not reconnect" no longer fires when your own `shouldReconnect` declines a close code.
 - `@anchor-presence/core`: a transport that joins an in-memory room while a message is delivered does not receive that message. `createInMemoryPair` ignores `connect()` after `dispose()`, as the room does. `createInMemoryPair().dispose()` sets both sides to `disconnected` and notifies their status listeners, as the room does.

@@ -17,6 +17,8 @@ export const metadata: Metadata = {
   description:
     "Anchor Presence is a live-cursor layer for web apps. Show where teammates are looking and clicking, and keep every cursor on the right element, even across different layouts.",
   icons: { icon: "/icon.svg" },
+  openGraph: { type: "website", siteName: appName },
+  twitter: { card: "summary_large_image" },
 };
 
 export default function Layout({ children }: { children: ReactNode }) {

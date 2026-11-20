@@ -1,7 +1,7 @@
 // Demo-authored interpolator styles, built against the public Interpolator interface (packages/core/src/interpolate.ts).
 // Owner decision: the library ships only none/linear; anything richer is application code. See docs/react.md.
-import { noneInterpolator, linearInterpolator } from "@anchor-presence/core";
-import type { Interpolator, InterpolatorFactory } from "@anchor-presence/core";
+import { noneInterpolator, linearInterpolator } from "@dammers/anchor-presence-core";
+import type { Interpolator, InterpolatorFactory } from "@dammers/anchor-presence-core";
 
 const SETTLE_VELOCITY = 0.05; // px/ms
 const SETTLE_DISTANCE = 0.05; // px

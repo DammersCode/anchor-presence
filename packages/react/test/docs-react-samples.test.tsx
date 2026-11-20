@@ -8,10 +8,10 @@ import {
   createPresenceClient,
   linearInterpolator,
   noneInterpolator,
-} from "@anchor-presence/core";
-import type { PresenceClient } from "@anchor-presence/core";
-import { createWebSocketTransport } from "@anchor-presence/dom";
-import type { DomBinding, WebSocketLike } from "@anchor-presence/dom";
+} from "@dammers/anchor-presence-core";
+import type { PresenceClient } from "@dammers/anchor-presence-core";
+import { createWebSocketTransport } from "@dammers/anchor-presence-dom";
+import type { DomBinding, WebSocketLike } from "@dammers/anchor-presence-dom";
 import {
   CursorLayer,
   PresenceProvider,
@@ -26,7 +26,7 @@ import * as typed from "./doc-presence";
 import type { Context, Events, User } from "./doc-presence";
 import { parserOf } from "./test-utils";
 import * as v from "valibot";
-import type { InferSchemaOutput } from "@anchor-presence/core/standard-schema";
+import type { InferSchemaOutput } from "@dammers/anchor-presence-core/standard-schema";
 
 class FakeSocket implements WebSocketLike {
   static instances: FakeSocket[] = [];

@@ -8,7 +8,7 @@ This example adds a SignalR transport to the demo. A peer is another client in t
 - `apps/demo` is the shared demo client. Open it with `?backend=signalr` to connect through this transport.
 - `server/` is a .NET 10 app with one SignalR hub. The hub relays presence messages to the peers of the sender.
 
-Only the backend changes. The client creates its presence client over `createSignalRTransport` instead of a plain WebSocket. The UI uses the same `@anchor-presence/react` hooks.
+Only the backend changes. The client creates its presence client over `createSignalRTransport` instead of a plain WebSocket. The UI uses the same `@dammers/anchor-presence-react` hooks.
 
 `createSignalRTransport` takes a `HubConnection` that you build with the `HubConnectionBuilder` of `@microsoft/signalr`. It adds the wire handlers and maps `HubConnectionState` to the `ConnectionStatus` of core. Its `connect()` calls `connection.start()`, and its `disconnect()` calls `connection.stop()`.
 
@@ -64,11 +64,11 @@ The transport reports the `4007` code of a `Refused` message through `subscribeC
 
 ## Validation in the receiver
 
-The hub checks only the size of a message. The receiving client checks the rest. `@anchor-presence/core` checks every incoming message against the presence schema before it stores it.
+The hub checks only the size of a message. The receiving client checks the rest. `@dammers/anchor-presence-core` checks every incoming message against the presence schema before it stores it.
 
 ## Cursor removal
 
-When a window closes, the binding sends a `leave` message on `pagehide`. The other windows remove its cursor at once. The `leave` message can fail to arrive, for example after a crash. Then `@anchor-presence/core` marks that client stale after `staleTimeoutMs` (default `70000` ms) and removes its cursor.
+When a window closes, the binding sends a `leave` message on `pagehide`. The other windows remove its cursor at once. The `leave` message can fail to arrive, for example after a crash. Then `@dammers/anchor-presence-core` marks that client stale after `staleTimeoutMs` (default `70000` ms) and removes its cursor.
 
 ## Transport tests
 

@@ -15,23 +15,23 @@ Pick the tab that matches your app. Each tab installs only the packages that the
 <Tabs items={["React app", "DOM app without React", "Server or tests"]}>
   <Tab value="React app">
 
-`@anchor-presence/react` depends on the other two packages:
+`@dammers/anchor-presence-react` depends on the other two packages:
 
 <InstallCommand />
 
   </Tab>
   <Tab value="DOM app without React">
 
-`@anchor-presence/dom` gives anchors, pointer capture, cursor positions, and the `createBroadcastChannelTransport` and `createWebSocketTransport` transports, with no React:
+`@dammers/anchor-presence-dom` gives anchors, pointer capture, cursor positions, and the `createBroadcastChannelTransport` and `createWebSocketTransport` transports, with no React:
 
-<InstallCommand packages="@anchor-presence/core @anchor-presence/dom" />
+<InstallCommand packages="@dammers/anchor-presence-core @dammers/anchor-presence-dom" />
 
   </Tab>
   <Tab value="Server or tests">
 
-`@anchor-presence/core` has no DOM and no dependencies. It runs in Node.js, Bun, workers, and browsers:
+`@dammers/anchor-presence-core` has no DOM and no dependencies. It runs in Node.js, Bun, workers, and browsers:
 
-<InstallCommand packages="@anchor-presence/core" />
+<InstallCommand packages="@dammers/anchor-presence-core" />
 
   </Tab>
 </Tabs>
@@ -57,8 +57,8 @@ Then add the override block to the `package.json` of your app. Use the real path
 ```json
 {
   "overrides": {
-    "@anchor-presence/core": "file:../anchor-presence/packages/core",
-    "@anchor-presence/dom": "file:../anchor-presence/packages/dom"
+    "@dammers/anchor-presence-core": "file:../anchor-presence/packages/core",
+    "@dammers/anchor-presence-dom": "file:../anchor-presence/packages/dom"
   }
 }
 ```
@@ -75,7 +75,7 @@ If you use Vite, `react` and `dom` can keep nested copies of `core`. Then the bu
 import { defineConfig } from "vite";
 
 export default defineConfig({
-  resolve: { dedupe: ["@anchor-presence/core", "@anchor-presence/dom", "react"] },
+  resolve: { dedupe: ["@dammers/anchor-presence-core", "@dammers/anchor-presence-dom", "react"] },
 });
 ```
 
@@ -86,14 +86,14 @@ export default defineConfig({
 
 | Requirement   | Version                                                                                                                        |
 | ------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| React         | 18 or later, only for `@anchor-presence/react`. The React Compiler works. React Native does not.                               |
+| React         | 18 or later, only for `@dammers/anchor-presence-react`. The React Compiler works. React Native does not.                       |
 | TypeScript    | 5.9 or later                                                                                                                   |
 | Browser       | Chrome, Edge, Firefox, and Safari with ES2022 support                                                                          |
 | Module format | ESM only. `require()` works in Node.js 20.19 or later on the 20.x line, or 22.12 or later. Jest needs ESM mode or a transform. |
 
 ## A transport
 
-A **transport** is the channel that carries the bytes between clients. The library needs one. `@anchor-presence/dom` ships two transports:
+A **transport** is the channel that carries the bytes between clients. The library needs one. `@dammers/anchor-presence-dom` ships two transports:
 
 - `createBroadcastChannelTransport` connects the tabs of one browser, with no server.
 - `createWebSocketTransport` connects any two browsers through a relay.

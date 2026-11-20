@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { binaryCodec, type PresenceCodec, type PresenceMessage } from "@anchor-presence/core";
+import { binaryCodec, type PresenceCodec, type PresenceMessage } from "@dammers/anchor-presence-core";
 
 // Copied verbatim from apps/docs/content/docs/core/custom-codec.mdx (Debugging, option B).
 const debugCodec: PresenceCodec = {

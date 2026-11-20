@@ -113,7 +113,7 @@ To build `parseEvent` from Valibot, Zod, or ArkType schemas, use `eventParserFro
 This sample declares two events, checks them with `createEventParser`, and sends and receives them through a channel:
 
 ```ts
-import { createEventChannel, createEventParser, createPresenceClient } from "@anchor-presence/core";
+import { createEventChannel, createEventParser, createPresenceClient } from "@dammers/anchor-presence-core";
 
 type Events = { reaction: { emoji: string }; ping: undefined };
 

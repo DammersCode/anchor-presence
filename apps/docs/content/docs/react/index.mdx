@@ -1,6 +1,6 @@
 ---
 title: Overview
-description: What @anchor-presence/react provides and how to add it to a React app.
+description: What @dammers/anchor-presence-react provides and how to add it to a React app.
 icon: atom
 ---
 
@@ -24,16 +24,16 @@ import {
   MousePointer,
 } from "lucide-react";
 
-`@anchor-presence/react` connects a presence client to React. Use it in a React app that shows the cursors of other users. It gives you one provider, hooks that read presence data, and two components that draw cursors.
+`@dammers/anchor-presence-react` connects a presence client to React. Use it in a React app that shows the cursors of other users. It gives you one provider, hooks that read presence data, and two components that draw cursors.
 
 ## Minimal setup
 
 This app connects to the Bun relay of the [Quick start](/docs/get-started/quick-start#connect-a-relay), on port 8788. It renders the cursors of every peer:
 
 ```tsx
-import { createPresenceClient } from "@anchor-presence/core";
-import { createWebSocketTransport } from "@anchor-presence/dom";
-import { CursorLayer, PresenceProvider } from "@anchor-presence/react";
+import { createPresenceClient } from "@dammers/anchor-presence-core";
+import { createWebSocketTransport } from "@dammers/anchor-presence-dom";
+import { CursorLayer, PresenceProvider } from "@dammers/anchor-presence-react";
 
 function App() {
   return (
@@ -108,7 +108,7 @@ Until the factory runs, the provider renders its children with no cursors. For t
 
 ## Package facts
 
-- The package has no state store of its own. The hooks read the client from `@anchor-presence/core` and the binding from `@anchor-presence/dom`.
+- The package has no state store of its own. The hooks read the client from `@dammers/anchor-presence-core` and the binding from `@dammers/anchor-presence-dom`.
 - The package entry starts with `"use client"`. In a framework with React Server Components, its exports are Client Components. See [Frameworks](/docs/get-started/frameworks).
 - The peer range is `>=18`. CI runs the tests on React 19.
 - In development mode, the provider and the hooks write console warnings for setup errors. See [Development warnings](/docs/get-started/guides/troubleshooting#development-warnings).

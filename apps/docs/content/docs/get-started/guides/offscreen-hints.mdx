@@ -19,8 +19,8 @@ When Mira or Theo points at a section outside the narrow pane, an arrow at the e
 The recipe is one file, `offscreen-hints.tsx`. It starts with the imports and the clamp function:
 
 ```tsx
-import { CursorLayer, PresenceProvider, useRemoteCursors } from "@anchor-presence/react";
-import type { PresenceClient, ResolvedCursor } from "@anchor-presence/react";
+import { CursorLayer, PresenceProvider, useRemoteCursors } from "@dammers/anchor-presence-react";
+import type { PresenceClient, ResolvedCursor } from "@dammers/anchor-presence-react";
 
 export type EdgeHint = { clientId: string; x: number; y: number; angle: number };
 

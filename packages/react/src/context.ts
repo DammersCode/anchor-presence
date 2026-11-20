@@ -1,7 +1,7 @@
 import { createContext } from "react";
 import type { Context } from "react";
-import type { EventMap, PresenceClient } from "@anchor-presence/core";
-import type { DomBinding } from "@anchor-presence/dom";
+import type { EventMap, PresenceClient } from "@dammers/anchor-presence-core";
+import type { DomBinding } from "@dammers/anchor-presence-dom";
 
 /**
  * The value the context carries.

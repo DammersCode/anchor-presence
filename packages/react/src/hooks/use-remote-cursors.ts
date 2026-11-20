@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState, useSyncExternalStore } from "react";
-import type { ResolvedCursor } from "@anchor-presence/dom";
+import type { ResolvedCursor } from "@dammers/anchor-presence-dom";
 import { PresenceProviderContext } from "../context.js";
 import type { PresenceContext } from "../context.js";
 import { EMPTY_CURSORS, getServerCursors, usePresenceProviderContext } from "./use-presence-client.js";

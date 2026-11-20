@@ -1,6 +1,6 @@
 import { useContext } from "react";
-import type { ConnectionStatus, PresenceClient } from "@anchor-presence/core";
-import { warnOnce } from "@anchor-presence/core";
+import type { ConnectionStatus, PresenceClient } from "@dammers/anchor-presence-core";
+import { warnOnce } from "@dammers/anchor-presence-core";
 import { PresenceProviderContext, PresenceProviderContextDefault } from "../context.js";
 import type { PresenceContext, PresenceProviderValue } from "../context.js";
 

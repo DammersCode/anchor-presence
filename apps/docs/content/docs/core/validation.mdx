@@ -13,7 +13,7 @@ import { BadgeCheck, ShieldCheck, Users, FileCode } from "lucide-react";
 This relay function drops an oversized frame first, then checks the decoded value:
 
 ```ts
-import { DEFAULT_MAX_MESSAGE_BYTES, jsonCodec, validatePresence } from "@anchor-presence/core";
+import { DEFAULT_MAX_MESSAGE_BYTES, jsonCodec, validatePresence } from "@dammers/anchor-presence-core";
 
 function inspect(frame: Uint8Array) {
   if (frame.byteLength > DEFAULT_MAX_MESSAGE_BYTES) return null;

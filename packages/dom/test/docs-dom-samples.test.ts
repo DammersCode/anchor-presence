@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, expectTypeOf, it, vi } from "vitest";
-import { createInMemoryPair, createPresenceClient, linearInterpolator } from "@anchor-presence/core";
-import type { InterpolatorFactory, TransportClose } from "@anchor-presence/core";
+import { createInMemoryPair, createPresenceClient, linearInterpolator } from "@dammers/anchor-presence-core";
+import type { InterpolatorFactory, TransportClose } from "@dammers/anchor-presence-core";
 import {
   CURSOR_MARKER_ATTRIBUTE,
   createBroadcastChannelTransport,

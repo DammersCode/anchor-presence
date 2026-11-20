@@ -1,14 +1,14 @@
 ---
 title: Hooks API
-description: Signature and return type for every hook in @anchor-presence/react.
+description: Signature and return type for every hook in @dammers/anchor-presence-react.
 icon: braces
 ---
 
 import { Braces, Component, Gauge } from "lucide-react";
 
-This page lists the signature of every hook in `@anchor-presence/react`, and of `createPresenceHooks`. Use it to look up a type. For usage, render cost, and examples, read the guide page that each section links to.
+This page lists the signature of every hook in `@dammers/anchor-presence-react`, and of `createPresenceHooks`. Use it to look up a type. For usage, render cost, and examples, read the guide page that each section links to.
 
-Every hook reads the nearest `PresenceProvider`. A hook that you import from `@anchor-presence/react` takes no type argument and returns `unknown` for `user`, `context`, and event `data`. A type argument cannot prove what a peer sends. To get typed values, call [`createPresenceHooks`](#createpresencehooks) and use its hooks. Without a provider, each hook returns its empty value, and in development mode one console warning appears. For the empty values, see [Server-safe values](/docs/react/ssr-and-strict-mode#server-safe-values).
+Every hook reads the nearest `PresenceProvider`. A hook that you import from `@dammers/anchor-presence-react` takes no type argument and returns `unknown` for `user`, `context`, and event `data`. A type argument cannot prove what a peer sends. To get typed values, call [`createPresenceHooks`](#createpresencehooks) and use its hooks. Without a provider, each hook returns its empty value, and in development mode one console warning appears. For the empty values, see [Server-safe values](/docs/react/ssr-and-strict-mode#server-safe-values).
 
 ## useRemoteCursors
 
@@ -145,10 +145,10 @@ function createPresenceHooks<TContext = unknown, TUser = unknown, TEvents extend
 
 ## Re-exported types
 
-The package re-exports the types that its signatures use, so you can import them from `@anchor-presence/react`:
+The package re-exports the types that its signatures use, so you can import them from `@dammers/anchor-presence-react`:
 
-- From `@anchor-presence/core`: `AnchorPoint`, `ConnectionStatus`, `CursorPosition`, `PresenceMessage`, `EventChannel`, `EventMap`, `Interpolator`, `InterpolatorFactory`, `PeerChange`, `PointerType`, `PresenceClient`, `PresenceEvent`, `RemoteEvent`, `RemotePresence`, and `TypedRemoteEvent`. See the [protocol types](/docs/core/api/protocol) and the [client API](/docs/core/api/client).
-- From `@anchor-presence/dom`: `DomBinding`, `DomBindingOptions`, `ResolutionTier`, and `ResolvedCursor`. See the [binding API](/docs/dom/api/binding) and the [resolution API](/docs/dom/api/resolution).
+- From `@dammers/anchor-presence-core`: `AnchorPoint`, `ConnectionStatus`, `CursorPosition`, `PresenceMessage`, `EventChannel`, `EventMap`, `Interpolator`, `InterpolatorFactory`, `PeerChange`, `PointerType`, `PresenceClient`, `PresenceEvent`, `RemoteEvent`, `RemotePresence`, and `TypedRemoteEvent`. See the [protocol types](/docs/core/api/protocol) and the [client API](/docs/core/api/client).
+- From `@dammers/anchor-presence-dom`: `DomBinding`, `DomBindingOptions`, `ResolutionTier`, and `ResolvedCursor`. See the [binding API](/docs/dom/api/binding) and the [resolution API](/docs/dom/api/resolution).
 
 ## Related
 

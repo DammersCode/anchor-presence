@@ -5,7 +5,7 @@ import {
   createPresenceClient,
   createInMemoryPair,
   type PresenceClient,
-} from "@anchor-presence/core";
+} from "@dammers/anchor-presence-core";
 import {
   createPresenceHooks,
   PresenceProvider,
@@ -13,8 +13,8 @@ import {
   useLocalUser,
   useRemoteCursors,
   useRemoteUsers,
-} from "@anchor-presence/react";
-import { createDomBinding } from "@anchor-presence/dom";
+} from "@dammers/anchor-presence-react";
+import { createDomBinding } from "@dammers/anchor-presence-dom";
 
 type IsAny<T> = 0 extends 1 & T ? true : false;
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;

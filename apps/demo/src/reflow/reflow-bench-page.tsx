@@ -3,10 +3,10 @@
 // and reports frame times, getBoundingClientRect call stats and longtask counters.
 // Controlled by e2e/reflow-perf.spec.ts via window.__reflowBench.runScenario(name, ms).
 import { useEffect, useRef, useState } from "react";
-import { createPresenceClient, jsonCodec, noneInterpolator } from "@anchor-presence/core";
-import type { PresenceClient } from "@anchor-presence/core";
-import { CURSOR_MARKER_ATTRIBUTE, createDomBinding } from "@anchor-presence/dom";
-import type { DomBinding } from "@anchor-presence/dom";
+import { createPresenceClient, jsonCodec, noneInterpolator } from "@dammers/anchor-presence-core";
+import type { PresenceClient } from "@dammers/anchor-presence-core";
+import { CURSOR_MARKER_ATTRIBUTE, createDomBinding } from "@dammers/anchor-presence-dom";
+import type { DomBinding } from "@dammers/anchor-presence-dom";
 import { createLoopbackTransport } from "../bench/loopback-transport";
 import type { LoopbackTransport } from "../bench/loopback-transport";
 

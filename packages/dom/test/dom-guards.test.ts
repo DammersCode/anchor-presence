@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { CursorPosition, PresenceClient } from "@anchor-presence/core";
+import type { CursorPosition, PresenceClient } from "@dammers/anchor-presence-core";
 import { createAnchorRegistry } from "../src/registry";
 import type { AnchorRegistry } from "../src/registry";
 import { attachPointerSource } from "../src/pointer";

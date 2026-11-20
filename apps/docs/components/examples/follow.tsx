@@ -1,8 +1,8 @@
 "use client";
 
-import type { PresenceClient } from "@anchor-presence/core";
+import type { PresenceClient } from "@dammers/anchor-presence-core";
 import type { TourContext } from "./_preview/tour";
-import type { VisibilityPolicy } from "@anchor-presence/dom";
+import type { VisibilityPolicy } from "@dammers/anchor-presence-dom";
 import {
   CursorLayer,
   PresenceProvider,
@@ -10,7 +10,7 @@ import {
   usePresenceClient,
   useRemoteCursorsSelector,
 } from "./_preview/hooks";
-import type { ResolvedCursor } from "@anchor-presence/react";
+import type { ResolvedCursor } from "@dammers/anchor-presence-react";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { MIRA } from "./_preview/scenes";
 import { LongPage } from "./long-page";

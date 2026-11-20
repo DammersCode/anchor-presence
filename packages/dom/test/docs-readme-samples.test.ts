@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createInMemoryPair, createPresenceClient } from "@anchor-presence/core";
+import { createInMemoryPair, createPresenceClient } from "@dammers/anchor-presence-core";
 import { createDomBinding } from "../src/index";
 import { fileSample, readRepoFile, trimLines } from "../../react/test/doc-source";
 

@@ -10,9 +10,9 @@ Your app runs on ASP.NET Core, and you want presence without a second WebSocket 
 
 ## Install
 
-Install the packages. `@anchor-presence/react` and `@dammers/use-signalr-react` are needed only for the shared connection below:
+Install the packages. `@dammers/anchor-presence-react` and `@dammers/use-signalr-react` are needed only for the shared connection below:
 
-<InstallCommand packages="@anchor-presence/core @anchor-presence/react @dammers/use-signalr-react @microsoft/signalr" />
+<InstallCommand packages="@dammers/anchor-presence-core @dammers/anchor-presence-react @dammers/use-signalr-react @microsoft/signalr" />
 
 ## Code
 
@@ -23,7 +23,7 @@ The client wraps a `HubConnection` as a transport. The hub forwards messages, an
     Use the transport like any other transport. The presence client starts the connection:
 
     ```ts
-    import { createPresenceClient } from "@anchor-presence/core";
+    import { createPresenceClient } from "@dammers/anchor-presence-core";
     import { HubConnectionBuilder } from "@microsoft/signalr";
     import { createSignalRTransport } from "./transport";
 
@@ -96,8 +96,8 @@ export const { SignalRProvider, useSignalR } = createSignalRClient({
 
 ```tsx
 import type { ReactNode } from "react";
-import { createPresenceClient } from "@anchor-presence/core";
-import { PresenceProvider } from "@anchor-presence/react";
+import { createPresenceClient } from "@dammers/anchor-presence-core";
+import { PresenceProvider } from "@dammers/anchor-presence-react";
 import { createSignalRTransport } from "./transport";
 import { useSignalR } from "./signalr";
 

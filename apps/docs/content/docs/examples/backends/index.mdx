@@ -18,7 +18,7 @@ import {
   Cable,
 } from "lucide-react";
 
-Live cursors need a relay: a server that forwards each message to the peers of the sender. `@anchor-presence/core` imports no transport library, so any channel that implements `PresenceTransport` works. This section has one tested relay for each common backend.
+Live cursors need a relay: a server that forwards each message to the peers of the sender. `@dammers/anchor-presence-core` imports no transport library, so any channel that implements `PresenceTransport` works. This section has one tested relay for each common backend.
 
 ## Pick a relay
 
@@ -54,7 +54,7 @@ This table compares the relays. "Topics" means that the runtime forwards a messa
 | Socket.IO    | Node.js or Bun | `socket.io`              | Socket.IO rooms       | Your app already uses Socket.IO.                     |
 | SignalR      | .NET 10        | ASP.NET Core SignalR     | SignalR groups        | Your server runs ASP.NET Core.                       |
 
-The Bun, Node.js (ws), Hono and Elysia relays need no custom client transport. The client connects with `createWebSocketTransport` from `@anchor-presence/dom`. Socket.IO and SignalR need the client transport of their example.
+The Bun, Node.js (ws), Hono and Elysia relays need no custom client transport. The client connects with `createWebSocketTransport` from `@dammers/anchor-presence-dom`. Socket.IO and SignalR need the client transport of their example.
 
 To run a relay in production, see [Deploy a relay](/docs/get-started/guides/deploy-relay).
 
@@ -64,8 +64,8 @@ Every relay has an integration test that starts the real server and connects two
 
 Two transports need no relay:
 
-- [`createInMemoryPair`](/docs/core/in-memory-transport) from `@anchor-presence/core` connects two transports in one process. Use it for tests and prototypes. Most tests and some samples use it.
-- [`createBroadcastChannelTransport`](/docs/dom/broadcast-channel-transport) from `@anchor-presence/dom` connects tabs and iframes on the same origin. The live demos of this site use it.
+- [`createInMemoryPair`](/docs/core/in-memory-transport) from `@dammers/anchor-presence-core` connects two transports in one process. Use it for tests and prototypes. Most tests and some samples use it.
+- [`createBroadcastChannelTransport`](/docs/dom/broadcast-channel-transport) from `@dammers/anchor-presence-dom` connects tabs and iframes on the same origin. The live demos of this site use it.
 
 ## What a relay does
 

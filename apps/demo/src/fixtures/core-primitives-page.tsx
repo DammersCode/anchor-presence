@@ -10,8 +10,8 @@ import {
   reportListenerError,
   validatePresence,
   warnOnce,
-} from "@anchor-presence/core";
-import type { PresenceMessage } from "@anchor-presence/core";
+} from "@dammers/anchor-presence-core";
+import type { PresenceMessage } from "@dammers/anchor-presence-core";
 
 type Report = Record<string, string>;
 type Events = { ping: number };

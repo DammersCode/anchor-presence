@@ -19,17 +19,17 @@ Each package adds one layer, and the dependency direction is one-way:
 ```mermaid
 flowchart TB
     accTitle: Package layers
-    accDescr: @anchor-presence/react depends on @anchor-presence/dom, which depends on @anchor-presence/core.
-    react["@anchor-presence/react<br/>provider component, hooks, cursor components"]
-    dom["@anchor-presence/dom<br/>anchor registry, pointer capture, layout measurement, resolver"]
-    core["@anchor-presence/core<br/>protocol types, validation, presence store, client"]
+    accDescr: @dammers/anchor-presence-react depends on @dammers/anchor-presence-dom, which depends on @dammers/anchor-presence-core.
+    react["@dammers/anchor-presence-react<br/>provider component, hooks, cursor components"]
+    dom["@dammers/anchor-presence-dom<br/>anchor registry, pointer capture, layout measurement, resolver"]
+    core["@dammers/anchor-presence-core<br/>protocol types, validation, presence store, client"]
 
     react --> dom --> core
 ```
 
-- `@anchor-presence/core` has no dependencies and needs no DOM. It runs in Node.js, Bun, workers, and browsers. It owns the protocol, validation, message order, the store of remote presence, and the client. If a `document` exists, the client listens for `visibilitychange` to send a pending update when the page shows again.
-- `@anchor-presence/dom` depends only on `@anchor-presence/core`. It owns every layout and pointer API call: the anchor registry, pointer capture, layout measurement once per animation frame, and visibility policies.
-- `@anchor-presence/react` is an adapter only. It keeps no cursor state of its own. It reads the stores of the other two packages with `useSyncExternalStore`.
+- `@dammers/anchor-presence-core` has no dependencies and needs no DOM. It runs in Node.js, Bun, workers, and browsers. It owns the protocol, validation, message order, the store of remote presence, and the client. If a `document` exists, the client listens for `visibilitychange` to send a pending update when the page shows again.
+- `@dammers/anchor-presence-dom` depends only on `@dammers/anchor-presence-core`. It owns every layout and pointer API call: the anchor registry, pointer capture, layout measurement once per animation frame, and visibility policies.
+- `@dammers/anchor-presence-react` is an adapter only. It keeps no cursor state of its own. It reads the stores of the other two packages with `useSyncExternalStore`.
 
 ## Path of one pointer move
 
@@ -64,12 +64,12 @@ An invariant is a rule the library never breaks. Other pages refer to these numb
 2. The layout of the receiver decides where a cursor appears.
 3. A semantic anchor keeps its ID when a responsive layout changes.
 4. A missing anchor degrades in a fixed order: the exact anchor, then each ancestor anchor, then the viewport position. Then the visibility policy decides.
-5. Framework adapters do not own presence state. `@anchor-presence/core` owns it.
-6. The cursor logic does not depend on a transport. `@anchor-presence/core` imports no transport library.
+5. Framework adapters do not own presence state. `@dammers/anchor-presence-core` owns it.
+6. The cursor logic does not depend on a transport. `@dammers/anchor-presence-core` imports no transport library.
 7. A local layout change moves a stationary remote cursor without a new network message.
 8. A network message cannot run a DOM selector. Anchor IDs resolve only against the registered anchor map.
-9. The consumer controls rendering. No cursor component is required. `@anchor-presence/react` has optional cursor components.
-10. All cursor state lives in `@anchor-presence/core` and `@anchor-presence/dom`. An adapter for another framework, such as Svelte, Vue, or Solid, uses both packages without a change.
+9. The consumer controls rendering. No cursor component is required. `@dammers/anchor-presence-react` has optional cursor components.
+10. All cursor state lives in `@dammers/anchor-presence-core` and `@dammers/anchor-presence-dom`. An adapter for another framework, such as Svelte, Vue, or Solid, uses both packages without a change.
 
 ## Why the receiver layout decides
 

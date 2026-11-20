@@ -1,6 +1,6 @@
 // Anchor registry — spec §8
 
-import { isDevMode } from "@anchor-presence/core";
+import { isDevMode } from "@dammers/anchor-presence-core";
 import { parentAcrossShadow } from "./dom-tree.js";
 
 export interface AnchorRegistry {

@@ -13,7 +13,7 @@ import { Cable, Plug, Server } from "lucide-react";
 Give one side of the pair to each client:
 
 ```ts
-import { createInMemoryPair, createPresenceClient } from "@anchor-presence/core";
+import { createInMemoryPair, createPresenceClient } from "@dammers/anchor-presence-core";
 
 const { a, b } = createInMemoryPair();
 const clientA = createPresenceClient({ transport: a, user: { name: "Alice" } });
@@ -42,7 +42,7 @@ const { a, b } = createInMemoryPair({ async: true });
 If a test needs three or more clients, use `createInMemoryRoom`. Call `join()` once per client:
 
 ```ts
-import { createInMemoryRoom, createPresenceClient } from "@anchor-presence/core";
+import { createInMemoryRoom, createPresenceClient } from "@dammers/anchor-presence-core";
 
 const room = createInMemoryRoom();
 const alice = createPresenceClient({ transport: room.join(), user: { name: "Alice" } });

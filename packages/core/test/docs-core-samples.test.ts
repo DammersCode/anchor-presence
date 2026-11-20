@@ -34,7 +34,7 @@ import {
   type PeerChange,
   type RemoteEvent,
   type TransportClose,
-} from "@anchor-presence/core";
+} from "@dammers/anchor-presence-core";
 
 const cursor = { anchors: [{ id: "doc", u: 0.5, v: 0.5 }] };
 

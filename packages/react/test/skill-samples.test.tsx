@@ -3,8 +3,8 @@ import { join } from "node:path";
 import { act, useEffect, useRef } from "react";
 import { createRoot } from "react-dom/client";
 import { describe, expect, it } from "vitest";
-import { createPresenceClient } from "@anchor-presence/core";
-import { createWebSocketTransport } from "@anchor-presence/dom";
+import { createPresenceClient } from "@dammers/anchor-presence-core";
+import { createWebSocketTransport } from "@dammers/anchor-presence-dom";
 import { CursorLayer, PresenceProvider, useDomBinding, useLocalContext } from "../src/index";
 import { makeFakeBinding, makeFakeClient } from "./test-utils";
 
@@ -98,6 +98,7 @@ const readRepoFile = (file: string) =>
 function sampleBodies(markdown: string): string[] {
   return [...markdown.matchAll(/```tsx\n([\s\S]*?)```/gu)].map(([, body = ""]) =>
     body
+      .replaceAll(/^import[^;]*?from\s+"[^"]+";\n/gmu, "")
       .split("\n")
       .filter((line) => !line.startsWith("import ") && line !== '"use client";')
       .join("\n")

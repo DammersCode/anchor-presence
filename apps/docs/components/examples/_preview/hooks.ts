@@ -1,4 +1,4 @@
-import { createPresenceHooks } from "@anchor-presence/react";
+import { createPresenceHooks } from "@dammers/anchor-presence-react";
 import type { TourContext, TourUser } from "./tour";
 
 export const {

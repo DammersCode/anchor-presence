@@ -1,5 +1,5 @@
-import { createPresenceClient, type PresenceClient } from "@anchor-presence/core";
-import { createWebSocketTransport } from "@anchor-presence/dom";
+import { createPresenceClient, type PresenceClient } from "@dammers/anchor-presence-core";
+import { createWebSocketTransport } from "@dammers/anchor-presence-dom";
 import { spawn } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";

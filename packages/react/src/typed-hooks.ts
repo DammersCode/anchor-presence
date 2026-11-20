@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import type { ReactNode } from "react";
-import type { EventMap, PeerChange, TypedRemoteEvent } from "@anchor-presence/core";
-import type { ResolvedCursor } from "@anchor-presence/dom";
+import type { EventMap, PeerChange, TypedRemoteEvent } from "@dammers/anchor-presence-core";
+import type { ResolvedCursor } from "@dammers/anchor-presence-dom";
 import { createPresenceContext } from "./context.js";
 import { CursorLayerIn } from "./cursor.js";
 import type { CursorLayerProps } from "./cursor.js";

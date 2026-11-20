@@ -2,7 +2,7 @@ import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { ResolvedCursor } from "@anchor-presence/dom";
+import type { ResolvedCursor } from "@dammers/anchor-presence-dom";
 import { PresenceProvider } from "../src/provider";
 import { CursorLayer, DefaultCursor } from "../src/cursor";
 import { makeFakeBinding, makeFakeClient } from "./test-utils";

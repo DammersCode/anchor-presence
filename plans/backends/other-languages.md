@@ -76,7 +76,7 @@ Phoenix Channels already exclude the sender from `broadcast_from!`, so the "forw
 
 ## Transport sketch (client side)
 
-No client-side change: `createWebSocketTransport({ url })` in `@anchor-presence/dom` already speaks plain WebSocket frames, so any of these three relays works with the existing client without a new adapter. This plan is entirely server-side.
+No client-side change: `createWebSocketTransport({ url })` in `@dammers/anchor-presence-dom` already speaks plain WebSocket frames, so any of these three relays works with the existing client without a new adapter. This plan is entirely server-side.
 
 ## Security notes
 

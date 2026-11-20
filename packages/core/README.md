@@ -1,13 +1,13 @@
-# @anchor-presence/core
+# @dammers/anchor-presence-core
 
-`@anchor-presence/core` is the protocol and client layer of Anchor Presence. It holds the wire types, the validation rules, the presence store, and the client that ties them together.
+`@dammers/anchor-presence-core` is the protocol and client layer of Anchor Presence. It holds the wire types, the validation rules, the presence store, and the client that ties them together.
 
 [![MIT](https://img.shields.io/badge/license-MIT-blue.svg)](../../LICENSE)
 
 This sample creates a client, publishes a cursor, and logs each remote change:
 
 ```ts
-import { createPresenceClient, jsonCodec } from "@anchor-presence/core";
+import { createPresenceClient, jsonCodec } from "@dammers/anchor-presence-core";
 
 const client = createPresenceClient({
   transport: myTransport,
@@ -27,7 +27,7 @@ The client calls `transport.connect()` for you by default. To connect at a time 
 
 ## Boundary rule
 
-`@anchor-presence/core` imports no DOM, React, transport, or codec library. It reads `document` only when it exists, to send a pending publish when the page becomes visible. Every other browser API call lives in `@anchor-presence/dom`.
+`@dammers/anchor-presence-core` imports no DOM, React, transport, or codec library. It reads `document` only when it exists, to send a pending publish when the page becomes visible. Every other browser API call lives in `@dammers/anchor-presence-dom`.
 
 ## Main exports
 
@@ -51,6 +51,6 @@ The client calls `transport.connect()` for you by default. To connect at a time 
 | `client.leave()`                                                    | Tells peers that the client left. The next publish announces it again.                                    |
 | `parseUser`, `parseContext`, `parseEvent` options                   | Check, rewrite, or drop each remote `user`, `context`, and event                                          |
 | `linearInterpolator`, `noneInterpolator`                            | Interpolation factories                                                                                   |
-| `@anchor-presence/core/standard-schema`                             | A separate entry point that builds `parseUser`, `parseContext`, and `parseEvent` from a schema            |
+| `@dammers/anchor-presence-core/standard-schema`                     | A separate entry point that builds `parseUser`, `parseContext`, and `parseEvent` from a schema            |
 
 See [How it works](https://anchor-presence.vercel.app/docs/get-started/concepts/how-it-works), [Events](https://anchor-presence.vercel.app/docs/core/events), and [Codecs](https://anchor-presence.vercel.app/docs/core/codecs) for full guides.

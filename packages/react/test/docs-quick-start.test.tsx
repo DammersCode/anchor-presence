@@ -4,8 +4,8 @@ import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { createPresenceClient } from "@anchor-presence/core";
-import { createBroadcastChannelTransport, createWebSocketTransport } from "@anchor-presence/dom";
+import { createPresenceClient } from "@dammers/anchor-presence-core";
+import { createBroadcastChannelTransport, createWebSocketTransport } from "@dammers/anchor-presence-dom";
 import { CursorLayer, PresenceProvider } from "../src/index";
 
 // Verbatim copies of the quick start and deploy-relay samples; the last test checks each copy against its source.

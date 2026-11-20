@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { ConnectionStatus } from "@anchor-presence/core";
+import type { ConnectionStatus } from "@dammers/anchor-presence-core";
 import { createWebSocketTransport } from "../src/transport";
 import type { WebSocketCtor, WebSocketLike } from "../src/transport";
 

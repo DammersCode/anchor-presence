@@ -1,6 +1,10 @@
 // The standard-schema entry point resolves under both module resolutions and infers from a schema.
-import { createInMemoryPair, createPresenceClient, type PresenceClient } from "@anchor-presence/core";
-import { eventParserFrom, parserFrom, type StandardSchemaV1 } from "@anchor-presence/core/standard-schema";
+import { createInMemoryPair, createPresenceClient, type PresenceClient } from "@dammers/anchor-presence-core";
+import {
+  eventParserFrom,
+  parserFrom,
+  type StandardSchemaV1,
+} from "@dammers/anchor-presence-core/standard-schema";
 
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
 declare function assertEqual<A, B>(ok: Equal<A, B>): void;

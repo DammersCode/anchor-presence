@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import { createPresenceClient, jsonCodec, type PresenceTransport } from "@anchor-presence/core";
+import { createPresenceClient, jsonCodec, type PresenceTransport } from "@dammers/anchor-presence-core";
 
 const page = readFileSync(
   join(process.cwd(), "apps/docs/content/docs/core/api/protocol.mdx"),

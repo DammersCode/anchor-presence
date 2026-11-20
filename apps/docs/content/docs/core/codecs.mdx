@@ -6,7 +6,7 @@ icon: binary
 
 import { FileCog, FileDigit, ShieldCheck } from "lucide-react";
 
-A codec turns a `PresenceMessage` into bytes for the wire, and turns bytes back into a value. `@anchor-presence/core` ships `jsonCodec`, the default, and `binaryCodec`, a compact codec with a fixed layout. When you set up a room, choose a codec. All clients in the room must use the same one.
+A codec turns a `PresenceMessage` into bytes for the wire, and turns bytes back into a value. `@dammers/anchor-presence-core` ships `jsonCodec`, the default, and `binaryCodec`, a compact codec with a fixed layout. When you set up a room, choose a codec. All clients in the room must use the same one.
 
 ## Use a codec
 
@@ -33,7 +33,7 @@ The relay forwards bytes and does not convert between `jsonCodec` and `binaryCod
 
 ## PresenceCodec
 
-`@anchor-presence/core` exports `PresenceCodec` with this shape:
+`@dammers/anchor-presence-core` exports `PresenceCodec` with this shape:
 
 ```ts
 interface PresenceCodec {

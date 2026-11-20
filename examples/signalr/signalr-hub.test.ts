@@ -1,4 +1,4 @@
-import { createPresenceClient, type PresenceClient } from "@anchor-presence/core";
+import { createPresenceClient, type PresenceClient } from "@dammers/anchor-presence-core";
 import { HubConnectionBuilder, type HubConnection } from "@microsoft/signalr";
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import net from "node:net";

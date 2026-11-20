@@ -4,7 +4,7 @@ import type { AnchorRegistry } from "../src/registry";
 import { attachPointerSource } from "../src/pointer";
 import { createGeometryScheduler } from "../src/scheduler";
 import type { SchedulerReadState } from "../src/scheduler";
-import type { CursorPosition, PointerInfo, PresenceClient } from "@anchor-presence/core";
+import type { CursorPosition, PointerInfo, PresenceClient } from "@dammers/anchor-presence-core";
 
 // jsdom has no layout engine and no PointerEvent constructor; stub both.
 function mockRect(el: Element, rect: { left: number; top: number; width: number; height: number }): void {

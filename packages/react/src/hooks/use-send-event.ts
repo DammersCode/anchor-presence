@@ -1,6 +1,6 @@
 import { useMemo } from "react";
-import { createEventChannel } from "@anchor-presence/core";
-import type { EventChannel, EventMap } from "@anchor-presence/core";
+import { createEventChannel } from "@dammers/anchor-presence-core";
+import type { EventChannel, EventMap } from "@dammers/anchor-presence-core";
 import { PresenceProviderContext } from "../context.js";
 import type { PresenceContext } from "../context.js";
 import { usePresenceProviderContext } from "./use-presence-client.js";

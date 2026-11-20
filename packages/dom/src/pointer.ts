@@ -1,6 +1,6 @@
 // Pointer capture and target resolution — spec §9
 
-import type { AnchorPoint, CursorPosition, PointerInfo, PresenceClient } from "@anchor-presence/core";
+import type { AnchorPoint, CursorPosition, PointerInfo, PresenceClient } from "@dammers/anchor-presence-core";
 import type { AnchorRegistry } from "./registry.js";
 import type { Rect } from "./geometry.js";
 

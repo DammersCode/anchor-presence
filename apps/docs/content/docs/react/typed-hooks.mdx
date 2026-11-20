@@ -6,7 +6,7 @@ icon: braces
 
 import { Braces, Plug, Users, Zap } from "lucide-react";
 
-`createPresenceHooks<TContext, TUser, TEvents>()` returns a provider, every hook, and a `CursorLayer` with your types fixed. The hooks that you import from `@anchor-presence/react` return `unknown` for `user`, `context`, and event `data`, because a type argument cannot prove what a peer sends. The hooks of the result read only the provider of the same call. That provider accepts only a client with the same `user` and `context` types and an event map that fits yours. Use it in every app that knows the shape of its context, user, or event values. `TEvents` is optional.
+`createPresenceHooks<TContext, TUser, TEvents>()` returns a provider, every hook, and a `CursorLayer` with your types fixed. The hooks that you import from `@dammers/anchor-presence-react` return `unknown` for `user`, `context`, and event `data`, because a type argument cannot prove what a peer sends. The hooks of the result read only the provider of the same call. That provider accepts only a client with the same `user` and `context` types and an event map that fits yours. Use it in every app that knows the shape of its context, user, or event values. `TEvents` is optional.
 
 ## Usage
 
@@ -14,7 +14,7 @@ Call `createPresenceHooks` one time for the whole app, at module level, and expo
 
 ```ts
 // presence.ts
-import { createPresenceHooks } from "@anchor-presence/react";
+import { createPresenceHooks } from "@dammers/anchor-presence-react";
 
 export type User = { name: string; color: string };
 export type Context = { pageId?: string; typingIn?: string | null; away?: boolean; selection?: string[] };
@@ -38,7 +38,7 @@ export const {
 } = createPresenceHooks<Context, User, Events>();
 ```
 
-Then import the provider and the hooks from your module, not from `@anchor-presence/react`:
+Then import the provider and the hooks from your module, not from `@dammers/anchor-presence-react`:
 
 ```tsx
 import { useRemoteUsers } from "./presence";
@@ -97,11 +97,11 @@ function Reactions() {
   `createEventParser`. See [Events](/docs/core/events).
 </Callout>
 
-`createEventParser` from `@anchor-presence/core` builds this `parseEvent` from one parser per event type. For an event without data, use `null` as the parser. The client types `user` and `context` only through `parseUser` and `parseContext`, so pass them too. Pass the result to `createPresenceClient` in the provider `factory`:
+`createEventParser` from `@dammers/anchor-presence-core` builds this `parseEvent` from one parser per event type. For an event without data, use `null` as the parser. The client types `user` and `context` only through `parseUser` and `parseContext`, so pass them too. Pass the result to `createPresenceClient` in the provider `factory`:
 
 ```tsx
-import { createEventParser, createPresenceClient } from "@anchor-presence/core";
-import { createWebSocketTransport } from "@anchor-presence/dom";
+import { createEventParser, createPresenceClient } from "@dammers/anchor-presence-core";
+import { createWebSocketTransport } from "@dammers/anchor-presence-dom";
 import { type Events, PresenceProvider } from "./presence";
 import { parseContext, parseUser } from "./parsers";
 
@@ -145,8 +145,8 @@ If you check `user` and `context` with [Standard Schema](/docs/core/standard-sch
 
 ```ts
 import * as v from "valibot";
-import { createPresenceHooks } from "@anchor-presence/react";
-import type { InferSchemaOutput } from "@anchor-presence/core/standard-schema";
+import { createPresenceHooks } from "@dammers/anchor-presence-react";
+import type { InferSchemaOutput } from "@dammers/anchor-presence-core/standard-schema";
 
 const userSchema = v.object({ name: v.string(), color: v.string() });
 const contextSchema = v.object({ pageId: v.string() });
@@ -175,9 +175,9 @@ Pass `parserFrom(userSchema)` and `parserFrom(contextSchema)` to `createPresence
 | `useRemoteEvents`, `useSendEvent`       | events                                                         |
 | `usePresenceStatus`                     | none                                                           |
 
-Without `TEvents`, an event can have any `type`, and its `data` has the type `unknown`. `DefaultCursor` is not in the result. Import it from `@anchor-presence/react`.
+Without `TEvents`, an event can have any `type`, and its `data` has the type `unknown`. `DefaultCursor` is not in the result. Import it from `@dammers/anchor-presence-react`.
 
-An app has one `createPresenceHooks` call. If you need more types, add them to this call. A hook from the result under another `PresenceProvider`, for example the one that you import from `@anchor-presence/react`, finds no client and shows empty data. The reverse also holds: a hook from `@anchor-presence/react` under the provider of the result shows empty data.
+An app has one `createPresenceHooks` call. If you need more types, add them to this call. A hook from the result under another `PresenceProvider`, for example the one that you import from `@dammers/anchor-presence-react`, finds no client and shows empty data. The reverse also holds: a hook from `@dammers/anchor-presence-react` under the provider of the result shows empty data.
 
 In development mode, a hook outside its provider writes a console warning. Outside development mode, it writes none. If you use the provider from your own module, the warning still names `PresenceProvider`.
 

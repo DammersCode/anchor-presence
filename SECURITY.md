@@ -16,9 +16,9 @@ Do not open a public issue for a security report.
 
 In scope:
 
-- `@anchor-presence/core`
-- `@anchor-presence/dom`
-- `@anchor-presence/react`
+- `@dammers/anchor-presence-core`
+- `@dammers/anchor-presence-dom`
+- `@dammers/anchor-presence-react`
 
 Out of scope:
 

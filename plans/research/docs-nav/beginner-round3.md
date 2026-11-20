@@ -36,7 +36,7 @@ Why Sidebar stays at 9: the leftovers do not mislead a beginner. "Layout design 
 **Consistency 8.5**
 
 - Fixed: Layout design, Anchors, UI context, and Occlusion and scroll each have one card title and one icon on every page that links them.
-- `/docs/core` has three card titles: "Core" (`dom/index.mdx:114`), "Core overview" (`react/index.mdx:128`), and "@anchor-presence/core" (`introduction.mdx:77`). `/docs/dom` has "DOM overview" and "@anchor-presence/dom" in the same way.
+- `/docs/core` has three card titles: "Core" (`dom/index.mdx:114`), "Core overview" (`react/index.mdx:128`), and "@dammers/anchor-presence-core" (`introduction.mdx:77`). `/docs/dom` has "DOM overview" and "@dammers/anchor-presence-dom" in the same way.
 - Section cards use an icon by package type, not the frontmatter icon of the target page. `BookOpen` marks Get started sections (`anchors-and-fallbacks.mdx:52,59`, `responsive-grid.mdx:48`, `table-and-cards.mdx:47,51`, `dialogs-and-layers.mdx:41`). `Cpu` marks core sections (`presence-list.mdx:58,61`, `interpolation-styles.mdx:46`). `Atom` marks React sections (`presence-list.mdx:67`, `custom-cursor-rendering.mdx:51`, `dialogs-and-layers.mdx:54`). `AppWindow`, the icon of the BroadcastChannel pages, marks DOM sections (`basics.mdx:52`, `kanban.mdx:47`, `anchors-and-fallbacks.mdx:65,69`). `LayoutGrid`, the Responsive grid icon, marks "Normalized u/v coordinates" (`responsive-grid.mdx:62`).
 - The inline link text "layout design guide" (`basics.mdx:15`, `presence-list.mdx:15`, `stable-layout.mdx:40`) differs from the page title. This is minor.
 - To reach 9: give every card its target page's frontmatter icon, and use one title for the Core and DOM overviews.

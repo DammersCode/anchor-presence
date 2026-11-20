@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { createPresenceClient, jsonCodec, noneInterpolator } from "@anchor-presence/core";
-import type { PresenceClient } from "@anchor-presence/core";
-import { createDomBinding } from "@anchor-presence/dom";
-import type { DomBinding } from "@anchor-presence/dom";
+import { createPresenceClient, jsonCodec, noneInterpolator } from "@dammers/anchor-presence-core";
+import type { PresenceClient } from "@dammers/anchor-presence-core";
+import { createDomBinding } from "@dammers/anchor-presence-dom";
+import type { DomBinding } from "@dammers/anchor-presence-dom";
 import { createLoopbackTransport } from "./loopback-transport";
 import type { LoopbackTransport } from "./loopback-transport";
 import { BenchCell } from "./bench-cell";

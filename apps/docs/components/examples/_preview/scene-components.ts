@@ -1,4 +1,4 @@
-import type { PresenceClient, PresenceClientOptions } from "@anchor-presence/core";
+import type { PresenceClient, PresenceClientOptions } from "@dammers/anchor-presence-core";
 import type { ComponentType, ReactNode } from "react";
 import { BasicsScene } from "../basics";
 import { ChatScene } from "../chat";

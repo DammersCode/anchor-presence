@@ -10,7 +10,7 @@ Status: open. The patch below is a proposal; `.github/workflows/release.yml` is 
 - The main-run lookup matches any `main.yml` run for the SHA, also a `workflow_dispatch` run on another branch.
 - `npm install -g npm@latest` installs whatever is latest at release time.
 - `bun install` runs the workspaces' own lifecycle scripts (the docs `postinstall`) and those of trusted dependencies, none of which the package build needs.
-- `npm view @anchor-presence/core@${GITHUB_REF_NAME#v}` is unquoted.
+- `npm view @dammers/anchor-presence-core@${GITHUB_REF_NAME#v}` is unquoted.
 - Third-party actions are pinned to movable major tags.
 
 ## Patch
@@ -81,12 +81,12 @@ jobs:
       - name: Check the tag matches the package versions
         run: node scripts/check-release.mjs "$GITHUB_REF_NAME"
       # npm view makes each publish idempotent: a re-run publishes only what is missing
-      - name: Publish @anchor-presence/core
-        run: npm view "@anchor-presence/core@${GITHUB_REF_NAME#v}" version 2>/dev/null || (cd packages/core && npm publish --provenance --access public)
-      - name: Publish @anchor-presence/dom
-        run: npm view "@anchor-presence/dom@${GITHUB_REF_NAME#v}" version 2>/dev/null || (cd packages/dom && npm publish --provenance --access public)
-      - name: Publish @anchor-presence/react
-        run: npm view "@anchor-presence/react@${GITHUB_REF_NAME#v}" version 2>/dev/null || (cd packages/react && npm publish --provenance --access public)
+      - name: Publish @dammers/anchor-presence-core
+        run: npm view "@dammers/anchor-presence-core@${GITHUB_REF_NAME#v}" version 2>/dev/null || (cd packages/core && npm publish --provenance --access public)
+      - name: Publish @dammers/anchor-presence-dom
+        run: npm view "@dammers/anchor-presence-dom@${GITHUB_REF_NAME#v}" version 2>/dev/null || (cd packages/dom && npm publish --provenance --access public)
+      - name: Publish @dammers/anchor-presence-react
+        run: npm view "@dammers/anchor-presence-react@${GITHUB_REF_NAME#v}" version 2>/dev/null || (cd packages/react && npm publish --provenance --access public)
 
   release:
     name: Create the GitHub release
@@ -107,7 +107,7 @@ A job-level `permissions` block replaces the top-level one, so every job lists a
 ## Owner setup in GitHub and npm
 
 1. GitHub, Settings > Environments: create `npm-release`. Add yourself as a required reviewer. Under deployment branches and tags, allow only tags that match `v*`.
-2. npmjs.com, for each of `@anchor-presence/core`, `@anchor-presence/dom` and `@anchor-presence/react`: Settings > Trusted publishing > GitHub Actions. Organization or user `DammersCode`, repository `anchor-presence`, workflow filename `release.yml`, environment `npm-release`.
+2. npmjs.com, for each of `@dammers/anchor-presence-core`, `@dammers/anchor-presence-dom` and `@dammers/anchor-presence-react`: Settings > Trusted publishing > GitHub Actions. Organization or user `DammersCode`, repository `anchor-presence`, workflow filename `release.yml`, environment `npm-release`.
 3. After the first release through trusted publishing: set each package's publishing access to "Require two-factor authentication and disallow tokens", and delete any `NPM_TOKEN` secret from the repo.
 4. Optional: Settings > Actions > General: allow only actions pinned to a full commit SHA. First pin every action in `pr.yml`, `main.yml` and the setup action to a full SHA, or those workflows fail.
 

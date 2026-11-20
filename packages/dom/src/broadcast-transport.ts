@@ -1,5 +1,5 @@
-import { reportListenerError, warnOnce } from "@anchor-presence/core";
-import type { ConnectionStatus, PresenceTransport } from "@anchor-presence/core";
+import { reportListenerError, warnOnce } from "@dammers/anchor-presence-core";
+import type { ConnectionStatus, PresenceTransport } from "@dammers/anchor-presence-core";
 
 /** A transport that connects and disconnects on demand, with required status members. */
 export type BroadcastChannelTransport = PresenceTransport & {

@@ -27,7 +27,7 @@ function createAblyTransport(channel: Ably.RealtimeChannel): PresenceTransport;
 function createPusherTransport(channel: Pusher.Channel, socket: Pusher): PresenceTransport;
 ```
 
-These adapters live in `examples/`, not in a package, the same way the Socket.IO adapter does — the package boundary rule in `AGENTS.md` keeps third-party client libraries out of `@anchor-presence/dom`.
+These adapters live in `examples/`, not in a package, the same way the Socket.IO adapter does — the package boundary rule in `AGENTS.md` keeps third-party client libraries out of `@dammers/anchor-presence-dom`.
 
 ## Transport sketch
 

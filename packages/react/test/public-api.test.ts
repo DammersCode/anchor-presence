@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-describe("@anchor-presence/react public runtime API", () => {
+describe("@dammers/anchor-presence-react public runtime API", () => {
   it("exposes the current runtime exports and no anchor-registration hook", async () => {
     const mod = await import("../src");
 

@@ -9,9 +9,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@anchor-presence/core": "0.1.0",
-    "@anchor-presence/dom": "0.1.0",
-    "@anchor-presence/react": "0.1.0",
+    "@dammers/anchor-presence-core": "0.1.0",
+    "@dammers/anchor-presence-dom": "0.1.0",
+    "@dammers/anchor-presence-react": "0.1.0",
     "@dammers/use-signalr-react": "^0.5.0",
     "@microsoft/signalr": "^10.0.11",
     "cn": "^0.4.0",

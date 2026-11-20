@@ -6,7 +6,7 @@ icon: workflow
 
 import { Rocket, Server, Plug, Puzzle } from "lucide-react";
 
-`@anchor-presence/react` is built for any React framework. This page shows where to put the provider in each framework. The provider and `CursorLayer` run only in the browser. On the server, the provider renders its children with a `null` client and creates no client.
+`@dammers/anchor-presence-react` is built for any React framework. This page shows where to put the provider in each framework. The provider and `CursorLayer` run only in the browser. On the server, the provider renders its children with a `null` client and creates no client.
 
 For Vue, Solid, Svelte, or plain DOM code, see [Build a framework adapter](/docs/core/build-a-framework-adapter).
 
@@ -19,9 +19,9 @@ Every framework below uses this provider module. It creates the client in the `f
 "use client";
 
 import type { ReactNode } from "react";
-import { createPresenceClient } from "@anchor-presence/core";
-import { createWebSocketTransport } from "@anchor-presence/dom";
-import { CursorLayer, PresenceProvider } from "@anchor-presence/react";
+import { createPresenceClient } from "@dammers/anchor-presence-core";
+import { createWebSocketTransport } from "@dammers/anchor-presence-dom";
+import { CursorLayer, PresenceProvider } from "@dammers/anchor-presence-react";
 
 function createClient() {
   const transport = createWebSocketTransport({ port: 8788, path: "/?room=main" });

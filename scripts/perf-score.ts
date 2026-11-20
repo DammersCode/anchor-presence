@@ -51,7 +51,7 @@ async function bundleSizes(): Promise<void> {
       entrypoints: [join(rootDir, `packages/${name}/dist/index.js`)],
       minify: true,
       target: "browser",
-      external: ["@anchor-presence/*", "react", "react-dom", "react/jsx-runtime"],
+      external: ["@dammers/anchor-presence-*", "react", "react-dom", "react/jsx-runtime"],
     });
     const output = result.outputs[0];
     if (result.success !== true || output === undefined)

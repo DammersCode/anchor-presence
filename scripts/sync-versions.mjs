@@ -6,7 +6,7 @@ import { dirname, join } from "node:path";
 const rootDir = dirname(import.meta.dirname);
 const rootPkg = JSON.parse(readFileSync(join(rootDir, "package.json"), "utf8"));
 const version = rootPkg.version;
-const SCOPE = "@anchor-presence/";
+const SCOPE = "@dammers/anchor-presence-";
 const DEP_FIELDS = ["dependencies", "devDependencies", "peerDependencies"];
 
 const manifests = [];

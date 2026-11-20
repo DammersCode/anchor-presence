@@ -13,7 +13,7 @@ Motion is the ease of a remote cursor from its last position to its new one. It 
 Pass `resolution.interpolatorFactory` to use another easing style, for example a spring. `mySpringInterpolatorFactory` is the spring from [Interpolation](/docs/core/interpolation#write-a-spring), and `client` is your presence client:
 
 ```ts
-import { createDomBinding } from "@anchor-presence/dom";
+import { createDomBinding } from "@dammers/anchor-presence-dom";
 
 const binding = createDomBinding(client, {
   resolution: { interpolatorFactory: mySpringInterpolatorFactory },
@@ -26,7 +26,7 @@ Write the factory against the `Interpolator` interface. See [Interpolation](/doc
 
 ## Default interpolator
 
-If you omit `resolution.interpolatorFactory`, `createDomBinding` picks a factory from `@anchor-presence/core`:
+If you omit `resolution.interpolatorFactory`, `createDomBinding` picks a factory from `@dammers/anchor-presence-core`:
 
 | Condition at creation                                              | Factory              | Motion                    |
 | ------------------------------------------------------------------ | -------------------- | ------------------------- |
@@ -45,7 +45,7 @@ The [Interpolation styles](/docs/examples/interpolation-styles) example shows th
 
 ## Where easing runs
 
-`@anchor-presence/core` defines the interpolators but never calls them, because it has no frame clock. The binding samples the interpolator on each scheduled frame and writes the result into `ResolvedCursor.x` and `ResolvedCursor.y`. Code that uses only `@anchor-presence/core` reads raw positions, with no easing.
+`@dammers/anchor-presence-core` defines the interpolators but never calls them, because it has no frame clock. The binding samples the interpolator on each scheduled frame and writes the result into `ResolvedCursor.x` and `ResolvedCursor.y`. Code that uses only `@dammers/anchor-presence-core` reads raw positions, with no easing.
 
 ## When motion restarts instead of easing
 

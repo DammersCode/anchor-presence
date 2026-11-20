@@ -1,5 +1,5 @@
-import { createPresenceClient, type PresenceClient } from "@anchor-presence/core";
-import { createWebSocketTransport } from "@anchor-presence/dom";
+import { createPresenceClient, type PresenceClient } from "@dammers/anchor-presence-core";
+import { createWebSocketTransport } from "@dammers/anchor-presence-dom";
 import { createElysiaClient } from "./client";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import {

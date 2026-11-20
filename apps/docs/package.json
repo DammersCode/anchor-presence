@@ -1,5 +1,5 @@
 {
-  "name": "@anchor-presence/docs",
+  "name": "@dammers/anchor-presence-docs",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -11,9 +11,9 @@
     "typecheck": "fumadocs-mdx && next typegen && tsc --noEmit"
   },
   "dependencies": {
-    "@anchor-presence/core": "workspace:*",
-    "@anchor-presence/dom": "workspace:*",
-    "@anchor-presence/react": "workspace:*",
+    "@dammers/anchor-presence-core": "workspace:*",
+    "@dammers/anchor-presence-dom": "workspace:*",
+    "@dammers/anchor-presence-react": "workspace:*",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
     "fumadocs-core": "^16.15.11",

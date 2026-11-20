@@ -15,7 +15,7 @@ The recipe imports its hooks and types from the `./presence` module of [Typed ho
 `usePeerChanges` calls your listener for each join, leave, and `user` or `context` update. If ten peers join in one second, ten messages queue up in the screen reader. The component below collects the changes for 1 second and announces one message:
 
 ```tsx
-import type { PeerChange } from "@anchor-presence/react";
+import type { PeerChange } from "@dammers/anchor-presence-react";
 import { useEffect, useRef, useState } from "react";
 import { usePeerChanges } from "./presence";
 import type { Context, User } from "./presence";

@@ -1,6 +1,6 @@
-# @anchor-presence/react
+# @dammers/anchor-presence-react
 
-`@anchor-presence/react` is the React adapter for Anchor Presence. It gives you a provider component, a set of hooks, and two optional cursor components.
+`@dammers/anchor-presence-react` is the React adapter for Anchor Presence. It gives you a provider component, a set of hooks, and two optional cursor components.
 
 [![MIT](https://img.shields.io/badge/license-MIT-blue.svg)](../../LICENSE)
 
@@ -9,15 +9,15 @@
 Install the adapter and the two packages that it uses:
 
 ```sh
-bun add @anchor-presence/react @anchor-presence/dom @anchor-presence/core
+bun add @dammers/anchor-presence-react @dammers/anchor-presence-dom @dammers/anchor-presence-core
 ```
 
-The first sample uses the provider of `@anchor-presence/react`. The samples connect to the Bun relay of the [quick start](https://anchor-presence.vercel.app/docs/get-started/quick-start#connect-a-relay), on port 8788. This app creates the client in the provider `factory` and renders the remote cursors:
+The first sample uses the provider of `@dammers/anchor-presence-react`. The samples connect to the Bun relay of the [quick start](https://anchor-presence.vercel.app/docs/get-started/quick-start#connect-a-relay), on port 8788. This app creates the client in the provider `factory` and renders the remote cursors:
 
 ```tsx
-import { createPresenceClient } from "@anchor-presence/core";
-import { createWebSocketTransport } from "@anchor-presence/dom";
-import { CursorLayer, PresenceProvider } from "@anchor-presence/react";
+import { createPresenceClient } from "@dammers/anchor-presence-core";
+import { createWebSocketTransport } from "@dammers/anchor-presence-dom";
+import { CursorLayer, PresenceProvider } from "@dammers/anchor-presence-react";
 
 function DashboardButton() {
   return <button data-anchor="nav.dashboard">Dashboard</button>;
@@ -40,7 +40,7 @@ function App() {
 
 ## Boundary rule
 
-`@anchor-presence/react` holds no cursor state of its own. It reads the `@anchor-presence/core` and `@anchor-presence/dom` stores with `useSyncExternalStore`. The package never touches the DOM at load time, so it is safe to import on a server.
+`@dammers/anchor-presence-react` holds no cursor state of its own. It reads the `@dammers/anchor-presence-core` and `@dammers/anchor-presence-dom` stores with `useSyncExternalStore`. The package never touches the DOM at load time, so it is safe to import on a server.
 
 ## Main exports
 
@@ -101,7 +101,7 @@ To bring your own client, pass the `client` prop instead. The provider then neve
 `useRemoteUsers` lists every peer. This component shows the number of peers in a presence bar:
 
 ```tsx
-import { useRemoteUsers } from "@anchor-presence/react";
+import { useRemoteUsers } from "@dammers/anchor-presence-react";
 
 function OnlineBar() {
   const users = useRemoteUsers();
@@ -109,7 +109,7 @@ function OnlineBar() {
 }
 ```
 
-`user` is the value that each peer passed to `createPresenceClient`, and it has the type `unknown` because a peer can send any value. This sample needs the provider of `@anchor-presence/react`. For a typed `user`, use the hooks of `createPresenceHooks` with the provider of the same call. Without `getLabel`, `CursorLayer` shows `user.name` when it is a string that is not empty. Without `getColor`, it picks one color per `clientId` from a palette of 8 colors. Check `user` before you render it.
+`user` is the value that each peer passed to `createPresenceClient`, and it has the type `unknown` because a peer can send any value. This sample needs the provider of `@dammers/anchor-presence-react`. For a typed `user`, use the hooks of `createPresenceHooks` with the provider of the same call. Without `getLabel`, `CursorLayer` shows `user.name` when it is a string that is not empty. Without `getColor`, it picks one color per `clientId` from a palette of 8 colors. Check `user` before you render it.
 
 ## CursorLayer
 

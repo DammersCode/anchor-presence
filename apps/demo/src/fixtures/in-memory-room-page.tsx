@@ -1,6 +1,6 @@
 import { useContext, useState } from "react";
-import { createEventChannel, createInMemoryRoom, createPresenceClient } from "@anchor-presence/core";
-import type { InMemoryRoom } from "@anchor-presence/core";
+import { createEventChannel, createInMemoryRoom, createPresenceClient } from "@dammers/anchor-presence-core";
+import type { InMemoryRoom } from "@dammers/anchor-presence-core";
 import {
   CursorLayer,
   DefaultCursor,
@@ -8,7 +8,7 @@ import {
   PresenceProviderContext,
   useRemoteEvents,
   useSendEvent,
-} from "@anchor-presence/react";
+} from "@dammers/anchor-presence-react";
 
 const NAMES = ["Ada", "Bo", "Cy"] as const;
 type Name = (typeof NAMES)[number];

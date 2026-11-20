@@ -2,7 +2,7 @@
 
 This relay is for demos and local development. Read the production notes before you run it anywhere else.
 
-This example is a room-broadcast relay on the WebSocket support of `Bun.serve`. It uses the topic pub-sub of Bun instead of a hand-written room map. A peer is another client in the same room. The relay forwards each message to the peers of the sender. The client needs no custom transport. It uses `createWebSocketTransport` from `@anchor-presence/dom`, as for `apps/server`.
+This example is a room-broadcast relay on the WebSocket support of `Bun.serve`. It uses the topic pub-sub of Bun instead of a hand-written room map. A peer is another client in the same room. The relay forwards each message to the peers of the sender. The client needs no custom transport. It uses `createWebSocketTransport` from `@dammers/anchor-presence-dom`, as for `apps/server`.
 
 - `server.ts` exports `createBunRelay(port)`. It returns `{ url, close }`.
 - `relay.ts` is the entry file (`bun run dev:relay`).
@@ -54,8 +54,8 @@ The relay reads the room from the `room` query parameter (`/?room=main`). A miss
 Create the presence client with the WebSocket transport. The client connects the transport:
 
 ```ts
-import { createPresenceClient } from "@anchor-presence/core";
-import { createWebSocketTransport } from "@anchor-presence/dom";
+import { createPresenceClient } from "@dammers/anchor-presence-core";
+import { createWebSocketTransport } from "@dammers/anchor-presence-dom";
 
 const transport = createWebSocketTransport({ port: 8788, path: "/?room=main" });
 const client = createPresenceClient({ transport });

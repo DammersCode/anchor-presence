@@ -1,5 +1,5 @@
 {
-  "name": "@anchor-presence/dom",
+  "name": "@dammers/anchor-presence-dom",
   "version": "0.1.0",
   "description": "DOM anchor registry, geometry scheduling and cursor resolution",
   "license": "MIT",
@@ -40,6 +40,6 @@
     "build": "rm -rf dist tsconfig.tsbuildinfo && tsc --build"
   },
   "dependencies": {
-    "@anchor-presence/core": "0.1.0"
+    "@dammers/anchor-presence-core": "0.1.0"
   }
 }

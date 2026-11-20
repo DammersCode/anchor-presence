@@ -12,10 +12,10 @@ If your app uses Socket.IO or SignalR, use the [Socket.IO](/docs/examples/backen
 
 ## BroadcastChannel sketch
 
-`BroadcastChannel` sends messages between browsing contexts (tabs, iframes, workers) on the same origin. It never crosses a network. This sketch shows the parts of a transport on a small version of [`createBroadcastChannelTransport`](/docs/dom/broadcast-channel-transport), which `@anchor-presence/dom` ships. The sketch posts raw bytes, so it does not work with the shipped transport, which wraps each message in an object with `from` and `data`:
+`BroadcastChannel` sends messages between browsing contexts (tabs, iframes, workers) on the same origin. It never crosses a network. This sketch shows the parts of a transport on a small version of [`createBroadcastChannelTransport`](/docs/dom/broadcast-channel-transport), which `@dammers/anchor-presence-dom` ships. The sketch posts raw bytes, so it does not work with the shipped transport, which wraps each message in an object with `from` and `data`:
 
 ```ts
-import type { ConnectionStatus, PresenceTransport } from "@anchor-presence/core";
+import type { ConnectionStatus, PresenceTransport } from "@dammers/anchor-presence-core";
 
 function createBroadcastChannelTransport(channelName: string): PresenceTransport {
   const listeners = new Set<(data: Uint8Array) => void>();
@@ -95,7 +95,7 @@ A managed service is a hosted publish and subscribe service or a serverless WebS
 A transport reports why a connection closed through the optional `subscribeClose` method. Keep a set of listeners, and call each one from the close handler of your socket:
 
 ```ts
-import type { TransportClose } from "@anchor-presence/core";
+import type { TransportClose } from "@dammers/anchor-presence-core";
 
 const closeListeners = new Set<(close: TransportClose) => void>();
 

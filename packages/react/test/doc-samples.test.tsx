@@ -1,9 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { createPresenceClient, type PresenceClient, type PresenceTransport } from "@anchor-presence/core";
-import { createWebSocketTransport } from "@anchor-presence/dom";
-import type { ResolvedCursor } from "@anchor-presence/dom";
+import {
+  createPresenceClient,
+  type PresenceClient,
+  type PresenceTransport,
+} from "@dammers/anchor-presence-core";
+import { createWebSocketTransport } from "@dammers/anchor-presence-dom";
+import type { ResolvedCursor } from "@dammers/anchor-presence-dom";
 import { PresenceProvider } from "../src/provider";
 import { useRemoteUsers } from "../src/hooks/use-remote-users";
 import { CursorLayer } from "../src/cursor";

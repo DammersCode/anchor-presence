@@ -1,7 +1,7 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import type { ResolvedCursor } from "@anchor-presence/dom";
+import type { ResolvedCursor } from "@dammers/anchor-presence-dom";
 import { PresenceProvider } from "../src/provider";
 import { useRemoteCursors } from "../src/hooks";
 import { makeFakeBinding, makeFakeClient } from "./test-utils";

@@ -1,4 +1,4 @@
-import { isDevMode } from "@anchor-presence/core";
+import { isDevMode } from "@dammers/anchor-presence-core";
 import type { AnchorRegistry } from "./registry.js";
 import type { MutationObserverCtor } from "./scheduler.js";
 

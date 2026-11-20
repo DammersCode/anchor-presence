@@ -1,7 +1,7 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, describe, expect, it } from "vitest";
-import type { PeerChange } from "@anchor-presence/core";
+import type { PeerChange } from "@dammers/anchor-presence-core";
 import { useLocalUser as useUntypedLocalUser } from "../src/hooks/use-local-user";
 import { createPresenceHooks } from "../src/typed-hooks";
 import { makeFakeBinding, makeFakeClient } from "./test-utils";

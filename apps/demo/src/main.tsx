@@ -1,6 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { createPresenceClient } from "@anchor-presence/core";
+import { createPresenceClient } from "@dammers/anchor-presence-core";
 import "./index.css";
 import App from "./app";
 import { InMemoryRoomPage } from "./fixtures/in-memory-room-page";

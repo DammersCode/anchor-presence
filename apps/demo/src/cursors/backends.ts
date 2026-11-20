@@ -1,7 +1,12 @@
 // Picks which relay backend the demo talks to, at runtime, via ?backend= or VITE_BACKEND.
 // Every backend but socketio/signalr is a plain WebSocket relay: same transport, different port.
-import { binaryCodec, jsonCodec, type PresenceCodec, type PresenceTransport } from "@anchor-presence/core";
-import { createWebSocketTransport } from "@anchor-presence/dom";
+import {
+  binaryCodec,
+  jsonCodec,
+  type PresenceCodec,
+  type PresenceTransport,
+} from "@dammers/anchor-presence-core";
+import { createWebSocketTransport } from "@dammers/anchor-presence-dom";
 import { io } from "socket.io-client";
 import { createSocketIoTransport } from "../../../../examples/socketio/transport";
 import { createSignalRTransport } from "../../../../examples/signalr/transport";

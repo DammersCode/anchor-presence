@@ -16,7 +16,7 @@ import {
   type PresenceTransport,
   type PresenceClient,
   type RemotePresence,
-} from "@anchor-presence/core";
+} from "@dammers/anchor-presence-core";
 
 // Verbatim copies of doc samples; the last test checks each copy against its .mdx source.
 

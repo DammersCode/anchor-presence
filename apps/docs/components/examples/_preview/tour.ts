@@ -1,8 +1,8 @@
-import { createPresenceClient } from "@anchor-presence/core";
-import type { AnchorPoint, CursorPosition, PresenceClient } from "@anchor-presence/core";
+import { createPresenceClient } from "@dammers/anchor-presence-core";
+import type { AnchorPoint, CursorPosition, PresenceClient } from "@dammers/anchor-presence-core";
 
 type TourClient = PresenceClient<TourContext, TourUser>;
-import { createBroadcastChannelTransport } from "@anchor-presence/dom";
+import { createBroadcastChannelTransport } from "@dammers/anchor-presence-dom";
 
 export type TourUser = { name: string; color: string };
 

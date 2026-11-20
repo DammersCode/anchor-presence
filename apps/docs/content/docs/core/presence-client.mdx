@@ -15,7 +15,7 @@ The client also sends and receives events: one-shot messages to every peer, for 
 This sample creates a client, publishes a cursor, reads the peers, and stops the client:
 
 ```ts
-import { createPresenceClient } from "@anchor-presence/core";
+import { createPresenceClient } from "@dammers/anchor-presence-core";
 
 const client = createPresenceClient({ transport: myTransport, user: { name: "Ada" } });
 
@@ -162,7 +162,7 @@ const client = createPresenceClient({
 This sample shows debug output only in development:
 
 ```ts
-import { isDevMode } from "@anchor-presence/core";
+import { isDevMode } from "@dammers/anchor-presence-core";
 
 if (isDevMode()) console.debug("[presence] debug overlay on");
 ```

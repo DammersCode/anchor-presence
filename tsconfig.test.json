@@ -9,9 +9,9 @@
     "types": ["node"],
     "jsx": "react-jsx",
     "paths": {
-      "@anchor-presence/core": ["./packages/core/src/index.ts"],
-      "@anchor-presence/dom": ["./packages/dom/src/index.ts"],
-      "@anchor-presence/react": ["./packages/react/src/index.ts"]
+      "@dammers/anchor-presence-core": ["./packages/core/src/index.ts"],
+      "@dammers/anchor-presence-dom": ["./packages/dom/src/index.ts"],
+      "@dammers/anchor-presence-react": ["./packages/react/src/index.ts"]
     }
   },
   "include": [

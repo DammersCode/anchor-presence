@@ -1,4 +1,4 @@
-import type { VisibilityPolicy } from "@anchor-presence/dom";
+import type { VisibilityPolicy } from "@dammers/anchor-presence-dom";
 import type { DemoContext } from "./setup";
 
 export type LocalViewState = {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { PresenceMessage } from "@anchor-presence/core";
-import type { ResolutionTier } from "@anchor-presence/dom";
+import type { PresenceMessage } from "@dammers/anchor-presence-core";
+import type { ResolutionTier } from "@dammers/anchor-presence-dom";
 import { createVisibilityPolicy } from "./visibility-policy";
 import type { LocalViewState } from "./visibility-policy";
 import type { DemoContext } from "./setup";

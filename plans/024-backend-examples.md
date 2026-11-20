@@ -14,7 +14,7 @@ Show the library on the most common live-data backends. Remove the duplicated ex
 ## Spec
 
 - One demo client: `apps/demo` selects the backend at runtime (query `?backend=` or `VITE_BACKEND`). Each `examples/<name>/` holds only its server, a client transport if it needs a third-party client library, a README, and an integration test.
-- Bun native, Node `ws`, Hono, and Elysia use `createWebSocketTransport` from `@anchor-presence/dom` on the client.
+- Bun native, Node `ws`, Hono, and Elysia use `createWebSocketTransport` from `@dammers/anchor-presence-dom` on the client.
 - Every server exports `createXRelay(port) → { url, close }` and has a runnable entry.
 - Integration test per backend: two real `createPresenceClient`s through the real server. It checks same-room relay, cross-room isolation, disconnect cleanup, and that invalid or oversized frames are dropped.
 - SignalR: the hub uses groups per room (`Groups.AddToGroupAsync`, `Clients.OthersInGroup`). A real test starts the ASP.NET Core hub and skips when `dotnet` is not on `PATH`. CI runs it with `setup-dotnet`.

@@ -1,7 +1,7 @@
 {
   "title": "Core",
   "icon": "box",
-  "description": "@anchor-presence/core: protocol, codecs, client, and transport contract",
+  "description": "@dammers/anchor-presence-core: protocol, codecs, client, and transport contract",
   "root": true,
   "pages": [
     "index",

@@ -1,5 +1,5 @@
 // injectInbound runs the real codec/validate/store/resolver pipeline, not store internals
-import type { PresenceTransport } from "@anchor-presence/core";
+import type { PresenceTransport } from "@dammers/anchor-presence-core";
 
 export type LoopbackTransport = PresenceTransport & {
   injectInbound(data: Uint8Array): void;

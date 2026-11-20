@@ -10,12 +10,12 @@ import { Braces, Crosshair, Users } from "lucide-react";
 
 ## Usage
 
-If your app has a [typed `presence.ts` module](/docs/react/typed-hooks), import `useRemotePresence` from it. The package export reads only the provider of `@anchor-presence/react`.
+If your app has a [typed `presence.ts` module](/docs/react/typed-hooks), import `useRemotePresence` from it. The package export reads only the provider of `@dammers/anchor-presence-react`.
 
 This component counts the peers whose cursor has no anchor, so the receiver can place it only by viewport position:
 
 ```tsx
-import { useRemotePresence } from "@anchor-presence/react";
+import { useRemotePresence } from "@dammers/anchor-presence-react";
 
 function ViewportOnlyBadge() {
   const presence = useRemotePresence();

@@ -1,7 +1,7 @@
 {
   "title": "DOM",
   "icon": "mouse-pointer",
-  "description": "The DOM binding for @anchor-presence/dom: anchors, pointer capture, resolution, and the browser transports",
+  "description": "The DOM binding for @dammers/anchor-presence-dom: anchors, pointer capture, resolution, and the browser transports",
   "root": true,
   "pages": [
     "index",

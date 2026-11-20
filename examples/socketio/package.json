@@ -6,7 +6,7 @@
     "dev:relay": "bun relay.ts"
   },
   "dependencies": {
-    "@dammers/anchor-presence-core": "0.1.0",
+    "@dammers/anchor-presence-core": "1.0.0",
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3"
   }

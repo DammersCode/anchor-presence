@@ -11,9 +11,9 @@
     "typecheck": "fumadocs-mdx && next typegen && tsc --noEmit"
   },
   "dependencies": {
-    "@dammers/anchor-presence-core": "workspace:*",
-    "@dammers/anchor-presence-dom": "workspace:*",
-    "@dammers/anchor-presence-react": "workspace:*",
+    "@dammers/anchor-presence-core": "1.0.0",
+    "@dammers/anchor-presence-dom": "1.0.0",
+    "@dammers/anchor-presence-react": "1.0.0",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
     "fumadocs-core": "^16.15.11",

@@ -1,6 +1,6 @@
 {
   "name": "@dammers/anchor-presence-core",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Framework-agnostic live cursor presence engine",
   "license": "MIT",
   "author": "DammersCode",

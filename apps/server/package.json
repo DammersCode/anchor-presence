@@ -7,6 +7,6 @@
     "dev": "bun run index.ts"
   },
   "devDependencies": {
-    "@dammers/anchor-presence-core": "0.1.0"
+    "@dammers/anchor-presence-core": "1.0.0"
   }
 }

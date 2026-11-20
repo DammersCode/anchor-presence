@@ -6,8 +6,8 @@
     "dev:relay": "bun relay.ts"
   },
   "dependencies": {
-    "@dammers/anchor-presence-core": "0.1.0",
-    "@dammers/anchor-presence-dom": "0.1.0",
+    "@dammers/anchor-presence-core": "1.0.0",
+    "@dammers/anchor-presence-dom": "1.0.0",
     "@elysia/eden": "^1.4.10",
     "elysia": "^1.4.30"
   }

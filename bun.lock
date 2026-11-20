@@ -27,9 +27,9 @@
       "name": "demo",
       "version": "0.1.0",
       "dependencies": {
-        "@dammers/anchor-presence-core": "0.1.0",
-        "@dammers/anchor-presence-dom": "0.1.0",
-        "@dammers/anchor-presence-react": "0.1.0",
+        "@dammers/anchor-presence-core": "1.0.0",
+        "@dammers/anchor-presence-dom": "1.0.0",
+        "@dammers/anchor-presence-react": "1.0.0",
         "@dammers/use-signalr-react": "^0.5.0",
         "@microsoft/signalr": "^10.0.11",
         "cn": "^0.4.0",
@@ -54,9 +54,9 @@
       "name": "@dammers/anchor-presence-docs",
       "version": "0.1.0",
       "dependencies": {
-        "@dammers/anchor-presence-core": "workspace:*",
-        "@dammers/anchor-presence-dom": "workspace:*",
-        "@dammers/anchor-presence-react": "workspace:*",
+        "@dammers/anchor-presence-core": "1.0.0",
+        "@dammers/anchor-presence-dom": "1.0.0",
+        "@dammers/anchor-presence-react": "1.0.0",
         "@vercel/analytics": "^2.0.1",
         "@vercel/speed-insights": "^2.0.0",
         "fumadocs-core": "^16.15.11",
@@ -84,21 +84,21 @@
       "name": "server",
       "version": "0.1.0",
       "devDependencies": {
-        "@dammers/anchor-presence-core": "0.1.0",
+        "@dammers/anchor-presence-core": "1.0.0",
       },
     },
     "examples/bun-native": {
       "name": "example-bun-native",
       "dependencies": {
-        "@dammers/anchor-presence-core": "0.1.0",
-        "@dammers/anchor-presence-dom": "0.1.0",
+        "@dammers/anchor-presence-core": "1.0.0",
+        "@dammers/anchor-presence-dom": "1.0.0",
       },
     },
     "examples/elysia": {
       "name": "example-elysia",
       "dependencies": {
-        "@dammers/anchor-presence-core": "0.1.0",
-        "@dammers/anchor-presence-dom": "0.1.0",
+        "@dammers/anchor-presence-core": "1.0.0",
+        "@dammers/anchor-presence-dom": "1.0.0",
         "@elysia/eden": "^1.4.10",
         "elysia": "^1.4.30",
       },
@@ -106,16 +106,16 @@
     "examples/hono": {
       "name": "example-hono",
       "dependencies": {
-        "@dammers/anchor-presence-core": "0.1.0",
-        "@dammers/anchor-presence-dom": "0.1.0",
+        "@dammers/anchor-presence-core": "1.0.0",
+        "@dammers/anchor-presence-dom": "1.0.0",
         "hono": "^4.13.9",
       },
     },
     "examples/node-ws": {
       "name": "example-node-ws",
       "dependencies": {
-        "@dammers/anchor-presence-core": "0.1.0",
-        "@dammers/anchor-presence-dom": "0.1.0",
+        "@dammers/anchor-presence-core": "1.0.0",
+        "@dammers/anchor-presence-dom": "1.0.0",
         "ws": "^8.21.3",
       },
       "devDependencies": {
@@ -125,21 +125,21 @@
     "examples/signalr": {
       "name": "example-signalr",
       "dependencies": {
-        "@dammers/anchor-presence-core": "0.1.0",
+        "@dammers/anchor-presence-core": "1.0.0",
         "@microsoft/signalr": "^10.0.11",
       },
     },
     "examples/socketio": {
       "name": "example-socketio",
       "dependencies": {
-        "@dammers/anchor-presence-core": "0.1.0",
+        "@dammers/anchor-presence-core": "1.0.0",
         "socket.io": "^4.8.3",
         "socket.io-client": "^4.8.3",
       },
     },
     "packages/core": {
       "name": "@dammers/anchor-presence-core",
-      "version": "0.1.0",
+      "version": "1.0.0",
       "devDependencies": {
         "arktype": "^2.2.10",
         "valibot": "^1.5.0",
@@ -148,17 +148,17 @@
     },
     "packages/dom": {
       "name": "@dammers/anchor-presence-dom",
-      "version": "0.1.0",
+      "version": "1.0.0",
       "dependencies": {
-        "@dammers/anchor-presence-core": "0.1.0",
+        "@dammers/anchor-presence-core": "1.0.0",
       },
     },
     "packages/react": {
       "name": "@dammers/anchor-presence-react",
-      "version": "0.1.0",
+      "version": "1.0.0",
       "dependencies": {
-        "@dammers/anchor-presence-core": "0.1.0",
-        "@dammers/anchor-presence-dom": "0.1.0",
+        "@dammers/anchor-presence-core": "1.0.0",
+        "@dammers/anchor-presence-dom": "1.0.0",
       },
       "devDependencies": {
         "@types/react": "^19.2.18",

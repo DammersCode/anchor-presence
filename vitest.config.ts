@@ -25,6 +25,8 @@ export default defineConfig({
           environment: "jsdom",
           include: ["packages/react/test/**/*.test.{ts,tsx}"],
           setupFiles: ["test/quiet-library-warnings.ts", "packages/react/test/setup.ts"],
+          // docs-links reads every docs page; under a parallel run it passes the 5 s default
+          testTimeout: 20_000,
         },
       },
       {

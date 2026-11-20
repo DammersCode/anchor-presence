@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       # Checks run once on main; the release waits for that run instead of repeating it.
       # npm version pushes the commit and the tag together, so the run can still be in progress here.
       - name: Wait for green main checks on the tagged commit
@@ -26,10 +26,10 @@ jobs:
           done
           test -n "$id" || { echo "::error::No Main checks run for $GITHUB_SHA. Tag a commit that was pushed to main."; exit 1; }
           gh run watch "$id" --repo "$GITHUB_REPOSITORY" --exit-status --interval 30
-      - uses: oven-sh/setup-bun@v2
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: 1.3.14
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 22
           registry-url: https://registry.npmjs.org
@@ -50,6 +50,6 @@ jobs:
       - name: Publish @anchor-presence/react
         run: npm view @anchor-presence/react@${GITHUB_REF_NAME#v} version 2>/dev/null || (cd packages/react && npm publish --provenance --access public)
       - name: Create the GitHub release
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # v3
         with:
           generate_release_notes: true

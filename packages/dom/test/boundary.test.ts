@@ -9,7 +9,9 @@ const srcDir = join(process.cwd(), "packages/dom/src");
 const importPattern = /import\s+(?:type\s+)?(?:[\s\S]*?)\s+from\s+["']([^"']+)["']/gu;
 
 function isAllowedSpecifier(specifier: string): boolean {
-  return specifier === "@anchor-presence/core" || specifier.startsWith("./") || specifier.startsWith("../");
+  return (
+    specifier === "@dammers/anchor-presence-core" || specifier.startsWith("./") || specifier.startsWith("../")
+  );
 }
 
 function listTsFiles(dir: string): string[] {
@@ -24,7 +26,7 @@ describe("dom import boundary (spec §3.2)", () => {
   });
 
   for (const file of files) {
-    it(`${file} imports only "@anchor-presence/core" or relative paths`, () => {
+    it(`${file} imports only "@dammers/anchor-presence-core" or relative paths`, () => {
       const contents = readFileSync(join(srcDir, file), "utf8");
       const specifiers = Array.from(contents.matchAll(importPattern), (m) => m[1]).filter(
         (s) => s !== undefined,

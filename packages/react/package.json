@@ -1,5 +1,5 @@
 {
-  "name": "@anchor-presence/react",
+  "name": "@dammers/anchor-presence-react",
   "version": "0.1.0",
   "description": "React hooks, provider, and optional configurable cursor components for anchor-presence",
   "license": "MIT",
@@ -40,8 +40,8 @@
     "build": "rm -rf dist tsconfig.tsbuildinfo && tsc --build"
   },
   "dependencies": {
-    "@anchor-presence/core": "0.1.0",
-    "@anchor-presence/dom": "0.1.0"
+    "@dammers/anchor-presence-core": "0.1.0",
+    "@dammers/anchor-presence-dom": "0.1.0"
   },
   "peerDependencies": {
     "react": ">=18"

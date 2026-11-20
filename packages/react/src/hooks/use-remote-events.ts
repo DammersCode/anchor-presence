@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import type { EventMap, TypedRemoteEvent } from "@anchor-presence/core";
+import type { EventMap, TypedRemoteEvent } from "@dammers/anchor-presence-core";
 import { PresenceProviderContext } from "../context.js";
 import type { PresenceContext } from "../context.js";
 import { usePresenceProviderContext } from "./use-presence-client.js";

@@ -2,7 +2,7 @@ import { act, StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
-import type { PresenceClient } from "@anchor-presence/core";
+import type { PresenceClient } from "@dammers/anchor-presence-core";
 import { PresenceProvider, usePresenceClient, usePresenceStatus } from "../src";
 import { makeFakeClient } from "./test-utils";
 

@@ -1,6 +1,6 @@
 "use client";
 
-import type { ResolvedCursor } from "@anchor-presence/react";
+import type { ResolvedCursor } from "@dammers/anchor-presence-react";
 import { usePresenceClient, useRemoteCursors } from "./hooks";
 import { useLayoutEffect, useMemo, useRef } from "react";
 import type { TourUser } from "./tour";

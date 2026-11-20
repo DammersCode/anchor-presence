@@ -1,6 +1,6 @@
 import { CursorLayer as PackageCursorLayer } from "./hooks";
-import type { CursorRenderProps } from "@anchor-presence/react";
-import type { ResolvedCursor } from "@anchor-presence/dom";
+import type { CursorRenderProps } from "@dammers/anchor-presence-react";
+import type { ResolvedCursor } from "@dammers/anchor-presence-dom";
 import { DEFAULT_CURSOR_COLOR, isKnownCursorColor } from "./setup";
 import type { DemoContext, DemoUser } from "./setup";
 

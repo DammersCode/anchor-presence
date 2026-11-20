@@ -13,8 +13,8 @@ import { Cable, PlugZap, ShieldCheck } from "lucide-react";
 This sample connects a client to one room of a relay:
 
 ```ts
-import { createWebSocketTransport } from "@anchor-presence/dom";
-import { createPresenceClient } from "@anchor-presence/core";
+import { createWebSocketTransport } from "@dammers/anchor-presence-dom";
+import { createPresenceClient } from "@dammers/anchor-presence-core";
 
 const transport = createWebSocketTransport({ url: "wss://relay.example.com/?room=room-42" });
 const client = createPresenceClient({ transport });

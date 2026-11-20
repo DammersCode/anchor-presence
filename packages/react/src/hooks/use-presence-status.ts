@@ -1,5 +1,5 @@
 import { useCallback, useSyncExternalStore } from "react";
-import type { ConnectionStatus } from "@anchor-presence/core";
+import type { ConnectionStatus } from "@dammers/anchor-presence-core";
 import { PresenceProviderContext } from "../context.js";
 import type { PresenceContext } from "../context.js";
 import { getServerStatus, usePresenceProviderContext } from "./use-presence-client.js";

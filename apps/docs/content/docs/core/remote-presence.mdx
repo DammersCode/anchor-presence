@@ -129,7 +129,7 @@ The store drops a same-session message whose `sequence` is not higher than the s
 `RemotePresenceStore` is exported, so a relay or a test can hold remote presence without a `PresenceClient`. This sample checks each decoded message, stores it, and runs the sweep on a timer:
 
 ```ts
-import { RemotePresenceStore, validatePresence } from "@anchor-presence/core";
+import { RemotePresenceStore, validatePresence } from "@dammers/anchor-presence-core";
 
 const store = new RemotePresenceStore({ maxRemoteClients: 200 });
 const sweepTimer = setInterval(() => store.sweep(), 1000);

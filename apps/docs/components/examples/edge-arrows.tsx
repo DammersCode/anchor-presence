@@ -1,9 +1,9 @@
 "use client";
 
-import type { PresenceClient } from "@anchor-presence/core";
+import type { PresenceClient } from "@dammers/anchor-presence-core";
 import type { TourContext } from "./_preview/tour";
 import { CursorLayer, PresenceProvider, useRemoteCursors } from "./_preview/hooks";
-import type { ResolvedCursor } from "@anchor-presence/react";
+import type { ResolvedCursor } from "@dammers/anchor-presence-react";
 import type { ReactNode } from "react";
 import { LongPage } from "./long-page";
 

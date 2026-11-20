@@ -1,7 +1,7 @@
 // Browser-only values — never imported by SSR/module-eval code paths.
 import { randomName, randomRoom } from "../lib/names";
 import { resolveBackendId } from "./backends";
-import { createEventParser } from "@anchor-presence/core";
+import { createEventParser } from "@dammers/anchor-presence-core";
 
 export type PageId = "dashboard" | "orders" | "customers" | "products";
 export type DemoContext = { page?: PageId; dialog?: "settings" };

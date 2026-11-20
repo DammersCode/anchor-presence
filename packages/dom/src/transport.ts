@@ -1,7 +1,7 @@
 // oxlint-disable unicorn/prefer-add-event-listener -- WebSocketLike only exposes on* handlers
 
-import { isDevMode, reportListenerError, warnOnce } from "@anchor-presence/core";
-import type { ConnectionStatus, PresenceTransport, TransportClose } from "@anchor-presence/core";
+import { isDevMode, reportListenerError, warnOnce } from "@dammers/anchor-presence-core";
+import type { ConnectionStatus, PresenceTransport, TransportClose } from "@dammers/anchor-presence-core";
 
 type Handler<Event> = { bivarianceHack(event: Event): void }["bivarianceHack"];
 

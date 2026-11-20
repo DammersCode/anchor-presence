@@ -14,14 +14,14 @@ import {
   type PresenceMessage,
   type PresenceClient,
   type RemotePresence,
-} from "@anchor-presence/core";
+} from "@dammers/anchor-presence-core";
 import {
   createDomBinding,
   type DomBinding,
   type ResolutionTier,
   type ResolvedCursor,
   type VisibilityPolicy as ExportedVisibilityPolicy,
-} from "@anchor-presence/dom";
+} from "@dammers/anchor-presence-dom";
 import {
   createPresenceHooks as exportedCreatePresenceHooks,
   PresenceProviderContext,

@@ -4,8 +4,8 @@ import type {
   PresenceMessage,
   PresenceClient,
   RemotePresence,
-} from "@anchor-presence/core";
-import type { DomBinding, ResolvedCursor } from "@anchor-presence/dom";
+} from "@dammers/anchor-presence-core";
+import type { DomBinding, ResolvedCursor } from "@dammers/anchor-presence-dom";
 
 // react's `act` needs this flag set; every jsdom test importing testUtils gets it without a shared vitest setupFiles entry.
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;

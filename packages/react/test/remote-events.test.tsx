@@ -1,7 +1,7 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, describe, expect, it } from "vitest";
-import type { EventMap, TypedRemoteEvent } from "@anchor-presence/core";
+import type { EventMap, TypedRemoteEvent } from "@dammers/anchor-presence-core";
 import { PresenceProvider } from "../src/provider";
 import { useRemoteEvents } from "../src/hooks/use-remote-events";
 import { makeFakeBinding, makeFakeClient } from "./test-utils";

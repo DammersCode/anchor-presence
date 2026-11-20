@@ -3,10 +3,10 @@ import type { ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import type { Root } from "react-dom/client";
 import { afterEach, describe, expect, it } from "vitest";
-import { createInMemoryPair, createPresenceClient } from "@anchor-presence/core";
-import { parserFrom } from "@anchor-presence/core/standard-schema";
-import { createDomBinding } from "@anchor-presence/dom";
-import type { DomBinding, ResolvedCursor, VisibilityPolicy } from "@anchor-presence/dom";
+import { createInMemoryPair, createPresenceClient } from "@dammers/anchor-presence-core";
+import { parserFrom } from "@dammers/anchor-presence-core/standard-schema";
+import { createDomBinding } from "@dammers/anchor-presence-dom";
+import type { DomBinding, ResolvedCursor, VisibilityPolicy } from "@dammers/anchor-presence-dom";
 import * as v from "valibot";
 import {
   CursorLayer,

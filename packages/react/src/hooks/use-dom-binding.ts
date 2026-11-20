@@ -1,4 +1,4 @@
-import type { DomBinding } from "@anchor-presence/dom";
+import type { DomBinding } from "@dammers/anchor-presence-dom";
 import { PresenceProviderContext } from "../context.js";
 import type { PresenceContext } from "../context.js";
 import { usePresenceProviderContext } from "./use-presence-client.js";

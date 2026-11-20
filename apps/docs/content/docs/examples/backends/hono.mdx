@@ -12,7 +12,7 @@ You want a relay with routes and middleware instead of raw `Bun.serve`. This exa
 
 Install the packages:
 
-<InstallCommand packages="@anchor-presence/core @anchor-presence/dom hono" />
+<InstallCommand packages="@dammers/anchor-presence-core @dammers/anchor-presence-dom hono" />
 
 Install the types of Bun as a development dependency:
 
@@ -27,8 +27,8 @@ The client connects with `createWebSocketTransport`. The server file exports a f
     The client needs no custom transport:
 
     ```ts
-    import { createPresenceClient } from "@anchor-presence/core";
-    import { createWebSocketTransport } from "@anchor-presence/dom";
+    import { createPresenceClient } from "@dammers/anchor-presence-core";
+    import { createWebSocketTransport } from "@dammers/anchor-presence-dom";
 
     const transport = createWebSocketTransport({ port: 8790, path: "/?room=main" });
     const client = createPresenceClient({ transport });

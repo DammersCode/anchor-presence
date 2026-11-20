@@ -16,9 +16,9 @@ The samples connect to the Bun relay of the [Quick start](/docs/get-started/quic
 <Tab value="factory (standard)">
 
 ```tsx
-import { createPresenceClient } from "@anchor-presence/core";
-import { createWebSocketTransport } from "@anchor-presence/dom";
-import { CursorLayer, PresenceProvider } from "@anchor-presence/react";
+import { createPresenceClient } from "@dammers/anchor-presence-core";
+import { createWebSocketTransport } from "@dammers/anchor-presence-dom";
+import { CursorLayer, PresenceProvider } from "@dammers/anchor-presence-react";
 
 function App() {
   return (
@@ -39,9 +39,9 @@ function App() {
 
 ```tsx
 import { useEffect, useState } from "react";
-import { createPresenceClient, type PresenceClient } from "@anchor-presence/core";
-import { createWebSocketTransport } from "@anchor-presence/dom";
-import { CursorLayer, PresenceProvider } from "@anchor-presence/react";
+import { createPresenceClient, type PresenceClient } from "@dammers/anchor-presence-core";
+import { createWebSocketTransport } from "@dammers/anchor-presence-dom";
+import { CursorLayer, PresenceProvider } from "@dammers/anchor-presence-react";
 
 function OwnClientApp() {
   const [client, setClient] = useState<PresenceClient | null>(null);

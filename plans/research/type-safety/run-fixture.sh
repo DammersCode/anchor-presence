@@ -4,7 +4,7 @@ root="$(cd "$(dirname "$0")/../../.." && pwd)"
 fixture="$root/plans/research/type-safety/consumer-fixture"
 rm -rf "$fixture/node_modules"
 for pkg in core dom react; do
-  dest="$fixture/node_modules/@anchor-presence/$pkg"
+  dest="$fixture/node_modules/@dammers/anchor-presence-$pkg"
   mkdir -p "$dest" && cp -r "$root/packages/$pkg/dist" "$root/packages/$pkg/package.json" "$dest/"
 done
 mkdir -p "$fixture/node_modules/@types" && cp -r "$root/packages/react/node_modules/@types/react" "$fixture/node_modules/@types/react" && cp -r "$root/node_modules/.bun/csstype@3.2.3/node_modules/csstype" "$fixture/node_modules/csstype"

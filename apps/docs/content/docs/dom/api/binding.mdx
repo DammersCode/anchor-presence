@@ -9,8 +9,8 @@ import { Braces, Link } from "lucide-react";
 This page lists `createDomBinding` and its option types. Use it to look up a field. The [Binding](/docs/dom/binding) guide explains the behavior. Import them from the package:
 
 ```ts
-import { createDomBinding } from "@anchor-presence/dom";
-import type { DomBinding, DomBindingOptions } from "@anchor-presence/dom";
+import { createDomBinding } from "@dammers/anchor-presence-dom";
+import type { DomBinding, DomBindingOptions } from "@dammers/anchor-presence-dom";
 ```
 
 ## createDomBinding
@@ -47,7 +47,7 @@ See [Options](/docs/dom/binding#options).
 
 ## Host types
 
-`@anchor-presence/dom` exports the types of the `environment` fields. A fake host for a test must fit these shapes:
+`@dammers/anchor-presence-dom` exports the types of the `environment` fields. A fake host for a test must fit these shapes:
 
 ```ts
 type RafLike = (callback: (timestampMs: number) => void) => number;

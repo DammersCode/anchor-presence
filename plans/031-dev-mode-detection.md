@@ -9,7 +9,7 @@ Goal: one `isDevMode()` in core that is correct in Vite, Bun, and Node, and remo
 - New `packages/core/src/import-meta-env.d.ts`: ambient `interface ImportMeta { readonly env?: { readonly DEV?: boolean } }` so `import.meta.env` type-checks. The file is not imported by the entry graph, so the declaration does not ship to consumers.
 - `packages/core/src/internal/dev-warnings.ts`: replace the `isDevMode` body. Check `import.meta.env?.DEV === false` first (bundler-defined), then fall back to `process.env.NODE_ENV !== "production"`. Keep the JSDoc one-liner.
 - `packages/core/src/index.ts`: export `isDevMode`.
-- `packages/dom/src/registry.ts`, `packages/dom/src/transport.ts`, `packages/dom/src/auto-register.ts`: delete the local `isDev` copy and import `isDevMode` from `@anchor-presence/core`.
+- `packages/dom/src/registry.ts`, `packages/dom/src/transport.ts`, `packages/dom/src/auto-register.ts`: delete the local `isDev` copy and import `isDevMode` from `@dammers/anchor-presence-core`.
 
 ## Verify
 

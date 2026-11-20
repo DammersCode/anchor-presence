@@ -1,7 +1,7 @@
 "use client";
 
-import { linearInterpolator, noneInterpolator } from "@anchor-presence/core";
-import type { Interpolator, InterpolatorFactory, PresenceClient } from "@anchor-presence/core";
+import { linearInterpolator, noneInterpolator } from "@dammers/anchor-presence-core";
+import type { Interpolator, InterpolatorFactory, PresenceClient } from "@dammers/anchor-presence-core";
 import type { TourContext } from "./_preview/tour";
 import { CursorLayer, PresenceProvider, useRemoteCursors } from "./_preview/hooks";
 import { useEffect, useState, type ReactNode } from "react";

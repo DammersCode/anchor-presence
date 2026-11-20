@@ -9,8 +9,8 @@ import { Cable, RadioTower } from "lucide-react";
 This page lists `createWebSocketTransport` and its types. Use it to look up an option. The [WebSocket transport](/docs/dom/websocket-transport) guide explains the behavior. Import them from the package:
 
 ```ts
-import { createWebSocketTransport } from "@anchor-presence/dom";
-import type { WebSocketTransport, WebSocketTransportOptions } from "@anchor-presence/dom";
+import { createWebSocketTransport } from "@dammers/anchor-presence-dom";
+import type { WebSocketTransport, WebSocketTransportOptions } from "@dammers/anchor-presence-dom";
 ```
 
 ## createWebSocketTransport
@@ -22,9 +22,9 @@ import type { WebSocketTransport, WebSocketTransportOptions } from "@anchor-pres
 - `baseBackoffMs` or `maxBackoffMs` is not a positive finite number.
 - `maxBackoffMs` is less than `baseBackoffMs`.
 
-`WebSocketTransport` is a `PresenceTransport` from `@anchor-presence/core` whose `connect`, `disconnect`, `subscribeStatus`, `getStatus`, `subscribeClose`, and `bufferedBytes` members are all required.
+`WebSocketTransport` is a `PresenceTransport` from `@dammers/anchor-presence-core` whose `connect`, `disconnect`, `subscribeStatus`, `getStatus`, `subscribeClose`, and `bufferedBytes` members are all required.
 
-A `subscribeClose` listener receives a [`TransportClose`](/docs/core/api/transports-and-codecs#transportclose) from `@anchor-presence/core`.
+A `subscribeClose` listener receives a [`TransportClose`](/docs/core/api/transports-and-codecs#transportclose) from `@dammers/anchor-presence-core`.
 
 ## WebSocketTransportOptions
 

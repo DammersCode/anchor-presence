@@ -7,8 +7,8 @@
     "dev:relay:node": "node relay.ts"
   },
   "dependencies": {
-    "@anchor-presence/core": "0.1.0",
-    "@anchor-presence/dom": "0.1.0",
+    "@dammers/anchor-presence-core": "0.1.0",
+    "@dammers/anchor-presence-dom": "0.1.0",
     "ws": "^8.21.3"
   },
   "devDependencies": {

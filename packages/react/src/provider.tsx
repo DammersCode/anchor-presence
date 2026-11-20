@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { warnOnce } from "@anchor-presence/core";
-import type { EventMap, PresenceClient } from "@anchor-presence/core";
-import { createDomBinding } from "@anchor-presence/dom";
-import type { DomBinding, DomBindingOptions } from "@anchor-presence/dom";
+import { warnOnce } from "@dammers/anchor-presence-core";
+import type { EventMap, PresenceClient } from "@dammers/anchor-presence-core";
+import { createDomBinding } from "@dammers/anchor-presence-dom";
+import type { DomBinding, DomBindingOptions } from "@dammers/anchor-presence-dom";
 import { PresenceProviderContext } from "./context.js";
 import type { PresenceProviderValue } from "./context.js";
 

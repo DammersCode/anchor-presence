@@ -9,7 +9,7 @@ import { Code, Crosshair, Eye } from "lucide-react";
 This page lists the types of the resolution result. Use it to look up a field. The [Resolution](/docs/dom/resolution) and [Visibility policy](/docs/dom/visibility-policy) guides explain the behavior. Import them from the package:
 
 ```ts
-import type { ResolvedCursor, ResolutionTier, VisibilityPolicy } from "@anchor-presence/dom";
+import type { ResolvedCursor, ResolutionTier, VisibilityPolicy } from "@dammers/anchor-presence-dom";
 ```
 
 ## ResolvedCursor
@@ -35,11 +35,11 @@ type VisibilityPolicy<TContext = unknown, TUser = unknown> = (input: {
 
 ## CURSOR_MARKER_ATTRIBUTE
 
-`CURSOR_MARKER_ATTRIBUTE` is the string `"data-anchor-presence-cursor"`. The binding ignores the DOM changes inside an element with this attribute. A renderer sets it on the root element of each cursor. `@anchor-presence/react` sets it for you. See [Draw cursors without React](/docs/dom/binding#draw-cursors-without-react).
+`CURSOR_MARKER_ATTRIBUTE` is the string `"data-anchor-presence-cursor"`. The binding ignores the DOM changes inside an element with this attribute. A renderer sets it on the root element of each cursor. `@dammers/anchor-presence-react` sets it for you. See [Draw cursors without React](/docs/dom/binding#draw-cursors-without-react).
 
 ## Re-exported types
 
-`@anchor-presence/dom` re-exports `PointerType` from `@anchor-presence/core`. Import it from either package.
+`@dammers/anchor-presence-dom` re-exports `PointerType` from `@dammers/anchor-presence-core`. Import it from either package.
 
 ## Related
 

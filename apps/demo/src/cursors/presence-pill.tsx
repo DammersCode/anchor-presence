@@ -1,6 +1,6 @@
 import { useRemotePresence, usePresenceStatus, useRemoteCursorsSelector } from "./hooks";
-import type { ResolvedCursor } from "@anchor-presence/dom";
-import type { ConnectionStatus } from "@anchor-presence/core";
+import type { ResolvedCursor } from "@dammers/anchor-presence-dom";
+import type { ConnectionStatus } from "@dammers/anchor-presence-core";
 import { Avatar } from "../components/ui/avatar";
 import { DEFAULT_CURSOR_COLOR, isKnownCursorColor } from "./setup";
 import type { DemoContext, DemoUser } from "./setup";

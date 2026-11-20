@@ -14,7 +14,7 @@ MessagePack makes smaller payloads than JSON for the same data. This sketch uses
 
 ```ts
 import { encode, decode } from "@msgpack/msgpack";
-import type { PresenceCodec } from "@anchor-presence/core";
+import type { PresenceCodec } from "@dammers/anchor-presence-core";
 
 export const messagePackCodec: PresenceCodec = {
   encode(message) {
@@ -50,7 +50,7 @@ The network tab of the browser DevTools cannot show the content of `binaryCodec`
     This wrapper logs every message and keeps `binaryCodec` on the wire:
 
 ```ts
-import { binaryCodec, type PresenceCodec } from "@anchor-presence/core";
+import { binaryCodec, type PresenceCodec } from "@dammers/anchor-presence-core";
 
 const debugCodec: PresenceCodec = {
   encode(message) {

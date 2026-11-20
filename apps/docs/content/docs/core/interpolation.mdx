@@ -6,14 +6,14 @@ icon: spline
 
 import { Move, Radio } from "lucide-react";
 
-An `Interpolator` eases the position of a remote cursor toward its last target, so the cursor does not jump on every message. `@anchor-presence/dom` creates one interpolator for each peer through an `InterpolatorFactory`. If you want another easing style, for example a spring, write your own interpolator.
+An `Interpolator` eases the position of a remote cursor toward its last target, so the cursor does not jump on every message. `@dammers/anchor-presence-dom` creates one interpolator for each peer through an `InterpolatorFactory`. If you want another easing style, for example a spring, write your own interpolator.
 
 ## Use an interpolator
 
 `linearInterpolator(durationMs?)` returns an `Interpolator`:
 
 ```ts
-import { linearInterpolator } from "@anchor-presence/core";
+import { linearInterpolator } from "@dammers/anchor-presence-core";
 
 const interpolator = linearInterpolator(80);
 ```
@@ -22,7 +22,7 @@ Pass a factory to the DOM binding through `resolution.interpolatorFactory`. See 
 
 ## The Interpolator interface
 
-`@anchor-presence/core` exports `Interpolator` and `InterpolatorFactory` with these shapes:
+`@dammers/anchor-presence-core` exports `Interpolator` and `InterpolatorFactory` with these shapes:
 
 ```ts
 interface Interpolator {
@@ -56,7 +56,7 @@ The DOM binding calls these methods at fixed points:
 This factory eases a cursor with a damped spring. A new `target` keeps the velocity, so the cursor curves toward the new place:
 
 ```ts
-import type { InterpolatorFactory } from "@anchor-presence/core";
+import type { InterpolatorFactory } from "@dammers/anchor-presence-core";
 
 const STIFFNESS = 120;
 const DAMPING = 13;
@@ -124,10 +124,10 @@ const factory = () => linearInterpolator(120);
 
 ## noneInterpolator
 
-`noneInterpolator` is an `InterpolatorFactory`. Import it from `@anchor-presence/core`:
+`noneInterpolator` is an `InterpolatorFactory`. Import it from `@dammers/anchor-presence-core`:
 
 ```ts
-import { noneInterpolator } from "@anchor-presence/core";
+import { noneInterpolator } from "@dammers/anchor-presence-core";
 ```
 
 An interpolator from `noneInterpolator` applies no easing. `sample` always returns the last target, with `settled: true`. If peers send messages at a high rate and you need no smoothing between updates, use it. The DOM binding uses it by default when the operating system asks for reduced motion.

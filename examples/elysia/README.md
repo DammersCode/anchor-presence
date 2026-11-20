@@ -6,7 +6,7 @@ This example is a room-broadcast relay on the `.ws()` route of [Elysia](https://
 
 - `server.ts` exports `createElysiaRelay(port)` and the `ElysiaRelayApp` type for the Eden treaty. The function returns `{ url, app, close }`.
 - `relay.ts` is the entry file (`bun run dev:relay`).
-- `client.ts` is the typed client. Eden builds the socket, and `createWebSocketTransport` from `@anchor-presence/dom` controls the connection through the `WebSocketCtor` option.
+- `client.ts` is the typed client. Eden builds the socket, and `createWebSocketTransport` from `@dammers/anchor-presence-dom` controls the connection through the `WebSocketCtor` option.
 
 ## Run it
 

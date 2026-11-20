@@ -13,7 +13,7 @@ An anchor inside a scrollable panel can have a real size and position while the 
 `pointVisible` is a field of the resolution that a `VisibilityPolicy` receives, and of every `ResolvedCursor`. The default visibility policy ignores it. This policy hides a clipped cursor:
 
 ```ts
-import type { VisibilityPolicy } from "@anchor-presence/dom";
+import type { VisibilityPolicy } from "@dammers/anchor-presence-dom";
 
 const clippedPointPolicy: VisibilityPolicy = ({ resolution }) =>
   !resolution.pointVisible || resolution.tier === "hidden" ? "hide" : "show";

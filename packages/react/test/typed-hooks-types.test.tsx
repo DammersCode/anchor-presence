@@ -1,7 +1,7 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, describe, expect, expectTypeOf, it } from "vitest";
-import { createInMemoryPair, createPresenceClient } from "@anchor-presence/core";
+import { createInMemoryPair, createPresenceClient } from "@dammers/anchor-presence-core";
 import type {
   EventChannel,
   EventMap,
@@ -9,8 +9,8 @@ import type {
   PresenceClient,
   RemotePresence,
   TypedRemoteEvent,
-} from "@anchor-presence/core";
-import type { DomBinding, ResolvedCursor } from "@anchor-presence/dom";
+} from "@dammers/anchor-presence-core";
+import type { DomBinding, ResolvedCursor } from "@dammers/anchor-presence-dom";
 import {
   CursorLayer,
   PresenceProvider,
@@ -42,7 +42,7 @@ declare const otherUser: PresenceClient<Ctx, { other: number }, Events>;
 declare const otherEvents: PresenceClient<Ctx, User, { other: { n: number } }>;
 declare const userOnly: PresenceClient<unknown, User>;
 
-describe("hooks from @anchor-presence/react", () => {
+describe("hooks from @dammers/anchor-presence-react", () => {
   it("return unknown and take no type argument", () => {
     expectTypeOf(useRemoteUsers).returns.toEqualTypeOf<readonly RemoteUser<unknown>[]>();
     expectTypeOf(useLocalUser).returns.toEqualTypeOf<[unknown, (next: unknown) => void]>();

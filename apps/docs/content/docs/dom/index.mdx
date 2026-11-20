@@ -1,6 +1,6 @@
 ---
 title: Overview
-description: What @anchor-presence/dom does, when to use it directly, and where each part is documented.
+description: What @dammers/anchor-presence-dom does, when to use it directly, and where each part is documented.
 icon: mouse-pointer
 ---
 
@@ -21,13 +21,13 @@ import {
   Rocket,
 } from "lucide-react";
 
-`@anchor-presence/dom` is the package that reads the DOM layout and the pointer. It turns a `PresenceClient` from `@anchor-presence/core` into a list of resolved cursors: the position of each remote cursor in the pixels of your viewport. It renders nothing. `@anchor-presence/react` uses it for you. Use it directly to draw cursors without React, or to build an adapter for another UI framework.
+`@dammers/anchor-presence-dom` is the package that reads the DOM layout and the pointer. It turns a `PresenceClient` from `@dammers/anchor-presence-core` into a list of resolved cursors: the position of each remote cursor in the pixels of your viewport. It renders nothing. `@dammers/anchor-presence-react` uses it for you. Use it directly to draw cursors without React, or to build an adapter for another UI framework.
 
 This sample connects a client and logs each visible cursor:
 
 ```ts
-import { createPresenceClient } from "@anchor-presence/core";
-import { createDomBinding } from "@anchor-presence/dom";
+import { createPresenceClient } from "@dammers/anchor-presence-core";
+import { createDomBinding } from "@dammers/anchor-presence-dom";
 
 const client = createPresenceClient({ transport: myTransport });
 const binding = createDomBinding(client);

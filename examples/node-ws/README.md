@@ -2,7 +2,7 @@
 
 This relay is for demos and local development. Read the production notes before you run it anywhere else.
 
-This example is a room-broadcast relay on the [`ws`](https://github.com/websockets/ws) package over `node:http`. A peer is another client in the same room. The relay forwards each message to the peers of the sender. The client needs no custom transport. It uses `createWebSocketTransport` from `@anchor-presence/dom`, as for `apps/server`.
+This example is a room-broadcast relay on the [`ws`](https://github.com/websockets/ws) package over `node:http`. A peer is another client in the same room. The relay forwards each message to the peers of the sender. The client needs no custom transport. It uses `createWebSocketTransport` from `@dammers/anchor-presence-dom`, as for `apps/server`.
 
 - `server.ts` exports `createNodeWsRelay(port)`. It returns a promise of `{ url, close }`.
 - `relay.ts` is the entry file. It runs on Bun (`bun run dev:relay`) and on Node 22.18 or later (`bun run dev:relay:node`).
@@ -56,8 +56,8 @@ The relay reads the room from the `room` query parameter (`/?room=main`). A miss
 Create the presence client with the WebSocket transport. The client connects the transport:
 
 ```ts
-import { createPresenceClient } from "@anchor-presence/core";
-import { createWebSocketTransport } from "@anchor-presence/dom";
+import { createPresenceClient } from "@dammers/anchor-presence-core";
+import { createWebSocketTransport } from "@dammers/anchor-presence-dom";
 
 const transport = createWebSocketTransport({ port: 8789, path: "/?room=main" });
 const client = createPresenceClient({ transport });

@@ -6,15 +6,15 @@ icon: link
 
 import { Anchor, Code, Crosshair } from "lucide-react";
 
-`createDomBinding(client, options?)` creates the DOM side of one presence client. It returns a `DomBinding`: an object with a snapshot of resolved cursors, a `subscribe` method, and a `dispose` method. A resolved cursor is the position of one remote cursor in the pixels of your viewport. Create one binding for each client. `@anchor-presence/react` creates it for you.
+`createDomBinding(client, options?)` creates the DOM side of one presence client. It returns a `DomBinding`: an object with a snapshot of resolved cursors, a `subscribe` method, and a `dispose` method. A resolved cursor is the position of one remote cursor in the pixels of your viewport. Create one binding for each client. `@dammers/anchor-presence-react` creates it for you.
 
 ## Create a binding
 
 Call `createDomBinding` with a `PresenceClient`:
 
 ```ts
-import { createPresenceClient } from "@anchor-presence/core";
-import { createDomBinding } from "@anchor-presence/dom";
+import { createPresenceClient } from "@dammers/anchor-presence-core";
+import { createDomBinding } from "@dammers/anchor-presence-dom";
 
 const client = createPresenceClient({ transport: myTransport });
 const binding = createDomBinding(client);
@@ -68,7 +68,7 @@ Subscribe to the binding and update one element for each cursor. Set `CURSOR_MAR
 This function draws each visible cursor as a `div` inside `layer`, and returns the unsubscribe function:
 
 ```ts
-import { CURSOR_MARKER_ATTRIBUTE, type DomBinding } from "@anchor-presence/dom";
+import { CURSOR_MARKER_ATTRIBUTE, type DomBinding } from "@dammers/anchor-presence-dom";
 
 function drawCursors(binding: DomBinding, layer: HTMLElement): () => void {
   const elements = new Map<string, HTMLElement>();
@@ -97,14 +97,14 @@ function drawCursors(binding: DomBinding, layer: HTMLElement): () => void {
 }
 ```
 
-`x` and `y` are viewport pixels. Give `.remote-cursor` the CSS `position: fixed`, `left: 0`, `top: 0`, and `pointer-events: none`. `aria-hidden="true"` keeps the cursor away from screen readers. `@anchor-presence/react` uses the same styles and attribute on each cursor root. The final empty snapshot of `dispose` removes every element.
+`x` and `y` are viewport pixels. Give `.remote-cursor` the CSS `position: fixed`, `left: 0`, `top: 0`, and `pointer-events: none`. `aria-hidden="true"` keeps the cursor away from screen readers. `@dammers/anchor-presence-react` uses the same styles and attribute on each cursor root. The final empty snapshot of `dispose` removes every element.
 
 ## getAnchorElement
 
 `binding.getAnchorElement(anchorId)` returns the element that the binding uses for an anchor ID. Use it to scroll to the anchor of a remote cursor:
 
 ```ts
-import type { DomBinding } from "@anchor-presence/dom";
+import type { DomBinding } from "@dammers/anchor-presence-dom";
 
 function scrollToAnchor(binding: DomBinding, anchorId: string): void {
   binding.getAnchorElement(anchorId)?.scrollIntoView({ block: "center" });

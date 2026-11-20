@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { createInMemoryPair, createPresenceClient } from "@anchor-presence/core";
-import type { PresenceMessage } from "@anchor-presence/core";
+import { createInMemoryPair, createPresenceClient } from "@dammers/anchor-presence-core";
+import type { PresenceMessage } from "@dammers/anchor-presence-core";
 import { createDomBinding } from "../src/index";
 import type { VisibilityPolicy } from "../src/index";
 

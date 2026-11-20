@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-describe("@anchor-presence/core public runtime API", () => {
+describe("@dammers/anchor-presence-core public runtime API", () => {
   it("exposes only the approved runtime exports", async () => {
     const mod = await import("../src");
 

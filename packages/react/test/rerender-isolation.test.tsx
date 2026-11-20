@@ -1,9 +1,9 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createPresenceClient, jsonCodec } from "@anchor-presence/core";
-import type { PresenceMessage, PresenceTransport } from "@anchor-presence/core";
-import type { ResolvedCursor } from "@anchor-presence/dom";
+import { createPresenceClient, jsonCodec } from "@dammers/anchor-presence-core";
+import type { PresenceMessage, PresenceTransport } from "@dammers/anchor-presence-core";
+import type { ResolvedCursor } from "@dammers/anchor-presence-dom";
 import { PresenceProvider } from "../src/provider";
 import { useRemotePresence, useRemoteCursors } from "../src/hooks";
 import { makeFakeBinding, makeFakeClient } from "./test-utils";

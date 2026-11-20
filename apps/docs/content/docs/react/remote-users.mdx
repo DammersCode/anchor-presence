@@ -10,7 +10,7 @@ import { Gauge, UserPen, Braces, Users } from "lucide-react";
 
 ## Usage
 
-`useRemoteUsers` from `@anchor-presence/react` returns each `user` as `unknown`. For a typed `user`, use the `useRemoteUsers` of a [`createPresenceHooks`](/docs/react/typed-hooks) result. This component lists the peers and dims the idle ones. Its `user` has the type `User`, which the `./presence` module of [Typed hooks](/docs/react/typed-hooks#usage) fixes. The app must use the `PresenceProvider` of that module:
+`useRemoteUsers` from `@dammers/anchor-presence-react` returns each `user` as `unknown`. For a typed `user`, use the `useRemoteUsers` of a [`createPresenceHooks`](/docs/react/typed-hooks) result. This component lists the peers and dims the idle ones. Its `user` has the type `User`, which the `./presence` module of [Typed hooks](/docs/react/typed-hooks#usage) fixes. The app must use the `PresenceProvider` of that module:
 
 ```tsx
 import { useRemoteUsers } from "./presence";
@@ -54,11 +54,11 @@ The list and each unchanged entry keep their object identity. A `React.memo` row
 
 `usePeerChanges(listener)` calls `listener` when a peer joins, leaves, or changes its `user` or `context`. Use it for a one-time effect, such as a notice. For a list, use `useRemoteUsers`.
 
-This component shows the last peer that joined. It needs the `PresenceProvider` from `@anchor-presence/react`:
+This component shows the last peer that joined. It needs the `PresenceProvider` from `@dammers/anchor-presence-react`:
 
 ```tsx
 import { useState } from "react";
-import { usePeerChanges } from "@anchor-presence/react";
+import { usePeerChanges } from "@dammers/anchor-presence-react";
 
 function JoinNotice() {
   const [notice, setNotice] = useState<string | null>(null);

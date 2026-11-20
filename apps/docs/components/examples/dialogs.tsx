@@ -1,8 +1,8 @@
 "use client";
 
-import type { PresenceClient } from "@anchor-presence/core";
+import type { PresenceClient } from "@dammers/anchor-presence-core";
 import type { TourContext } from "./_preview/tour";
-import type { VisibilityPolicy } from "@anchor-presence/dom";
+import type { VisibilityPolicy } from "@dammers/anchor-presence-dom";
 import { CursorLayer, PresenceProvider } from "./_preview/hooks";
 import { UserPlus, X } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";

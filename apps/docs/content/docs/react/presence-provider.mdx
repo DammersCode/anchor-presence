@@ -6,16 +6,16 @@ icon: plug
 
 import { Component, Factory, Server, Link } from "lucide-react";
 
-`PresenceProvider` shares a presence client and its DOM binding with every hook and component below it. The DOM binding is the object from `@anchor-presence/dom` that turns remote presence into screen positions. Every app that uses `@anchor-presence/react` wraps its cursor-aware tree in one provider.
+`PresenceProvider` shares a presence client and its DOM binding with every hook and component below it. The DOM binding is the object from `@dammers/anchor-presence-dom` that turns remote presence into screen positions. Every app that uses `@dammers/anchor-presence-react` wraps its cursor-aware tree in one provider.
 
 ## Usage
 
 The samples on this page connect to the Bun relay of the [Quick start](/docs/get-started/quick-start#connect-a-relay), on port 8788. This provider creates the client through `factory`:
 
 ```tsx
-import { createPresenceClient } from "@anchor-presence/core";
-import { createWebSocketTransport } from "@anchor-presence/dom";
-import { CursorLayer, PresenceProvider } from "@anchor-presence/react";
+import { createPresenceClient } from "@dammers/anchor-presence-core";
+import { createWebSocketTransport } from "@dammers/anchor-presence-dom";
+import { CursorLayer, PresenceProvider } from "@dammers/anchor-presence-react";
 
 function App() {
   return (
@@ -57,9 +57,9 @@ To apply a new `bindingOptions` value, change `bindingKey`. The provider dispose
 This example switches the interpolator:
 
 ```tsx
-import { createPresenceClient, linearInterpolator, noneInterpolator } from "@anchor-presence/core";
-import { createWebSocketTransport } from "@anchor-presence/dom";
-import { CursorLayer, PresenceProvider } from "@anchor-presence/react";
+import { createPresenceClient, linearInterpolator, noneInterpolator } from "@dammers/anchor-presence-core";
+import { createWebSocketTransport } from "@dammers/anchor-presence-dom";
+import { CursorLayer, PresenceProvider } from "@dammers/anchor-presence-react";
 
 function Workspace({ smooth }: { smooth: boolean }) {
   return (
@@ -86,9 +86,9 @@ To replace the client that `factory` made, change `clientKey`. The provider disp
 This example joins the room that the `room` prop names:
 
 ```tsx
-import { createPresenceClient } from "@anchor-presence/core";
-import { createWebSocketTransport } from "@anchor-presence/dom";
-import { CursorLayer, PresenceProvider } from "@anchor-presence/react";
+import { createPresenceClient } from "@dammers/anchor-presence-core";
+import { createWebSocketTransport } from "@dammers/anchor-presence-dom";
+import { CursorLayer, PresenceProvider } from "@dammers/anchor-presence-react";
 
 function Room({ room }: { room: string }) {
   return (

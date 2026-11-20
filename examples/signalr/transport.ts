@@ -3,7 +3,7 @@ import {
   type ConnectionStatus,
   type PresenceTransport,
   type TransportClose,
-} from "@anchor-presence/core";
+} from "@dammers/anchor-presence-core";
 import { HubConnectionState, type HubConnection } from "@microsoft/signalr";
 
 // The hub path the whole app talks to; a single relay hub.

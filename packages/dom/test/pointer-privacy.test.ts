@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { createInMemoryPair, createPresenceClient } from "@anchor-presence/core";
-import type { CursorPosition, PresenceClient } from "@anchor-presence/core";
+import { createInMemoryPair, createPresenceClient } from "@dammers/anchor-presence-core";
+import type { CursorPosition, PresenceClient } from "@dammers/anchor-presence-core";
 import { createDomBinding } from "../src/index";
 import { createAnchorRegistry } from "../src/registry";
 import { attachPointerSource } from "../src/pointer";

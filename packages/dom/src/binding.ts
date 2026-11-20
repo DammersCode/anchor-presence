@@ -1,7 +1,7 @@
 // Top-level wiring: registry, pointer, scheduler, and resolver. The React adapter consumes it.
 
-import type { EventMap, InterpolatorFactory, PresenceClient } from "@anchor-presence/core";
-import { linearInterpolator, noneInterpolator, reportListenerError } from "@anchor-presence/core";
+import type { EventMap, InterpolatorFactory, PresenceClient } from "@dammers/anchor-presence-core";
+import { linearInterpolator, noneInterpolator, reportListenerError } from "@dammers/anchor-presence-core";
 import { createAnchorRegistry } from "./registry.js";
 import { attachPointerSource } from "./pointer.js";
 import { createGeometryScheduler } from "./scheduler.js";

@@ -21,17 +21,17 @@ These terms appear in this README:
 Install the three packages:
 
 ```sh
-bun add @anchor-presence/react @anchor-presence/dom @anchor-presence/core
+bun add @dammers/anchor-presence-react @dammers/anchor-presence-dom @dammers/anchor-presence-core
 ```
 
-If the command returns a 404, the packages are not published to npm. Build them from this repository with `bun install` and `bun run build`. Then add `"overrides"` to your `package.json` that map `@anchor-presence/core` and `@anchor-presence/dom` to `file:<path>/packages/core` and `file:<path>/packages/dom`, and run `bun add file:<path>/packages/core file:<path>/packages/dom file:<path>/packages/react`. [Installation](https://anchor-presence.vercel.app/docs/get-started/installation) has the full steps.
+If the command returns a 404, the packages are not published to npm. Build them from this repository with `bun install` and `bun run build`. Then add `"overrides"` to your `package.json` that map `@dammers/anchor-presence-core` and `@dammers/anchor-presence-dom` to `file:<path>/packages/core` and `file:<path>/packages/dom`, and run `bun add file:<path>/packages/core file:<path>/packages/dom file:<path>/packages/react`. [Installation](https://anchor-presence.vercel.app/docs/get-started/installation) has the full steps.
 
 Pass the provider a `factory` that creates the transport and the client. Mark one element with `data-anchor`. Then render the provider and the cursor layer:
 
 ```tsx
-import { createPresenceClient } from "@anchor-presence/core";
-import { createBroadcastChannelTransport } from "@anchor-presence/dom";
-import { CursorLayer, PresenceProvider } from "@anchor-presence/react";
+import { createPresenceClient } from "@dammers/anchor-presence-core";
+import { createBroadcastChannelTransport } from "@dammers/anchor-presence-dom";
+import { CursorLayer, PresenceProvider } from "@dammers/anchor-presence-react";
 
 function createClient() {
   const transport = createBroadcastChannelTransport("live-cursors");
@@ -58,7 +58,7 @@ To connect two browsers, run a relay. Start the Bun relay with `cd examples/bun-
 const transport = createWebSocketTransport({ port: 8788, path: "/?room=main" });
 ```
 
-`createWebSocketTransport` comes from `@anchor-presence/dom`. See the [quick start](https://anchor-presence.vercel.app/docs/get-started/quick-start) for the full steps.
+`createWebSocketTransport` comes from `@dammers/anchor-presence-dom`. See the [quick start](https://anchor-presence.vercel.app/docs/get-started/quick-start) for the full steps.
 
 ## Requirements
 
@@ -71,21 +71,21 @@ const transport = createWebSocketTransport({ port: 8788, path: "/?room=main" });
 
 ## Packages
 
-| Package                  | Description                                                                                                  | Link                                         |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------ | -------------------------------------------- |
-| `@anchor-presence/core`  | Protocol, validation, presence store, and the client. Zero dependencies, no DOM needed.                      | [`packages/core`](packages/core/README.md)   |
-| `@anchor-presence/dom`   | Anchor registry, pointer capture, layout measurement, resolver, WebSocket and `BroadcastChannel` transports. | [`packages/dom`](packages/dom/README.md)     |
-| `@anchor-presence/react` | Provider component and hooks, built on `useSyncExternalStore`.                                               | [`packages/react`](packages/react/README.md) |
-| `apps/demo`              | React admin dashboard that shows correct cursors across layouts.                                             | [`apps/demo`](apps/demo/README.md)           |
-| `apps/server`            | Bun WebSocket relay for the demo.                                                                            | [`apps/server`](apps/server)                 |
+| Package                          | Description                                                                                                  | Link                                         |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------ | -------------------------------------------- |
+| `@dammers/anchor-presence-core`  | Protocol, validation, presence store, and the client. Zero dependencies, no DOM needed.                      | [`packages/core`](packages/core/README.md)   |
+| `@dammers/anchor-presence-dom`   | Anchor registry, pointer capture, layout measurement, resolver, WebSocket and `BroadcastChannel` transports. | [`packages/dom`](packages/dom/README.md)     |
+| `@dammers/anchor-presence-react` | Provider component and hooks, built on `useSyncExternalStore`.                                               | [`packages/react`](packages/react/README.md) |
+| `apps/demo`                      | React admin dashboard that shows correct cursors across layouts.                                             | [`apps/demo`](apps/demo/README.md)           |
+| `apps/server`                    | Bun WebSocket relay for the demo.                                                                            | [`apps/server`](apps/server)                 |
 
 ## Features
 
 - **Layout-independent positioning.** Cursors track a semantic anchor, not a pixel.
 - **Receiver-authoritative.** Each client measures its own DOM.
 - **No network on reposition.** A scroll or resize moves a stationary remote cursor for free.
-- **Transport-agnostic.** `@anchor-presence/core` imports no transport library.
-- **Framework-optional.** `@anchor-presence/core` and `@anchor-presence/dom` run without React. `@anchor-presence/react` is a thin adapter.
+- **Transport-agnostic.** `@dammers/anchor-presence-core` imports no transport library.
+- **Framework-optional.** `@dammers/anchor-presence-core` and `@dammers/anchor-presence-dom` run without React. `@dammers/anchor-presence-react` is a thin adapter.
 - **Checked input.** Every inbound message passes size and shape limits first.
 
 ## Docs

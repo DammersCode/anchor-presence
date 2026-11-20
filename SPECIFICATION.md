@@ -22,16 +22,16 @@ A sender transmits a semantic anchor ID, a normalized position inside that ancho
 6. Transport implementation is independent from cursor logic. Core imports no transport library.
 7. A local layout change repositions a stationary remote cursor without a new network packet.
 8. Network messages cannot execute arbitrary DOM selectors. Anchor IDs resolve only against the registered anchor map.
-9. Rendering is consumer-controlled. No cursor component is required. `@anchor-presence/react` provides optional, configurable cursor components.
+9. Rendering is consumer-controlled. No cursor component is required. `@dammers/anchor-presence-react` provides optional, configurable cursor components.
 10. Future framework adapters (Svelte, Vue, Solid) require no architectural rewrite.
 
 ## 3. Package Architecture
 
 ```text
 packages/
-  core/     @anchor-presence/core
-  dom/      @anchor-presence/dom
-  react/    @anchor-presence/react
+  core/     @dammers/anchor-presence-core
+  dom/      @dammers/anchor-presence-dom
+  react/    @dammers/anchor-presence-react
 apps/
   demo/     React admin dashboard (Vite, Tailwind, shadcn-style UI)
   server/   Bun WebSocket relay for the demo
@@ -139,7 +139,7 @@ interface PresenceTransport {
 }
 ```
 
-Core never imports a transport implementation. `@anchor-presence/dom` ships `createWebSocketTransport` for the repository relay; it is a convenience transport, not a core dependency. `send` failures are swallowed after a status check; presence is lossy by design. When a transport omits `subscribeStatus`, the client reports a constant `"connected"`. The status union is fixed for protocol v1; consumers can switch exhaustively.
+Core never imports a transport implementation. `@dammers/anchor-presence-dom` ships `createWebSocketTransport` for the repository relay; it is a convenience transport, not a core dependency. `send` failures are swallowed after a status check; presence is lossy by design. When a transport omits `subscribeStatus`, the client reports a constant `"connected"`. The status union is fixed for protocol v1; consumers can switch exhaustively.
 
 A transport that implements `subscribeStatus` SHOULD replay its current status to every new subscriber. `getStatus` is optional; when present, the client reads it once at creation for its initial status. Without either signal, the client assumes `"connecting"` until the first status callback — an already-connected transport that never replays would leave the client mute. The client sends only while the status is `"connected"`; `"connecting"`, `"reconnecting"`, and `"disconnected"` block sends. `bufferedBytes` is optional and is used only by the opt-in `adaptivePublish` client option.
 
@@ -383,7 +383,7 @@ SSR: the client is created by the consumer in browser-only code, or the provider
 
 ### 14.1 Optional cursor components
 
-`@anchor-presence/react` exports `CursorLayer` and `DefaultCursor`. Both are optional. A consumer can render remote cursors with `useRemoteCursors` directly instead, per Invariant 9.
+`@dammers/anchor-presence-react` exports `CursorLayer` and `DefaultCursor`. Both are optional. A consumer can render remote cursors with `useRemoteCursors` directly instead, per Invariant 9.
 
 `CursorLayer` calls `useRemoteCursorsSelector` once, with a selector that keeps the visible, unfiltered cursors. The resolver already keeps unchanged cursors' identity (section 13), and the selection compares element by element, so a list whose visible cursors did not change keeps its identity. For each selected cursor, `CursorLayer` renders one package-owned root `div`. The root style sets `position: fixed`, `left: 0`, `top: 0`, `pointerEvents: "none"`, `zIndex: 9999` (or the `zIndex` prop), and a `transform` from the resolved coordinates. The root carries `aria-hidden="true"` and four stable data attributes: `data-anchor-presence-cursor`, `data-anchor-presence-client-id`, `data-anchor-presence-tier`, and `data-anchor-presence-anchor` (empty string when `anchorId` is `null`).
 

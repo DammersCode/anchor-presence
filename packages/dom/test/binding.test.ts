@@ -4,8 +4,8 @@ import type {
   PresenceClient,
   PresenceMessage,
   CursorPosition,
-} from "@anchor-presence/core";
-import { linearInterpolator } from "@anchor-presence/core";
+} from "@dammers/anchor-presence-core";
+import { linearInterpolator } from "@dammers/anchor-presence-core";
 import { createDomBinding } from "../src/binding";
 
 type RafLike = (cb: (ts: number) => void) => number;

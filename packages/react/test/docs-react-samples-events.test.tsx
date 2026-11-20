@@ -13,7 +13,7 @@ import {
   type PeerChange,
   type PresenceClient,
   type TypedRemoteEvent,
-} from "@anchor-presence/core";
+} from "@dammers/anchor-presence-core";
 import {
   PresenceProvider as PlainProvider,
   usePeerChanges,
@@ -21,7 +21,7 @@ import {
 } from "../src/index";
 import type { useLocalUser as exportedUseLocalUser } from "../src/hooks/use-local-user";
 import type { usePeerChanges as exportedUsePeerChanges } from "../src/hooks/use-peer-changes";
-import { createWebSocketTransport } from "@anchor-presence/dom";
+import { createWebSocketTransport } from "@dammers/anchor-presence-dom";
 import {
   PresenceProvider,
   useLocalUser as useTypedLocalUser,

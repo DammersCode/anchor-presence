@@ -1,9 +1,9 @@
 "use client";
 
-import type { PresenceClient } from "@anchor-presence/core";
+import type { PresenceClient } from "@dammers/anchor-presence-core";
 import type { TourContext } from "./_preview/tour";
-import type { VisibilityPolicy } from "@anchor-presence/dom";
-import type { ResolvedCursor } from "@anchor-presence/react";
+import type { VisibilityPolicy } from "@dammers/anchor-presence-dom";
+import type { ResolvedCursor } from "@dammers/anchor-presence-react";
 import {
   CursorLayer,
   PresenceProvider,

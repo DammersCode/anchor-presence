@@ -10,12 +10,12 @@ import { Braces, Gauge, RadioTower } from "lucide-react";
 
 ## Usage
 
-If your app has a [typed `presence.ts` module](/docs/react/typed-hooks), import `usePresenceStatus` from it. The package export reads only the provider of `@anchor-presence/react`.
+If your app has a [typed `presence.ts` module](/docs/react/typed-hooks), import `usePresenceStatus` from it. The package export reads only the provider of `@dammers/anchor-presence-react`.
 
 This component shows the status while the client is not connected:
 
 ```tsx
-import { usePresenceStatus } from "@anchor-presence/react";
+import { usePresenceStatus } from "@dammers/anchor-presence-react";
 
 function ConnectionBanner() {
   const status = usePresenceStatus();
@@ -39,7 +39,7 @@ This component waits 1.5 seconds before it shows the banner:
 
 ```tsx
 import { useEffect, useState } from "react";
-import { usePresenceStatus } from "@anchor-presence/react";
+import { usePresenceStatus } from "@dammers/anchor-presence-react";
 
 function DelayedConnectionBanner() {
   const status = usePresenceStatus();
@@ -71,7 +71,7 @@ This component shows an error when the relay rejects the [room token](/docs/dom/
 
 ```tsx
 import { useEffect, useState } from "react";
-import { usePresenceClient } from "@anchor-presence/react";
+import { usePresenceClient } from "@dammers/anchor-presence-react";
 
 function TokenError() {
   const client = usePresenceClient();

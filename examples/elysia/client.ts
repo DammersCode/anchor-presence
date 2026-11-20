@@ -1,7 +1,7 @@
 // A typed client for the Elysia relay. Eden builds the socket from the treaty, so the query
 // parameters are checked against the relay's query schema at compile time.
-import { createPresenceClient } from "@anchor-presence/core";
-import { createWebSocketTransport, type WebSocketCtor } from "@anchor-presence/dom";
+import { createPresenceClient } from "@dammers/anchor-presence-core";
+import { createWebSocketTransport, type WebSocketCtor } from "@dammers/anchor-presence-dom";
 import { treaty } from "@elysia/eden";
 import type { ElysiaRelayApp } from "./server.js";
 

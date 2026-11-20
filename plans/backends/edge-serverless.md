@@ -2,7 +2,7 @@
 
 Status: open (planning only, not scheduled)
 
-This plan describes two relay backends that run on edge platforms instead of a long-lived Bun process. It does not change `@anchor-presence/core`, `dom`, or `react`. Both backends implement the same job as `apps/server`: group WebSocket connections into rooms and forward each inbound message to the other sockets in the room.
+This plan describes two relay backends that run on edge platforms instead of a long-lived Bun process. It does not change `@dammers/anchor-presence-core`, `dom`, or `react`. Both backends implement the same job as `apps/server`: group WebSocket connections into rooms and forward each inbound message to the other sockets in the room.
 
 ## Goal
 

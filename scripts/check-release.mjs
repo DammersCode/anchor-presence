@@ -13,7 +13,7 @@ for (const name of readdirSync(join(rootDir, "packages"))) {
   if (pkg.version !== rootVersion) failures.push(`${name}: version ${pkg.version} != root ${rootVersion}`);
   for (const field of DEP_FIELDS) {
     for (const [key, value] of Object.entries(pkg[field] ?? {})) {
-      if (key.startsWith("@anchor-presence/") && value !== rootVersion) {
+      if (key.startsWith("@dammers/anchor-presence-") && value !== rootVersion) {
         failures.push(`${name}: ${key} ${value} != root ${rootVersion}`);
       }
     }

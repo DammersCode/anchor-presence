@@ -8,7 +8,7 @@ Replace the single-file GitHub Pages site (`site/index.html`, `.github/workflows
 
 ## Spec
 
-- App: `apps/docs`, package `@anchor-presence/docs` (private), Next.js + fumadocs-core/ui/mdx with the same versions as gridcn, Tailwind v4. Uses the workspace packages through `workspace:*`.
+- App: `apps/docs`, package `@dammers/anchor-presence-docs` (private), Next.js + fumadocs-core/ui/mdx with the same versions as gridcn, Tailwind v4. Uses the workspace packages through `workspace:*`.
 - Design: keep the look of `site/index.html`: fonts, indigo `#4F46E5` → cyan `#22D3EE` gradient, logo, dark and light mode. Map the colors to the Fumadocs `--color-fd-*` tokens. The home page keeps the section order hero → what it does → how it works → guarantees → quick start.
 - Content: `apps/docs/content/docs/**` with `meta.json`. Sections: Getting started (introduction, installation, quick start), Concepts, Guides, API reference, Examples, AI agents. `docs/*.md` moves into the app and is then deleted.
 - Quick start: zero-backend first run with `createInMemoryPair`, then the relay setup. Uses `usePresenceClient`.

@@ -1,6 +1,6 @@
 ---
 title: Overview
-description: What @anchor-presence/core does, when to use it directly, and where each part is documented.
+description: What @dammers/anchor-presence-core does, when to use it directly, and where each part is documented.
 icon: box
 ---
 
@@ -27,14 +27,14 @@ import {
   MousePointer,
 } from "lucide-react";
 
-`@anchor-presence/core` is the protocol layer. It sends the local presence, and it checks and stores the presence of each peer. Use the package directly in a test, on a server, or in an adapter for a UI framework other than React.
+`@dammers/anchor-presence-core` is the protocol layer. It sends the local presence, and it checks and stores the presence of each peer. Use the package directly in a test, on a server, or in an adapter for a UI framework other than React.
 
-`@anchor-presence/core` has no runtime dependencies and needs no DOM. It runs in Node.js, Bun, workers, and browsers. It reads `document` at one place only, after a check that `document` exists. There, the client listens for `visibilitychange`. When the page becomes visible, the client sends a pending publish at once.
+`@dammers/anchor-presence-core` has no runtime dependencies and needs no DOM. It runs in Node.js, Bun, workers, and browsers. It reads `document` at one place only, after a check that `document` exists. There, the client listens for `visibilitychange`. When the page becomes visible, the client sends a pending publish at once.
 
 This sample connects two clients in one process:
 
 ```ts
-import { createInMemoryPair, createPresenceClient } from "@anchor-presence/core";
+import { createInMemoryPair, createPresenceClient } from "@dammers/anchor-presence-core";
 
 const { a, b } = createInMemoryPair();
 const clientA = createPresenceClient({ transport: a, user: { name: "Alice" } });
@@ -122,13 +122,13 @@ const clientB = createPresenceClient({ transport: b, user: { name: "Bob" } });
 
 ## Where core sits
 
-`@anchor-presence/core` imports no DOM library, no framework, and no transport or codec library. `@anchor-presence/dom` adds the browser side, and `@anchor-presence/react` adds the React components:
+`@dammers/anchor-presence-core` imports no DOM library, no framework, and no transport or codec library. `@dammers/anchor-presence-dom` adds the browser side, and `@dammers/anchor-presence-react` adds the React components:
 
 <Mermaid
   chart={`flowchart TD
   accTitle: Package layers and imports
-  react["@anchor-presence/react"] --> dom["@anchor-presence/dom"]
-  dom --> core["@anchor-presence/core"]
+  react["@dammers/anchor-presence-react"] --> dom["@dammers/anchor-presence-dom"]
+  dom --> core["@dammers/anchor-presence-core"]
   react --> core`}
 />
 

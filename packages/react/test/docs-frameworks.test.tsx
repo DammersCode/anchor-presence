@@ -5,8 +5,8 @@ import { renderToString } from "react-dom/server";
 import { createRootRoute, Outlet } from "@tanstack/react-router";
 import { Outlet as RrOutlet } from "react-router";
 import { describe, expect, it } from "vitest";
-import { createPresenceClient } from "@anchor-presence/core";
-import { createWebSocketTransport } from "@anchor-presence/dom";
+import { createPresenceClient } from "@dammers/anchor-presence-core";
+import { createWebSocketTransport } from "@dammers/anchor-presence-dom";
 import { CursorLayer, PresenceProvider } from "../src/index";
 
 // Verbatim copies of the samples in frameworks.mdx; the last test checks each copy against its source.

@@ -6,14 +6,14 @@ icon: component
 
 import { Braces, MousePointer2, Paintbrush, Plug } from "lucide-react";
 
-This page lists the props of every component in `@anchor-presence/react`, and the value of `PresenceProviderContext`. Use it to look up a prop type. For usage and examples, read the guide page that each section links to.
+This page lists the props of every component in `@dammers/anchor-presence-react`, and the value of `PresenceProviderContext`. Use it to look up a prop type. For usage and examples, read the guide page that each section links to.
 
 ## PresenceProvider
 
-Import `PresenceProvider` from `@anchor-presence/react`:
+Import `PresenceProvider` from `@dammers/anchor-presence-react`:
 
 ```ts
-import { PresenceProvider } from "@anchor-presence/react";
+import { PresenceProvider } from "@dammers/anchor-presence-react";
 ```
 
 <AutoTypeTable path="../../packages/react/src/provider.tsx" name="PresenceProviderProps" />
@@ -22,16 +22,16 @@ Pass exactly one of `client` and `factory`.
 
 `PresenceProviderProps` is `PresenceProviderConfig & { children }`. Use `PresenceProviderConfig`, the props without `children`, to type a wrapper that forwards its props to the provider.
 
-This provider takes only an untyped client, and the hooks that you import from `@anchor-presence/react` return `unknown`. A typed client goes to the `PresenceProvider` of a [`createPresenceHooks`](/docs/react/typed-hooks) result.
+This provider takes only an untyped client, and the hooks that you import from `@dammers/anchor-presence-react` return `unknown`. A typed client goes to the `PresenceProvider` of a [`createPresenceHooks`](/docs/react/typed-hooks) result.
 
 Guide: [PresenceProvider](/docs/react/presence-provider). For `bindingKey`, see [Rebuild the binding](/docs/react/presence-provider#rebuild-the-binding). For `clientKey`, see [Switch rooms](/docs/react/presence-provider#switch-rooms).
 
 ## CursorLayer
 
-Import `CursorLayer` from `@anchor-presence/react`:
+Import `CursorLayer` from `@dammers/anchor-presence-react`:
 
 ```ts
-import { CursorLayer } from "@anchor-presence/react";
+import { CursorLayer } from "@dammers/anchor-presence-react";
 ```
 
 <AutoTypeTable path="../../packages/react/src/cursor.tsx" name="CursorLayerProps" />
@@ -44,10 +44,10 @@ import { CursorLayer } from "@anchor-presence/react";
 
 ## DefaultCursor
 
-Import `DefaultCursor` from `@anchor-presence/react`:
+Import `DefaultCursor` from `@dammers/anchor-presence-react`:
 
 ```ts
-import { DefaultCursor } from "@anchor-presence/react";
+import { DefaultCursor } from "@dammers/anchor-presence-react";
 ```
 
 <AutoTypeTable path="../../packages/react/src/cursor.tsx" name="DefaultCursorProps" />
@@ -56,15 +56,15 @@ Guide: [Custom cursors](/docs/react/custom-cursors).
 
 ## PresenceProviderContext
 
-`PresenceProviderContext` is the React context that `PresenceProvider` fills. Import it and its value type from `@anchor-presence/react`:
+`PresenceProviderContext` is the React context that `PresenceProvider` fills. Import it and its value type from `@dammers/anchor-presence-react`:
 
 ```ts
-import { PresenceProviderContext, type PresenceProviderValue } from "@anchor-presence/react";
+import { PresenceProviderContext, type PresenceProviderValue } from "@dammers/anchor-presence-react";
 ```
 
 <AutoTypeTable path="../../packages/react/src/context.ts" name="PresenceProviderValue" />
 
-`client` is a `PresenceClient` or `null`, and `binding` is a `DomBinding` or `null`. Both are `null` outside a provider. A provider with a `factory` has a `null` client until the factory runs, and `clientPending` is `true` in that time. `clientPending` is `false` with `client={null}`, and absent without a provider. During server rendering, `binding` is the `binding` prop of the provider, or `null` without that prop. The hooks that you import from `@anchor-presence/react` read this context for you, so most apps never read it directly.
+`client` is a `PresenceClient` or `null`, and `binding` is a `DomBinding` or `null`. Both are `null` outside a provider. A provider with a `factory` has a `null` client until the factory runs, and `clientPending` is `true` in that time. `clientPending` is `false` with `client={null}`, and absent without a provider. During server rendering, `binding` is the `binding` prop of the provider, or `null` without that prop. The hooks that you import from `@dammers/anchor-presence-react` read this context for you, so most apps never read it directly.
 
 The provider of a `createPresenceHooks` result fills its own context instead.
 
@@ -72,7 +72,7 @@ This component reads the context directly and shows a line when the client and t
 
 ```tsx
 import { useContext } from "react";
-import { PresenceProviderContext } from "@anchor-presence/react";
+import { PresenceProviderContext } from "@dammers/anchor-presence-react";
 
 function PresenceReady() {
   const { client, binding } = useContext(PresenceProviderContext);

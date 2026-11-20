@@ -6,17 +6,17 @@ icon: gauge
 
 import { Crosshair, Users, Gauge } from "lucide-react";
 
-A hook in `@anchor-presence/react` rerenders its component when the value that it returns changes, or when the provider value changes. `useSendEvent`, `usePresenceClient`, and `useDomBinding` rerender on any change of the provider value. Use this page to pick the hook with the smallest value that a component needs. Then an unrelated update does not rerender the component.
+A hook in `@dammers/anchor-presence-react` rerenders its component when the value that it returns changes, or when the provider value changes. `useSendEvent`, `usePresenceClient`, and `useDomBinding` rerender on any change of the provider value. Use this page to pick the hook with the smallest value that a component needs. Then an unrelated update does not rerender the component.
 
 ## Usage
 
-If your app has a [typed `presence.ts` module](/docs/react/typed-hooks), import the hooks from it. The package export reads only the provider of `@anchor-presence/react`.
+If your app has a [typed `presence.ts` module](/docs/react/typed-hooks), import the hooks from it. The package export reads only the provider of `@dammers/anchor-presence-react`.
 
 This badge shows the resolution tier of one peer. It rerenders only when that tier changes, not on every cursor frame:
 
 ```tsx
 import { useCallback } from "react";
-import { useRemoteCursorsSelector, type ResolvedCursor } from "@anchor-presence/react";
+import { useRemoteCursorsSelector, type ResolvedCursor } from "@dammers/anchor-presence-react";
 
 function TierBadge({ clientId }: { clientId: string }) {
   const select = useCallback(

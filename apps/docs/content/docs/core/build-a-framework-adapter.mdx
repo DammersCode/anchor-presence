@@ -6,14 +6,14 @@ icon: puzzle
 
 import { Atom, Code, Blocks } from "lucide-react";
 
-A framework adapter connects the DOM binding to the reactivity of one UI framework. `@anchor-presence/react` is the adapter for React. Read this page to write an adapter for Solid, Vue, or another framework. The adapter copies the shape of the React adapter.
+A framework adapter connects the DOM binding to the reactivity of one UI framework. `@dammers/anchor-presence-react` is the adapter for React. Read this page to write an adapter for Solid, Vue, or another framework. The adapter copies the shape of the React adapter.
 
 ## The bridge
 
 The core of every adapter is a bridge from `subscribe` and `getSnapshot` to a reactive value. This function writes each new snapshot of a binding into a callback, and returns the unsubscribe function:
 
 ```ts
-import type { DomBinding, ResolvedCursor } from "@anchor-presence/dom";
+import type { DomBinding, ResolvedCursor } from "@dammers/anchor-presence-dom";
 
 function observeCursors(
   binding: DomBinding,
@@ -33,16 +33,16 @@ Each layer depends only on the layers below it:
 <Mermaid
   chart={`flowchart TD
   accTitle: Package layers
-  adapter["your adapter"] --> dom["@anchor-presence/dom"]
-  dom --> core["@anchor-presence/core"]
+  adapter["your adapter"] --> dom["@dammers/anchor-presence-dom"]
+  dom --> core["@dammers/anchor-presence-core"]
   adapter --> core`}
 />
 
-| Layer                   | Contents                                                    |
-| ----------------------- | ----------------------------------------------------------- |
-| Adapter                 | Provider, hooks, SSR guard                                  |
-| `@anchor-presence/dom`  | Anchor registry, pointer capture, frame scheduler, resolver |
-| `@anchor-presence/core` | Protocol types, validation, store, client                   |
+| Layer                           | Contents                                                    |
+| ------------------------------- | ----------------------------------------------------------- |
+| Adapter                         | Provider, hooks, SSR guard                                  |
+| `@dammers/anchor-presence-dom`  | Anchor registry, pointer capture, frame scheduler, resolver |
+| `@dammers/anchor-presence-core` | Protocol types, validation, store, client                   |
 
 An adapter holds no protocol state of its own ([invariant 5](/docs/get-started/concepts/how-it-works#the-10-invariants)). Every value that it exposes comes from a `PresenceClient` or a `DomBinding`.
 
@@ -75,7 +75,7 @@ An adapter holds no protocol state of its own ([invariant 5](/docs/get-started/c
 This sample does steps 2, 4, and 5 for the remote presence and the status of a client. `Framework` models the three primitives of Solid or Vue, so the sample needs no framework import:
 
 ```ts
-import type { ConnectionStatus, PresenceClient, RemotePresence } from "@anchor-presence/core";
+import type { ConnectionStatus, PresenceClient, RemotePresence } from "@dammers/anchor-presence-core";
 
 interface Framework {
   isServer: boolean;
@@ -109,7 +109,7 @@ Call `createPresenceSignals` inside the owner scope, so that `onCleanup` runs wh
 
 ## What the React adapter does
 
-`PresenceProvider` is the one stateful part of `@anchor-presence/react`:
+`PresenceProvider` is the one stateful part of `@dammers/anchor-presence-react`:
 
 - It creates the client from a `factory` prop in a mount effect, and disposes it on unmount. The factory runs again each time the `clientKey` prop changes. A client from the `client` prop belongs to the app, and the provider never disposes it.
 - If you pass no `binding` prop, it creates one `DomBinding` with `createDomBinding(client, bindingOptions)` in an effect. The cleanup of that effect calls `binding.dispose()`.
@@ -121,20 +121,20 @@ The hooks read that context. `useRemoteCursors` subscribes to `binding.subscribe
 
 ## Public APIs an adapter uses
 
-An adapter calls only the public exports of `@anchor-presence/core` and `@anchor-presence/dom`:
+An adapter calls only the public exports of `@dammers/anchor-presence-core` and `@dammers/anchor-presence-dom`:
 
-| Package                 | Exports                                                                                                                                               |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@anchor-presence/core` | `createPresenceClient`, the methods of [`PresenceClient`](/docs/core/api/client#presenceclient), and the protocol types such as `RemotePresence`.     |
-| `@anchor-presence/dom`  | `createDomBinding`, the `DomBinding` methods, `DomBindingOptions`, `ResolvedCursor`, `ResolutionTier`, `VisibilityPolicy`, `CURSOR_MARKER_ATTRIBUTE`. |
+| Package                         | Exports                                                                                                                                               |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@dammers/anchor-presence-core` | `createPresenceClient`, the methods of [`PresenceClient`](/docs/core/api/client#presenceclient), and the protocol types such as `RemotePresence`.     |
+| `@dammers/anchor-presence-dom`  | `createDomBinding`, the `DomBinding` methods, `DomBindingOptions`, `ResolvedCursor`, `ResolutionTier`, `VisibilityPolicy`, `CURSOR_MARKER_ATTRIBUTE`. |
 
 Set `CURSOR_MARKER_ATTRIBUTE` on the root element of each cursor that the adapter draws. See [Draw cursors without React](/docs/dom/binding#draw-cursors-without-react).
 
-An adapter package exports again the types of the lower packages that its own public signatures use. For example, `@anchor-presence/react` exports `AnchorPoint`, `ConnectionStatus`, `PresenceClient`, and `DomBinding`. A user of the adapter then needs no direct dependency on the lower packages for types.
+An adapter package exports again the types of the lower packages that its own public signatures use. For example, `@dammers/anchor-presence-react` exports `AnchorPoint`, `ConnectionStatus`, `PresenceClient`, and `DomBinding`. A user of the adapter then needs no direct dependency on the lower packages for types.
 
 ## Package boundaries
 
-No third-party framework code lives inside `@anchor-presence/core` or `@anchor-presence/dom`. A `@anchor-presence/solid` or `@anchor-presence/vue` package depends on these two packages only. It never imports the internals of another adapter. The [Packages section](/docs/get-started/introduction#packages) shows the dependencies of each package.
+No third-party framework code lives inside `@dammers/anchor-presence-core` or `@dammers/anchor-presence-dom`. A `@dammers/anchor-presence-solid` or `@dammers/anchor-presence-vue` package depends on these two packages only. It never imports the internals of another adapter. The [Packages section](/docs/get-started/introduction#packages) shows the dependencies of each package.
 
 ## Related
 

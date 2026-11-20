@@ -11,7 +11,7 @@ A `VisibilityPolicy` is a function that decides whether a resolved cursor render
 This policy hides the cursors of staff users:
 
 ```ts
-import type { VisibilityPolicy } from "@anchor-presence/dom";
+import type { VisibilityPolicy } from "@dammers/anchor-presence-dom";
 
 const hideStaffCursors: VisibilityPolicy<{ role: string }> = ({ presence }) =>
   presence.context?.role === "staff" ? "hide" : "show";
@@ -26,7 +26,7 @@ const defaultVisibilityPolicy: VisibilityPolicy = ({ resolution }) =>
   resolution.tier === "hidden" ? "hide" : "show";
 ```
 
-`@anchor-presence/dom` does not export the default policy. The default policy hides a cursor only when nothing resolved. It shows an `anchor` or `viewport` tier cursor even when the point sits in a clipped region. See [Occlusion and scroll](/docs/dom/occlusion-and-scroll) for a policy that also hides a clipped point.
+`@dammers/anchor-presence-dom` does not export the default policy. The default policy hides a cursor only when nothing resolved. It shows an `anchor` or `viewport` tier cursor even when the point sits in a clipped region. See [Occlusion and scroll](/docs/dom/occlusion-and-scroll) for a policy that also hides a clipped point.
 
 ## Write a custom policy
 
@@ -40,9 +40,9 @@ The resolver reuses one input object for every call. Read it in the call. Do not
 The first type parameter of `VisibilityPolicy` is the context type, and the second is the user type. Pass the policy through `resolution.visibilityPolicy`. The client must have the same context type as the policy. The client takes this type from `parseContext`:
 
 ```ts
-import { createPresenceClient } from "@anchor-presence/core";
-import { parserFrom } from "@anchor-presence/core/standard-schema";
-import { createDomBinding } from "@anchor-presence/dom";
+import { createPresenceClient } from "@dammers/anchor-presence-core";
+import { parserFrom } from "@dammers/anchor-presence-core/standard-schema";
+import { createDomBinding } from "@dammers/anchor-presence-dom";
 import * as v from "valibot";
 
 const client = createPresenceClient({
@@ -87,7 +87,7 @@ In React, `useDomBinding` returns the binding of the nearest `PresenceProvider`.
 
 ```tsx
 import { useEffect } from "react";
-import { useDomBinding } from "@anchor-presence/react";
+import { useDomBinding } from "@dammers/anchor-presence-react";
 
 function SyncOpenDialog({ dialog }: { dialog: string | null }) {
   const domBinding = useDomBinding();

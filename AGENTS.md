@@ -6,9 +6,9 @@ Everything in this repo is written in English: code, comments, docs, plans, rese
 
 ## Package boundaries
 
-- `@anchor-presence/core`: protocol, codecs, client, store. No DOM, no React, no runtime dependencies.
-- `@anchor-presence/dom`: anchors, pointer capture, resolver, native `WebSocket` transport. No React.
-- `@anchor-presence/react`: provider, hooks, cursor components.
+- `@dammers/anchor-presence-core`: protocol, codecs, client, store. No DOM, no React, no runtime dependencies.
+- `@dammers/anchor-presence-dom`: anchors, pointer capture, resolver, native `WebSocket` transport. No React.
+- `@dammers/anchor-presence-react`: provider, hooks, cursor components.
 - A transport that needs a third-party library (Socket.IO, SignalR, Elysia, Hono, `ws`) lives in `examples/`, never in a package.
 - The public API is what each package's `src/index.ts` exports. `test/public-api.test.ts` pins it; update both together.
 

@@ -8,7 +8,7 @@ This example adds a Socket.IO transport to the demo. A peer is another client in
 - `server.ts` and `relay.ts` are a Socket.IO server. It relays `"presence"` events to the peers of the sender.
 - `apps/demo` is the shared demo client. Open it with `?backend=socketio` to connect through this transport.
 
-Only the backend changes. The client creates its presence client over `createSocketIoTransport` instead of a plain WebSocket. The UI uses the same `@anchor-presence/react` hooks, so the cursors behave the same way.
+Only the backend changes. The client creates its presence client over `createSocketIoTransport` instead of a plain WebSocket. The UI uses the same `@dammers/anchor-presence-react` hooks, so the cursors behave the same way.
 
 ## Start the relay
 
@@ -51,7 +51,7 @@ bunx vitest run --project socketio-example
 Create the presence client over a Socket.IO socket:
 
 ```ts
-import { createPresenceClient } from "@anchor-presence/core";
+import { createPresenceClient } from "@dammers/anchor-presence-core";
 import { io } from "socket.io-client";
 import { createSocketIoTransport } from "./transport";
 

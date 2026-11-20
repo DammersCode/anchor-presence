@@ -8,7 +8,7 @@ Owner request: replace the GitHub Pages site with a Fumadocs docs site on Vercel
 
 Owner decisions:
 
-- Core size budget: the `perf:score` tier for `@anchor-presence/core` is 10 KB gzip for the whole entry (9.85 KB measured). The extra 1.4 KB over the first target is validation and safety checks, which stay in every app, plus `binaryCodec` (about 1.5 KB) and the in-memory transports, which apps tree-shake away. The `bundle core app` metric (createPresenceClient plus jsonCodec only) measures 7.3 KB; the whole entry 9.9 KB. Revisit with a `@anchor-presence/core/binary` subpath if the budget matters before the first publish.
+- Core size budget: the `perf:score` tier for `@dammers/anchor-presence-core` is 10 KB gzip for the whole entry (9.85 KB measured). The extra 1.4 KB over the first target is validation and safety checks, which stay in every app, plus `binaryCodec` (about 1.5 KB) and the in-memory transports, which apps tree-shake away. The `bundle core app` metric (createPresenceClient plus jsonCodec only) measures 7.3 KB; the whole entry 9.9 KB. Revisit with a `@dammers/anchor-presence-core/binary` subpath if the budget matters before the first publish.
 - Docs: Fumadocs in `apps/docs`, the design of the old `site/index.html`, deployed on Vercel. The owner imports the repo in Vercel (Root Directory `apps/docs`).
 - Examples: live in-browser demos plus backend code tabs. Real backends stay in `examples/` with integration tests.
 - Backends to implement: Bun native, Node `ws`, Hono, Elysia. Edge, managed realtime, and other languages are plans only (`plans/backends/`).
@@ -96,7 +96,7 @@ Final structure: five tabs (`get-started`, `core`, `dom`, `react`, `examples`), 
 
 ### Root-folder tabs (from the tab-switcher restructure)
 
-- `content/docs` now has five Fumadocs root folders (`meta.json` with `"root": true`, `icon`, `description`), giving the sidebar a tab switcher like fumadocs.dev: `get-started` ("Anchor Presence"), `core` (`@anchor-presence/core`), `dom` (`@anchor-presence/dom`), `react` (`@anchor-presence/react`), `examples`.
+- `content/docs` now has five Fumadocs root folders (`meta.json` with `"root": true`, `icon`, `description`), giving the sidebar a tab switcher like fumadocs.dev: `get-started` ("Anchor Presence"), `core` (`@dammers/anchor-presence-core`), `dom` (`@dammers/anchor-presence-dom`), `react` (`@dammers/anchor-presence-react`), `examples`.
 - URLs moved to `/docs/<tab>/<page>`. `core`, `dom`, `react` each have an `index.mdx` overview page; `get-started` and `examples` do not, so `next.config.mjs` redirects their bare tab URL to a real page (`/docs/get-started` to `introduction`, `/docs/examples` to `basics`). A root folder with no `index.mdx` 404s at its own bare URL; add one or a redirect for any new tab.
 - `lib/source.ts` resolves `meta.json`'s `icon` string through a small `icons` map (`lucide-react`) passed to `loader({ icon })`.
 - `next.config.mjs` redirects only the three bare tab URLs (`/docs`, `/docs/get-started`, `/docs/examples`) to a real page. There is no redirect for old `/docs/getting-started/*`, `/docs/concepts/*`, `/docs/guides/*`, or `/docs/reference/*` URLs: a page moved under the tab restructure or the 2026-09-25 rework 404s directly if a link still points at its old path. Grep the whole repo for a moved slug before renaming or removing a page.

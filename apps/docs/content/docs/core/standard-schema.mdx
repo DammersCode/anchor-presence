@@ -8,15 +8,15 @@ import { Braces, ShieldCheck, Zap } from "lucide-react";
 
 Remote data is untrusted. The client checks its size and structure, but it cannot know the shape of your `user`, your `context`, or your events. Use a schema to check that shape. Valibot, Zod, and ArkType are tested. Other libraries that implement [Standard Schema](https://standardschema.dev) fit the same interface. No test covers them.
 
-The schema support is optional. Without it, `user` and `context` stay `unknown`, and the client keeps its default shape check. Core adds no dependency. The helper lives in its own entry point, `@anchor-presence/core/standard-schema`, so an app that does not import it pays nothing. The [API reference](/docs/core/api/standard-schema) lists the signatures.
+The schema support is optional. Without it, `user` and `context` stay `unknown`, and the client keeps its default shape check. Core adds no dependency. The helper lives in its own entry point, `@dammers/anchor-presence-core/standard-schema`, so an app that does not import it pays nothing. The [API reference](/docs/core/api/standard-schema) lists the signatures.
 
 ## Check the user and the context
 
 This client drops a remote `user` or `context` that the schema rejects:
 
 ```ts
-import { createPresenceClient } from "@anchor-presence/core";
-import { parserFrom } from "@anchor-presence/core/standard-schema";
+import { createPresenceClient } from "@dammers/anchor-presence-core";
+import { parserFrom } from "@dammers/anchor-presence-core/standard-schema";
 import * as v from "valibot";
 
 const User = v.object({ name: v.string(), color: v.string() });
@@ -41,7 +41,7 @@ The client takes the type of `user` and `context` only from `parseUser` and `par
 This client has no parser, so `user` and `context` are `unknown`:
 
 ```ts
-import { createPresenceClient } from "@anchor-presence/core";
+import { createPresenceClient } from "@dammers/anchor-presence-core";
 
 const client = createPresenceClient({ transport, user: { name: "Ada" } });
 const remote = client.getRemotePresence()[0];
@@ -55,8 +55,8 @@ Check an `unknown` value before you use it. To type it, pass a parser.
 This client drops an event with an unknown type, or with data that its schema rejects:
 
 ```ts
-import { createPresenceClient } from "@anchor-presence/core";
-import { eventParserFrom } from "@anchor-presence/core/standard-schema";
+import { createPresenceClient } from "@dammers/anchor-presence-core";
+import { eventParserFrom } from "@dammers/anchor-presence-core/standard-schema";
 import { z } from "zod";
 
 const parseEvent = eventParserFrom({

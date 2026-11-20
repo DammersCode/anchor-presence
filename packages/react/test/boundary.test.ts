@@ -12,7 +12,7 @@ function listSourceFiles(dir: string): string[] {
   return readdirSync(dir).filter((name) => name.endsWith(".ts") || name.endsWith(".tsx"));
 }
 
-const allowedSpecifiers = new Set(["react", "@anchor-presence/core", "@anchor-presence/dom"]);
+const allowedSpecifiers = new Set(["react", "@dammers/anchor-presence-core", "@dammers/anchor-presence-dom"]);
 
 function isAllowedSpecifier(specifier: string): boolean {
   return allowedSpecifiers.has(specifier) || specifier.startsWith("./") || specifier.startsWith("../");
@@ -26,7 +26,7 @@ describe("react import boundary (spec §3.3)", () => {
   });
 
   for (const file of files) {
-    it(`${file} imports only react, "@anchor-presence/core", "@anchor-presence/dom", or relative paths`, () => {
+    it(`${file} imports only react, "@dammers/anchor-presence-core", "@dammers/anchor-presence-dom", or relative paths`, () => {
       const contents = readFileSync(join(srcDir, file), "utf8");
       const specifiers = Array.from(contents.matchAll(importPattern), (m) => m[1]);
       for (const specifier of specifiers) {

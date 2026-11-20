@@ -3,8 +3,8 @@ import { join } from "node:path";
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createPresenceClient } from "@anchor-presence/core";
-import type { PresenceTransport } from "@anchor-presence/core";
+import { createPresenceClient } from "@dammers/anchor-presence-core";
+import type { PresenceTransport } from "@dammers/anchor-presence-core";
 import { createPresenceHooks } from "../src/typed-hooks";
 import { makeFakeBinding, parserOf } from "./test-utils";
 

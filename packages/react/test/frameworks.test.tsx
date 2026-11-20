@@ -21,8 +21,8 @@ import {
   Outlet as RrOutlet,
 } from "react-router";
 import { afterEach, describe, expect, it } from "vitest";
-import { createInMemoryPair, createPresenceClient } from "@anchor-presence/core";
-import type { PresenceClient } from "@anchor-presence/core";
+import { createInMemoryPair, createPresenceClient } from "@dammers/anchor-presence-core";
+import type { PresenceClient } from "@dammers/anchor-presence-core";
 import { CursorLayer, PresenceProvider, usePresenceStatus } from "../src";
 
 function Shell() {

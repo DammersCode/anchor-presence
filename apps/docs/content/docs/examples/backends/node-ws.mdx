@@ -12,7 +12,7 @@ You want a relay that runs on plain Node.js, with a well-known WebSocket library
 
 Install the packages:
 
-<InstallCommand packages="@anchor-presence/core @anchor-presence/dom ws" />
+<InstallCommand packages="@dammers/anchor-presence-core @dammers/anchor-presence-dom ws" />
 
 Install the types of `ws` as a development dependency:
 
@@ -27,8 +27,8 @@ The client connects with `createWebSocketTransport`. The server file exports a f
     The client needs no custom transport:
 
     ```ts
-    import { createPresenceClient } from "@anchor-presence/core";
-    import { createWebSocketTransport } from "@anchor-presence/dom";
+    import { createPresenceClient } from "@dammers/anchor-presence-core";
+    import { createWebSocketTransport } from "@dammers/anchor-presence-dom";
 
     const transport = createWebSocketTransport({ port: 8789, path: "/?room=main" });
     const client = createPresenceClient({ transport });

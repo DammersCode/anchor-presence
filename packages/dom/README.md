@@ -1,14 +1,14 @@
-# @anchor-presence/dom
+# @dammers/anchor-presence-dom
 
-`@anchor-presence/dom` is the browser layer of Anchor Presence. It registers anchors, samples the pointer, measures elements, and turns remote cursor data into screen positions.
+`@dammers/anchor-presence-dom` is the browser layer of Anchor Presence. It registers anchors, samples the pointer, measures elements, and turns remote cursor data into screen positions.
 
 [![MIT](https://img.shields.io/badge/license-MIT-blue.svg)](../../LICENSE)
 
 This sample binds a client to the page and draws each visible remote cursor:
 
 ```ts
-import { createPresenceClient } from "@anchor-presence/core";
-import { createDomBinding } from "@anchor-presence/dom";
+import { createPresenceClient } from "@dammers/anchor-presence-core";
+import { createDomBinding } from "@dammers/anchor-presence-dom";
 
 const client = createPresenceClient({ transport: myTransport });
 const binding = createDomBinding(client);
@@ -24,7 +24,7 @@ binding.subscribe(() => {
 
 ## Boundary rule
 
-`@anchor-presence/dom` is the package that reads the DOM layout and the pointer with `getBoundingClientRect`, `ResizeObserver`, `MutationObserver`, `requestAnimationFrame`, and pointer events. `@anchor-presence/core` has no DOM code and listens only for `visibilitychange`. Framework adapters read from `@anchor-presence/dom`, never from the browser directly.
+`@dammers/anchor-presence-dom` is the package that reads the DOM layout and the pointer with `getBoundingClientRect`, `ResizeObserver`, `MutationObserver`, `requestAnimationFrame`, and pointer events. `@dammers/anchor-presence-core` has no DOM code and listens only for `visibilitychange`. Framework adapters read from `@dammers/anchor-presence-dom`, never from the browser directly.
 
 ## Main exports
 

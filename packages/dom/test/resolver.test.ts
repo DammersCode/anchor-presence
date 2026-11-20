@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { PresenceMessage, Interpolator, InterpolatorFactory } from "@anchor-presence/core";
-import { noneInterpolator } from "@anchor-presence/core";
+import type { PresenceMessage, Interpolator, InterpolatorFactory } from "@dammers/anchor-presence-core";
+import { noneInterpolator } from "@dammers/anchor-presence-core";
 import { createAnchorRegistry } from "../src/registry";
 import type { AnchorRegistry } from "../src/registry";
 import { defaultVisibilityPolicy, RemoteResolver, resolveGeometry } from "../src/resolver";

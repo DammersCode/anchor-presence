@@ -20,9 +20,9 @@ To get an empty app, run `bun create vite my-app --template react-ts`. Put the s
 `createBroadcastChannelTransport` connects the tabs of one browser, with no server. The `factory` prop of the provider creates the client. One element carries `data-anchor`:
 
 ```tsx
-import { createPresenceClient } from "@anchor-presence/core";
-import { createBroadcastChannelTransport } from "@anchor-presence/dom";
-import { CursorLayer, PresenceProvider } from "@anchor-presence/react";
+import { createPresenceClient } from "@dammers/anchor-presence-core";
+import { createBroadcastChannelTransport } from "@dammers/anchor-presence-dom";
+import { CursorLayer, PresenceProvider } from "@dammers/anchor-presence-react";
 
 function createClient() {
   const transport = createBroadcastChannelTransport("live-cursors");
@@ -84,8 +84,8 @@ bun run dev:relay
 Change only the transport in `createClient`:
 
 ```tsx
-import { createPresenceClient } from "@anchor-presence/core";
-import { createWebSocketTransport } from "@anchor-presence/dom";
+import { createPresenceClient } from "@dammers/anchor-presence-core";
+import { createWebSocketTransport } from "@dammers/anchor-presence-dom";
 
 function createClient() {
   const transport = createWebSocketTransport({ port: 8788, path: "/?room=main" });
@@ -115,7 +115,7 @@ To open the app on a phone, start the dev server with `bun run dev --host`. Then
 
 ## Without React
 
-`@anchor-presence/core` and `@anchor-presence/dom` work with no React. `createDomBinding` gives the resolved cursors, and you render them with plain DOM code or another framework. See [Draw cursors without React](/docs/dom/binding#draw-cursors-without-react). To connect the binding to another framework, see [Build a framework adapter](/docs/core/build-a-framework-adapter).
+`@dammers/anchor-presence-core` and `@dammers/anchor-presence-dom` work with no React. `createDomBinding` gives the resolved cursors, and you render them with plain DOM code or another framework. See [Draw cursors without React](/docs/dom/binding#draw-cursors-without-react). To connect the binding to another framework, see [Build a framework adapter](/docs/core/build-a-framework-adapter).
 
 ## Related
 

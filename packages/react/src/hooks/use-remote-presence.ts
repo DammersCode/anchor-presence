@@ -1,5 +1,5 @@
 import { useCallback, useSyncExternalStore } from "react";
-import type { RemotePresence } from "@anchor-presence/core";
+import type { RemotePresence } from "@dammers/anchor-presence-core";
 import { PresenceProviderContext } from "../context.js";
 import type { PresenceContext } from "../context.js";
 import { EMPTY_PRESENCE, getServerPresence, usePresenceProviderContext } from "./use-presence-client.js";

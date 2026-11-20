@@ -10,12 +10,12 @@ import { Braces, Gauge, MousePointer2 } from "lucide-react";
 
 ## Usage
 
-If your app has a [typed `presence.ts` module](/docs/react/typed-hooks), import `useRemoteCursors` and `useRemoteCursorsSelector` from it. The package export reads only the provider of `@anchor-presence/react`.
+If your app has a [typed `presence.ts` module](/docs/react/typed-hooks), import `useRemoteCursors` and `useRemoteCursorsSelector` from it. The package export reads only the provider of `@dammers/anchor-presence-react`.
 
 The list also contains the hidden cursors. This component counts the visible ones:
 
 ```tsx
-import { useRemoteCursors } from "@anchor-presence/react";
+import { useRemoteCursors } from "@dammers/anchor-presence-react";
 
 function CursorCount() {
   const cursors = useRemoteCursors();
@@ -39,7 +39,7 @@ The hook applies `select` to each snapshot. It rerenders only when `isEqual` rep
 This selector derives the set of clients whose cursor is clipped out of view:
 
 ```tsx
-import { type ResolvedCursor, useRemoteCursorsSelector } from "@anchor-presence/react";
+import { type ResolvedCursor, useRemoteCursorsSelector } from "@dammers/anchor-presence-react";
 
 function selectClippedClientIds(cursors: readonly ResolvedCursor[]): ReadonlySet<string> {
   const clipped = new Set<string>();

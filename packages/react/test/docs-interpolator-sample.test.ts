@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import type { InterpolatorFactory } from "@anchor-presence/core";
+import type { InterpolatorFactory } from "@dammers/anchor-presence-core";
 import { docSample, missingLines } from "./doc-source";
 
 // interpolation.mdx: Write a spring

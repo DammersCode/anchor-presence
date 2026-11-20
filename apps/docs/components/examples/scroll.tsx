@@ -1,8 +1,8 @@
 "use client";
 
-import type { PresenceClient } from "@anchor-presence/core";
+import type { PresenceClient } from "@dammers/anchor-presence-core";
 import type { TourContext } from "./_preview/tour";
-import type { VisibilityPolicy } from "@anchor-presence/dom";
+import type { VisibilityPolicy } from "@dammers/anchor-presence-dom";
 import { CursorLayer, PresenceProvider, useRemoteCursors } from "./_preview/hooks";
 import { useRef, type ReactNode, type RefObject } from "react";
 

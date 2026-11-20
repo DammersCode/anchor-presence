@@ -1,4 +1,4 @@
-import type { ConnectionStatus, PresenceTransport, TransportClose } from "@anchor-presence/core";
+import type { ConnectionStatus, PresenceTransport, TransportClose } from "@dammers/anchor-presence-core";
 import type { Socket } from "socket.io-client";
 
 /** Normalizes Socket.IO's binary payload shape across Node and browser clients. */

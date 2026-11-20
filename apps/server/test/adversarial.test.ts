@@ -11,7 +11,7 @@ import {
   type PresenceMessage,
   type PresenceTransport,
   type PresenceClient,
-} from "@anchor-presence/core";
+} from "@dammers/anchor-presence-core";
 import { createAnchorRegistry } from "../../../packages/dom/src/registry";
 import { resolveGeometry } from "../../../packages/dom/src/resolver";
 

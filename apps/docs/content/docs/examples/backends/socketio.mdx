@@ -6,13 +6,13 @@ icon: radio
 
 import { FileCheck, ShieldCheck, Signal, Cable } from "lucide-react";
 
-Your app already uses Socket.IO for other real-time features, and you want presence on the same connection. `examples/socketio` has a Socket.IO relay and a client transport for it. The relay forwards each `"presence"` event to the peers of the sender and never reads the payload. Every `@anchor-presence/react` hook works the same way as on a WebSocket relay.
+Your app already uses Socket.IO for other real-time features, and you want presence on the same connection. `examples/socketio` has a Socket.IO relay and a client transport for it. The relay forwards each `"presence"` event to the peers of the sender and never reads the payload. Every `@dammers/anchor-presence-react` hook works the same way as on a WebSocket relay.
 
 ## Install
 
 Install the Socket.IO server and client with your package manager:
 
-<InstallCommand packages="@anchor-presence/core socket.io socket.io-client" />
+<InstallCommand packages="@dammers/anchor-presence-core socket.io socket.io-client" />
 
 ## Code
 
@@ -23,7 +23,7 @@ The client wraps a Socket.IO socket as a transport. The server file exports a fa
     Use the transport like any other transport:
 
     ```ts
-    import { createPresenceClient } from "@anchor-presence/core";
+    import { createPresenceClient } from "@dammers/anchor-presence-core";
     import { io } from "socket.io-client";
     import { createSocketIoTransport } from "./transport";
 

@@ -13,8 +13,8 @@ import { Cable, MemoryStick, Plug, RadioTower, AppWindow } from "lucide-react";
 Give each client its own transport with the same channel name:
 
 ```ts
-import { createPresenceClient } from "@anchor-presence/core";
-import { createBroadcastChannelTransport } from "@anchor-presence/dom";
+import { createPresenceClient } from "@dammers/anchor-presence-core";
+import { createBroadcastChannelTransport } from "@dammers/anchor-presence-dom";
 
 const client = createPresenceClient({ transport: createBroadcastChannelTransport("presence-demo") });
 ```

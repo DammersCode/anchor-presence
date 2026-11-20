@@ -1,7 +1,7 @@
 import { memo, useCallback } from "react";
 import type { ComponentPropsWithoutRef, CSSProperties, ReactNode } from "react";
-import type { PointerType } from "@anchor-presence/core";
-import { CURSOR_MARKER_ATTRIBUTE, type ResolvedCursor } from "@anchor-presence/dom";
+import type { PointerType } from "@dammers/anchor-presence-core";
+import { CURSOR_MARKER_ATTRIBUTE, type ResolvedCursor } from "@dammers/anchor-presence-dom";
 import { PresenceProviderContext } from "./context.js";
 import type { PresenceContext } from "./context.js";
 import { useRemoteCursorsSelectorIn } from "./hooks/use-remote-cursors.js";

@@ -22,7 +22,7 @@ The client checks each inbound message in two steps:
 1. It drops a message above `maxMessageBytes` (32 KiB) before it decodes the message.
 2. It passes the decoded message to `validatePresence()`.
 
-`validatePresence()` drops a message with an invalid `version`, `clientId`, `session`, `sequence`, or `cursor` shape. If only `user` or `context` breaks a limit, it drops that field and keeps the rest of the message. It clamps `u` and `v` to the range 0 to 1. [ValidationLimits](/docs/core/validation#validationlimits) lists every limit, its default, and the result of a break. The validation defaults are the `DEFAULT_MAX_*` constants of `@anchor-presence/core`. To change a limit, pass `validationLimits` to `createPresenceClient`.
+`validatePresence()` drops a message with an invalid `version`, `clientId`, `session`, `sequence`, or `cursor` shape. If only `user` or `context` breaks a limit, it drops that field and keeps the rest of the message. It clamps `u` and `v` to the range 0 to 1. [ValidationLimits](/docs/core/validation#validationlimits) lists every limit, its default, and the result of a break. The validation defaults are the `DEFAULT_MAX_*` constants of `@dammers/anchor-presence-core`. To change a limit, pass `validationLimits` to `createPresenceClient`.
 
 <Callout type="warn">
   If your relay calls `validatePresence`, cap the frame size on the relay. `validatePresence` ignores
@@ -50,7 +50,7 @@ Validation checks the size of `user` and `context`, not the content. A peer can 
 This sample shows the correct and the wrong way to render a remote name:
 
 ```tsx
-import type { ResolvedCursor } from "@anchor-presence/react";
+import type { ResolvedCursor } from "@dammers/anchor-presence-react";
 
 function RemoteName({ cursor }: { cursor: ResolvedCursor<unknown, { name: string }> }) {
   return (
@@ -89,7 +89,7 @@ To build `parseUser` from a Valibot, Zod, or ArkType schema, see [Validate with 
 The client above has a user type. In React, you have two routes:
 
 - Give the client to the `PresenceProvider` of [`createPresenceHooks`](/docs/react/typed-hooks). Its hooks return the user type.
-- Use the `PresenceProvider` of `@anchor-presence/react`. It takes only an untyped client, and its hooks return `unknown`. Create the client with `createPresenceClient<unknown, unknown>`. The `parseUser` still checks every peer value.
+- Use the `PresenceProvider` of `@dammers/anchor-presence-react`. It takes only an untyped client, and its hooks return `unknown`. Create the client with `createPresenceClient<unknown, unknown>`. The `parseUser` still checks every peer value.
 
 Check every URL and CSS value from a peer before you use it. A peer can send a `javascript:` URL, or a string that breaks out of a CSS value. Allow only `https://` URLs. Allow only colors that match a fixed pattern, such as `/^#[0-9a-f]{6}$/i`, or that are in a list you own.
 

@@ -41,5 +41,10 @@ export type {
   PointerType,
   RemotePresence,
   TypedRemoteEvent,
-} from "@anchor-presence/core";
-export type { DomBinding, DomBindingOptions, ResolutionTier, ResolvedCursor } from "@anchor-presence/dom";
+} from "@dammers/anchor-presence-core";
+export type {
+  DomBinding,
+  DomBindingOptions,
+  ResolutionTier,
+  ResolvedCursor,
+} from "@dammers/anchor-presence-dom";

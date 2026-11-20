@@ -23,4 +23,4 @@ export type {
 } from "./scheduler.js";
 
 export type { ResolvedCursor, ResolutionTier, VisibilityPolicy } from "./resolver.js";
-export type { PointerType } from "@anchor-presence/core";
+export type { PointerType } from "@dammers/anchor-presence-core";

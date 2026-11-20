@@ -14,7 +14,7 @@ The sender sets it with `setContext` on the client, or with `useLocalContext` in
 
 ## What the client sends
 
-The `context` field of `PresenceMessage` is opaque: `@anchor-presence/core` gives it no meaning.
+The `context` field of `PresenceMessage` is opaque: `@dammers/anchor-presence-core` gives it no meaning.
 
 - The client sends a changed context once. Later messages leave the field out, which means "unchanged".
 - Reconnect and heartbeat messages carry the current context, so a late peer gets it.

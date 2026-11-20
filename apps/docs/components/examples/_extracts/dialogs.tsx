@@ -1,8 +1,8 @@
 "use client";
 
-import { createPresenceClient } from "@anchor-presence/core";
-import { createBroadcastChannelTransport, type VisibilityPolicy } from "@anchor-presence/dom";
-import { createPresenceHooks } from "@anchor-presence/react";
+import { createPresenceClient } from "@dammers/anchor-presence-core";
+import { createBroadcastChannelTransport, type VisibilityPolicy } from "@dammers/anchor-presence-dom";
+import { createPresenceHooks } from "@dammers/anchor-presence-react";
 import { useEffect, useRef, useState } from "react";
 
 const safeColor = (color: string | undefined, fallback: string) =>

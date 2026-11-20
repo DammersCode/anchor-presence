@@ -1,4 +1,4 @@
-import { createPresenceClient, type PresenceClient } from "@anchor-presence/core";
+import { createPresenceClient, type PresenceClient } from "@dammers/anchor-presence-core";
 import { io, type Socket } from "socket.io-client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createSocketIoRelay } from "./server";

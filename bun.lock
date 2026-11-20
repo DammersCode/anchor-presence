@@ -27,9 +27,9 @@
       "name": "demo",
       "version": "0.1.0",
       "dependencies": {
-        "@anchor-presence/core": "0.1.0",
-        "@anchor-presence/dom": "0.1.0",
-        "@anchor-presence/react": "0.1.0",
+        "@dammers/anchor-presence-core": "0.1.0",
+        "@dammers/anchor-presence-dom": "0.1.0",
+        "@dammers/anchor-presence-react": "0.1.0",
         "@dammers/use-signalr-react": "^0.5.0",
         "@microsoft/signalr": "^10.0.11",
         "cn": "^0.4.0",
@@ -51,12 +51,12 @@
       },
     },
     "apps/docs": {
-      "name": "@anchor-presence/docs",
+      "name": "@dammers/anchor-presence-docs",
       "version": "0.1.0",
       "dependencies": {
-        "@anchor-presence/core": "workspace:*",
-        "@anchor-presence/dom": "workspace:*",
-        "@anchor-presence/react": "workspace:*",
+        "@dammers/anchor-presence-core": "workspace:*",
+        "@dammers/anchor-presence-dom": "workspace:*",
+        "@dammers/anchor-presence-react": "workspace:*",
         "@vercel/analytics": "^2.0.1",
         "@vercel/speed-insights": "^2.0.0",
         "fumadocs-core": "^16.15.11",
@@ -84,21 +84,21 @@
       "name": "server",
       "version": "0.1.0",
       "devDependencies": {
-        "@anchor-presence/core": "0.1.0",
+        "@dammers/anchor-presence-core": "0.1.0",
       },
     },
     "examples/bun-native": {
       "name": "example-bun-native",
       "dependencies": {
-        "@anchor-presence/core": "0.1.0",
-        "@anchor-presence/dom": "0.1.0",
+        "@dammers/anchor-presence-core": "0.1.0",
+        "@dammers/anchor-presence-dom": "0.1.0",
       },
     },
     "examples/elysia": {
       "name": "example-elysia",
       "dependencies": {
-        "@anchor-presence/core": "0.1.0",
-        "@anchor-presence/dom": "0.1.0",
+        "@dammers/anchor-presence-core": "0.1.0",
+        "@dammers/anchor-presence-dom": "0.1.0",
         "@elysia/eden": "^1.4.10",
         "elysia": "^1.4.30",
       },
@@ -106,16 +106,16 @@
     "examples/hono": {
       "name": "example-hono",
       "dependencies": {
-        "@anchor-presence/core": "0.1.0",
-        "@anchor-presence/dom": "0.1.0",
+        "@dammers/anchor-presence-core": "0.1.0",
+        "@dammers/anchor-presence-dom": "0.1.0",
         "hono": "^4.13.9",
       },
     },
     "examples/node-ws": {
       "name": "example-node-ws",
       "dependencies": {
-        "@anchor-presence/core": "0.1.0",
-        "@anchor-presence/dom": "0.1.0",
+        "@dammers/anchor-presence-core": "0.1.0",
+        "@dammers/anchor-presence-dom": "0.1.0",
         "ws": "^8.21.3",
       },
       "devDependencies": {
@@ -125,20 +125,20 @@
     "examples/signalr": {
       "name": "example-signalr",
       "dependencies": {
-        "@anchor-presence/core": "0.1.0",
+        "@dammers/anchor-presence-core": "0.1.0",
         "@microsoft/signalr": "^10.0.11",
       },
     },
     "examples/socketio": {
       "name": "example-socketio",
       "dependencies": {
-        "@anchor-presence/core": "0.1.0",
+        "@dammers/anchor-presence-core": "0.1.0",
         "socket.io": "^4.8.3",
         "socket.io-client": "^4.8.3",
       },
     },
     "packages/core": {
-      "name": "@anchor-presence/core",
+      "name": "@dammers/anchor-presence-core",
       "version": "0.1.0",
       "devDependencies": {
         "arktype": "^2.2.10",
@@ -147,18 +147,18 @@
       },
     },
     "packages/dom": {
-      "name": "@anchor-presence/dom",
+      "name": "@dammers/anchor-presence-dom",
       "version": "0.1.0",
       "dependencies": {
-        "@anchor-presence/core": "0.1.0",
+        "@dammers/anchor-presence-core": "0.1.0",
       },
     },
     "packages/react": {
-      "name": "@anchor-presence/react",
+      "name": "@dammers/anchor-presence-react",
       "version": "0.1.0",
       "dependencies": {
-        "@anchor-presence/core": "0.1.0",
-        "@anchor-presence/dom": "0.1.0",
+        "@dammers/anchor-presence-core": "0.1.0",
+        "@dammers/anchor-presence-dom": "0.1.0",
       },
       "devDependencies": {
         "@types/react": "^19.2.18",
@@ -178,14 +178,6 @@
   },
   "packages": {
     "@alloc/quick-lru": ["@alloc/quick-lru@5.3.0", "", {}, "sha512-U4+70Pc5ZS9osnCBCE5Jha/ciHM+Yp+CNMNC/7HvYbNRk1Ldd+f7qO65W5qfhu/TCv+/ozljlXXe9Nj8419DMA=="],
-
-    "@anchor-presence/core": ["@anchor-presence/core@workspace:packages/core"],
-
-    "@anchor-presence/docs": ["@anchor-presence/docs@workspace:apps/docs"],
-
-    "@anchor-presence/dom": ["@anchor-presence/dom@workspace:packages/dom"],
-
-    "@anchor-presence/react": ["@anchor-presence/react@workspace:packages/react"],
 
     "@andrewbranch/untar.js": ["@andrewbranch/untar.js@1.0.4", "", {}, "sha512-pVXSwPsLuw8IGLo2Di0EaOfsk+ntVvpkk942J/sHYIkwvtKUakEcPh7HBgZ6tuimgzKSEHgCvO4XgQ05DEbwDw=="],
 
@@ -264,6 +256,14 @@
     "@csstools/css-syntax-patches-for-csstree": ["@csstools/css-syntax-patches-for-csstree@1.1.8", "", { "peerDependencies": { "css-tree": "^3.2.1" }, "optionalPeers": ["css-tree"] }, "sha512-CpMLjAvwQg3BL5S0IeqsZNMH7EQrEWi0kLKOC13ZBF0ZwERiLWlibNPJr8G1kdU3Ms/r2KiNrF81pUh2HwAHdg=="],
 
     "@csstools/css-tokenizer": ["@csstools/css-tokenizer@4.0.0", "", {}, "sha512-QxULHAm7cNu72w97JUNCBFODFaXpbDg+dP8b/oWFAZ2MTRppA3U00Y2L1HqaS4J6yBqxwa/Y3nMBaxVKbB/NsA=="],
+
+    "@dammers/anchor-presence-core": ["@dammers/anchor-presence-core@workspace:packages/core"],
+
+    "@dammers/anchor-presence-docs": ["@dammers/anchor-presence-docs@workspace:apps/docs"],
+
+    "@dammers/anchor-presence-dom": ["@dammers/anchor-presence-dom@workspace:packages/dom"],
+
+    "@dammers/anchor-presence-react": ["@dammers/anchor-presence-react@workspace:packages/react"],
 
     "@dammers/use-signalr-core": ["@dammers/use-signalr-core@0.5.0", "", { "peerDependencies": { "@microsoft/signalr": ">=8" } }, "sha512-nxGi9QZiRqRiECAfWwsIdqEZXMrlyWveJ3S8znQiszGiIUALbmJ1I2GcS63pzCezamAHlqkRm+UhbYkkdX3PIw=="],
 
@@ -1867,13 +1867,13 @@
 
     "zwitch": ["zwitch@2.0.4", "", {}, "sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A=="],
 
-    "@anchor-presence/docs/typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
-
     "@arethetypeswrong/core/typescript": ["typescript@5.6.1-rc", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-E3b2+1zEFu84jB0YQi9BORDjz9+jGbwwy1Zi3G0LUNw7a7cePUrHMRNy8aPh53nXpkFGVHSxIZo5vKTfYaFiBQ=="],
 
     "@babel/core/obug": ["obug@2.1.4", "", {}, "sha512-4a+OsYv9UktOJKE+l1A4OufDgdRF9PifWj+tJnHURo/P+WOxpG4GzUFL9qCalmWauao6ogiG+QvnCovwPoyAWA=="],
 
     "@babel/traverse/obug": ["obug@2.1.4", "", {}, "sha512-4a+OsYv9UktOJKE+l1A4OufDgdRF9PifWj+tJnHURo/P+WOxpG4GzUFL9qCalmWauao6ogiG+QvnCovwPoyAWA=="],
+
+    "@dammers/anchor-presence-docs/typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
 
     "@img/sharp-wasm32/@emnapi/runtime": ["@emnapi/runtime@1.11.3", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-Xz4Tpyki7XyrpbUK1jR1AhdAdaXyhhY4lZ3neLodmhpuWfy2PAQN5B46sAiU4liOXGLkHypn/qU+jvfWSCYYLA=="],
 

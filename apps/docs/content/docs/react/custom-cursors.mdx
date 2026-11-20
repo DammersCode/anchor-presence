@@ -10,13 +10,13 @@ import { Component, MousePointer2, Brush, Users } from "lucide-react";
 
 ## Usage
 
-If your app has a [typed `presence.ts` module](/docs/react/typed-hooks), import `CursorLayer` from it. The package export reads only the provider of `@anchor-presence/react`.
+If your app has a [typed `presence.ts` module](/docs/react/typed-hooks), import `CursorLayer` from it. The package export reads only the provider of `@dammers/anchor-presence-react`.
 
 `renderCursor` replaces only the content of the root. The samples on this page pass `renderCursor` inline for brevity. Declare it at module level, as in [Keep the callbacks stable](/docs/react/cursor-layer#keep-the-callbacks-stable):
 
 ```tsx
 import type { ReactNode } from "react";
-import { CursorLayer } from "@anchor-presence/react";
+import { CursorLayer } from "@dammers/anchor-presence-react";
 
 function MyCursorGlyph({ color, children }: { color: string; children: ReactNode }) {
   return <span data-color={color}>{children}</span>;
@@ -46,7 +46,7 @@ This preview switches between several renderers:
 `DefaultCursor` needs no Tailwind and no external stylesheet. Three CSS variables control its look: `--anchor-presence-cursor-color`, `--anchor-presence-cursor-size`, and `--anchor-presence-cursor-label-color`. This renderer makes the arrow larger:
 
 ```tsx
-import { CursorLayer, DefaultCursor } from "@anchor-presence/react";
+import { CursorLayer, DefaultCursor } from "@dammers/anchor-presence-react";
 
 function LargeCursorLayer() {
   return (
@@ -66,7 +66,7 @@ The `--anchor-presence-cursor-color` variable on `style` wins over the `color` p
 `pointerType` is `"mouse"`, `"pen"`, or `"touch"`. It is `undefined` when the sender sent no pointer type. This renderer shows a ring for a touch cursor and the default arrow for all others:
 
 ```tsx
-import { CursorLayer, DefaultCursor } from "@anchor-presence/react";
+import { CursorLayer, DefaultCursor } from "@dammers/anchor-presence-react";
 
 function TouchRingLayer() {
   return (

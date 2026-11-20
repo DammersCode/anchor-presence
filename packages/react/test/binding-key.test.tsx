@@ -1,7 +1,7 @@
 import { act, useContext } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, describe, expect, it } from "vitest";
-import type { EventMap } from "@anchor-presence/core";
+import type { EventMap } from "@dammers/anchor-presence-core";
 import { PresenceProviderContext } from "../src/context";
 import { PresenceProvider } from "../src/provider";
 import { makeFakeClient } from "./test-utils";

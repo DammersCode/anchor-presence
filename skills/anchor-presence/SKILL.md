@@ -8,7 +8,7 @@ Anchor-presence shows remote cursors in DOM apps. A cursor travels as a semantic
 
 Sources of truth, in order:
 
-- After install: `node_modules/@anchor-presence/{core,dom,react}/README.md` and the package `.d.ts` files. Trust them over any sample here.
+- After install: `node_modules/@dammers/anchor-presence-{core,dom,react}/README.md` and the package `.d.ts` files. Trust them over any sample here.
 - Docs as markdown: `https://anchor-presence.vercel.app/docs/<page>.md`, index at `https://anchor-presence.vercel.app/llms.txt`.
 
 To fix a broken integration, go straight to [troubleshooting.md](troubleshooting.md). To score cursor-jump risk across layouts, use the `anchor-presence-audit` skill.
@@ -36,12 +36,12 @@ Read [transports.md](transports.md) and pick the row that matches the survey.
 ### 3. Install
 
 ```bash
-npm install @anchor-presence/core @anchor-presence/dom @anchor-presence/react
+npm install @dammers/anchor-presence-core @dammers/anchor-presence-dom @dammers/anchor-presence-react
 ```
 
 Use the project's package manager. Install the relay dependencies from the chosen row too.
 
-If the install returns a 404, the packages are not on npm. Build a clone with `bun install && bun run build`. In the project's `package.json`, add an override block that maps `@anchor-presence/core` and `@anchor-presence/dom` to `file:<clone>/packages/core` and `file:<clone>/packages/dom`. The block is named `overrides` for bun and npm, `pnpm.overrides` for pnpm, and `resolutions` for yarn. Then run `bun add file:<clone>/packages/core file:<clone>/packages/dom file:<clone>/packages/react`.
+If the install returns a 404, the packages are not on npm. Build a clone with `bun install && bun run build`. In the project's `package.json`, add an override block that maps `@dammers/anchor-presence-core` and `@dammers/anchor-presence-dom` to `file:<clone>/packages/core` and `file:<clone>/packages/dom`. The block is named `overrides` for bun and npm, `pnpm.overrides` for pnpm, and `resolutions` for yarn. Then run `bun add file:<clone>/packages/core file:<clone>/packages/dom file:<clone>/packages/react`.
 
 ### 4. Create the client and render the cursor layer
 
@@ -49,9 +49,9 @@ Create the client in the provider's `factory`, in a client component. The factor
 
 ```tsx
 "use client";
-import { createPresenceClient } from "@anchor-presence/core";
-import { createWebSocketTransport } from "@anchor-presence/dom";
-import { CursorLayer, PresenceProvider } from "@anchor-presence/react";
+import { createPresenceClient } from "@dammers/anchor-presence-core";
+import { createWebSocketTransport } from "@dammers/anchor-presence-dom";
+import { CursorLayer, PresenceProvider } from "@dammers/anchor-presence-react";
 
 export function PresenceRoot({
   room,
@@ -99,9 +99,14 @@ This step applies when one anchor ID can appear in different app states (pages, 
 ```tsx
 "use client";
 import { useEffect, useRef } from "react";
-import { createPresenceClient } from "@anchor-presence/core";
-import { createWebSocketTransport } from "@anchor-presence/dom";
-import { CursorLayer, PresenceProvider, useDomBinding, useLocalContext } from "@anchor-presence/react";
+import { createPresenceClient } from "@dammers/anchor-presence-core";
+import { createWebSocketTransport } from "@dammers/anchor-presence-dom";
+import {
+  CursorLayer,
+  PresenceProvider,
+  useDomBinding,
+  useLocalContext,
+} from "@dammers/anchor-presence-react";
 
 function parseContext(value: unknown): { page: string } | undefined {
   const page = typeof value === "object" && value !== null && "page" in value ? value.page : undefined;

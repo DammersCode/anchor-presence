@@ -1,7 +1,7 @@
 // Remote anchor resolution — spec §10 — and interpolation integration — spec §13
 
-import type { PresenceMessage, InterpolatorFactory, PointerType } from "@anchor-presence/core";
-import { linearInterpolator } from "@anchor-presence/core";
+import type { PresenceMessage, InterpolatorFactory, PointerType } from "@dammers/anchor-presence-core";
+import { linearInterpolator } from "@dammers/anchor-presence-core";
 import type { AnchorRegistry } from "./registry.js";
 import { parentAcrossShadow } from "./dom-tree.js";
 import type { Rect, ViewportSize } from "./geometry.js";

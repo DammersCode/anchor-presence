@@ -2,7 +2,7 @@
 
 import type { Rect, ViewportSize } from "./geometry.js";
 import type { StyleValues } from "./occlusion.js";
-import { isDevMode, reportListenerError } from "@anchor-presence/core";
+import { isDevMode, reportListenerError } from "@dammers/anchor-presence-core";
 import { createFrameCache } from "./frame-cache.js";
 import { createSignalHub } from "./internal/signals.js";
 

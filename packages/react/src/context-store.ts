@@ -1,4 +1,4 @@
-import type { PresenceClient } from "@anchor-presence/core";
+import type { PresenceClient } from "@dammers/anchor-presence-core";
 
 type ContextStore<TContext> = {
   getSnapshot(): TContext | undefined;

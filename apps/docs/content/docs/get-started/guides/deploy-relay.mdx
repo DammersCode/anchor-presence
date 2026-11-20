@@ -13,7 +13,7 @@ A relay forwards each message to the other clients in a room. This page tells yo
 In production, pass `url` to `createWebSocketTransport`. Put the room query in the URL, and pass the room token with the `token` option:
 
 ```ts
-import { createWebSocketTransport } from "@anchor-presence/dom";
+import { createWebSocketTransport } from "@dammers/anchor-presence-dom";
 
 const transport = createWebSocketTransport({
   url: "wss://relay.example.com/?room=main",

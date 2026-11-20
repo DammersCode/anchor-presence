@@ -4,7 +4,8 @@ import type { Plugin } from "vitest/config";
 import { transformAsync } from "@babel/core";
 import reactCompiler from "babel-plugin-react-compiler";
 
-const librarySource = /packages[\\/]react[\\/]src[\\/].*\.tsx?$/u;
+// The test components stand in for compiled app code.
+const librarySource = /packages[\\/]react[\\/](src|test)[\\/].*\.tsx?$/u;
 
 function reactCompilerPlugin(): Plugin {
   return {
@@ -31,6 +32,7 @@ export default defineConfig({
   plugins: [reactCompilerPlugin()],
   test: {
     name: "react-compiler",
+    env: { REACT_COMPILER_RUN: "1" },
     environment: "jsdom",
     include: ["packages/react/test/**/*.test.{ts,tsx}"],
     setupFiles: ["test/quiet-library-warnings.ts", "packages/react/test/setup.ts"],

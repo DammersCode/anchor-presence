@@ -602,6 +602,7 @@ describe("createWebSocketTransport", () => {
 
   it("keeps reconnecting when a status listener throws", () => {
     vi.useFakeTimers();
+    const reported = vi.spyOn(console, "error").mockImplementation(() => {});
     const transport = make({ baseBackoffMs: 100 });
     let calls = 0;
     transport.subscribeStatus?.(() => {
@@ -613,6 +614,7 @@ describe("createWebSocketTransport", () => {
     FakeWebSocket.fire(lastSocket(), "close", { code: 1006 });
     vi.advanceTimersByTime(60_000);
     expect(FakeWebSocket.instances.length).toBeGreaterThan(first);
+    expect(reported).toHaveBeenCalled();
   });
 
   it("reports the close code, reason and whether it reconnects", () => {
@@ -682,7 +684,7 @@ describe("createWebSocketTransport", () => {
     expect(transport.getStatus()).toBe("reconnecting");
   });
 
-  const throwingCtor = vi.fn(() => {
+  const throwingCtor = vi.fn(function () {
     throw new Error("blocked");
   }) as unknown as WebSocketCtor;
 

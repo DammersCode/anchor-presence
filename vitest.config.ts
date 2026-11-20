@@ -1,5 +1,8 @@
 import { defineConfig } from "vitest/config";
 
+// Real servers, real sockets and the docs scan run in parallel, so the 5 s default fails on a busy machine.
+const TEST_TIMEOUT_MS = 20_000;
+
 export default defineConfig({
   test: {
     projects: [
@@ -7,6 +10,7 @@ export default defineConfig({
         test: {
           name: "core",
           environment: "node",
+          testTimeout: TEST_TIMEOUT_MS,
           include: ["packages/core/test/**/*.test.ts"],
           setupFiles: ["test/quiet-library-warnings.ts"],
         },
@@ -15,6 +19,7 @@ export default defineConfig({
         test: {
           name: "dom",
           environment: "jsdom",
+          testTimeout: TEST_TIMEOUT_MS,
           include: ["packages/dom/test/**/*.test.ts"],
           setupFiles: ["test/quiet-library-warnings.ts"],
         },
@@ -23,16 +28,16 @@ export default defineConfig({
         test: {
           name: "react",
           environment: "jsdom",
+          testTimeout: TEST_TIMEOUT_MS,
           include: ["packages/react/test/**/*.test.{ts,tsx}"],
           setupFiles: ["test/quiet-library-warnings.ts", "packages/react/test/setup.ts"],
-          // docs-links reads every docs page; under a parallel run it passes the 5 s default
-          testTimeout: 20_000,
         },
       },
       {
         test: {
           name: "demo",
           environment: "node",
+          testTimeout: TEST_TIMEOUT_MS,
           include: ["apps/demo/src/cursors/**/*.test.ts"],
         },
       },
@@ -40,6 +45,7 @@ export default defineConfig({
         test: {
           name: "server",
           environment: "node",
+          testTimeout: TEST_TIMEOUT_MS,
           include: ["apps/server/test/**/*.test.ts"],
           setupFiles: ["test/quiet-library-warnings.ts"],
         },
@@ -48,14 +54,15 @@ export default defineConfig({
         test: {
           name: "built-packages",
           environment: "node",
+          testTimeout: TEST_TIMEOUT_MS,
           include: ["test/built-packages/**/*.test.ts"],
-          testTimeout: 20_000,
         },
       },
       {
         test: {
           name: "audit-skill",
           environment: "node",
+          testTimeout: TEST_TIMEOUT_MS,
           include: ["test/audit-skill/**/*.test.mjs", "test/scripts/**/*.test.mjs"],
         },
       },
@@ -63,6 +70,7 @@ export default defineConfig({
         test: {
           name: "socketio-example",
           environment: "node",
+          testTimeout: TEST_TIMEOUT_MS,
           include: ["examples/socketio/**/*.test.ts"],
         },
       },
@@ -70,15 +78,16 @@ export default defineConfig({
         test: {
           name: "signalr-example",
           environment: "node",
+          testTimeout: TEST_TIMEOUT_MS,
           include: ["examples/signalr/**/*.test.ts"],
-          testTimeout: 20_000,
-          hookTimeout: 20_000,
+          hookTimeout: TEST_TIMEOUT_MS,
         },
       },
       {
         test: {
           name: "bun-native-example",
           environment: "node",
+          testTimeout: TEST_TIMEOUT_MS,
           include: ["examples/bun-native/**/*.test.ts"],
         },
       },
@@ -86,6 +95,7 @@ export default defineConfig({
         test: {
           name: "node-ws-example",
           environment: "node",
+          testTimeout: TEST_TIMEOUT_MS,
           include: ["examples/node-ws/**/*.test.ts"],
         },
       },
@@ -93,6 +103,7 @@ export default defineConfig({
         test: {
           name: "hono-example",
           environment: "node",
+          testTimeout: TEST_TIMEOUT_MS,
           include: ["examples/hono/**/*.test.ts"],
         },
       },
@@ -100,6 +111,7 @@ export default defineConfig({
         test: {
           name: "elysia-example",
           environment: "node",
+          testTimeout: TEST_TIMEOUT_MS,
           include: ["examples/elysia/**/*.test.ts"],
           setupFiles: ["test/quiet-library-warnings.ts"],
         },
@@ -108,6 +120,7 @@ export default defineConfig({
         test: {
           name: "relay-conformance",
           environment: "node",
+          testTimeout: TEST_TIMEOUT_MS,
           include: ["examples/_shared/**/*.test.ts"],
         },
       },

@@ -16,23 +16,7 @@ When Mira moves to a section outside the narrow pane, that pane scrolls to the s
 
 ## Find the target
 
-The recipe reads the user type from a `presence.ts` module. The module calls `createPresenceHooks` one time, so each `user` has the type `User` and not `unknown`:
-
-```ts
-// presence.ts
-import { createPresenceHooks } from "@anchor-presence/react";
-
-export type User = { name: string };
-
-export const {
-  CursorLayer,
-  PresenceProvider,
-  usePeerChanges,
-  useRemoteCursorsSelector,
-  useDomBinding,
-  useRemoteUsers,
-} = createPresenceHooks<unknown, User>();
-```
+The recipe imports its hooks and types from the `./presence` module of [Typed hooks](/docs/react/typed-hooks#usage). The app has one `createPresenceHooks` call, so add no second module.
 
 The recipe is one file, `follow-mode.tsx`. It starts with the imports, the off-screen test and the anchor lookup:
 
@@ -47,7 +31,7 @@ import {
   useDomBinding,
   useRemoteUsers,
 } from "./presence";
-import type { User } from "./presence";
+import type { Context, Events, User } from "./presence";
 
 const SCROLL_KEYS = new Set(["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " "]);
 
@@ -142,7 +126,7 @@ export function FollowControls() {
 Render the controls inside the provider:
 
 ```tsx
-export function FollowApp({ client }: { client: PresenceClient<unknown, User> }) {
+export function FollowApp({ client }: { client: PresenceClient<Context, User, Events> }) {
   return (
     <PresenceProvider client={client}>
       <FollowControls />

@@ -4,7 +4,7 @@ description: sendEvent and subscribeEvents, the limits of an event, parseEvent, 
 icon: zap
 ---
 
-import { Code, Radio, ShieldCheck, Zap } from "lucide-react";
+import { BadgeCheck, Code, Radio, ShieldCheck, Zap } from "lucide-react";
 
 An event is a one-shot message to every peer, for example a reaction or a ping. Use an event for a short action that peers see one time. Use `setContext` for a state that peers keep, such as a selection. See [Lifecycle](/docs/core/presence-client#lifecycle).
 
@@ -108,6 +108,8 @@ The receiver keeps a burst for at most 512 senders. When a new sender arrives af
 - For an event without data, use `null` in place of a parser. The client then drops the event if it carries data.
 - The client drops an event whose type has no entry in `parsers`.
 
+To build `parseEvent` from Valibot, Zod, or ArkType schemas, use `eventParserFrom`. See [Check the events](/docs/core/standard-schema#check-the-events).
+
 This sample declares two events, checks them with `createEventParser`, and sends and receives them through a channel:
 
 ```ts
@@ -144,6 +146,9 @@ const unsubscribe = events.subscribe((event) => {
   </Card>
   <Card icon={<Zap />} title="Remote events" href="/docs/react/remote-events">
     Send and receive events from React components.
+  </Card>
+  <Card icon={<BadgeCheck />} title="Validate with a schema" href="/docs/core/standard-schema">
+    Build the parsers from a Valibot, Zod, or ArkType schema.
   </Card>
   <Card icon={<Code />} title="Client API" href="/docs/core/api/client#createeventchannel">
     The signatures of `createEventChannel` and `createEventParser`.

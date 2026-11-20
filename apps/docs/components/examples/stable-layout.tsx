@@ -28,7 +28,7 @@ const STEPS = [
 const button =
   "inline-flex h-8 items-center justify-center rounded-lg px-3 text-xs font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fd-ring";
 
-// The card keeps one width and three tiles per line in both panes. The wide pane adds a side panel instead of reflowing the card.
+// The card keeps one width and two tiles per line in both panes. The wide pane adds a side panel instead of reflowing the card.
 export function StableLayoutScene({ client, layout, children }: Props) {
   return (
     <PresenceProvider client={client}>

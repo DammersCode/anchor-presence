@@ -18,9 +18,9 @@ export function trimmedTestSource(file: string): string {
     .join("\n");
 }
 
-// Returns the ts or tsx block of `page` that contains `marker`, without import lines.
-export function docSample(page: string, marker: string): string {
-  const markdown = readRepoFile(`apps/docs/content/docs/${page}`);
+// Returns the ts or tsx block of `file` (a repo path) that contains `marker`, without import lines.
+export function fileSample(file: string, marker: string): string {
+  const markdown = readRepoFile(file);
   const blocks = [...markdown.matchAll(/```tsx?\n([\s\S]*?)```/gu)].map(([, body = ""]) =>
     body
       .split("\n")
@@ -29,9 +29,12 @@ export function docSample(page: string, marker: string): string {
       .trim(),
   );
   const block = blocks.find((body) => body.includes(marker));
-  if (block === undefined) throw new Error(`no sample with "${marker}" in ${page}`);
+  if (block === undefined) throw new Error(`no sample with "${marker}" in ${file}`);
   return block;
 }
+
+export const docSample = (page: string, marker: string) =>
+  fileSample(`apps/docs/content/docs/${page}`, marker);
 
 const stripSemicolon = (line: string) => line.replace(/;$/u, "");
 

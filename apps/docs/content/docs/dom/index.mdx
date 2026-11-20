@@ -21,7 +21,7 @@ import {
   Rocket,
 } from "lucide-react";
 
-`@anchor-presence/dom` is the only package that calls browser APIs. It turns a `PresenceClient` from `@anchor-presence/core` into a list of resolved cursors: the position of each remote cursor in the pixels of your viewport. It renders nothing. `@anchor-presence/react` uses it for you. Use it directly to draw cursors without React, or to build an adapter for another UI framework.
+`@anchor-presence/dom` is the package that reads the DOM layout and the pointer. It turns a `PresenceClient` from `@anchor-presence/core` into a list of resolved cursors: the position of each remote cursor in the pixels of your viewport. It renders nothing. `@anchor-presence/react` uses it for you. Use it directly to draw cursors without React, or to build an adapter for another UI framework.
 
 This sample connects a client and logs each visible cursor:
 

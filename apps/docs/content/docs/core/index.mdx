@@ -5,6 +5,8 @@ icon: box
 ---
 
 import {
+  BadgeCheck,
+  Braces,
   Binary,
   FileCheck,
   FileCog,
@@ -53,6 +55,9 @@ const clientB = createPresenceClient({ transport: b, user: { name: "Bob" } });
   </Card>
   <Card icon={<ShieldCheck />} title="Validation" href="/docs/core/validation">
     The checks on each inbound message, and the limits that you can change.
+  </Card>
+  <Card icon={<BadgeCheck />} title="Validate with a schema" href="/docs/core/standard-schema">
+    Check the user, the context, and the events with a Standard Schema library.
   </Card>
   <Card icon={<Spline />} title="Interpolation" href="/docs/core/interpolation">
     Ease a remote cursor between two positions.
@@ -106,6 +111,9 @@ const clientB = createPresenceClient({ transport: b, user: { name: "Bob" } });
   </Card>
   <Card icon={<FileCode />} title="Protocol types" href="/docs/core/api/protocol">
     The wire messages, validation limits, and constants.
+  </Card>
+  <Card icon={<Braces />} title="Standard schema API" href="/docs/core/api/standard-schema">
+    The signatures of parserFrom and eventParserFrom.
   </Card>
   <Card icon={<ArrowLeftRight />} title="Transport and codec API" href="/docs/core/api/transports-and-codecs">
     The transport and codec interfaces and the built-in codecs.

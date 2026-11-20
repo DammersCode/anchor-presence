@@ -186,8 +186,8 @@ export interface PresenceClient<TContext = unknown, TUser = unknown, TEvents ext
    */
   getRemotePresence(): readonly RemotePresence<TContext, TUser>[];
   /**
-   * Returns whether at least one remote client currently has a cursor position.
-   * O(1) on the client returned by `createPresenceClient`; optional so custom clients may omit it.
+   * Returns whether at least one remote client has a cursor position.
+   * It is optional, so a custom client can omit it.
    */
   hasActiveCursors?(): boolean;
   /**

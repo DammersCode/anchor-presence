@@ -63,7 +63,7 @@ While no remote cursor is active, no `requestAnimationFrame` loop runs. The sche
 - A stationary pointer sends only a heartbeat, every `heartbeatIntervalMs`. The heartbeat carries every field, so a late peer gets the current values.
 - The client sends a changed `context` or `user` once. Later messages leave out the fields that did not change.
 - The `adaptivePublish` option slows the publish rate while the send buffer of the transport grows. See [Publish rate](/docs/core/presence-client#publish-rate).
-- Minified and gzipped, `@anchor-presence/core` is about 10 KB, `@anchor-presence/dom` about 9 KB, and `@anchor-presence/react` about 3.5 KB. Each size excludes React and the other Anchor Presence packages.
+- Minified and gzipped, `@anchor-presence/core` is 9.9 KB, `@anchor-presence/dom` 9.2 KB, and `@anchor-presence/react` 3.6 KB. Each size excludes React and the other Anchor Presence packages.
 
 ## Scaling limits
 
@@ -83,7 +83,7 @@ Scaling across servers and identity checks belong to your server, not to the tra
 
 ## Capacity planning
 
-A cursor message with 4 anchors is 292 bytes with `jsonCodec` and 144 bytes with `binaryCodec`. That test message has two-letter anchor IDs, coordinates with one decimal place, and a small `user`. Real coordinates have more decimal places, so a real JSON message is larger. Measure your own messages before you plan. Encode a message with your codec and read its length:
+A cursor message with 4 anchors is 292 bytes with `jsonCodec` and 144 bytes with `binaryCodec`. That test message has two-letter anchor IDs, coordinates with one decimal place, and a small `user`. Real coordinates have more decimal places, so a real JSON message is larger. A later cursor message has no `user` or `context`. With three real anchor names and four-decimal coordinates, it is 261 bytes with `jsonCodec` and 106 bytes with `binaryCodec`. Measure your own messages before you plan. Encode a message with your codec and read its length:
 
 ```ts
 const bytes = codec.encode(message).byteLength;
@@ -104,12 +104,28 @@ To lower the load of a room:
 
 ## Measured at scale
 
-Two local benchmarks give these numbers: a Chromium receiver test and a relay load test. Plan rooms of up to about 50 active clients per relay process. Before you allow larger rooms, measure your own relay on your own hardware.
+Three local benchmarks give these numbers: a hot-path benchmark, a Chromium receiver test, and a relay load test. On the test machine, one relay process kept every message at 100 active clients, with a p99 latency of 26 ms. Measure your own relay on your own hardware before you plan large rooms.
 
 <Accordions>
 <Accordion title="Test machine">
 
-13th Gen Intel Core i7-13850HX, 28 logical cores, Windows 11 Pro (build 26200), Bun 1.3.14, Playwright 1.62.1 with its bundled Chromium.
+Intel Core Ultra 7 366H, 16 logical cores, 63.5 GB of memory, Windows 11 Pro (build 26300), Bun 1.4.4, Playwright 1.62.1 with its bundled Chromium.
+
+</Accordion>
+<Accordion title="Cost of one inbound message">
+
+`bun run bench` times the receive path of the client in one process. It compares each step with a recorded baseline:
+
+| Step                                                         | Time per message |
+| ------------------------------------------------------------ | ---------------- |
+| `validatePresence` on a decoded message with 4 anchors       | 0.3 µs           |
+| `jsonCodec` decode and `validatePresence`                    | 0.9 µs           |
+| `binaryCodec` decode and `validatePresence`                  | 1.0 µs           |
+| Full path from bytes to the snapshot listener, `jsonCodec`   | 1.2 µs           |
+| Full path from bytes to the snapshot listener, `binaryCodec` | 1.4 µs           |
+| Store ingest in a room of 200 clients                        | 0.3 µs           |
+
+At 1.4 µs, one core can take in about 700,000 messages per second. A room of 100 senders at 20 Hz sends 2,000 messages per second to each receiver.
 
 </Accordion>
 <Accordion title="Receiver resolve cost">
@@ -118,9 +134,9 @@ A benchmark page drives N remote cursors over M registered anchors. It measures 
 
 | Anchors × cursors | Mean pass (ms) | p95 pass (ms) |
 | ----------------- | -------------- | ------------- |
-| 500 × 100         | 1.72           | 2.50          |
-| 1000 × 200        | 2.24           | 3.00          |
-| 2000 × 200        | 2.52           | 3.30          |
+| 500 × 100         | 1.64           | 3.10          |
+| 1000 × 200        | 2.48           | 4.30          |
+| 2000 × 200        | 2.72           | 4.20          |
 
 </Accordion>
 <Accordion title="Relay load">
@@ -129,15 +145,16 @@ The load test starts the reference relay and opens N WebSocket clients in one ro
 
 | Clients | Sent (msg/s) | Delivered (msg/s) | Delivery ratio | Latency p50 | Latency p99 | Relay CPU | Relay RSS |
 | ------- | ------------ | ----------------- | -------------- | ----------- | ----------- | --------- | --------- |
-| 50      | 813          | 39,813            | 100%           | 16 ms       | 32 ms       | 50%       | 66 MB     |
-| 100     | 1,963        | 80,408            | 41%            | 3.7 s       | 5.2 s       | 100%      | 70 MB     |
-| 200     | 3,950        | 27,656            | 3.5%           | 4.0 s       | 9.4 s       | 98%       | 70 MB     |
+| 50      | 981          | 48,081            | 100%           | 4 ms        | 8 ms        | 8%        | 33 MB     |
+| 100     | 1,975        | 195,525           | 100%           | 12 ms       | 26 ms       | 20%       | 37 MB     |
+| 200     | 3,050        | 606,950           | 100%           | 70 ms       | 134 ms      | 53%       | 39 MB     |
 
-- At 50 clients, the relay delivers every message, with a p99 latency of 32 ms and less than one CPU core.
-- At 100 clients, the relay must make about 200,000 deliveries per second. The relay process reaches a full CPU core.
-- The 100 and 200 rows also show a limit of the test setup. All clients run in one process on the same machine, and that process uses a full CPU core at 100 clients.
-- The test raised the socket caps to fit every client. It set the rate limit to a burst of 40 and a refill of 20 messages per second, half the default of the relay.
-- The slow-receiver and rate-limit protections did not trigger. Every socket stayed open, and messages queued.
+- At 100 clients, the relay delivers every message, with a p99 latency of 26 ms and one fifth of a CPU core.
+- At 200 clients, the relay makes about 607,000 deliveries per second with a p99 latency of 134 ms and about half of a CPU core. No message is dropped and no socket closes.
+- The load generator limits the 200-client row. It runs in one process and uses more than one CPU core, so it reaches 3,050 of the 4,000 messages per second that 200 clients would send at 20 Hz.
+- The delivery ratio compares delivery with the rate that the clients really sent.
+- The test raised the socket caps to fit every client. The rate limit stays at the default of the relay: a burst of 80 and a refill of 40 messages per second.
+- The slow-receiver and rate-limit protections did not trigger.
 
 </Accordion>
 </Accordions>

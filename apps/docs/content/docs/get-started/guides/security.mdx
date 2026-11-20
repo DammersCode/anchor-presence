@@ -4,7 +4,7 @@ description: What the client validates, why anchor IDs are safe, and how to rend
 icon: shield-check
 ---
 
-import { Eye, ShieldCheck, FileCheck, Users } from "lucide-react";
+import { BadgeCheck, Eye, ShieldCheck, FileCheck, Users } from "lucide-react";
 
 Every inbound message comes from a peer, so treat it as untrusted. This page lists what the library protects, and what your app and your relay must protect. Read it before you put Anchor Presence in production.
 
@@ -84,6 +84,8 @@ const client = createPresenceClient<unknown, { name: string; avatar?: string }>(
 });
 ```
 
+To build `parseUser` from a Valibot, Zod, or ArkType schema, see [Validate with a schema](/docs/core/standard-schema).
+
 The client above has a user type. In React, you have two routes:
 
 - Give the client to the `PresenceProvider` of [`createPresenceHooks`](/docs/react/typed-hooks). Its hooks return the user type.
@@ -113,9 +115,9 @@ A peer can fill every slot with new `clientId` values. Real clients then stay ou
 
 A **room token** is a secret that the relay checks before it accepts a connection. If `RELAY_AUTH_TOKEN` is set, the reference relay requires a matching [room token](/docs/dom/websocket-transport#room-token). It closes a connection with a missing or wrong token with code `4006`.
 
-- To limit who can connect by origin, set `RELAY_ALLOWED_ORIGINS`. The relay closes a connection from another origin with code `4004`. See [Set the environment variables](/docs/get-started/guides/deploy-relay#set-the-environment-variables).
+- To limit who can connect by origin, set `RELAY_ALLOWED_ORIGINS`. The relay closes a connection from another origin, or with no `Origin` header, with code `4004`. See [Set the environment variables](/docs/get-started/guides/deploy-relay#set-the-environment-variables).
 - The room token controls who can connect. It does not prove the identity inside a message.
-- The reference relay and the example relays compare all connections with one `RELAY_AUTH_TOKEN`, so one token opens every room.
+- The reference relay and the example relays, except the SignalR hub, compare all connections with one `RELAY_AUTH_TOKEN`, so one token opens every room.
 - To limit a token to one room, check the `room` field in your own [`authCheck` hook](/docs/examples/backends/relay-contract#identity).
 - The transport sends the token in the `token` query parameter. Proxies and servers often write the full URL into their access logs.
 
@@ -130,6 +132,9 @@ A **room token** is a secret that the relay checks before it accepts a connectio
 <Cards>
   <Card icon={<ShieldCheck />} title="Validation" href="/docs/core/validation">
     Every limit and its default.
+  </Card>
+  <Card icon={<BadgeCheck />} title="Validate with a schema" href="/docs/core/standard-schema">
+    Build the parsers from a Valibot, Zod, or ArkType schema.
   </Card>
   <Card icon={<FileCheck />} title="Relay contract" href="/docs/examples/backends/relay-contract">
     What a relay must check, and the close codes.

@@ -4,15 +4,19 @@ description: Audits an anchor-presence app for cursor-jump risk between layouts 
 compatibility: Requires Node 20+, playwright with Chromium, and a running instance of the app.
 ---
 
-Anchor-presence resolves each remote cursor against the receiver's own layout. A cursor **jumps** when a short pointer move on the sender's screen becomes a long move on the receiver's screen. The cause is always a difference between the two layouts. Neighbors can sit apart in the other layout. Gaps can have no anchored parent. Anchors can change shape. Anchors can exist in one layout only.
+Anchor-presence resolves each remote cursor against the receiver's own layout. A cursor **jumps** when a short pointer move on the sender's screen becomes a long move on the receiver's screen. The cause is always a difference between the two layouts.
 
-This skill measures that risk in the running app. A **view** is one route at one viewport in one UI state. Every **view pair** of the same page gets a score from 0 to 100. Higher is worse. Bands: 0–20 low, 21–50 moderate, 51–100 high. For sub-scores, formula, and bands, see [scoring.md](scoring.md). For the fix catalogue, see [fixes.md](fixes.md).
+Neighbors can sit apart in the other layout. Gaps can have no anchored parent. Anchors can change shape. Anchors can exist in one layout only.
+
+This skill measures that risk in the running app. A **view** is one route at one viewport in one UI state. Every **view pair** of the same page gets a score from 0 to 100. Higher is worse.
+
+Bands: 0–20 low, 21–50 moderate, 51–100 high. For sub-scores, formula, and bands, see [scoring.md](scoring.md). For the fix catalogue, see [fixes.md](fixes.md).
 
 The scripts do the heavy work and print short summaries. The JSON and the report files stay on disk. Read only a summary, a table, or one pair's section.
 
 The scripts are in `scripts/` next to this file. They need Node 20+ and one dependency, `playwright`. Run them from the app root. `<skill>` is this skill's folder:
 
-- `node <skill>/scripts/measure.mjs` measures and scores. It reads `.anchor-audit/audit.config.json` and writes `.anchor-audit/anchor-audit.json`. `--config` and `--out` change the paths. It exits with code 1 when a view cannot be measured, and with code 2 when the config is unreadable or another error stops the run. `--check` tests the Playwright setup. `--fail-above <score>` also exits with code 1 when a pair scores above it, for the user's own CI.
+- `node <skill>/scripts/measure.mjs` measures and scores. It reads `.anchor-audit/audit.config.json` and writes `.anchor-audit/anchor-audit.json`. `--config` and `--out` change the paths. It exits with code 1 when it cannot measure a view. It exits with code 2 when the config is unreadable or another error stops the run. `--check` tests the Playwright setup. `--fail-above <score>` also exits with code 1 when a pair scores above it, for the user's own CI.
 - `node <skill>/scripts/report.mjs --format table|markdown|mermaid|all` renders a report from `.anchor-audit/anchor-audit.json` into `.anchor-audit/anchor-audit.md`. `--in` and `--out` change the paths. `--format` also takes a comma list. `--before <json>` prints only a before/after table and writes no file.
 - `node <skill>/scripts/scan.mjs` scans the source for step 1 and prints a short summary. `--root`, `--attribute`, `--max`, and `--json` change what it prints.
 - Every script prints its usage with `--help`. Set `ANCHOR_AUDIT_BROWSER` to the path of a Chrome or Chromium executable when Playwright has no browser of its own.
@@ -26,7 +30,7 @@ Keep every audit file in `.anchor-audit/` in the app root.
 Run `node <skill>/scripts/scan.mjs` from the app root. Read its summary, then check the lists below against it. Search the source for anything it missed, and record each finding with its file and line:
 
 - **Anchors**: every `data-anchor` attribute. If the code passes `anchorAttribute` to the provider or binding, search for that attribute too. Mark anchors that render only under a condition, such as `cond ? … : null`, `hidden md:block`, or a breakpoint hook.
-- **Routes**: the routes that render anchors. File routes (`app/**/page.*`, `pages/**`, `routes/**`) or router config (`path:`, `<Route path=`). An app without a router may switch views by query string or hash (`?page=orders`, `#/orders`). Use those URLs as routes.
+- **Routes**: the routes that render anchors. File routes (`app/**/page.*`, `pages/**`, `routes/**`) or router config (`path:`, `<Route path=`). An app without a router can switch views by query string or hash (`?page=orders`, `#/orders`). Use those URLs as routes.
 - **Breakpoints**: Tailwind `screens` in `tailwind.config.*` or `--breakpoint-*` in a CSS `@theme` block. With Tailwind and no overrides, use the defaults 640, 768, 1024, 1280, 1536. Also `@media (min-width` / `(max-width`, `matchMedia`, `useMediaQuery`, and container queries.
 - **Toggles**: controls that change which anchors render or where they sit. Examples are sidebar collapse and expand, tabs (`role="tab"`, `aria-selected`), dialogs and sheets (`<dialog`, `aria-modal`), accordions and disclosures (`aria-expanded`, `<details>`), switches (`role="switch"`).
 
@@ -62,12 +66,12 @@ Write `.anchor-audit/audit.config.json` from the confirmed matrix. Start from [a
 
 Ask which format the user wants, and state the rough cost in chat tokens:
 
-| Format        | Content                                                                                                                             | Chat cost                                                               |
-| ------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| `table`       | One row per view pair (top 15): total, band, five sub-scores                                                                        | about 40 tokens per row, 600 for 15 rows                                |
-| `markdown`    | A file: the score table, then per pair the inputs, largest jumps, gaps, shapes, fallbacks                                           | about 30 tokens (the path); the script prints the file's size in tokens |
-| `mermaid`     | A file: bar charts of total and jump distance for the top 20 pairs, each followed by its data table, plus fallback-chain flowcharts | about 30 tokens (the path)                                              |
-| a combination | `table,markdown`, `markdown,mermaid`, or `all`                                                                                      | the sum; the files merge into one                                       |
+| Format        | Content                                                                                                                             | Chat cost                                                                 |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `table`       | One row per view pair (top 15): total, band, five sub-scores                                                                        | about 40 tokens per row, 600 for 15 rows                                  |
+| `markdown`    | A file: the score table, then per pair the inputs, largest jumps, gaps, shapes, fallbacks                                           | about 30 tokens for the path. The script prints the file's size in tokens |
+| `mermaid`     | A file: bar charts of total and jump distance for the top 20 pairs, each followed by its data table, plus fallback-chain flowcharts | about 30 tokens (the path)                                                |
+| a combination | `table,markdown`, `markdown,mermaid`, or `all`                                                                                      | the sum. The files merge into one                                         |
 
 Run `report.mjs` with that format. Paste the table output unchanged. For a file, give its path. A report file can run to tens of thousands of tokens. Never read it whole. Read only one pair's section.
 

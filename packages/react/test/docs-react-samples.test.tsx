@@ -22,6 +22,8 @@ import {
 import type { RemoteUser } from "../src/index";
 import { PresenceProviderContext } from "../src/context";
 import { docSample, missingSamples } from "./doc-source";
+import * as typed from "./doc-presence";
+import type { Context, Events, User } from "./doc-presence";
 import { parserOf } from "./test-utils";
 import * as v from "valibot";
 import type { InferSchemaOutput } from "@anchor-presence/core/standard-schema";
@@ -128,25 +130,18 @@ function Reactions() {
   );
 }
 
-type Events = { reaction: string };
-const eventHooks = createPresenceHooks<unknown, unknown, Events>();
-const { useSendEvent } = eventHooks;
+const { useSendEvent } = typed;
 
 // remote-events.mdx: Send typed events
 function WaveButton() {
   const sendEvent = useSendEvent();
   return (
-    <button type="button" onClick={() => sendEvent("reaction", "wave")}>
+    <button type="button" onClick={() => sendEvent("reaction", { emoji: "wave" })}>
       Wave
     </button>
   );
 }
 
-// typed-hooks.mdx: presence.ts
-type User = { name: string; color: string };
-type Context = { pageId: string };
-
-const typed = createPresenceHooks<Context, User>();
 const parseUser = parserOf<User>();
 const parseContext = parserOf<Context>();
 const { useRemoteUsers } = typed;
@@ -289,25 +284,29 @@ describe("react docs samples", () => {
     const { a, b } = createInMemoryPair();
     const sender = createPresenceClient({
       transport: a,
+      parseUser,
+      parseContext,
       parseEvent: createEventParser<Events>({
-        reaction: (data) => (typeof data === "string" ? data : undefined),
+        reaction: (data) =>
+          typeof data === "object" && data !== null && "emoji" in data
+            ? { emoji: String(data.emoji) }
+            : undefined,
+        chat: () => undefined,
+        ping: null,
       }),
     });
     const receiver = createPresenceClient({ transport: b });
+    const received: unknown[] = [];
+    receiver.subscribeEvents((event) => received.push(event.data));
     const senderView = mount(
-      <eventHooks.PresenceProvider client={sender}>
+      <typed.PresenceProvider client={sender}>
         <WaveButton />
-      </eventHooks.PresenceProvider>,
-    );
-    const receiverView = mount(
-      <PresenceProvider client={receiver}>
-        <Reactions />
-      </PresenceProvider>,
+      </typed.PresenceProvider>,
     );
 
     act(() => senderView.querySelector("button")!.click());
 
-    expect(receiverView.querySelector("[role=status]")?.textContent).toBe(`${sender.clientId}: wave`);
+    expect(received).toEqual([{ emoji: "wave" }]);
     sender.dispose();
     receiver.dispose();
   });
@@ -318,6 +317,7 @@ describe("react docs samples", () => {
       transport: a,
       parseUser,
       parseContext,
+      parseEvent: createEventParser<Events>({ reaction: () => undefined, chat: () => undefined, ping: null }),
       user: { name: "Me", color: "blue" },
     });
     const peer = createPresenceClient({
@@ -354,6 +354,12 @@ describe("doc sample sources", () => {
         docSample("react/remote-events.mdx", "function Reactions"),
         docSample("react/remote-events.mdx", "function WaveButton"),
         docSample("react/typed-hooks.mdx", "export const schemaHooks"),
+        docSample("react/typed-hooks.mdx", "function PresenceList"),
+      ]),
+    ).toEqual([]);
+    expect(
+      missingSamples("doc-presence.ts", [
+        docSample("react/typed-hooks.mdx", "createPresenceHooks<Context, User, Events>"),
       ]),
     ).toEqual([]);
   });

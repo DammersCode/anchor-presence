@@ -48,7 +48,7 @@ const MERMAID = /<Mermaid\s+chart="([\s\S]*?)"\s*\/>/g;
 const WARN_CALLOUT = /<Callout type="warn">\s*([\s\S]*?)\s*<\/Callout>/g;
 const SCENE_NOTE = /<SceneNote \/>/g;
 const SCENE_NOTE_TEXT =
-  "The scene takes `client`, `layout`, and `children` from the preview. In your app, create the client through the provider's `factory` with a real transport, and render your own status bar as `children`. The scene also uses docs theme classes such as `bg-fd-secondary`, `text-fd-muted-foreground`, and `bg-gradient-brand`. Replace them with your own styles.";
+  "The scene takes `client`, `layout`, and `children` from the preview. In your app, create the client through the provider's `factory` with a real transport, and render your own status bar as `children`. The file `./_preview/hooks` is one `createPresenceHooks` call for the preview. Import from your own [`./presence`](/docs/react/typed-hooks#usage) module instead. `TourContext` has the optional fields `selection` and `dialog`, and `TourUser` has `name` and `color`. Use your own types. The scene also uses docs theme classes such as `bg-fd-secondary`, `text-fd-muted-foreground`, and `bg-gradient-brand`. Replace them with your own styles.";
 const LUCIDE_IMPORT = /^import \{[^}]*\} from "lucide-react";\n/gm;
 // The catch-all excludes quotes, braces and "/" so each character has one match path (no backtracking blowup).
 const CARD_ATTRIBUTES = String.raw`(?:"[^"]*"|\{[^}]*\}|[^>"{/])*?`;
@@ -94,6 +94,7 @@ function dedentBody(_block: string, open: string, body: string, close: string): 
 // MDX components render nothing in markdown, so agents get the real code and type tables instead.
 async function inlineComponents(markdown: string): Promise<string> {
   let out = markdown
+    .replace(LUCIDE_IMPORT, "")
     .replace(DEMO, "")
     .replace(EXAMPLE_PREVIEW, "")
     .replace(
@@ -101,10 +102,6 @@ async function inlineComponents(markdown: string): Promise<string> {
       (_tag, packages: string | undefined) =>
         `${FENCE}sh\nnpm install ${packages ?? installPackages}\n${FENCE}`,
     )
-    .replace(CODE_FROM_SOURCE, (_tag, kind: string, file: string, lang: string) => {
-      const code = kind === "repo" ? readExampleSource(file) : readDocsSource(file);
-      return `${FENCE}${lang}\n${code.trimEnd()}\n${FENCE}`;
-    })
     .replace(
       MERMAID,
       (_tag, chart: string) =>
@@ -112,13 +109,16 @@ async function inlineComponents(markdown: string): Promise<string> {
     )
     .replace(WARN_CALLOUT, (_tag, body: string) => warningQuote(body))
     .replace(SCENE_NOTE, () => warningQuote(SCENE_NOTE_TEXT))
-    .replace(LUCIDE_IMPORT, "")
     .replace(CARD, (_tag, title: string, href: string, body: string | undefined) =>
       body === undefined ? `- [${title}](${href})` : `- [${title}](${href}): ${body.replaceAll("\n", " ")}`,
     )
     .replace(STEP_BODY, dedentBody)
     .replace(TAB_BODY, dedentBody)
     .replace(ACCORDION_BODY, dedentBody)
+    .replace(CODE_FROM_SOURCE, (_tag, kind: string, file: string, lang: string) => {
+      const code = kind === "repo" ? readExampleSource(file) : readDocsSource(file);
+      return `${FENCE}${lang}\n${code.trimEnd()}\n${FENCE}`;
+    })
     .replace(ACCORDION, (_tag, title: string) => `**${title}**\n`)
     .replace(STRUCTURE_TAGS, "")
     .replace(TAB, (_tag, name: string) => `\n**${name}**\n\n`);

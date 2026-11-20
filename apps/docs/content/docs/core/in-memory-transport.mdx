@@ -24,7 +24,7 @@ A send from `a` reaches only the listeners of `b`. A send from `b` reaches only 
 
 ## Delivery
 
-By default, a send reaches the other side at once, inside the `send` call. To deliver in a microtask, pass `{ async: true }`:
+By default, a send reaches the other side at once, inside the `send` call. To deliver after the current code finishes, in a microtask, pass `{ async: true }`:
 
 ```ts
 const { a, b } = createInMemoryPair({ async: true });
@@ -39,7 +39,7 @@ const { a, b } = createInMemoryPair({ async: true });
 
 ## Test with more than two peers
 
-Use `createInMemoryRoom` when a test needs three or more clients. Call `join()` once per client:
+If a test needs three or more clients, use `createInMemoryRoom`. Call `join()` once per client:
 
 ```ts
 import { createInMemoryRoom, createPresenceClient } from "@anchor-presence/core";

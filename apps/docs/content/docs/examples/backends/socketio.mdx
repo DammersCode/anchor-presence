@@ -39,7 +39,7 @@ The client wraps a Socket.IO socket as a transport. The server file exports a fa
 
   </Tab>
   <Tab value="Server">
-    The relay joins each socket to the room from the `room` query parameter of the handshake:
+    The relay uses the [shared guard helpers](/docs/examples/backends#shared-guard-helpers) from `examples/_shared/relay-guard.ts`, and it joins each socket to the room from the `room` query parameter of the handshake:
 
 <CodeFromSource repo="examples/socketio/server.ts" lang="ts" />
 

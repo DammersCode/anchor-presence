@@ -10,31 +10,22 @@ A screen reader user cannot see a peer join or leave. `CursorLayer` cannot help:
 
 ## Collect changes into one message
 
-`usePeerChanges` calls your listener for each join, leave, and `user` or `context` update. If ten peers join in one second, ten messages would queue up in the screen reader. The component below collects the changes for 1 second and announces one message:
+The recipe imports its hooks and types from the `./presence` module of [Typed hooks](/docs/react/typed-hooks#usage). The app has one `createPresenceHooks` call, so add no second module.
 
-The `usePeerChanges` in this recipe comes from a `presence.ts` module. The module calls `createPresenceHooks` one time, so `change.user` has the type `Person` and not `unknown`:
-
-```ts
-// presence.ts
-import { createPresenceHooks } from "@anchor-presence/react";
-
-export type Person = { name: string };
-
-export const { PresenceProvider, usePeerChanges } = createPresenceHooks<unknown, Person>();
-```
+`usePeerChanges` calls your listener for each join, leave, and `user` or `context` update. If ten peers join in one second, ten messages queue up in the screen reader. The component below collects the changes for 1 second and announces one message:
 
 ```tsx
 import type { PeerChange } from "@anchor-presence/react";
 import { useEffect, useRef, useState } from "react";
 import { usePeerChanges } from "./presence";
-import type { Person } from "./presence";
+import type { Context, User } from "./presence";
 
 const BURST_MS = 1000;
 const CLEAR_MS = 100;
 
 const people = (count: number) => `${count} ${count === 1 ? "person" : "people"}`;
 
-function describeChanges(changes: PeerChange<unknown, Person>[]): string {
+function describeChanges(changes: PeerChange<Context, User>[]): string {
   const [only] = changes;
   if (changes.length === 1 && only !== undefined)
     return `${only.user?.name ?? "Someone"} ${only.type === "join" ? "joined" : "left"}`;
@@ -47,7 +38,7 @@ function describeChanges(changes: PeerChange<unknown, Person>[]): string {
 
 function PeerAnnouncer() {
   const [message, setMessage] = useState("");
-  const pending = useRef<PeerChange<unknown, Person>[]>([]);
+  const pending = useRef<PeerChange<Context, User>[]>([]);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const announceTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 

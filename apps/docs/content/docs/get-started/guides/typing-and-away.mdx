@@ -10,28 +10,18 @@ Two common states fit in `context`: the anchor where the user types, and whether
 
 ## Send the state
 
+The recipe imports its hooks and types from the `./presence` module of [Typed hooks](/docs/react/typed-hooks#usage). The app has one `createPresenceHooks` call, so add no second module.
+
 `setContext` replaces the whole context. The hook below merges each change into the current local context, so a change of one field never drops the other. It sends a new context only when a field changes. Call `useStatus` once, in a parent, and pass `publish` to each box. Then one `visibilitychange` listener serves every box:
-
-The hooks come from a `presence.ts` module. The module calls `createPresenceHooks` one time, so `context` and `user` have your types and not `unknown`:
-
-```ts
-// presence.ts
-import { createPresenceHooks } from "@anchor-presence/react";
-
-export type Person = { name: string };
-export type Status = { typingIn: string | null; away: boolean };
-
-export const { PresenceProvider, useLocalContext, useRemotePresence } = createPresenceHooks<Status, Person>();
-```
 
 ```tsx
 import { useCallback, useEffect, useRef } from "react";
 import { useLocalContext, useRemotePresence } from "./presence";
-import type { Status } from "./presence";
+import type { Context } from "./presence";
 
 const TYPING_STOP_MS = 2000;
 
-function useStatus(): (patch: Partial<Status>) => void {
+function useStatus(): (patch: Partial<Context>) => void {
   const [context, setContext] = useLocalContext();
   const latest = useRef(context);
 
@@ -40,7 +30,7 @@ function useStatus(): (patch: Partial<Status>) => void {
   }, [context]);
 
   const publish = useCallback(
-    (patch: Partial<Status>) => {
+    (patch: Partial<Context>) => {
       const current = { typingIn: null, away: false, ...latest.current };
       const next = { ...current, ...patch };
       if (next.typingIn === current.typingIn && next.away === current.away) return;
@@ -60,7 +50,7 @@ function useStatus(): (patch: Partial<Status>) => void {
   return publish;
 }
 
-function CommentBox({ anchorId, publish }: { anchorId: string; publish: (patch: Partial<Status>) => void }) {
+function CommentBox({ anchorId, publish }: { anchorId: string; publish: (patch: Partial<Context>) => void }) {
   const stopTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const stopTyping = () => {
@@ -91,14 +81,14 @@ function Comments() {
 
 function TypingHint({ anchorId }: { anchorId: string }) {
   const names = useRemotePresence()
-    .filter(({ context }) => context?.typingIn === anchorId && !context.away)
+    .filter(({ context }) => context?.typingIn === anchorId && context.away !== true)
     .map(({ user }) => user?.name ?? "Someone");
 
   return names.length === 0 ? null : <p>{names.join(", ")} typing…</p>;
 }
 ```
 
-Render `<TypingHint anchorId="comments.box" />` next to `<Comments />`. Both read the same anchor ID. If your app puts more fields in the context, for example a `selection` from the [card occupancy recipe](/docs/get-started/guides/card-occupancy), use one context type with all fields. Both recipes spread the current context before they change a field, so neither drops the other's field.
+Render `<TypingHint anchorId="comments.box" />` next to `<Comments />`. Both read the same anchor ID. The shared `Context` also holds the `selection` field of the [card occupancy recipe](/docs/get-started/guides/card-occupancy). Both recipes spread the current context before they change a field, so neither drops the other's field.
 
 To show the name tag of a peer only while that peer types, return `cursor.user?.name` from `getLabel` when `cursor.context?.typingIn` is set, and `null` otherwise. See [Label and color](/docs/react/cursor-layer#label-and-color).
 

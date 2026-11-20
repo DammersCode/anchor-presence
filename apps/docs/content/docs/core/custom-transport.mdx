@@ -71,7 +71,7 @@ The sketch keeps the current status in `status`. `connect` and `disconnect` set 
 
 ## Wrap a managed service
 
-A managed service is a hosted pub/sub or a serverless WebSocket gateway. Its SDK has a `send` method and a message event. Wrap the SDK in a transport object:
+A managed service is a hosted publish and subscribe service or a serverless WebSocket gateway. Its SDK has a `send` method and a message event. Wrap the SDK in a transport object:
 
 <Steps>
   <Step>Forward each `send` call to the SDK.</Step>
@@ -112,7 +112,7 @@ function onSocketClose(event: CloseEvent, willReconnect: boolean) {
 }
 ```
 
-Return `subscribeClose` on the transport object. Set `willReconnect` to `true` when the transport schedules another attempt, and to `false` otherwise. `client.subscribeClose` then receives each close. See [Close reasons](/docs/core/transports#close-reasons).
+Return `subscribeClose` on the transport object. If the transport schedules another attempt, set `willReconnect` to `true`. Otherwise set it to `false`. `client.subscribeClose` then receives each close. See [Close reasons](/docs/core/transports#close-reasons).
 
 ## Test a custom transport
 

@@ -19,7 +19,7 @@ Use the first row that matches the survey. Each docs page has the full server an
 
 Base URL: `https://anchor-presence.vercel.app`. Every page also links the shared relay guard helpers (`/docs/examples/backends`).
 
-A managed service (Supabase Realtime, Ably, Pusher, Liveblocks) works through a custom transport over its pub/sub channel: implement the interface below and use one channel per room. See `/docs/core/custom-transport`.
+A managed service (Supabase Realtime, Ably, Pusher, Liveblocks) works through a custom transport over its publish and subscribe channel. Implement the interface below and use one channel per room. See `/docs/core/custom-transport`.
 
 ## The transport interface
 

@@ -128,7 +128,7 @@ If the shared connection is `Connecting` or `Disconnecting`, `connect()` waits a
 
 <Callout type="warn">
   If the provider remounts on a shared connection, the `onclose`, `onreconnecting`, and `onreconnected`
-  callbacks of the old transport stay on that connection, because SignalR has no API to remove them.
+  callbacks of the old transport stay on that connection. SignalR has no API to remove them.
 </Callout>
 
 ## Close reasons

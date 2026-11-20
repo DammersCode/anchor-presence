@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { createPresenceClient, type PresenceClient } from "@anchor-presence/core";
+import { createPresenceClient, type PresenceClient, type PresenceTransport } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
 import type { ResolvedCursor } from "@anchor-presence/dom";
 import { PresenceProvider } from "../src/provider";
+import { useRemoteUsers } from "../src/hooks/use-remote-users";
 import { CursorLayer } from "../src/cursor";
 import { useRemoteCursorsSelector } from "../src/hooks/use-remote-cursors";
-import { createPresenceHooks } from "../src/typed-hooks";
-import { docSample, missingSamples } from "./doc-source";
+import { CursorLayer as TypedCursorLayer } from "./doc-presence";
+import { docSample, fileSample, missingLines, missingSamples } from "./doc-source";
 
 // type-level proof that createWebSocketTransport has connect and disconnect
 const ws = createWebSocketTransport({ url: "ws://x" });
@@ -34,17 +35,13 @@ function App() {
   );
 }
 
-// packages/react/README.md CursorLayer sample; the README declares MyCursorGlyph and takes CursorLayer from createPresenceHooks, the test defines both
-type MyContext = { pageId: string };
-type MyUser = { name: string; color?: string };
+// packages/react/README.md CursorLayer sample; the README declares MyCursorGlyph and the test defines it
 function MyCursorGlyph(props: { color: string; children: React.ReactNode }): React.JSX.Element {
   return <span style={{ color: props.color }}>{props.children}</span>;
 }
 
 const safeColor = (color?: string) =>
   color !== undefined && /^#[0-9a-f]{6}$/iu.test(color) ? color : "#6b7280";
-
-const { CursorLayer: TypedCursorLayer } = createPresenceHooks<MyContext, MyUser>();
 
 function CursorLayerSample() {
   return (
@@ -117,6 +114,28 @@ describe("doc samples compile and render", () => {
   });
 });
 
+// packages/react/README.md Who is online sample
+function OnlineBar() {
+  const users = useRemoteUsers();
+  return <span>{users.length} online</span>;
+}
+void OnlineBar;
+
+// get-started/guides/security.mdx: parseUser
+function parseUserClient(transport: PresenceTransport) {
+  const client = createPresenceClient<unknown, { name: string; avatar?: string }>({
+    transport,
+    parseUser: (value) => {
+      const { name, avatar } = value as { name?: unknown; avatar?: unknown };
+      if (typeof name !== "string") return undefined;
+      const safeAvatar = typeof avatar === "string" && avatar.startsWith("https://") ? avatar : undefined;
+      return safeAvatar === undefined ? { name } : { name, avatar: safeAvatar };
+    },
+  });
+  return client;
+}
+void parseUserClient;
+
 // get-started/guides/security.mdx
 function RemoteName({ cursor }: { cursor: ResolvedCursor<unknown, { name: string }> }) {
   return (
@@ -138,7 +157,14 @@ describe("doc sample sources", () => {
         docSample("react/client-creation.mdx", "function OwnClientApp"),
         docSample("react/rerenders.mdx", "function TierBadge"),
         docSample("get-started/guides/security.mdx", "function RemoteName"),
+        docSample("get-started/guides/security.mdx", "parseUser: (value)"),
+        fileSample("packages/react/README.md", "function DashboardButton"),
+        fileSample("packages/react/README.md", "function OnlineBar"),
       ]),
     ).toEqual([]);
+    const readmeLayer = fileSample("packages/react/README.md", "function MyCursorGlyph")
+      .replace("<CursorLayer", "<TypedCursorLayer")
+      .replace(/^declare function .*$/mu, "");
+    expect(missingLines("doc-samples.test.tsx", readmeLayer)).toEqual([]);
   });
 });

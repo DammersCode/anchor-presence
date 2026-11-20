@@ -22,7 +22,7 @@ Pass exactly one of `client` and `factory`.
 
 `PresenceProviderProps` is `PresenceProviderConfig & { children }`. Use `PresenceProviderConfig`, the props without `children`, to type a wrapper that forwards its props to the provider.
 
-The types of `client` or `factory` give the provider its types. The hooks that you import from `@anchor-presence/react` still return `unknown`. The provider of a `createPresenceHooks` result accepts only a client of its own types.
+This provider takes only an untyped client, and the hooks that you import from `@anchor-presence/react` return `unknown`. A typed client goes to the `PresenceProvider` of a [`createPresenceHooks`](/docs/react/typed-hooks) result.
 
 Guide: [PresenceProvider](/docs/react/presence-provider). For `bindingKey`, see [Rebuild the binding](/docs/react/presence-provider#rebuild-the-binding). For `clientKey`, see [Switch rooms](/docs/react/presence-provider#switch-rooms).
 
@@ -64,7 +64,9 @@ import { PresenceProviderContext, type PresenceProviderValue } from "@anchor-pre
 
 <AutoTypeTable path="../../packages/react/src/context.ts" name="PresenceProviderValue" />
 
-`client` is a `PresenceClient` or `null`, and `binding` is a `DomBinding` or `null`. `client` and `binding` are `null` outside a provider. A provider with a `factory` has a `null` client until the factory runs. In that time `clientPending` is `true`. It is `false` with `client={null}`, and absent without a provider. During server rendering, `binding` is the `binding` prop of the provider, or `null` without that prop. The hooks that you import from `@anchor-presence/react` read this context for you, so most apps never read it directly. The provider of a `createPresenceHooks` result fills its own context instead.
+`client` is a `PresenceClient` or `null`, and `binding` is a `DomBinding` or `null`. Both are `null` outside a provider. A provider with a `factory` has a `null` client until the factory runs, and `clientPending` is `true` in that time. `clientPending` is `false` with `client={null}`, and absent without a provider. During server rendering, `binding` is the `binding` prop of the provider, or `null` without that prop. The hooks that you import from `@anchor-presence/react` read this context for you, so most apps never read it directly.
+
+The provider of a `createPresenceHooks` result fills its own context instead.
 
 This component reads the context directly and shows a line when the client and the binding exist:
 

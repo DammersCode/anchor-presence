@@ -10,7 +10,7 @@ Your client sends two values to each peer together with the cursor. The `user` v
 
 ## Usage
 
-`useLocalUser` from `@anchor-presence/react` returns the `user` value as `unknown`. For a typed value, use the `useLocalUser` of a [`createPresenceHooks`](/docs/react/typed-hooks) result. This component lets a user change the name that peers see. Its `user` has the type `MyUser`, which `./presence` fixes:
+`useLocalUser` from `@anchor-presence/react` returns the `user` value as `unknown`. For a typed value, use the `useLocalUser` of a [`createPresenceHooks`](/docs/react/typed-hooks) result. This component lets a user change the name that peers see. Its `user` has the type `User`, which the `./presence` module of [Typed hooks](/docs/react/typed-hooks#usage) fixes. The app must use the `PresenceProvider` of that module:
 
 ```tsx
 import { useLocalUser } from "./presence";
@@ -31,13 +31,13 @@ function NameField() {
 
 - The setter calls `client.setUser()`, which sends the value to peers.
 - The hook rerenders when the value changes. A change is a value with another reference than the current value. A direct `client.setUser()` call also rerenders the hook.
-- On the server, and without a client, the hook returns `undefined` and a setter that does nothing.
+- On the server, the hook returns `undefined`. Without a client, the setter does nothing.
 
 The default label of `CursorLayer` is the `name` field of this value. See [Defaults](/docs/react/cursor-layer#defaults).
 
 ## Local context
 
-This component sets the context while its dialog is open:
+This component sets the context while its dialog is open. It needs the `PresenceProvider` from `@anchor-presence/react`:
 
 ```tsx
 import { useEffect } from "react";
@@ -55,7 +55,7 @@ function SettingsDialog({ open }: { open: boolean }) {
 - The value and the setter use the type `unknown`. For a typed context, use the `useLocalContext` of a `createPresenceHooks` result.
 - The setter calls `client.setContext()`, which sends the value to peers.
 - The hook rerenders when the value changes. A direct `client.setContext()` call also rerenders the hook.
-- On the server, and without a client, the hook returns `undefined` and a setter that does nothing.
+- On the server, the hook returns `undefined`. Without a client, the setter does nothing.
 
 Both setters keep their identity while the client stays the same. You can list them in effect dependencies.
 

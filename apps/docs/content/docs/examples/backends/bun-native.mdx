@@ -6,7 +6,7 @@ icon: zap
 
 import { FileCheck, Flame, Hexagon, RadioTower } from "lucide-react";
 
-You want a relay with no framework and no extra dependency. This example uses the WebSocket support of `Bun.serve`. Each room is one Bun topic. Bun forwards each message to every other socket that subscribes to the topic, so the relay keeps no room map of its own.
+You want a relay with no framework and no extra dependency. This example uses the WebSocket support of `Bun.serve`. Each room is one Bun topic. Bun forwards each message to every other socket that subscribes to the topic, so the relay keeps no socket set for each room.
 
 ## Install
 

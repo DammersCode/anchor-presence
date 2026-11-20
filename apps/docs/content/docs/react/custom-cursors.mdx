@@ -10,6 +10,8 @@ import { Component, MousePointer2, Brush, Users } from "lucide-react";
 
 ## Usage
 
+If your app has a [typed `presence.ts` module](/docs/react/typed-hooks), import `CursorLayer` from it. The package export reads only the provider of `@anchor-presence/react`.
+
 `renderCursor` replaces only the content of the root. The samples on this page pass `renderCursor` inline for brevity. Declare it at module level, as in [Keep the callbacks stable](/docs/react/cursor-layer#keep-the-callbacks-stable):
 
 ```tsx
@@ -61,7 +63,7 @@ The `--anchor-presence-cursor-color` variable on `style` wins over the `color` p
 
 ## Style touch and pen cursors
 
-`pointerType` is `"mouse"`, `"pen"`, or `"touch"`. It is `undefined` when the sender sent no pointer info. This renderer shows a ring for a touch cursor and the default arrow for all others:
+`pointerType` is `"mouse"`, `"pen"`, or `"touch"`. It is `undefined` when the sender sent no pointer type. This renderer shows a ring for a touch cursor and the default arrow for all others:
 
 ```tsx
 import { CursorLayer, DefaultCursor } from "@anchor-presence/react";

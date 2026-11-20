@@ -17,6 +17,8 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:browser": "playwright test",
+    "test:react-compiler": "vitest run --config apps/demo/vitest.compiler.config.ts",
+    "test:react-18": "vitest run --config test/react18.vitest.config.ts",
     "docs:dev": "bun run --cwd apps/docs dev",
     "docs:build": "bun run build && bun run --cwd apps/docs build",
     "bench": "bun run scripts/bench.ts",

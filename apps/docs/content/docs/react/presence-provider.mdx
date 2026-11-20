@@ -36,7 +36,9 @@ function App() {
 
 The provider takes `factory`, `client`, `binding`, `bindingOptions`, `clientKey`, `bindingKey`, and `children`. For the type of each prop, see [Components API](/docs/react/api/components#presenceprovider).
 
-Pass `factory` or `client`. The types forbid passing both. In JavaScript, `client` wins. For the difference between the two, read [Create the client](/docs/react/client-creation). The provider disposes a client that `factory` created. It never disposes a `client` that you pass.
+Pass `factory` or `client`. The types forbid passing both. In JavaScript, `client` wins. For the difference between the two, read [Create the client](/docs/react/client-creation).
+
+This provider takes only an untyped client. A typed client goes to the `PresenceProvider` of a [`createPresenceHooks`](/docs/react/typed-hooks) result. The provider disposes a client that `factory` created. It never disposes a `client` that you pass.
 
 To render without a client, for example on the server, pass `client={null}`. See [SSR and Strict Mode](/docs/react/ssr-and-strict-mode).
 

@@ -76,7 +76,7 @@ export type CursorRenderProps<TContext = unknown, TUser = unknown> = {
   label: ReactNode;
   /** The color, from `getColor`. */
   color: string;
-  /** The pointer type that moved the cursor. `undefined` when the sender sent no pointer info. */
+  /** The pointer type that moved the cursor. `undefined` when the sender sent no pointer type. */
   pointerType?: PointerType | undefined;
 };
 

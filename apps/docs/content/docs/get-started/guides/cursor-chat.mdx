@@ -18,19 +18,7 @@ When Mira sends a message, the label of her cursor shows the text and moves with
 
 ## Read and cap the text
 
-The recipe reads the user type from a `presence.ts` module. The module calls `createPresenceHooks` one time, so `cursor.user` has the type `User` and not `unknown`:
-
-```ts
-// presence.ts
-import { createPresenceHooks } from "@anchor-presence/react";
-
-export type User = { name: string };
-
-export const { CursorLayer, PresenceProvider, usePresenceClient, useRemoteEvents } = createPresenceHooks<
-  unknown,
-  User
->();
-```
+The recipe imports its hooks and types from the `./presence` module of [Typed hooks](/docs/react/typed-hooks#usage). The app has one `createPresenceHooks` call, so add no second module.
 
 The recipe is one file, `cursor-chat.tsx`. It starts with the imports, the limits and the text check:
 
@@ -40,7 +28,7 @@ import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { DefaultCursor } from "@anchor-presence/react";
 import type { PresenceClient } from "@anchor-presence/react";
 import { CursorLayer, PresenceProvider, usePresenceClient, useRemoteEvents } from "./presence";
-import type { User } from "./presence";
+import type { Context, Events, User } from "./presence";
 
 export const CHAT_MAX_LENGTH = 100;
 export const CHAT_HIDE_MS = 5000;
@@ -206,7 +194,7 @@ export function ChatComposer() {
 Render both components inside the provider:
 
 ```tsx
-export function ChatApp({ client }: { client: PresenceClient<unknown, User> }) {
+export function ChatApp({ client }: { client: PresenceClient<Context, User, Events> }) {
   return (
     <PresenceProvider client={client}>
       <main>{/* your app */}</main>
@@ -250,6 +238,6 @@ export function ChatApp({ client }: { client: PresenceClient<unknown, User> }) {
     title="Demo app"
     href="https://github.com/DammersCode/anchor-presence/tree/main/apps/demo"
   >
-    The demo README lists the steps to run the demo with live reactions and a one-line chat.
+    The source of the demo, with live reactions and a one-line chat. Its README lists the steps to run it.
   </Card>
 </Cards>

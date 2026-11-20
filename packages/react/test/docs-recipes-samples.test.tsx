@@ -8,30 +8,25 @@ import { renderToString } from "react-dom/server";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  createPresenceHooks,
   CursorLayer as PlainLayer,
   DefaultCursor,
   PresenceProvider as PlainProvider,
   useRemoteCursors,
 } from "../src/index";
-import type { EventMap, PeerChange, PresenceClient, ResolvedCursor, TypedRemoteEvent } from "../src/index";
-import { missingLines } from "./doc-source";
-import { makeFakeBinding, makeFakeClient } from "./test-utils";
-
-// cursor-chat.mdx and follow-mode.mdx: presence.ts
-
-type User = { name: string };
-
-const {
+import type { PeerChange, PresenceClient, ResolvedCursor, TypedRemoteEvent } from "../src/index";
+import {
   CursorLayer,
   PresenceProvider,
-  usePresenceClient,
-  useRemoteEvents,
-  usePeerChanges,
-  useRemoteCursorsSelector,
   useDomBinding,
+  usePeerChanges,
+  usePresenceClient,
+  useRemoteCursorsSelector,
+  useRemoteEvents,
   useRemoteUsers,
-} = createPresenceHooks<unknown, User>();
+} from "./doc-presence";
+import type { Context, Events, User } from "./doc-presence";
+import { missingLines } from "./doc-source";
+import { makeFakeBinding, makeFakeClient } from "./test-utils";
 
 // cursor-chat.mdx
 
@@ -174,7 +169,7 @@ function ChatComposer() {
   );
 }
 
-function ChatApp({ client }: { client: PresenceClient<unknown, User> }) {
+function ChatApp({ client }: { client: PresenceClient<Context, User, Events> }) {
   return (
     <PresenceProvider client={client}>
       <main>{/* your app */}</main>
@@ -261,7 +256,7 @@ function FollowControls() {
   );
 }
 
-function FollowApp({ client }: { client: PresenceClient<unknown, User> }) {
+function FollowApp({ client }: { client: PresenceClient<Context, User, Events> }) {
   return (
     <PresenceProvider client={client}>
       <FollowControls />
@@ -333,8 +328,8 @@ function HintsApp({ client }: { client: PresenceClient }) {
 
 function cursorAt(
   clientId: string,
-  overrides: Partial<ResolvedCursor<unknown, User>> = {},
-): ResolvedCursor<unknown, User> {
+  overrides: Partial<ResolvedCursor<Context, User>> = {},
+): ResolvedCursor<Context, User> {
   return {
     clientId,
     x: 100,
@@ -365,7 +360,7 @@ afterEach(() => {
 
 describe("recipe usage samples", () => {
   it("render on the server with a client", () => {
-    const { client } = makeFakeClient<unknown, User>();
+    const { client } = makeFakeClient<Context, User, Events>();
     expect(renderToString(<ChatApp client={client} />)).toContain("<main>");
     expect(renderToString(<FollowApp client={client} />)).toContain("<ul>");
     expect(renderToString(<HintsApp client={makeFakeClient().client} />)).toContain("aria-hidden");
@@ -384,7 +379,7 @@ describe("cursor chat recipe", () => {
 
   it("sends the typed text as a chat event and hides the local bubble after the timeout", () => {
     vi.useFakeTimers();
-    const { client } = makeFakeClient<unknown, User>();
+    const { client } = makeFakeClient<Context, User, Events>();
     const sent: Array<[string, unknown]> = [];
     client.sendEvent = (type, data) => {
       sent.push([type, data]);
@@ -392,7 +387,7 @@ describe("cursor chat recipe", () => {
     };
     act(() =>
       root.render(
-        <PresenceProvider client={client} binding={makeFakeBinding<unknown, User>().binding}>
+        <PresenceProvider client={client} binding={makeFakeBinding<Context, User>().binding}>
           <ChatComposer />
         </PresenceProvider>,
       ),
@@ -418,13 +413,13 @@ describe("cursor chat recipe", () => {
 
   it("shows a remote chat as plain text next to the remote cursor, then falls back to the name", () => {
     vi.useFakeTimers();
-    const { client } = makeFakeClient<unknown, User>();
-    const listeners = new Set<(event: TypedRemoteEvent<EventMap>) => void>();
+    const { client } = makeFakeClient<Context, User, Events>();
+    const listeners = new Set<(event: TypedRemoteEvent<Events>) => void>();
     client.subscribeEvents = (listener) => {
       listeners.add(listener);
       return () => listeners.delete(listener);
     };
-    const fake = makeFakeBinding<unknown, User>();
+    const fake = makeFakeBinding<Context, User>();
     act(() =>
       root.render(
         <PresenceProvider client={client} binding={fake.binding}>
@@ -432,7 +427,7 @@ describe("cursor chat recipe", () => {
         </PresenceProvider>,
       ),
     );
-    act(() => fake.publish([{ ...cursorAt("peer"), user: { name: "Ada" } }]));
+    act(() => fake.publish([{ ...cursorAt("peer"), user: { name: "Ada", color: "#000000" } }]));
     expect(document.body.textContent).toContain("Ada");
 
     act(() => {
@@ -453,13 +448,13 @@ describe("cursor chat recipe", () => {
 
 describe("follow mode recipe", () => {
   it("scrolls the leader's anchor into view and stops on wheel, Escape or leave", () => {
-    const { client, pushRemote } = makeFakeClient<unknown, User>();
-    const peerListeners = new Set<(change: PeerChange<unknown, User>) => void>();
+    const { client, pushRemote } = makeFakeClient<Context, User, Events>();
+    const peerListeners = new Set<(change: PeerChange<Context, User>) => void>();
     client.subscribePeers = (listener) => {
       peerListeners.add(listener);
       return () => peerListeners.delete(listener);
     };
-    const fake = makeFakeBinding<unknown, User>();
+    const fake = makeFakeBinding<Context, User>();
     const anchor = document.createElement("section");
     anchor.dataset.anchor = "orders";
     const scrollIntoView = vi.fn();
@@ -475,7 +470,14 @@ describe("follow mode recipe", () => {
     );
     act(() =>
       pushRemote([
-        { version: 1, clientId: "leader", session: "s", sequence: 1, cursor: null, user: { name: "Ada" } },
+        {
+          version: 1,
+          clientId: "leader",
+          session: "s",
+          sequence: 1,
+          cursor: null,
+          user: { name: "Ada", color: "#000000" },
+        },
       ]),
     );
     const followButton = (): HTMLButtonElement => container.querySelector("button")!;

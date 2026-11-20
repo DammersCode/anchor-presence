@@ -90,7 +90,9 @@ The answer waits a random delay of up to 500 ms, then goes out on the next publi
 
 When the status changes to `connected` from `reconnecting` or `disconnected`, the client marks every peer unconfirmed. A peer can leave during the outage, and its leave message never reaches this client.
 
-Any accepted message confirms a peer. If an unconfirmed peer sends no message within `2 * heartbeatIntervalMs + 5 s`, the next sweep removes it and reports a `leave`. A sweep is a periodic check of the store. With the default `heartbeatIntervalMs`, this time is 25 seconds. If the stale timeout comes first, the stale timeout applies. A peer that stays in the store shows its last cursor again as soon as the status is `connected`. See [Connection status](/docs/dom/binding#connection-status).
+Any accepted message confirms a peer. If an unconfirmed peer sends no message within `2 * heartbeatIntervalMs + 5 s`, the next sweep removes it and reports a `leave`.
+
+A sweep is a periodic check of the store. With the default `heartbeatIntervalMs`, this time is 25 seconds. If the stale timeout comes first, the stale timeout applies. A peer that stays in the store shows its last cursor again as soon as the status is `connected`. See [Connection status](/docs/dom/binding#connection-status).
 
 <Callout type="warn">
   If peers use a longer `heartbeatIntervalMs` than this client, they disappear after a reconnect until their

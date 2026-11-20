@@ -55,7 +55,7 @@ type TransportClose = { code?: number; reason?: string; willReconnect: boolean }
 
 Only `send` and `subscribe` are required:
 
-- `send` receives encoded bytes. The client calls `codec.encode()` before it calls `send`. The client catches each throw and each rejection from `send`, because presence is lossy by design. A lost message does not stop the client.
+- `send` receives encoded bytes. The client calls `codec.encode()` before it calls `send`. The client catches each throw and each rejection from `send`, because presence can lose a message and stay correct. A lost message does not stop the client.
 - `subscribe` delivers encoded bytes from the wire. The client then calls `codec.decode()` and `validatePresence()` on them.
 
 ## Connect and disconnect ownership

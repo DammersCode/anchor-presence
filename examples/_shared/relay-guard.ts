@@ -165,8 +165,8 @@ export type AuthRequest = {
 };
 
 /**
- * Auth hook: decides whether a connection may join. It may be async, for example to verify a JWT or look up a session.
- * The default accepts everything, matching the reference relay's opt-in auth.
+ * Auth hook: decides whether a connection may join. It can be async, for example to verify a JWT or look up a session.
+ * A relay without a hook uses the `RELAY_AUTH_TOKEN` check.
  */
 export type AuthCheck = (request: AuthRequest) => AuthResult | Promise<AuthResult>;
 

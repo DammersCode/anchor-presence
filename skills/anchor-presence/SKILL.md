@@ -25,7 +25,7 @@ Read the code and record:
 - where the current user's display name comes from.
 - which views get live cursors.
 
-**Done when** every item has an answer. Ask the user only for items the code cannot answer, usually the target views and, when no real-time channel exists, where a **relay** may run.
+**Done when** every item has an answer. Ask the user only for items the code cannot answer, usually the target views and, when no real-time channel exists, where a **relay** can run.
 
 ### 2. Choose the transport and relay
 
@@ -164,7 +164,7 @@ function PublishPage({ page, pageRef }: { page: string; pageRef: { current: stri
 
 ### 7. Add a presence list
 
-This step applies when the user asked for a who-is-online list. `useRemoteUsers()` returns one entry per remote tab with `clientId`, `user`, `session`, and `idle`. Render `user.name` as text.
+This step applies when the user asked for a who-is-online list. `useRemoteUsers()` returns one entry per remote tab with `clientId`, `user`, `session`, and `idle`. `user` has the type `unknown`, so check that `user.name` is a string before you render it as text. For a typed `user`, use `createPresenceHooks` with a `parseUser` parser.
 
 **Done when** the list shows one row per remote tab, with names as text.
 

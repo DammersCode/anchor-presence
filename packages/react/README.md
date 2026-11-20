@@ -12,7 +12,7 @@ Install the adapter and the two packages that it uses:
 bun add @anchor-presence/react @anchor-presence/dom @anchor-presence/core
 ```
 
-The samples connect to the Bun relay of the [quick start](https://anchor-presence.vercel.app/docs/get-started/quick-start#connect-a-relay), on port 8788. This app creates the client in the provider `factory` and renders the remote cursors:
+The first sample uses the provider of `@anchor-presence/react`. The samples connect to the Bun relay of the [quick start](https://anchor-presence.vercel.app/docs/get-started/quick-start#connect-a-relay), on port 8788. This app creates the client in the provider `factory` and renders the remote cursors:
 
 ```tsx
 import { createPresenceClient } from "@anchor-presence/core";
@@ -67,7 +67,7 @@ The package exports these hooks and components:
 
 ## Hooks and render cost
 
-Every hook rerenders its component only when the value that it returns changes. Pick the hook that matches the value that you need.
+A hook rerenders its component when the value that it returns changes, or when the provider value changes. `useSendEvent`, `usePresenceClient`, and `useDomBinding` rerender on any change of the provider value. Pick the hook that matches the value that you need.
 
 | Hook                                         | Rerenders when                                                                                           |
 | -------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
@@ -81,7 +81,7 @@ Every hook rerenders its component only when the value that it returns changes. 
 
 Two more rules apply:
 
-- An idle room costs nothing: no inbound messages, no rerenders.
+- A heartbeat that changes no field causes no rerender. A peer that turns idle or expires does cause one.
 - A message that only advances `sequence` does not rerender `useRemotePresence` consumers. `sequence` is a wire-level ordering field and is not part of the stable snapshot. To read each `sequence` value, call `client.getRemoteSnapshot()` inside a `client.subscribeRemote()` callback.
 
 `useRemoteCursors` rerenders every frame while cursors move. If your component needs less than the full snapshot, derive a smaller value with `useRemoteCursorsSelector`.
@@ -109,23 +109,23 @@ function OnlineBar() {
 }
 ```
 
-`user` is the value that each peer passed to `createPresenceClient`. It has the type `unknown`, because a peer can send any value. For a typed `user`, use the hooks of `createPresenceHooks`. Without `getLabel`, `CursorLayer` shows `user.name` when it is a string that is not empty. Without `getColor`, it picks one color per `clientId` from a palette of 8 colors. Check `user` before you render it.
+`user` is the value that each peer passed to `createPresenceClient`, and it has the type `unknown` because a peer can send any value. This sample needs the provider of `@anchor-presence/react`. For a typed `user`, use the hooks of `createPresenceHooks` with the provider of the same call. Without `getLabel`, `CursorLayer` shows `user.name` when it is a string that is not empty. Without `getColor`, it picks one color per `clientId` from a palette of 8 colors. Check `user` before you render it.
 
 ## CursorLayer
 
-`CursorLayer` is optional. It renders every visible remote cursor. You can style it with the props `getLabel`, `getColor`, `filterCursor`, and `getCursorProps`. You can replace its contents with `renderCursor`. This sample uses every prop:
+`CursorLayer` is optional. It renders every visible remote cursor. You can style it with the props `getLabel`, `getColor`, `filterCursor`, and `getCursorProps`. You can replace its contents with `renderCursor`. This sample uses every prop. It takes `CursorLayer` from a `./presence` module that calls [`createPresenceHooks`](https://anchor-presence.vercel.app/docs/react/typed-hooks#usage) one time, so the app must use the `PresenceProvider` of that module:
 
 ```tsx
-import { createPresenceHooks } from "@anchor-presence/react";
+import { CursorLayer } from "./presence";
 
-type MyContext = { pageId: string };
-type MyUser = { name: string; color?: string };
-const { CursorLayer } = createPresenceHooks<MyContext, MyUser>();
 declare function MyCursorGlyph(props: { color: string; children: React.ReactNode }): React.JSX.Element;
+
+const safeColor = (color?: string) =>
+  color !== undefined && /^#[0-9a-f]{6}$/iu.test(color) ? color : "#6b7280";
 
 <CursorLayer
   getLabel={(cursor) => cursor.user?.name ?? "Guest"}
-  getColor={(cursor) => cursor.user?.color ?? "#6b7280"}
+  getColor={(cursor) => safeColor(cursor.user?.color)}
   filterCursor={(cursor) => cursor.tier !== "viewport"}
   getCursorProps={() => ({ className: "my-cursor" })}
   renderCursor={({ label, color }) => <MyCursorGlyph color={color}>{label}</MyCursorGlyph>}

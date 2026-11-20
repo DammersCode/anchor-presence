@@ -15,11 +15,13 @@ An **anchor** ID names what an element means, never where it sits. IDs survive r
 exact anchor → next anchor in the chain (parent, then larger region) → viewport position → policy decides
 ```
 
-Sometimes the receiver does not have the exact anchor. Examples are a virtualized row that scrolled out, a closed dialog, or a different responsive layout. Then the cursor lands on the nearest parent that the receiver has. If no anchor resolves, the normalized viewport position places the cursor approximately. The **policy** sees which **tier** resolved: `anchor`, `viewport`, or `hidden`. A parent anchor is still tier `anchor`. The policy can hide the cursor instead.
+Sometimes the receiver does not have the exact anchor. Examples are a virtualized row that scrolled out, a closed dialog, or a different responsive layout. Then the cursor lands on the nearest parent that the receiver has. If no anchor resolves, the normalized viewport position places the cursor approximately.
+
+The **policy** sees which **tier** resolved: `anchor`, `viewport`, or `hidden`. A parent anchor is still tier `anchor`. The policy can hide the cursor instead.
 
 ## Where to register
 
-Mark anchors on: navigation items, cards, table rows and their action cells, dialog bodies and their controls, and any element a user would say "look here" about. Skip decorative wrappers. One meaningful parent in the chain is better than four vague ones.
+Mark anchors on: navigation items, cards, table rows and their action cells, dialog bodies and their controls, and any element where a user says "look here". Skip decorative wrappers. One meaningful parent in the chain is better than four vague ones.
 
 ## Private regions
 

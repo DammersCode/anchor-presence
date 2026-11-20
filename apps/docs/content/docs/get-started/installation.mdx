@@ -42,8 +42,8 @@ Pick the tab that matches your app. Each tab installs only the packages that the
 <Callout type="warn">
   If the install command returns a 404, the packages are not published to npm. Build them from the repository,
   then install them from their folders. The `react` and `dom` packages depend on the other packages by
-  version, so your app needs an override block that points those names to the folders. The key is `overrides`
-  for bun and npm, `pnpm.overrides` for pnpm, and `resolutions` for yarn.
+  version. Your app needs an override block that points those names to the folders. The key is `overrides` for
+  bun and npm, `pnpm.overrides` for pnpm, and `resolutions` for yarn.
 </Callout>
 
 Build the packages in a clone of the repository:
@@ -86,7 +86,7 @@ export default defineConfig({
 
 | Requirement   | Version                                                                                                                        |
 | ------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| React         | 18 or later, only for `@anchor-presence/react`                                                                                 |
+| React         | 18 or later, only for `@anchor-presence/react`. The React Compiler works. React Native does not.                               |
 | TypeScript    | 5.9 or later                                                                                                                   |
 | Browser       | Chrome, Edge, Firefox, and Safari with ES2022 support                                                                          |
 | Module format | ESM only. `require()` works in Node.js 20.19 or later on the 20.x line, or 22.12 or later. Jest needs ESM mode or a transform. |

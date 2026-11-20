@@ -17,18 +17,7 @@ The recipe has two parts:
 
 ## Copy the code
 
-The hooks come from a `presence.ts` module. The module calls `createPresenceHooks` one time, so `user` and `context` have your types and not `unknown`:
-
-```ts
-// presence.ts
-import { createPresenceHooks } from "@anchor-presence/react";
-
-export type User = { name: string; color: string };
-export type Context = { selection?: string[] };
-
-export const { PresenceProvider, useLocalContext, useRemoteCursorsSelector, useRemoteUsers } =
-  createPresenceHooks<Context, User>();
-```
+The recipe imports its hooks and types from the `./presence` module of [Typed hooks](/docs/react/typed-hooks#usage). The app has one `createPresenceHooks` call, so add no second module.
 
 This file counts the peers on each card and renders the card with its selection:
 

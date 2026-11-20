@@ -7,7 +7,7 @@ import { Outlet as RrOutlet } from "react-router";
 import { describe, expect, it } from "vitest";
 import { createPresenceClient } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
-import { CursorLayer, LiveCursorProvider } from "../src/index";
+import { CursorLayer, PresenceProvider } from "../src/index";
 
 // Verbatim copies of the samples in frameworks.mdx; the last test checks each copy against its source.
 
@@ -18,12 +18,12 @@ function createClient() {
   return createPresenceClient({ transport, user: { name: `Guest ${Math.floor(Math.random() * 100)}` } });
 }
 
-export function PresenceProvider({ children }: { children: ReactNode }) {
+export function AppPresenceProvider({ children }: { children: ReactNode }) {
   return (
-    <LiveCursorProvider factory={createClient}>
+    <PresenceProvider factory={createClient}>
       {children}
       <CursorLayer />
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }
 
@@ -33,7 +33,7 @@ function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body>
-        <PresenceProvider>{children}</PresenceProvider>
+        <AppPresenceProvider>{children}</AppPresenceProvider>
       </body>
     </html>
   );
@@ -43,9 +43,9 @@ function RootLayout({ children }: { children: ReactNode }) {
 
 const Route = createRootRoute({
   component: () => (
-    <PresenceProvider>
+    <AppPresenceProvider>
       <Outlet />
-    </PresenceProvider>
+    </AppPresenceProvider>
   ),
 });
 
@@ -54,9 +54,9 @@ function reactRouterRoot(Outlet: typeof RrOutlet) {
   // app/root.tsx
   function App() {
     return (
-      <PresenceProvider>
+      <AppPresenceProvider>
         <Outlet />
-      </PresenceProvider>
+      </AppPresenceProvider>
     );
   }
   return App;
@@ -101,7 +101,7 @@ describe("frameworks.mdx samples", () => {
   it("match the docs", () => {
     const source = trimLines(readRepoFile("packages/react/test/docs-frameworks.test.tsx"));
     for (const marker of [
-      "function PresenceProvider",
+      "function AppPresenceProvider",
       "function RootLayout",
       "createRootRoute({",
       "function App",

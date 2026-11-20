@@ -12,44 +12,32 @@ import {
   type EventMap,
   type PeerChange,
   type PresenceClient,
-  type RemoteEvent,
+  type TypedRemoteEvent,
 } from "@anchor-presence/core";
 import {
-  createPresenceHooks,
-  LiveCursorProvider as PlainProvider,
-  useLocalUser,
+  PresenceProvider as PlainProvider,
   usePeerChanges,
   type useSendEvent as exportedUseSendEvent,
 } from "../src/index";
 import type { useLocalUser as exportedUseLocalUser } from "../src/hooks/use-local-user";
 import type { usePeerChanges as exportedUsePeerChanges } from "../src/hooks/use-peer-changes";
 import { createWebSocketTransport } from "@anchor-presence/dom";
-import { makeFakeBinding } from "./test-utils";
+import {
+  PresenceProvider,
+  useLocalUser as useTypedLocalUser,
+  useRemoteEvents,
+  useSendEvent,
+} from "./doc-presence";
+import type { Context, Events, User } from "./doc-presence";
+import { makeFakeBinding, parserOf } from "./test-utils";
 
 // Verbatim copies of doc samples; the last test checks each copy against its .mdx source.
-
-// presence.ts
-
-export type User = { name: string; color: string };
-export type Context = { pageId: string };
-export type Events = { reaction: { emoji: string }; ping: undefined };
-
-export const {
-  LiveCursorProvider,
-  useCursorClient,
-  useLocalContext,
-  useCursorEvents,
-  useLocalUser: useTypedLocalUser,
-  useRemoteCursors,
-  useRemoteUsers,
-  useSendEvent,
-} = createPresenceHooks<Context, User, Events>();
 
 function Reactions() {
   const sendEvent = useSendEvent();
   const [lastEmoji, setLastEmoji] = useState<string | null>(null);
 
-  useCursorEvents((event) => {
+  useRemoteEvents((event) => {
     if (event.type === "reaction") setLastEmoji(event.data.emoji);
   });
 
@@ -63,26 +51,35 @@ function Reactions() {
   );
 }
 
+const parseUser = parserOf<User>();
+const parseContext = parserOf<Context>();
+
 const parseEvent = createEventParser<Events>({
   reaction: (data) => {
-    const emoji = (data as { emoji?: unknown } | undefined)?.emoji;
+    const emoji = typeof data === "object" && data !== null && "emoji" in data ? data.emoji : undefined;
     return typeof emoji === "string" ? { emoji } : undefined;
+  },
+  chat: (data) => {
+    const text = typeof data === "object" && data !== null && "text" in data ? data.text : undefined;
+    return typeof text === "string" ? { text } : undefined;
   },
   ping: null,
 });
 
 function App() {
   return (
-    <LiveCursorProvider
+    <PresenceProvider
       factory={() =>
         createPresenceClient({
           transport: createWebSocketTransport({ port: 8788, path: "/?room=main" }),
+          parseUser,
+          parseContext,
           parseEvent,
         })
       }
     >
       <Reactions />
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }
 
@@ -94,10 +91,10 @@ function JoinNotice() {
   return notice !== null ? <p role="status">{notice}</p> : null;
 }
 
-type MyUser = { name: string; color: string };
+const useLocalUser = useTypedLocalUser;
 
 function NameField() {
-  const [user, setUser] = useLocalUser<MyUser>();
+  const [user, setUser] = useLocalUser();
   return (
     <input
       aria-label="Your name"
@@ -109,20 +106,18 @@ function NameField() {
 
 declare namespace Listing {
   // oxlint-disable-next-line eslint/no-shadow -- the listing keeps the exported name
-  function useLocalUser<TUser = unknown>(): [TUser | undefined, (next: TUser | undefined) => void];
+  function useLocalUser(): [unknown, (next: unknown) => void];
 
   // oxlint-disable-next-line eslint/no-shadow -- the listing keeps the exported name
-  function usePeerChanges<TContext = unknown, TUser = unknown>(
-    listener: (change: PeerChange<TContext, TUser>) => void,
-  ): void;
+  function usePeerChanges(listener: (change: PeerChange) => void): void;
 
   // oxlint-disable-next-line eslint/no-shadow, typescript/no-unnecessary-type-parameters -- the listing copies the export
-  function useSendEvent<TEvents extends object = EventMap>(): EventChannel<TEvents>["send"];
+  function useSendEvent(): EventChannel<EventMap>["send"];
 }
 
 let container: HTMLDivElement;
 let root: Root;
-const clients: PresenceClient<unknown, unknown>[] = [];
+const clients: { dispose(): void }[] = [];
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -138,28 +133,32 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-function connectedPair<TUser, TContext = unknown>(user?: TUser) {
+function connectedPair<TUser, TContext = unknown, TEvents extends object = EventMap>(user?: TUser) {
   const { a, b } = createInMemoryPair();
-  const local = createPresenceClient<TContext, TUser>({
+  const local = createPresenceClient({
     transport: a,
     clientId: "local",
     ...(user === undefined ? {} : { user }),
-  });
-  const peer = createPresenceClient({ transport: b, clientId: "peer" });
-  clients.push(local as PresenceClient<unknown, unknown>, peer);
+  }) as unknown as PresenceClient<TContext, TUser, TEvents>;
+  const peer = createPresenceClient({ transport: b, clientId: "peer" }) as unknown as PresenceClient<
+    unknown,
+    unknown,
+    TEvents
+  >;
+  clients.push(local, peer);
   return { local, peer };
 }
 
 describe("typed-hooks.mdx: typed events", () => {
   it("shows a typed reaction from a peer and sends one on click", () => {
-    const { local, peer } = connectedPair<User, Context>();
-    const peerEvents: RemoteEvent[] = [];
+    const { local, peer } = connectedPair<User, Context, Events>();
+    const peerEvents: TypedRemoteEvent<Events>[] = [];
     peer.subscribeEvents((event) => peerEvents.push(event));
     act(() =>
       root.render(
-        <LiveCursorProvider client={local} binding={makeFakeBinding<Context, User>().binding}>
+        <PresenceProvider client={local} binding={makeFakeBinding<Context, User>().binding}>
           <Reactions />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       ),
     );
 
@@ -211,12 +210,12 @@ describe("remote-users.mdx: peer changes", () => {
 
 describe("local-context.mdx: local user", () => {
   it("shows the local user and sends a typed name to the client", () => {
-    const { local } = connectedPair<MyUser>({ name: "Ada", color: "#000000" });
+    const { local } = connectedPair<User, Context, Events>({ name: "Ada", color: "#000000" });
     act(() =>
       root.render(
-        <PlainProvider client={local} binding={makeFakeBinding().binding}>
+        <PresenceProvider client={local} binding={makeFakeBinding<Context, User>().binding}>
           <NameField />
-        </PlainProvider>,
+        </PresenceProvider>,
       ),
     );
     const input = container.querySelector("input");
@@ -238,8 +237,8 @@ describe("local-context.mdx: local user", () => {
 
 describe("api/hooks.mdx: hook listings", () => {
   it("equal the exported signatures", () => {
-    expectTypeOf<ReturnType<typeof Listing.useLocalUser<MyUser>>>().toEqualTypeOf<
-      ReturnType<typeof exportedUseLocalUser<MyUser>>
+    expectTypeOf<ReturnType<typeof Listing.useLocalUser>>().toEqualTypeOf<
+      ReturnType<typeof exportedUseLocalUser>
     >();
     expectTypeOf<Parameters<typeof Listing.usePeerChanges>>().toEqualTypeOf<
       Parameters<typeof exportedUsePeerChanges>
@@ -248,8 +247,8 @@ describe("api/hooks.mdx: hook listings", () => {
   });
 
   it("include the useSendEvent listing, which the typed result fixes to Events", () => {
-    expectTypeOf<ReturnType<typeof Listing.useSendEvent<Events>>>().toEqualTypeOf<
-      ReturnType<typeof exportedUseSendEvent<Events>>
+    expectTypeOf<ReturnType<typeof Listing.useSendEvent>>().toEqualTypeOf<
+      ReturnType<typeof exportedUseSendEvent>
     >();
     expectTypeOf(useSendEvent).returns.toEqualTypeOf<EventChannel<Events>["send"]>();
   });
@@ -296,11 +295,5 @@ describe("doc sample sources", () => {
       docSample("react/api/hooks.mdx", "function useSendEvent"),
     ];
     for (const sample of samples) expect(source).toContain(trimLines(sample));
-  });
-
-  it("match the presence module, apart from the renamed useLocalUser", () => {
-    const source = trimLines(readRepoFile("packages/react/test/docs-react-samples-events.test.tsx"));
-    const sample = docSample("react/typed-hooks.mdx", "createPresenceHooks<Context, User, Events>");
-    expect(source).toContain(trimLines(sample).replace("useLocalUser,", "useLocalUser: useTypedLocalUser,"));
   });
 });

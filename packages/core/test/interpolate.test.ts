@@ -25,6 +25,16 @@ describe("noneInterpolator", () => {
 });
 
 describe("linearInterpolator", () => {
+  it("retargets from the position at the retarget time, not from the last sample", () => {
+    const interp = linearInterpolator(100);
+    interp.target(0, 0, 0);
+    interp.target(100, 0, 0);
+    expect(interp.sample(10).x).toBeCloseTo(10);
+    interp.target(200, 0, 50);
+    expect(interp.sample(50).x).toBeCloseTo(50);
+    expect(interp.sample(100).x).toBeCloseTo(125);
+  });
+
   it("snaps to the first target with no ease", () => {
     const interp = linearInterpolator(80);
     interp.target(100, 200, 0);

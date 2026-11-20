@@ -1,10 +1,10 @@
 ---
 title: Fallback chain
-description: How a cursor falls back from the exact anchor to a parent anchor, then to the window.
+description: How a cursor falls back from the exact anchor to a parent anchor, then to a viewport position.
 icon: waypoints
 ---
 
-import { Anchor, Crosshair, EyeOff, LayoutDashboard } from "lucide-react";
+import { Anchor, Crosshair, LayoutDashboard, Eye } from "lucide-react";
 
 The fallback chain lets a receiver place a cursor when the exact element is missing on its screen. One example is a table row that exists on the sender but not in a shorter table on the receiver. The cursor then moves to the nearest parent anchor that the receiver has, and not to a random place.
 
@@ -28,27 +28,27 @@ A pointer on the button sends the chain `orders.row:17.actions`, `orders.row:17`
 
 ## How the chain works
 
-The fallback chain is the ordered list of anchors that a cursor position carries, the most specific anchor first.
+The fallback chain is the anchor, then its parent anchors, then the viewport position when the message carries one. A cursor position stores the anchors in an ordered list, the most specific first.
 
 1. The sender starts at the element under the pointer.
 2. It adds each registered anchor between that element and the document root, the nearest anchor first.
-3. It stops at `maxAnchors` entries. The default is 4, and the protocol allows at most 8. See [Binding](/docs/dom/binding).
+3. It stops at `maxSentAnchors` entries. The default is 4, and the protocol allows at most 8. See [Binding](/docs/dom/binding).
 
 The receiver walks the chain in order. It uses the first anchor that is connected to its DOM and has a size larger than zero.
 
 ## Viewport fallback
 
-Each cursor position also carries a `viewport` field. It is a `u`/`v` position across the full browser window: `pointerX / innerWidth` and `pointerY / innerHeight`. If no anchor in the chain resolves, the receiver uses this position. The cursor then stays visible, but it can land on another element.
+A cursor position can also carry a `viewport` field. It is a `u`/`v` position across the full viewport: `pointerX / innerWidth` and `pointerY / innerHeight`. If no anchor in the chain resolves, the receiver uses this position. The cursor then stays visible, but it can land on another element.
 
 ## Resolution tiers
 
 A **tier** names the fallback step that placed the cursor. Each resolved cursor carries one:
 
-| Tier       | Meaning                                      |
-| ---------- | -------------------------------------------- |
-| `anchor`   | An anchor in the chain resolved.             |
-| `viewport` | No anchor resolved. The window position won. |
-| `hidden`   | The cursor has no position to show.          |
+| Tier       | Meaning                                        |
+| ---------- | ---------------------------------------------- |
+| `anchor`   | An anchor in the chain resolved.               |
+| `viewport` | No anchor resolved. The viewport position won. |
+| `hidden`   | The cursor has no position to show.            |
 
 After this step, a **visibility policy** decides whether the cursor shows. The default policy hides only the `hidden` tier. A custom policy can hide other cursors for app reasons. See [UI context](/docs/get-started/concepts/ui-context). [Resolution](/docs/dom/resolution) gives the pixel formula of each tier.
 
@@ -61,10 +61,14 @@ After this step, a **visibility policy** decides whether the cursor shows. The d
   <Card icon={<Crosshair />} title="Resolution" href="/docs/dom/resolution">
     The pixel formula of each tier.
   </Card>
-  <Card icon={<EyeOff />} title="UI context" href="/docs/get-started/concepts/ui-context">
+  <Card icon={<Eye />} title="UI context" href="/docs/get-started/concepts/ui-context">
     Hide a cursor with a visibility policy.
   </Card>
-  <Card icon={<LayoutDashboard />} title="Layout design" href="/docs/get-started/guides/layout-design">
+  <Card
+    icon={<LayoutDashboard />}
+    title="Layout design for presence"
+    href="/docs/get-started/guides/layout-design"
+  >
     Anchor each level so that the fallback lands one step up.
   </Card>
 </Cards>

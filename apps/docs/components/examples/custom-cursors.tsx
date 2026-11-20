@@ -1,18 +1,25 @@
 "use client";
 
 import type { PresenceClient } from "@anchor-presence/core";
-import { CursorLayer, LiveCursorProvider, type CursorRenderProps } from "@anchor-presence/react";
+import type { TourContext } from "./_preview/tour";
+import type { CursorRenderProps } from "@anchor-presence/react";
+import { CursorLayer, PresenceProvider } from "./_preview/hooks";
 import { useState, type ReactNode } from "react";
+
+const safeColor = (color: string | undefined, fallback: string) =>
+  color !== undefined && /^#[0-9a-f]{6}$/iu.test(color) ? color : fallback;
 
 type User = { name: string; color: string };
 
 type Props = {
-  client: PresenceClient<unknown, User> | null;
+  client: PresenceClient<TourContext, User> | null;
   layout: "wide" | "narrow";
   children?: ReactNode;
 };
 
 type Renderer = "arrow" | "pill" | "avatar" | "crosshair";
+
+const isRenderer = (value: string): value is Renderer => Object.hasOwn(RENDERERS, value);
 
 type RenderCursor = (props: CursorRenderProps<unknown, User>) => ReactNode;
 
@@ -65,13 +72,15 @@ export function CustomCursorsScene({ client, layout, children }: Props) {
   const [renderer, setRenderer] = useState<Renderer>(wide ? "pill" : "avatar");
 
   return (
-    <LiveCursorProvider client={client}>
+    <PresenceProvider client={client}>
       <div className="flex h-full flex-col gap-2 p-2.5">
         <label className="flex items-center justify-between gap-2 text-[11px] text-fd-muted-foreground">
           Remote cursor style
           <select
             value={renderer}
-            onChange={(event) => setRenderer(event.target.value as Renderer)}
+            onChange={(event) => {
+              if (isRenderer(event.target.value)) setRenderer(event.target.value);
+            }}
             className="rounded-md border border-fd-border bg-fd-background px-1.5 py-1 text-[11px] text-fd-foreground focus-visible:outline-2 focus-visible:outline-fd-ring"
           >
             {Object.entries(RENDERERS).map(([value, { label }]) => (
@@ -113,12 +122,12 @@ export function CustomCursorsScene({ client, layout, children }: Props) {
           </div>
         </div>
       </div>
-      <CursorLayer<unknown, User>
+      <CursorLayer
         getLabel={(cursor) => cursor.user?.name ?? null}
-        getColor={(cursor) => cursor.user?.color ?? "#4f46e5"}
+        getColor={(cursor) => safeColor(cursor.user?.color, "#4f46e5")}
         renderCursor={RENDERERS[renderer].render}
       />
       {children}
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }

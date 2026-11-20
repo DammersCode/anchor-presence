@@ -12,12 +12,13 @@ import { KanbanScene } from "../kanban";
 import { PresenceScene, presenceTimeouts } from "../presence";
 import { ResponsiveGridScene } from "../responsive-grid";
 import { ScrollScene } from "../scroll";
+import { StableLayoutScene } from "../stable-layout";
 import { TableAndCardsScene } from "../table-and-cards";
 import type { Layout, SceneName } from "./scenes";
-import type { TourUser } from "./tour";
+import type { TourContext, TourUser } from "./tour";
 
 type SceneProps = {
-  client: PresenceClient<unknown, TourUser> | null;
+  client: PresenceClient<TourContext, TourUser> | null;
   layout: Layout;
   children?: ReactNode;
 };
@@ -32,6 +33,7 @@ export const SCENE_COMPONENTS: Record<SceneName, SceneEntry> = {
   "responsive-grid": { Scene: ResponsiveGridScene },
   "table-and-cards": { Scene: TableAndCardsScene },
   kanban: { Scene: KanbanScene },
+  "stable-layout": { Scene: StableLayoutScene },
   dialogs: { Scene: DialogsScene },
   fallbacks: { Scene: FallbacksScene },
   scroll: { Scene: ScrollScene },

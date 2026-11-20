@@ -1,8 +1,9 @@
-import type { CursorCodec } from "./codec.js";
+import type { PresenceCodec } from "./codec.js";
 import {
   DEFAULT_MAX_SEQUENCE,
+  type AnchorPoint,
   type CursorPosition,
-  type CursorPresence,
+  type PresenceMessage,
   type PointerInfo,
 } from "./protocol.js";
 
@@ -80,7 +81,7 @@ function pointerFromTag(tag: number): PointerInfo | undefined {
   }
 }
 
-function encodeMessage(message: CursorPresence): Uint8Array {
+function encodeMessage(message: PresenceMessage): Uint8Array {
   if (message.version !== 1) throw new Error("binaryCodec: unsupported protocol version");
 
   const clientIdBytes = encoder.encode(message.clientId);
@@ -115,7 +116,7 @@ function encodeMessage(message: CursorPresence): Uint8Array {
       const id = encoder.encode(anchor.id);
       if (id.byteLength > 0xffff) throw new Error("binaryCodec: anchor id too large");
       if (!Number.isFinite(Math.fround(anchor.u)) || !Number.isFinite(Math.fround(anchor.v)))
-        throw new Error("binaryCodec: invalid anchor");
+        throw new TypeError("binaryCodec: invalid anchor");
       anchorParts.push({ id, u: anchor.u, v: anchor.v });
       cursorSize += 2 + id.byteLength + 8;
     }
@@ -249,7 +250,7 @@ function decodeMessage(data: Uint8Array): unknown {
       const length = dv.getUint32(offset, true);
       offset += 4;
       if (offset + length > data.byteLength) throw new Error("truncated JSON field");
-      const value = JSON.parse(decoder.decode(data.subarray(offset, offset + length)));
+      const value: unknown = JSON.parse(decoder.decode(data.subarray(offset, offset + length)));
       offset += length;
       return { present: true, value };
     }
@@ -271,7 +272,7 @@ function decodeMessage(data: Uint8Array): unknown {
     eventType = readString();
   } else if (cursorTag === CURSOR_PRESENT) {
     const anchorCount = dv.getUint8(offset++);
-    const anchors: CursorPosition["anchors"] = [];
+    const anchors: AnchorPoint[] = [];
     for (let i = 0; i < anchorCount; i++) {
       const id = readString();
       const u = dv.getFloat32(offset, true);
@@ -321,8 +322,8 @@ function decodeMessage(data: Uint8Array): unknown {
  * Codec that encodes messages as compact binary frames.
  * The `encode` method throws when a message breaks the frame limits.
  */
-export const binaryCodec: CursorCodec = {
-  encode(message: CursorPresence): Uint8Array {
+export const binaryCodec: PresenceCodec = {
+  encode(message: PresenceMessage): Uint8Array {
     return encodeMessage(message);
   },
   decode(data: Uint8Array): unknown {

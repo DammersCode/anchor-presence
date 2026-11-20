@@ -9,7 +9,7 @@ import {
   DEFAULT_MAX_SESSION_LENGTH,
   MAX_EVENT_TYPE_LENGTH,
 } from "./protocol.js";
-import type { AnchorPoint, CursorPosition, CursorPresence, PresenceEvent } from "./protocol.js";
+import type { AnchorPoint, CursorPosition, PresenceMessage, PresenceEvent } from "./protocol.js";
 
 /**
  * Limits for `validatePresence`.
@@ -17,24 +17,24 @@ import type { AnchorPoint, CursorPosition, CursorPresence, PresenceEvent } from 
  */
 export type ValidationLimits = {
   /** Maximum `clientId` length. Default `DEFAULT_MAX_CLIENT_ID_LENGTH`. */
-  maxClientIdLength?: number;
+  maxClientIdLength?: number | undefined;
   /** Maximum `session` length. Default `DEFAULT_MAX_SESSION_LENGTH`. */
-  maxSessionLength?: number;
+  maxSessionLength?: number | undefined;
   /** Maximum `sequence` value. Default `DEFAULT_MAX_SEQUENCE`. */
-  maxSequence?: number;
+  maxSequence?: number | undefined;
   /** Maximum anchors in one cursor. Default `DEFAULT_MAX_ANCHORS`. */
-  maxAnchors?: number;
+  maxAnchors?: number | undefined;
   /** Maximum anchor `id` length. Default `DEFAULT_MAX_ANCHOR_ID_LENGTH`. */
-  maxAnchorIdLength?: number;
+  maxAnchorIdLength?: number | undefined;
   /** Maximum size of `context` or `user` as JSON, in bytes. Default `DEFAULT_MAX_FIELD_BYTES`. */
-  maxFieldBytes?: number;
+  maxFieldBytes?: number | undefined;
   /** Maximum nesting depth of `context` or `user`. Default `DEFAULT_MAX_FIELD_DEPTH`. */
-  maxFieldDepth?: number;
+  maxFieldDepth?: number | undefined;
   /** Maximum size of one encoded message, in bytes. Default `DEFAULT_MAX_MESSAGE_BYTES`. */
-  maxMessageBytes?: number;
+  maxMessageBytes?: number | undefined;
 };
 
-type ResolvedLimits = Required<ValidationLimits>;
+type ResolvedLimits = { [K in keyof ValidationLimits]-?: NonNullable<ValidationLimits[K]> };
 
 const DEFAULT_RESOLVED_LIMITS: ResolvedLimits = {
   maxClientIdLength: DEFAULT_MAX_CLIENT_ID_LENGTH,
@@ -173,7 +173,7 @@ function validateEvent(input: unknown, limits: ResolvedLimits): PresenceEvent | 
 }
 
 /**
- * Returns a validated `CursorPresence` from one decoded message, or `null`.
+ * Returns a validated `PresenceMessage` from one decoded message, or `null`.
  * The function enforces the limits of the decoded message and never throws.
  * The client checks `maxMessageBytes` on the wire bytes before it decodes.
  * It clamps anchor and viewport values into the `0` to `1` range.
@@ -181,10 +181,7 @@ function validateEvent(input: unknown, limits: ResolvedLimits): PresenceEvent | 
  * @param limits Optional limits. The defaults fill the fields you omit.
  * @returns A validated message, or `null` when the message is invalid.
  */
-export function validatePresence<TContext = unknown, TUser = unknown>(
-  input: unknown,
-  limits?: ValidationLimits,
-): CursorPresence<TContext, TUser> | null {
+export function validatePresence(input: unknown, limits?: ValidationLimits): PresenceMessage | null {
   try {
     // whole-message 32 KiB limit is enforced on wire bytes by the client, before decode (spec §4.2)
     if (!isPlainObject(input)) return null;
@@ -212,7 +209,7 @@ export function validatePresence<TContext = unknown, TUser = unknown>(
     const cursor = validateCursor(input.cursor, resolved);
     if (cursor === undefined) return null;
 
-    const message: CursorPresence<TContext, TUser> = {
+    const message: PresenceMessage = {
       version: 1,
       clientId,
       session,
@@ -236,7 +233,7 @@ export function validatePresence<TContext = unknown, TUser = unknown>(
       !exceedsMaxDepth(input.context, resolved.maxFieldDepth) &&
       jsonFieldFits(input.context, resolved.maxFieldBytes)
     ) {
-      message.context = input.context as TContext;
+      message.context = input.context;
     }
 
     if (
@@ -245,7 +242,7 @@ export function validatePresence<TContext = unknown, TUser = unknown>(
       !exceedsMaxDepth(input.user, resolved.maxFieldDepth) &&
       jsonFieldFits(input.user, resolved.maxFieldBytes)
     ) {
-      message.user = input.user as TUser;
+      message.user = input.user;
     }
 
     const pointer = input.pointer;

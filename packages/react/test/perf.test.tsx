@@ -2,9 +2,9 @@ import { Profiler, act } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createPresenceClient, jsonCodec } from "@anchor-presence/core";
-import type { CursorPresence, LiveCursorTransport } from "@anchor-presence/core";
+import type { PresenceMessage, PresenceTransport } from "@anchor-presence/core";
 import type { ResolvedCursor } from "@anchor-presence/dom";
-import { LiveCursorProvider } from "../src/provider";
+import { PresenceProvider } from "../src/provider";
 import { useRemotePresence, useRemoteCursors } from "../src/hooks";
 import { makeFakeBinding, makeFakeClient } from "./test-utils";
 
@@ -53,10 +53,10 @@ describe("react adapter perf contracts", () => {
 
     act(() => {
       root.render(
-        <LiveCursorProvider client={client} binding={binding}>
+        <PresenceProvider client={client} binding={binding}>
           <Sibling />
           <CursorReader />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
     expect(cursorRenderCount).toBe(1);
@@ -90,9 +90,9 @@ describe("react adapter perf contracts", () => {
 
     act(() => {
       root.render(
-        <LiveCursorProvider client={client} binding={binding}>
+        <PresenceProvider client={client} binding={binding}>
           <CursorReader />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
     const sample = cursors(5);
@@ -131,11 +131,11 @@ describe("react adapter perf contracts", () => {
     const durations: number[] = [];
     act(() => {
       root.render(
-        <LiveCursorProvider client={client} binding={binding}>
+        <PresenceProvider client={client} binding={binding}>
           <Profiler id="list" onRender={(_id, _phase, actualDuration) => durations.push(actualDuration)}>
             <CursorList />
           </Profiler>
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
 
@@ -168,9 +168,9 @@ describe("react adapter perf contracts", () => {
       const root = createRoot(container);
       act(() => {
         root.render(
-          <LiveCursorProvider client={client} binding={binding}>
+          <PresenceProvider client={client} binding={binding}>
             <CursorReader />
-          </LiveCursorProvider>,
+          </PresenceProvider>,
         );
       });
       act(() => {
@@ -183,9 +183,9 @@ describe("react adapter perf contracts", () => {
 });
 
 // K2 baseline: a real PresenceClient (real store) behind a fake inbound transport.
-function makeInboundChannel(): { transport: LiveCursorTransport; push: (presence: CursorPresence) => void } {
+function makeInboundChannel(): { transport: PresenceTransport; push: (presence: PresenceMessage) => void } {
   const listeners = new Set<(data: Uint8Array) => void>();
-  const transport: LiveCursorTransport = {
+  const transport: PresenceTransport = {
     send: () => {},
     subscribe: (listener) => {
       listeners.add(listener);
@@ -194,13 +194,13 @@ function makeInboundChannel(): { transport: LiveCursorTransport; push: (presence
   };
   return {
     transport,
-    push(presence: CursorPresence) {
+    push(presence: PresenceMessage) {
       for (const listener of listeners) listener(jsonCodec.encode(presence));
     },
   };
 }
 
-function sameAnchorMessage(sequence: number, u = 0.5): CursorPresence {
+function sameAnchorMessage(sequence: number, u = 0.5): PresenceMessage {
   return {
     version: 1,
     clientId: "remote-1",
@@ -236,9 +236,9 @@ describe("useRemotePresence inbound render cost (K2)", () => {
 
     act(() => {
       root.render(
-        <LiveCursorProvider client={client} binding={makeFakeBinding().binding}>
+        <PresenceProvider client={client} binding={makeFakeBinding().binding}>
           <PresenceReader />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
     expect(presenceRenderCount).toBe(1);

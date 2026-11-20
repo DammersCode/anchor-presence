@@ -4,25 +4,38 @@ description: Replace the cursor content that CursorLayer renders, or style the b
 icon: paintbrush
 ---
 
-import { Component, MousePointer2, Users } from "lucide-react";
+import { Component, MousePointer2, Brush, Users } from "lucide-react";
 
 `CursorLayer` places one root element per remote cursor. `renderCursor` replaces what that root shows, and `DefaultCursor` is the arrow that it shows by default. Use them to change the look of a cursor. The position always stays with `CursorLayer`.
 
 ## Usage
 
-`renderCursor` replaces only the content of the root:
+If your app has a [typed `presence.ts` module](/docs/react/typed-hooks), import `CursorLayer` from it. The package export reads only the provider of `@anchor-presence/react`.
+
+`renderCursor` replaces only the content of the root. The samples on this page pass `renderCursor` inline for brevity. Declare it at module level, as in [Keep the callbacks stable](/docs/react/cursor-layer#keep-the-callbacks-stable):
 
 ```tsx
-<CursorLayer
-  renderCursor={({ label, color }) => (
-    <MyCursorGlyph color={color}>
-      <span>{label}</span>
-    </MyCursorGlyph>
-  )}
-/>
+import type { ReactNode } from "react";
+import { CursorLayer } from "@anchor-presence/react";
+
+function MyCursorGlyph({ color, children }: { color: string; children: ReactNode }) {
+  return <span data-color={color}>{children}</span>;
+}
+
+function GlyphLayer() {
+  return (
+    <CursorLayer
+      renderCursor={({ label, color }) => (
+        <MyCursorGlyph color={color}>
+          <span>{label}</span>
+        </MyCursorGlyph>
+      )}
+    />
+  );
+}
 ```
 
-`renderCursor` receives the resolved `cursor`, the `label` from `getLabel`, and the `color` from `getColor`. `CursorLayer` keeps control of the root position, transform, pointer events, `aria-hidden`, and data attributes.
+`renderCursor` receives the resolved `cursor`, the `label` from `getLabel`, the `color` from `getColor`, and the `pointerType` of the peer. `CursorLayer` keeps control of the root position, transform, pointer events, `aria-hidden`, and data attributes.
 
 This preview switches between several renderers:
 
@@ -33,14 +46,50 @@ This preview switches between several renderers:
 `DefaultCursor` needs no Tailwind and no external stylesheet. Three CSS variables control its look: `--anchor-presence-cursor-color`, `--anchor-presence-cursor-size`, and `--anchor-presence-cursor-label-color`. This renderer makes the arrow larger:
 
 ```tsx
-<CursorLayer
-  renderCursor={({ label, color }) => (
-    <DefaultCursor label={label} color={color} style={{ "--anchor-presence-cursor-size": "28px" }} />
-  )}
-/>
+import { CursorLayer, DefaultCursor } from "@anchor-presence/react";
+
+function LargeCursorLayer() {
+  return (
+    <CursorLayer
+      renderCursor={({ label, color }) => (
+        <DefaultCursor label={label} color={color} style={{ "--anchor-presence-cursor-size": "28px" }} />
+      )}
+    />
+  );
+}
 ```
 
 The `--anchor-presence-cursor-color` variable on `style` wins over the `color` prop. A `label` of `null` or `undefined` shows the arrow without a label. For every prop, see [DefaultCursor](/docs/react/api/components#defaultcursor).
+
+## Style touch and pen cursors
+
+`pointerType` is `"mouse"`, `"pen"`, or `"touch"`. It is `undefined` when the sender sent no pointer type. This renderer shows a ring for a touch cursor and the default arrow for all others:
+
+```tsx
+import { CursorLayer, DefaultCursor } from "@anchor-presence/react";
+
+function TouchRingLayer() {
+  return (
+    <CursorLayer
+      renderCursor={({ label, color, pointerType }) =>
+        pointerType === "touch" ? (
+          <span
+            style={{
+              display: "block",
+              width: 24,
+              height: 24,
+              borderRadius: "50%",
+              border: `2px solid ${color}`,
+            }}
+          />
+        ) : (
+          <DefaultCursor label={label} color={color} />
+        )
+      }
+    />
+  );
+}
+```
 
 ## Root attributes
 
@@ -56,7 +105,7 @@ The root of each cursor carries these attributes. Select and test cursors with t
 
 ## Idle cursors
 
-A peer is idle when its presence does not change for `idleAfterMs`. See [Idle stage](/docs/core/remote-presence#idle-stage). `CursorLayer` sets the opacity of an idle cursor to `0.4` and adds `data-anchor-presence-idle`. Use the attribute for your own idle style:
+A peer is idle when its presence does not change for `idleAfterMs`. See [Idle state](/docs/core/remote-presence#idle-state). `CursorLayer` sets the opacity of an idle cursor to `0.4` and adds `data-anchor-presence-idle`. Use the attribute for your own idle style:
 
 ```css
 [data-anchor-presence-idle] {
@@ -64,7 +113,15 @@ A peer is idle when its presence does not change for `idleAfterMs`. See [Idle st
 }
 ```
 
-To show the idle stage next to a name in a list, use [Remote users](/docs/react/remote-users).
+To hide an idle cursor, return `false` from `filterCursor`:
+
+```tsx
+function ActiveCursorLayer() {
+  return <CursorLayer filterCursor={(cursor) => !cursor.idle} />;
+}
+```
+
+To show the idle state next to a name in a list, use [Remote users](/docs/react/remote-users).
 
 ## Related
 
@@ -72,8 +129,11 @@ To show the idle stage next to a name in a list, use [Remote users](/docs/react/
   <Card icon={<MousePointer2 />} title="CursorLayer" href="/docs/react/cursor-layer">
     Labels, colors, filters, and accessibility.
   </Card>
+  <Card icon={<Brush />} title="Custom cursor rendering" href="/docs/examples/custom-cursor-rendering">
+    A live demo of custom cursors.
+  </Card>
   <Card icon={<Users />} title="Remote users" href="/docs/react/remote-users">
-    Show the idle stage in a presence list.
+    Show the idle state in a presence list.
   </Card>
   <Card icon={<Component />} title="Components API" href="/docs/react/api/components">
     Every prop of DefaultCursor and CursorRenderProps.

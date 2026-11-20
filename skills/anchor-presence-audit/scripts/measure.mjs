@@ -316,6 +316,11 @@ function printSummary(result, outPath) {
   console.log(`Bands: ${bands.high} high, ${bands.moderate} moderate, ${bands.low} low`);
 }
 
+function launchOptions() {
+  const executablePath = process.env.ANCHOR_AUDIT_BROWSER;
+  return executablePath === undefined || executablePath === "" ? {} : { executablePath };
+}
+
 async function main() {
   const args = parseCli();
   if (args.help) {
@@ -333,7 +338,7 @@ async function main() {
   }
   if (args.check) {
     try {
-      const browser = await chromium.launch();
+      const browser = await chromium.launch(launchOptions());
       await browser.close();
       console.log("Playwright and Chromium are ready.");
       return 0;
@@ -360,7 +365,7 @@ async function main() {
   if (views.length === 0)
     throw new Error(`${configPath}: no views. Add "routes" and "viewports", or "views".`);
 
-  const browser = await chromium.launch();
+  const browser = await chromium.launch(launchOptions());
   const measured = [];
   try {
     // oxlint-disable-next-line no-await-in-loop -- one view at a time keeps dev servers and timings stable

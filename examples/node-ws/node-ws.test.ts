@@ -1,6 +1,7 @@
 import { createPresenceClient, type PresenceClient } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
 import { spawn } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -370,4 +371,37 @@ describe("node-ws relay entry file", () => {
     },
     15_000,
   );
+});
+
+describe("relay-contract.mdx authCheck sample", () => {
+  it("admits a known token, binds its identity, and refuses an unknown token", async () => {
+    // Verbatim copy of the page sample, on port 0.
+    const sessions = new Map([["ada-token", { id: "ada", name: "Ada" }]]);
+
+    const relay = await createNodeWsRelay(0, {
+      authCheck: async ({ token }) => {
+        const session = sessions.get(token);
+        return session === undefined ? false : { clientId: session.id, user: { name: session.name } };
+      },
+    });
+    try {
+      const base = relay.url.replace(/^http/u, "ws");
+      const known = new WebSocket(`${base}/?room=r&token=ada-token`);
+      const unknown = new WebSocket(`${base}/?room=r&token=other`);
+      await opened(known);
+      expect(await closeCode(unknown)).toBe(4006);
+      known.close();
+    } finally {
+      await relay.close();
+    }
+    const pageText = readFileSync("apps/docs/content/docs/examples/backends/relay-contract.mdx", "utf8");
+    const start = pageText.indexOf("const sessions = new Map");
+    const sample = pageText.slice(start, pageText.indexOf("```", start)).replace("8788", "0");
+    const trimmed = (text: string) =>
+      text
+        .split("\n")
+        .map((line) => line.trim())
+        .join("\n");
+    expect(trimmed(readFileSync(import.meta.filename, "utf8"))).toContain(trimmed(sample).trim());
+  });
 });

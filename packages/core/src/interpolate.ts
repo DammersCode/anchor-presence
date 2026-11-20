@@ -106,6 +106,8 @@ export const linearInterpolator = (durationMs = 80): Interpolator => {
         settled = true;
         return;
       }
+      // start from where the cursor is at this timestamp, not from the last sampled frame
+      advance(timestampMs);
       startX = currentX;
       startY = currentY;
       targetX = x;

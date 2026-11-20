@@ -1,9 +1,9 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ResolvedCursor } from "@anchor-presence/dom";
-import { LiveCursorProvider } from "../src/provider";
+import { PresenceProvider } from "../src/provider";
 import { CursorLayer, DefaultCursor } from "../src/cursor";
 import { makeFakeBinding, makeFakeClient } from "./test-utils";
 
@@ -47,9 +47,9 @@ describe("cursor components", () => {
 
     act(() => {
       root.render(
-        <LiveCursorProvider client={client} binding={binding}>
+        <PresenceProvider client={client} binding={binding}>
           <CursorLayer />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
     act(() => {
@@ -64,6 +64,130 @@ describe("cursor components", () => {
     act(() => root.unmount());
   });
 
+  it("passes the pointer type to renderCursor and re-renders when only it changes", () => {
+    const { client } = makeFakeClient();
+    const { binding, publish } = makeFakeBinding();
+    const root = createRoot(container);
+
+    act(() => {
+      root.render(
+        <PresenceProvider client={client} binding={binding}>
+          <CursorLayer renderCursor={({ pointerType }) => <i>{pointerType ?? "none"}</i>} />
+        </PresenceProvider>,
+      );
+    });
+    act(() => publish([cursor()]));
+    expect(container.querySelector("i")?.textContent).toBe("none");
+    act(() => publish([cursor({ pointerType: "touch" })]));
+    expect(container.querySelector("i")?.textContent).toBe("touch");
+    act(() => publish([cursor({ pointerType: "pen" })]));
+    expect(container.querySelector("i")?.textContent).toBe("pen");
+
+    act(() => root.unmount());
+  });
+
+  it("truncates the default label by code points, never inside an emoji", () => {
+    const { client } = makeFakeClient();
+    const { binding, publish } = makeFakeBinding();
+    const root = createRoot(container);
+    const name = `${"a".repeat(31)}😀${"b".repeat(5)}`;
+
+    act(() => {
+      root.render(
+        <PresenceProvider client={client} binding={binding}>
+          <CursorLayer />
+        </PresenceProvider>,
+      );
+    });
+    act(() => {
+      publish([cursor({ user: { name } })]);
+    });
+
+    expect(container.querySelector("[data-anchor-presence-cursor]")?.textContent).toBe(`${"a".repeat(31)}😀`);
+
+    act(() => root.unmount());
+  });
+
+  it.each([
+    ["a flag emoji", "\u{1F1E9}\u{1F1EA}"],
+    ["a ZWJ family emoji", "\u{1F468}‍\u{1F469}‍\u{1F467}‍\u{1F466}"],
+  ])("keeps %s whole at the label limit and drops it whole past the limit", (_name, emoji) => {
+    const { client } = makeFakeClient();
+    const { binding, publish } = makeFakeBinding();
+    const root = createRoot(container);
+    act(() => {
+      root.render(
+        <PresenceProvider client={client} binding={binding}>
+          <CursorLayer />
+        </PresenceProvider>,
+      );
+    });
+    const label = () => container.querySelector("[data-anchor-presence-cursor]")?.textContent;
+
+    act(() => {
+      publish([cursor({ user: { name: `${"a".repeat(31)}${emoji}b` } })]);
+    });
+    expect(label()).toBe(`${"a".repeat(31)}${emoji}`);
+
+    act(() => {
+      publish([cursor({ user: { name: `${"a".repeat(32)}${emoji}` } })]);
+    });
+    expect(label()).toBe("a".repeat(32));
+
+    act(() => {
+      publish([cursor({ user: { name: "a".repeat(1_000_000) } })]);
+    });
+    expect(label()).toBe("a".repeat(32));
+
+    act(() => root.unmount());
+  });
+
+  it("cuts a huge name lazily by code point when Intl.Segmenter is missing", async () => {
+    vi.stubGlobal("Intl", { ...Intl, Segmenter: undefined });
+    vi.resetModules();
+    try {
+      const { CursorLayer: Layer } = await import("../src/cursor");
+      const { PresenceProvider: Provider } = await import("../src/provider");
+      const { client } = makeFakeClient();
+      const { binding, publish } = makeFakeBinding();
+      const root = createRoot(container);
+      act(() => {
+        root.render(
+          <Provider client={client} binding={binding}>
+            <Layer />
+          </Provider>,
+        );
+      });
+      const smile = "\u{1F600}";
+      const originalIterator = String.prototype[Symbol.iterator];
+      let reads = 0;
+      const spy = vi.spyOn(String.prototype, Symbol.iterator).mockImplementation(function (this: string) {
+        const iterator = originalIterator.call(this);
+        if (this.length < 1_000) return iterator;
+        return (function* () {
+          for (const char of iterator) {
+            if (++reads > 64) throw new Error("read past the label limit");
+            yield char;
+          }
+        })() as ReturnType<typeof originalIterator>;
+      });
+      try {
+        act(() => {
+          publish([cursor({ user: { name: smile.repeat(500_000) } })]);
+        });
+      } finally {
+        spy.mockRestore();
+      }
+      expect(reads).toBeGreaterThanOrEqual(32);
+      expect(reads).toBeLessThanOrEqual(64);
+      expect(container.querySelector("[data-anchor-presence-cursor]")?.textContent).toBe(smile.repeat(32));
+      act(() => root.unmount());
+    } finally {
+      vi.unstubAllGlobals();
+      vi.resetModules();
+    }
+  });
+
   it("applies getLabel and getColor to change the default visual", () => {
     const { client } = makeFakeClient();
     const { binding, publish } = makeFakeBinding();
@@ -71,9 +195,9 @@ describe("cursor components", () => {
 
     act(() => {
       root.render(
-        <LiveCursorProvider client={client} binding={binding}>
+        <PresenceProvider client={client} binding={binding}>
           <CursorLayer getLabel={() => "Ada"} getColor={() => "#ff0000"} />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
     act(() => {
@@ -94,9 +218,9 @@ describe("cursor components", () => {
 
     act(() => {
       root.render(
-        <LiveCursorProvider client={client} binding={binding}>
+        <PresenceProvider client={client} binding={binding}>
           <CursorLayer renderCursor={({ cursor: c }) => <span data-testid="custom">{c.clientId}</span>} />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
     act(() => {
@@ -119,7 +243,7 @@ describe("cursor components", () => {
 
     act(() => {
       root.render(
-        <LiveCursorProvider client={client} binding={binding}>
+        <PresenceProvider client={client} binding={binding}>
           <CursorLayer
             getCursorProps={() => ({
               style: {
@@ -131,7 +255,7 @@ describe("cursor components", () => {
               },
             })}
           />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
     act(() => {
@@ -155,9 +279,9 @@ describe("cursor components", () => {
 
     act(() => {
       root.render(
-        <LiveCursorProvider client={client} binding={binding}>
+        <PresenceProvider client={client} binding={binding}>
           <CursorLayer getCursorProps={() => ({ style: { zIndex: 999 } })} />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
     act(() => {
@@ -177,7 +301,7 @@ describe("cursor components", () => {
 
     act(() => {
       root.render(
-        <LiveCursorProvider client={client} binding={binding}>
+        <PresenceProvider client={client} binding={binding}>
           <CursorLayer
             getCursorProps={() => ({
               className: "demo-cursor",
@@ -185,7 +309,7 @@ describe("cursor components", () => {
               "data-cursor-name": "Ada",
             })}
           />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
     act(() => {
@@ -207,9 +331,9 @@ describe("cursor components", () => {
 
     act(() => {
       root.render(
-        <LiveCursorProvider client={client} binding={binding}>
+        <PresenceProvider client={client} binding={binding}>
           <CursorLayer />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
     act(() => {
@@ -228,9 +352,9 @@ describe("cursor components", () => {
 
     act(() => {
       root.render(
-        <LiveCursorProvider client={client} binding={binding}>
+        <PresenceProvider client={client} binding={binding}>
           <CursorLayer />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
     act(() => {
@@ -251,9 +375,9 @@ describe("cursor components", () => {
 
     act(() => {
       root.render(
-        <LiveCursorProvider client={client} binding={binding}>
+        <PresenceProvider client={client} binding={binding}>
           <CursorLayer />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
     act(() => {
@@ -287,9 +411,9 @@ describe("cursor components", () => {
 
       act(() => {
         root.render(
-          <LiveCursorProvider client={client} binding={binding}>
+          <PresenceProvider client={client} binding={binding}>
             <CursorLayer />
-          </LiveCursorProvider>,
+          </PresenceProvider>,
         );
       });
       act(() => {
@@ -313,9 +437,9 @@ describe("cursor components", () => {
 
     act(() => {
       root.render(
-        <LiveCursorProvider client={client} binding={binding}>
+        <PresenceProvider client={client} binding={binding}>
           <CursorLayer filterCursor={(c) => c.clientId !== "r2"} />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
     act(() => {
@@ -332,9 +456,9 @@ describe("cursor components", () => {
 
   it("renders an empty server snapshot with renderToString", () => {
     const html = renderToString(
-      <LiveCursorProvider client={null}>
+      <PresenceProvider client={null}>
         <CursorLayer />
-      </LiveCursorProvider>,
+      </PresenceProvider>,
     );
     expect(html).not.toContain("data-anchor-presence-cursor");
   });
@@ -352,10 +476,10 @@ describe("cursor components", () => {
 
     act(() => {
       root.render(
-        <LiveCursorProvider client={client} binding={binding}>
+        <PresenceProvider client={client} binding={binding}>
           <Sibling />
           <CursorLayer />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
     expect(siblingRenderCount).toBe(1);
@@ -378,9 +502,9 @@ describe("cursor components", () => {
 
     act(() => {
       root.render(
-        <LiveCursorProvider client={client} binding={binding}>
+        <PresenceProvider client={client} binding={binding}>
           <CursorLayer renderCursor={renderCursor} />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
 
@@ -409,7 +533,7 @@ describe("cursor components", () => {
 
     act(() => {
       root.render(
-        <LiveCursorProvider client={client} binding={binding}>
+        <PresenceProvider client={client} binding={binding}>
           <CursorLayer
             filterCursor={(c) => c.clientId !== "r2"}
             getLabel={(c) => {
@@ -417,7 +541,7 @@ describe("cursor components", () => {
               return c.clientId;
             }}
           />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
     act(() => {

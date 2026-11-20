@@ -5,10 +5,10 @@ import { binaryCodec } from "../src/binary-codec";
 import { jsonCodec } from "../src/codec";
 import { RemotePresenceStore } from "../src/store";
 import { validatePresence } from "../src/validate";
-import type { CursorPresence } from "../src/protocol";
-import type { LiveCursorTransport } from "../src/transport";
+import type { PresenceMessage } from "../src/protocol";
+import type { PresenceTransport } from "../src/transport";
 
-function fourAnchorMessage(clientId: string, sequence: number): CursorPresence {
+function fourAnchorMessage(clientId: string, sequence: number): PresenceMessage {
   return {
     version: 1,
     clientId,
@@ -71,7 +71,7 @@ export function registerHotPathCases(bench: Bench): void {
     let fired = false;
     // a plain `let` here narrows to `never` at the read site under TS's closure flow analysis
     const subscriberBox: { current: ((data: Uint8Array) => void) | null } = { current: null };
-    const transport: LiveCursorTransport = {
+    const transport: PresenceTransport = {
       send: () => {},
       subscribe: (fn) => {
         subscriberBox.current = fn;
@@ -100,7 +100,7 @@ export function registerHotPathCases(bench: Bench): void {
   bench.add("full inbound path: bytes -> snapshot listener fired", () => {
     let fired = false;
     const subscriberBox: { current: ((data: Uint8Array) => void) | null } = { current: null };
-    const transport: LiveCursorTransport = {
+    const transport: PresenceTransport = {
       send: () => {},
       subscribe: (fn) => {
         subscriberBox.current = fn;

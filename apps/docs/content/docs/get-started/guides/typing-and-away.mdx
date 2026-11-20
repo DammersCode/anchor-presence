@@ -1,0 +1,126 @@
+---
+title: Typing and away
+description: "Show who types in a field and who left the tab, with useLocalContext and useRemotePresence."
+icon: eye-off
+---
+
+import { Eye, Kanban, MousePointer2, Users, Radar } from "lucide-react";
+
+Two common states fit in `context`: the anchor where the user types, and whether the tab is hidden. The sender sets both with `useLocalContext`. The receiver reads them with `useRemotePresence`.
+
+## Send the state
+
+The recipe imports its hooks and types from the `./presence` module of [Typed hooks](/docs/react/typed-hooks#usage). The app has one `createPresenceHooks` call, so add no second module.
+
+`setContext` replaces the whole context. The hook below merges each change into the current local context, so a change of one field never drops the other. It sends a new context only when a field changes. Call `useStatus` once, in a parent, and pass `publish` to each box. Then one `visibilitychange` listener serves every box:
+
+```tsx
+import { useCallback, useEffect, useRef } from "react";
+import { useLocalContext, useRemotePresence } from "./presence";
+import type { Context } from "./presence";
+
+const TYPING_STOP_MS = 2000;
+
+function useStatus(): (patch: Partial<Context>) => void {
+  const [context, setContext] = useLocalContext();
+  const latest = useRef(context);
+
+  useEffect(() => {
+    latest.current = context;
+  }, [context]);
+
+  const publish = useCallback(
+    (patch: Partial<Context>) => {
+      const current = { typingIn: null, away: false, ...latest.current };
+      const next = { ...current, ...patch };
+      if (next.typingIn === current.typingIn && next.away === current.away) return;
+      latest.current = next;
+      setContext(next);
+    },
+    [setContext],
+  );
+
+  useEffect(() => {
+    const sync = () => publish({ away: document.visibilityState === "hidden" });
+    sync();
+    document.addEventListener("visibilitychange", sync);
+    return () => document.removeEventListener("visibilitychange", sync);
+  }, [publish]);
+
+  return publish;
+}
+
+function CommentBox({ anchorId, publish }: { anchorId: string; publish: (patch: Partial<Context>) => void }) {
+  const stopTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const stopTyping = () => {
+    clearTimeout(stopTimer.current);
+    publish({ typingIn: null });
+  };
+
+  useEffect(() => () => clearTimeout(stopTimer.current), []);
+
+  return (
+    <textarea
+      data-anchor={anchorId}
+      aria-label="Comment"
+      onChange={() => {
+        publish({ typingIn: anchorId });
+        clearTimeout(stopTimer.current);
+        stopTimer.current = setTimeout(stopTyping, TYPING_STOP_MS);
+      }}
+      onBlur={stopTyping}
+    />
+  );
+}
+
+function Comments() {
+  const publish = useStatus();
+  return <CommentBox anchorId="comments.box" publish={publish} />;
+}
+
+function TypingHint({ anchorId }: { anchorId: string }) {
+  const names = useRemotePresence()
+    .filter(({ context }) => context?.typingIn === anchorId && context.away !== true)
+    .map(({ user }) => user?.name ?? "Someone");
+
+  return names.length === 0 ? null : <p>{names.join(", ")} typing…</p>;
+}
+```
+
+Render `<TypingHint anchorId="comments.box" />` next to `<Comments />`. Both read the same anchor ID. The shared `Context` also holds the `selection` field of the [card occupancy recipe](/docs/get-started/guides/card-occupancy). Both recipes spread the current context before they change a field, so neither drops the other's field.
+
+To show the name tag of a peer only while that peer types, return `cursor.user?.name` from `getLabel` when `cursor.context?.typingIn` is set, and `null` otherwise. See [Label and color](/docs/react/cursor-layer#label-and-color).
+
+## Idle or away
+
+The store sets `idle` on a peer whose presence did not change for `idleAfterMs`. See [Idle state](/docs/core/remote-presence#idle-state). It needs no code in the sender, and it cannot tell a tab in the background from a user who reads. A context change ends the idle state, so a sender that sets `away` also resets the idle timer.
+
+- Use `idle` to dim a cursor that stopped. [`CursorLayer`](/docs/react/custom-cursors#idle-cursors) and `useRemoteUsers` already give it.
+- Use `away` when you need to know at once, and for a reason you can name, like a hidden tab.
+
+## Behavior notes
+
+- `away` is a visibility flag that the sender sets on `visibilitychange`. It is true at once when the tab is hidden, and false at once when the tab shows again.
+- A peer with `away: true` does not show as typing, even if its last typing state was never cleared.
+- The receiver treats `typingIn` and `away` as untrusted: it compares them, and renders only `user.name` as text.
+
+## Related
+
+<Cards>
+  <Card icon={<Eye />} title="UI context" href="/docs/get-started/concepts/ui-context">
+    What `context` is for.
+  </Card>
+  <Card icon={<Radar />} title="Raw presence" href="/docs/react/remote-presence">
+    Read the `user` and `context` of each peer.
+  </Card>
+  <Card icon={<MousePointer2 />} title="CursorLayer" href="/docs/react/cursor-layer">
+    Label and color each remote cursor.
+  </Card>
+  <Card icon={<Kanban />} title="Card occupancy" href="/docs/get-started/guides/card-occupancy">
+    Show who is on a card.
+  </Card>
+  <Card icon={<Users />} title="Presence list" href="/docs/examples/presence-list">
+    List the peers in the room.
+  </Card>
+</Cards>

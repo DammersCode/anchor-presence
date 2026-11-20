@@ -4,7 +4,7 @@ description: How an element becomes an anchor, the data-anchor attribute, duplic
 icon: anchor
 ---
 
-import { BookOpen, Link, Pointer } from "lucide-react";
+import { Link, Pointer, Anchor } from "lucide-react";
 
 An anchor is a DOM element that the binding measures and places cursors on. The binding registers and unregisters anchors on its own: you mark an element with an attribute, and the binding finds it. Read this page to choose anchor IDs and to know which elements the binding can find.
 
@@ -58,7 +58,7 @@ The walk from a pointer target to its anchors crosses open shadow boundaries. As
   <Card icon={<Pointer />} title="Pointer capture" href="/docs/dom/pointer-capture">
     How the binding builds the chain of anchors.
   </Card>
-  <Card icon={<BookOpen />} title="Anchors" href="/docs/get-started/concepts/anchors">
+  <Card icon={<Anchor />} title="Anchors" href="/docs/get-started/concepts/anchors">
     How to choose good anchor IDs.
   </Card>
 </Cards>

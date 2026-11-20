@@ -109,7 +109,7 @@ A job-level `permissions` block replaces the top-level one, so every job lists a
 1. GitHub, Settings > Environments: create `npm-release`. Add yourself as a required reviewer. Under deployment branches and tags, allow only tags that match `v*`.
 2. npmjs.com, for each of `@anchor-presence/core`, `@anchor-presence/dom` and `@anchor-presence/react`: Settings > Trusted publishing > GitHub Actions. Organization or user `DammersCode`, repository `anchor-presence`, workflow filename `release.yml`, environment `npm-release`.
 3. After the first release through trusted publishing: set each package's publishing access to "Require two-factor authentication and disallow tokens", and delete any `NPM_TOKEN` secret from the repo.
-4. Optional: Settings > Actions > General: allow only actions pinned to a full commit SHA.
+4. Optional: Settings > Actions > General: allow only actions pinned to a full commit SHA. First pin every action in `pr.yml`, `main.yml` and the setup action to a full SHA, or those workflows fail.
 
 ## Open checks
 

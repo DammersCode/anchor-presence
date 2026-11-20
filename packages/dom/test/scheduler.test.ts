@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createGeometryScheduler } from "../src/scheduler";
+import { CURSOR_MARKER_ATTRIBUTE, createGeometryScheduler } from "../src/scheduler";
 import type {
   ClearTimeoutLike,
   ComputeResult,
@@ -297,6 +297,36 @@ describe("createGeometryScheduler (spec §11)", () => {
     scheduler.dispose();
   });
 
+  it("ignores transitions of non-geometry properties and of cursor elements", () => {
+    vi.useFakeTimers();
+    const { raf, caf } = makeRafStub();
+    active = true;
+    const scheduler = createGeometryScheduler(baseOptions({ raf, caf }));
+    scheduler.invalidate();
+    const cursor = document.createElement("div");
+    cursor.setAttribute(CURSOR_MARKER_ATTRIBUTE, "");
+    const inner = document.createElement("span");
+    cursor.append(inner);
+    const plain = document.createElement("div");
+    document.body.append(cursor, plain);
+    const start = (target: Element, propertyName: string) => {
+      const event = new Event("transitionrun", { bubbles: true });
+      Object.defineProperty(event, "propertyName", { value: propertyName });
+      target.dispatchEvent(event);
+    };
+    const timersBefore = vi.getTimerCount();
+
+    start(plain, "opacity");
+    start(plain, "box-shadow");
+    start(inner, "width");
+    expect(vi.getTimerCount()).toBe(timersBefore);
+
+    start(plain, "width");
+    expect(vi.getTimerCount()).toBe(timersBefore + 1);
+    scheduler.dispose();
+    vi.useRealTimers();
+  });
+
   it("transition entry closes on transitioncancel", () => {
     vi.useFakeTimers();
     const { raf, caf } = makeRafStub();
@@ -310,13 +340,13 @@ describe("createGeometryScheduler (spec §11)", () => {
     const startEvent = new Event("transitionrun", { bubbles: true }) as TransitionEvent & {
       propertyName: string;
     };
-    Object.defineProperty(startEvent, "propertyName", { value: "opacity" });
+    Object.defineProperty(startEvent, "propertyName", { value: "width" });
     el.dispatchEvent(startEvent);
 
     const cancelEvent = new Event("transitioncancel", { bubbles: true }) as TransitionEvent & {
       propertyName: string;
     };
-    Object.defineProperty(cancelEvent, "propertyName", { value: "opacity" });
+    Object.defineProperty(cancelEvent, "propertyName", { value: "width" });
     el.dispatchEvent(cancelEvent);
 
     // closed entry leaves no pending safety timer behind
@@ -349,14 +379,14 @@ describe("createGeometryScheduler (spec §11)", () => {
       const startA = new Event("transitionrun", { bubbles: true }) as TransitionEvent & {
         propertyName: string;
       };
-      Object.defineProperty(startA, "propertyName", { value: "opacity" });
+      Object.defineProperty(startA, "propertyName", { value: "width" });
       elA.dispatchEvent(startA);
       flush();
 
       const startB = new Event("transitionrun", { bubbles: true }) as TransitionEvent & {
         propertyName: string;
       };
-      Object.defineProperty(startB, "propertyName", { value: "opacity" });
+      Object.defineProperty(startB, "propertyName", { value: "width" });
       elB.dispatchEvent(startB);
       flush();
 
@@ -364,7 +394,7 @@ describe("createGeometryScheduler (spec §11)", () => {
       const endA = new Event("transitionend", { bubbles: true }) as TransitionEvent & {
         propertyName: string;
       };
-      Object.defineProperty(endA, "propertyName", { value: "opacity" });
+      Object.defineProperty(endA, "propertyName", { value: "width" });
       elA.dispatchEvent(endA);
       flush();
 
@@ -376,7 +406,7 @@ describe("createGeometryScheduler (spec §11)", () => {
       const endB = new Event("transitionend", { bubbles: true }) as TransitionEvent & {
         propertyName: string;
       };
-      Object.defineProperty(endB, "propertyName", { value: "opacity" });
+      Object.defineProperty(endB, "propertyName", { value: "width" });
       elB.dispatchEvent(endB);
       flush();
 
@@ -413,7 +443,7 @@ describe("createGeometryScheduler (spec §11)", () => {
       const startEvent = new Event("transitionrun", { bubbles: true }) as TransitionEvent & {
         propertyName: string;
       };
-      Object.defineProperty(startEvent, "propertyName", { value: "opacity" });
+      Object.defineProperty(startEvent, "propertyName", { value: "width" });
       el.dispatchEvent(startEvent);
       flush(); // consume the frame scheduled by the transitionrun invalidation itself
 
@@ -460,7 +490,7 @@ describe("createGeometryScheduler (spec §11)", () => {
     const startEvent = new Event("transitionrun", { bubbles: true }) as TransitionEvent & {
       propertyName: string;
     };
-    Object.defineProperty(startEvent, "propertyName", { value: "opacity" });
+    Object.defineProperty(startEvent, "propertyName", { value: "width" });
     el.dispatchEvent(startEvent);
     flush(); // consume the frame scheduled by the transitionrun invalidation itself
     compute.mockClear();
@@ -601,7 +631,7 @@ describe("createGeometryScheduler (spec §11)", () => {
       const startEvent = new Event("transitionrun", { bubbles: true }) as TransitionEvent & {
         propertyName: string;
       };
-      Object.defineProperty(startEvent, "propertyName", { value: "opacity" });
+      Object.defineProperty(startEvent, "propertyName", { value: "width" });
       el.dispatchEvent(startEvent);
       flush();
 

@@ -1,12 +1,12 @@
 ---
 title: Transports
-description: The LiveCursorTransport contract, connect and disconnect ownership, connection status, and close reasons.
+description: The PresenceTransport contract, connect and disconnect ownership, connection status, and close reasons.
 icon: cable
 ---
 
-import { AppWindow, MemoryStick, Plug, RadioTower, Server } from "lucide-react";
+import { AppWindow, FileCheck, MemoryStick, Plug, RadioTower, Server } from "lucide-react";
 
-A transport is the byte channel between a presence client and the network. `@anchor-presence/core` imports no transport library. You give the client an object that implements `LiveCursorTransport`. Read this page before you write a transport. It also explains the connection status and the close reasons.
+A transport is the byte channel between a presence client and the network. `@anchor-presence/core` imports no transport library. You give the client an object that implements `PresenceTransport`. Read this page before you write a transport. It also explains the connection status and the close reasons.
 
 ## Use a transport
 
@@ -21,27 +21,23 @@ const client = createPresenceClient({ transport: myTransport });
 These transports ship in the packages:
 
 <Cards>
-  <Card icon={<RadioTower />} title="createWebSocketTransport" href="/docs/dom/websocket-transport">
+  <Card icon={<RadioTower />} title="WebSocket transport" href="/docs/dom/websocket-transport">
     `@anchor-presence/dom`. Connects clients through a WebSocket relay.
   </Card>
-  <Card
-    icon={<AppWindow />}
-    title="createBroadcastChannelTransport"
-    href="/docs/dom/broadcast-channel-transport"
-  >
+  <Card icon={<AppWindow />} title="BroadcastChannel transport" href="/docs/dom/broadcast-channel-transport">
     `@anchor-presence/dom`. Connects tabs and iframes of one origin, with no server.
   </Card>
-  <Card icon={<MemoryStick />} title="createInMemoryPair" href="/docs/core/in-memory-transport">
+  <Card icon={<MemoryStick />} title="In-memory transport" href="/docs/core/in-memory-transport">
     `@anchor-presence/core`. Connects two transports in one process, for tests.
   </Card>
 </Cards>
 
-## The LiveCursorTransport interface
+## The PresenceTransport interface
 
-`@anchor-presence/core` exports `LiveCursorTransport`, `ConnectionStatus`, and `TransportClose` with these shapes:
+`@anchor-presence/core` exports `PresenceTransport`, `ConnectionStatus`, and `TransportClose` with these shapes:
 
 ```ts
-interface LiveCursorTransport {
+interface PresenceTransport {
   connect?(): Promise<void> | void;
   disconnect?(): Promise<void> | void;
   send(data: Uint8Array): Promise<void> | void;
@@ -59,7 +55,7 @@ type TransportClose = { code?: number; reason?: string; willReconnect: boolean }
 
 Only `send` and `subscribe` are required:
 
-- `send` receives encoded bytes. The client calls `codec.encode()` before it calls `send`. The client catches each throw and each rejection from `send`, because presence is lossy by design. A lost message does not stop the client.
+- `send` receives encoded bytes. The client calls `codec.encode()` before it calls `send`. The client catches each throw and each rejection from `send`, because presence can lose a message and stay correct. A lost message does not stop the client.
 - `subscribe` delivers encoded bytes from the wire. The client then calls `codec.decode()` and `validatePresence()` on them.
 
 ## Connect and disconnect ownership
@@ -77,7 +73,7 @@ Only `send` and `subscribe` are required:
 
 Replay the current status to every new subscriber inside `subscribeStatus`. Without a replay, a client that subscribes after the connection opened never learns that it can send.
 
-When the status changes to `connected` from `reconnecting` or `disconnected`, the client publishes its full state again. It also expires each peer that no message confirms. A peer is another client in the same room. See [After a reconnect](/docs/core/remote-presence#after-a-reconnect).
+Every change of the status to `connected` makes the client publish its full state again. Only a change from `reconnecting` or `disconnected` also expires each peer that no message confirms. See [After a reconnect](/docs/core/remote-presence#after-a-reconnect).
 
 `bufferedBytes` is optional. It reports the number of bytes in the send queue of the transport. The client uses it only for the `adaptivePublish` option. See [Publish rate](/docs/core/presence-client#publish-rate).
 
@@ -102,5 +98,8 @@ When the status changes to `connected` from `reconnecting` or `disconnected`, th
   </Card>
   <Card icon={<Server />} title="Backends" href="/docs/examples/backends">
     Relays and transports for other servers.
+  </Card>
+  <Card icon={<FileCheck />} title="Relay contract" href="/docs/examples/backends/relay-contract">
+    The rules that every relay obeys.
   </Card>
 </Cards>

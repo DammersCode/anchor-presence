@@ -1,6 +1,6 @@
 // Remote anchor resolution — spec §10 — and interpolation integration — spec §13
 
-import type { CursorPresence, InterpolatorFactory } from "@anchor-presence/core";
+import type { PresenceMessage, InterpolatorFactory, PointerType } from "@anchor-presence/core";
 import { linearInterpolator } from "@anchor-presence/core";
 import type { AnchorRegistry } from "./registry.js";
 import { parentAcrossShadow } from "./dom-tree.js";
@@ -37,8 +37,10 @@ export type ResolvedCursor<TContext = unknown, TUser = unknown> = {
   context?: TContext;
   /** The remote user value, when the sender sent one. */
   user?: TUser;
-  /** `true` when the client sent no update for a while. */
+  /** `true` when the remote cursor has not changed for a while. */
   idle: boolean;
+  /** The pointer type that moved the remote cursor. `undefined` when the sender sent no pointer type. */
+  pointerType?: PointerType;
 };
 
 /**
@@ -46,7 +48,7 @@ export type ResolvedCursor<TContext = unknown, TUser = unknown> = {
  * The resolver runs this policy for each cursor it resolves.
  */
 export type VisibilityPolicy<TContext = unknown, TUser = unknown> = (input: {
-  presence: CursorPresence<TContext, TUser>;
+  presence: PresenceMessage<TContext, TUser>;
   resolution: { tier: ResolutionTier; anchorId: string | null; pointVisible: boolean };
 }) => "show" | "hide";
 
@@ -60,7 +62,7 @@ function isMeasurable(rect: Rect): boolean {
 
 /** Finds the first connected, measurable anchor in the chain (most specific first). */
 function findResolvableAnchor(
-  presence: CursorPresence,
+  presence: PresenceMessage,
   registry: AnchorRegistry,
   getRect: (element: Element) => Rect | undefined,
 ): { id: string; element: Element; rect: Rect } | null {
@@ -91,7 +93,7 @@ type VisibleRectEntry = { rect: Rect | null; clippingAncestors: Element[] };
 
 // Fills `out` without allocating; `outAnchors` is refilled in place (spec §10, steps 1-5)
 function resolveGeometryInto(
-  presence: CursorPresence,
+  presence: PresenceMessage,
   registry: AnchorRegistry,
   readState: SchedulerReadState,
   visibleRectMemo: Map<Element, VisibleRectEntry>,
@@ -163,7 +165,7 @@ function resolveGeometryInto(
 
 /** Pure geometry resolution (spec §10, steps 1-5) — no interpolation, no visibility policy. */
 export function resolveGeometry(
-  presence: CursorPresence,
+  presence: PresenceMessage,
   registry: AnchorRegistry,
   readState: SchedulerReadState,
   visibleRectMemo?: Map<Element, VisibleRectEntry>,
@@ -225,13 +227,12 @@ export class RemoteResolver<TContext = unknown, TUser = unknown> {
     element: null,
     activeAnchors: this.rawAnchorScratch,
   };
-  private readonly policyInput: {
-    presence: CursorPresence<TContext, TUser>;
-    resolution: { tier: ResolutionTier; anchorId: string | null; pointVisible: boolean };
-  } = {
-    presence: undefined as unknown as CursorPresence<TContext, TUser>,
-    resolution: { tier: "hidden", anchorId: null, pointVisible: false },
-  };
+  private readonly policyInputCell: {
+    input?: {
+      presence: PresenceMessage<TContext, TUser>;
+      resolution: { tier: ResolutionTier; anchorId: string | null; pointVisible: boolean };
+    };
+  } = {};
 
   constructor(options: ResolverOptions<TContext, TUser>) {
     this.registry = options.registry;
@@ -251,7 +252,7 @@ export class RemoteResolver<TContext = unknown, TUser = unknown> {
   }
 
   resolveAll(
-    presences: readonly CursorPresence<TContext, TUser>[],
+    presences: readonly PresenceMessage<TContext, TUser>[],
     readState: SchedulerReadState,
     timestampMs: number,
     isIdle: (clientId: string) => boolean = () => false,
@@ -278,11 +279,15 @@ export class RemoteResolver<TContext = unknown, TUser = unknown> {
       resolveGeometryInto(presence, this.registry, readState, visibleRectMemo, raw, rawAnchors);
       for (const element of rawAnchors) activeAnchors.add(element);
       const pointVisible = this.isPointVisible(raw, readState.viewportSize);
-      this.policyInput.presence = presence;
-      this.policyInput.resolution.tier = raw.tier;
-      this.policyInput.resolution.anchorId = raw.anchorId;
-      this.policyInput.resolution.pointVisible = pointVisible;
-      const visibility = this.visibilityPolicy(this.policyInput);
+      const policyInput = (this.policyInputCell.input ??= {
+        presence,
+        resolution: { tier: raw.tier, anchorId: raw.anchorId, pointVisible },
+      });
+      policyInput.presence = presence;
+      policyInput.resolution.tier = raw.tier;
+      policyInput.resolution.anchorId = raw.anchorId;
+      policyInput.resolution.pointVisible = pointVisible;
+      const visibility = this.visibilityPolicy(policyInput);
 
       let state = this.states.get(presence.clientId);
       const hidden = raw.tier === "hidden";
@@ -333,7 +338,8 @@ export class RemoteResolver<TContext = unknown, TUser = unknown> {
         prev.tier === raw.tier &&
         prev.context === presence.context &&
         prev.user === presence.user &&
-        prev.idle === idle
+        prev.idle === idle &&
+        prev.pointerType === presence.pointer?.type
       ) {
         result = prev;
       } else {
@@ -349,6 +355,7 @@ export class RemoteResolver<TContext = unknown, TUser = unknown> {
         };
         if (presence.context !== null && presence.context !== undefined) result.context = presence.context;
         if (presence.user !== null && presence.user !== undefined) result.user = presence.user;
+        if (presence.pointer?.type !== undefined) result.pointerType = presence.pointer.type;
         this.lastResults.set(presence.clientId, result);
       }
       if (listUnchanged && previous !== result) listUnchanged = false;

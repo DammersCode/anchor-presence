@@ -2,7 +2,7 @@
 
 Status: open (planning only, not scheduled)
 
-This plan describes three managed pub/sub services as transport carriers for Anchor Presence: Supabase Realtime Broadcast, Ably, and Pusher. None of them need a server we run. Each one is a `LiveCursorTransport` implementation that sends bytes through the vendor's SDK instead of a raw WebSocket.
+This plan describes three managed pub/sub services as transport carriers for Anchor Presence: Supabase Realtime Broadcast, Ably, and Pusher. None of them need a server we run. Each one is a `PresenceTransport` implementation that sends bytes through the vendor's SDK instead of a raw WebSocket.
 
 ## Goal
 
@@ -22,9 +22,9 @@ Each transport is a thin adapter: `send` publishes one message on the room's cha
 
 ```ts
 // Sketch, not the final signature
-function createSupabaseTransport(channel: RealtimeChannel): LiveCursorTransport;
-function createAblyTransport(channel: Ably.RealtimeChannel): LiveCursorTransport;
-function createPusherTransport(channel: Pusher.Channel, socket: Pusher): LiveCursorTransport;
+function createSupabaseTransport(channel: RealtimeChannel): PresenceTransport;
+function createAblyTransport(channel: Ably.RealtimeChannel): PresenceTransport;
+function createPusherTransport(channel: Pusher.Channel, socket: Pusher): PresenceTransport;
 ```
 
 These adapters live in `examples/`, not in a package, the same way the Socket.IO adapter does — the package boundary rule in `AGENTS.md` keeps third-party client libraries out of `@anchor-presence/dom`.

@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { DEFAULT_IDLE_AFTER_MS, RemotePresenceStore } from "../src/store";
-import type { CursorPresence } from "../src/protocol";
+import type { PresenceMessage } from "../src/protocol";
 
-function presence(overrides: Partial<CursorPresence> = {}): CursorPresence {
+function presence(overrides: Partial<PresenceMessage> = {}): PresenceMessage {
   return {
     version: 1,
     clientId: "client-1",
@@ -94,14 +94,14 @@ describe("RemotePresenceStore cap", () => {
   });
 
   it("reports dropped new clients without reporting updates to existing clients", () => {
-    const onDropNewClient = vi.fn();
-    const store = new RemotePresenceStore({ maxRemoteClients: 1, onDropNewClient });
+    const onRemoteClientRejected = vi.fn();
+    const store = new RemotePresenceStore({ maxRemoteClients: 1, onRemoteClientRejected });
     store.ingest(presence({ clientId: "a" }));
     store.ingest(presence({ clientId: "a", sequence: 1 }));
-    expect(onDropNewClient).not.toHaveBeenCalled();
+    expect(onRemoteClientRejected).not.toHaveBeenCalled();
 
     expect(store.ingest(presence({ clientId: "b" }))).toBe(false);
-    expect(onDropNewClient).toHaveBeenCalledTimes(1);
+    expect(onRemoteClientRejected).toHaveBeenCalledTimes(1);
   });
 });
 

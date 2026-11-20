@@ -8,7 +8,7 @@ import { createBroadcastChannelTransport } from "@anchor-presence/dom";
 import { ResolutionInsight } from "./resolution-insight";
 import { SCENE_COMPONENTS } from "./scene-components";
 import { READER, SCENES, type Layout, type SceneName } from "./scenes";
-import type { TourUser } from "./tour";
+import { parseTourContext, parseTourUser, type TourContext, type TourUser } from "./tour";
 import { useTourControl } from "./use-tour-control";
 
 const NO_TRACKS = [] as const;
@@ -21,15 +21,17 @@ function usePreviewClient(
   channel: string,
   clientOptions:
     Pick<PresenceClientOptions, "heartbeatIntervalMs" | "idleAfterMs" | "staleTimeoutMs"> | undefined,
-): PresenceClient<unknown, TourUser> | null {
-  const [client, setClient] = useState<PresenceClient<unknown, TourUser> | null>(null);
+): PresenceClient<TourContext, TourUser> | null {
+  const [client, setClient] = useState<PresenceClient<TourContext, TourUser> | null>(null);
 
   useEffect(() => {
     const transport = createBroadcastChannelTransport(channel);
     transport.connect();
-    const created = createPresenceClient<unknown, TourUser>({
+    const created = createPresenceClient({
       transport,
       user: READER,
+      parseUser: parseTourUser,
+      parseContext: parseTourContext,
       ...clientOptions,
     });
     setClient(created);

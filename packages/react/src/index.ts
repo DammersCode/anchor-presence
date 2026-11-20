@@ -1,20 +1,20 @@
 "use client";
 
-export { LiveCursorProvider } from "./provider.js";
-export type { LiveCursorProviderProps } from "./provider.js";
+export { PresenceProvider } from "./provider.js";
+export type { PresenceProviderConfig, PresenceProviderProps } from "./provider.js";
 
-export { LiveCursorContext } from "./context.js";
-export type { LiveCursorContextValue } from "./context.js";
+export { PresenceProviderContext } from "./context.js";
+export type { PresenceProviderValue } from "./context.js";
 
-export { useCursorBinding } from "./hooks/use-cursor-binding.js";
-export { useCursorClient } from "./hooks/use-cursor-client.js";
+export { useDomBinding } from "./hooks/use-dom-binding.js";
+export { usePresenceClient } from "./hooks/use-presence-client.js";
 export { useLocalContext } from "./hooks/use-local-context.js";
-export { useCursorEvents } from "./hooks/use-cursor-events.js";
+export { useRemoteEvents } from "./hooks/use-remote-events.js";
 export { useSendEvent } from "./hooks/use-send-event.js";
 export { useLocalUser } from "./hooks/use-local-user.js";
 export { usePeerChanges } from "./hooks/use-peer-changes.js";
 export { useRemotePresence } from "./hooks/use-remote-presence.js";
-export { useCursorStatus } from "./hooks/use-cursor-status.js";
+export { usePresenceStatus } from "./hooks/use-presence-status.js";
 export { useRemoteCursors, useRemoteCursorsSelector } from "./hooks/use-remote-cursors.js";
 export { useRemoteUsers } from "./hooks/use-remote-users.js";
 export { createPresenceHooks } from "./typed-hooks.js";
@@ -29,7 +29,7 @@ export type {
   AnchorPoint,
   ConnectionStatus,
   CursorPosition,
-  CursorPresence,
+  PresenceMessage,
   Interpolator,
   InterpolatorFactory,
   EventChannel,
@@ -38,6 +38,7 @@ export type {
   PresenceClient,
   PresenceEvent,
   RemoteEvent,
+  PointerType,
   RemotePresence,
   TypedRemoteEvent,
 } from "@anchor-presence/core";

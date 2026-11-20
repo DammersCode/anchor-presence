@@ -1,8 +1,12 @@
 "use client";
 
-import { useCursorClient, useRemoteCursors, type ResolvedCursor } from "@anchor-presence/react";
+import type { ResolvedCursor } from "@anchor-presence/react";
+import { usePresenceClient, useRemoteCursors } from "./hooks";
 import { useLayoutEffect, useMemo, useRef } from "react";
 import type { TourUser } from "./tour";
+
+const safeColor = (color: string | undefined, fallback: string) =>
+  color !== undefined && /^#[0-9a-f]{6}$/iu.test(color) ? color : fallback;
 
 type Cursor = ResolvedCursor<unknown, TourUser>;
 
@@ -99,7 +103,7 @@ function ResolvedOutline({ cursor, dashed }: { cursor: Cursor | null; dashed: bo
     };
   });
 
-  const color = cursor?.user?.color ?? "#4f46e5";
+  const color = safeColor(cursor?.user?.color, "#4f46e5");
   return (
     <div
       ref={boxRef}
@@ -115,8 +119,8 @@ function ResolvedOutline({ cursor, dashed }: { cursor: Cursor | null; dashed: bo
 
 /** Outlines the element the focused remote cursor resolved to, and shows tier and anchor in a status bar. */
 export function ResolutionInsight() {
-  const cursors = useRemoteCursors<unknown, TourUser>();
-  const client = useCursorClient<unknown, TourUser>();
+  const cursors = useRemoteCursors();
+  const client = usePresenceClient();
   const trackerRef = useRef<Tracker>({ tick: 0, seen: new Map() });
   // The insight mirrors what the pane renders; a policy-hidden cursor must not outline its element.
   const shown = useMemo(() => cursors.filter((cursor) => cursor.visible), [cursors]);
@@ -146,7 +150,10 @@ export function ResolutionInsight() {
             <span className="flex flex-none items-center gap-1.5 font-medium">
               <span
                 className="size-2 rounded-full"
-                style={{ backgroundColor: focus.user?.color ?? "#6b7280", opacity: focus.idle ? 0.4 : 1 }}
+                style={{
+                  backgroundColor: safeColor(focus.user?.color, "#6b7280"),
+                  opacity: focus.idle ? 0.4 : 1,
+                }}
               />
               {focus.user?.name ?? "Guest"}
             </span>

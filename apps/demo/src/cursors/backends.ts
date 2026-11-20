@@ -1,6 +1,6 @@
 // Picks which relay backend the demo talks to, at runtime, via ?backend= or VITE_BACKEND.
 // Every backend but socketio/signalr is a plain WebSocket relay: same transport, different port.
-import { binaryCodec, jsonCodec, type CursorCodec, type LiveCursorTransport } from "@anchor-presence/core";
+import { binaryCodec, jsonCodec, type PresenceCodec, type PresenceTransport } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
 import { io } from "socket.io-client";
 import { createSocketIoTransport } from "../../../../examples/socketio/transport";
@@ -24,19 +24,16 @@ const BACKEND_IDS: readonly BackendId[] = [
 ];
 
 function isBackendId(value: string | null): value is BackendId {
-  return value !== null && (BACKEND_IDS as readonly string[]).includes(value);
+  return value !== null && BACKEND_IDS.some((id) => id === value);
 }
-
-// Read structurally instead of via the ambient `ImportMetaEnv` type, so this file typechecks
-// under tsconfig.test.json too, which does not load Vite's client types. `unknown` values also
-// cover the package's minimal ImportMeta.env declaration (a boolean DEV flag).
-type ViteEnvMeta = { env?: Record<string, unknown> };
 
 /** Reads the backend choice from `?backend=`, then `VITE_BACKEND`, falling back to apps/server. */
 export function resolveBackendId(search: string): BackendId {
   const fromQuery = new URLSearchParams(search).get("backend");
   if (isBackendId(fromQuery)) return fromQuery;
-  const fromEnv = (import.meta as ViteEnvMeta).env?.VITE_BACKEND;
+  const env: unknown = import.meta.env;
+  const fromEnv =
+    typeof env === "object" && env !== null && "VITE_BACKEND" in env ? env.VITE_BACKEND : undefined;
   if (typeof fromEnv === "string" && isBackendId(fromEnv)) return fromEnv;
   return DEFAULT_BACKEND;
 }
@@ -54,7 +51,7 @@ const NATIVE_WS_PORTS: Record<"bun" | "bun-native" | "node-ws" | "hono" | "elysi
 export function createBackendTransport(
   backend: BackendId,
   room: string,
-): { transport: LiveCursorTransport; codec: CursorCodec } {
+): { transport: PresenceTransport; codec: PresenceCodec } {
   if (backend === "socketio") {
     const socket = io("http://localhost:5001", { query: { room }, transports: ["websocket"] });
     return { transport: createSocketIoTransport(socket), codec: jsonCodec };

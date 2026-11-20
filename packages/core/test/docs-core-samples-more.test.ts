@@ -3,23 +3,24 @@ import { join } from "node:path";
 import { describe, expect, expectTypeOf, it, vi } from "vitest";
 import {
   createInMemoryPair,
+  createInMemoryRoom,
   createPresenceClient,
   binaryCodec,
   jsonCodec,
   linearInterpolator,
   type ConnectionStatus,
-  type CursorCodec as ExportedCursorCodec,
-  type CursorPresence,
+  type PresenceCodec as ExportedPresenceCodec,
+  type PresenceMessage,
   type Interpolator as ExportedInterpolator,
   type InterpolatorFactory as ExportedInterpolatorFactory,
-  type LiveCursorTransport,
+  type PresenceTransport,
   type PresenceClient,
   type RemotePresence,
 } from "@anchor-presence/core";
 
 // Verbatim copies of doc samples; the last test checks each copy against its .mdx source.
 
-function createBroadcastChannelTransport(channelName: string): LiveCursorTransport {
+function createBroadcastChannelTransport(channelName: string): PresenceTransport {
   const listeners = new Set<(data: Uint8Array) => void>();
   const statusListeners = new Set<(status: ConnectionStatus) => void>();
   let channel: BroadcastChannel | null = null;
@@ -74,7 +75,7 @@ interface Framework {
 }
 
 function createPresenceSignals(framework: Framework, client: PresenceClient) {
-  const [presence, setPresence] = framework.createSignal<RemotePresence[]>([]);
+  const [presence, setPresence] = framework.createSignal<readonly RemotePresence[]>([]);
   const [status, setStatus] = framework.createSignal<ConnectionStatus>("disconnected");
   if (framework.isServer) return { presence, status };
 
@@ -99,8 +100,8 @@ interface Interpolator {
 
 type InterpolatorFactory = () => Interpolator;
 
-interface CursorCodec {
-  encode(message: CursorPresence): Uint8Array;
+interface PresenceCodec {
+  encode(message: PresenceMessage): Uint8Array;
   decode(data: Uint8Array): unknown;
 }
 
@@ -122,7 +123,7 @@ function docSample(page: string, marker: string): string {
   return block;
 }
 
-const samplePresence: CursorPresence = {
+const samplePresence: PresenceMessage = {
   version: 1,
   clientId: "a",
   session: "s",
@@ -161,10 +162,10 @@ describe("interpolation.mdx: Interpolator listing", () => {
   });
 });
 
-describe("codecs.mdx: CursorCodec listing", () => {
+describe("codecs.mdx: PresenceCodec listing", () => {
   it("equals the exported type, and both codecs round-trip through it", () => {
-    expectTypeOf<CursorCodec>().toEqualTypeOf<ExportedCursorCodec>();
-    const codecs: CursorCodec[] = [jsonCodec, binaryCodec];
+    expectTypeOf<PresenceCodec>().toEqualTypeOf<ExportedPresenceCodec>();
+    const codecs: PresenceCodec[] = [jsonCodec, binaryCodec];
     for (const codec of codecs)
       expect(codec.decode(codec.encode(samplePresence))).toMatchObject(samplePresence);
   });
@@ -172,7 +173,7 @@ describe("codecs.mdx: CursorCodec listing", () => {
 
 describe("codecs.mdx and performance.mdx: wire sizes", () => {
   it("a 4-anchor message with a small user is 292 JSON bytes and 144 binary bytes", () => {
-    const message: CursorPresence = {
+    const message: PresenceMessage = {
       version: 1,
       clientId: "bench-client",
       session: "bench-client-s",
@@ -206,6 +207,19 @@ describe("build-a-framework-adapter.mdx: signal bridge", () => {
     };
     return { framework, cleanup: () => cleanups.forEach((fn) => fn()) };
   }
+
+  it("joins three clients to one in-memory room", () => {
+    vi.useFakeTimers();
+    const room = createInMemoryRoom();
+    const alice = createPresenceClient({ transport: room.join(), user: { name: "Alice" } });
+    const bob = createPresenceClient({ transport: room.join(), user: { name: "Bob" } });
+    const carol = createPresenceClient({ transport: room.join(), user: { name: "Carol" } });
+    alice.setLocalCursor({ anchors: [{ id: "doc", u: 0.5, v: 0.5 }] });
+    vi.advanceTimersByTime(100);
+    expect([bob, carol].map((client) => client.getRemotePresence().length)).toEqual([2, 2]);
+    for (const client of [alice, bob, carol]) client.dispose();
+    vi.useRealTimers();
+  });
 
   it("follows the client until cleanup", () => {
     vi.useFakeTimers();
@@ -247,9 +261,29 @@ describe("doc sample sources", () => {
     const samples = [
       docSample("core/custom-transport.mdx", "function createBroadcastChannelTransport"),
       docSample("core/interpolation.mdx", "interface Interpolator"),
-      docSample("core/codecs.mdx", "interface CursorCodec"),
+      docSample("core/codecs.mdx", "interface PresenceCodec"),
       docSample("core/build-a-framework-adapter.mdx", "function createPresenceSignals"),
     ];
     for (const sample of samples) expect(source).toContain(sample);
+  });
+});
+
+describe("performance.mdx: measure a message", () => {
+  it("documents the byteLength line that the codec supports", () => {
+    const page = readFileSync(
+      join(process.cwd(), "apps/docs/content/docs/get-started/guides/performance.mdx"),
+      "utf8",
+    );
+    expect(page).toContain("const bytes = codec.encode(message).byteLength;");
+    const codec: PresenceCodec = jsonCodec;
+    const message: PresenceMessage = {
+      version: 1,
+      clientId: "c",
+      session: "s",
+      sequence: 1,
+      cursor: { anchors: [], viewport: { u: 0, v: 0 } },
+    };
+    const bytes = codec.encode(message).byteLength;
+    expect(bytes).toBeGreaterThan(0);
   });
 });

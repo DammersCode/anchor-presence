@@ -4,11 +4,13 @@ description: Which hook rerenders when, so you can pick the smallest one for eac
 icon: gauge
 ---
 
-import { Activity, Crosshair, Users } from "lucide-react";
+import { Crosshair, Users, Gauge } from "lucide-react";
 
-Each hook in `@anchor-presence/react` rerenders its component only when the value that it returns changes. Use this page to pick the hook with the smallest value that a component needs. Then an unrelated update does not rerender the component.
+A hook in `@anchor-presence/react` rerenders its component when the value that it returns changes, or when the provider value changes. `useSendEvent`, `usePresenceClient`, and `useDomBinding` rerender on any change of the provider value. Use this page to pick the hook with the smallest value that a component needs. Then an unrelated update does not rerender the component.
 
 ## Usage
+
+If your app has a [typed `presence.ts` module](/docs/react/typed-hooks), import the hooks from it. The package export reads only the provider of `@anchor-presence/react`.
 
 This badge shows the resolution tier of one peer. It rerenders only when that tier changes, not on every cursor frame:
 
@@ -18,7 +20,8 @@ import { useRemoteCursorsSelector, type ResolvedCursor } from "@anchor-presence/
 
 function TierBadge({ clientId }: { clientId: string }) {
   const select = useCallback(
-    (cursors: ResolvedCursor[]) => cursors.find((cursor) => cursor.clientId === clientId)?.tier ?? "hidden",
+    (cursors: readonly ResolvedCursor[]) =>
+      cursors.find((cursor) => cursor.clientId === clientId)?.tier ?? "hidden",
     [clientId],
   );
   const tier = useRemoteCursorsSelector(select);
@@ -28,24 +31,22 @@ function TierBadge({ clientId }: { clientId: string }) {
 
 ## Rerender rules
 
-A peer is another client in the same room.
-
 | Hook                                                                          | Rerenders when                                                                                      |
 | ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
 | [useRemoteCursors](/docs/react/remote-cursors)                                | a new snapshot of resolved cursors arrives: every frame while cursors move                          |
 | [useRemoteCursorsSelector](/docs/react/remote-cursors#select-a-smaller-value) | its `select` output changes under `isEqual`                                                         |
 | [useRemoteUsers](/docs/react/remote-users)                                    | a peer joins or leaves, or the `user`, `session`, or `idle` field of a peer changes                 |
 | [useRemotePresence](/docs/react/remote-presence)                              | a peer joins or leaves, or its `cursor`, `context`, `user`, `pointer`, `session`, or `idle` changes |
-| [useSendEvent](/docs/react/cursor-events)                                     | the client or the binding of the provider changes                                                   |
-| [useCursorStatus](/docs/react/connection-status)                              | the connection status changes                                                                       |
+| [useSendEvent](/docs/react/remote-events)                                     | the provider value changes (client, binding, or the `clientPending` flag)                           |
+| [usePresenceStatus](/docs/react/connection-status)                            | the connection status changes                                                                       |
 | [useLocalContext](/docs/react/local-context#local-context)                    | the local context value changes                                                                     |
 | [useLocalUser](/docs/react/local-context#local-user)                          | the local user value changes                                                                        |
-| [usePeerChanges](/docs/react/remote-users#peer-changes)                       | never: it calls its listener and returns nothing                                                    |
-| [useCursorEvents](/docs/react/cursor-events)                                  | never: it calls its listener and returns nothing                                                    |
-| [useCursorClient](/docs/react/api/hooks#usecursorclient)                      | the client or the binding of the provider changes                                                   |
-| [useCursorBinding](/docs/react/api/hooks#usecursorbinding)                    | the client or the binding of the provider changes                                                   |
+| [usePeerChanges](/docs/react/remote-users#peer-changes)                       | never by itself: it calls its listener and returns nothing                                          |
+| [useRemoteEvents](/docs/react/remote-events)                                  | never by itself: it calls its listener and returns nothing                                          |
+| [usePresenceClient](/docs/react/api/hooks#usepresenceclient)                  | the provider value changes (client, binding, or the `clientPending` flag)                           |
+| [useDomBinding](/docs/react/api/hooks#usedombinding)                          | the provider value changes (client, binding, or the `clientPending` flag)                           |
 
-In an idle room with no inbound messages, no hook rerenders.
+A peer that turns idle or expires also changes the values that hooks return, so hooks can rerender in a room with no inbound messages. When a factory finishes creating its client, the provider value changes and every hook rerenders. The value changes again when the provider creates its own binding.
 
 ## CursorLayer rerenders
 
@@ -60,7 +61,7 @@ In an idle room with no inbound messages, no hook rerenders.
   <Card icon={<Users />} title="Remote users" href="/docs/react/remote-users">
     A list that ignores cursor moves.
   </Card>
-  <Card icon={<Activity />} title="Performance" href="/docs/get-started/guides/performance">
+  <Card icon={<Gauge />} title="Performance" href="/docs/get-started/guides/performance">
     Costs across the whole stack.
   </Card>
 </Cards>

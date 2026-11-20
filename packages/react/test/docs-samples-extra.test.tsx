@@ -4,17 +4,26 @@ import { createRoot } from "react-dom/client";
 import type { Root } from "react-dom/client";
 import { afterEach, describe, expect, it } from "vitest";
 import { createInMemoryPair, createPresenceClient } from "@anchor-presence/core";
-import type { ResolvedCursor } from "@anchor-presence/dom";
+import { parserFrom } from "@anchor-presence/core/standard-schema";
+import { createDomBinding } from "@anchor-presence/dom";
+import type { DomBinding, ResolvedCursor, VisibilityPolicy } from "@anchor-presence/dom";
+import * as v from "valibot";
 import {
   CursorLayer,
   DefaultCursor,
-  LiveCursorProvider,
+  PresenceProvider,
   useLocalContext,
   useRemotePresence,
   useRemoteCursors,
   useRemoteCursorsSelector,
-  useRemoteUsers,
 } from "../src/index";
+import {
+  CursorLayer as TypedCursorLayer,
+  PresenceProvider as TypedProvider,
+  useRemoteUsers,
+} from "./doc-presence";
+import type { Context, Events, User } from "./doc-presence";
+import { docSample, missingLines, missingSamples } from "./doc-source";
 import { makeFakeBinding, makeFakeClient } from "./test-utils";
 
 function DialogBody() {
@@ -35,22 +44,22 @@ function SettingsDialog({ open }: { open: boolean }) {
 }
 
 function ContextReader() {
-  const [context] = useLocalContext<{ dialog?: string }>();
-  return <output>{String(context?.dialog)}</output>;
+  const [context] = useLocalContext();
+  const dialog =
+    typeof context === "object" && context !== null && "dialog" in context ? context.dialog : undefined;
+  return <output>{String(dialog)}</output>;
 }
 
 // remote-presence.mdx: Usage
-function PointerTypeBadge() {
+function ViewportOnlyBadge() {
   const presence = useRemotePresence();
-  const touchCount = presence.filter((p) => p.pointer?.type === "touch").length;
-  return <span>{touchCount} touch users</span>;
+  const count = presence.filter((p) => p.cursor !== null && p.cursor.anchors.length === 0).length;
+  return <span>{count} viewport-only cursors</span>;
 }
 
 // remote-users.mdx: Usage
-type MyUser = { name: string; color: string };
-
 function PresenceList() {
-  const users = useRemoteUsers<MyUser>();
+  const users = useRemoteUsers();
   return (
     <ul>
       {users.map((entry) => (
@@ -70,7 +79,7 @@ function CursorCount() {
 }
 
 // remote-cursors.mdx: useRemoteCursorsSelector
-function selectClippedClientIds(cursors: ResolvedCursor[]): ReadonlySet<string> {
+function selectClippedClientIds(cursors: readonly ResolvedCursor[]): ReadonlySet<string> {
   const clipped = new Set<string>();
   for (const cursor of cursors) {
     if (cursor.tier === "anchor" && !cursor.pointVisible) clipped.add(cursor.clientId);
@@ -113,20 +122,56 @@ function LargeCursorLayer() {
   );
 }
 
-// cursor-layer.mdx: Label and color
-type LayerUser = { name: string; color?: string };
-
-function LabeledLayer() {
+// custom-cursors.mdx: Style touch and pen cursors
+function TouchRingLayer() {
   return (
-    <CursorLayer<unknown, LayerUser>
-      getLabel={(cursor) => cursor.user?.name ?? "Guest"}
-      getColor={(cursor) => cursor.user?.color ?? "#6b7280"}
+    <CursorLayer
+      renderCursor={({ label, color, pointerType }) =>
+        pointerType === "touch" ? (
+          <span
+            style={{
+              display: "block",
+              width: 24,
+              height: 24,
+              borderRadius: "50%",
+              border: `2px solid ${color}`,
+            }}
+          />
+        ) : (
+          <DefaultCursor label={label} color={color} />
+        )
+      }
     />
   );
 }
 
-function makeCursor<TUser = unknown>(clientId: string, extra: Partial<ResolvedCursor<unknown, TUser>> = {}) {
-  const base: ResolvedCursor<unknown, TUser> = {
+void TouchRingLayer;
+
+// custom-cursors.mdx: Idle cursors
+function ActiveCursorLayer() {
+  return <CursorLayer filterCursor={(cursor) => !cursor.idle} />;
+}
+
+void ActiveCursorLayer;
+
+// cursor-layer.mdx: Label and color
+const safeColor = (color?: string) =>
+  color !== undefined && /^#[0-9a-f]{6}$/iu.test(color) ? color : "#6b7280";
+
+function LabeledLayer() {
+  return (
+    <TypedCursorLayer
+      getLabel={(cursor) => cursor.user?.name ?? "Guest"}
+      getColor={(cursor) => safeColor(cursor.user?.color)}
+    />
+  );
+}
+
+function makeCursor<TUser = unknown, TContext = unknown>(
+  clientId: string,
+  extra: Partial<ResolvedCursor<TContext, TUser>> = {},
+) {
+  const base: ResolvedCursor<TContext, TUser> = {
     clientId,
     x: 10,
     y: 20,
@@ -160,12 +205,12 @@ describe("extra docs samples", () => {
 
   it("local-context.mdx: SettingsDialog sets the context, and a direct setContext reaches the hook", () => {
     const { a } = createInMemoryPair();
-    const client = createPresenceClient<{ dialog?: string }>({ transport: a });
+    const client = createPresenceClient({ transport: a });
     const view = mount(
-      <LiveCursorProvider client={client}>
+      <PresenceProvider client={client}>
         <SettingsDialog open />
         <ContextReader />
-      </LiveCursorProvider>,
+      </PresenceProvider>,
     );
     expect(client.getContext()).toEqual({ dialog: "settings" });
     expect(view.querySelector("[role=dialog]")).not.toBeNull();
@@ -175,28 +220,40 @@ describe("extra docs samples", () => {
     client.dispose();
   });
 
-  it("remote-presence.mdx: PointerTypeBadge counts touch pointers", () => {
+  it("remote-presence.mdx: ViewportOnlyBadge counts cursors with no anchor", () => {
     const { client, pushRemote } = makeFakeClient();
     const view = mount(
-      <LiveCursorProvider client={client}>
-        <PointerTypeBadge />
-      </LiveCursorProvider>,
+      <PresenceProvider client={client}>
+        <ViewportOnlyBadge />
+      </PresenceProvider>,
     );
     act(() =>
       pushRemote([
-        { version: 1, clientId: "a", session: "sa", sequence: 0, cursor: null, pointer: { type: "touch" } },
-        { version: 1, clientId: "b", session: "sb", sequence: 0, cursor: null, pointer: { type: "mouse" } },
+        {
+          version: 1,
+          clientId: "a",
+          session: "sa",
+          sequence: 0,
+          cursor: { anchors: [], viewport: { u: 0.5, v: 0.5 } },
+        },
+        {
+          version: 1,
+          clientId: "b",
+          session: "sb",
+          sequence: 0,
+          cursor: { anchors: [{ id: "x", u: 0, v: 0 }] },
+        },
       ]),
     );
-    expect(view.textContent).toBe("1 touch users");
+    expect(view.textContent).toBe("1 viewport-only cursors");
   });
 
   it("remote-users.mdx: PresenceList shows names and dims idle users", () => {
-    const { client, pushRemote } = makeFakeClient<unknown, MyUser>();
+    const { client, pushRemote } = makeFakeClient<Context, User, Events>();
     const view = mount(
-      <LiveCursorProvider client={client}>
+      <TypedProvider client={client}>
         <PresenceList />
-      </LiveCursorProvider>,
+      </TypedProvider>,
     );
     act(() =>
       pushRemote(
@@ -223,9 +280,9 @@ describe("extra docs samples", () => {
     const { client } = makeFakeClient();
     const { binding, publish } = makeFakeBinding();
     const view = mount(
-      <LiveCursorProvider client={client} binding={binding}>
+      <PresenceProvider client={client} binding={binding}>
         <CursorCount />
-      </LiveCursorProvider>,
+      </PresenceProvider>,
     );
     act(() => publish([makeCursor("a"), makeCursor("b", { visible: false, tier: "hidden" })]));
     expect(view.textContent).toBe("1 cursors visible");
@@ -235,9 +292,9 @@ describe("extra docs samples", () => {
     const { client } = makeFakeClient();
     const { binding, publish } = makeFakeBinding();
     const view = mount(
-      <LiveCursorProvider client={client} binding={binding}>
+      <PresenceProvider client={client} binding={binding}>
         <PresencePill />
-      </LiveCursorProvider>,
+      </PresenceProvider>,
     );
     act(() => publish([makeCursor("a", { pointVisible: false }), makeCursor("b")]));
     expect(view.textContent).toBe("1 out of view");
@@ -252,9 +309,9 @@ describe("extra docs samples", () => {
     const { client } = makeFakeClient();
     const { binding, publish } = makeFakeBinding();
     const view = mount(
-      <LiveCursorProvider client={client} binding={binding}>
+      <PresenceProvider client={client} binding={binding}>
         <GlyphLayer />
-      </LiveCursorProvider>,
+      </PresenceProvider>,
     );
     act(() => publish([makeCursor("a")]));
     expect(
@@ -266,9 +323,9 @@ describe("extra docs samples", () => {
     const { client } = makeFakeClient();
     const { binding, publish } = makeFakeBinding();
     const view = mount(
-      <LiveCursorProvider client={client} binding={binding}>
+      <PresenceProvider client={client} binding={binding}>
         <CursorLayer />
-      </LiveCursorProvider>,
+      </PresenceProvider>,
     );
     act(() => publish([{ ...makeCursor("a"), user: { name: "Ada" } }, makeCursor("b")]));
     expect(view.textContent).toContain("Ada");
@@ -279,9 +336,9 @@ describe("extra docs samples", () => {
     const { client } = makeFakeClient();
     const { binding, publish } = makeFakeBinding();
     const view = mount(
-      <LiveCursorProvider client={client} binding={binding}>
+      <PresenceProvider client={client} binding={binding}>
         <LargeCursorLayer />
-      </LiveCursorProvider>,
+      </PresenceProvider>,
     );
     act(() => publish([makeCursor("a")]));
     const outer = view.querySelector<HTMLElement>("[data-anchor-presence-client-id=a] > span");
@@ -289,23 +346,23 @@ describe("extra docs samples", () => {
   });
 
   it("cursor-layer.mdx: getLabel and getColor read the typed user", () => {
-    const { client } = makeFakeClient<unknown, LayerUser>();
-    const { binding, publish } = makeFakeBinding<unknown, LayerUser>();
+    const { client } = makeFakeClient<Context, User, Events>();
+    const { binding, publish } = makeFakeBinding<Context, User>();
     const view = mount(
-      <LiveCursorProvider client={client} binding={binding}>
+      <TypedProvider client={client} binding={binding}>
         <LabeledLayer />
-      </LiveCursorProvider>,
+      </TypedProvider>,
     );
     act(() =>
       publish([
-        makeCursor<LayerUser>("a", { user: { name: "Ada", color: "rgb(255, 0, 0)" } }),
-        makeCursor<LayerUser>("b"),
+        makeCursor<User, Context>("a", { user: { name: "Ada", color: "#ff0000" } }),
+        makeCursor<User, Context>("b"),
       ]),
     );
     const labels = [...view.querySelectorAll("[data-anchor-presence-client-id] span > span")];
     expect(labels.map((label) => label.textContent)).toEqual(["Ada", "Guest"]);
     expect(labels[0]?.parentElement?.querySelector("path")?.getAttribute("fill")).toBe(
-      "var(--anchor-presence-cursor-color, rgb(255, 0, 0))",
+      "var(--anchor-presence-cursor-color, #ff0000)",
     );
   });
 });
@@ -334,14 +391,86 @@ describe("default cursor appearance", () => {
     const root = createRoot(host);
     act(() =>
       root.render(
-        <LiveCursorProvider client={client} binding={binding}>
+        <PresenceProvider client={client} binding={binding}>
           <CursorLayer />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       ),
     );
     act(() => publish([{ ...makeCursor("a"), user: { name: "x".repeat(500) } }]));
     expect(host.textContent?.length).toBeLessThanOrEqual(32);
     act(() => root.unmount());
     host.remove();
+  });
+});
+
+const myTransport = createInMemoryPair().a;
+const hideStaffCursors: VisibilityPolicy<{ role: string }> = ({ presence }) =>
+  presence.context?.role === "staff" ? "hide" : "show";
+
+describe("dom docs samples", () => {
+  it("visibility-policy.mdx: a client with a context schema accepts the policy", () => {
+    // visibility-policy.mdx: Write a custom policy
+    const client = createPresenceClient({
+      transport: myTransport,
+      parseContext: parserFrom(v.object({ role: v.string() })),
+    });
+    const binding = createDomBinding(client, {
+      resolution: { visibilityPolicy: hideStaffCursors },
+    });
+    expect(binding.getSnapshot()).toEqual([]);
+    binding.dispose();
+    client.dispose();
+  });
+
+  it("binding.mdx: scrollToAnchor scrolls the anchor element", () => {
+    // binding.mdx: getAnchorElement
+    function scrollToAnchor(binding: DomBinding, anchorId: string): void {
+      binding.getAnchorElement(anchorId)?.scrollIntoView({ block: "center" });
+    }
+    const element = document.createElement("div");
+    let options: unknown;
+    element.scrollIntoView = (arg) => {
+      options = arg;
+    };
+    scrollToAnchor({ getAnchorElement: () => element } as unknown as DomBinding, "card");
+    expect(options).toEqual({ block: "center" });
+  });
+});
+
+describe("doc sample sources", () => {
+  it("match the copies in this file", () => {
+    expect(
+      missingSamples("docs-samples-extra.test.tsx", [
+        docSample("react/custom-cursors.mdx", "function TouchRingLayer"),
+        docSample("react/custom-cursors.mdx", "function ActiveCursorLayer"),
+        docSample("react/remote-cursors.mdx", "function CursorCount"),
+        docSample("react/remote-presence.mdx", "function ViewportOnlyBadge"),
+        docSample("dom/binding.mdx", "function scrollToAnchor"),
+        docSample("react/remote-users.mdx", "function PresenceList"),
+        docSample("react/local-context.mdx", "function SettingsDialog"),
+      ]),
+    ).toEqual([]);
+    expect(
+      missingLines(
+        "docs-samples-extra.test.tsx",
+        docSample("react/remote-cursors.mdx", "function selectClippedClientIds"),
+      ),
+    ).toEqual([]);
+    expect(
+      missingLines("docs-samples-extra.test.tsx", docSample("react/custom-cursors.mdx", "<MyCursorGlyph")),
+    ).toEqual([]);
+    expect(
+      missingLines("docs-samples-extra.test.tsx", docSample("react/custom-cursors.mdx", 'size": "28px')),
+    ).toEqual([]);
+    expect(
+      missingLines(
+        "docs-samples-extra.test.tsx",
+        docSample("dom/visibility-policy.mdx", "const binding = createDomBinding"),
+      ),
+    ).toEqual([]);
+    const labelLayer = docSample("react/cursor-layer.mdx", "const safeColor").split("\n\n").at(-1) ?? "";
+    expect(
+      missingLines("docs-samples-extra.test.tsx", labelLayer.replace("<CursorLayer", "<TypedCursorLayer")),
+    ).toEqual([]);
   });
 });

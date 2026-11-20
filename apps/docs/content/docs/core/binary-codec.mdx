@@ -4,7 +4,7 @@ description: The binaryCodec wire layout, coordinate precision, and encode limit
 icon: file-digit
 ---
 
-import { Binary, FileCode, Shield } from "lucide-react";
+import { FileCog, Binary, FileCode, ShieldCheck } from "lucide-react";
 
 `binaryCodec` is a compact codec with a fixed binary layout. It sends about half the bytes of `jsonCodec` for a typical message. If bandwidth matters more than readable traffic, use it. See [Choose a codec](/docs/core/codecs#choose-a-codec).
 
@@ -46,7 +46,7 @@ The `context` and `user` values stay JSON inside the binary frame. Only the curs
 
 ## Encode limits
 
-`binaryCodec.encode` throws when a message breaks a frame limit. It throws an `Error` in these cases:
+`binaryCodec.encode` throws when a message breaks a frame limit. It throws a `TypeError` for a coordinate that is not a finite 32-bit float, for example `1e39`, and an `Error` in these cases:
 
 - `version` is not `1`.
 - `clientId`, `session`, or an anchor `id` is longer than 65535 UTF-8 bytes.
@@ -55,13 +55,10 @@ The `context` and `user` values stay JSON inside the binary frame. Only the curs
 - `cursor.anchors` is not an array.
 - The cursor has more than 255 anchors.
 - `sequence` is not a safe integer from 0 to `DEFAULT_MAX_SEQUENCE`.
-- An anchor coordinate is not a finite 32-bit float. For example, `1e39` throws.
 - `pointer.type` is not `mouse`, `pen`, or `touch`.
-- `JSON.stringify` cannot serialize `context` or `user`.
+- `JSON.stringify` cannot serialize `context` or `user`. A BigInt or a cycle makes it throw its own `TypeError`.
 
-A viewport coordinate that is not a finite 32-bit float throws a `TypeError`.
-
-The protocol limits on the [Validation](/docs/core/validation#validationlimits) page are tighter than these frame limits. For example, the protocol allows 8 anchors and the frame allows 255. A message inside the protocol limits never reaches a frame limit. If an encode error comes from `user` or `context`, the client encodes the message again. It encodes without `context`, then without `user`, then without both, and sends the first message that encodes. In all other cases, the client loses the message and continues.
+The protocol limits on the [Validation](/docs/core/validation#validationlimits) page are tighter than these frame limits. For example, the protocol allows 8 anchors and the frame allows 255. A message inside the protocol limits never reaches a frame limit. If an encode error comes from `user` or `context`, the client encodes the message again without them. See [Development mode](/docs/core/presence-client#development-mode). In all other cases, the client loses the message and continues.
 
 `binaryCodec.decode` never throws. It returns `null` for malformed, truncated, or non-binary input.
 
@@ -71,10 +68,13 @@ The protocol limits on the [Validation](/docs/core/validation#validationlimits) 
   <Card icon={<Binary />} title="Codecs" href="/docs/core/codecs">
     The codec contract and how to choose a codec.
   </Card>
-  <Card icon={<FileCode />} title="Custom codec" href="/docs/core/custom-codec">
+  <Card icon={<FileCog />} title="Custom codec" href="/docs/core/custom-codec">
     Log binary traffic during development.
   </Card>
-  <Card icon={<Shield />} title="Security" href="/docs/get-started/guides/security">
+  <Card icon={<ShieldCheck />} title="Security" href="/docs/get-started/guides/security">
     The limits that every decoded message must meet.
+  </Card>
+  <Card icon={<FileCode />} title="Protocol types" href="/docs/core/api/protocol">
+    The messages that the codec encodes.
   </Card>
 </Cards>

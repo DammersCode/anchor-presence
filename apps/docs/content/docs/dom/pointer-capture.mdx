@@ -4,7 +4,7 @@ description: What the binding sends on pointer and focus activity, and when it c
 icon: pointer
 ---
 
-import { Anchor, BookOpen, Link, Play } from "lucide-react";
+import { Anchor, Link, Waypoints, MousePointer2 } from "lucide-react";
 
 Pointer capture is the part of the binding that turns local pointer events into the local cursor. The binding listens on the document and calls `client.setLocalCursor` on each relevant event. It is on by default. Set `capturePointer: false` for a client that only shows remote cursors.
 
@@ -18,7 +18,7 @@ const binding = createDomBinding(client, { captureFocus: true });
 
 On `pointermove`, `pointerdown`, and `pointerover`, the binding reads the event target, walks its anchor ancestors, and builds a `CursorPosition`. It ignores a touch or pen event whose `isPrimary` is `false`, for example a second finger on a touch screen. The `CursorPosition` has these fields:
 
-- `anchors`: the fallback chain, most specific first, up to `maxAnchors` entries. Each entry carries the anchor ID and the `u`/`v` position inside the rectangle of that anchor. The binding skips an anchor with a zero width or height.
+- `anchors`: the fallback chain, most specific first, up to `maxSentAnchors` entries. Each entry carries the anchor ID and the `u`/`v` position inside the rectangle of that anchor. The binding skips an anchor with a zero width or height.
 - `viewport`: the `u`/`v` position across the full window, when the window has a non-zero size.
 
 The binding rounds each `u` and `v` value to 4 decimal places. It reads each rectangle from the cache of the current frame when one exists, and calls `getBoundingClientRect()` otherwise. The cache is at most one frame old.
@@ -28,8 +28,7 @@ If an element has pointer capture, the event target stays the element where the 
 The binding also sends the pointer type, `mouse`, `pen`, or `touch`, from the `pointerType` of the event.
 
 <Callout type="warn">
-  If the browser reports another pointer type, the binding sends no new type, and peers keep the last pointer
-  type that they received.
+  If the browser reports another pointer type, the binding sends the cursor with no pointer type.
 </Callout>
 
 ## When the cursor clears
@@ -59,6 +58,24 @@ By default, the binding ignores keyboard focus. With `captureFocus: true`, the b
 
 The binding adds its listeners to the document and the window, not to each anchor. `pointerover` and `pointermove` bubble, so one listener on the document covers every element.
 
+## Skip part of the page
+
+Add `data-anchor-private` to an element to keep the pointer over it private. Over that element and everything inside it, the binding sends no cursor. Peers see your cursor disappear, not move to a parent anchor.
+
+```html
+<input type="password" data-anchor-private />
+```
+
+The rule also holds for an element inside a shadow root. With `captureFocus`, focus that moves into the element clears the cursor in the same way. The cursor comes back when the pointer or the focus moves to an element outside it.
+
+To use another attribute name, set `privateAttribute`. The name follows the same rules as `anchorAttribute`:
+
+```ts
+const binding = createDomBinding(client, { privateAttribute: "data-no-cursor" });
+```
+
+Over an element with no anchor and no private mark, the binding sends the nearest anchored parent. Set `capturePointer: false` to stop sending for the whole page.
+
 ## Touch behavior
 
 A touch pointer fires the same `pointermove`, `pointerdown`, and `pointerover` events as a mouse. The binding does not separate a touch scroll from a touch drag, and it has no option to ignore touch pointers.
@@ -78,10 +95,10 @@ CI runs the browser tests of pointer and focus capture in Chromium, with Playwri
   <Card icon={<Link />} title="Binding" href="/docs/dom/binding">
     The `capturePointer` and `captureFocus` options.
   </Card>
-  <Card icon={<BookOpen />} title="Fallback chain" href="/docs/get-started/concepts/fallback-chain">
+  <Card icon={<Waypoints />} title="Fallback chain" href="/docs/get-started/concepts/fallback-chain">
     Why the chain has more than one anchor.
   </Card>
-  <Card icon={<Play />} title="Basics example" href="/docs/examples/basics">
+  <Card icon={<MousePointer2 />} title="Basics" href="/docs/examples/basics">
     A live demo of one cursor in two layouts.
   </Card>
 </Cards>

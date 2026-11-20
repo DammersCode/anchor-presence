@@ -14,7 +14,7 @@ export const CURSOR_PALETTE = [
 export const DEFAULT_CURSOR_COLOR = "#6b7280"; // gray-500 fallback for unrecognized colors
 
 export function isKnownCursorColor(color: unknown): color is (typeof CURSOR_PALETTE)[number] {
-  return typeof color === "string" && (CURSOR_PALETTE as readonly string[]).includes(color);
+  return typeof color === "string" && CURSOR_PALETTE.some((c) => c === color);
 }
 
 function hashString(value: string): number {

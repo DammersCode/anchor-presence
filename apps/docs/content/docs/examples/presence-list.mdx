@@ -4,11 +4,18 @@ description: A "who is online" bar from useRemoteUsers, with users who join, go 
 icon: users
 ---
 
-import { Atom, Brush, Cpu, ShieldCheck } from "lucide-react";
+import { Brush, ShieldCheck, Users, Paintbrush } from "lucide-react";
 
 A presence list shows who is in the room, independent of where their cursor is. `useRemoteUsers` gives you that list, and it does not rerender when a cursor moves. In this demo, three users work on a roadmap board. The wide pane shows their names in the bar. The narrow pane shows only their avatars.
 
 <ExamplePreview scene="presence" />
+
+<Callout type="info">
+  This demo breaks the layout rules on purpose, so you can see how a cursor moves. The three columns become
+  three rows in the narrow pane. In your app, keep neighbors, sizes, and shapes alike. See the [layout design
+  guide](/docs/get-started/guides/layout-design) and the [Stable layout](/docs/examples/stable-layout)
+  example.
+</Callout>
 
 ## Code
 
@@ -20,7 +27,9 @@ This file renders the scene of the demo:
 
 <CodeFromSource docs="components/examples/presence.tsx" lang="tsx" />
 
-The demo uses short timeouts, so that you see the idle and leave steps in seconds. The defaults are 10 s for `heartbeatIntervalMs`, 15 s for `idleAfterMs`, and 70 s for `staleTimeoutMs`.
+<SceneNote />
+
+The demo uses short timeouts, so that you see the idle and leave steps in seconds. Pass `presenceTimeouts` from the scene file to `createPresenceClient` to use them. See [Remote presence](/docs/core/remote-presence) for the defaults.
 
 <Callout type="warn">
   If `staleTimeoutMs` is at most twice `heartbeatIntervalMs`, the store can remove a connected user who does
@@ -28,31 +37,34 @@ The demo uses short timeouts, so that you see the idle and leave steps in second
 </Callout>
 
 <Callout type="warn">
-  If you render `user` as HTML, another client can inject markup into your page. `user` is untrusted network
+  If you render `user` as HTML, another peer can inject markup into your page. `user` is untrusted network
   data. Render `user.name` as text, as the scene does.
 </Callout>
 
 ## Behavior notes
 
+Try it: Move your pointer in one pane.
+
 - Mira, Theo, and Jun join a few seconds apart. Each user appears in the bar when the first message from that user arrives.
-- Theo stops after two moves. After `idleAfterMs` with no change, the bar dims Theo and shows "away". `CursorLayer` dims the cursor too. Heartbeats do not end the idle stage.
+- Theo stops after two moves. After `idleAfterMs` with no change, the bar dims Theo and shows "idle". `CursorLayer` dims the cursor too. Heartbeats do not end the idle state.
 - Jun leaves the page. Jun's client sends a leave message, so Jun's cursor and bar entry disappear at once.
 - A client that stops without a leave message stays in the bar until `staleTimeoutMs` passes with no message.
-- Move your pointer in one pane. You appear in the bar of the other pane as "You".
+- You appear in the bar of the other pane as "You".
+- Screen readers skip cursors. The [Join and leave announcer](/docs/get-started/guides/join-leave-announcer) recipe adds a live region.
 
 ## Related
 
 <Cards>
-  <Card icon={<Cpu />} title="Idle stage" href="/docs/core/remote-presence#idle-stage">
-    When another client is idle.
+  <Card icon={<Users />} title="Idle state" href="/docs/core/remote-presence#idle-state">
+    When another peer is idle.
   </Card>
-  <Card icon={<Cpu />} title="Stale timeout" href="/docs/core/remote-presence#stale-timeout">
-    When the store removes another client.
+  <Card icon={<Users />} title="Stale timeout" href="/docs/core/remote-presence#stale-timeout">
+    When the store removes another peer.
   </Card>
-  <Card icon={<Atom />} title="useRemoteUsers" href="/docs/react/remote-users">
+  <Card icon={<Users />} title="Remote users" href="/docs/react/remote-users">
     The hook and its render cost.
   </Card>
-  <Card icon={<Atom />} title="Idle cursors" href="/docs/react/custom-cursors#idle-cursors">
+  <Card icon={<Paintbrush />} title="Idle cursors" href="/docs/react/custom-cursors#idle-cursors">
     How `CursorLayer` shows an idle cursor.
   </Card>
   <Card icon={<Brush />} title="Custom cursor rendering" href="/docs/examples/custom-cursor-rendering">

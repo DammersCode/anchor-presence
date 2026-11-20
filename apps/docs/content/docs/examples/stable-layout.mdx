@@ -1,0 +1,56 @@
+---
+title: Stable layout
+description: A panel with fixed sizes and a side panel that keeps every cursor move short in any pane.
+icon: layout-panel-left
+---
+
+import { LayoutGrid, ScanSearch, Kanban, LayoutDashboard } from "lucide-react";
+
+A layout can change with the viewport and still keep cursors calm. In this demo, a release checklist keeps one card width and two tiles per line in both panes. The wide pane adds a side panel beside the card. The narrow pane leaves it out. A cursor that moves from one tile to the next never crosses a long distance.
+
+<ExamplePreview scene="stable-layout" />
+
+## Code
+
+Install the packages:
+
+<InstallCommand />
+
+This file renders the scene of the demo:
+
+<CodeFromSource docs="components/examples/stable-layout.tsx" lang="tsx" />
+
+<SceneNote />
+
+## Behavior notes
+
+Try it: Move your pointer along the tiles in the wide pane.
+
+- The cursor of Mira walks along the tiles. Each step has the same length in both panes.
+- A point on a tile lands on the same tile at the same offset in both panes.
+- The card has one width and the tiles have one size. The column count fits the narrowest pane, so the tiles never reflow.
+- Extra room holds extra content beside the card. The wide pane adds the side panel and moves nothing else.
+- Each group has an anchor: `release.steps`, `release.actions`, and `release`. A point in a gap resolves to its group.
+- A page anchor, `release.page`, covers the whole pane. The side panel exists only in the wide pane. In the narrow pane, a cursor on the panel falls back to the page.
+- The [layout design guide](/docs/get-started/guides/layout-design) explains each rule. The [audit skill](/docs/skills/layout-audit) rates the layout risk of the narrow and the wide pane as low.
+
+## Related
+
+<Cards>
+  <Card
+    icon={<LayoutDashboard />}
+    title="Keep item sizes and shapes alike"
+    href="/docs/get-started/guides/layout-design#keep-item-sizes-and-shapes-alike"
+  >
+    The rule that this demo follows.
+  </Card>
+  <Card icon={<ScanSearch />} title="Layout audit skill" href="/docs/skills/layout-audit">
+    Score the jump risk of your own layout.
+  </Card>
+  <Card icon={<LayoutGrid />} title="Responsive grid" href="/docs/examples/responsive-grid">
+    The same idea with cards that change size and move.
+  </Card>
+  <Card icon={<Kanban />} title="Kanban board" href="/docs/examples/kanban">
+    A board that scrolls instead of wrapping.
+  </Card>
+</Cards>

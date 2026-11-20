@@ -5,7 +5,7 @@ import { createRoot } from "react-dom/client";
 import { describe, expect, it } from "vitest";
 import { createPresenceClient } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
-import { CursorLayer, LiveCursorProvider, useCursorBinding, useLocalContext } from "../src/index";
+import { CursorLayer, PresenceProvider, useDomBinding, useLocalContext } from "../src/index";
 import { makeFakeBinding, makeFakeClient } from "./test-utils";
 
 // Verbatim copies of the tsx samples in skills/anchor-presence/SKILL.md; the test below keeps them in sync.
@@ -20,7 +20,7 @@ export function PresenceRoot({
   children: React.ReactNode;
 }) {
   return (
-    <LiveCursorProvider<unknown, { name: string }>
+    <PresenceProvider
       clientKey={room}
       factory={() => {
         const transport = createWebSocketTransport({
@@ -30,9 +30,14 @@ export function PresenceRoot({
       }}
     >
       {children}
-      <CursorLayer<unknown, { name: string }> getLabel={(cursor) => cursor.user?.name ?? null} />
-    </LiveCursorProvider>
+      <CursorLayer />
+    </PresenceProvider>
   );
+}
+
+function parseContext(value: unknown): { page: string } | undefined {
+  const page = typeof value === "object" && value !== null && "page" in value ? value.page : undefined;
+  return typeof page === "string" ? { page } : undefined;
 }
 
 function ScopedPresenceRoot({
@@ -50,35 +55,34 @@ function ScopedPresenceRoot({
   const pageRef = useRef(currentPage);
 
   return (
-    <LiveCursorProvider<{ page: string }, { name: string }>
+    <PresenceProvider
       clientKey={room}
       factory={() => {
         const transport = createWebSocketTransport({
           url: `wss://relay.example.com/?room=${encodeURIComponent(room)}`,
         });
-        return createPresenceClient<{ page: string }, { name: string }>({
-          transport,
-          user: { name: userName },
-        });
+        return createPresenceClient({ transport, user: { name: userName } });
       }}
       bindingOptions={{
         resolution: {
           visibilityPolicy: ({ presence, resolution }) =>
-            presence.context?.page !== pageRef.current || resolution.tier === "hidden" ? "hide" : "show",
+            parseContext(presence.context)?.page !== pageRef.current || resolution.tier === "hidden"
+              ? "hide"
+              : "show",
         },
       }}
     >
       <PublishPage page={currentPage} pageRef={pageRef} />
       {children}
-      <CursorLayer<{ page: string }, { name: string }> getLabel={(cursor) => cursor.user?.name ?? null} />
-    </LiveCursorProvider>
+      <CursorLayer />
+    </PresenceProvider>
   );
 }
 
-// useLocalContext and useCursorBinding work only below the provider.
+// useLocalContext and useDomBinding work only below the provider.
 function PublishPage({ page, pageRef }: { page: string; pageRef: { current: string } }) {
-  const [, setContext] = useLocalContext<{ page: string }>();
-  const binding = useCursorBinding();
+  const [, setContext] = useLocalContext();
+  const binding = useDomBinding();
   useEffect(() => setContext({ page }), [page, setContext]);
   useEffect(() => {
     pageRef.current = page;
@@ -127,9 +131,9 @@ describe("skills/anchor-presence/SKILL.md samples", () => {
     const render = (page: string) =>
       act(() =>
         root.render(
-          <LiveCursorProvider client={client} binding={binding}>
+          <PresenceProvider client={client} binding={binding}>
             <PublishPage page={page} pageRef={pageRef} />
-          </LiveCursorProvider>,
+          </PresenceProvider>,
         ),
       );
 

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createPresenceClient } from "../src/client";
 import { createInMemoryPair } from "../src/in-memory-transport";
 import { jsonCodec } from "../src/codec";
-import type { LiveCursorTransport } from "../src/transport";
+import type { PresenceTransport } from "../src/transport";
 import type { ConnectionStatus } from "../src/protocol";
 
 function makeTransport(withStatus = false, initialStatus?: ConnectionStatus) {
@@ -11,7 +11,7 @@ function makeTransport(withStatus = false, initialStatus?: ConnectionStatus) {
   const statusListeners = new Set<(status: ConnectionStatus) => void>();
   const disconnect = vi.fn();
 
-  const transport: LiveCursorTransport = {
+  const transport: PresenceTransport = {
     send: vi.fn((data: Uint8Array) => {
       sent.push(data);
     }),
@@ -48,7 +48,7 @@ function decodeSent(bytes: Uint8Array) {
   return JSON.parse(new TextDecoder().decode(bytes));
 }
 
-function makeBufferedTransport(sent: Uint8Array[], bufferedByCall: number[]): LiveCursorTransport {
+function makeBufferedTransport(sent: Uint8Array[], bufferedByCall: number[]): PresenceTransport {
   let calls = 0;
   let buffered = 0;
   return {
@@ -203,7 +203,7 @@ describe("createPresenceClient publishing", () => {
   });
 
   it("swallows send errors", () => {
-    const transport: LiveCursorTransport = {
+    const transport: PresenceTransport = {
       send: vi.fn(() => {
         throw new Error("boom");
       }),
@@ -466,7 +466,7 @@ describe("createPresenceClient session/context/user", () => {
 
     client.setLocalCursor({ anchors: [] });
     vi.advanceTimersByTime(50);
-    expect(decodeSent(sent[0]!).context).toBeUndefined();
+    expect(decodeSent(sent[0]!).context).toBeNull();
 
     vi.advanceTimersByTime(1000);
     const heartbeat = decodeSent(sent[1]!);
@@ -657,7 +657,7 @@ describe("createPresenceClient adaptive publish rate", () => {
   it("uses the slow interval while the transport reports buffered bytes above the high watermark", () => {
     const sent: Uint8Array[] = [];
     let buffered = 0;
-    const transport: LiveCursorTransport = {
+    const transport: PresenceTransport = {
       send: vi.fn((data: Uint8Array) => {
         sent.push(data);
         buffered += 100;
@@ -781,7 +781,7 @@ describe("createPresenceClient dirty-flag publishing", () => {
     send.mockImplementationOnce(() => {
       throw new Error("boom");
     });
-    const transport: LiveCursorTransport = {
+    const transport: PresenceTransport = {
       send,
       subscribe: vi.fn(() => () => {}),
     };
@@ -806,7 +806,7 @@ describe("createPresenceClient publish retry backoff", () => {
     const send = vi.fn(() => {
       if (failing) throw new Error("boom");
     });
-    const transport: LiveCursorTransport = { send, subscribe: vi.fn(() => () => {}) };
+    const transport: PresenceTransport = { send, subscribe: vi.fn(() => () => {}) };
     return {
       transport,
       send,
@@ -980,7 +980,7 @@ describe("createPresenceClient autoConnect", () => {
     const connect = vi.fn(() => {
       calls.push("connect");
     });
-    const transport: LiveCursorTransport = {
+    const transport: PresenceTransport = {
       connect,
       disconnect: vi.fn(),
       send: vi.fn(),
@@ -1502,7 +1502,7 @@ describe("default shape check for remote fields", () => {
 
   it("drops a remote user that does not have the shape of the local user, and removes extra object keys", () => {
     const { transport, emit } = makeTransport();
-    const client = createPresenceClient<unknown, { name: string; tags: string[] }>({
+    const client = createPresenceClient({
       transport,
       idFactory,
       user: { name: "Ada", tags: ["x"] },
@@ -1525,7 +1525,7 @@ describe("default shape check for remote fields", () => {
 
   it("accepts only plain values where the local value is null or an empty array", () => {
     const { transport, emit } = makeTransport();
-    const client = createPresenceClient<unknown, { name: string; avatar: string | null; tags: string[] }>({
+    const client = createPresenceClient({
       transport,
       idFactory,
       user: { name: "Ada", avatar: null, tags: [] },
@@ -1546,7 +1546,7 @@ describe("default shape check for remote fields", () => {
 
   it("keeps an optional context key that the local context lacks, as in a dialog flag", () => {
     const { transport, emit } = makeTransport();
-    const client = createPresenceClient<{ page: string; dialog?: string }>({
+    const client = createPresenceClient({
       transport,
       idFactory,
       context: { page: "dashboard" },
@@ -1572,7 +1572,7 @@ describe("default shape check for remote fields", () => {
   it("accepts a remote null for any key and warns once when a value is dropped", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     const { transport, emit } = makeTransport();
-    const client = createPresenceClient<{ hover: { id: string } | null; name: string }>({
+    const client = createPresenceClient({
       transport,
       idFactory,
       context: { hover: { id: "a" }, name: "Ada" },
@@ -1601,7 +1601,7 @@ describe("default shape check for remote fields", () => {
 
   it("ignores prototype and inherited keys in a remote value", () => {
     const { transport, emit } = makeTransport();
-    const client = createPresenceClient<unknown, { name: string }>({
+    const client = createPresenceClient({
       transport,
       idFactory,
       user: { name: "Ada" },
@@ -1659,6 +1659,22 @@ describe("numeric option validation", () => {
   });
 });
 
+describe("option shape validation", () => {
+  it.each([0, -1, 1.5])("rejects maxRemoteClients %s", (value) => {
+    const { a } = createInMemoryPair();
+    expect(() => createPresenceClient({ transport: a, maxRemoteClients: value })).toThrow(
+      /maxRemoteClients must be an integer of at least 1/u,
+    );
+  });
+
+  it("rejects a transport without subscribe", () => {
+    const transport = { send: () => {}, connect: () => {}, disconnect: () => {} };
+    expect(() => createPresenceClient({ transport: transport as unknown as PresenceTransport })).toThrow(
+      "createPresenceClient: transport.subscribe must be a function",
+    );
+  });
+});
+
 describe("inbound drop warnings", () => {
   it("warns once in dev mode when a message fails to decode", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -1700,6 +1716,60 @@ describe("inbound drop warnings", () => {
     vi.advanceTimersByTime(200);
     expect(receiver.getRemoteSnapshot()).toHaveLength(1);
     warn.mockRestore();
+    sender.dispose();
+    receiver.dispose();
+  });
+});
+
+describe("createPresenceClient id validation", () => {
+  it("applies validationLimits.maxClientIdLength to the clientId", () => {
+    const { transport } = makeTransport();
+    expect(() =>
+      createPresenceClient({ transport, clientId: "abcd", validationLimits: { maxClientIdLength: 3 } }),
+    ).toThrow(/1 to 3 characters/u);
+    createPresenceClient({
+      transport,
+      clientId: "abc",
+      validationLimits: { maxClientIdLength: 3 },
+    }).dispose();
+  });
+
+  it("throws a TypeError when the idFactory session is empty or longer than 64 characters", () => {
+    const { transport } = makeTransport();
+    const ids = (second: string) => {
+      let calls = 0;
+      return () => (calls++ === 0 ? "me" : second);
+    };
+    expect(() => createPresenceClient({ transport, idFactory: ids("") })).toThrow(TypeError);
+    expect(() => createPresenceClient({ transport, idFactory: ids("s".repeat(65)) })).toThrow(
+      /session must be 1 to 64/u,
+    );
+  });
+});
+
+describe("createPresenceClient session limit and pre-connected transports", () => {
+  it("applies validationLimits.maxSessionLength to the session", () => {
+    const { transport } = makeTransport();
+    const ids = (second: string) => {
+      let calls = 0;
+      return () => (calls++ === 0 ? "me" : second);
+    };
+    const validationLimits = { maxSessionLength: 100 };
+    createPresenceClient({ transport, idFactory: ids("s".repeat(80)), validationLimits }).dispose();
+    expect(() =>
+      createPresenceClient({ transport, idFactory: ids("s".repeat(101)), validationLimits }),
+    ).toThrow(/session must be 1 to 100/u);
+  });
+
+  it("announces a client created on an already connected transport without a cursor", () => {
+    vi.useFakeTimers();
+    const { a, b } = createInMemoryPair();
+    void a.connect?.();
+    void b.connect?.();
+    const receiver = createPresenceClient({ transport: b, clientId: "R" });
+    const sender = createPresenceClient({ transport: a, clientId: "S", user: { name: "Sam" } });
+    vi.advanceTimersByTime(200);
+    expect(receiver.getRemotePresence().map((p) => p.clientId)).toEqual(["S"]);
     sender.dispose();
     receiver.dispose();
   });

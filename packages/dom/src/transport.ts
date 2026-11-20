@@ -1,28 +1,41 @@
 // oxlint-disable unicorn/prefer-add-event-listener -- WebSocketLike only exposes on* handlers
 
-import { isDevMode, warnOnce } from "@anchor-presence/core";
-import type { ConnectionStatus, LiveCursorTransport, TransportClose } from "@anchor-presence/core";
+import { isDevMode, reportListenerError, warnOnce } from "@anchor-presence/core";
+import type { ConnectionStatus, PresenceTransport, TransportClose } from "@anchor-presence/core";
 
 type Handler<Event> = { bivarianceHack(event: Event): void }["bivarianceHack"];
 
 export type WebSocketLike = {
-  readonly readyState: number; // 1 = OPEN
+  /** `1` when the socket is open. */
+  readonly readyState: number;
+  /** Runs when the socket opens. */
   onopen: null | Handler<unknown>;
+  /** Runs when the socket closes. */
   onclose: null | Handler<{ code?: number; reason?: string }>;
+  /** Runs when the socket reports an error. */
   onerror: null | Handler<unknown>;
+  /** Runs for each received message. */
   onmessage: null | Handler<{ data: unknown }>;
+  /** Set to `"arraybuffer"` so binary frames arrive as `ArrayBuffer`. */
   binaryType: string;
+  /** Bytes queued but not yet sent. */
   bufferedAmount?: number;
+  /** Sends one binary frame. */
   send(data: ArrayBufferView<ArrayBuffer>): void;
+  /** Closes the socket. */
   close(): void;
 };
 
 export type WebSocketCtor = new (url: string) => WebSocketLike;
 
-/** A `LiveCursorTransport` whose `connect`/`disconnect` are always present, not optional. */
-export type WebSocketTransport = LiveCursorTransport & {
+/** A `PresenceTransport` whose lifecycle, status, and close members are always present, not optional. */
+export type WebSocketTransport = PresenceTransport & {
   connect(): void;
   disconnect(): void;
+  subscribeStatus(listener: (status: ConnectionStatus) => void): () => void;
+  getStatus(): ConnectionStatus;
+  subscribeClose(listener: (close: TransportClose) => void): () => void;
+  bufferedBytes(): number;
 };
 
 /**
@@ -30,33 +43,33 @@ export type WebSocketTransport = LiveCursorTransport & {
  */
 export type WebSocketTransportOptions = {
   /** WebSocket URL. Defaults to `ws(s)://<current host>:<relay port><path>` when omitted. */
-  url?: string;
+  url?: string | undefined;
   /** The host used when building the default URL. Default: `window.location.hostname`. */
-  host?: string;
+  host?: string | undefined;
   /** The path, including the query. Default: `/`. */
-  path?: string;
+  path?: string | undefined;
   /** The relay port used when building the default URL. Default: `8787`. */
-  port?: number;
+  port?: number | undefined;
   /**
    * Room token for the relay auth check.
    * The transport URL-encodes the token and adds it to the URL as `token=...`.
-   * A function runs before every connection attempt, so an expiring token stays fresh. It may return a promise.
+   * A function runs before every connection attempt, so an expiring token stays fresh. It can return a promise.
    */
-  token?: string | (() => string | Promise<string>);
+  token?: (string | (() => string | Promise<string>)) | undefined;
   /** Enables automatic reconnect with exponential backoff. Default `true`. */
-  reconnect?: boolean;
+  reconnect?: boolean | undefined;
   /** Base backoff, in milliseconds, before the first reconnect attempt. Default `500`. */
-  baseBackoffMs?: number;
+  baseBackoffMs?: number | undefined;
   /** Cap on the reconnect backoff, in milliseconds. Default `8000`. */
-  maxBackoffMs?: number;
+  maxBackoffMs?: number | undefined;
   /** Returns a value in `[0, 1)` for the random part of the reconnect wait. Default: `Math.random`. */
-  random?: () => number;
+  random?: (() => number) | undefined;
   /** How long a connection must stay open before the backoff resets, in milliseconds. Default `5000`. */
-  stableAfterMs?: number;
-  /** Return `false` to stop reconnecting after a close. Default: reconnect unless the close code is 1008, 4004 (origin), 4006 (auth) or 4007 (room). */
-  shouldReconnect?: (close: { code?: number; reason?: string }) => boolean;
+  stableAfterMs?: number | undefined;
+  /** Return `false` to stop reconnecting after a close. Default: reconnect unless the close code is 1008, 4004 (origin), 4006 (room token) or 4007 (room name). If the token function or the WebSocket constructor fails, it passes no `code` and the reason "connection attempt failed". A socket that cannot reach the relay closes with 1006. */
+  shouldReconnect?: ((close: { code?: number; reason?: string }) => boolean) | undefined;
   /** A WebSocket constructor to use. Default: `globalThis.WebSocket`. */
-  WebSocketCtor?: WebSocketCtor;
+  WebSocketCtor?: WebSocketCtor | undefined;
 };
 
 const NO_RETRY_CODES = new Set([1008, 4004, 4006, 4007]);
@@ -102,10 +115,22 @@ function withToken(url: string, token: string): string {
  */
 export function createWebSocketTransport(options: WebSocketTransportOptions = {}): WebSocketTransport {
   const baseUrl = resolveUrl(options);
+  let failedAttempts = 0;
   const tokenSource = options.token;
   const reconnect = options.reconnect ?? true;
   const baseBackoffMs = options.baseBackoffMs ?? 500;
   const maxBackoffMs = options.maxBackoffMs ?? 8_000;
+  for (const [name, value] of [
+    ["baseBackoffMs", baseBackoffMs],
+    ["maxBackoffMs", maxBackoffMs],
+  ] as const) {
+    if (!Number.isFinite(value) || value <= 0) {
+      throw new TypeError(`createWebSocketTransport: ${name} must be a positive finite number, got ${value}`);
+    }
+  }
+  if (maxBackoffMs < baseBackoffMs) {
+    throw new TypeError("createWebSocketTransport: maxBackoffMs must be at least baseBackoffMs");
+  }
   const random = options.random ?? Math.random;
   const stableAfterMs = options.stableAfterMs ?? 5_000;
   const shouldReconnect =
@@ -129,8 +154,8 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
     for (const listener of statusListeners) {
       try {
         listener(status);
-      } catch {
-        // a throwing listener must not stop the reconnect
+      } catch (error) {
+        reportListenerError(error);
       }
     }
   }
@@ -172,15 +197,36 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
     }
   }
 
+  function decideReconnect(event: { code?: number; reason?: string }): boolean {
+    try {
+      return shouldReconnect(event);
+    } catch (error) {
+      reportListenerError(error);
+      return false;
+    }
+  }
+
+  function recordFailedAttempt(): void {
+    failedAttempts += 1;
+    if (failedAttempts === FAILED_ATTEMPTS_BEFORE_WARNING) {
+      warnOnce(
+        `relay-unreachable:${baseUrl}`,
+        `the connection to ${baseUrl} failed ${FAILED_ATTEMPTS_BEFORE_WARNING} times in a row. Check that a relay runs there and that the port and path are right.`,
+      );
+    }
+  }
+
   function failConnect(): void {
+    recordFailedAttempt();
     // no socket opened: a token function or the constructor failed, so the app still learns why
-    emitClose({ reason: "connection attempt failed", willReconnect: reconnect });
-    if (reconnect) scheduleReconnect();
+    const reason = "connection attempt failed";
+    const willReconnect = reconnect && decideReconnect({ reason });
+    emitClose({ reason, willReconnect });
+    if (willReconnect) scheduleReconnect();
     else setStatus("disconnected");
   }
 
   let openAttempt = 0;
-  let failedAttempts = 0;
 
   function open(): void {
     if (disposedByUser) return;
@@ -243,7 +289,7 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
       };
 
       ws.onmessage = (event) => {
-        const data = event.data;
+        const data: unknown = event.data;
         if (!(data instanceof ArrayBuffer)) return;
         const bytes = new Uint8Array(data);
         for (const listener of dataListeners) {
@@ -257,16 +303,10 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
 
       ws.onclose = (event) => {
         clearStableTimer();
-        if (!opened) failedAttempts += 1;
-        if (failedAttempts === FAILED_ATTEMPTS_BEFORE_WARNING) {
-          warnOnce(
-            `relay-unreachable:${baseUrl}`,
-            `the connection to ${baseUrl} failed ${FAILED_ATTEMPTS_BEFORE_WARNING} times in a row. Check that a relay runs there and that the port and path are right.`,
-          );
-        }
+        if (!opened) recordFailedAttempt();
         if (socket === ws) socket = null;
         if (disposedByUser) return;
-        const willReconnect = reconnect && shouldReconnect(event);
+        const willReconnect = reconnect && decideReconnect(event);
         const closeInfo: TransportClose = { willReconnect };
         if (event.code !== undefined) closeInfo.code = event.code;
         if (event.reason !== undefined && event.reason !== "") closeInfo.reason = event.reason;
@@ -277,6 +317,18 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
             event.code,
             event.reason !== undefined && event.reason !== "" ? ` (${event.reason})` : "",
             willReconnect ? "; reconnecting" : "",
+          );
+        }
+        if (
+          reconnect &&
+          !willReconnect &&
+          options.shouldReconnect === undefined &&
+          event.code !== undefined &&
+          event.code < FIRST_APPLICATION_CLOSE_CODE
+        ) {
+          warnOnce(
+            `no-reconnect:${baseUrl}`,
+            `the connection closed with code ${event.code}${event.reason === undefined || event.reason === "" ? "" : ` (${event.reason})`} and the client does not reconnect.`,
           );
         }
         if (willReconnect) scheduleReconnect();
@@ -304,6 +356,8 @@ export function createWebSocketTransport(options: WebSocketTransportOptions = {}
       }
       // a socket already connecting or open must not be replaced: connect() is idempotent while one is live
       if (socket !== null && (socket.readyState === WS_CONNECTING || socket.readyState === WS_OPEN)) return;
+      if (reconnectTimer !== null) clearTimeout(reconnectTimer);
+      reconnectTimer = null;
       setStatus("connecting");
       open();
     },

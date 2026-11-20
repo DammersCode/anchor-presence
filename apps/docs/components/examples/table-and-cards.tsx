@@ -1,13 +1,17 @@
 "use client";
 
 import type { PresenceClient } from "@anchor-presence/core";
-import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
+import type { TourContext } from "./_preview/tour";
+import { CursorLayer, PresenceProvider } from "./_preview/hooks";
 import type { ReactNode } from "react";
+
+const safeColor = (color: string | undefined, fallback: string) =>
+  color !== undefined && /^#[0-9a-f]{6}$/iu.test(color) ? color : fallback;
 
 type User = { name: string; color: string };
 
 type Props = {
-  client: PresenceClient<unknown, User> | null;
+  client: PresenceClient<TourContext, User> | null;
   layout: "wide" | "narrow";
   children?: ReactNode;
 };
@@ -124,15 +128,15 @@ function InvoiceCards() {
 
 export function TableAndCardsScene({ client, layout, children }: Props) {
   return (
-    <LiveCursorProvider client={client}>
+    <PresenceProvider client={client}>
       <div data-anchor="invoices" className="h-full p-2.5">
         {layout === "wide" ? <InvoiceTable /> : <InvoiceCards />}
       </div>
-      <CursorLayer<unknown, User>
+      <CursorLayer
         getLabel={(cursor) => cursor.user?.name ?? null}
-        getColor={(cursor) => cursor.user?.color ?? "#4f46e5"}
+        getColor={(cursor) => safeColor(cursor.user?.color, "#4f46e5")}
       />
       {children}
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }

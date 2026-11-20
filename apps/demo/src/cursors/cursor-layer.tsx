@@ -1,4 +1,4 @@
-import { CursorLayer as PackageCursorLayer } from "@anchor-presence/react";
+import { CursorLayer as PackageCursorLayer } from "./hooks";
 import type { CursorRenderProps } from "@anchor-presence/react";
 import type { ResolvedCursor } from "@anchor-presence/dom";
 import { DEFAULT_CURSOR_COLOR, isKnownCursorColor } from "./setup";
@@ -42,7 +42,7 @@ function DemoCursor({ label, color }: CursorRenderProps<DemoContext, DemoUser>) 
 
 export function CursorLayer() {
   return (
-    <PackageCursorLayer<DemoContext, DemoUser>
+    <PackageCursorLayer
       getLabel={getLabel}
       getColor={getColor}
       getCursorProps={getCursorProps}

@@ -2,14 +2,14 @@
 // Usage: bun run perf:score [--relay]. Run `bun run build` first. Prints a table and writes .crew/rounds/perf-score.json when .crew exists.
 
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { gzipSync } from "node:zlib";
 import { Bench } from "tinybench";
 import { registerHotPathCases } from "../packages/core/bench/hotpath.bench";
 import { binaryCodec } from "../packages/core/src/binary-codec";
 import { jsonCodec } from "../packages/core/src/codec";
-import type { CursorPresence } from "../packages/core/src/protocol";
+import type { PresenceMessage } from "../packages/core/src/protocol";
 import { RemotePresenceStore } from "../packages/core/src/store";
 
 const rootDir = dirname(import.meta.dirname);
@@ -18,7 +18,9 @@ const rootDir = dirname(import.meta.dirname);
 type Budget = { ten: number; nine: number; seven: number; higher?: boolean };
 
 const BUDGETS: Record<string, Budget> = {
-  "bundle core gzip (KB)": { ten: 7, nine: 9, seven: 13 },
+  // Whole entry, so binaryCodec and the in-memory transports count; apps tree-shake what they do not import.
+  "bundle core gzip (KB)": { ten: 7, nine: 10, seven: 13 },
+  "bundle core app (jsonCodec client only, KB)": { ten: 7, nine: 9, seven: 13 },
   "bundle dom gzip (KB)": { ten: 10, nine: 13, seven: 19 },
   "bundle react gzip (KB)": { ten: 4, nine: 5, seven: 8 },
   "wire json steady cursor (bytes)": { ten: 220, nine: 300, seven: 420 },
@@ -56,9 +58,31 @@ async function bundleSizes(): Promise<void> {
       throw new Error(`bundle failed for ${name}: run bun run build`);
     metrics.set(`bundle ${name} gzip (KB)`, gzipSync(Buffer.from(await output.text())).length / 1024);
   }
+  metrics.set("bundle core app (jsonCodec client only, KB)", await coreAppBundleKb());
 }
 
-const steady: CursorPresence = {
+// An app imports only what it uses, so the bundler drops binaryCodec and the in-memory transports.
+async function coreAppBundleKb(): Promise<number> {
+  const dir = mkdtempSync(join(rootDir, "node_modules", ".anchor-app-"));
+  try {
+    const entry = join(dir, "entry.js");
+    const core = join(rootDir, "packages/core/dist/index.js").replaceAll("\\", "/");
+    writeFileSync(
+      entry,
+      `import { createPresenceClient, jsonCodec } from "${core}";
+globalThis.app = [createPresenceClient, jsonCodec];
+`,
+    );
+    const result = await Bun.build({ entrypoints: [entry], minify: true, target: "browser" });
+    const output = result.outputs[0];
+    if (result.success !== true || output === undefined) throw new Error("app bundle failed");
+    return gzipSync(Buffer.from(await output.text())).length / 1024;
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+const steady: PresenceMessage = {
   version: 1,
   clientId: "Qm3xT9vLk2Zp",
   session: "H7sWc1eYb0Nd",
@@ -82,7 +106,7 @@ function heapPerMessage(): void {
   const clients = 200;
   const rounds = 500;
   const store = new RemotePresenceStore({ maxRemoteClients: clients });
-  const messages: CursorPresence[] = [];
+  const messages: PresenceMessage[] = [];
   for (let id = 0; id < clients; id += 1) {
     messages.push({ ...steady, clientId: `client-${id}`, sequence: 0 });
   }

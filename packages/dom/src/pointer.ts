@@ -1,6 +1,6 @@
 // Pointer capture and target resolution — spec §9
 
-import type { CursorPosition, PointerInfo, PresenceClient } from "@anchor-presence/core";
+import type { AnchorPoint, CursorPosition, PointerInfo, PresenceClient } from "@anchor-presence/core";
 import type { AnchorRegistry } from "./registry.js";
 import type { Rect } from "./geometry.js";
 
@@ -14,6 +14,8 @@ export type PointerSourceOptions = {
    * The cursor clears when focus leaves the document. Default `false`.
    */
   captureFocus?: boolean | undefined;
+  /** Elements with this attribute, and their descendants, never publish a cursor. Default `data-anchor-private`. */
+  privateAttribute?: string | undefined;
 };
 
 export type PointerSourceHandle = {
@@ -32,6 +34,11 @@ type AnchorEntry = { id: string; element: Element };
 // nodeType instead of instanceof: an element of an iframe belongs to another realm
 function isElement(value: unknown): value is Element {
   return typeof value === "object" && value !== null && (value as Node).nodeType === 1;
+}
+
+function pathHasAttribute(path: readonly EventTarget[], attribute: string): boolean {
+  for (const node of path) if (isElement(node) && node.hasAttribute(attribute)) return true;
+  return false;
 }
 
 function eventTargetElement(event: Event): Element | null {
@@ -55,7 +62,7 @@ function buildCursorPosition(
   win: Window,
   getCachedRect?: (element: Element) => Rect | undefined,
 ): CursorPosition {
-  const anchors: CursorPosition["anchors"] = [];
+  const anchors: AnchorPoint[] = [];
   for (const { id, element } of chain) {
     // cache is at most one frame old; every layout-changing signal invalidates it (spec §9 tolerance)
     const rect = getCachedRect?.(element) ?? element.getBoundingClientRect();
@@ -77,7 +84,7 @@ function buildCursorPosition(
 
 /** Listens for pointer activity and feeds outbound samples to the presence client — spec §9. */
 export function attachPointerSource(
-  client: PresenceClient,
+  client: Pick<PresenceClient, "setLocalCursor" | "registerTeardown">,
   registry: AnchorRegistry,
   options: PointerSourceOptions,
 ): PointerSourceHandle {
@@ -86,6 +93,20 @@ export function attachPointerSource(
   const win = options.window ?? window;
   const getCachedRect = options.getCachedRect;
   const captureFocus = options.captureFocus ?? false;
+  const privateAttribute = options.privateAttribute ?? "data-anchor-private";
+
+  // composedPath sees through shadow roots; closest covers the hit-tested element of a captured pointer
+  function isPrivate(event: Event, element: Element): boolean {
+    const path = typeof event.composedPath === "function" ? event.composedPath() : [];
+    return pathHasAttribute(path, privateAttribute) || element.closest(`[${privateAttribute}]`) !== null;
+  }
+
+  let clearedByPrivacy = false;
+  function clearForPrivacy(): void {
+    if (clearedByPrivacy) return;
+    clearedByPrivacy = true;
+    client.setLocalCursor(null);
+  }
 
   // ponytail: composedPath still runs per move (shadow retargeting needs it); only the registry walk is cached
   let cachedTarget: Element | null = null;
@@ -126,8 +147,10 @@ export function attachPointerSource(
     const target = pointerTarget(event);
     if (target === null) return;
     if (event.pointerType === "touch") activeTouchPointers.add(event.pointerId);
+    if (isPrivate(event, target)) return clearForPrivacy();
+    clearedByPrivacy = false;
     const position = buildCursorPosition(event.clientX, event.clientY, chainFor(target), win, getCachedRect);
-    client.setLocalCursor(position, POINTER_INFO[event.pointerType]);
+    client.setLocalCursor(position, POINTER_INFO[event.pointerType] ?? {});
   }
 
   function onPointerEnd(event: PointerEvent): void {
@@ -148,6 +171,8 @@ export function attachPointerSource(
   function onFocusIn(event: FocusEvent): void {
     const target = event.target;
     if (!isElement(target)) return;
+    if (isPrivate(event, target)) return clearForPrivacy();
+    clearedByPrivacy = false;
     const rect = getCachedRect?.(target) ?? target.getBoundingClientRect();
     if (rect.width <= 0 || rect.height <= 0) return;
     const position = buildCursorPosition(

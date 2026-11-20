@@ -10,7 +10,7 @@ Anchor Presence turns a pointer move into an element ID and a point inside that 
 
 The central rule of the library is:
 
-> A remote cursor represents a semantic DOM location, not an absolute screen coordinate.
+> A remote cursor represents an anchored element and a position inside it, not an absolute screen coordinate.
 
 ## Package layers
 
@@ -28,7 +28,7 @@ flowchart TB
 ```
 
 - `@anchor-presence/core` has no dependencies and needs no DOM. It runs in Node.js, Bun, workers, and browsers. It owns the protocol, validation, message order, the store of remote presence, and the client. If a `document` exists, the client listens for `visibilitychange` to send a pending update when the page shows again.
-- `@anchor-presence/dom` depends only on `@anchor-presence/core`. It owns every browser API call: the anchor registry, pointer capture, layout measurement once per animation frame, and visibility policies.
+- `@anchor-presence/dom` depends only on `@anchor-presence/core`. It owns every layout and pointer API call: the anchor registry, pointer capture, layout measurement once per animation frame, and visibility policies.
 - `@anchor-presence/react` is an adapter only. It keeps no cursor state of its own. It reads the stores of the other two packages with `useSyncExternalStore`.
 
 ## Path of one pointer move
@@ -58,7 +58,7 @@ The receiver keeps the latest presence of each peer. [Remote presence](/docs/cor
 
 ## The 10 invariants
 
-An invariant is a rule that holds for every message. Other pages refer to these numbers:
+An invariant is a rule the library never breaks. Other pages refer to these numbers:
 
 1. The sender never uses its screen coordinates as the main position. The main position is an anchor and a point inside it.
 2. The layout of the receiver decides where a cursor appears.

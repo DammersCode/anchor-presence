@@ -11,9 +11,11 @@ import {
   INVALID_ROOM_CODE,
   newConnectionId,
   parseRoom,
+  parseToken,
   slowPeerAction,
   safeAuthCheck,
   bindIdentity,
+  UNBINDABLE_FRAME_CLOSE,
   type AuthIdentity,
   tokenAuthCheck,
   type AuthCheck,
@@ -31,7 +33,7 @@ export type NodeWsRelayOptions = {
   slowPeerHardBytes?: number;
   slowPeerResumeBytes?: number;
   allowedOrigins?: Set<string>;
-  /** Auth hook placeholder: verify a token query param. Default accepts every token. */
+  /** Auth hook. Default: the `RELAY_AUTH_TOKEN` check, which admits everyone when the variable is unset. */
   authCheck?: AuthCheck;
 };
 
@@ -111,7 +113,7 @@ export function createNodeWsRelay(port: number, options: NodeWsRelayOptions = {}
       refuse(req, socket, head, 4004, "origin not allowed");
       return;
     }
-    const room = parseRoom(url.searchParams.get("room"));
+    const room = parseRoom(url.searchParams.getAll("room"));
     if (room === null) {
       refuse(req, socket, head, INVALID_ROOM_CODE, "invalid room");
       return;
@@ -122,12 +124,8 @@ export function createNodeWsRelay(port: number, options: NodeWsRelayOptions = {}
         Array.isArray(value) ? value.join(", ") : value,
       ]),
     );
-    const auth = await authCheck({
-      token: url.searchParams.get("token") ?? "",
-      room,
-      origin,
-      headers,
-    });
+    const token = parseToken(url.searchParams.getAll("token"));
+    const auth = token === null ? false : await authCheck({ token, room, origin, headers });
     if (socket.destroyed) return;
     if (auth === false) {
       refuse(req, socket, head, 4006, "invalid token");
@@ -188,7 +186,10 @@ export function createNodeWsRelay(port: number, options: NodeWsRelayOptions = {}
       let outgoingBinary = isBinary;
       if (socketState.identity !== undefined) {
         const bound = bindIdentity(message, socketState.identity, socketState.connectionId);
-        if (bound === null) return;
+        if (bound === null) {
+          ws.close(UNBINDABLE_FRAME_CLOSE.code, UNBINDABLE_FRAME_CLOSE.reason);
+          return;
+        }
         outgoing = bound;
         outgoingBinary = true;
       }

@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest";
 import {
+  createEventParser,
   createInMemoryPair,
   createPresenceClient,
   linearInterpolator,
@@ -13,13 +14,19 @@ import { createWebSocketTransport } from "@anchor-presence/dom";
 import type { DomBinding, WebSocketLike } from "@anchor-presence/dom";
 import {
   CursorLayer,
-  LiveCursorProvider,
+  PresenceProvider,
   createPresenceHooks,
-  useCursorClient,
-  useCursorEvents,
-  useSendEvent,
+  usePresenceClient,
+  useRemoteEvents,
 } from "../src/index";
-import { LiveCursorContext } from "../src/context";
+import type { RemoteUser } from "../src/index";
+import { PresenceProviderContext } from "../src/context";
+import { docSample, missingSamples } from "./doc-source";
+import * as typed from "./doc-presence";
+import type { Context, Events, User } from "./doc-presence";
+import { parserOf } from "./test-utils";
+import * as v from "valibot";
+import type { InferSchemaOutput } from "@anchor-presence/core/standard-schema";
 
 class FakeSocket implements WebSocketLike {
   static instances: FakeSocket[] = [];
@@ -42,16 +49,16 @@ const seenBindings: (DomBinding | null)[] = [];
 const seenClients: (PresenceClient | null)[] = [];
 
 function Dashboard() {
-  const { client, binding } = useContext(LiveCursorContext);
+  const { client, binding } = useContext(PresenceProviderContext);
   seenBindings.push(binding);
   seenClients.push(client);
   return <main data-anchor="dashboard" />;
 }
 
-// live-cursor-provider.mdx: Rebuild the binding
+// presence-provider.mdx: Rebuild the binding
 function Workspace({ smooth }: { smooth: boolean }) {
   return (
-    <LiveCursorProvider
+    <PresenceProvider
       factory={() =>
         createPresenceClient({ transport: createWebSocketTransport({ port: 8788, path: "/?room=main" }) })
       }
@@ -62,14 +69,14 @@ function Workspace({ smooth }: { smooth: boolean }) {
     >
       <Dashboard />
       <CursorLayer />
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }
 
-// live-cursor-provider.mdx: Switch rooms
+// presence-provider.mdx: Switch rooms
 function Room({ room }: { room: string }) {
   return (
-    <LiveCursorProvider
+    <PresenceProvider
       clientKey={room}
       factory={() => {
         const transport = createWebSocketTransport({
@@ -81,13 +88,13 @@ function Room({ room }: { room: string }) {
     >
       <Dashboard />
       <CursorLayer />
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }
 
 // connection-status.mdx: Close reasons
 function TokenError() {
-  const client = useCursorClient();
+  const client = usePresenceClient();
   const [closeCode, setCloseCode] = useState<number | null>(null);
 
   useEffect(
@@ -102,12 +109,12 @@ function TokenError() {
   return <div role="alert">The relay rejected the room token.</div>;
 }
 
-// cursor-events.mdx: Send and receive
+// remote-events.mdx: Send and receive
 function Reactions() {
-  const client = useCursorClient();
+  const client = usePresenceClient();
   const [lastReaction, setLastReaction] = useState<string | null>(null);
 
-  useCursorEvents((event) => {
+  useRemoteEvents((event) => {
     if (event.type === "reaction" && typeof event.data === "string") {
       setLastReaction(`${event.clientId}: ${event.data}`);
     }
@@ -123,23 +130,20 @@ function Reactions() {
   );
 }
 
-// cursor-events.mdx: Send typed events
-type Events = { reaction: string };
+const { useSendEvent } = typed;
 
+// remote-events.mdx: Send typed events
 function WaveButton() {
-  const sendEvent = useSendEvent<Events>();
+  const sendEvent = useSendEvent();
   return (
-    <button type="button" onClick={() => sendEvent("reaction", "wave")}>
+    <button type="button" onClick={() => sendEvent("reaction", { emoji: "wave" })}>
       Wave
     </button>
   );
 }
 
-// typed-hooks.mdx: presence.ts
-type User = { name: string; color: string };
-type Context = { pageId: string };
-
-const typed = createPresenceHooks<Context, User>();
+const parseUser = parserOf<User>();
+const parseContext = parserOf<Context>();
 const { useRemoteUsers } = typed;
 
 // typed-hooks.mdx: Use the hooks
@@ -163,11 +167,26 @@ function TypeErrors() {
   return <span>{String(age)}</span>;
 }
 
+// typed-hooks.mdx: Infer the types from schemas
+const userSchema = v.object({ name: v.string(), color: v.string() });
+const contextSchema = v.object({ pageId: v.string() });
+
+export const schemaHooks = createPresenceHooks<
+  InferSchemaOutput<typeof contextSchema>,
+  InferSchemaOutput<typeof userSchema>
+>();
+
 describe("react docs samples", () => {
+  it("typed-hooks.mdx: schema output types fix the hook types", () => {
+    expectTypeOf(schemaHooks.useRemoteUsers).returns.toEqualTypeOf<
+      readonly RemoteUser<{ name: string; color: string }>[]
+    >();
+  });
+
   it("typed-hooks.mdx: the result has every name the sample destructures", () => {
     for (const name of [
-      "LiveCursorProvider",
-      "useCursorClient",
+      "PresenceProvider",
+      "usePresenceClient",
       "useLocalContext",
       "useRemoteCursors",
       "useRemoteUsers",
@@ -225,13 +244,13 @@ describe("react docs samples", () => {
 
   it("TokenError shows an alert after a 4006 close", () => {
     const container = mount(
-      <LiveCursorProvider
+      <PresenceProvider
         factory={() =>
           createPresenceClient({ transport: createWebSocketTransport({ port: 8788, path: "/?room=main" }) })
         }
       >
         <TokenError />
-      </LiveCursorProvider>,
+      </PresenceProvider>,
     );
     expect(container.querySelector("[role=alert]")).toBeNull();
     act(() => FakeSocket.instances[0]!.onclose?.({ code: 4006 }));
@@ -243,14 +262,14 @@ describe("react docs samples", () => {
     const sender = createPresenceClient({ transport: a });
     const receiver = createPresenceClient({ transport: b });
     const senderView = mount(
-      <LiveCursorProvider client={sender}>
+      <PresenceProvider client={sender}>
         <Reactions />
-      </LiveCursorProvider>,
+      </PresenceProvider>,
     );
     const receiverView = mount(
-      <LiveCursorProvider client={receiver}>
+      <PresenceProvider client={receiver}>
         <Reactions />
-      </LiveCursorProvider>,
+      </PresenceProvider>,
     );
 
     act(() => senderView.querySelector("button")!.click());
@@ -263,35 +282,55 @@ describe("react docs samples", () => {
 
   it("WaveButton sends a typed reaction that the peer receives", () => {
     const { a, b } = createInMemoryPair();
-    const sender = createPresenceClient({ transport: a });
+    const sender = createPresenceClient({
+      transport: a,
+      parseUser,
+      parseContext,
+      parseEvent: createEventParser<Events>({
+        reaction: (data) =>
+          typeof data === "object" && data !== null && "emoji" in data
+            ? { emoji: String(data.emoji) }
+            : undefined,
+        chat: () => undefined,
+        ping: null,
+      }),
+    });
     const receiver = createPresenceClient({ transport: b });
+    const received: unknown[] = [];
+    receiver.subscribeEvents((event) => received.push(event.data));
     const senderView = mount(
-      <LiveCursorProvider client={sender}>
+      <typed.PresenceProvider client={sender}>
         <WaveButton />
-      </LiveCursorProvider>,
-    );
-    const receiverView = mount(
-      <LiveCursorProvider client={receiver}>
-        <Reactions />
-      </LiveCursorProvider>,
+      </typed.PresenceProvider>,
     );
 
     act(() => senderView.querySelector("button")!.click());
 
-    expect(receiverView.querySelector("[role=status]")?.textContent).toBe(`${sender.clientId}: wave`);
+    expect(received).toEqual([{ emoji: "wave" }]);
     sender.dispose();
     receiver.dispose();
   });
 
   it("PresenceList renders typed remote users", async () => {
     const { a, b } = createInMemoryPair();
-    const local = createPresenceClient<Context, User>({ transport: a, user: { name: "Me", color: "blue" } });
-    const peer = createPresenceClient<Context, User>({ transport: b, user: { name: "Ada", color: "red" } });
+    const local = createPresenceClient({
+      transport: a,
+      parseUser,
+      parseContext,
+      parseEvent: createEventParser<Events>({ reaction: () => undefined, chat: () => undefined, ping: null }),
+      user: { name: "Me", color: "blue" },
+    });
+    const peer = createPresenceClient({
+      transport: b,
+      parseUser,
+      parseContext,
+      user: { name: "Ada", color: "red" },
+    });
     const view = mount(
-      <typed.LiveCursorProvider client={local}>
+      <typed.PresenceProvider client={local}>
         <PresenceList />
         <TypeErrors />
-      </typed.LiveCursorProvider>,
+      </typed.PresenceProvider>,
     );
 
     peer.setLocalCursor({ anchors: [], viewport: { u: 0.5, v: 0.5 } });
@@ -302,5 +341,26 @@ describe("react docs samples", () => {
     expect(view.querySelector("li")?.textContent).toBe("Ada");
     local.dispose();
     peer.dispose();
+  });
+});
+
+describe("doc sample sources", () => {
+  it("match the copies in this file", () => {
+    expect(
+      missingSamples("docs-react-samples.test.tsx", [
+        docSample("react/presence-provider.mdx", "function Workspace"),
+        docSample("react/presence-provider.mdx", "function Room"),
+        docSample("react/connection-status.mdx", "function TokenError"),
+        docSample("react/remote-events.mdx", "function Reactions"),
+        docSample("react/remote-events.mdx", "function WaveButton"),
+        docSample("react/typed-hooks.mdx", "export const schemaHooks"),
+        docSample("react/typed-hooks.mdx", "function PresenceList"),
+      ]),
+    ).toEqual([]);
+    expect(
+      missingSamples("doc-presence.ts", [
+        docSample("react/typed-hooks.mdx", "createPresenceHooks<Context, User, Events>"),
+      ]),
+    ).toEqual([]);
   });
 });

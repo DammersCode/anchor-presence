@@ -6,14 +6,21 @@ icon: book-open
 
 import {
   Anchor,
+  Braces,
+  Code,
+  PlugZap,
   Atom,
   Blocks,
   Bot,
   Box,
   Download,
+  FileCheck,
+  FileCode,
   FlaskConical,
+  Link,
   MousePointer,
   Rocket,
+  Server,
   ShieldCheck,
   Waypoints,
 } from "lucide-react";
@@ -40,10 +47,10 @@ Anchor Presence is a live-cursor library for web apps. It shows where your teamm
 Mark an element as an anchor, and render the cursor layer inside the provider:
 
 ```tsx
-<LiveCursorProvider factory={createClient}>
+<PresenceProvider factory={createClient}>
   <button data-anchor="nav.dashboard">Dashboard</button>
   <CursorLayer />
-</LiveCursorProvider>
+</PresenceProvider>
 ```
 
 [Quick start](/docs/get-started/quick-start) shows the full file, with the `createClient` function.
@@ -59,22 +66,23 @@ Anchor Presence sends an element ID and a point inside that element, not a scree
 - An **anchor** is an element with a `data-anchor` attribute, for example `<button data-anchor="nav.dashboard">`. The attribute value is the **anchor ID**.
 - The **position** is a point inside the anchor, as a fraction from 0 to 1 of its width (`u`) and of its height (`v`).
 - The **receiver** is the browser that shows a remote cursor. The receiver measures its own copy of the anchor and turns the position into pixels.
-- The **fallback chain** is the anchor, then its parent anchors, then a position in the browser window. If the receiver has no element for an entry, it tries the next entry.
+- The **fallback chain** is the anchor, then its parent anchors, then a viewport position, when the message carries one. If the receiver has no element for an entry, it tries the next entry.
 - A **peer** is another client in the same room.
+- The **binding** (`createDomBinding`) connects the client to the DOM: it registers anchors, captures the pointer, and resolves remote cursors.
 - A **relay** is a server that forwards each message to every other client in a room.
 
 ## Packages
 
-The library has three packages. Each package adds one layer. `@anchor-presence/react` depends on `@anchor-presence/dom`, and `@anchor-presence/dom` depends on `@anchor-presence/core`.
+The library has three packages. Each package adds one layer. `@anchor-presence/react` depends on `@anchor-presence/dom`, and `@anchor-presence/dom` depends on `@anchor-presence/core`. Each package has one public entry point, its package root. `@anchor-presence/core` has a second one, `@anchor-presence/core/standard-schema`. Other paths are not public.
 
 <Cards>
-  <Card icon={<Box />} title="@anchor-presence/core" href="/docs/core">
+  <Card icon={<Box />} title="Core overview" href="/docs/core">
     Protocol, validation, presence store, and the client. No DOM, no React, no dependencies.
   </Card>
-  <Card icon={<MousePointer />} title="@anchor-presence/dom" href="/docs/dom">
+  <Card icon={<MousePointer />} title="DOM overview" href="/docs/dom">
     Anchors, pointer capture, layout measurement, resolver, and the WebSocket transport.
   </Card>
-  <Card icon={<Atom />} title="@anchor-presence/react" href="/docs/react">
+  <Card icon={<Atom />} title="React overview" href="/docs/react">
     The provider, hooks, and cursor components.
   </Card>
 </Cards>
@@ -83,10 +91,39 @@ The library has three packages. Each package adds one layer. `@anchor-presence/r
 
 <Cards>
   <Card icon={<FlaskConical />} title="Examples" href="/docs/examples">
-    Live demos of layouts, and relays for Bun, Node.js, Socket.IO, and more.
+    Live demos of layouts, resolution, and rendering.
+  </Card>
+  <Card icon={<Server />} title="Backends" href="/docs/examples/backends">
+    Relays for Bun, Node.js, Hono, Elysia, Socket.IO, and SignalR.
   </Card>
   <Card icon={<Bot />} title="Skills" href="/docs/skills">
     Agent skills that install Anchor Presence and audit layouts.
+  </Card>
+</Cards>
+
+## Reference
+
+<Cards>
+  <Card icon={<FileCode />} title="Protocol types" href="/docs/core/api/protocol">
+    The message types, validation limits, and where each limit lives.
+  </Card>
+  <Card icon={<FileCode />} title="Wire frames" href="/docs/core/api/protocol#wire-frames">
+    The JSON of a cursor, event, and leave frame.
+  </Card>
+  <Card icon={<Code />} title="Client API" href="/docs/core/api/client">
+    Every method of the presence client.
+  </Card>
+  <Card icon={<PlugZap />} title="WebSocket transport API" href="/docs/dom/api/websocket-transport">
+    The options and states of the WebSocket transport.
+  </Card>
+  <Card icon={<Braces />} title="Hooks API" href="/docs/react/api/hooks">
+    The signature of every React hook.
+  </Card>
+  <Card icon={<FileCheck />} title="Relay contract" href="/docs/examples/backends/relay-contract">
+    The rules that every relay obeys, with close codes.
+  </Card>
+  <Card icon={<Link />} title="Binding options" href="/docs/dom/binding#options">
+    Every option of createDomBinding, with defaults.
   </Card>
 </Cards>
 

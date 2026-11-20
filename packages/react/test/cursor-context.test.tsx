@@ -4,14 +4,15 @@ import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createPresenceClient } from "@anchor-presence/core";
-import type { LiveCursorTransport } from "@anchor-presence/core";
-import { LiveCursorProvider } from "../src/provider";
-import { useLocalContext } from "../src/hooks";
-import { makeFakeBinding } from "./test-utils";
+import type { PresenceTransport } from "@anchor-presence/core";
+import { createPresenceHooks } from "../src/typed-hooks";
+import { makeFakeBinding, parserOf } from "./test-utils";
 
 type TestContext = { route: string };
 
-function makeStubTransport(): LiveCursorTransport {
+const { PresenceProvider, useLocalContext } = createPresenceHooks<TestContext>();
+
+function makeStubTransport(): PresenceTransport {
   return {
     send: () => {},
     subscribe: () => () => {},
@@ -35,14 +36,15 @@ describe("useLocalContext", () => {
   });
 
   function Reader() {
-    const [context, setContext] = useLocalContext<TestContext>();
+    const [context, setContext] = useLocalContext();
     renders.push(context);
     lastSetContext = setContext;
     return null;
   }
 
   it("returns the client's initial context option", () => {
-    const client = createPresenceClient<TestContext>({
+    const client = createPresenceClient({
+      parseContext: parserOf<TestContext>(),
       transport: makeStubTransport(),
       context: { route: "/home" },
     });
@@ -51,9 +53,9 @@ describe("useLocalContext", () => {
 
     act(() => {
       root.render(
-        <LiveCursorProvider client={client} binding={binding}>
+        <PresenceProvider client={client} binding={binding}>
           <Reader />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
     expect(renders.at(-1)).toEqual({ route: "/home" });
@@ -65,15 +67,18 @@ describe("useLocalContext", () => {
   });
 
   it("setContext via the hook updates both the client and the hook value", () => {
-    const client = createPresenceClient<TestContext>({ transport: makeStubTransport() });
+    const client = createPresenceClient({
+      parseContext: parserOf<TestContext>(),
+      transport: makeStubTransport(),
+    });
     const { binding } = makeFakeBinding<TestContext, unknown>();
     const root = createRoot(container);
 
     act(() => {
       root.render(
-        <LiveCursorProvider client={client} binding={binding}>
+        <PresenceProvider client={client} binding={binding}>
           <Reader />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
     expect(renders.at(-1)).toBeUndefined();
@@ -91,15 +96,18 @@ describe("useLocalContext", () => {
   });
 
   it("re-renders when the client's context is set directly, bypassing the hook", () => {
-    const client = createPresenceClient<TestContext>({ transport: makeStubTransport() });
+    const client = createPresenceClient({
+      parseContext: parserOf<TestContext>(),
+      transport: makeStubTransport(),
+    });
     const { binding } = makeFakeBinding<TestContext, unknown>();
     const root = createRoot(container);
 
     act(() => {
       root.render(
-        <LiveCursorProvider client={client} binding={binding}>
+        <PresenceProvider client={client} binding={binding}>
           <Reader />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
     expect(renders.at(-1)).toBeUndefined();
@@ -124,7 +132,7 @@ describe("useLocalContext", () => {
 describe("index re-exports", () => {
   const foreignTypes = [
     "ConnectionStatus",
-    "CursorPresence",
+    "PresenceMessage",
     "PresenceClient",
     "DomBinding",
     "DomBindingOptions",

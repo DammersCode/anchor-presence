@@ -1,26 +1,26 @@
 ---
-title: Cursor events
-description: Send one-shot events such as reactions with client.sendEvent, and receive them with useCursorEvents.
+title: Remote events
+description: Send one-shot events such as reactions with client.sendEvent, and receive them with useRemoteEvents.
 icon: zap
 ---
 
 import { Braces, Wifi, Zap } from "lucide-react";
 
-An event is a one-shot message to every peer (another client in the same room), for example a reaction or a ping. It has a `type` and an optional `data` value. `useCursorEvents` calls a listener for each event that a peer sends. Use events for things that happen one time. For state that a late peer must also see, use the [local user or context](/docs/react/local-context).
+An event is a one-shot message to every peer, for example a reaction or a ping. It has a `type` and an optional `data` value. `useRemoteEvents` calls a listener for each event that a peer sends. Use events for things that happen one time. For state that a late peer must also see, use the [local user or context](/docs/react/local-context).
 
 ## Usage
 
-This component sends a reaction with `client.sendEvent` and shows the last reaction from a peer:
+This component sends a reaction with `client.sendEvent` and shows the last reaction from a peer. It needs the `PresenceProvider` from `@anchor-presence/react`:
 
 ```tsx
 import { useState } from "react";
-import { useCursorClient, useCursorEvents } from "@anchor-presence/react";
+import { usePresenceClient, useRemoteEvents } from "@anchor-presence/react";
 
 function Reactions() {
-  const client = useCursorClient();
+  const client = usePresenceClient();
   const [lastReaction, setLastReaction] = useState<string | null>(null);
 
-  useCursorEvents((event) => {
+  useRemoteEvents((event) => {
     if (event.type === "reaction" && typeof event.data === "string") {
       setLastReaction(`${event.clientId}: ${event.data}`);
     }
@@ -43,26 +43,24 @@ function Reactions() {
 
 ## Send typed events
 
-`useSendEvent<TEvents>()` returns a function that sends only the events of the event map `TEvents`. A misspelled `type` or a `data` value of the wrong type does not compile. Without a client, the function sends nothing and returns `false`.
+The `useSendEvent` that you import from `@anchor-presence/react` sends any event `type`, with `data` of the type `unknown`. To send only the events of one event map, pass the map as the third type argument of `createPresenceHooks`. Export `useSendEvent` from the result. See [Typed hooks](/docs/react/typed-hooks). A misspelled `type` or a `data` value of the wrong type then does not compile. Without a client, the function sends nothing and returns `false`.
 
-This button sends a typed reaction:
+This button sends a typed reaction. The `PresenceProvider` above it must come from `./presence`, the module of [Typed hooks](/docs/react/typed-hooks#usage):
 
 ```tsx
-import { useSendEvent } from "@anchor-presence/react";
-
-type Events = { reaction: string };
+import { useSendEvent } from "./presence";
 
 function WaveButton() {
-  const sendEvent = useSendEvent<Events>();
+  const sendEvent = useSendEvent();
   return (
-    <button type="button" onClick={() => sendEvent("reaction", "wave")}>
+    <button type="button" onClick={() => sendEvent("reaction", { emoji: "wave" })}>
       Wave
     </button>
   );
 }
 ```
 
-`useSendEvent` types only the events that you send. To give the received events types too, use [typed events](/docs/react/typed-hooks#typed-events).
+The typed `useRemoteEvents` of the same result types the events that you receive. See [typed events](/docs/react/typed-hooks#typed-events).
 
 ## Behavior
 
@@ -71,7 +69,7 @@ function WaveButton() {
 - The listener receives a `RemoteEvent`: the `type`, the `data`, and the `clientId` of the sender.
 - `client.sendEvent(type, data?)` returns `false` when it sends nothing, for example while the client is not connected. See [Events](/docs/core/events) for every case.
 - The receiver limits the events of each sender and of all senders together. It drops the events above a limit. See [Event rate limit](/docs/core/events#event-rate-limit).
-- The hook subscribes one time per client. An inline listener does not subscribe again on each render, and the hook always calls the listener of the last render. The hook never rerenders its component.
+- The hook subscribes one time per client. An inline listener does not subscribe again on each render, and the hook always calls the listener of the last render. The hook returns nothing, so it adds no rerender of its own.
 
 ## Related
 
@@ -79,7 +77,7 @@ function WaveButton() {
   <Card icon={<Braces />} title="Typed hooks" href="/docs/react/typed-hooks#typed-events">
     Type the events that you send and the events that you receive.
   </Card>
-  <Card icon={<Zap />} title="Events in the client" href="/docs/core/events">
+  <Card icon={<Zap />} title="Events" href="/docs/core/events">
     Field limits, rate limits, and parseEvent.
   </Card>
   <Card icon={<Wifi />} title="Connection status" href="/docs/react/connection-status">

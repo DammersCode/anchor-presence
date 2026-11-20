@@ -6,7 +6,7 @@ icon: code
 
 import { FileCode, Radio, Users, Zap } from "lucide-react";
 
-This page lists the client exports of `@anchor-presence/core` with their types. Use it to look up an option or a method. The guides explain the behavior.
+This page lists the client exports of `@anchor-presence/core` with their types. Use it to look up an option or a method. The guides explain the behavior. Import them from the package:
 
 ```ts
 import { createPresenceClient } from "@anchor-presence/core";
@@ -16,11 +16,16 @@ import { createPresenceClient } from "@anchor-presence/core";
 
 `createPresenceClient(options)` builds a `PresenceClient`. See [Presence client](/docs/core/presence-client).
 
-It throws a `TypeError` when one of these options is not a finite number:
+It throws a `TypeError` in these cases:
 
-- `publishIntervalMs`, `heartbeatIntervalMs`, `staleTimeoutMs`, and `idleAfterMs`.
-- `maxRemoteClients`.
-- `adaptivePublish.highWatermarkBytes`, `adaptivePublish.lowWatermarkBytes`, and `adaptivePublish.slowPublishIntervalMs`.
+- `transport` is missing, or `transport.subscribe` is not a function.
+- `clientId` is not a string of 1 to 128 characters. The limit is `validationLimits.maxClientIdLength` when you set it.
+- The session ID that `idFactory` returns is not a string of 1 to 64 characters. The limit is `validationLimits.maxSessionLength` when you set it.
+- `maxRemoteClients` is not an integer of at least 1.
+- One of these options is not a finite number:
+
+  - `publishIntervalMs`, `heartbeatIntervalMs`, `staleTimeoutMs`, and `idleAfterMs`.
+  - `adaptivePublish.highWatermarkBytes`, `adaptivePublish.lowWatermarkBytes`, and `adaptivePublish.slowPublishIntervalMs`.
 
 The fields of `eventRateLimit` and `validationLimits` get no such check.
 
@@ -55,6 +60,8 @@ type TypedRemoteEvent<TEvents extends object> = {
   [K in keyof TEvents & string]: { clientId: string; type: K; data: TEvents[K] };
 }[keyof TEvents & string];
 
+type EventParser<TEvents extends object> = (event: RemoteEvent) => TypedRemoteEvent<TEvents> | undefined;
+
 type EventChannel<TEvents extends object> = {
   send<K extends keyof TEvents & string>(
     type: K,
@@ -63,8 +70,8 @@ type EventChannel<TEvents extends object> = {
   subscribe(listener: (event: TypedRemoteEvent<TEvents>) => void): () => void;
 };
 
-function createEventChannel<TEvents extends object>(
-  client: Pick<PresenceClient, "sendEvent" | "subscribeEvents">,
+function createEventChannel<TEvents extends object = EventMap>(
+  client: Pick<PresenceClient<unknown, unknown, TEvents>, "sendEvent" | "subscribeEvents">,
 ): EventChannel<TEvents>;
 ```
 
@@ -80,9 +87,7 @@ type EventParsers<TEvents extends object> = {
     ((data: unknown) => TEvents[K] | undefined) | (undefined extends TEvents[K] ? null : never);
 };
 
-function createEventParser<TEvents extends object>(
-  parsers: EventParsers<TEvents>,
-): (event: RemoteEvent) => TypedRemoteEvent<TEvents> | undefined;
+function createEventParser<TEvents extends object>(parsers: EventParsers<TEvents>): EventParser<TEvents>;
 ```
 
 `createEventParser` returns a function for the `parseEvent` option. `null` is legal only for an event whose data type includes `undefined`. The returned function drops an event in these cases:
@@ -147,13 +152,13 @@ import {
 } from "@anchor-presence/core";
 ```
 
-| Constant                        | Value   | Default for                         |
-| ------------------------------- | ------- | ----------------------------------- |
-| `DEFAULT_PUBLISH_INTERVAL_MS`   | `50`    | `publishIntervalMs`, milliseconds   |
-| `DEFAULT_HEARTBEAT_INTERVAL_MS` | `10000` | `heartbeatIntervalMs`, milliseconds |
-| `DEFAULT_STALE_TIMEOUT_MS`      | `70000` | `staleTimeoutMs`, milliseconds      |
-| `DEFAULT_IDLE_AFTER_MS`         | `15000` | `idleAfterMs`, milliseconds         |
-| `DEFAULT_MAX_REMOTE_CLIENTS`    | `64`    | `maxRemoteClients`                  |
+| Constant                        | Default for                                                       |
+| ------------------------------- | ----------------------------------------------------------------- |
+| `DEFAULT_PUBLISH_INTERVAL_MS`   | [`publishIntervalMs`](/docs/core/presence-client#publish-rate)    |
+| `DEFAULT_HEARTBEAT_INTERVAL_MS` | [`heartbeatIntervalMs`](/docs/core/presence-client#heartbeat)     |
+| `DEFAULT_STALE_TIMEOUT_MS`      | [`staleTimeoutMs`](/docs/core/remote-presence#stale-timeout)      |
+| `DEFAULT_IDLE_AFTER_MS`         | [`idleAfterMs`](/docs/core/remote-presence#idle-state)            |
+| `DEFAULT_MAX_REMOTE_CLIENTS`    | [`maxRemoteClients`](/docs/core/remote-presence#maxremoteclients) |
 
 ## Related
 

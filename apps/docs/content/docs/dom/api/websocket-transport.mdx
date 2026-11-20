@@ -6,7 +6,7 @@ icon: plug-zap
 
 import { Cable, RadioTower } from "lucide-react";
 
-This page lists `createWebSocketTransport` and its types. Use it to look up an option. The [WebSocket transport](/docs/dom/websocket-transport) guide explains the behavior.
+This page lists `createWebSocketTransport` and its types. Use it to look up an option. The [WebSocket transport](/docs/dom/websocket-transport) guide explains the behavior. Import them from the package:
 
 ```ts
 import { createWebSocketTransport } from "@anchor-presence/dom";
@@ -15,9 +15,14 @@ import type { WebSocketTransport, WebSocketTransportOptions } from "@anchor-pres
 
 ## createWebSocketTransport
 
-`createWebSocketTransport(options?)` returns a `WebSocketTransport`. If `options.url` is missing, it throws a `TypeError` in two cases: `window` does not exist, or `options.path` does not start with `/` or `?`. See [The default URL](/docs/dom/websocket-transport#the-default-url).
+`createWebSocketTransport(options?)` returns a `WebSocketTransport`. It throws a `TypeError` in these cases:
 
-`WebSocketTransport` is a `LiveCursorTransport` from `@anchor-presence/core` whose `connect` and `disconnect` methods are required. The type keeps `subscribeStatus`, `getStatus`, `subscribeClose`, and `bufferedBytes` optional, although the returned object always has them.
+- `options.url` is missing, and `window` does not exist.
+- `options.url` is missing, and `options.path` does not start with `/` or `?`. See [The default URL](/docs/dom/websocket-transport#the-default-url).
+- `baseBackoffMs` or `maxBackoffMs` is not a positive finite number.
+- `maxBackoffMs` is less than `baseBackoffMs`.
+
+`WebSocketTransport` is a `PresenceTransport` from `@anchor-presence/core` whose `connect`, `disconnect`, `subscribeStatus`, `getStatus`, `subscribeClose`, and `bufferedBytes` members are all required.
 
 A `subscribeClose` listener receives a [`TransportClose`](/docs/core/api/transports-and-codecs#transportclose) from `@anchor-presence/core`.
 

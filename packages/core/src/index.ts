@@ -2,7 +2,7 @@ export type {
   AnchorPoint,
   ConnectionStatus,
   CursorPosition,
-  CursorPresence,
+  PresenceMessage,
   PeerChange,
   PointerInfo,
   PointerType,
@@ -35,15 +35,21 @@ export type { RemotePresenceStoreOptions } from "./store.js";
 
 export { jsonCodec } from "./codec.js";
 export { binaryCodec } from "./binary-codec.js";
-export type { CursorCodec } from "./codec.js";
+export type { PresenceCodec } from "./codec.js";
 
-export type { LiveCursorTransport, TransportClose } from "./transport.js";
+export type { PresenceTransport, TransportClose } from "./transport.js";
 
-export { createInMemoryPair } from "./in-memory-transport.js";
-export type { InMemoryPair, InMemoryPairOptions, InMemoryTransport } from "./in-memory-transport.js";
+export { createInMemoryPair, createInMemoryRoom } from "./in-memory-transport.js";
+export type {
+  InMemoryPair,
+  InMemoryPairOptions,
+  InMemoryRoom,
+  InMemoryRoomOptions,
+  InMemoryTransport,
+} from "./in-memory-transport.js";
 
 export { createEventChannel, createEventParser } from "./event-channel.js";
-export type { EventChannel, EventMap, EventParsers, TypedRemoteEvent } from "./event-channel.js";
+export type { EventChannel, EventMap, EventParser, EventParsers, TypedRemoteEvent } from "./event-channel.js";
 
 export {
   createPresenceClient,

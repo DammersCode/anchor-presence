@@ -2,13 +2,17 @@
 
 import { linearInterpolator, noneInterpolator } from "@anchor-presence/core";
 import type { Interpolator, InterpolatorFactory, PresenceClient } from "@anchor-presence/core";
-import { CursorLayer, LiveCursorProvider, useRemoteCursors } from "@anchor-presence/react";
+import type { TourContext } from "./_preview/tour";
+import { CursorLayer, PresenceProvider, useRemoteCursors } from "./_preview/hooks";
 import { useEffect, useState, type ReactNode } from "react";
+
+const safeColor = (color: string | undefined, fallback: string) =>
+  color !== undefined && /^#[0-9a-f]{6}$/iu.test(color) ? color : fallback;
 
 type User = { name: string; color: string };
 
 type Props = {
-  client: PresenceClient<unknown, User> | null;
+  client: PresenceClient<TourContext, User> | null;
   layout: "wide" | "narrow";
   children?: ReactNode;
 };
@@ -80,6 +84,8 @@ const INTERPOLATORS: Record<Style, InterpolatorFactory> = {
   spring: () => springInterpolator(),
 };
 
+const isStyle = (value: string): value is Style => Object.hasOwn(INTERPOLATORS, value);
+
 const TARGETS = [
   { id: "a", place: "col-start-1 row-start-1 self-start justify-self-start" },
   { id: "b", place: "col-start-2 row-start-1 self-start justify-self-end" },
@@ -91,7 +97,7 @@ const TRAIL_LENGTH = 28;
 
 /** Dots on the last positions of the first remote cursor, so the path of each glide stays visible. */
 function MotionTrail() {
-  const cursor = useRemoteCursors<unknown, User>().find((candidate) => candidate.visible);
+  const cursor = useRemoteCursors().find((candidate) => candidate.visible);
   const [trail, setTrail] = useState<{ x: number; y: number }[]>([]);
   const x = cursor?.x;
   const y = cursor?.y;
@@ -109,7 +115,7 @@ function MotionTrail() {
           cx={point.x}
           cy={point.y}
           r={2.5}
-          fill={cursor?.user?.color ?? "#4f46e5"}
+          fill={safeColor(cursor?.user?.color, "#4f46e5")}
           opacity={(index + 1) / trail.length / 2}
         />
       ))}
@@ -126,10 +132,9 @@ export function InterpolationScene({ client, layout, children }: Props) {
   const [style, setStyle] = useState<Style>(() => (wide || prefersReducedMotion() ? "none" : "spring"));
 
   return (
-    // The provider reads bindingOptions once, so a new key remounts the binding with the new interpolator.
-    <LiveCursorProvider
-      key={style}
+    <PresenceProvider
       client={client}
+      bindingKey={style}
       bindingOptions={{ resolution: { interpolatorFactory: INTERPOLATORS[style] } }}
     >
       <div className="flex h-full flex-col gap-2 p-2.5">
@@ -139,7 +144,9 @@ export function InterpolationScene({ client, layout, children }: Props) {
             <select
               aria-label="Interpolator"
               value={style}
-              onChange={(event) => setStyle(event.target.value as Style)}
+              onChange={(event) => {
+                if (isStyle(event.target.value)) setStyle(event.target.value);
+              }}
               className="rounded-md border border-fd-border bg-fd-background px-1.5 py-1 text-[11px] text-fd-foreground focus-visible:outline-2 focus-visible:outline-fd-ring"
             >
               <option value="none">none</option>
@@ -164,11 +171,11 @@ export function InterpolationScene({ client, layout, children }: Props) {
         </div>
       </div>
       <MotionTrail />
-      <CursorLayer<unknown, User>
+      <CursorLayer
         getLabel={(cursor) => cursor.user?.name ?? null}
-        getColor={(cursor) => cursor.user?.color ?? "#4f46e5"}
+        getColor={(cursor) => safeColor(cursor.user?.color, "#4f46e5")}
       />
       {children}
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }

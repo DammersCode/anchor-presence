@@ -1,12 +1,12 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, describe, expect, it } from "vitest";
-import type { RemoteEvent } from "@anchor-presence/core";
-import { LiveCursorProvider } from "../src/provider";
-import { useCursorEvents } from "../src/hooks/use-cursor-events";
+import type { EventMap, TypedRemoteEvent } from "@anchor-presence/core";
+import { PresenceProvider } from "../src/provider";
+import { useRemoteEvents } from "../src/hooks/use-remote-events";
 import { makeFakeBinding, makeFakeClient } from "./test-utils";
 
-describe("useCursorEvents", () => {
+describe("useRemoteEvents", () => {
   let container: HTMLDivElement | null = null;
 
   afterEach(() => {
@@ -16,14 +16,14 @@ describe("useCursorEvents", () => {
 
   it("subscribes once per client, calls the latest listener and unsubscribes on unmount", () => {
     const { client } = makeFakeClient();
-    const handlers = new Set<(event: RemoteEvent) => void>();
+    const handlers = new Set<(event: TypedRemoteEvent<EventMap>) => void>();
     client.subscribeEvents = (listener) => {
       handlers.add(listener);
       return () => handlers.delete(listener);
     };
     const seen: string[] = [];
     function Probe({ tag }: { tag: string }) {
-      useCursorEvents((event) => seen.push(`${tag}:${event.type}`));
+      useRemoteEvents((event) => seen.push(`${tag}:${event.type}`));
       return null;
     }
 
@@ -31,16 +31,16 @@ describe("useCursorEvents", () => {
     document.body.append(container);
     const root = createRoot(container);
     const tree = (tag: string) => (
-      <LiveCursorProvider client={client} binding={makeFakeBinding().binding}>
+      <PresenceProvider client={client} binding={makeFakeBinding().binding}>
         <Probe tag={tag} />
-      </LiveCursorProvider>
+      </PresenceProvider>
     );
     act(() => root.render(tree("a")));
     expect(handlers.size).toBe(1);
 
     act(() => root.render(tree("b")));
     expect(handlers.size).toBe(1);
-    for (const handler of handlers) handler({ clientId: "p", type: "ping" });
+    for (const handler of handlers) handler({ clientId: "p", type: "ping", data: undefined });
     expect(seen).toEqual(["b:ping"]);
 
     act(() => root.unmount());

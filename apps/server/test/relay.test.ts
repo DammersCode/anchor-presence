@@ -265,6 +265,26 @@ afterAll(async () => {
 });
 
 describe("reference relay hardening", () => {
+  it("accepts sockets when RELAY_MAX_ROOM_SOCKETS floors to zero", async () => {
+    const port = await freePort();
+    const child = startRelay(port, { RELAY_MAX_ROOM_SOCKETS: "0.5" });
+    try {
+      await waitForPort(port);
+      const room = randomUUID();
+      const first = await connect(`ws://127.0.0.1:${port}/?room=${room}`);
+      const second = await connect(`ws://127.0.0.1:${port}/?room=${room}`);
+      const settled = await Promise.race([
+        second.closeCode,
+        new Promise((r) => setTimeout(() => r("open"), 200)),
+      ]);
+      expect(settled).toBe("open");
+      first.ws.close();
+      second.ws.close();
+    } finally {
+      child.kill();
+    }
+  });
+
   it("broadcasts binary messages to other sockets in the same room", async () => {
     const room = randomUUID();
     const sender = await connect(`ws://127.0.0.1:${hardeningPort}/?room=${room}`);
@@ -407,4 +427,19 @@ describe("reference relay hardening", () => {
     refillBucket(bucket, 6_000, 10, 2);
     expect(bucket.tokens).toBe(2);
   });
+
+  it("keeps the room count per relay instance, enforces both caps and rejects invalid cap options", async () => {
+    const child = spawn("bun", ["apps/server/test/two-relays-fixture.ts"], {
+      cwd: repoRoot,
+      stdio: "pipe",
+      windowsHide: true,
+    });
+    let output = "";
+    child.stdout.on("data", (chunk) => (output += chunk));
+    child.stderr.on("data", (chunk) => (output += chunk));
+    const killer = setTimeout(() => child.kill(), 12_000);
+    const code = await new Promise((resolve) => child.once("exit", resolve));
+    clearTimeout(killer);
+    expect(code, output).toBe(0);
+  }, 15_000);
 });

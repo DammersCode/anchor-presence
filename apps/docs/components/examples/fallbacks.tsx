@@ -1,13 +1,17 @@
 "use client";
 
 import type { PresenceClient } from "@anchor-presence/core";
-import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
+import type { TourContext } from "./_preview/tour";
+import { CursorLayer, PresenceProvider } from "./_preview/hooks";
 import { useState, type ReactNode } from "react";
+
+const safeColor = (color: string | undefined, fallback: string) =>
+  color !== undefined && /^#[0-9a-f]{6}$/iu.test(color) ? color : fallback;
 
 type User = { name: string; color: string };
 
 type Props = {
-  client: PresenceClient<unknown, User> | null;
+  client: PresenceClient<TourContext, User> | null;
   layout: "wide" | "narrow";
   children?: ReactNode;
 };
@@ -62,7 +66,7 @@ export function FallbacksScene({ client, layout, children }: Props) {
   const [showOrders, setShowOrders] = useState(true);
 
   return (
-    <LiveCursorProvider client={client}>
+    <PresenceProvider client={client}>
       <div data-anchor="shop" className="flex h-full flex-col gap-2 p-3">
         <div className="flex items-center justify-between gap-2">
           <h3 className="font-display text-sm font-semibold">{wide ? "All orders" : "Recent orders"}</h3>
@@ -102,11 +106,11 @@ export function FallbacksScene({ client, layout, children }: Props) {
           </p>
         )}
       </div>
-      <CursorLayer<unknown, User>
+      <CursorLayer
         getLabel={(cursor) => cursor.user?.name ?? null}
-        getColor={(cursor) => cursor.user?.color ?? "#4f46e5"}
+        getColor={(cursor) => safeColor(cursor.user?.color, "#4f46e5")}
       />
       {children}
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }

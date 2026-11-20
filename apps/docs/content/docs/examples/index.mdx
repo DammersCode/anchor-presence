@@ -8,21 +8,28 @@ import {
   Brush,
   EyeOff,
   FileCheck,
-  Footprints,
   Kanban,
   Layers,
+  LayoutPanelLeft,
   LayoutGrid,
   ListTree,
-  LocateFixed,
-  MessageSquareText,
   MousePointer2,
   Server,
   Spline,
   TableProperties,
   Users,
+  ListChecks,
+  Rocket,
+  CloudUpload,
 } from "lucide-react";
 
-Each example page has a live demo with two panes. The panes show the same app in two layouts, a wide one and a narrow one. Move your pointer in one pane, and your cursor appears in the other pane on the same element. The panes connect through a `BroadcastChannel`, so the demos need no server.
+Each example page has a live demo with two panes. The panes show the same app in two layouts, a wide one and a narrow one. Move your pointer in one pane, and your cursor appears in the other pane on the same element. In each demo, a scripted tour moves the peers Mira, Theo and Jun, so you see remote cursors before you move your own pointer. The panes connect through a `BroadcastChannel`, so the demos need no server.
+
+<Callout type="warn">
+  If you render a color from a peer, check it first. The examples use `safeColor`, a one-line check for a
+  `#rrggbb` value. See [Check the shape of remote
+  values](/docs/get-started/guides/security#check-the-shape-of-remote-values).
+</Callout>
 
 ## Layouts
 
@@ -38,6 +45,9 @@ Each example page has a live demo with two panes. The panes show the same app in
   </Card>
   <Card icon={<Kanban />} title="Kanban board" href="/docs/examples/kanban">
     Use this when your columns keep a fixed width and the board scrolls.
+  </Card>
+  <Card icon={<LayoutPanelLeft />} title="Stable layout" href="/docs/examples/stable-layout">
+    Use this when you want every cursor move to stay short in any pane.
   </Card>
 </Cards>
 
@@ -76,18 +86,13 @@ Each example page has a live demo with two panes. The panes show the same app in
 ## Recipes
 
 <Cards>
-  <Card icon={<MessageSquareText />} title="Cursor chat" href="/docs/get-started/guides/cursor-chat">
-    Use this when users send a short message next to their cursor.
-  </Card>
-  <Card icon={<Footprints />} title="Follow mode" href="/docs/get-started/guides/follow-mode">
-    Use this when one user follows the cursor of another user.
-  </Card>
-  <Card icon={<LocateFixed />} title="Off-screen hints" href="/docs/get-started/guides/offscreen-hints">
-    Use this when you point to a cursor outside the visible area.
+  <Card icon={<ListChecks />} title="Recipes" href="/docs/get-started/guides/recipes">
+    Use this for a short how-to: cursor chat, follow mode, off-screen hints, typing and away, join and leave
+    announcements, or card occupancy. The pages are under Recipes in Get started.
   </Card>
 </Cards>
 
-## Servers
+## Backends
 
 <Cards>
   <Card icon={<Server />} title="Backends" href="/docs/examples/backends">
@@ -95,5 +100,16 @@ Each example page has a live demo with two panes. The panes show the same app in
   </Card>
   <Card icon={<FileCheck />} title="Relay contract" href="/docs/examples/backends/relay-contract">
     Use this when you write your own relay and want to test it.
+  </Card>
+</Cards>
+
+## Related
+
+<Cards>
+  <Card icon={<Rocket />} title="Quick start" href="/docs/get-started/quick-start">
+    Build the smallest working app, then come back for more.
+  </Card>
+  <Card icon={<CloudUpload />} title="Deploy a relay" href="/docs/get-started/guides/deploy-relay">
+    Run a relay for production.
   </Card>
 </Cards>

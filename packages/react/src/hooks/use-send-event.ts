@@ -1,11 +1,21 @@
 import { useMemo } from "react";
 import { createEventChannel } from "@anchor-presence/core";
 import type { EventChannel, EventMap } from "@anchor-presence/core";
-import { useLiveCursorContext } from "./use-cursor-client.js";
+import { PresenceProviderContext } from "../context.js";
+import type { PresenceContext } from "../context.js";
+import { usePresenceProviderContext } from "./use-presence-client.js";
 
-/** Returns `send` for one-shot events. It returns `false` and sends nothing until the client exists. */
-// oxlint-disable-next-line typescript/no-unnecessary-type-parameters -- the type parameter types the returned `send`
-export function useSendEvent<TEvents extends object = EventMap>(): EventChannel<TEvents>["send"] {
-  const { client } = useLiveCursorContext<unknown, unknown>();
-  return useMemo(() => (client === null ? () => false : createEventChannel<TEvents>(client).send), [client]);
+export function useSendEventIn<TContext, TUser, TEvents extends object>(
+  context: PresenceContext<TContext, TUser, TEvents>,
+): EventChannel<TEvents>["send"] {
+  const { client } = usePresenceProviderContext(context);
+  return useMemo(() => (client === null ? () => false : createEventChannel(client).send), [client]);
+}
+
+/**
+ * Returns `send` for one-shot events. It returns `false` and sends nothing until the client exists.
+ * Any event `type` is allowed. For a typed `send`, use `useSendEvent` from `createPresenceHooks`.
+ */
+export function useSendEvent(): EventChannel<EventMap>["send"] {
+  return useSendEventIn(PresenceProviderContext);
 }

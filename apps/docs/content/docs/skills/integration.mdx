@@ -4,9 +4,15 @@ description: The agent skill that adds anchor-presence live cursors to a React a
 icon: plug
 ---
 
-import { LifeBuoy, Rocket, Ruler, ScanSearch } from "lucide-react";
+import { LifeBuoy, Rocket, ScanSearch, LayoutDashboard } from "lucide-react";
 
-The integration skill teaches a coding agent to add Anchor Presence to your app. It also teaches the agent to fix live cursors that misbehave. To use it, install the skill. Then ask your agent to add live cursors or to fix a cursor problem. The skill gives the agent all the remaining steps.
+The integration skill teaches a coding agent to add Anchor Presence to your app. It also teaches the agent to fix live cursors that misbehave. The skill is named `anchor-presence`. To install only this skill, run:
+
+```sh
+npx skills add DammersCode/anchor-presence --skill anchor-presence
+```
+
+See [Install](/docs/skills#install) for both skills. Then ask your agent to add live cursors or to fix a cursor problem. The skill gives the agent all the remaining steps.
 
 ## What it does
 
@@ -60,7 +66,7 @@ Everything else comes from your code. If you ask for a who-is-online list, the s
     installs them too.
   </Step>
   <Step>
-    **Add the client.** It adds `LiveCursorProvider` with a `factory` prop, and `CursorLayer`, to a client
+    **Add the client.** It adds `PresenceProvider` with a `factory` prop, and `CursorLayer`, to a client
     component.
   </Step>
   <Step>
@@ -109,7 +115,7 @@ Everything else comes from your code. If you ask for a who-is-online list, the s
 - The provider wraps every target view, and the project typechecks.
 - Every navigation item, card, table row, row action, dialog, and primary control in the target views has an anchor. Every specific anchor has a marked parent anchor.
 - A cursor on an anchored element in a wide client appears on the same element in a narrow client, at a different pixel position.
-- After the transport connects, `useCursorStatus()` reports `connected`, not `connecting`.
+- After the transport connects, `usePresenceStatus()` reports `connected`, not `connecting`.
 
 ## Related
 
@@ -123,7 +129,11 @@ Everything else comes from your code. If you ask for a who-is-online list, the s
   <Card icon={<LifeBuoy />} title="Troubleshooting" href="/docs/get-started/guides/troubleshooting">
     The fixes that the skill applies to a broken integration.
   </Card>
-  <Card icon={<Ruler />} title="Layout design for presence" href="/docs/get-started/guides/layout-design">
+  <Card
+    icon={<LayoutDashboard />}
+    title="Layout design for presence"
+    href="/docs/get-started/guides/layout-design"
+  >
     The rules behind anchor placement.
   </Card>
 </Cards>

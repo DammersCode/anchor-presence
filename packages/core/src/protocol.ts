@@ -14,8 +14,8 @@ export type AnchorPoint = {
  * `viewport` holds a position in the sender viewport, used when no anchor resolves.
  */
 export type CursorPosition = {
-  anchors: AnchorPoint[];
-  viewport?: { u: number; v: number };
+  anchors: readonly AnchorPoint[];
+  viewport?: { u: number; v: number } | undefined;
 };
 
 /** The pointer type that moved the cursor. */
@@ -38,9 +38,9 @@ export type PeerChange<TContext = unknown, TUser = unknown> = {
   type: "join" | "leave" | "update";
   clientId: string;
   /** The client's `user` after the change, or its last `user` for a leave. */
-  user?: TUser;
+  user?: TUser | undefined;
   /** The client's `context` after the change, or its last `context` for a leave. */
-  context?: TContext;
+  context?: TContext | undefined;
 };
 
 /** A `PresenceEvent` received from a remote client. */
@@ -51,7 +51,7 @@ export type RemoteEvent = PresenceEvent & { clientId: string };
  * `clientId` names the client instance (tab or connection), not the user.
  * For `context` and `user`, `null` clears the field, and a missing field keeps the previous same-session value.
  */
-export type CursorPresence<TContext = unknown, TUser = unknown> = {
+export type PresenceMessage<TContext = unknown, TUser = unknown> = {
   version: 1;
   clientId: string;
   session: string;
@@ -59,7 +59,7 @@ export type CursorPresence<TContext = unknown, TUser = unknown> = {
   cursor: CursorPosition | null;
   context?: TContext | null | undefined;
   user?: TUser | null | undefined;
-  pointer?: PointerInfo;
+  pointer?: PointerInfo | undefined;
   /** `true` when the client leaves. `cursor` is `null`, and receivers remove the client at once. */
   leave?: true | undefined;
   /** A one-shot event. `cursor` is `null`. Receivers hand it to event listeners and never store it. */
@@ -72,7 +72,7 @@ export type CursorPresence<TContext = unknown, TUser = unknown> = {
  * The list keeps entry and array identity while nothing observable changes.
  */
 export type RemotePresence<TContext = unknown, TUser = unknown> = Omit<
-  CursorPresence<TContext, TUser>,
+  PresenceMessage<TContext, TUser>,
   "sequence"
 > & {
   /** `true` when this client's presence has not changed for `idleAfterMs`, even while heartbeats arrive. */

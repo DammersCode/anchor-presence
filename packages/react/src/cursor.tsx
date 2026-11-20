@@ -1,7 +1,10 @@
 import { memo, useCallback } from "react";
 import type { ComponentPropsWithoutRef, CSSProperties, ReactNode } from "react";
+import type { PointerType } from "@anchor-presence/core";
 import { CURSOR_MARKER_ATTRIBUTE, type ResolvedCursor } from "@anchor-presence/dom";
-import { useRemoteCursorsSelector } from "./hooks/index.js";
+import { PresenceProviderContext } from "./context.js";
+import type { PresenceContext } from "./context.js";
+import { useRemoteCursorsSelectorIn } from "./hooks/use-remote-cursors.js";
 
 const DEFAULT_COLOR = "#6b7280";
 const MAX_DEFAULT_LABEL_LENGTH = 32;
@@ -16,9 +19,23 @@ const DEFAULT_PALETTE = [
   "#4b5563",
 ];
 
+const graphemeSegmenter =
+  typeof Intl.Segmenter === "function" ? new Intl.Segmenter(undefined, { granularity: "grapheme" }) : null;
+
+function truncateLabel(name: string): string {
+  const units: string[] = [];
+  const parts = graphemeSegmenter === null ? name : graphemeSegmenter.segment(name);
+  for (const part of parts) {
+    if (units.length === MAX_DEFAULT_LABEL_LENGTH) break;
+    units.push(typeof part === "string" ? part : part.segment);
+  }
+  return units.join("");
+}
+
 function defaultLabel(cursor: ResolvedCursor): string | null {
-  const name = (cursor.user as { name?: unknown } | undefined)?.name;
-  return typeof name === "string" && name !== "" ? name.slice(0, MAX_DEFAULT_LABEL_LENGTH) : null;
+  const user = cursor.user;
+  const name = typeof user === "object" && user !== null && "name" in user ? user.name : undefined;
+  return typeof name === "string" && name !== "" ? truncateLabel(name) : null;
 }
 
 function defaultColor(cursor: ResolvedCursor): string {
@@ -59,6 +76,8 @@ export type CursorRenderProps<TContext = unknown, TUser = unknown> = {
   label: ReactNode;
   /** The color, from `getColor`. */
   color: string;
+  /** The pointer type that moved the cursor. `undefined` when the sender sent no pointer type. */
+  pointerType?: PointerType | undefined;
 };
 
 /**
@@ -66,19 +85,19 @@ export type CursorRenderProps<TContext = unknown, TUser = unknown> = {
  */
 export type CursorLayerProps<TContext = unknown, TUser = unknown> = {
   /** Returns the label to show for one cursor. */
-  getLabel?: (cursor: ResolvedCursor<TContext, TUser>) => ReactNode;
+  getLabel?: ((cursor: ResolvedCursor<TContext, TUser>) => ReactNode) | undefined;
   /** Returns the color for one cursor. */
-  getColor?: (cursor: ResolvedCursor<TContext, TUser>) => string;
+  getColor?: ((cursor: ResolvedCursor<TContext, TUser>) => string) | undefined;
   /** Hides a cursor when it returns `false`. Default: show every visible cursor. */
-  filterCursor?: (cursor: ResolvedCursor<TContext, TUser>) => boolean;
+  filterCursor?: ((cursor: ResolvedCursor<TContext, TUser>) => boolean) | undefined;
   /** Returns extra props for the cursor element. */
-  getCursorProps?: (
-    cursor: ResolvedCursor<TContext, TUser>,
-  ) => Omit<ComponentPropsWithoutRef<"div">, "children">;
+  getCursorProps?:
+    | ((cursor: ResolvedCursor<TContext, TUser>) => Omit<ComponentPropsWithoutRef<"div">, "children">)
+    | undefined;
   /** Renders one cursor. Default: the `DefaultCursor` component. */
-  renderCursor?: (props: CursorRenderProps<TContext, TUser>) => ReactNode;
+  renderCursor?: ((props: CursorRenderProps<TContext, TUser>) => ReactNode) | undefined;
   /** The z-index for the cursor elements. Default `9999`. */
-  zIndex?: number;
+  zIndex?: number | undefined;
 };
 
 /**
@@ -88,23 +107,25 @@ export type DefaultCursorProps = {
   /** The label text to show next to the arrow. */
   label?: ReactNode;
   /** The arrow color. Default `#6b7280`. */
-  color?: string;
+  color?: string | undefined;
   /** A class name for the outer element. */
-  className?: string;
+  className?: string | undefined;
   /** Inline styles for the outer element. */
-  style?: CSSProperties &
-    Partial<
-      Record<
-        | "--anchor-presence-cursor-color"
-        | "--anchor-presence-cursor-size"
-        | "--anchor-presence-cursor-label-color",
-        string
-      >
-    >;
+  style?:
+    | (CSSProperties &
+        Partial<
+          Record<
+            | "--anchor-presence-cursor-color"
+            | "--anchor-presence-cursor-size"
+            | "--anchor-presence-cursor-label-color",
+            string
+          >
+        >)
+    | undefined;
   /** A class name for the label element. */
-  labelClassName?: string;
+  labelClassName?: string | undefined;
   /** Inline styles for the label element. */
-  labelStyle?: CSSProperties;
+  labelStyle?: CSSProperties | undefined;
 };
 
 /**
@@ -193,7 +214,11 @@ function CursorItem<TContext = unknown, TUser = unknown>(props: CursorItemProps<
       data-anchor-presence-anchor={cursor.anchorId ?? ""}
       data-anchor-presence-idle={cursor.idle || undefined}
     >
-      {renderCursor ? renderCursor({ cursor, label, color }) : <DefaultCursor label={label} color={color} />}
+      {renderCursor ? (
+        renderCursor({ cursor, label, color, pointerType: cursor.pointerType })
+      ) : (
+        <DefaultCursor label={label} color={color} />
+      )}
     </div>
   );
 }
@@ -201,21 +226,21 @@ function CursorItem<TContext = unknown, TUser = unknown>(props: CursorItemProps<
 // the resolver keeps result-object identity for unchanged cursors (spec §14.1), so memo skips static cursors for free
 const MemoizedCursorItem = memo(CursorItem) as typeof CursorItem;
 
-/**
- * Renders the visible remote cursors.
- * The layer places each cursor at its resolved position.
- */
-export function CursorLayer<TContext = unknown, TUser = unknown>(
-  props: CursorLayerProps<TContext, TUser>,
+type CursorLayerInProps<TContext, TUser, TEvents extends object> = CursorLayerProps<TContext, TUser> & {
+  context: PresenceContext<TContext, TUser, TEvents>;
+};
+
+export function CursorLayerIn<TContext, TUser, TEvents extends object>(
+  props: CursorLayerInProps<TContext, TUser, TEvents>,
 ): ReactNode {
-  const { getLabel, getColor, filterCursor, getCursorProps, renderCursor, zIndex } = props;
+  const { context, getLabel, getColor, filterCursor, getCursorProps, renderCursor, zIndex } = props;
 
   const select = useCallback(
-    (cursors: ResolvedCursor<TContext, TUser>[]) =>
+    (cursors: readonly ResolvedCursor<TContext, TUser>[]) =>
       cursors.filter((cursor) => cursor.visible && (filterCursor?.(cursor) ?? true)),
     [filterCursor],
   );
-  const filtered = useRemoteCursorsSelector(select, sameCursors);
+  const filtered = useRemoteCursorsSelectorIn(context, select, sameCursors);
 
   return (
     <>
@@ -232,4 +257,13 @@ export function CursorLayer<TContext = unknown, TUser = unknown>(
       ))}
     </>
   );
+}
+
+/**
+ * Renders the visible remote cursors.
+ * The layer places each cursor at its resolved position.
+ * The `user` and `context` of a cursor have the type `unknown`. For typed render props, use `CursorLayer` from `createPresenceHooks`.
+ */
+export function CursorLayer(props: CursorLayerProps): ReactNode {
+  return <CursorLayerIn {...props} context={PresenceProviderContext} />;
 }

@@ -1,8 +1,8 @@
 {
   "title": "Backends",
   "icon": "server",
+  "defaultOpen": true,
   "pages": [
-    "index",
     "relay-contract",
     "---[radio-tower]Relays---",
     "bun-native",

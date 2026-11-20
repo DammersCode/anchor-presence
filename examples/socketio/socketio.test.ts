@@ -50,11 +50,12 @@ describe("Socket.IO transport integration", () => {
         reconnection: false,
       });
       sockets.push(evil);
-      const outcome = await new Promise<string>((resolve) => {
+      const outcome = await new Promise<string | number | undefined>((resolve) => {
         evil.on("connect", () => resolve("connected"));
-        evil.on("connect_error", () => resolve("refused"));
+        evil.on("connect_error", (error: Error & { data?: { code?: number } }) => resolve(error.data?.code));
       });
-      expect(outcome).toBe("refused");
+      expect(outcome).toBe(4004);
+      expect(evil.active).toBe(false);
     } finally {
       await guarded.close();
     }
@@ -105,6 +106,22 @@ describe("Socket.IO transport integration", () => {
     );
     expect(error.data?.code).toBe(4007);
     expect(socket.connected).toBe(false);
+  });
+
+  it.each([
+    ["room=a&room=b", 4007],
+    ["room=a&token=x&token=y", 4006],
+  ])("refuses a repeated query key in the raw URL (%s)", async (query, code) => {
+    const raw = new WebSocket(`${url.replace("http", "ws")}/socket.io/?EIO=4&transport=websocket&${query}`);
+    const packet = await new Promise<string>((resolve) => {
+      raw.onmessage = (event) => {
+        const text = String(event.data);
+        if (text.startsWith("0")) raw.send("40");
+        if (text.startsWith("44")) resolve(text);
+      };
+    });
+    raw.close();
+    expect(JSON.parse(packet.slice(2)).data.code).toBe(code);
   });
 
   it("never delivers to a socket whose id another socket names as its room", async () => {
@@ -189,6 +206,24 @@ describe("Socket.IO transport integration", () => {
       expect(rejected[0]).toMatchObject({ code: 4006, reason: "invalid token", willReconnect: false });
     } finally {
       await strict.close();
+    }
+  });
+
+  it("refuses a frame it cannot bind with 1008 under identity binding", async () => {
+    const bound = await createSocketIoRelay(0, {
+      authCheck: ({ token }) => ({ clientId: `user-${token}`, user: { name: token } }),
+    });
+    try {
+      const sender = io(bound.url, { query: { room: "bind", token: "t" }, transports: ["websocket"] });
+      sockets.push(sender);
+      const closes: unknown[] = [];
+      createSocketIoTransport(sender).subscribeClose?.((close) => closes.push(close));
+      await vi.waitFor(() => expect(sender.connected).toBe(true), { timeout: 5000, interval: 25 });
+      sender.emit("presence", new Uint8Array([0xff, 0x00]));
+      await vi.waitFor(() => expect(closes).toHaveLength(1), { timeout: 5000, interval: 25 });
+      expect(closes[0]).toMatchObject({ code: 1008, willReconnect: false });
+    } finally {
+      await bound.close();
     }
   });
 

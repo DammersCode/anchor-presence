@@ -1,12 +1,12 @@
 ---
 title: Custom codec
 description: Write your own codec with MessagePack, and debug binaryCodec traffic.
-icon: file-code
+icon: file-cog
 ---
 
 import { Binary, FileDigit } from "lucide-react";
 
-A custom codec is your own `CursorCodec`. Write one when you need a wire format that `jsonCodec` and `binaryCodec` do not cover, for example MessagePack. A codec that wraps another codec also lets you log the traffic of `binaryCodec` during development.
+A custom codec is your own `PresenceCodec`. If you need a wire format that `jsonCodec` and `binaryCodec` do not cover, for example MessagePack, write one. A codec that wraps another codec also lets you log the traffic of `binaryCodec` during development.
 
 ## MessagePack sketch
 
@@ -14,9 +14,9 @@ MessagePack makes smaller payloads than JSON for the same data. This sketch uses
 
 ```ts
 import { encode, decode } from "@msgpack/msgpack";
-import type { CursorCodec } from "@anchor-presence/core";
+import type { PresenceCodec } from "@anchor-presence/core";
 
-export const messagePackCodec: CursorCodec = {
+export const messagePackCodec: PresenceCodec = {
   encode(message) {
     return encode(message);
   },
@@ -30,14 +30,14 @@ export const messagePackCodec: CursorCodec = {
 };
 ```
 
-Wrap every decode call in `try`/`catch`. For a malformed or truncated buffer, `decode` must return `null` and never throw. `encode` can throw. If it throws on a message with `user` or `context`, the client encodes the message again. It encodes without `context`, then without `user`, then without both, and sends the first message that encodes. If no message encodes, the client drops it.
+Wrap every decode call in `try`/`catch`. For a malformed or truncated buffer, `decode` must return `null` and never throw. `encode` can throw. If it throws on a message with `user` or `context`, the client encodes the message again without them. See [Development mode](/docs/core/presence-client#development-mode). If no message encodes, the client drops it.
 
 ## Debug binary traffic
 
 The network tab of the browser DevTools cannot show the content of `binaryCodec` frames. Use one of these two options:
 
-<Tabs items={["Switch the codec", "Wrap the codec"]}>
-  <Tab value="Switch the codec">
+<Tabs items={["Switch codec", "Wrap codec"]}>
+  <Tab value="Switch codec">
     Use `jsonCodec` in development and `binaryCodec` in production. The network tab then shows every development message as readable JSON.
 
     <Callout type="warn">
@@ -46,13 +46,13 @@ The network tab of the browser DevTools cannot show the content of `binaryCodec`
     </Callout>
 
   </Tab>
-  <Tab value="Wrap the codec">
+  <Tab value="Wrap codec">
     This wrapper logs every message and keeps `binaryCodec` on the wire:
 
 ```ts
-import { binaryCodec, type CursorCodec } from "@anchor-presence/core";
+import { binaryCodec, type PresenceCodec } from "@anchor-presence/core";
 
-const debugCodec: CursorCodec = {
+const debugCodec: PresenceCodec = {
   encode(message) {
     console.debug("[presence out]", message);
     return binaryCodec.encode(message);

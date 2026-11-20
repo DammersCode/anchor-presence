@@ -1,13 +1,17 @@
 "use client";
 
 import type { PresenceClient } from "@anchor-presence/core";
-import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
+import type { TourContext } from "./_preview/tour";
+import { CursorLayer, PresenceProvider } from "./_preview/hooks";
 import type { ReactNode } from "react";
+
+const safeColor = (color: string | undefined, fallback: string) =>
+  color !== undefined && /^#[0-9a-f]{6}$/iu.test(color) ? color : fallback;
 
 type User = { name: string; color: string };
 
 type Props = {
-  client: PresenceClient<unknown, User> | null;
+  client: PresenceClient<TourContext, User> | null;
   layout: "wide" | "narrow";
   children?: ReactNode;
 };
@@ -73,7 +77,7 @@ export function ResponsiveGridScene({ client, layout, children }: Props) {
   const compact = layout === "narrow";
 
   return (
-    <LiveCursorProvider client={client}>
+    <PresenceProvider client={client}>
       <div data-anchor="metrics" className={`grid h-full gap-1.5 p-2.5 ${spans.grid}`}>
         <div
           data-anchor="metrics.revenue"
@@ -127,11 +131,11 @@ export function ResponsiveGridScene({ client, layout, children }: Props) {
           <MetricCard key={metric.id} metric={metric} compact={compact} />
         ))}
       </div>
-      <CursorLayer<unknown, User>
+      <CursorLayer
         getLabel={(cursor) => cursor.user?.name ?? null}
-        getColor={(cursor) => cursor.user?.color ?? "#4f46e5"}
+        getColor={(cursor) => safeColor(cursor.user?.color, "#4f46e5")}
       />
       {children}
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }

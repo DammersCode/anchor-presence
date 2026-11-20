@@ -1,9 +1,20 @@
 // Room-broadcast relay with reference-side size, rate, room, origin, and liveness limits.
-import { timingSafeEqual } from "node:crypto";
+import {
+  bindIdentity,
+  demoIdentityOptions,
+  newConnectionId,
+  originAllowed,
+  parseToken,
+  safeAuthCheck,
+  tokenAuthCheck,
+  UNBINDABLE_FRAME_CLOSE,
+  type AuthCheck,
+  type AuthIdentity,
+} from "../../examples/_shared/relay-guard";
 
 function limitFromEnv(name: string, fallback: number): number {
-  const parsed = Number(process.env[name]);
-  return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback;
+  const floored = Math.floor(Number(process.env[name]));
+  return Number.isFinite(floored) && floored > 0 ? floored : fallback;
 }
 
 const PORT = limitFromEnv("PORT", 8787);
@@ -37,48 +48,30 @@ type SocketData = {
   lastRefill: number;
   lastPong: number;
   authOk: boolean;
+  identity?: AuthIdentity;
+  connectionId: string;
   roomInvalid: boolean;
 };
 
 type RoomSocket = Bun.ServerWebSocket<SocketData>;
 
-const rooms = new Map<string, Set<RoomSocket>>();
 const allowedOrigins = new Set(
   (process.env.RELAY_ALLOWED_ORIGINS ?? "")
     .split(",")
     .map((origin) => origin.trim())
     .filter((origin) => origin.length > 0),
 );
-let totalSockets = 0;
-
 const ROOM_CHARSET = /^[A-Za-z0-9_-]+$/;
 
 // null means the name is not a valid room name: the relay refuses the connection instead of merging it into `main`
 function roomFor(req: Request): string | null {
   const url = new URL(req.url);
-  const fromQuery = url.searchParams.get("room");
+  const rooms = url.searchParams.getAll("room");
+  if (rooms.length > 1) return null;
+  const fromQuery = rooms[0];
   const fromPath = url.pathname.replace(/^\/+|\/+$/g, "");
   const candidate = fromQuery || fromPath || "main";
   return candidate.length <= 256 && ROOM_CHARSET.test(candidate) ? candidate : null;
-}
-
-// Opt-in room auth: when AUTH_TOKEN is set, the upgrade must carry a matching `token` query param.
-function authOkFor(req: Request): boolean {
-  if (AUTH_TOKEN === "") return true;
-  const provided = new URL(req.url).searchParams.get("token") ?? "";
-  return timingSafeEqualString(provided, AUTH_TOKEN);
-}
-
-// constant-time compare guards against timing side-channels; unequal lengths compare padded copies.
-function timingSafeEqualString(a: string, b: string): boolean {
-  const aBytes = encoder.encode(a);
-  const bBytes = encoder.encode(b);
-  const length = Math.max(aBytes.length, bBytes.length, 1);
-  const aPadded = new Uint8Array(length);
-  const bPadded = new Uint8Array(length);
-  aPadded.set(aBytes);
-  bPadded.set(bBytes);
-  return timingSafeEqual(aPadded, bPadded) && aBytes.length === bBytes.length;
 }
 
 function messageByteLength(message: string | ArrayBuffer): number {
@@ -109,14 +102,40 @@ export function closePeerAboveHardLimit(
   return true;
 }
 
-if (typeof Bun !== "undefined" && import.meta.main) {
-  Bun.serve({
-    port: PORT,
-    fetch(req, server) {
+function positiveInteger(name: string, value: number): number {
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new TypeError(`createReferenceRelay: ${name} must be a positive integer, received ${value}`);
+  }
+  return value;
+}
+
+export type ReferenceRelayOptions = {
+  authCheck?: AuthCheck;
+  /** Overrides `RELAY_MAX_ROOM_SOCKETS`. */
+  maxRoomSockets?: number;
+  /** Overrides `RELAY_MAX_TOTAL_SOCKETS`. */
+  maxTotalSockets?: number;
+};
+
+/** Starts the relay on `port`. `authCheck` defaults to the `RELAY_AUTH_TOKEN` check; an identity result binds each frame to that identity. */
+export function createReferenceRelay(port: number, options: ReferenceRelayOptions = {}) {
+  const authCheck = safeAuthCheck(options.authCheck ?? tokenAuthCheck(AUTH_TOKEN));
+  const maxRoomSockets = positiveInteger("maxRoomSockets", options.maxRoomSockets ?? MAX_ROOM_SOCKETS);
+  const maxTotalSockets = positiveInteger("maxTotalSockets", options.maxTotalSockets ?? MAX_TOTAL_SOCKETS);
+  const rooms = new Map<string, Set<RoomSocket>>();
+  let totalSockets = 0;
+  const server = Bun.serve({
+    port,
+    async fetch(req, server) {
       const parsedRoom = roomFor(req);
       const room = parsedRoom ?? "main";
       const origin = req.headers.get("origin") ?? "";
-      const authOk = authOkFor(req);
+      const token = parseToken(new URL(req.url).searchParams.getAll("token"));
+      // origin and room are checked before the hook runs, so a refused request never drives an expensive hook
+      const authResult =
+        token === null || parsedRoom === null || !originAllowed(allowedOrigins, origin)
+          ? false
+          : await authCheck({ token, room, origin, headers: Object.fromEntries(req.headers) });
       if (
         server.upgrade(req, {
           data: {
@@ -125,7 +144,9 @@ if (typeof Bun !== "undefined" && import.meta.main) {
             tokens: RATE_CAPACITY,
             lastRefill: performance.now(),
             lastPong: performance.now(),
-            authOk,
+            authOk: authResult !== false,
+            identity: typeof authResult === "object" ? authResult : undefined,
+            connectionId: newConnectionId(),
             roomInvalid: parsedRoom === null,
           },
         })
@@ -138,7 +159,7 @@ if (typeof Bun !== "undefined" && import.meta.main) {
       // Bun drops a published frame for a subscriber buffered above this soft watermark
       backpressureLimit: SLOW_PEER_SOFT_BYTES,
       open(ws: RoomSocket) {
-        if (allowedOrigins.size > 0 && !allowedOrigins.has(ws.data.origin)) {
+        if (!originAllowed(allowedOrigins, ws.data.origin)) {
           ws.close(ORIGIN_REJECTED_CODE, "origin not allowed");
           return;
         }
@@ -150,12 +171,12 @@ if (typeof Bun !== "undefined" && import.meta.main) {
           ws.close(AUTH_REJECTED_CODE, "invalid token");
           return;
         }
-        if (totalSockets >= MAX_TOTAL_SOCKETS) {
+        if (totalSockets >= maxTotalSockets) {
           ws.close(SERVER_FULL_CODE, "server full");
           return;
         }
         const sockets = rooms.get(ws.data.room);
-        if (sockets && sockets.size >= MAX_ROOM_SOCKETS) {
+        if (sockets && sockets.size >= maxRoomSockets) {
           ws.close(ROOM_FULL_CODE, "room full");
           return;
         }
@@ -175,8 +196,22 @@ if (typeof Bun !== "undefined" && import.meta.main) {
 
         if (messageByteLength(message) > MAX_MESSAGE_BYTES) return;
 
+        let outgoing: string | ArrayBuffer | Uint8Array = message;
+        if (ws.data.identity !== undefined) {
+          const bound = bindIdentity(
+            typeof message === "string" ? message : new Uint8Array(message),
+            ws.data.identity,
+            ws.data.connectionId,
+          );
+          if (bound === null) {
+            ws.close(UNBINDABLE_FRAME_CLOSE.code, UNBINDABLE_FRAME_CLOSE.reason);
+            return;
+          }
+          outgoing = bound;
+        }
+
         // a result of 0 (dropped) or -1 (backpressure) means at least one subscriber is behind
-        if (ws.publish(ws.data.room, message) > 0 || !HARD_LIMIT_REACHABLE) return;
+        if (ws.publish(ws.data.room, outgoing) > 0 || !HARD_LIMIT_REACHABLE) return;
         for (const peer of sockets) if (peer !== ws) closePeerAboveHardLimit(peer);
       },
       pong(ws: RoomSocket) {
@@ -192,7 +227,7 @@ if (typeof Bun !== "undefined" && import.meta.main) {
     },
   });
 
-  setInterval(() => {
+  const pinger = setInterval(() => {
     const now = performance.now();
     for (const sockets of rooms.values()) {
       for (const peer of sockets) {
@@ -206,5 +241,19 @@ if (typeof Bun !== "undefined" && import.meta.main) {
     }
   }, PING_INTERVAL_MS);
 
-  console.log(`relay listening on :${PORT}`);
+  return {
+    url: `http://localhost:${server.port}`,
+    close: () => {
+      clearInterval(pinger);
+      return server.stop(true);
+    },
+  };
 }
+
+export function startReferenceRelay(options: ReferenceRelayOptions = {}) {
+  const relay = createReferenceRelay(PORT, options);
+  console.log(`relay listening on :${PORT}`);
+  return relay;
+}
+
+if (typeof Bun !== "undefined" && import.meta.main) startReferenceRelay(demoIdentityOptions());

@@ -1,4 +1,4 @@
-import type { CursorPosition, CursorPresence, PeerChange, RemotePresence } from "./protocol.js";
+import type { CursorPosition, PresenceMessage, PeerChange, RemotePresence } from "./protocol.js";
 import { defaultNow } from "./internal/clock.js";
 import { reportListenerError } from "./internal/dev-warnings.js";
 
@@ -17,19 +17,19 @@ export const DEFAULT_IDLE_AFTER_MS = 15_000;
  */
 export type RemotePresenceStoreOptions = {
   /** Maximum number of remote clients. Default `DEFAULT_MAX_REMOTE_CLIENTS`. */
-  maxRemoteClients?: number;
+  maxRemoteClients?: number | undefined;
   /** Time before a client counts as stale, in milliseconds. Default `DEFAULT_STALE_TIMEOUT_MS`. */
-  staleTimeoutMs?: number;
+  staleTimeoutMs?: number | undefined;
   /** Time before a client counts as idle, in milliseconds. Default `DEFAULT_IDLE_AFTER_MS`, clamped below `staleTimeoutMs`. */
-  idleAfterMs?: number;
+  idleAfterMs?: number | undefined;
   /** Returns the current time in milliseconds. Default: `performance.now()`, or `Date.now()` without `performance`. */
-  now?: () => number;
+  now?: (() => number) | undefined;
   /** Runs when the store drops a new client because the store is full. */
-  onDropNewClient?: (clientId: string) => void;
+  onRemoteClientRejected?: ((info: { clientId: string }) => void) | undefined;
 };
 
 type Entry<TContext, TUser> = {
-  presence: CursorPresence<TContext, TUser>;
+  presence: PresenceMessage<TContext, TUser>;
   lastSeenAt: number;
   changedAt: number;
   idle: boolean;
@@ -39,20 +39,20 @@ type Entry<TContext, TUser> = {
 /**
  * Store for the remote presences one client receives.
  * The store drops a same-session message when its sequence is not higher than the stored value.
- * When the store is full, it drops a new `clientId` and calls `onDropNewClient`.
+ * When the store is full, it drops a new `clientId` and calls `onRemoteClientRejected`.
  */
 export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
   private readonly maxRemoteClients: number;
   private readonly staleTimeoutMs: number;
   private readonly idleAfterMs: number;
   private readonly now: () => number;
-  private readonly onDropNewClient: ((clientId: string) => void) | undefined;
+  private readonly onRemoteClientRejected: ((info: { clientId: string }) => void) | undefined;
 
   private readonly entries = new Map<string, Entry<TContext, TUser>>();
   private readonly listeners = new Set<() => void>();
   private readonly peerListeners = new Set<(change: PeerChange<TContext, TUser>) => void>();
 
-  private snapshot: CursorPresence<TContext, TUser>[] = [];
+  private snapshot: PresenceMessage<TContext, TUser>[] = [];
   private snapshotDirty = false;
 
   private stableSnapshot: RemotePresence<TContext, TUser>[] = [];
@@ -68,7 +68,7 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
     // idleAfterMs must stay below staleTimeoutMs: idle is an earlier stage, not a replacement
     this.idleAfterMs = Math.min(options.idleAfterMs ?? DEFAULT_IDLE_AFTER_MS, this.staleTimeoutMs - 1);
     this.now = options.now ?? defaultNow;
-    this.onDropNewClient = options.onDropNewClient;
+    this.onRemoteClientRejected = options.onRemoteClientRejected;
   }
 
   /**
@@ -77,13 +77,13 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
    * @param presence The validated inbound message.
    * @returns `true` when the store accepted the message.
    */
-  ingest(presence: CursorPresence<TContext, TUser>): boolean {
+  ingest(presence: PresenceMessage<TContext, TUser>): boolean {
     const existing = this.entries.get(presence.clientId);
 
     if (existing === undefined) {
       if (presence.leave === true) return false;
       if (this.entries.size >= this.maxRemoteClients) {
-        this.onDropNewClient?.(presence.clientId);
+        this.onRemoteClientRejected?.({ clientId: presence.clientId });
         return false;
       }
       const normalized = this.normalizePresence(presence);
@@ -138,9 +138,9 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
 
   // A missing field is a delta encoding: keep the previous same-session value. An explicit `null` clears it.
   private mergeFields(
-    previous: CursorPresence<TContext, TUser>,
-    next: CursorPresence<TContext, TUser>,
-  ): CursorPresence<TContext, TUser> {
+    previous: PresenceMessage<TContext, TUser>,
+    next: PresenceMessage<TContext, TUser>,
+  ): PresenceMessage<TContext, TUser> {
     const context = keepIdentity(resolveFieldDelta(next.context, previous.context), previous.context);
     const user = keepIdentity(resolveFieldDelta(next.user, previous.user), previous.user);
     const hasOwnContext = "context" in next && next.context === undefined;
@@ -149,7 +149,7 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
     return applyFieldDeltas(next, context, user);
   }
 
-  private normalizePresence(presence: CursorPresence<TContext, TUser>): CursorPresence<TContext, TUser> {
+  private normalizePresence(presence: PresenceMessage<TContext, TUser>): PresenceMessage<TContext, TUser> {
     if (!("context" in presence) && !("user" in presence)) return presence;
     const context = resolveFieldDelta(presence.context);
     const user = resolveFieldDelta(presence.user);
@@ -244,7 +244,7 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
    * Returns the raw remote snapshot, including `sequence`.
    * The store returns a new array when it accepts a message.
    */
-  getSnapshot(): CursorPresence<TContext, TUser>[] {
+  getSnapshot(): readonly PresenceMessage<TContext, TUser>[] {
     if (this.snapshotDirty) {
       this.snapshot = Array.from(this.entries.values(), (entry) => entry.presence);
       this.snapshotDirty = false;
@@ -257,7 +257,7 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
    * The store keeps the array and entry identity while nothing observable changes.
    * Use this for rendering. Use `getSnapshot()` to watch `sequence`.
    */
-  getStableSnapshot(): RemotePresence<TContext, TUser>[] {
+  getStableSnapshot(): readonly RemotePresence<TContext, TUser>[] {
     if (this.stableSnapshotDirty) {
       this.stableSnapshot = Array.from(this.entries.values(), (entry) => entry.projected);
       this.stableSnapshotDirty = false;
@@ -277,7 +277,7 @@ export class RemotePresenceStore<TContext = unknown, TUser = unknown> {
     };
   }
 
-  private notifyPeer(type: PeerChange["type"], presence: CursorPresence<TContext, TUser>): void {
+  private notifyPeer(type: PeerChange["type"], presence: PresenceMessage<TContext, TUser>): void {
     const change: PeerChange<TContext, TUser> = { type, clientId: presence.clientId };
     if (presence.user != null) change.user = presence.user;
     if (presence.context != null) change.context = presence.context;
@@ -328,11 +328,11 @@ function resolveFieldDelta<T>(next: T | null | undefined, previous?: T | null): 
 
 // A resolved `undefined` must not become an own property: public presences omit empty fields.
 function applyFieldDeltas<TContext, TUser>(
-  base: CursorPresence<TContext, TUser>,
+  base: PresenceMessage<TContext, TUser>,
   context: TContext | undefined,
   user: TUser | undefined,
-): CursorPresence<TContext, TUser> {
-  const result: CursorPresence<TContext, TUser> = { ...base };
+): PresenceMessage<TContext, TUser> {
+  const result: PresenceMessage<TContext, TUser> = { ...base };
   if (context === undefined) delete result.context;
   else result.context = context;
   if (user === undefined) delete result.user;
@@ -341,7 +341,7 @@ function applyFieldDeltas<TContext, TUser>(
 }
 
 function projectPresence<TContext, TUser>(
-  presence: CursorPresence<TContext, TUser>,
+  presence: PresenceMessage<TContext, TUser>,
   idle: boolean,
 ): RemotePresence<TContext, TUser> {
   const projected: RemotePresence<TContext, TUser> = {
@@ -359,8 +359,8 @@ function projectPresence<TContext, TUser>(
 
 // `sequence` is excluded on purpose: it advances with every accepted message.
 function sameObservedPresence<TContext, TUser>(
-  a: CursorPresence<TContext, TUser>,
-  b: CursorPresence<TContext, TUser>,
+  a: PresenceMessage<TContext, TUser>,
+  b: PresenceMessage<TContext, TUser>,
 ): boolean {
   if (a.session !== b.session) return false;
   if (!sameCursor(a.cursor, b.cursor)) return false;

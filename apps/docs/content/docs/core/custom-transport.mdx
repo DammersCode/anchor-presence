@@ -1,10 +1,10 @@
 ---
 title: Custom transport
-description: Write a transport for BroadcastChannel or a managed real-time service.
+description: A teaching sketch of a custom transport, with the interface, the status and close contracts, and a minimal example.
 icon: plug
 ---
 
-import { AppWindow, Cable, MemoryStick, Server } from "lucide-react";
+import { AppWindow, Cable, FileCheck, MemoryStick, Server } from "lucide-react";
 
 A custom transport connects the client to a byte channel that the packages do not ship, for example the SDK of a managed real-time service. A transport only moves bytes. It never checks or reads them.
 
@@ -12,12 +12,12 @@ If your app uses Socket.IO or SignalR, use the [Socket.IO](/docs/examples/backen
 
 ## BroadcastChannel sketch
 
-`BroadcastChannel` sends messages between browsing contexts (tabs, iframes, workers) on the same origin. It never crosses a network. This sketch shows the parts of a transport on a small version of [`createBroadcastChannelTransport`](/docs/dom/broadcast-channel-transport), which `@anchor-presence/dom` ships:
+`BroadcastChannel` sends messages between browsing contexts (tabs, iframes, workers) on the same origin. It never crosses a network. This sketch shows the parts of a transport on a small version of [`createBroadcastChannelTransport`](/docs/dom/broadcast-channel-transport), which `@anchor-presence/dom` ships. The sketch posts raw bytes, so it does not work with the shipped transport, which wraps each message in an object with `from` and `data`:
 
 ```ts
-import type { ConnectionStatus, LiveCursorTransport } from "@anchor-presence/core";
+import type { ConnectionStatus, PresenceTransport } from "@anchor-presence/core";
 
-function createBroadcastChannelTransport(channelName: string): LiveCursorTransport {
+function createBroadcastChannelTransport(channelName: string): PresenceTransport {
   const listeners = new Set<(data: Uint8Array) => void>();
   const statusListeners = new Set<(status: ConnectionStatus) => void>();
   let channel: BroadcastChannel | null = null;
@@ -71,7 +71,7 @@ The sketch keeps the current status in `status`. `connect` and `disconnect` set 
 
 ## Wrap a managed service
 
-A managed service is a hosted pub/sub or a serverless WebSocket gateway. Its SDK has a `send` method and a message event. Wrap the SDK in a transport object:
+A managed service is a hosted publish and subscribe service or a serverless WebSocket gateway. Its SDK has a `send` method and a message event. Wrap the SDK in a transport object:
 
 <Steps>
   <Step>Forward each `send` call to the SDK.</Step>
@@ -112,7 +112,7 @@ function onSocketClose(event: CloseEvent, willReconnect: boolean) {
 }
 ```
 
-Return `subscribeClose` on the transport object. Set `willReconnect` to `true` when the transport schedules another attempt, and to `false` otherwise. `client.subscribeClose` then receives each close. See [Close reasons](/docs/core/transports#close-reasons).
+Return `subscribeClose` on the transport object. If the transport schedules another attempt, set `willReconnect` to `true`. Otherwise set it to `false`. `client.subscribeClose` then receives each close. See [Close reasons](/docs/core/transports#close-reasons).
 
 ## Test a custom transport
 
@@ -124,7 +124,7 @@ Do a test of your transport with these cases:
 - A status change with no active subscriber.
 - A `subscribeStatus` call after the connection opened. The listener must receive `connected` at once.
 
-`createInMemoryPair` is not a reference for the disconnected case: it delivers a send while its side is disconnected. See [In-memory transport](/docs/core/in-memory-transport#limits).
+`createInMemoryPair` is not a reference for the disconnected case: it delivers a send while its side is disconnected. See [In-memory transport](/docs/core/in-memory-transport#limits-of-the-pair).
 
 ## Related
 
@@ -140,5 +140,8 @@ Do a test of your transport with these cases:
   </Card>
   <Card icon={<Server />} title="Backends" href="/docs/examples/backends">
     Relays and transports for other servers.
+  </Card>
+  <Card icon={<FileCheck />} title="Relay contract" href="/docs/examples/backends/relay-contract">
+    The rules that every relay obeys.
   </Card>
 </Cards>

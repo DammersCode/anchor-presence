@@ -264,6 +264,17 @@ describe("attachPointerSource (spec §9)", () => {
     handle.detach();
   });
 
+  it("ignores a window blur after the client is disposed", () => {
+    const { client, samples } = makeClient();
+    attachPointerSource(client, registry, { maxAnchors: 4 });
+    client.dispose();
+    const before = samples.length;
+
+    window.dispatchEvent(new Event("blur"));
+
+    expect(samples).toHaveLength(before);
+  });
+
   it("uses getCachedRect when it returns a hit, skipping getBoundingClientRect for that element", () => {
     const el = document.createElement("div");
     document.body.append(el);
@@ -349,7 +360,7 @@ describe("attachPointerSource (spec §9)", () => {
     handle.detach();
   });
 
-  it("C-4: passes the event's pointerType to setLocalCursor; unknown or missing types pass undefined", () => {
+  it("C-4: passes the event's pointerType to setLocalCursor; unknown or missing types pass an empty pointer info", () => {
     const el = document.createElement("div");
     document.body.append(el);
     mockRect(el, { left: 0, top: 0, width: 100, height: 100 });
@@ -364,7 +375,7 @@ describe("attachPointerSource (spec §9)", () => {
     firePointerEvent("pointermove", el, { clientX: 10, clientY: 10, pointerType: "eyetracker" });
     firePointerEvent("pointermove", el, { clientX: 10, clientY: 10 });
 
-    expect(pointers).toEqual([{ type: "mouse" }, { type: "touch" }, { type: "pen" }, undefined, undefined]);
+    expect(pointers).toEqual([{ type: "mouse" }, { type: "touch" }, { type: "pen" }, {}, {}]);
 
     handle.detach();
   });

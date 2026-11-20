@@ -4,9 +4,9 @@ import { jsonCodec } from "../src/codec";
 import { createInMemoryPair } from "../src/in-memory-transport";
 import { createPresenceClient } from "../src/client";
 import { validatePresence } from "../src/validate";
-import type { CursorPresence } from "../src/protocol";
+import type { PresenceMessage } from "../src/protocol";
 
-function fullMessage(): CursorPresence {
+function fullMessage(): PresenceMessage {
   return {
     version: 1,
     clientId: "client-1",
@@ -31,7 +31,7 @@ describe("binaryCodec", () => {
     const encoded = binaryCodec.encode(message);
     expect(encoded).toBeInstanceOf(Uint8Array);
 
-    const decoded = binaryCodec.decode(encoded) as CursorPresence;
+    const decoded = binaryCodec.decode(encoded) as PresenceMessage;
     expect(validatePresence(decoded)).not.toBeNull();
     expect(decoded.version).toBe(1);
     expect(decoded.clientId).toBe("client-1");
@@ -52,7 +52,7 @@ describe("binaryCodec", () => {
   });
 
   it("round-trips a leave message", () => {
-    const message: CursorPresence = {
+    const message: PresenceMessage = {
       version: 1,
       clientId: "c",
       session: "s",
@@ -65,7 +65,7 @@ describe("binaryCodec", () => {
   });
 
   it("round-trips explicit null cursor, context, and user", () => {
-    const message: CursorPresence = {
+    const message: PresenceMessage = {
       version: 1,
       clientId: "client-1",
       session: "session-1",
@@ -75,7 +75,7 @@ describe("binaryCodec", () => {
       user: null,
     };
 
-    const decoded = binaryCodec.decode(binaryCodec.encode(message)) as CursorPresence;
+    const decoded = binaryCodec.decode(binaryCodec.encode(message)) as PresenceMessage;
     expect(decoded.cursor).toBeNull();
     expect("context" in decoded).toBe(true);
     expect(decoded.context).toBeNull();
@@ -84,7 +84,7 @@ describe("binaryCodec", () => {
   });
 
   it("omits absent cursor metadata, context, user, and pointer", () => {
-    const message: CursorPresence = {
+    const message: PresenceMessage = {
       version: 1,
       clientId: "client-1",
       session: "session-1",
@@ -92,7 +92,7 @@ describe("binaryCodec", () => {
       cursor: { anchors: [] },
     };
 
-    const decoded = binaryCodec.decode(binaryCodec.encode(message)) as CursorPresence;
+    const decoded = binaryCodec.decode(binaryCodec.encode(message)) as PresenceMessage;
     expect(decoded.cursor).toEqual({ anchors: [] });
     expect("viewport" in decoded.cursor!).toBe(false);
     expect("context" in decoded).toBe(false);
@@ -109,7 +109,7 @@ describe("binaryCodec", () => {
       cursor: null,
     } as const;
 
-    const cases: { pointer: CursorPresence["pointer"]; expected: CursorPresence["pointer"] }[] = [
+    const cases: { pointer: PresenceMessage["pointer"]; expected: PresenceMessage["pointer"] }[] = [
       { pointer: undefined, expected: undefined },
       { pointer: {}, expected: {} },
       { pointer: { type: "mouse" }, expected: { type: "mouse" } },
@@ -118,8 +118,8 @@ describe("binaryCodec", () => {
     ];
 
     for (const { pointer, expected } of cases) {
-      const message = { ...base, pointer } as unknown as CursorPresence;
-      const decoded = binaryCodec.decode(binaryCodec.encode(message)) as CursorPresence;
+      const message = { ...base, pointer } as unknown as PresenceMessage;
+      const decoded = binaryCodec.decode(binaryCodec.encode(message)) as PresenceMessage;
       expect(decoded.pointer).toEqual(expected);
       expect("pointer" in decoded).toBe(pointer !== undefined);
     }
@@ -201,10 +201,10 @@ describe("binaryCodec", () => {
       cursor: null,
     } as const;
 
-    const atLimit = { ...base, sequence: 2_147_483_647 } as CursorPresence;
+    const atLimit = { ...base, sequence: 2_147_483_647 } as PresenceMessage;
     expect(validatePresence(binaryCodec.decode(binaryCodec.encode(atLimit)))).not.toBeNull();
 
-    const aboveLimit = { ...base, sequence: 2_147_483_648 } as CursorPresence;
+    const aboveLimit = { ...base, sequence: 2_147_483_648 } as PresenceMessage;
     expect(() => binaryCodec.encode(aboveLimit)).toThrow("sequence out of range");
   });
 
@@ -227,7 +227,7 @@ describe("binaryCodec", () => {
   });
 
   it("round-trips unicode clientId, session, anchor ids, and JSON fields", () => {
-    const message: CursorPresence = {
+    const message: PresenceMessage = {
       version: 1,
       clientId: "client-äöü-😀",
       session: "Sitzung-1",
@@ -239,7 +239,7 @@ describe("binaryCodec", () => {
       user: { name: "Zoë" },
     };
 
-    const decoded = binaryCodec.decode(binaryCodec.encode(message)) as CursorPresence;
+    const decoded = binaryCodec.decode(binaryCodec.encode(message)) as PresenceMessage;
     expect(decoded.clientId).toBe("client-äöü-😀");
     expect(decoded.session).toBe("Sitzung-1");
     expect(decoded.cursor?.anchors[0]?.id).toBe("navigation.Übersicht");
@@ -267,7 +267,7 @@ describe("binaryCodec", () => {
     for (const message of [
       { ...base, context: () => 1 },
       { ...base, user: Symbol("tag") },
-    ] satisfies CursorPresence[]) {
+    ] satisfies PresenceMessage[]) {
       expect(() => binaryCodec.encode(message)).toThrow("cannot encode field as JSON");
     }
   });
@@ -282,9 +282,9 @@ describe("binaryCodec", () => {
     } as const;
 
     expect(() =>
-      binaryCodec.encode({ ...base, pointer: { type: "stylus" } } as unknown as CursorPresence),
+      binaryCodec.encode({ ...base, pointer: { type: "stylus" } } as unknown as PresenceMessage),
     ).toThrow("unsupported pointer type");
-    expect(() => binaryCodec.encode({ ...base, version: 2 } as unknown as CursorPresence)).toThrow(
+    expect(() => binaryCodec.encode({ ...base, version: 2 } as unknown as PresenceMessage)).toThrow(
       "unsupported protocol version",
     );
     expect(() => binaryCodec.encode({ ...base, clientId: "a".repeat(65536) })).toThrow("clientId too large");

@@ -4,7 +4,7 @@ description: VisibilityPolicy, the default policy, how to write a custom one, an
 icon: eye
 ---
 
-import { Braces, Crosshair, Layers, Webhook } from "lucide-react";
+import { Braces, Crosshair, Layers } from "lucide-react";
 
 A `VisibilityPolicy` is a function that decides whether a resolved cursor renders. It returns `"show"` or `"hide"`, and the result goes into `ResolvedCursor.visible`. A custom policy can hide cursors by role, by UI mode, or for a point that a scroll container clips.
 
@@ -30,18 +30,25 @@ const defaultVisibilityPolicy: VisibilityPolicy = ({ resolution }) =>
 
 ## Write a custom policy
 
-Each time the resolver resolves the cursors, it calls the policy once for each peer. A peer is another client in the same room. The policy receives two values:
+Each time the resolver resolves the cursors, it calls the policy once for each peer. The policy receives two values:
 
 - `presence`: the full presence of the peer, with its `context` and `user`.
 - `resolution`: the `tier`, the winning `anchorId`, and `pointVisible`.
 
-The first type parameter of `VisibilityPolicy` is the context type, and the second is the user type. Pass the policy through `resolution.visibilityPolicy`. The client must have the same context type as the policy:
+The resolver reuses one input object for every call. Read it in the call. Do not keep it, and do not change it or its `resolution`.
+
+The first type parameter of `VisibilityPolicy` is the context type, and the second is the user type. Pass the policy through `resolution.visibilityPolicy`. The client must have the same context type as the policy. The client takes this type from `parseContext`:
 
 ```ts
 import { createPresenceClient } from "@anchor-presence/core";
+import { parserFrom } from "@anchor-presence/core/standard-schema";
 import { createDomBinding } from "@anchor-presence/dom";
+import * as v from "valibot";
 
-const client = createPresenceClient<{ role: string }>({ transport });
+const client = createPresenceClient({
+  transport: myTransport,
+  parseContext: parserFrom(v.object({ role: v.string() })),
+});
 const binding = createDomBinding(client, {
   resolution: { visibilityPolicy: hideStaffCursors },
 });
@@ -76,18 +83,18 @@ function setOpenDialog(next: string | null) {
 }
 ```
 
-In React, `useCursorBinding` returns the binding of the nearest `LiveCursorProvider`. This component writes the open dialog into the variable of the policy, then calls `invalidate`:
+In React, `useDomBinding` returns the binding of the nearest `PresenceProvider`. This component writes the open dialog into the variable of the policy, then calls `invalidate`:
 
 ```tsx
 import { useEffect } from "react";
-import { useCursorBinding } from "@anchor-presence/react";
+import { useDomBinding } from "@anchor-presence/react";
 
 function SyncOpenDialog({ dialog }: { dialog: string | null }) {
-  const cursorBinding = useCursorBinding();
+  const domBinding = useDomBinding();
   useEffect(() => {
     openDialog = dialog;
-    cursorBinding?.invalidate("dialog-changed");
-  }, [cursorBinding, dialog]);
+    domBinding?.invalidate("dialog-changed");
+  }, [domBinding, dialog]);
   return null;
 }
 ```
@@ -103,10 +110,13 @@ If a policy throws, the binding keeps the last snapshot. See [Errors in a policy
   <Card icon={<Layers />} title="Occlusion and scroll" href="/docs/dom/occlusion-and-scroll">
     Hide a cursor that a scroll container clips.
   </Card>
+  <Card icon={<Layers />} title="Dialogs and layers" href="/docs/examples/dialogs-and-layers">
+    A live demo of a visibility policy while a dialog is open.
+  </Card>
   <Card icon={<Braces />} title="Resolution types" href="/docs/dom/api/resolution">
     The type of `VisibilityPolicy`.
   </Card>
-  <Card icon={<Webhook />} title="useCursorBinding" href="/docs/react/api/hooks#usecursorbinding">
+  <Card icon={<Braces />} title="useDomBinding" href="/docs/react/api/hooks#usedombinding">
     The React hook that returns the binding.
   </Card>
 </Cards>

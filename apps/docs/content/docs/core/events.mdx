@@ -4,9 +4,9 @@ description: sendEvent and subscribeEvents, the limits of an event, parseEvent, 
 icon: zap
 ---
 
-import { Code, MousePointerClick, Radio, ShieldCheck } from "lucide-react";
+import { BadgeCheck, Code, Radio, ShieldCheck, Zap } from "lucide-react";
 
-An event is a one-shot message to every peer, for example a reaction or a ping. A peer is another client in the same room. Use an event for a short action that peers see one time. Use `setContext` for a state that peers keep, such as a selection. See [Lifecycle](/docs/core/presence-client#lifecycle).
+An event is a one-shot message to every peer, for example a reaction or a ping. Use an event for a short action that peers see one time. Use `setContext` for a state that peers keep, such as a selection. See [Lifecycle](/docs/core/presence-client#lifecycle).
 
 ## Send and receive events
 
@@ -21,11 +21,11 @@ client.sendEvent("wave");
 client.sendEvent("reaction", { emoji: "tada" });
 ```
 
-The listener receives a `RemoteEvent`: the `type`, the optional `data`, and the `clientId` of the sender. A client never receives its own events. `subscribeEvents` returns a function that removes the listener.
+The listener receives an event with the `type`, the `data`, and the `clientId` of the sender. Without `parseEvent`, `data` has the type `unknown`. A client never receives its own events. `subscribeEvents` returns a function that removes the listener.
 
 ## Delivery
 
-The client never stores an event and never sends it again. A peer that is not connected at that time never receives the event. A peer that joins later never receives it either. An event does not add the sender to the remote presence, and it does not end the idle stage of the sender.
+The client never stores an event and never sends it again. A peer that is not connected at that time never receives the event. A peer that joins later never receives it either. An event does not add the sender to the remote presence, and it does not end the idle state of the sender.
 
 ## Limits of an event
 
@@ -48,7 +48,7 @@ In all other cases, `sendEvent` gives the message to the transport and returns `
   a peer can send any JSON within the field limits.
 </Callout>
 
-The `parseEvent` option checks events. It receives each remote event and returns the event to deliver, or `undefined` to drop it. A parser that throws drops the event:
+The `parseEvent` option checks events. It receives each remote event. It returns an event with `clientId`, `type`, and `data` to deliver, or `undefined` to drop it. A filter that returns the received event needs `data: event.data` set, because the received `data` is optional. A parser that throws drops the event:
 
 ```ts
 const client = createPresenceClient({
@@ -92,21 +92,23 @@ The receiver keeps a burst for at most 512 senders. When a new sender arrives af
 
 ## Typed events
 
-`createEventChannel<TEvents>(client)` gives the events of a client a type. `TEvents` maps each event type to the type of its `data`. Declare it with `type` or with `interface`. The channel has two methods:
+`createEventChannel(client)` gives the events of a client a type. The type comes from the `parseEvent` option of the client. `TEvents` maps each event type to the type of its `data`. Declare it with `type` or with `interface`. The channel has two methods:
 
 - `send(type, data)` calls `client.sendEvent` and returns its result. A misspelled `type` or a `data` value of the wrong type does not compile. If the `data` type of an event includes `undefined`, `data` is optional.
 - `subscribe(listener)` calls `client.subscribeEvents` and returns a function that removes the listener. The listener receives a `TypedRemoteEvent<TEvents>`. A check of `event.type` narrows `event.data` to the type of that event.
 
 <Callout type="warn">
-  If a peer sends data of another type, the listener still receives it. The channel types only the code that
-  you write, and it does not check remote data. Pass a `parseEvent` that checks the same event types.
+  The channel types the events that you send. The client types the events that it receives, and only
+  `parseEvent` checks them. Without `parseEvent`, the data of a remote event has the type `unknown`.
 </Callout>
 
-`createEventParser<TEvents>(parsers)` builds this `parseEvent` from one parser for each event type. `parsers` is an `EventParsers<TEvents>` object:
+`createEventParser<TEvents>(parsers)` builds this `parseEvent` from one parser for each event type. The client infers `TEvents` from it. A `parseEvent` that you write by hand leaves the events `unknown`. To type them, pass `TEvents` to `createPresenceClient` as the third type argument. `parsers` is an `EventParsers<TEvents>` object:
 
 - A parser receives the remote `data` and returns the checked data, or `undefined` to drop the event.
 - For an event without data, use `null` in place of a parser. The client then drops the event if it carries data.
 - The client drops an event whose type has no entry in `parsers`.
+
+To build `parseEvent` from Valibot, Zod, or ArkType schemas, use `eventParserFrom`. See [Check the events](/docs/core/standard-schema#check-the-events).
 
 This sample declares two events, checks them with `createEventParser`, and sends and receives them through a channel:
 
@@ -124,7 +126,7 @@ const parseEvent = createEventParser<Events>({
 });
 
 const client = createPresenceClient({ transport: myTransport, parseEvent });
-const events = createEventChannel<Events>(client);
+const events = createEventChannel(client);
 
 events.send("reaction", { emoji: "tada" });
 events.send("ping");
@@ -142,8 +144,11 @@ const unsubscribe = events.subscribe((event) => {
   <Card icon={<ShieldCheck />} title="Validation" href="/docs/core/validation#events-and-leave-messages">
     The checks on each inbound event.
   </Card>
-  <Card icon={<MousePointerClick />} title="Cursor events in React" href="/docs/react/cursor-events">
+  <Card icon={<Zap />} title="Remote events" href="/docs/react/remote-events">
     Send and receive events from React components.
+  </Card>
+  <Card icon={<BadgeCheck />} title="Validate with a schema" href="/docs/core/standard-schema">
+    Build the parsers from a Valibot, Zod, or ArkType schema.
   </Card>
   <Card icon={<Code />} title="Client API" href="/docs/core/api/client#createeventchannel">
     The signatures of `createEventChannel` and `createEventParser`.

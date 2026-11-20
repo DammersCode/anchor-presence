@@ -1,10 +1,11 @@
 ---
 title: Overview
 description: What @anchor-presence/react provides and how to add it to a React app.
-icon: info
+icon: atom
 ---
 
 import {
+  Box,
   Braces,
   Component,
   Crosshair,
@@ -20,9 +21,10 @@ import {
   Users,
   Wifi,
   Zap,
+  MousePointer,
 } from "lucide-react";
 
-`@anchor-presence/react` connects a presence client to React. Use it in a React app that shows the cursors of other users. It gives you one provider, hooks that read presence data, and two components that draw cursors. A peer is another client in the same room.
+`@anchor-presence/react` connects a presence client to React. Use it in a React app that shows the cursors of other users. It gives you one provider, hooks that read presence data, and two components that draw cursors.
 
 ## Minimal setup
 
@@ -31,11 +33,11 @@ This app connects to the Bun relay of the [Quick start](/docs/get-started/quick-
 ```tsx
 import { createPresenceClient } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
-import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
+import { CursorLayer, PresenceProvider } from "@anchor-presence/react";
 
 function App() {
   return (
-    <LiveCursorProvider
+    <PresenceProvider
       factory={() => {
         const transport = createWebSocketTransport({ port: 8788, path: "/?room=main" });
         return createPresenceClient({ transport });
@@ -43,18 +45,21 @@ function App() {
     >
       <Dashboard />
       <CursorLayer />
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }
 ```
 
 Until the factory runs, the provider renders its children with no cursors. For the anchor markup and the relay, follow the [Quick start](/docs/get-started/quick-start).
 
-## Set up
+## Setup
 
 <Cards>
-  <Card icon={<Plug />} title="LiveCursorProvider" href="/docs/react/live-cursor-provider">
+  <Card icon={<Plug />} title="PresenceProvider" href="/docs/react/presence-provider">
     Share one client and its DOM binding with the tree.
+  </Card>
+  <Card icon={<Braces />} title="Typed hooks" href="/docs/react/typed-hooks">
+    Fix the context, user, and event types one time.
   </Card>
   <Card icon={<Factory />} title="Create the client" href="/docs/react/client-creation">
     Let the provider own the client, or pass a client that you own.
@@ -64,7 +69,7 @@ Until the factory runs, the provider renders its children with no cursors. For t
   </Card>
 </Cards>
 
-## Render cursors
+## Rendering
 
 <Cards>
   <Card icon={<MousePointer2 />} title="CursorLayer" href="/docs/react/cursor-layer">
@@ -75,7 +80,7 @@ Until the factory runs, the provider renders its children with no cursors. For t
   </Card>
 </Cards>
 
-## Read and send presence
+## Hooks
 
 <Cards>
   <Card icon={<Users />} title="Remote users" href="/docs/react/remote-users">
@@ -87,17 +92,14 @@ Until the factory runs, the provider renders its children with no cursors. For t
   <Card icon={<Wifi />} title="Connection status" href="/docs/react/connection-status">
     Show a banner while the connection is down.
   </Card>
-  <Card icon={<Zap />} title="Cursor events" href="/docs/react/cursor-events">
+  <Card icon={<Zap />} title="Remote events" href="/docs/react/remote-events">
     Send one-shot events, such as reactions.
   </Card>
   <Card icon={<Crosshair />} title="Remote cursors" href="/docs/react/remote-cursors">
     Read the screen positions and draw the cursors yourself.
   </Card>
-  <Card icon={<Radar />} title="Remote presence" href="/docs/react/remote-presence">
+  <Card icon={<Radar />} title="Raw presence" href="/docs/react/remote-presence">
     Read the raw presence of every peer.
-  </Card>
-  <Card icon={<Braces />} title="Typed hooks" href="/docs/react/typed-hooks">
-    Fix the context, user, and event types one time.
   </Card>
   <Card icon={<Gauge />} title="Rerenders" href="/docs/react/rerenders">
     Pick the hook with the smallest render cost.
@@ -111,16 +113,27 @@ Until the factory runs, the provider renders its children with no cursors. For t
 - The peer range is `>=18`. CI runs the tests on React 19.
 - In development mode, the provider and the hooks write console warnings for setup errors. See [Development warnings](/docs/get-started/guides/troubleshooting#development-warnings).
 
+## API reference
+
+<Cards>
+  <Card icon={<Braces />} title="Hooks API" href="/docs/react/api/hooks">
+    The signature of every hook.
+  </Card>
+  <Card icon={<Component />} title="Components API" href="/docs/react/api/components">
+    The props of every component.
+  </Card>
+</Cards>
+
 ## Related
 
 <Cards>
   <Card icon={<Rocket />} title="Quick start" href="/docs/get-started/quick-start">
     Build a first working app, step by step.
   </Card>
-  <Card icon={<Braces />} title="Hooks API" href="/docs/react/api/hooks">
-    The signature of every hook.
+  <Card icon={<Box />} title="Core overview" href="/docs/core">
+    The protocol layer that the hooks read from.
   </Card>
-  <Card icon={<Component />} title="Components API" href="/docs/react/api/components">
-    The props of every component.
+  <Card icon={<MousePointer />} title="DOM overview" href="/docs/dom">
+    The binding and the browser transports.
   </Card>
 </Cards>

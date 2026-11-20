@@ -5,8 +5,8 @@ import type { PresenceClientState } from "./types.js";
  * The liveness schedules of one presence client.
  * The heartbeat resends the full state every interval; the sweep expires stale remote clients.
  */
-export function startLiveness<TContext, TUser>(
-  state: PresenceClientState<TContext, TUser>,
+export function startLiveness<TContext, TUser, TEvents extends object>(
+  state: PresenceClientState<TContext, TUser, TEvents>,
   publish: Pick<PublishLoop, "sendHeartbeat">,
 ): void {
   function scheduleHeartbeat(): void {

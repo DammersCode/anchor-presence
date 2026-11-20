@@ -27,6 +27,8 @@ jobs:
       - uses: ./.github/actions/setup
       - name: Typecheck
         run: bun run typecheck
+      - name: Check every vitest project runs in the test matrix
+        run: node scripts/check-ci-projects.mjs
       - name: Check package exports and unused code
         run: bun run check:package && bun run check:unused
 
@@ -46,7 +48,7 @@ jobs:
         run: bun run lint
 
   test:
-    name: Unit tests (shard ${{ matrix.shard }} of 3)
+    name: Unit tests (${{ matrix.name }})
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     if: >-
@@ -55,13 +57,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3]
+        include:
+          - name: packages
+            projects: --project core --project dom --project react --project demo --project audit-skill --project built-packages
+          - name: relays
+            projects: --project server --project relay-conformance --project hono-example --project node-ws-example
+          - name: examples
+            projects: --project elysia-example --project bun-native-example --project socketio-example --project signalr-example
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
-      # No .NET on this runner, so the real SignalR hub test skips itself; main runs it.
+      # The real SignalR hub test needs .NET; the hub job on main runs it.
       - name: Unit tests
-        run: bunx vitest run --shard=${{ matrix.shard }}/3
+        run: bunx vitest run ${{ matrix.projects }} --exclude examples/signalr/signalr-hub.test.ts
 
   informational:
     name: Bun runtime smoke and dependency audit
@@ -78,6 +86,5 @@ jobs:
         continue-on-error: true
         timeout-minutes: 3
         run: timeout -k 5 90 bun scripts/runtime-smoke.ts
-      # Fails on a new high advisory. GHSA-fc5q-39xc-vjpf (picomatch, dev tooling) has no fixed version yet; drop the flag when one exists.
       - name: Dependency audit
-        run: bun audit --audit-level=high --ignore=GHSA-fc5q-39xc-vjpf
+        run: bun audit --audit-level=high

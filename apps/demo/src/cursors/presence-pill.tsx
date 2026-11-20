@@ -1,11 +1,13 @@
-import { useRemotePresence, useCursorStatus, useRemoteCursorsSelector } from "@anchor-presence/react";
+import { useRemotePresence, usePresenceStatus, useRemoteCursorsSelector } from "./hooks";
 import type { ResolvedCursor } from "@anchor-presence/dom";
 import type { ConnectionStatus } from "@anchor-presence/core";
 import { Avatar } from "../components/ui/avatar";
 import { DEFAULT_CURSOR_COLOR, isKnownCursorColor } from "./setup";
 import type { DemoContext, DemoUser } from "./setup";
 
-function selectClippedClientIds(cursors: ResolvedCursor<DemoContext, DemoUser>[]): ReadonlySet<string> {
+function selectClippedClientIds(
+  cursors: readonly ResolvedCursor<DemoContext, DemoUser>[],
+): ReadonlySet<string> {
   const clipped = new Set<string>();
   for (const cursor of cursors) {
     if (cursor.tier === "anchor" && !cursor.pointVisible) clipped.add(cursor.clientId);
@@ -32,8 +34,8 @@ const STATUS_DOT: Record<ConnectionStatus, string> = {
 };
 
 export function PresencePill() {
-  const status = useCursorStatus();
-  const presence = useRemotePresence<DemoContext, DemoUser>();
+  const status = usePresenceStatus();
+  const presence = useRemotePresence();
   const clippedClientIds = useRemoteCursorsSelector(selectClippedClientIds, sameClientIds);
 
   return (

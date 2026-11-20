@@ -14,10 +14,18 @@ function pair() {
   open.push(a, b);
   void a.connect();
   void b.connect();
-  return { a, b };
+  return { a, b, name };
 }
 
 describe("createBroadcastChannelTransport", () => {
+  it("exposes status members without optional chaining", () => {
+    const { a } = pair();
+    const seen: string[] = [];
+    a.subscribeStatus((status) => seen.push(status));
+    expect(a.getStatus()).toBe("connected");
+    expect(seen.at(-1)).toBe("connected");
+  });
+
   it("delivers bytes to the other transport and not to the sender", async () => {
     const { a, b } = pair();
     const seenByA: Uint8Array[] = [];
@@ -33,10 +41,16 @@ describe("createBroadcastChannelTransport", () => {
   });
 
   it("ignores payloads that are not byte views and keeps delivering", async () => {
-    const { a, b } = pair();
+    const { a, b, name } = pair();
     const seen: number[][] = [];
     b.subscribe((data) => seen.push([...data]));
-    const raw = new BroadcastChannel((a as unknown as { name?: string }).name ?? "");
+    const raw = new BroadcastChannel(name);
+    // oxlint-disable-next-line unicorn/require-post-message-target-origin
+    raw.postMessage({ from: "other", data: "not bytes" });
+    // oxlint-disable-next-line unicorn/require-post-message-target-origin
+    raw.postMessage(null);
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(seen).toEqual([]);
     raw.close();
     void a.send(new Uint8Array([7]));
     await new Promise((resolve) => setTimeout(resolve, 50));

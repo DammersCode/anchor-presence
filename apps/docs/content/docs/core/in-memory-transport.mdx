@@ -1,12 +1,12 @@
 ---
 title: In-memory transport
-description: createInMemoryPair, two transports wired to each other for tests and prototypes.
+description: createInMemoryPair and createInMemoryRoom, in-process transports for tests and prototypes.
 icon: memory-stick
 ---
 
 import { Cable, Plug, Server } from "lucide-react";
 
-`createInMemoryPair` returns two transports that are wired directly to each other in one process. Use it in unit tests, in server-rendered samples, and to try the provider and the hooks before a relay exists.
+`createInMemoryPair` returns two transports that are wired directly to each other in one process. Use it in unit tests, in server-rendered samples, and to try the provider and the hooks before a relay exists. `createInMemoryRoom` does the same for three or more peers.
 
 ## Usage
 
@@ -20,22 +20,39 @@ const clientA = createPresenceClient({ transport: a, user: { name: "Alice" } });
 const clientB = createPresenceClient({ transport: b, user: { name: "Bob" } });
 ```
 
-A send from `a` reaches only the listeners of `b`. A send from `b` reaches only the listeners of `a`. Call `dispose()` on the pair to stop delivery and clear both sides.
+A send from `a` reaches only the listeners of `b`. A send from `b` reaches only the listeners of `a`. Call `dispose()` on the pair to stop delivery. It sets both sides to `disconnected`, tells their status listeners, and clears the listeners.
 
 ## Delivery
 
-By default, a send reaches the other side at once, inside the `send` call. To deliver in a microtask, pass `{ async: true }`:
+By default, a send reaches the other side at once, inside the `send` call. To deliver after the current code finishes, in a microtask, pass `{ async: true }`:
 
 ```ts
 const { a, b } = createInMemoryPair({ async: true });
 ```
 
-## Limits
+## Limits of the pair
 
 - Both sides must run in the same JavaScript realm, that is, one global environment such as one page or one worker. The pair cannot cross a process, tab, or iframe boundary.
 - Each side starts `disconnected`. `connect()` sets it to `connected`, and `disconnect()` sets it to `disconnected`.
-- A send reaches the other side also while the sending side is `disconnected`. The browser transports drop such a send. A test of offline behavior can pass with this pair and fail in the browser.
+- A send reaches the other side while the sending side is `disconnected`. It also reaches a `disconnected` receiver. The browser transports drop such a send. A test of offline behavior can pass with this pair and fail in the browser. The room drops both: a `disconnected` transport neither sends nor receives.
 - The pair has no `subscribeClose` and no `bufferedBytes`.
+
+## Test with more than two peers
+
+If a test needs three or more clients, use `createInMemoryRoom`. Call `join()` once per client:
+
+```ts
+import { createInMemoryRoom, createPresenceClient } from "@anchor-presence/core";
+
+const room = createInMemoryRoom();
+const alice = createPresenceClient({ transport: room.join(), user: { name: "Alice" } });
+const bob = createPresenceClient({ transport: room.join(), user: { name: "Bob" } });
+const carol = createPresenceClient({ transport: room.join(), user: { name: "Carol" } });
+```
+
+A send reaches every other joined transport and never the sender. `join()` returns a connected transport. Call `disconnect()` on a transport to leave the room. A disconnected transport receives nothing, and its sends are dropped. Call `connect()` to join again. The room takes the same `{ async: true }` option as the pair.
+
+Call `room.dispose()` to end the room. It disconnects every joined transport and clears their listeners. After it, `join()` returns a transport that stays `disconnected`, and `connect()` and `send()` do nothing.
 
 ## Related
 

@@ -1,15 +1,31 @@
 "use client";
 
 import type { PresenceClient } from "@anchor-presence/core";
+import type { TourContext } from "./_preview/tour";
 import type { VisibilityPolicy } from "@anchor-presence/dom";
-import { CursorLayer, LiveCursorProvider, useRemoteCursors } from "@anchor-presence/react";
+import type { ResolvedCursor } from "@anchor-presence/react";
+import {
+  CursorLayer,
+  PresenceProvider,
+  useLocalContext,
+  useRemoteCursors,
+  useRemoteCursorsSelector,
+  useRemoteUsers,
+} from "./_preview/hooks";
 import { Plus, X } from "lucide-react";
 import { useRef, type ReactNode, type RefObject } from "react";
 
+const safeColor = (color: string | undefined, fallback: string) =>
+  color !== undefined && /^#[0-9a-f]{6}$/iu.test(color) ? color : fallback;
+
 type User = { name: string; color: string };
+type Context = { selection?: string[] };
+type Groups = Record<string, string[]>;
+type Placement = { anchorId: string; clientId: string };
+type Cursor = ResolvedCursor<Context, User>;
 
 type Props = {
-  client: PresenceClient<unknown, User> | null;
+  client: PresenceClient<TourContext, User> | null;
   layout: "wide" | "narrow";
   children?: ReactNode;
 };
@@ -65,10 +81,115 @@ const clippedPointPolicy: VisibilityPolicy = ({ resolution }) =>
 
 const bindingOptions = { resolution: { visibilityPolicy: clippedPointPolicy } };
 
-function OutOfViewHint({ boardRef }: { boardRef: RefObject<HTMLDivElement | null> }) {
-  const clipped = useRemoteCursors<unknown, User>().find(
-    (cursor) => cursor.tier === "anchor" && !cursor.pointVisible,
+function group(placements: Placement[]): Groups {
+  const groups: Groups = {};
+  for (const { anchorId, clientId } of placements) (groups[anchorId] ??= []).push(clientId);
+  for (const clientIds of Object.values(groups)) clientIds.sort();
+  return groups;
+}
+
+function selectedIds(context: Context | undefined): string[] {
+  const selection: unknown = context?.selection;
+  return Array.isArray(selection) ? selection.filter((id): id is string => typeof id === "string") : [];
+}
+
+const whoIsOn = (cursors: readonly Cursor[]) =>
+  group(
+    cursors.flatMap(({ anchorId, clientId, visible }) =>
+      visible && anchorId !== null ? [{ anchorId, clientId }] : [],
+    ),
   );
+
+const whoPicked = (cursors: readonly Cursor[]) =>
+  group(
+    cursors.flatMap(({ clientId, context }) =>
+      selectedIds(context).map((anchorId) => ({ anchorId, clientId })),
+    ),
+  );
+
+function sameGroups(a: Groups, b: Groups): boolean {
+  const keys = Object.keys(a);
+  return keys.length === Object.keys(b).length && keys.every((key) => a[key]?.join() === b[key]?.join());
+}
+
+function useCardPeers() {
+  const here = useRemoteCursorsSelector(whoIsOn, sameGroups);
+  const picked = useRemoteCursorsSelector(whoPicked, sameGroups);
+  const users = useRemoteUsers();
+  const [context, setContext] = useLocalContext();
+  const mine = selectedIds(context);
+  const byClient = (clientIds: string[] = []) => users.filter(({ clientId }) => clientIds.includes(clientId));
+
+  return {
+    peersOn: (anchorId: string) => byClient(here[anchorId]),
+    peerPicking: (anchorId: string) => byClient(picked[anchorId])[0],
+    isSelected: (anchorId: string) => mine.includes(anchorId),
+    toggle: (anchorId: string) =>
+      setContext({ ...context, selection: mine.includes(anchorId) ? [] : [anchorId] }),
+  };
+}
+
+type CardPeers = ReturnType<typeof useCardPeers>;
+
+function CardTile({ id, title, peers }: { id: string; title: string; peers: CardPeers }) {
+  const anchorId = `board.card:${id}`;
+  const picker = peers.peerPicking(anchorId);
+  const pickerColor = safeColor(picker?.user?.color, "#4f46e5");
+  const selected = peers.isSelected(anchorId);
+
+  return (
+    <div
+      data-anchor={anchorId}
+      className={`flex flex-col gap-1 rounded-md border bg-fd-background px-2 py-1.5 shadow-xs ${selected ? "border-fd-primary" : "border-fd-border"}`}
+      style={
+        picker !== undefined
+          ? { backgroundColor: `color-mix(in srgb, ${pickerColor} 22%, var(--color-fd-background))` }
+          : undefined
+      }
+    >
+      <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          aria-pressed={selected}
+          onClick={() => peers.toggle(anchorId)}
+          className="min-w-0 flex-1 truncate text-left text-xs font-medium focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-fd-ring"
+        >
+          {title}
+        </button>
+        <span className="flex -space-x-1">
+          {peers.peersOn(anchorId).map(({ clientId, user }) => (
+            <span
+              key={clientId}
+              title={user?.name ?? "Guest"}
+              className="grid size-4 place-items-center rounded-full text-[8px] font-semibold text-white ring-2 ring-fd-background"
+              style={{ backgroundColor: safeColor(user?.color, "#6b7280") }}
+            >
+              {(user?.name ?? "?").charAt(0)}
+            </span>
+          ))}
+        </span>
+        <span
+          aria-hidden="true"
+          data-anchor={`${anchorId}.delete`}
+          className="grid size-4 flex-none place-items-center rounded text-fd-muted-foreground"
+        >
+          <X className="size-3" />
+        </span>
+      </div>
+      {picker !== undefined && (
+        <span
+          className="w-fit rounded px-1 text-[9px] font-semibold text-white"
+          style={{ backgroundColor: pickerColor }}
+        >
+          Selected by {picker.user?.name ?? "Guest"}
+        </span>
+      )}
+    </div>
+  );
+}
+
+function OutOfViewHint({ boardRef }: { boardRef: RefObject<HTMLDivElement | null> }) {
+  const clipped = useRemoteCursors().find((cursor) => cursor.tier === "anchor" && !cursor.pointVisible);
   if (clipped === undefined || clipped.anchorId === null) return null;
 
   const anchorId = clipped.anchorId;
@@ -83,7 +204,7 @@ function OutOfViewHint({ boardRef }: { boardRef: RefObject<HTMLDivElement | null
       type="button"
       onClick={reveal}
       className={`absolute top-1/2 z-10 flex -translate-y-1/2 items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium whitespace-nowrap text-white shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fd-ring ${right ? "right-2" : "left-2"}`}
-      style={{ backgroundColor: clipped.user?.color ?? "#4f46e5" }}
+      style={{ backgroundColor: safeColor(clipped.user?.color, "#4f46e5") }}
     >
       {clipped.user?.name ?? "the cursor"} {right ? "→" : "←"}
     </button>
@@ -91,66 +212,58 @@ function OutOfViewHint({ boardRef }: { boardRef: RefObject<HTMLDivElement | null
 }
 
 export function KanbanScene({ client, layout, children }: Props) {
-  const boardRef = useRef<HTMLDivElement>(null);
-
   return (
-    <LiveCursorProvider client={client} bindingOptions={bindingOptions}>
-      <div data-anchor="board" className="flex h-full flex-col p-2.5">
-        <h3 className="font-display px-1 pb-1.5 text-sm font-semibold">Board</h3>
-        <div className="relative min-h-0 flex-1">
-          <div ref={boardRef} className="flex h-full gap-2 overflow-x-auto">
-            {COLUMNS.map((column) => (
-              <section
-                key={column.id}
-                data-anchor={`board.column:${column.id}`}
-                className={`flex h-full flex-none flex-col gap-1.5 rounded-md bg-fd-secondary/60 p-1.5 ${COLUMN_WIDTH}`}
-              >
-                <header className="flex items-center justify-between gap-1 px-1">
-                  <h4 className="text-[10px] font-semibold tracking-wide text-fd-muted-foreground uppercase">
-                    {column.title} <span className="font-normal">{column.cards.length}</span>
-                  </h4>
-                  <button
-                    type="button"
-                    data-anchor={`board.column:${column.id}.add`}
-                    aria-label={`Add a card to ${column.title}`}
-                    className="grid size-4 place-items-center rounded text-fd-muted-foreground hover:bg-fd-background hover:text-fd-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-fd-ring"
-                  >
-                    <Plus className="size-3" />
-                  </button>
-                </header>
-                <div className="flex min-h-0 flex-col gap-1.5 overflow-y-auto">
-                  {column.cards.map((card) => (
-                    <div
-                      key={card.id}
-                      data-anchor={`board.card:${card.id}`}
-                      className="flex items-center gap-1.5 rounded-md border border-fd-border bg-fd-background px-2 py-1.5 shadow-xs"
-                    >
-                      <span className="min-w-0 flex-1 truncate text-xs font-medium">{card.title}</span>
-                      <button
-                        type="button"
-                        data-anchor={`board.card:${card.id}.delete`}
-                        aria-label={`Delete ${card.title}`}
-                        className="grid size-4 flex-none place-items-center rounded text-fd-muted-foreground hover:bg-fd-secondary hover:text-fd-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-fd-ring"
-                      >
-                        <X className="size-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            ))}
-          </div>
-          <OutOfViewHint boardRef={boardRef} />
-        </div>
-        <p className="px-1 pt-2 text-[11px] text-fd-muted-foreground">
-          Columns keep their size. Scroll the board to find a cursor that is out of view.
-        </p>
-      </div>
-      <CursorLayer<unknown, User>
+    <PresenceProvider client={client} bindingOptions={bindingOptions}>
+      <Board />
+      <CursorLayer
         getLabel={(cursor) => cursor.user?.name ?? null}
-        getColor={(cursor) => cursor.user?.color ?? "#4f46e5"}
+        getColor={(cursor) => safeColor(cursor.user?.color, "#4f46e5")}
       />
       {children}
-    </LiveCursorProvider>
+    </PresenceProvider>
+  );
+}
+
+function Board() {
+  const boardRef = useRef<HTMLDivElement>(null);
+  const peers = useCardPeers();
+
+  return (
+    <div data-anchor="board" className="flex h-full flex-col p-2.5">
+      <h3 className="font-display px-1 pb-1.5 text-sm font-semibold">Board</h3>
+      <div className="relative min-h-0 flex-1">
+        <div ref={boardRef} className="flex h-full gap-2 overflow-x-auto">
+          {COLUMNS.map((column) => (
+            <section
+              key={column.id}
+              data-anchor={`board.column:${column.id}`}
+              className={`flex h-full flex-none flex-col gap-1.5 rounded-md bg-fd-secondary/60 p-1.5 ${COLUMN_WIDTH}`}
+            >
+              <header className="flex items-center justify-between gap-1 px-1">
+                <h4 className="text-[10px] font-semibold tracking-wide text-fd-muted-foreground uppercase">
+                  {column.title} <span className="font-normal">{column.cards.length}</span>
+                </h4>
+                <span
+                  aria-hidden="true"
+                  data-anchor={`board.column:${column.id}.add`}
+                  className="grid size-4 place-items-center rounded text-fd-muted-foreground"
+                >
+                  <Plus className="size-3" />
+                </span>
+              </header>
+              <div className="flex min-h-0 flex-col gap-1.5 overflow-y-auto">
+                {column.cards.map((card) => (
+                  <CardTile key={card.id} id={card.id} title={card.title} peers={peers} />
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+        <OutOfViewHint boardRef={boardRef} />
+      </div>
+      <p className="px-1 pt-2 text-[11px] text-fd-muted-foreground">
+        Columns keep their size. Scroll the board to find a cursor that is out of view.
+      </p>
+    </div>
   );
 }

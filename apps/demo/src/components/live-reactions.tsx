@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  useCursorEvents,
+  useRemoteEvents,
   useLocalUser,
   usePeerChanges,
   useRemoteUsers,
@@ -30,7 +30,7 @@ export function LiveReactions({ localName }: { localName: string }) {
     setTimeout(() => setToasts((current) => current.filter((toast) => toast.id !== id)), TOAST_MS);
   }, []);
 
-  useCursorEvents((event) => {
+  useRemoteEvents((event) => {
     const parsed = parseDemoEvent(event);
     if (parsed === undefined) return;
     const who = users.find((user) => user.clientId === event.clientId)?.user?.name ?? "Someone";
@@ -39,7 +39,7 @@ export function LiveReactions({ localName }: { localName: string }) {
 
   usePeerChanges((change) => {
     if (change.type === "update") return;
-    const name = users.find((user) => user.clientId === change.clientId)?.user?.name ?? "Someone";
+    const name = change.user?.name ?? "Someone";
     show(name, change.type === "join" ? "joined" : "left");
   });
 

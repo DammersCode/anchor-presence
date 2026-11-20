@@ -17,6 +17,27 @@ afterEach(() => {
 });
 
 describe("createInMemoryPair", () => {
+  it("dispose() disconnects both sides and notifies their status listeners", () => {
+    const pair = createInMemoryPair();
+    void pair.a.connect();
+    void pair.b.connect();
+    const seen: string[] = [];
+    pair.a.subscribeStatus((status) => seen.push(status));
+    pair.dispose();
+    expect(seen).toEqual(["connected", "disconnected"]);
+    expect(pair.a.getStatus()).toBe("disconnected");
+    expect(pair.b.getStatus()).toBe("disconnected");
+  });
+
+  it("connect() after dispose() keeps both sides disconnected", () => {
+    const pair = createInMemoryPair();
+    pair.dispose();
+    void pair.a.connect();
+    void pair.b.connect();
+    expect(pair.a.getStatus()).toBe("disconnected");
+    expect(pair.b.getStatus()).toBe("disconnected");
+  });
+
   it("delivers client A's cursor to client B end to end (decode+validate runs on the other side)", () => {
     const { a, b } = createInMemoryPair();
     const clientA = createPresenceClient({ transport: a, clientId: "A" });
@@ -39,13 +60,13 @@ describe("createInMemoryPair", () => {
 
   it("delivers binaryCodec cursor, user, and context changes end to end", () => {
     const { a, b } = createInMemoryPair();
-    const clientA = createPresenceClient<{ page?: string }, { name?: string }>({
+    const clientA = createPresenceClient({
       transport: a,
       clientId: "A",
       codec: binaryCodec,
       user: { name: "A" },
     });
-    const clientB = createPresenceClient<{ page?: string }, { name?: string }>({
+    const clientB = createPresenceClient({
       transport: b,
       clientId: "B",
       codec: binaryCodec,
@@ -143,5 +164,37 @@ describe("createInMemoryPair", () => {
     expect(received).toHaveLength(1);
 
     unsub();
+  });
+
+  it("a throwing listener does not stop the others or throw into the sender", () => {
+    const pair = createInMemoryPair();
+    void pair.a.connect();
+    void pair.b.connect();
+    const received: number[] = [];
+    pair.b.subscribe(() => {
+      throw new Error("boom");
+    });
+    pair.b.subscribe((data) => received.push(data[0]!));
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(() => pair.a.send(Uint8Array.of(4))).not.toThrow();
+    expect(received).toEqual([4]);
+    spy.mockRestore();
+  });
+
+  it("dispose clears both sides after a status listener throws", () => {
+    const pair = createInMemoryPair();
+    void pair.a.connect();
+    void pair.b.connect();
+    let armed = false;
+    pair.a.subscribeStatus(() => {
+      if (armed) throw new Error("boom");
+    });
+    const seen: string[] = [];
+    pair.b.subscribeStatus((status) => seen.push(status));
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    armed = true;
+    expect(() => pair.dispose()).not.toThrow();
+    expect(seen).toEqual(["connected", "disconnected"]);
+    spy.mockRestore();
   });
 });

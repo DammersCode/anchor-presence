@@ -72,6 +72,22 @@ export function defineRelayConformance(
       for (const { socket } of [sender, peer, stranger]) socket.close();
     });
 
+    it("relays a text frame unchanged, even when it looks like JSON", async () => {
+      const { baseUrl } = relay();
+      const sender = await connect(baseUrl, "conf-text");
+      const peer = await connect(baseUrl, "conf-text");
+      const texts: unknown[] = [];
+      peer.socket.addEventListener("message", (event) => texts.push(event.data));
+      const frames = ['"hello"', "42", '{"a":1}' + " ".repeat(300), "hello"];
+
+      for (const frame of frames) sender.socket.send(frame);
+      await settle();
+
+      expect(texts).toEqual(frames);
+      sender.socket.close();
+      peer.socket.close();
+    });
+
     it.each(oversizedFrames)(
       "drops a %s frame above the size cap and keeps relaying",
       async (kind, makeFrame) => {
@@ -99,6 +115,7 @@ export function defineRelayConformance(
       const { baseUrl } = relay();
       expect(await closeCode(new WebSocket(`${baseUrl}/?room=team%2Fa`))).toBe(4007);
       expect(await closeCode(new WebSocket(`${baseUrl}/?room=${"x".repeat(300)}`))).toBe(4007);
+      expect(await closeCode(new WebSocket(`${baseUrl}/?room=a&room=b`))).toBe(4007);
     });
   });
 
@@ -163,6 +180,8 @@ export function defineRelayConformance(
       const { baseUrl } = relay();
       expect(await closeCode(new WebSocket(`${baseUrl}/?room=auth`))).toBe(4006);
       expect(await closeCode(new WebSocket(`${baseUrl}/?room=auth&token=nope`))).toBe(4006);
+      expect(await closeCode(new WebSocket(`${baseUrl}/?room=auth&token=secret&token=secret`))).toBe(4006);
+      expect(await closeCode(new WebSocket(`${baseUrl}/?room=auth&token=secret&token=other`))).toBe(4006);
 
       const admitted = await connect(baseUrl, "auth", "&token=secret");
       expect(admitted.socket.readyState).toBe(WebSocket.OPEN);
@@ -222,6 +241,19 @@ export function defineRelayConformance(
         }
         expect(new Set(seen.map((message) => message.clientId)).size).toBe(2);
         for (const { socket } of [peer, tabOne, tabTwo]) socket.close();
+      });
+
+      it("closes a sender whose frame it cannot bind, with code 1008, and relays nothing", async () => {
+        const { baseUrl } = relay();
+        const peer = await connect(baseUrl, "ident-binary", "&token=bob");
+        const sender = await connect(baseUrl, "ident-binary", "&token=ada");
+        const closed = closeCode(sender.socket);
+
+        sender.socket.send(new Uint8Array([0x41, 0x02, 0xff]));
+
+        expect(await closed).toBe(1008);
+        expect(peer.received).toHaveLength(0);
+        peer.socket.close();
       });
     });
   }

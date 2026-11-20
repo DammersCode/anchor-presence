@@ -9,8 +9,10 @@ import {
   RateLimiter,
   INVALID_ROOM_CODE,
   bindIdentity,
+  UNBINDABLE_FRAME_CLOSE,
   newConnectionId,
   parseRoom,
+  parseToken,
   type AuthIdentity,
   safeAuthCheck,
   tokenAuthCheck,
@@ -24,9 +26,14 @@ export type SocketIoRelayOptions = {
   maxRoomSockets?: number;
   maxSockets?: number;
   allowedOrigins?: string[];
-  /** Auth hook placeholder: verify a token query param. Default accepts every token. */
+  /** Auth hook. Default: the `RELAY_AUTH_TOKEN` check, which admits everyone when the variable is unset. */
   authCheck?: AuthCheck;
 };
+
+// engine.io keeps only the last value of a repeated query key; the raw URL still has them all
+function rawQuery(socket: Socket, key: string): string[] {
+  return new URL(socket.request.url ?? "", "http://localhost").searchParams.getAll(key);
+}
 
 /** Minimal room-broadcast relay: no message inspection beyond size, no persistence. */
 export function createSocketIoRelay(port: number, options: SocketIoRelayOptions = {}) {
@@ -46,33 +53,38 @@ export function createSocketIoRelay(port: number, options: SocketIoRelayOptions 
     // Empty allowlist (dev default) falls back to "*"; socket.io's cors option has no "allow everyone" sentinel.
     cors: { origin: allowedOrigins.length > 0 ? allowedOrigins : "*" },
     maxHttpBufferSize: Math.max(maxMessageBytes * 4, 1024 * 1024),
-    // cors only guards polling responses; a WebSocket upgrade needs its own origin check
-    allowRequest: (req, callback) => {
-      const allowlist = new Set(allowedOrigins);
-      callback(null, originAllowed(allowlist, req.headers.origin ?? ""));
-    },
   });
 
   const limits = new ConnectionLimits(maxSockets, maxRoomSockets);
+  const allowlist = new Set(allowedOrigins);
 
   io.use(async (socket, next) => {
-    const { query, headers } = socket.handshake;
-    const room = parseRoom(String(query.room ?? ""));
+    const { headers } = socket.handshake;
+    // a refusal here carries a code, so the client stops; an HTTP-level refusal would make it retry forever
+    if (!originAllowed(allowlist, headers.origin ?? "")) {
+      next(Object.assign(new Error("origin not allowed"), { data: { code: 4004 } }));
+      return;
+    }
+    const room = parseRoom(rawQuery(socket, "room"));
     if (room === null) {
       next(Object.assign(new Error("invalid room"), { data: { code: INVALID_ROOM_CODE } }));
       return;
     }
-    const ok = await authCheck({
-      token: String(query.token ?? ""),
-      room,
-      origin: headers.origin ?? "",
-      headers: Object.fromEntries(
-        Object.entries(headers).map(([name, value]) => [
-          name,
-          Array.isArray(value) ? value.join(", ") : value,
-        ]),
-      ),
-    });
+    const token = parseToken(rawQuery(socket, "token"));
+    const ok =
+      token === null
+        ? false
+        : await authCheck({
+            token,
+            room,
+            origin: headers.origin ?? "",
+            headers: Object.fromEntries(
+              Object.entries(headers).map(([name, value]) => [
+                name,
+                Array.isArray(value) ? value.join(", ") : value,
+              ]),
+            ),
+          });
     if (!ok) {
       next(Object.assign(new Error("invalid token"), { data: { code: 4006 } }));
       return;
@@ -88,7 +100,7 @@ export function createSocketIoRelay(port: number, options: SocketIoRelayOptions 
   };
 
   io.on("connection", (socket: Socket) => {
-    const parsedRoom = parseRoom(String(socket.handshake.query.room ?? ""));
+    const parsedRoom = parseRoom(rawQuery(socket, "room"));
     if (parsedRoom === null) {
       refuse(socket, INVALID_ROOM_CODE, "invalid room");
       return;
@@ -113,7 +125,10 @@ export function createSocketIoRelay(port: number, options: SocketIoRelayOptions 
       if (identity !== undefined) {
         const bytes = data instanceof ArrayBuffer ? new Uint8Array(data) : (data as Uint8Array);
         const bound = bindIdentity(bytes, identity, connectionId);
-        if (bound === null) return;
+        if (bound === null) {
+          refuse(socket, UNBINDABLE_FRAME_CLOSE.code, UNBINDABLE_FRAME_CLOSE.reason);
+          return;
+        }
         outgoing = bound;
       }
       socket.to(ioRoom).emit("presence", outgoing);

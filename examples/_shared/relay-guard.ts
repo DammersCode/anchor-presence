@@ -9,13 +9,31 @@ const MAX_ROOM_LENGTH = 256;
 /** Close code a relay uses when a connection names a room that is not a valid room name. */
 export const INVALID_ROOM_CODE = 4007;
 
+/** A query value as a framework reports it: one string, or a list when the client repeats the key. */
+export type QueryValue = string | readonly string[] | null | undefined;
+
+function isRepeated(candidate: QueryValue): boolean {
+  return typeof candidate === "object" && candidate !== null && candidate.length > 1;
+}
+
+function firstValue(candidate: QueryValue): string | null | undefined {
+  return typeof candidate === "object" && candidate !== null ? candidate[0] : candidate;
+}
+
 /**
  * Reads a room name. A missing or empty value is the default room `main`.
- * A name with other characters, or above 256 characters, returns `null`: refuse the connection, never merge it into `main`.
+ * A repeated key, a name with other characters, or a name above 256 characters returns `null`: refuse the connection, never merge it into `main`.
  */
-export function parseRoom(candidate: string | null | undefined): string | null {
-  if (candidate === null || candidate === undefined || candidate === "") return "main";
-  return candidate.length <= MAX_ROOM_LENGTH && ROOM_CHARSET.test(candidate) ? candidate : null;
+export function parseRoom(candidate: QueryValue): string | null {
+  if (isRepeated(candidate)) return null;
+  const value = firstValue(candidate);
+  if (value === null || value === undefined || value === "") return "main";
+  return value.length <= MAX_ROOM_LENGTH && ROOM_CHARSET.test(value) ? value : null;
+}
+
+/** Reads a token. A missing value is `""`. A repeated key returns `null`: refuse the connection with `4006`. */
+export function parseToken(candidate: QueryValue): string | null {
+  return isRepeated(candidate) ? null : (firstValue(candidate) ?? "");
 }
 
 /** A short random ID that tells the connections of one identity apart. */
@@ -147,8 +165,8 @@ export type AuthRequest = {
 };
 
 /**
- * Auth hook: decides whether a connection may join. It may be async, for example to verify a JWT or look up a session.
- * The default accepts everything, matching the reference relay's opt-in auth.
+ * Auth hook: decides whether a connection may join. It can be async, for example to verify a JWT or look up a session.
+ * A relay without a hook uses the `RELAY_AUTH_TOKEN` check.
  */
 export type AuthCheck = (request: AuthRequest) => AuthResult | Promise<AuthResult>;
 
@@ -181,6 +199,9 @@ export function safeAuthCheck(check: AuthCheck): (request: AuthRequest) => Promi
     }
   };
 }
+
+/** Close code and reason of a relay that binds identity when a peer sends a frame it cannot rewrite: a non-JSON frame, such as binaryCodec. */
+export const UNBINDABLE_FRAME_CLOSE = { code: 1008, reason: "identity binding needs JSON frames" } as const;
 
 const identityEncoder = new TextEncoder();
 const identityDecoder = new TextDecoder();

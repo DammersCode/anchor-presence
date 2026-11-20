@@ -4,20 +4,20 @@ description: What every relay must do, the close codes, and the conformance suit
 icon: file-check
 ---
 
-import { Cable, Server, ShieldCheck } from "lucide-react";
+import { Cable, FileCode, RadioTower, Server, ShieldCheck } from "lucide-react";
 
-A relay forwards bytes between the clients of one room. A peer is another client in the same room. A relay must obey these rules so that `createWebSocketTransport` works with it.
+A relay forwards bytes between the clients of one room. A relay must obey these rules so that `createWebSocketTransport` works with it.
 
 ## Rules
 
 - Accept binary WebSocket frames. The transport sets `binaryType` to `arraybuffer` and ignores text frames from the relay.
-- Forward each frame, unchanged, to every peer of the sender. Never send a frame back to its sender.
+- Without identity binding, do not decode the presence message. Forward each frame, as bytes, unchanged, to every peer of the sender. Never send a frame back to its sender.
 - Read the room from the `room` query parameter, for example `/?room=room-42`. If the parameter is missing, use the room `main`.
 - Accept a room name of letters, digits, `_` and `-`, up to 256 characters. Close a connection with any other name with code `4007`.
+- Treat a repeated `room` parameter as an invalid room name: close the connection with code `4007`.
 - Never map an invalid room name to `main`. Otherwise, two different rooms share one stream.
-- If the relay checks a [room token](/docs/dom/websocket-transport#room-token), read it from the `token` query parameter.
-- Drop a frame above the size cap and keep the socket open. The default cap is 32 KiB (`MAX_MESSAGE_BYTES`). This rule applies to binary and to text frames.
-- Without identity binding, do not decode the presence message. Forward the bytes as they arrive.
+- If the relay checks a [room token](/docs/dom/websocket-transport#room-token), read it from the `token` query parameter. A repeated `token` parameter fails the check: close the connection with code `4006`.
+- Drop a frame above the size cap and keep the socket open. The [`MAX_MESSAGE_BYTES`](/docs/get-started/guides/deploy-relay#set-the-environment-variables) environment variable sets the cap. This rule applies to binary and to text frames.
 - Keep serving other connections after a malformed request line, a reset during the handshake, or an oversized header.
 
 ## Room from the URL
@@ -33,21 +33,59 @@ The reference relay (`apps/server`) also reads a room from the path. It uses the
 
 ## Identity
 
-A relay that does not decode messages cannot tell who sent one. Any room member can claim another `clientId`, or send a `leave` for another client. To prevent this, make `authCheck` return a verified `{ clientId, user }`. The relay then writes that identity into every JSON frame of the connection.
+A relay that does not decode messages cannot tell who sent one. Any peer can claim another `clientId`, or send a `leave` for another peer. To prevent this, make `authCheck` return a verified `{ clientId, user }`. The relay then writes that identity into every JSON frame of the connection.
+
+`authCheck` receives `{ token, room, origin, headers }`. It can be async. It returns `true` to admit, `false` to refuse, or `{ clientId, user }` to admit and bind that identity. A throw or a rejection counts as a refusal. This Node.js (ws) relay admits the tokens of a session table and binds the identity of each session:
+
+```ts
+import { createNodeWsRelay } from "./server";
+
+const sessions = new Map([["ada-token", { id: "ada", name: "Ada" }]]);
+
+const relay = await createNodeWsRelay(8788, {
+  authCheck: async ({ token }) => {
+    const session = sessions.get(token);
+    return session === undefined ? false : { clientId: session.id, user: { name: session.name } };
+  },
+});
+```
 
 These relays have an `authCheck` hook and bind the identity that it returns:
 
+- Reference relay (`startReferenceRelay({ authCheck })`)
 - Bun
 - Node.js (ws)
 - Hono
 - Elysia
 - Socket.IO
 
-The relay adds a suffix per connection to `clientId`, in the form `<clientId>~<connection>`, so two tabs of one user stay two clients. If `authCheck` returns a `clientId` that contains `~`, the example relays refuse the connection, as for a wrong room token. A custom relay that adds the suffix must also refuse such a `clientId`. Otherwise, a receiver must split the `clientId` at the last `~` to find the identity. Identity binding works with `jsonCodec` only. The relay drops a frame that is not a JSON object, for example a `binaryCodec` frame.
+With identity binding, the relay follows these rules:
+
+- It adds a suffix per connection to `clientId`, in the form `<clientId>~<connection>`, so two tabs of one user stay two clients.
+- If `authCheck` returns a `clientId` that contains `~`, the example relays refuse the connection, as for a wrong room token. A custom relay that adds the suffix must also refuse such a `clientId`.
+- A receiver that does not know the suffix must split the `clientId` at the last `~` to find the identity.
+- It works with `jsonCodec` only. The relay closes the sender of a non-JSON frame, for example a `binaryCodec` frame. The code is `1008` and the reason is `identity binding needs JSON frames`. The relay forwards nothing from that frame.
+- The transport does not reconnect on `1008`.
 
 The reference relay and the Bun, Node.js (ws), Hono, Elysia, and Socket.IO relays use one check order. They check the origin first, then the room name, then the room token or the `authCheck` hook. A connection from a refused origin or with an invalid room name never runs the hook. If a connection fails more than one check, it gets the code of the first failed check. The SignalR hub checks the origin first, then your ASP.NET Core authentication, if you add it, then the room name.
 
-The reference relay and the SignalR hub have no `authCheck` hook and bind no identity. The reference relay checks only a shared room token. See [Identity binding](/docs/examples/backends#identity-binding) for the demo identity mode.
+The SignalR hub has no `authCheck` hook and binds no identity. The reference relay checks the shared room token unless you pass `authCheck` to `startReferenceRelay`. See [Demo identity mode](#demo-identity-mode) for a quick start.
+
+### Demo identity mode
+
+The entry files of the reference relay and of the Bun, Node.js (ws), Hono and Elysia relays have a demo identity mode. To turn it on, set `RELAY_DEMO_IDENTITY=1` before you start the relay:
+
+```sh
+RELAY_DEMO_IDENTITY=1 bun relay.ts
+```
+
+In this mode, the [room token](/docs/dom/websocket-transport#room-token) names the user. `authCheck` returns `{ clientId: "user-<token>", user: { name: "<token>" } }`. A client with the room token `ada` gets the `clientId` `user-ada~<connection>` and the user `{ name: "ada" }`. The relay refuses a connection without a room token.
+
+<Callout type="warn">
+  If you use the demo identity mode in production, any client can claim any name. The relay trusts the room
+  token as the user name. Check the room token in your own `authCheck`, for example as a JWT, and return the
+  verified user.
+</Callout>
 
 ## Close codes
 
@@ -55,6 +93,7 @@ The reference relay closes a socket with one of these codes:
 
 | Code   | Meaning                                      | The transport reconnects |
 | ------ | -------------------------------------------- | ------------------------ |
+| `1008` | Identity binding needs JSON frames.          | No                       |
 | `4001` | The room is full.                            | Yes                      |
 | `4002` | The server is full.                          | Yes                      |
 | `4003` | The client reads too slowly.                 | Yes                      |
@@ -63,16 +102,16 @@ The reference relay closes a socket with one of these codes:
 | `4006` | The room token is missing or wrong.          | No                       |
 | `4007` | The room name is not valid.                  | No                       |
 
-The column "The transport reconnects" applies to `createWebSocketTransport` with its default `shouldReconnect`. The transport also stops on `1008`, the WebSocket code for a policy violation. To change which codes stop the reconnect, pass `shouldReconnect` to `createWebSocketTransport`.
+The relay sends `1008` only with identity binding, to a sender of a frame that is not a JSON object. The column "The transport reconnects" applies to `createWebSocketTransport` with its default `shouldReconnect`. To change which codes stop the reconnect, pass `shouldReconnect` to `createWebSocketTransport`.
 
-The Bun, Node.js (ws), Hono and Elysia relays use `4001`, `4002`, `4004`, `4006` and `4007` with the same meaning. Only the reference relay and the Node.js (ws) relay use `4003`:
+The Bun, Node.js (ws), Hono and Elysia relays use `1008`, `4001`, `4002`, `4004`, `4006` and `4007` with the same meaning. Only the reference relay and the Node.js (ws) relay use `4003`:
 
 - The Node.js (ws) relay closes a receiver with `4003` above `RELAY_SLOW_PEER_HARD_BYTES`.
 - The reference relay closes a receiver with `4003` above `RELAY_SLOW_PEER_HARD_BYTES`. Bun drops frames above `RELAY_SLOW_PEER_SOFT_BYTES`, so the buffer reaches the hard limit only when `RELAY_SLOW_PEER_HARD_BYTES` is below `RELAY_SLOW_PEER_SOFT_BYTES` plus `MAX_MESSAGE_BYTES`. With the default limits, `4003` never occurs, and a stalled receiver ends with `4005` after the liveness timeout of 60 seconds.
 
 The Bun, Hono and Elysia relays never send `4003`. On these relays, Bun closes a slow receiver at its `backpressureLimit`. Socket.IO and SignalR have no WebSocket close codes. Their relays send the code in a message, and their transports report it through `subscribeClose`:
 
-- The Socket.IO relay sends `4007` and `4006` in the `connect_error` data of a refused handshake. It sends `4001` and `4002` in a `refused` event before it disconnects. The Socket.IO client does not reconnect after any of them. See [Socket.IO](/docs/examples/backends/socketio#close-reasons).
+- The Socket.IO relay sends `4004`, `4007` and `4006` in the `connect_error` data of a refused handshake. It sends `1008`, `4001` and `4002` in a `refused` event before it disconnects. The Socket.IO client does not reconnect after any of them. See [Socket.IO](/docs/examples/backends/socketio#close-reasons).
 - The SignalR hub sends only `4007`, in a `Refused` message. See [SignalR](/docs/examples/backends/signalr#close-reasons).
 
 ## Check your relay
@@ -83,16 +122,20 @@ The conformance suite `examples/_shared/relay-conformance-suite.ts` runs in vite
 - A client in another room receives nothing.
 - The sender does not receive its own frame.
 - The relay drops a binary frame and a text frame above the size cap, and it keeps relaying.
+- The relay relays a text frame unchanged, even when it looks like JSON.
 - The relay closes a connection with an invalid room name with code `4007`, and never merges it into `main`.
 - The relay closes a connection from an origin outside the allowlist with code `4004`, and accepts a listed origin.
 - The relay closes a connection without the room token with code `4006`, and accepts a connection with it.
 - The relay drops frames above the rate limit of a socket, and keeps the socket open.
 - The relay keeps serving after a malformed request line, a reset during the handshake, and an oversized header.
 - With `{ identity: true }`, the relay replaces `clientId` and `user` with the verified identity, with one `clientId` per connection.
+- With `{ identity: true }`, the relay closes a sender of a non-JSON frame with code `1008` and relays nothing.
 
 The suite does not check the codes `4001`, `4002`, `4003` and `4005`.
 
-To test a relay of your own, copy `relay-conformance-suite.ts` and `relay-test-helpers.ts` from `examples/_shared`. Then call `defineRelayConformance(name, start, options)` in a vitest file. The `start(env)` function starts your relay with the given environment variables. It returns `{ baseUrl, stop }`: the `ws://` base URL of the relay and a function that stops it.
+To test a relay of your own, copy `relay-conformance-suite.ts` and `relay-test-helpers.ts` from `examples/_shared`. Then call `defineRelayConformance(name, start, options)` in a vitest file. The only option is `identity`: `{ identity?: boolean }`, default `false`. Set it to `true` to add the identity checks.
+
+In this repo, `bunx vitest run examples/_shared/relay-conformance.test.ts` runs it against the reference relay and the four example relays. The `start(env)` function starts your relay with the given environment variables. It returns `{ baseUrl, stop }`: the `ws://` base URL of the relay and a function that stops it.
 
 Your relay must read these environment variables:
 
@@ -102,7 +145,7 @@ Your relay must read these environment variables:
 - `RELAY_ALLOWED_ORIGINS`: a comma-separated origin allowlist.
 - `RELAY_DEMO_IDENTITY`: with the value `1`, the demo identity mode. The suite sets it only with `{ identity: true }`.
 
-In the demo identity mode, the room token names the user. Make `authCheck` return `{ clientId: "user-<token>", user: { name: "<token>" } }`, and refuse an empty room token. [Identity binding](/docs/examples/backends#identity-binding) shows an example.
+In the demo identity mode, make `authCheck` return the user that [Demo identity mode](#demo-identity-mode) describes, and refuse an empty room token.
 
 ## Related
 
@@ -110,10 +153,16 @@ In the demo identity mode, the room token names the user. Make `authCheck` retur
   <Card icon={<Server />} title="Backends" href="/docs/examples/backends">
     Pick a tested relay for your server.
   </Card>
-  <Card icon={<Cable />} title="WebSocket transport" href="/docs/dom/websocket-transport">
+  <Card icon={<RadioTower />} title="WebSocket transport" href="/docs/dom/websocket-transport">
     The client side of the contract: reconnect and `shouldReconnect`.
   </Card>
   <Card icon={<ShieldCheck />} title="Security" href="/docs/get-started/guides/security">
     Why a relay without identity binding trusts every `clientId`.
+  </Card>
+  <Card icon={<Cable />} title="Transports" href="/docs/core/transports">
+    The client side: how a transport carries the frames.
+  </Card>
+  <Card icon={<FileCode />} title="Protocol types" href="/docs/core/api/protocol">
+    The frames that the relay forwards.
   </Card>
 </Cards>

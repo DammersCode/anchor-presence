@@ -1,0 +1,54 @@
+---
+title: Recipes
+description: Short how-to pages for common presence features, each with working code.
+icon: list-checks
+---
+
+import {
+  EyeOff,
+  FlaskConical,
+  Footprints,
+  Kanban,
+  LocateFixed,
+  MessageSquareText,
+  Users,
+} from "lucide-react";
+
+A recipe shows one presence feature from start to finish. Each page has a live demo, the code, and the limits of the feature. Read a recipe when the basics already work and you want one more feature on top.
+
+A recipe that imports from `./presence` uses the module of [Typed hooks](/docs/react/typed-hooks#usage). An app has one `createPresenceHooks` call, so one `presence.ts` serves every recipe. A hook under the provider of another call shows empty data.
+
+## Pick a recipe
+
+<Cards>
+  <Card icon={<MessageSquareText />} title="Cursor chat" href="/docs/get-started/guides/cursor-chat">
+    Type a short message next to your cursor.
+  </Card>
+  <Card icon={<Footprints />} title="Follow mode" href="/docs/get-started/guides/follow-mode">
+    Follow one peer and scroll its anchor into view.
+  </Card>
+  <Card icon={<LocateFixed />} title="Off-screen hints" href="/docs/get-started/guides/offscreen-hints">
+    Show an arrow at the window edge for each cursor outside the window.
+  </Card>
+  <Card icon={<EyeOff />} title="Typing and away" href="/docs/get-started/guides/typing-and-away">
+    Show who types in a field and who left the tab.
+  </Card>
+  <Card
+    icon={<Users />}
+    title="Join and leave announcer"
+    href="/docs/get-started/guides/join-leave-announcer"
+  >
+    Tell screen reader users when a peer joins or leaves.
+  </Card>
+  <Card icon={<Kanban />} title="Card occupancy" href="/docs/get-started/guides/card-occupancy">
+    Show the peers that are on a card, and the card that a peer selected.
+  </Card>
+</Cards>
+
+## Related
+
+<Cards>
+  <Card icon={<FlaskConical />} title="Examples overview" href="/docs/examples">
+    Live demos of layouts, anchors, and cursor rendering.
+  </Card>
+</Cards>

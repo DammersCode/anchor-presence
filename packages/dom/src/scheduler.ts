@@ -2,29 +2,37 @@
 
 import type { Rect, ViewportSize } from "./geometry.js";
 import type { StyleValues } from "./occlusion.js";
-import { isDevMode } from "@anchor-presence/core";
+import { isDevMode, reportListenerError } from "@anchor-presence/core";
 import { createFrameCache } from "./frame-cache.js";
 import { createSignalHub } from "./internal/signals.js";
 
+/** The part of `ResizeObserver` the scheduler uses; pass a fake in tests. */
 export type ResizeObserverLike = {
   observe(target: Element): void;
   unobserve(target: Element): void;
   disconnect(): void;
 };
+/** Constructor of a `ResizeObserverLike`. */
 export type ResizeObserverCtor = new (callback: () => void) => ResizeObserverLike;
 
+/** The part of `MutationObserver` the scheduler uses; pass a fake in tests. */
 export type MutationObserverLike = {
   observe(target: Node, options: MutationObserverInit): void;
   unobserve?(target: Node): void;
   disconnect(): void;
 };
+/** Constructor of a `MutationObserverLike`. */
 export type MutationObserverCtor = new (
   callback: (records?: MutationRecord[]) => void,
 ) => MutationObserverLike;
 
+/** Replaces `requestAnimationFrame`. */
 export type RafLike = (callback: (timestampMs: number) => void) => number;
+/** Replaces `cancelAnimationFrame`. */
 export type CafLike = (handle: number) => void;
+/** Replaces `setTimeout`. */
 export type SetTimeoutLike = (callback: () => void, ms: number) => ReturnType<typeof setTimeout>;
+/** Replaces `clearTimeout`. */
 export type ClearTimeoutLike = (handle: ReturnType<typeof setTimeout>) => void;
 
 /**
@@ -139,7 +147,11 @@ export function createGeometryScheduler<TSnapshot>(
       return;
     }
     signals.syncAnchors(result.activeAnchors);
-    options.notify(result.snapshot);
+    try {
+      options.notify(result.snapshot);
+    } catch (error) {
+      reportListenerError(error);
+    }
 
     if (result.needsAnotherFrame || dirty || signals.hasOpenTransitions()) {
       scheduleFrame();

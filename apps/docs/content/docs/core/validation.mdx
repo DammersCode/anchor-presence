@@ -4,9 +4,9 @@ description: validatePresence, ValidationLimits, the shape check for remote user
 icon: shield-check
 ---
 
-import { Code, Shield, Users } from "lucide-react";
+import { BadgeCheck, ShieldCheck, Users, FileCode } from "lucide-react";
 
-`validatePresence` turns an untrusted decoded value into a `CursorPresence` or `null`. The client passes the output of every codec `decode` through it before the value reaches the store. Call it yourself only when you process presence data outside a `PresenceClient`, for example on a relay.
+`validatePresence` turns an untrusted decoded value into a `PresenceMessage` or `null`. The client passes the output of every codec `decode` through it before the value reaches the store. If you process presence data outside a `PresenceClient`, for example on a relay, call it yourself.
 
 ## Use validatePresence directly
 
@@ -21,7 +21,7 @@ function inspect(frame: Uint8Array) {
 }
 ```
 
-`inspect` returns a well-formed `CursorPresence`, or `null` for a message to drop. `validatePresence` never throws. It clamps anchor and viewport coordinates into the range `0` to `1`.
+`inspect` returns a well-formed `PresenceMessage`, or `null` for a message to drop. `validatePresence` never throws. The `user` and `context` of the result have the type `unknown`. It clamps anchor and viewport coordinates into the range `0` to `1`.
 
 <Callout type="warn">
   If a relay calls `validatePresence`, cap the frame size before the decode. `validatePresence` ignores
@@ -32,23 +32,33 @@ function inspect(frame: Uint8Array) {
 
 The client runs these steps on each inbound message, in this order:
 
-<Mermaid
-  chart={`flowchart TD
+<div role="region" aria-label="Incoming message checks diagram" tabIndex={0} className="overflow-x-auto">
+  <Mermaid
+    chart={`flowchart TD
+  accTitle: Incoming message checks
   bytes["bytes"] --> checks["steps 1 to 4"]
   checks -->|fails| drop["drop"]
-  checks -->|step 5| listeners["event listeners"]
-  checks -->|steps 6 and 7| store["store"]`}
-/>
+  checks -->|steps 5 and 6| listeners["event listeners"]
+  checks -->|steps 7 and 8| store["store"]`}
+  />
+</div>
 
 1. The client drops the message when its byte length is more than `maxMessageBytes`.
 2. It decodes the bytes with the codec.
-3. It calls `validatePresence` on the decoded value. A `null` result drops the message.
+3. It calls `validatePresence` on the decoded value. A `null` result drops the message. The result is `null` in these cases:
+   - `version` is not `1`.
+   - `clientId` is not a string of 1 to `maxClientIdLength` characters.
+   - `session` is not a string of 1 to `maxSessionLength` characters.
+   - `sequence` is not an integer from `0` to `maxSequence`.
+   - `cursor` is neither `null` nor an object.
+   - `cursor.anchors` is not an array.
 4. It drops an echo of its own message.
-5. It sends an event message to the event listeners. An event message stops at this step.
-6. It checks `user` and `context` with `parseUser` and `parseContext`, or with the shape check when no parser is set.
-7. It gives the message to the store.
+5. It applies the [event rate limit](/docs/core/events#event-rate-limit) to an event message. A message over the limit is dropped.
+6. It passes an event message that stays to `parseEvent`, when you set one, and then to the event listeners. An event message stops at this step.
+7. It checks `user` and `context` with `parseUser` and `parseContext`, or with the shape check when no parser is set.
+8. It gives the message to the store.
 
-A codec does not check limits. Its job is to turn bytes into a value and back, without a throw. `validatePresence` checks the decoded value against the protocol limits.
+A codec does not check the protocol limits. Its job is to turn bytes into a value and back. `decode` never throws. `validatePresence` checks the decoded value against the protocol limits.
 
 ## ValidationLimits
 
@@ -101,7 +111,7 @@ When a part of the remote value does not fit, the client drops the whole field. 
     - A remote `null` always fits, at every level. For example, a key with a local string value accepts a remote `null`. As a result, a key typed `T | null` stays valid.
     - A key of the local object must have the type of the local value, or be `null`. A remote object can omit a key.
     - An extra key is a key that the local object does not have. An extra key stays when its value is a string, a number, a boolean, or `null`. The check removes an extra key that holds an object or an array. This rule also applies to an empty local object.
-    - The check removes a `__proto__` key at every level.
+    - The check removes a `__proto__` key at every level. It also removes an extra key that has the name of an `Object.prototype` member, such as `constructor` or `toString`.
     - An array must be an array. Each item must have the shape of the first local item, or be `null`. An empty local array accepts an array of strings, numbers, booleans, or `null` values.
     - A string, a number, or a boolean must have the type of the local value, or be `null`.
     - A local `null` value, or a local `undefined` value inside an object, accepts a string, a number, a boolean, or `null`. It never accepts an object or an array.
@@ -111,7 +121,7 @@ When a part of the remote value does not fit, the client drops the whole field. 
 
   </Accordions>
 
-`parseUser` and `parseContext` replace the shape check. The parser receives the remote value and returns the value to store. Return `undefined` or throw to drop the field:
+`parseUser` and `parseContext` replace the shape check. They also give the `user` and `context` their types. Without them, both types are `unknown`, because the shape check never types a value. The parser receives the remote value and returns the value to store. Return `undefined` or throw to drop the field:
 
 ```ts
 const viewer = createPresenceClient<{ page: string }>({
@@ -122,6 +132,8 @@ const viewer = createPresenceClient<{ page: string }>({
   },
 });
 ```
+
+To build these parsers from a Valibot, Zod, or ArkType schema, see [Validate with a schema](/docs/core/standard-schema).
 
 A dropped field does not clear the stored value. The receiver keeps the previous value of the same session. A `null` field value clears the field, and no check runs on it.
 
@@ -149,10 +161,13 @@ As a result, a bad event never reaches the store as a message that clears the cu
   <Card icon={<Users />} title="Remote presence" href="/docs/core/remote-presence">
     What the store does with a checked message.
   </Card>
-  <Card icon={<Shield />} title="Security" href="/docs/get-started/guides/security">
+  <Card icon={<ShieldCheck />} title="Security" href="/docs/get-started/guides/security">
     The risks that each limit covers.
   </Card>
-  <Card icon={<Code />} title="Protocol types" href="/docs/core/api/protocol">
-    The shape of `CursorPresence`.
+  <Card icon={<BadgeCheck />} title="Validate with a schema" href="/docs/core/standard-schema">
+    Build the parsers from a Valibot, Zod, or ArkType schema.
+  </Card>
+  <Card icon={<FileCode />} title="Protocol types" href="/docs/core/api/protocol">
+    The shape of `PresenceMessage`.
   </Card>
 </Cards>

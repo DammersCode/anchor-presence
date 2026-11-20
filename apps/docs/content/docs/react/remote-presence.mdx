@@ -1,30 +1,32 @@
 ---
-title: Remote presence
+title: Raw presence
 description: Read the raw remote presence list with useRemotePresence, before the binding resolves it into screen positions.
 icon: radar
 ---
 
 import { Braces, Crosshair, Users } from "lucide-react";
 
-`useRemotePresence` returns the raw presence of each peer (another client in the same room). This is the data that the DOM binding later resolves into cursors. Use it only for a field that a resolved cursor does not carry, such as `pointer.type`. To draw cursors, use [Remote cursors](/docs/react/remote-cursors). For a list of people, use [Remote users](/docs/react/remote-users).
+`useRemotePresence` returns the raw presence of each peer. This is the data that the DOM binding later resolves into cursors. Use it only for a field that a resolved cursor does not carry, such as `session` or the anchor chain of the sender. To draw cursors, use [Remote cursors](/docs/react/remote-cursors). For a list of people, use [Remote users](/docs/react/remote-users).
 
 ## Usage
 
-This component counts the peers that use a touch pointer:
+If your app has a [typed `presence.ts` module](/docs/react/typed-hooks), import `useRemotePresence` from it. The package export reads only the provider of `@anchor-presence/react`.
+
+This component counts the peers whose cursor has no anchor, so the receiver can place it only by viewport position:
 
 ```tsx
 import { useRemotePresence } from "@anchor-presence/react";
 
-function PointerTypeBadge() {
+function ViewportOnlyBadge() {
   const presence = useRemotePresence();
-  const touchCount = presence.filter((p) => p.pointer?.type === "touch").length;
-  return <span>{touchCount} touch users</span>;
+  const count = presence.filter((p) => p.cursor !== null && p.cursor.anchors.length === 0).length;
+  return <span>{count} viewport-only cursors</span>;
 }
 ```
 
 ## Entries
 
-Each entry is a [`RemotePresence`](/docs/core/api/protocol#remotepresence): the presence message of the peer without its `sequence` field, plus `idle`. A `user` or `context` of `null` stays `null` here. `useRemoteUsers` turns it into `undefined`.
+Each entry is a [`RemotePresence`](/docs/core/api/protocol#remotepresence): the presence message of the peer without its `sequence` field, plus `idle`. A `null` `user` or `context` on the wire clears the field, so the entry has no such key.
 
 The hook rerenders only when the `cursor`, `context`, `user`, `pointer`, `session`, or `idle` field of a peer changes, or when a peer joins or leaves. A message that only advances `sequence` does not rerender it.
 
@@ -41,7 +43,7 @@ The hook rerenders only when the `cursor`, `context`, `user`, `pointer`, `sessio
     Positions in pixels of your viewport.
   </Card>
   <Card icon={<Users />} title="Remote users" href="/docs/react/remote-users">
-    One entry per person, for presence lists.
+    One entry per client (tab), for presence lists.
   </Card>
   <Card icon={<Braces />} title="Hooks API" href="/docs/react/api/hooks#useremotepresence">
     The signature of useRemotePresence.

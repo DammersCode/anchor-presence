@@ -1,7 +1,7 @@
 import {
   jsonCodec,
   type ConnectionStatus,
-  type LiveCursorTransport,
+  type PresenceTransport,
   type TransportClose,
 } from "@anchor-presence/core";
 import { HubConnectionState, type HubConnection } from "@microsoft/signalr";
@@ -13,6 +13,10 @@ export const PRESENCE_HUB = "/hubs/presence";
 export const EVENT_RECEIVED = "PresenceReceived";
 export const EVENT_REFUSED = "Refused";
 export const METHOD_SEND = "OnPresence";
+
+const CONNECTING_POLL_MS = 50;
+const CONNECTING_POLL_LIMIT = 200;
+const SLOW_POLL_MS = 1000;
 
 // Core's default JSON codec, re-exported so the transport and the presence client
 // share one encoding.
@@ -49,7 +53,7 @@ export function mapStatus(state: HubConnectionState): ConnectionStatus {
 }
 
 /**
- * `LiveCursorTransport` over a `@microsoft/signalr` `HubConnection`.
+ * `PresenceTransport` over a `@microsoft/signalr` `HubConnection`.
  *
  * - `connect` calls `connection.start()`; a no-op while already starting or connected.
  * - `send` drops the payload while the hub is not `connected`, otherwise base64-encodes
@@ -60,10 +64,17 @@ export function mapStatus(state: HubConnectionState): ConnectionStatus {
  *
  * The relay never inspects the payload; validation stays receiver-side (spec §4).
  */
-export function createSignalRTransport(connection: HubConnection): LiveCursorTransport {
+export function createSignalRTransport(
+  connection: HubConnection,
+  options: { stopConnection?: boolean } = {},
+): PresenceTransport {
+  const stopConnection = options.stopConnection ?? true;
   const statusListeners = new Set<(status: ConnectionStatus) => void>();
   const dataListeners = new Set<(data: Uint8Array) => void>();
   let status: ConnectionStatus = mapStatus(connection.state);
+  // a shared connection (stopConnection: false) keeps firing callbacks after this transport disconnects
+  let active = true;
+  let connectGeneration = 0;
 
   const setStatus = (next: ConnectionStatus): void => {
     if (next === status) return;
@@ -87,40 +98,86 @@ export function createSignalRTransport(connection: HubConnection): LiveCursorTra
     }
   };
 
-  connection.on(EVENT_REFUSED, (code: number, reason: string) => {
+  const onRefused = (code: number, reason: string): void => {
     refusal = { code, reason };
-  });
+  };
+  const onReceived = (payload: string): void => {
+    const bytes = fromBase64(payload);
+    if (bytes === null) return;
+    for (const listener of dataListeners) listener(bytes);
+  };
+  let handlersRegistered = false;
+  const registerHandlers = (): void => {
+    if (handlersRegistered) return;
+    handlersRegistered = true;
+    connection.on(EVENT_REFUSED, onRefused);
+    connection.on(EVENT_RECEIVED, onReceived);
+  };
+  registerHandlers();
+
   connection.onreconnecting((error) => {
+    if (!active) return;
     emitClose(error, true);
     setStatus("reconnecting");
   });
-  connection.onreconnected(() => setStatus("connected"));
+  connection.onreconnected(() => {
+    if (active) setStatus("connected");
+  });
   connection.onclose((error) => {
+    if (!active) return;
     emitClose(error, false);
     setStatus("disconnected");
   });
 
-  connection.on(EVENT_RECEIVED, (payload: string) => {
-    const bytes = fromBase64(payload);
-    if (bytes === null) return;
-    for (const listener of dataListeners) listener(bytes);
-  });
-
   return {
     connect: async () => {
-      // Idempotent: a fresh connection reports Disconnected; starting or connected, skip.
-      if (connection.state !== HubConnectionState.Disconnected) return;
+      registerHandlers();
+      active = true;
+      const generation = ++connectGeneration;
+      // a shared connection that is still starting, or one that is still stopping: wait for it instead of returning early
+      for (
+        let tries = 0;
+        connection.state === HubConnectionState.Connecting ||
+        connection.state === HubConnectionState.Disconnecting;
+        tries++
+      ) {
+        setStatus("connecting");
+        await new Promise((resolve) =>
+          setTimeout(resolve, tries < CONNECTING_POLL_LIMIT ? CONNECTING_POLL_MS : SLOW_POLL_MS),
+        );
+        if (generation !== connectGeneration) return;
+      }
+      // Idempotent: a fresh connection reports Disconnected; connected or reconnecting, skip.
+      if (connection.state !== HubConnectionState.Disconnected) {
+        setStatus(mapStatus(connection.state));
+        return;
+      }
       setStatus("connecting");
       try {
         await connection.start();
       } catch (error) {
+        if (generation !== connectGeneration) return;
         // a failed first start is not retried by withAutomaticReconnect: report it instead of hanging at "connecting"
         setStatus("disconnected");
         throw error;
       }
+      if (generation !== connectGeneration) return;
       setStatus("connected");
     },
-    disconnect: () => connection.stop(),
+    disconnect: () => {
+      const generation = ++connectGeneration;
+      connection.off(EVENT_REFUSED, onRefused);
+      connection.off(EVENT_RECEIVED, onReceived);
+      handlersRegistered = false;
+      if (stopConnection) {
+        return connection.stop().finally(() => {
+          if (generation === connectGeneration) setStatus(mapStatus(connection.state));
+        });
+      }
+      active = false;
+      setStatus("disconnected");
+      return Promise.resolve();
+    },
     send: async (data) => {
       if (status !== "connected") return;
       await connection.send(METHOD_SEND, toBase64(data));

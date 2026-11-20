@@ -1,16 +1,20 @@
 "use client";
 
 import type { PresenceClient } from "@anchor-presence/core";
-import { CursorLayer, LiveCursorProvider, useCursorClient, useCursorEvents } from "@anchor-presence/react";
+import type { TourContext } from "./_preview/tour";
+import { CursorLayer, PresenceProvider, usePresenceClient, useRemoteEvents } from "./_preview/hooks";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { READER } from "./_preview/scenes";
 import { LongPage } from "./long-page";
 
+const safeColor = (color: string | undefined, fallback: string) =>
+  color !== undefined && /^#[0-9a-f]{6}$/iu.test(color) ? color : fallback;
+
 type User = { name: string; color: string };
 
 type Props = {
-  client: PresenceClient<unknown, User> | null;
+  client: PresenceClient<TourContext, User> | null;
   layout: "wide" | "narrow";
   children?: ReactNode;
 };
@@ -20,10 +24,9 @@ const CHAT_MAX_LENGTH = 100;
 const CHAT_HIDE_MS = 5000;
 
 function readChatText(data: unknown): string | null {
-  if (typeof data !== "object" || data === null) return null;
-  const text: unknown = (data as { text?: unknown }).text;
-  if (typeof text !== "string") return null;
-  const trimmed = text.trim().slice(0, CHAT_MAX_LENGTH);
+  if (typeof data !== "object" || data === null || !("text" in data) || typeof data.text !== "string")
+    return null;
+  const trimmed = data.text.trim().slice(0, CHAT_MAX_LENGTH);
   return trimmed === "" ? null : trimmed;
 }
 
@@ -31,7 +34,7 @@ function useRemoteChat(): Record<string, string> {
   const [messages, setMessages] = useState<Record<string, string>>({});
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
 
-  useCursorEvents((event) => {
+  useRemoteEvents((event) => {
     if (event.type !== "chat") return;
     const text = readChatText(event.data);
     if (text === null) return;
@@ -64,9 +67,9 @@ function useRemoteChat(): Record<string, string> {
 function ChatCursorLayer() {
   const messages = useRemoteChat();
   return (
-    <CursorLayer<unknown, User>
+    <CursorLayer
       getLabel={(cursor) => messages[cursor.clientId] ?? cursor.user?.name}
-      getColor={(cursor) => cursor.user?.color ?? "#4f46e5"}
+      getColor={(cursor) => safeColor(cursor.user?.color, "#4f46e5")}
     />
   );
 }
@@ -79,7 +82,7 @@ function isTextField(target: EventTarget | null): boolean {
 }
 
 function ChatComposer() {
-  const client = useCursorClient();
+  const client = usePresenceClient();
   const pointer = useRef({ x: 0, y: 0 });
   const bubble = useRef<HTMLDivElement>(null);
   const [origin, setOrigin] = useState({ x: 0, y: 0 });
@@ -156,11 +159,11 @@ function ChatComposer() {
 
 export function ChatScene({ client, children }: Props) {
   return (
-    <LiveCursorProvider client={client}>
+    <PresenceProvider client={client}>
       <LongPage layout="wide" />
       <ChatCursorLayer />
       <ChatComposer />
       {children}
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }

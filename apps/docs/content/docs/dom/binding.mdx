@@ -29,29 +29,37 @@ binding.subscribe(() => {
 The binding runs its geometry scheduler only while two conditions are true:
 
 - The client is live: its status is `connecting` or `connected`.
-- At least one peer has a cursor. A peer is another client in the same room.
+- At least one peer has a cursor.
 
 In all other cases the scheduler stops, so an empty room costs no frame work.
 
 ## Options
 
-| Option            | Default       | Effect                                                                                                                                                                             |
-| ----------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `anchorAttribute` | `data-anchor` | The attribute that marks an anchor element. See [Anchor registration](/docs/dom/anchor-registration).                                                                              |
-| `maxAnchors`      | `4`           | The length of the fallback chain that the binding sends. The binding clamps an integer outside `1` to `8` into this range.                                                         |
-| `capturePointer`  | `true`        | Sends the local pointer as a cursor. With `false`, the client shows remote cursors and sends no cursor. `context` and `user` still go to peers.                                    |
-| `captureFocus`    | `false`       | Sends a cursor at the center of the focused element, for keyboard users. Ignored when `capturePointer` is `false`. See [Keyboard focus](/docs/dom/pointer-capture#keyboard-focus). |
-| `resolution`      | see below     | How remote cursors turn into screen positions. See [Resolution](/docs/dom/resolution) and [Motion](/docs/dom/motion).                                                              |
-| `environment`     | the browser   | The DOM and timing hosts: `root`, `window`, `raf`, `caf`, `ResizeObserverCtor`, `MutationObserverCtor`.                                                                            |
+| Option             | Default               | Effect                                                                                                                                                                                                                                                                                                           |
+| ------------------ | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `anchorAttribute`  | `data-anchor`         | The attribute that marks an anchor element. See [Anchor registration](/docs/dom/anchor-registration).                                                                                                                                                                                                            |
+| `privateAttribute` | `data-anchor-private` | The attribute that keeps the cursor private. Over an element with it, and over its descendants, the binding sends no cursor. See [Skip part of the page](/docs/dom/pointer-capture#skip-part-of-the-page).                                                                                                       |
+| `maxSentAnchors`   | `4`                   | The length of the fallback chain that the binding sends. The binding clamps an integer outside `1` to `8` into this range.                                                                                                                                                                                       |
+| `capturePointer`   | `true`                | Sends the local pointer as a cursor. With `false`, the client shows remote cursors and sends no cursor. `context` and `user` still go to peers.                                                                                                                                                                  |
+| `captureFocus`     | `false`               | Sends a cursor at the center of the focused element, for keyboard users. Ignored when `capturePointer` is `false`. See [Keyboard focus](/docs/dom/pointer-capture#keyboard-focus).                                                                                                                               |
+| `resolution`       | see below             | Options for how remote cursors turn into screen positions: `visibilityPolicy` ([Visibility policy](/docs/dom/visibility-policy)), `interpolatorFactory` ([Motion](/docs/dom/motion)), and `hitTest` ([Occlusion](/docs/dom/occlusion-and-scroll#hit-test-for-overlays)). See [Resolution](/docs/dom/resolution). |
+| `environment`      | the browser           | The DOM and timing hosts: `root`, `window`, `raf`, `caf`, `ResizeObserverCtor`, `MutationObserverCtor`.                                                                                                                                                                                                          |
+
+The defaults of `resolution`:
+
+- `visibilityPolicy` hides a cursor that does not resolve.
+- `interpolatorFactory` is `linearInterpolator`, and `noneInterpolator` with reduced motion.
+- `hitTest` is `false`.
 
 Each `environment` field defaults to the matching browser global. A test can replace one host with a fake and keep the others. See [Binding API](/docs/dom/api/binding) for the full types.
 
-For a same-origin iframe, `root` can be its `contentDocument`, with its `contentWindow` as `window`. The binding identifies an element by its `nodeType`, so the elements of the iframe pass that check. The tests cover only a root in the same document as the binding code, so an iframe root is not tested.
+<Callout type="warn">
+  If you use a same-origin iframe, set `root` to its `contentDocument` and `window` to its `contentWindow`.
+  The binding identifies an element by its `nodeType`, so the elements of the iframe pass that check. A jsdom
+  unit test covers pointer capture with an iframe root. No test runs the full binding there.
+</Callout>
 
-`createDomBinding` throws a `TypeError` in these cases:
-
-- `anchorAttribute` is not letters and digits in groups split by single hyphens, with a letter first. For example, `data-anchor` and `anchor` pass, and `data_anchor` and `1-anchor` fail.
-- `maxAnchors` is not an integer, for example `2.5` or `NaN`.
+`createDomBinding` throws a `TypeError` for a bad `anchorAttribute` or `privateAttribute`, or a `maxSentAnchors` that is not an integer. See the [binding API](/docs/dom/api/binding#createdombinding).
 
 ## Draw cursors without React
 
@@ -91,6 +99,20 @@ function drawCursors(binding: DomBinding, layer: HTMLElement): () => void {
 
 `x` and `y` are viewport pixels. Give `.remote-cursor` the CSS `position: fixed`, `left: 0`, `top: 0`, and `pointer-events: none`. `aria-hidden="true"` keeps the cursor away from screen readers. `@anchor-presence/react` uses the same styles and attribute on each cursor root. The final empty snapshot of `dispose` removes every element.
 
+## getAnchorElement
+
+`binding.getAnchorElement(anchorId)` returns the element that the binding uses for an anchor ID. Use it to scroll to the anchor of a remote cursor:
+
+```ts
+import type { DomBinding } from "@anchor-presence/dom";
+
+function scrollToAnchor(binding: DomBinding, anchorId: string): void {
+  binding.getAnchorElement(anchorId)?.scrollIntoView({ block: "center" });
+}
+```
+
+When several elements share an ID, it returns the newest registered one. It returns `null` when no registered element with the ID is connected. It does not measure the element. The resolver skips an element with zero width or height, so a returned element can be one that no cursor resolves to. An attribute inside a shadow root is not an anchor, so it returns `null` for it.
+
 ## invalidate
 
 `binding.invalidate(reason?)` marks the layout dirty. On the next frame, the binding measures every active anchor again and resolves the cursors again. An active anchor is an anchor that a remote cursor uses.
@@ -100,7 +122,7 @@ While the scheduler runs, the binding reacts to these layout signals:
 - A window resize, or a scroll of the document or of any element.
 - A size change of an active anchor or of the document element.
 - A DOM change anywhere in the document body, outside the cursor elements.
-- A CSS transition or animation on an active anchor.
+- A CSS transition or animation on an element outside the cursor layer that can change geometry.
 
 Call `invalidate` after a layout change that none of these signals can see. One example is a web font that loads after the first paint and moves an anchor without a change to its size:
 
@@ -125,6 +147,8 @@ On the `pagehide` event of the window, the binding calls `client.leave()`. Peers
 ## Errors in a policy or interpolator
 
 If a `visibilityPolicy` or an interpolator throws, the binding keeps the last snapshot and does not stop. In development mode, it logs the error with `console.error`. The binding tries again on the next remote, anchor, or layout change.
+
+If a `binding.subscribe` listener throws, the binding still calls the other listeners. In development mode, the binding logs the error with `console.error`.
 
 ## Dispose
 

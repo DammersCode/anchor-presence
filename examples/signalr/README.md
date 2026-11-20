@@ -4,7 +4,7 @@ This hub is for demos and local development. Read the production notes before yo
 
 This example adds a SignalR transport to the demo. A peer is another client in the same room. The example has three parts:
 
-- `transport.ts` wraps a plain `@microsoft/signalr` `HubConnection` as a `LiveCursorTransport`.
+- `transport.ts` wraps a plain `@microsoft/signalr` `HubConnection` as a `PresenceTransport`.
 - `apps/demo` is the shared demo client. Open it with `?backend=signalr` to connect through this transport.
 - `server/` is a .NET 10 app with one SignalR hub. The hub relays presence messages to the peers of the sender.
 

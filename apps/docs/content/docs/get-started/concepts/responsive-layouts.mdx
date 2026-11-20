@@ -4,7 +4,7 @@ description: How a cursor stays on the same element across wrapping, breakpoints
 icon: scaling
 ---
 
-import { Anchor, FlaskConical, LayoutDashboard, Waypoints } from "lucide-react";
+import { Anchor, LayoutDashboard, LayoutGrid, LifeBuoy, Waypoints, MousePointer2 } from "lucide-react";
 
 Two clients rarely show the same layout at the same time. This page shows how the anchor and its `u`/`v` position keep a cursor on the same element when the layouts differ. You need no code for this. You only keep the anchor IDs the same in every layout.
 
@@ -47,8 +47,22 @@ If no anchor of the chain exists on the receiver, the cursor uses the viewport p
 ## Related
 
 <Cards>
-  <Card icon={<LayoutDashboard />} title="Layout design" href="/docs/get-started/guides/layout-design">
+  <Card
+    icon={<LayoutDashboard />}
+    title="Layout design for presence"
+    href="/docs/get-started/guides/layout-design"
+  >
     Rules that keep cursors steady between elements.
+  </Card>
+  <Card
+    icon={<LifeBuoy />}
+    title="Cursor jumps between two elements"
+    href="/docs/get-started/guides/troubleshooting#cursor-jumps-between-two-elements"
+  >
+    Find the cause of a jump.
+  </Card>
+  <Card icon={<LayoutGrid />} title="Responsive grid" href="/docs/examples/responsive-grid">
+    A grid that reflows, live.
   </Card>
   <Card icon={<Anchor />} title="Anchors" href="/docs/get-started/concepts/anchors">
     The u/v formula on the sender.
@@ -56,7 +70,7 @@ If no anchor of the chain exists on the receiver, the cursor uses the viewport p
   <Card icon={<Waypoints />} title="Fallback chain" href="/docs/get-started/concepts/fallback-chain">
     The order of the fallback steps.
   </Card>
-  <Card icon={<FlaskConical />} title="Basics example" href="/docs/examples/basics">
+  <Card icon={<MousePointer2 />} title="Basics" href="/docs/examples/basics">
     Two layouts side by side, live.
   </Card>
 </Cards>

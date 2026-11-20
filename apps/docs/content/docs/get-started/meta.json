@@ -14,15 +14,20 @@
     "concepts/fallback-chain",
     "concepts/responsive-layouts",
     "concepts/ui-context",
-    "---[book-open]Guides---",
+    "---[book-marked]Guides---",
     "guides/layout-design",
-    "guides/security",
-    "guides/deploy-relay",
-    "guides/performance",
     "guides/troubleshooting",
     "---[list-checks]Recipes---",
+    "guides/recipes",
     "guides/cursor-chat",
     "guides/follow-mode",
-    "guides/offscreen-hints"
+    "guides/offscreen-hints",
+    "guides/typing-and-away",
+    "guides/join-leave-announcer",
+    "guides/card-occupancy",
+    "---[server-cog]Production---",
+    "guides/security",
+    "guides/deploy-relay",
+    "guides/performance"
   ]
 }

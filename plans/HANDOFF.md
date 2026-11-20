@@ -8,6 +8,7 @@ Owner request: replace the GitHub Pages site with a Fumadocs docs site on Vercel
 
 Owner decisions:
 
+- Core size budget: the `perf:score` tier for `@anchor-presence/core` is 10 KB gzip for the whole entry (9.85 KB measured). The extra 1.4 KB over the first target is validation and safety checks, which stay in every app, plus `binaryCodec` (about 1.5 KB) and the in-memory transports, which apps tree-shake away. The `bundle core app` metric (createPresenceClient plus jsonCodec only) measures 7.3 KB; the whole entry 9.9 KB. Revisit with a `@anchor-presence/core/binary` subpath if the budget matters before the first publish.
 - Docs: Fumadocs in `apps/docs`, the design of the old `site/index.html`, deployed on Vercel. The owner imports the repo in Vercel (Root Directory `apps/docs`).
 - Examples: live in-browser demos plus backend code tabs. Real backends stay in `examples/` with integration tests.
 - Backends to implement: Bun native, Node `ws`, Hono, Elysia. Edge, managed realtime, and other languages are plans only (`plans/backends/`).
@@ -70,7 +71,7 @@ Each branch keeps its own progress in `plans/handoffs/<branch>.md`. Read that fi
 ## Example previews notes (026)
 
 - Every example page embeds `<ExamplePreview scene="..." />`: two iframes (`/demo-frame/<scene>/<layout>`) on one `BroadcastChannel`, plus a control channel (`<channel>:control`) for tour state, reader input, and visibility. The home hero and quick start keep `<Demo />` (scene `home` on the same route).
-- Scene files (`components/examples/<scene>.tsx`) are the code the page shows. Keep plumbing out of them: a scene takes `client`, `layout`, and `children` (the status bar), and owns its `LiveCursorProvider` and `CursorLayer`.
+- Scene files (`components/examples/<scene>.tsx`) are the code the page shows. Keep plumbing out of them: a scene takes `client`, `layout`, and `children` (the status bar), and owns its `PresenceProvider` and `CursorLayer`.
 - The tour runs only in the wide pane: each track is a real presence client (`clientId` `tour-<name>`, one-hour heartbeat so a `quiet` step goes idle). It builds anchor chains from the DOM like the binding does. It pauses on reader input (resumes after 4 s), when the preview leaves the viewport (parent `IntersectionObserver`), when the tab is hidden, and on the Pause button. Under reduced motion it jumps instead of gliding.
 - To add a scene: write the scene file, add it to `SCENE_COMPONENTS`, add captions and a tour to `SCENES`, and embed `<ExamplePreview scene="..." />`. Tour anchors must exist in the wide layout.
 - Dev server caveat: moving `app/demo-frame/[variant]` to `[scene]/[layout]` broke the running `next dev` route table ("different slug names for the same dynamic path"). After that, it served no new dynamic route. Restart `next dev` once after pulling this change.
@@ -138,11 +139,18 @@ Final structure: five tabs (`get-started`, `core`, `dom`, `react`, `examples`), 
 - Accessibility: demo has zero axe violations (`e2e/a11y.spec.ts`). Open, owner's call: the light code theme (`github-light`) has one token color at 3.48:1; `github-light-high-contrast` would fix it.
 - `CHANGELOG.md` has `## 0.1.0 - 2026-09-26`. No tag yet: a `v*` tag runs `release.yml`, which publishes to npm.
 
+## Advisor decisions while AFK (type-safety round 2)
+
+- Exact-identity check in `RequiredParsers`, so `any`, `{}`, `object`, empty interfaces and `Record<string, any>` need a parser.
+- `setUser` and `setContext` are properties, not methods. The standalone `PresenceProvider` takes only untyped clients. A typed client uses `createPresenceHooks(...).PresenceProvider`.
+- Skips are listed in `plans/045-standard-schema-privacy-type-safety.md`.
+
 ## Next steps
 
 1. Owner: import the repo in Vercel (Root Directory `apps/docs`).
 2. Owner decides when to publish: `npm version` pushes the commit and a `v*` tag; `release.yml` waits for a green `main.yml` run on that SHA.
-3. Future backends: `plans/backends/`. Future framework adapters (Solid, Vue): `plans/adapters/framework-adapters.md`.
+3. Owner: open the PR from `develop` to `main` (all audit rounds up to 12 are on `develop`; scorers: three docs scopes at 9.0, last audit approved with no P1 or P2). Pin the actions in `pr.yml`, `main.yml` and the setup action before step 4 of `plans/release-hardening.md`.
+4. Future backends: `plans/backends/`. Future framework adapters (Solid, Vue): `plans/adapters/framework-adapters.md`.
 
 ## How to resume
 

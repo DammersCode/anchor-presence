@@ -84,17 +84,17 @@ describe("createWebSocketTransport", () => {
   it("starts connecting, connects on open, ends disconnected after close with reconnect off", () => {
     vi.useFakeTimers();
     const transport = make({ reconnect: false });
-    expect(transport.getStatus?.()).toBe("connecting");
+    expect(transport.getStatus()).toBe("connecting");
 
     void transport.connect();
-    expect(transport.getStatus?.()).toBe("connecting");
+    expect(transport.getStatus()).toBe("connecting");
     expect(lastSocket().binaryType).toBe("arraybuffer");
 
     FakeWebSocket.fire(lastSocket(), "open");
-    expect(transport.getStatus?.()).toBe("connected");
+    expect(transport.getStatus()).toBe("connected");
 
     FakeWebSocket.fire(lastSocket(), "close");
-    expect(transport.getStatus?.()).toBe("disconnected");
+    expect(transport.getStatus()).toBe("disconnected");
     vi.advanceTimersByTime(60_000);
     expect(FakeWebSocket.instances).toHaveLength(1);
   });
@@ -104,17 +104,17 @@ describe("createWebSocketTransport", () => {
     const transport = make({ baseBackoffMs: 200, maxBackoffMs: 1000, random: () => 1 });
     void transport.connect?.();
     FakeWebSocket.fire(lastSocket(), "open");
-    expect(transport.getStatus?.()).toBe("connected");
+    expect(transport.getStatus()).toBe("connected");
 
     FakeWebSocket.fire(lastSocket(), "close");
-    expect(transport.getStatus?.()).toBe("reconnecting");
+    expect(transport.getStatus()).toBe("reconnecting");
     vi.advanceTimersByTime(199);
     expect(FakeWebSocket.instances).toHaveLength(1);
     vi.advanceTimersByTime(1);
     expect(FakeWebSocket.instances).toHaveLength(2);
 
     FakeWebSocket.fire(lastSocket(), "close");
-    expect(transport.getStatus?.()).toBe("reconnecting");
+    expect(transport.getStatus()).toBe("reconnecting");
     vi.advanceTimersByTime(399);
     expect(FakeWebSocket.instances).toHaveLength(2);
     vi.advanceTimersByTime(1);
@@ -131,7 +131,7 @@ describe("createWebSocketTransport", () => {
     expect(FakeWebSocket.instances).toHaveLength(4);
     vi.advanceTimersByTime(201);
     expect(FakeWebSocket.instances).toHaveLength(5);
-    expect(transport.getStatus?.()).toBe("reconnecting");
+    expect(transport.getStatus()).toBe("reconnecting");
   });
 
   it("jitters the first reconnect delay down to half the base backoff", () => {
@@ -153,10 +153,10 @@ describe("createWebSocketTransport", () => {
     void transport.connect?.();
     FakeWebSocket.fire(lastSocket(), "open");
     FakeWebSocket.fire(lastSocket(), "close");
-    expect(transport.getStatus?.()).toBe("reconnecting");
+    expect(transport.getStatus()).toBe("reconnecting");
 
     void transport.disconnect?.();
-    expect(transport.getStatus?.()).toBe("disconnected");
+    expect(transport.getStatus()).toBe("disconnected");
     expect(vi.getTimerCount()).toBe(0);
     vi.advanceTimersByTime(60_000);
     expect(FakeWebSocket.instances).toHaveLength(1);
@@ -185,20 +185,20 @@ describe("createWebSocketTransport", () => {
 
     void transport.connect?.();
     FakeWebSocket.fire(FakeWebSocket.instances.at(-1)!, "open");
-    expect(transport.getStatus?.()).toBe("connected");
+    expect(transport.getStatus()).toBe("connected");
 
     FakeWebSocket.fire(FakeWebSocket.instances.at(-1)!, "close");
-    expect(transport.getStatus?.()).toBe("reconnecting");
+    expect(transport.getStatus()).toBe("reconnecting");
 
     vi.advanceTimersByTime(200); // second attempt: the constructor throws
     expect(attempts()).toBe(2);
-    expect(transport.getStatus?.()).toBe("reconnecting");
+    expect(transport.getStatus()).toBe("reconnecting");
     expect(vi.getTimerCount()).toBe(1); // next attempt scheduled instead of an uncaught throw
 
     vi.advanceTimersByTime(400); // third attempt: constructor succeeds
     expect(attempts()).toBe(3);
     FakeWebSocket.fire(FakeWebSocket.instances.at(-1)!, "open");
-    expect(transport.getStatus?.()).toBe("connected");
+    expect(transport.getStatus()).toBe("connected");
   });
 
   it("does not throw from connect() when the socket constructor fails on the first attempt", () => {
@@ -213,13 +213,13 @@ describe("createWebSocketTransport", () => {
 
     expect(() => transport.connect?.()).not.toThrow();
     expect(attempts()).toBe(1);
-    expect(transport.getStatus?.()).toBe("reconnecting"); // not stuck in "connecting"
+    expect(transport.getStatus()).toBe("reconnecting"); // not stuck in "connecting"
     expect(vi.getTimerCount()).toBe(1);
 
     vi.advanceTimersByTime(200);
     expect(attempts()).toBe(2);
     FakeWebSocket.fire(FakeWebSocket.instances.at(-1)!, "open");
-    expect(transport.getStatus?.()).toBe("connected");
+    expect(transport.getStatus()).toBe("connected");
   });
 
   it("goes disconnected without throwing when the constructor fails and reconnect is off", () => {
@@ -231,7 +231,7 @@ describe("createWebSocketTransport", () => {
     });
 
     expect(() => transport.connect?.()).not.toThrow();
-    expect(transport.getStatus?.()).toBe("disconnected");
+    expect(transport.getStatus()).toBe("disconnected");
     expect(FakeWebSocket.instances).toHaveLength(0);
   });
 
@@ -251,6 +251,20 @@ describe("createWebSocketTransport", () => {
     const afterUnsubscribe: ConnectionStatus[] = [];
     transport.subscribeStatus?.((s) => afterUnsubscribe.push(s));
     expect(afterUnsubscribe).toEqual(["reconnecting"]);
+  });
+
+  it("reports a throwing status listener and still notifies the others", () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const transport = make();
+    const statuses: ConnectionStatus[] = [];
+    void transport.connect?.();
+    transport.subscribeStatus?.((s) => {
+      if (s !== "connecting") throw new Error("boom");
+    });
+    transport.subscribeStatus?.((s) => statuses.push(s));
+    FakeWebSocket.fire(lastSocket(), "open");
+    expect(statuses).toEqual(["connecting", "connected"]);
+    expect(error).toHaveBeenCalled();
   });
 
   it("drops send before open and records exact bytes while OPEN", () => {
@@ -277,22 +291,61 @@ describe("createWebSocketTransport", () => {
     transport.subscribeStatus?.((s) => events.push(s));
 
     expect(events).toEqual(["connecting"]);
-    expect(transport.getStatus?.()).toBe("connecting");
+    expect(transport.getStatus()).toBe("connecting");
 
     void transport.connect?.();
-    expect(transport.getStatus?.()).toBe("connecting");
+    expect(transport.getStatus()).toBe("connecting");
 
     FakeWebSocket.fire(lastSocket(), "open");
-    expect(transport.getStatus?.()).toBe("connected");
+    expect(transport.getStatus()).toBe("connected");
 
     FakeWebSocket.fire(lastSocket(), "close");
-    expect(transport.getStatus?.()).toBe("reconnecting");
+    expect(transport.getStatus()).toBe("reconnecting");
 
     vi.advanceTimersByTime(100);
     FakeWebSocket.fire(lastSocket(), "open");
-    expect(transport.getStatus?.()).toBe("connected");
+    expect(transport.getStatus()).toBe("connected");
 
     expect(events).toEqual(["connecting", "connected", "reconnecting", "connected"]);
+  });
+
+  it("warns once in dev when a code below 4000 ends reconnecting", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const url = "ws://no-reconnect.test/?room=main";
+    for (let i = 0; i < 2; i++) {
+      const transport = createWebSocketTransport({ url, WebSocketCtor: FakeWebSocket });
+      void transport.connect?.();
+      FakeWebSocket.fire(lastSocket(), "close", { code: 1008, reason: "identity binding needs JSON frames" });
+      expect(transport.getStatus()).toBe("disconnected");
+    }
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0]?.[0])).toContain("does not reconnect");
+  });
+
+  it("keeps the no-reconnect warning silent for codes from 4000, reconnect:false, disconnect() and a custom shouldReconnect", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const closeWith = (name: string, options: Record<string, unknown>, code: number): void => {
+      const transport = createWebSocketTransport({
+        url: "ws://silent-" + name + ".test/?room=main",
+        WebSocketCtor: FakeWebSocket,
+        ...options,
+      });
+      void transport.connect?.();
+      FakeWebSocket.fire(lastSocket(), "close", { code });
+    };
+    closeWith("app-code", {}, 4001);
+    closeWith("no-reconnect", { reconnect: false }, 1008);
+    closeWith("custom-rule", { shouldReconnect: () => false }, 1000);
+    const transport = createWebSocketTransport({
+      url: "ws://silent-disconnect.test/?room=main",
+      WebSocketCtor: FakeWebSocket,
+    });
+    void transport.connect?.();
+    void transport.disconnect?.();
+    const noReconnectWarnings = warn.mock.calls.filter((call) =>
+      String(call[0]).includes("does not reconnect"),
+    );
+    expect(noReconnectWarnings).toEqual([]);
   });
 
   it("treats connect() after disconnect() as a no-op and warns in dev", () => {
@@ -301,12 +354,12 @@ describe("createWebSocketTransport", () => {
     void transport.connect?.();
     FakeWebSocket.fire(lastSocket(), "open");
     void transport.disconnect?.();
-    expect(transport.getStatus?.()).toBe("disconnected");
+    expect(transport.getStatus()).toBe("disconnected");
 
     void transport.connect?.();
     expect(warn).toHaveBeenCalledTimes(1);
     expect(FakeWebSocket.instances).toHaveLength(1);
-    expect(transport.getStatus?.()).toBe("disconnected");
+    expect(transport.getStatus()).toBe("disconnected");
 
     vi.useFakeTimers();
     vi.advanceTimersByTime(60_000);
@@ -323,7 +376,7 @@ describe("createWebSocketTransport", () => {
     expect(first.readyState).toBe(FakeWebSocket.CONNECTING);
 
     FakeWebSocket.fire(first, "open");
-    expect(transport.getStatus?.()).toBe("connected");
+    expect(transport.getStatus()).toBe("connected");
   });
 
   it("does not open a second socket while one is already open", () => {
@@ -333,7 +386,7 @@ describe("createWebSocketTransport", () => {
     void transport.connect();
 
     expect(FakeWebSocket.instances).toHaveLength(1);
-    expect(transport.getStatus?.()).toBe("connected");
+    expect(transport.getStatus()).toBe("connected");
   });
 
   it("delivers ArrayBuffer messages to data subscribers and ignores other payloads", () => {
@@ -362,7 +415,7 @@ describe("createWebSocketTransport", () => {
     expect(closeSpy).toHaveBeenCalledTimes(1);
 
     FakeWebSocket.fire(ws, "close");
-    expect(transport.getStatus?.()).toBe("disconnected");
+    expect(transport.getStatus()).toBe("disconnected");
   });
 
   it("reports the live socket's bufferedAmount and zero while no socket is open", () => {
@@ -465,7 +518,23 @@ describe("createWebSocketTransport", () => {
     void transport.connect();
     FakeWebSocket.fire(lastSocket(), "open");
     FakeWebSocket.fire(lastSocket(), "close", { code: 1008 });
-    expect(transport.getStatus?.()).toBe("disconnected");
+    expect(transport.getStatus()).toBe("disconnected");
+    vi.advanceTimersByTime(60_000);
+    expect(FakeWebSocket.instances).toHaveLength(1);
+  });
+
+  it("treats a throwing shouldReconnect as no reconnect and still settles the status", () => {
+    vi.useFakeTimers();
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const transport = make({
+      shouldReconnect: () => {
+        throw new Error("bad predicate");
+      },
+    });
+    void transport.connect?.();
+    FakeWebSocket.fire(lastSocket(), "open");
+    FakeWebSocket.fire(lastSocket(), "close");
+    expect(transport.getStatus()).toBe("disconnected");
     vi.advanceTimersByTime(60_000);
     expect(FakeWebSocket.instances).toHaveLength(1);
   });
@@ -475,7 +544,7 @@ describe("createWebSocketTransport", () => {
     const transport = make({ shouldReconnect: (close) => close.code !== 4401 });
     void transport.connect();
     FakeWebSocket.fire(lastSocket(), "close", { code: 4401 });
-    expect(transport.getStatus?.()).toBe("disconnected");
+    expect(transport.getStatus()).toBe("disconnected");
   });
 
   it("asks for an explicit url when window is not available", () => {
@@ -510,7 +579,7 @@ describe("createWebSocketTransport", () => {
     void transport.connect();
     await vi.advanceTimersByTimeAsync(0);
     expect(FakeWebSocket.instances).toHaveLength(0);
-    expect(transport.getStatus?.()).toBe("reconnecting");
+    expect(transport.getStatus()).toBe("reconnecting");
     await vi.advanceTimersByTimeAsync(100);
     expect(lastSocket().url).toBe(`${TEST_URL}&token=ok`);
   });
@@ -520,7 +589,7 @@ describe("createWebSocketTransport", () => {
     const transport = make();
     void transport.connect();
     FakeWebSocket.fire(lastSocket(), "close", { code: 4006 });
-    expect(transport.getStatus?.()).toBe("disconnected");
+    expect(transport.getStatus()).toBe("disconnected");
   });
 
   it("does not reconnect after a room refusal (4007)", () => {
@@ -528,7 +597,7 @@ describe("createWebSocketTransport", () => {
     const transport = make();
     void transport.connect();
     FakeWebSocket.fire(lastSocket(), "close", { code: 4007 });
-    expect(transport.getStatus?.()).toBe("disconnected");
+    expect(transport.getStatus()).toBe("disconnected");
   });
 
   it("keeps reconnecting when a status listener throws", () => {
@@ -573,6 +642,79 @@ describe("createWebSocketTransport", () => {
     expect(closes).toEqual([{ reason: "connection attempt failed", willReconnect: true }]);
   });
 
+  it("stops retrying a rejecting token function when shouldReconnect returns false", async () => {
+    vi.useFakeTimers();
+    const reasons: unknown[] = [];
+    const transport = make({
+      token: () => Promise.reject(new Error("expired")),
+      shouldReconnect: (close) => {
+        reasons.push((close as { reason?: string }).reason);
+        return false;
+      },
+      baseBackoffMs: 100,
+    });
+    const closes: unknown[] = [];
+    transport.subscribeClose?.((close) => closes.push(close));
+    void transport.connect();
+    await vi.advanceTimersByTimeAsync(60_000);
+
+    expect(reasons).toEqual(["connection attempt failed"]);
+    expect(closes).toEqual([{ reason: "connection attempt failed", willReconnect: false }]);
+    expect(transport.getStatus()).toBe("disconnected");
+  });
+
+  it("keeps retrying a rejecting token function when shouldReconnect returns true", async () => {
+    vi.useFakeTimers();
+    let calls = 0;
+    const transport = make({
+      token: () => {
+        calls += 1;
+        return Promise.reject(new Error("expired"));
+      },
+      shouldReconnect: () => true,
+      baseBackoffMs: 100,
+      random: () => 1,
+    });
+    void transport.connect();
+    await vi.advanceTimersByTimeAsync(250);
+
+    expect(calls).toBeGreaterThan(1);
+    expect(transport.getStatus()).toBe("reconnecting");
+  });
+
+  const throwingCtor = vi.fn(() => {
+    throw new Error("blocked");
+  }) as unknown as WebSocketCtor;
+
+  it("stops retrying a throwing WebSocketCtor when shouldReconnect returns false", () => {
+    vi.useFakeTimers();
+    const transport = createWebSocketTransport({
+      url: TEST_URL,
+      WebSocketCtor: throwingCtor,
+      shouldReconnect: () => false,
+      baseBackoffMs: 100,
+    });
+    void transport.connect();
+    vi.advanceTimersByTime(60_000);
+
+    expect(throwingCtor).toHaveBeenCalledTimes(1);
+    expect(transport.getStatus()).toBe("disconnected");
+  });
+
+  it("keeps retrying a throwing WebSocketCtor when shouldReconnect is unset", () => {
+    vi.useFakeTimers();
+    const transport = createWebSocketTransport({
+      url: TEST_URL,
+      WebSocketCtor: throwingCtor,
+      baseBackoffMs: 100,
+      random: () => 1,
+    });
+    void transport.connect();
+    vi.advanceTimersByTime(250);
+
+    expect(vi.mocked(throwingCtor).mock.calls.length).toBeGreaterThan(1);
+  });
+
   it("keeps reconnecting when a close listener throws", () => {
     vi.useFakeTimers();
     const transport = make({ baseBackoffMs: 100, random: () => 1 });
@@ -582,7 +724,7 @@ describe("createWebSocketTransport", () => {
     void transport.connect();
     FakeWebSocket.fire(lastSocket(), "close", { code: 1006 });
 
-    expect(transport.getStatus?.()).toBe("reconnecting");
+    expect(transport.getStatus()).toBe("reconnecting");
     vi.advanceTimersByTime(100);
     expect(FakeWebSocket.instances).toHaveLength(2);
   });
@@ -590,5 +732,31 @@ describe("createWebSocketTransport", () => {
   it("accepts the platform WebSocket constructor without a cast", () => {
     const ctor: WebSocketCtor = WebSocket;
     expect(ctor).toBe(WebSocket);
+  });
+});
+
+describe("createWebSocketTransport connect during backoff", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("connect() during the reconnect backoff clears the timer and opens one socket", () => {
+    FakeWebSocket.instances = [];
+    vi.useFakeTimers();
+    const transport = createWebSocketTransport({
+      url: TEST_URL,
+      WebSocketCtor: FakeWebSocket,
+      baseBackoffMs: 200,
+    });
+    void transport.connect();
+    FakeWebSocket.fire(lastSocket(), "open");
+    FakeWebSocket.fire(lastSocket(), "close");
+    expect(transport.getStatus()).toBe("reconnecting");
+
+    void transport.connect();
+    expect(FakeWebSocket.instances).toHaveLength(2);
+    vi.advanceTimersByTime(60_000);
+    expect(FakeWebSocket.instances).toHaveLength(2);
+    expect(lastSocket().readyState).not.toBe(FakeWebSocket.CLOSED);
   });
 });

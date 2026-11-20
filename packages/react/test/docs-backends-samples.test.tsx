@@ -5,8 +5,9 @@ import type { Root } from "react-dom/client";
 import { afterEach, describe, expect, expectTypeOf, it, vi } from "vitest";
 import { createPresenceClient } from "@anchor-presence/core";
 import type { PresenceClient } from "@anchor-presence/core";
-import { LiveCursorProvider } from "../src/index";
-import { LiveCursorContext } from "../src/context";
+import { PresenceProvider } from "../src/index";
+import { PresenceProviderContext } from "../src/context";
+import { docSample, missingSamples } from "./doc-source";
 import { createSignalRTransport } from "../../../examples/signalr/transport";
 import { createSocketIoTransport } from "../../../examples/socketio/transport";
 // The test does not import @microsoft/signalr: it is a dependency of examples/signalr only, so the root cannot resolve it.
@@ -67,22 +68,22 @@ function warnOnFullRoom(client: PresenceClient) {
   });
 }
 
-// signalr.mdx: Already using use-signalr?
-function PresenceProvider({ children }: { children: ReactNode }) {
+// signalr.mdx: Share a use-signalr connection
+function AppPresenceProvider({ children }: { children: ReactNode }) {
   const { getConnection } = useSignalR();
   const connection = getConnection("/hubs/presence");
   if (connection === null) return children;
   return (
-    <LiveCursorProvider
+    <PresenceProvider
       clientKey={connection}
       factory={() => {
-        const transport = createSignalRTransport(connection);
         // use-signalr owns the connection, so disposing the client must not stop it
-        return createPresenceClient({ transport: { ...transport, disconnect: () => {} } });
+        const transport = createSignalRTransport(connection, { stopConnection: false });
+        return createPresenceClient({ transport });
       }}
     >
       {children}
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }
 
@@ -112,7 +113,7 @@ function fakeConnection() {
 
 const seenClients: (PresenceClient | null)[] = [];
 function Dashboard() {
-  seenClients.push(useContext(LiveCursorContext).client);
+  seenClients.push(useContext(PresenceProviderContext).client);
   return <main data-anchor="dashboard" />;
 }
 
@@ -179,16 +180,16 @@ describe("signalr.mdx samples", () => {
     const fake = fakeConnection();
     currentConnection = fake.connection;
     const root = mount(
-      <PresenceProvider>
+      <AppPresenceProvider>
         <Dashboard />
-      </PresenceProvider>,
+      </AppPresenceProvider>,
     );
     for (let render = 0; render < 3; render += 1) {
       act(() =>
         root.render(
-          <PresenceProvider>
+          <AppPresenceProvider>
             <Dashboard />
-          </PresenceProvider>,
+          </AppPresenceProvider>,
         ),
       );
     }
@@ -198,9 +199,9 @@ describe("signalr.mdx samples", () => {
 
   it("renders the children without a client until use-signalr opens the hub", () => {
     const root = mount(
-      <PresenceProvider>
+      <AppPresenceProvider>
         <Dashboard />
-      </PresenceProvider>,
+      </AppPresenceProvider>,
     );
     expect(seenClients.every((client) => client === null)).toBe(true);
 
@@ -208,9 +209,9 @@ describe("signalr.mdx samples", () => {
     currentConnection = fake.connection;
     act(() =>
       root.render(
-        <PresenceProvider>
+        <AppPresenceProvider>
           <Dashboard />
-        </PresenceProvider>,
+        </AppPresenceProvider>,
       ),
     );
     expect(seenClients.at(-1)).not.toBeNull();
@@ -220,14 +221,24 @@ describe("signalr.mdx samples", () => {
     const fake = fakeConnection();
     currentConnection = fake.connection;
     const root = mount(
-      <PresenceProvider>
+      <AppPresenceProvider>
         <Dashboard />
-      </PresenceProvider>,
+      </AppPresenceProvider>,
     );
     const client = seenClients.at(-1)!;
     act(() => root.unmount());
     roots.splice(0);
     expect(client.sendEvent("reaction", "wave")).toBe(false);
     expect(fake.stop).not.toHaveBeenCalled();
+  });
+});
+
+describe("doc sample sources", () => {
+  it("match the copies in this file", () => {
+    expect(
+      missingSamples("docs-backends-samples.test.tsx", [
+        docSample("examples/backends/signalr.mdx", "function AppPresenceProvider"),
+      ]),
+    ).toEqual([]);
   });
 });

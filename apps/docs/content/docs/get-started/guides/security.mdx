@@ -4,7 +4,7 @@ description: What the client validates, why anchor IDs are safe, and how to rend
 icon: shield-check
 ---
 
-import { Box, Eye, Handshake, ListChecks } from "lucide-react";
+import { BadgeCheck, Eye, ShieldCheck, FileCheck, Users } from "lucide-react";
 
 Every inbound message comes from a peer, so treat it as untrusted. This page lists what the library protects, and what your app and your relay must protect. Read it before you put Anchor Presence in production.
 
@@ -30,7 +30,7 @@ The client checks each inbound message in two steps:
   contract](/docs/examples/backends/relay-contract).
 </Callout>
 
-Each receiver also limits the rate of inbound events with the `eventRateLimit` option. See [Event rate limit](/docs/core/events#event-rate-limit). This limit protects one receiver only. A sender can still flood the room, so the rate limit per socket on the relay is the real control.
+Each receiver also limits the rate of inbound events with the `eventRateLimit` option. See [Event rate limit](/docs/core/events#event-rate-limit). This limit protects one receiver only. A sender can still flood the room, so the [rate limit per socket](/docs/get-started/guides/deploy-relay#set-the-environment-variables) on the relay is the real control.
 
 ## Why anchor IDs never touch selectors
 
@@ -50,18 +50,25 @@ Validation checks the size of `user` and `context`, not the content. A peer can 
 This sample shows the correct and the wrong way to render a remote name:
 
 ```tsx
-// correct: renders as text, no matter what the string contains
-<span>{cursor.user?.name}</span>
+import type { ResolvedCursor } from "@anchor-presence/react";
 
-// wrong: never do this with network-sourced data
-<span dangerouslySetInnerHTML={{ __html: cursor.user?.name }} />
+function RemoteName({ cursor }: { cursor: ResolvedCursor<unknown, { name: string }> }) {
+  return (
+    <>
+      {/* correct: renders as text, no matter what the string contains */}
+      <span>{cursor.user?.name}</span>
+      {/* wrong: never do this with network-sourced data */}
+      <span dangerouslySetInnerHTML={{ __html: cursor.user?.name ?? "" }} />
+    </>
+  );
+}
 ```
 
 ## Check the shape of remote values
 
 A peer can send `{ name: {} }` where you expect a string. React throws when it renders that object as a child.
 
-If you pass a local `user` or `context` to `createPresenceClient`, the client compares each remote value with its shape. For example, with `user: { name: "Ada" }`, a remote `user` must be an object whose `name` is a string or `null`. The client drops a value that does not fit, and keeps the previous value. Your render code must accept `null` in every field. [Remote user and context](/docs/core/validation#remote-user-and-context) lists every rule.
+If you pass a local `user` or `context` to `createPresenceClient`, the client compares each remote value with its shape. For example, with `user: { name: "Ada" }`, a remote `user` must be an object whose `name` is a string, `null`, or missing. The client drops a value that does not fit, and keeps the previous value. Your render code must accept `null` and missing fields. [Remote user and context](/docs/core/validation#remote-user-and-context) lists every rule.
 
 A client with no local value has no shape to compare with. Pass `parseUser` or `parseContext` instead. Return `undefined` to drop the value:
 
@@ -71,12 +78,26 @@ const client = createPresenceClient<unknown, { name: string; avatar?: string }>(
   parseUser: (value) => {
     const { name, avatar } = value as { name?: unknown; avatar?: unknown };
     if (typeof name !== "string") return undefined;
-    return typeof avatar === "string" ? { name, avatar } : { name };
+    const safeAvatar = typeof avatar === "string" && avatar.startsWith("https://") ? avatar : undefined;
+    return safeAvatar === undefined ? { name } : { name, avatar: safeAvatar };
   },
 });
 ```
 
+To build `parseUser` from a Valibot, Zod, or ArkType schema, see [Validate with a schema](/docs/core/standard-schema).
+
+The client above has a user type. In React, you have two routes:
+
+- Give the client to the `PresenceProvider` of [`createPresenceHooks`](/docs/react/typed-hooks). Its hooks return the user type.
+- Use the `PresenceProvider` of `@anchor-presence/react`. It takes only an untyped client, and its hooks return `unknown`. Create the client with `createPresenceClient<unknown, unknown>`. The `parseUser` still checks every peer value.
+
+Check every URL and CSS value from a peer before you use it. A peer can send a `javascript:` URL, or a string that breaks out of a CSS value. Allow only `https://` URLs. Allow only colors that match a fixed pattern, such as `/^#[0-9a-f]{6}$/i`, or that are in a list you own.
+
 In development mode, the client warns when no check applies to a remote value, and when the shape check drops a value.
+
+## Cursor position over private fields
+
+Your cursor position can show what you look at. Add `data-anchor-private` to a sensitive field or region, for example a password input or a payment form. Over it, and inside it, the binding sends no cursor. See [Skip part of the page](/docs/dom/pointer-capture#skip-part-of-the-page).
 
 ## Identity is not authenticated
 
@@ -86,17 +107,18 @@ If your app must know who sent a message, bind the identity on your server. The 
 
 ## maxRemoteClients
 
-`maxRemoteClients` caps the store entries, resolved cursors, and observed anchors that network data causes. The default is 64. The [event rate limit](/docs/core/events#event-rate-limit) has a separate cap: it tracks at most 512 senders. When the store is full, it drops new clients and calls `onRemoteClientRejected`.
+`maxRemoteClients` caps the store entries, resolved cursors, and observed anchors that network data causes. The default is on [Remote presence](/docs/core/remote-presence#maxremoteclients). The [event rate limit](/docs/core/events#event-rate-limit) has a separate cap: it tracks at most 512 senders.
 
-A peer can fill every slot with new `clientId` values. Real clients then stay out until those entries expire after `staleTimeoutMs`. Set `maxRemoteClients` to the number of sessions that you expect at the same time. See [maxRemoteClients](/docs/core/remote-presence#maxremoteclients).
+A peer can fill every slot with new `clientId` values. Real clients then stay out until those entries expire after `staleTimeoutMs`. Set `maxRemoteClients` to the number of sessions that you expect at the same time.
 
 ## Room token
 
 A **room token** is a secret that the relay checks before it accepts a connection. If `RELAY_AUTH_TOKEN` is set, the reference relay requires a matching [room token](/docs/dom/websocket-transport#room-token). It closes a connection with a missing or wrong token with code `4006`.
 
+- To limit who can connect by origin, set `RELAY_ALLOWED_ORIGINS`. The relay closes a connection from another origin, or with no `Origin` header, with code `4004`. See [Set the environment variables](/docs/get-started/guides/deploy-relay#set-the-environment-variables).
 - The room token controls who can connect. It does not prove the identity inside a message.
-- The reference relay and the example relays compare all connections with one `RELAY_AUTH_TOKEN`, so one token opens every room.
-- To limit a token to one room, check the `room` field in your own `authCheck` hook.
+- The reference relay and the example relays, except the SignalR hub, compare all connections with one `RELAY_AUTH_TOKEN`, so one token opens every room.
+- To limit a token to one room, check the `room` field in your own [`authCheck` hook](/docs/examples/backends/relay-contract#identity).
 - The transport sends the token in the `token` query parameter. Proxies and servers often write the full URL into their access logs.
 
 <Callout type="warn">
@@ -108,13 +130,16 @@ A **room token** is a secret that the relay checks before it accepts a connectio
 ## Related
 
 <Cards>
-  <Card icon={<ListChecks />} title="Validation" href="/docs/core/validation">
+  <Card icon={<ShieldCheck />} title="Validation" href="/docs/core/validation">
     Every limit and its default.
   </Card>
-  <Card icon={<Handshake />} title="Relay contract" href="/docs/examples/backends/relay-contract">
+  <Card icon={<BadgeCheck />} title="Validate with a schema" href="/docs/core/standard-schema">
+    Build the parsers from a Valibot, Zod, or ArkType schema.
+  </Card>
+  <Card icon={<FileCheck />} title="Relay contract" href="/docs/examples/backends/relay-contract">
     What a relay must check, and the close codes.
   </Card>
-  <Card icon={<Box />} title="Remote presence" href="/docs/core/remote-presence">
+  <Card icon={<Users />} title="Remote presence" href="/docs/core/remote-presence">
     The store, the stale timeout, and the client cap.
   </Card>
   <Card icon={<Eye />} title="UI context" href="/docs/get-started/concepts/ui-context">

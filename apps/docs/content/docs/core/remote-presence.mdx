@@ -1,12 +1,12 @@
 ---
 title: Remote presence
-description: RemotePresenceStore, the stale timeout, the idle stage, peer changes, leave messages, late join, reconnect expiry, and maxRemoteClients.
+description: RemotePresenceStore, the stale timeout, the idle state, peer changes, leave messages, late join, reconnect expiry, and maxRemoteClients.
 icon: users
 ---
 
-import { Code, Radio, Shield, ShieldCheck } from "lucide-react";
+import { Code, Radio, ShieldCheck } from "lucide-react";
 
-`RemotePresenceStore` holds the presence of every peer that a client accepts. A peer is another client in the same room. `createPresenceClient` creates one store for each client. Read the store through the client to render peers, or use the store alone on a relay or in a test.
+`RemotePresenceStore` holds the presence of every peer that a client accepts. `createPresenceClient` creates one store for each client. Read the store through the client to render peers, or use the store alone on a relay or in a test.
 
 ## Read remote presence
 
@@ -29,6 +29,7 @@ A peer joins on its first accepted message. It goes idle when its presence stops
 
 <Mermaid
   chart={`stateDiagram-v2
+  accTitle: Remote client states
   [*] --> active: first message
   active --> idle: idleAfterMs, no change
   idle --> active: presence changes
@@ -40,11 +41,11 @@ A peer joins on its first accepted message. It goes idle when its presence stops
 
 The store removes a peer when it accepts no message from that peer for `staleTimeoutMs`. The default is `DEFAULT_STALE_TIMEOUT_MS`, `70000` milliseconds. Set `staleTimeoutMs` on `createPresenceClient` to change it. The client enforces a minimum of `1000` milliseconds.
 
-## Idle stage
+## Idle state
 
 The store sets `idle: true` on the `RemotePresence` of a peer whose presence did not change for `idleAfterMs`. The store measures this time from the last change, not from the last message. The default is `DEFAULT_IDLE_AFTER_MS`, `15000` milliseconds. `idleAfterMs` always stays below `staleTimeoutMs`. If you pass a larger value, the store clamps it to `staleTimeoutMs - 1`.
 
-Heartbeats do not end the idle stage, because they repeat the same state. A peer that changes nothing goes idle while its heartbeats keep arriving. Any change in cursor, user, context, or pointer ends it. Use `idle` to dim a cursor that stopped moving. `staleTimeoutMs` decides when the cursor disappears.
+Heartbeats do not end the idle state, because they repeat the same state. A peer that changes nothing goes idle while its heartbeats keep arriving. Any change in cursor, user, context, or pointer type ends it. Use `idle` to dim a cursor that stopped moving. `staleTimeoutMs` decides when the cursor disappears.
 
 ## Peer changes
 
@@ -83,13 +84,15 @@ A receiver accepts a leave message only from the stored `session`, and only with
 
 When the client accepts the first message of an unknown `clientId`, it answers with one full publish. A known `clientId` with another `session` gets the same answer. The full publish carries the cursor, `user`, and `context`. As a result, the peer that joined sees this client before the next heartbeat.
 
-The answer comes after a random delay of up to 500 ms. One delay covers every peer that joins in this time, and the random delay spreads the answers of the clients in a full room. A leave message or an event gets no answer.
+The answer waits a random delay of up to 500 ms, then goes out on the next publish tick. One delay covers every peer that joins in this time, and the random delay spreads the answers of the clients in a full room. A leave message or an event gets no answer.
 
 ## After a reconnect
 
 When the status changes to `connected` from `reconnecting` or `disconnected`, the client marks every peer unconfirmed. A peer can leave during the outage, and its leave message never reaches this client.
 
-Any accepted message confirms a peer. If an unconfirmed peer sends no message within `2 * heartbeatIntervalMs + 5 s`, the next sweep removes it and reports a `leave`. A sweep is a periodic check of the store. With the default `heartbeatIntervalMs`, this time is 25 seconds. If the stale timeout comes first, the stale timeout applies.
+Any accepted message confirms a peer. If an unconfirmed peer sends no message within `2 * heartbeatIntervalMs + 5 s`, the next sweep removes it and reports a `leave`.
+
+A sweep is a periodic check of the store. With the default `heartbeatIntervalMs`, this time is 25 seconds. If the stale timeout comes first, the stale timeout applies. A peer that stays in the store shows its last cursor again as soon as the status is `connected`. See [Connection status](/docs/dom/binding#connection-status).
 
 <Callout type="warn">
   If peers use a longer `heartbeatIntervalMs` than this client, they disappear after a reconnect until their
@@ -115,7 +118,7 @@ const client = createPresenceClient({
 });
 ```
 
-`onRemoteClientRejected` runs each time the store drops a new peer because it is full. It receives `{ clientId }`, the ID of the dropped peer. If it throws, the client ignores the error. See [maxRemoteClients](/docs/get-started/guides/security#maxremoteclients) on the Security page for capacity planning.
+`onRemoteClientRejected` runs each time the store drops a new peer because it is full. It receives `{ clientId }`, the ID of the dropped peer. If it throws, the client ignores the error. See [capacity planning](/docs/get-started/guides/performance#capacity-planning).
 
 ## Message ordering
 
@@ -145,7 +148,7 @@ The store has no timer of its own. Without a `sweep()` call on a timer, no peer 
 2. Drop the echoes of your own `clientId`.
 3. Keep event messages out of the store. An event message has a `null` cursor, so `ingest` stores it as a peer without a cursor.
 
-The constructor takes [`RemotePresenceStoreOptions`](/docs/core/api/client#remotepresencestore). Its `staleTimeoutMs` has no minimum, unlike the client option. `onDropNewClient` runs each time the full store drops a message from a new peer.
+The constructor takes [`RemotePresenceStoreOptions`](/docs/core/api/client#remotepresencestore). Its `staleTimeoutMs` has no minimum, unlike the client option. `onRemoteClientRejected` runs each time the full store drops a message from a new peer.
 
 The store has these methods:
 
@@ -171,7 +174,7 @@ The store has these methods:
   <Card icon={<ShieldCheck />} title="Validation" href="/docs/core/validation">
     The checks before a message reaches the store.
   </Card>
-  <Card icon={<Shield />} title="Security" href="/docs/get-started/guides/security">
+  <Card icon={<ShieldCheck />} title="Security" href="/docs/get-started/guides/security">
     The risks that the store limits cover.
   </Card>
   <Card icon={<Code />} title="Client API" href="/docs/core/api/client">

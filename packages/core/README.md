@@ -1,6 +1,6 @@
 # @anchor-presence/core
 
-`@anchor-presence/core` is the protocol and orchestration layer of Anchor Presence. It holds the wire types, the validation rules, the presence store, and the client that ties them together.
+`@anchor-presence/core` is the protocol and client layer of Anchor Presence. It holds the wire types, the validation rules, the presence store, and the client that ties them together.
 
 [![MIT](https://img.shields.io/badge/license-MIT-blue.svg)](../../LICENSE)
 
@@ -11,7 +11,7 @@ import { createPresenceClient, jsonCodec } from "@anchor-presence/core";
 
 const client = createPresenceClient({
   transport: myTransport,
-  codec: jsonCodec, // default; pass a custom CursorCodec for a different wire format
+  codec: jsonCodec, // default; pass a custom PresenceCodec for a different wire format
   publishIntervalMs: 50,
 });
 
@@ -34,14 +34,14 @@ The client calls `transport.connect()` for you by default. To connect at a time 
 | Export                                                              | What it does                                                                                              |
 | ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | `createPresenceClient(options)`                                     | Wires the transport, codec, publishing, sequencing, expiry, and the remote presence store into one client |
-| `CursorPresence`, `AnchorPoint`, `CursorPosition`                   | Wire protocol types                                                                                       |
+| `PresenceMessage`, `AnchorPoint`, `CursorPosition`                  | Wire protocol types                                                                                       |
 | `RemotePresence`                                                    | A remote presence without `sequence`. It is the shape of an entry in the stable snapshot.                 |
 | `validatePresence(input, limits?)`                                  | Checks and clamps an untrusted decoded value                                                              |
-| `jsonCodec`                                                         | The default `CursorCodec` implementation                                                                  |
-| `binaryCodec`                                                       | A compact `CursorCodec` for binary WebSocket relays                                                       |
-| `LiveCursorTransport`, `ConnectionStatus`                           | The transport interface                                                                                   |
-| `AdaptivePublishOptions`                                            | Opt-in slow-mode options for the publish rate                                                             |
-| `createInMemoryPair`                                                | A connected pair of in-memory transports for tests                                                        |
+| `jsonCodec`                                                         | The default `PresenceCodec` implementation                                                                |
+| `binaryCodec`                                                       | A compact `PresenceCodec` for binary WebSocket relays                                                     |
+| `PresenceTransport`, `ConnectionStatus`                             | The transport interface                                                                                   |
+| `AdaptivePublishOptions`                                            | Options that slow the publish rate when the connection is busy                                            |
+| `createInMemoryPair`, `createInMemoryRoom`                          | In-memory transports for tests: a connected pair, or a room of three or more peers                        |
 | `RemotePresenceStore`                                               | Sequencing, field-delta merge, and stale-expiry store for remote presences                                |
 | `createEventChannel(client)`                                        | Typed `send` and `subscribe` for the events of a client                                                   |
 | `createEventParser(parsers)`, `EventParsers`                        | Builds a typed `parseEvent` from one data parser per event type                                           |
@@ -51,5 +51,6 @@ The client calls `transport.connect()` for you by default. To connect at a time 
 | `client.leave()`                                                    | Tells peers that the client left. The next publish announces it again.                                    |
 | `parseUser`, `parseContext`, `parseEvent` options                   | Check, rewrite, or drop each remote `user`, `context`, and event                                          |
 | `linearInterpolator`, `noneInterpolator`                            | Interpolation factories                                                                                   |
+| `@anchor-presence/core/standard-schema`                             | A separate entry point that builds `parseUser`, `parseContext`, and `parseEvent` from a schema            |
 
 See [How it works](https://anchor-presence.vercel.app/docs/get-started/concepts/how-it-works), [Events](https://anchor-presence.vercel.app/docs/core/events), and [Codecs](https://anchor-presence.vercel.app/docs/core/codecs) for full guides.

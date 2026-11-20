@@ -1,6 +1,7 @@
 import { warnOnce } from "./dev-warnings.js";
 import { validatePresence } from "../validate.js";
-import type { RemoteEvent } from "../protocol.js";
+import type { TypedRemoteEvent } from "../event-channel.js";
+import type { PresenceMessage, RemoteEvent } from "../protocol.js";
 import type { PresenceClientState } from "./types.js";
 
 function isPlainRecord(value: unknown): value is Record<string, unknown> {
@@ -73,8 +74,8 @@ function countKeys(value: unknown): number {
   return total;
 }
 
-function hasUnparsedField<TContext, TUser>(
-  state: PresenceClientState<TContext, TUser>,
+function hasUnparsedField<TContext, TUser, TEvents extends object>(
+  state: PresenceClientState<TContext, TUser, TEvents>,
   presence: { user?: unknown; context?: unknown },
 ): boolean {
   return (
@@ -125,12 +126,12 @@ function createEventAllowance(
 }
 
 // parseEvent can drop or rewrite an event; a throwing parser drops it
-function deliverEvent<TContext, TUser>(
-  state: PresenceClientState<TContext, TUser>,
+function deliverEvent<TContext, TUser, TEvents extends object>(
+  state: PresenceClientState<TContext, TUser, TEvents>,
   event: RemoteEvent,
 ): void {
   if (state.parseEvent === undefined) {
-    emitEvent(state, event);
+    emitEvent(state, event as TypedRemoteEvent<TEvents>); // RequiredParsers: without parseEvent, TEvents is the default
     return;
   }
   try {
@@ -141,7 +142,10 @@ function deliverEvent<TContext, TUser>(
   }
 }
 
-function emitEvent<TContext, TUser>(state: PresenceClientState<TContext, TUser>, event: RemoteEvent): void {
+function emitEvent<TContext, TUser, TEvents extends object>(
+  state: PresenceClientState<TContext, TUser, TEvents>,
+  event: TypedRemoteEvent<TEvents>,
+): void {
   for (const listener of state.eventListeners) {
     try {
       listener(event);
@@ -185,7 +189,9 @@ function warnDropped(
  * Wires the transport inbound stream into the remote store.
  * Oversized, invalid, and self-echoed messages are dropped.
  */
-export function wireInbound<TContext, TUser>(state: PresenceClientState<TContext, TUser>): void {
+export function wireInbound<TContext, TUser, TEvents extends object>(
+  state: PresenceClientState<TContext, TUser, TEvents>,
+): void {
   let warnedUnparsed = false;
   const warnedInbound = new Set<string>();
   const dropInbound = (reason: string, hint = "", error?: unknown): void => {
@@ -206,9 +212,12 @@ export function wireInbound<TContext, TUser>(state: PresenceClientState<TContext
         return; // oversized wire message: drop before parsing (spec §4.2)
       }
       const decoded = state.codec.decode(data);
-      const presence = validatePresence<TContext, TUser>(decoded, state.validationLimits);
+      const presence = validatePresence(decoded, state.validationLimits);
       if (presence === null) {
-        dropInbound("it failed to decode or validate", " A codec mismatch between peers causes this.");
+        dropInbound(
+          "it failed to decode or validate",
+          " A codec mismatch between peers, or a value over a validationLimits bound, causes this.",
+        );
         return;
       }
       if (presence.clientId === state.clientId) {
@@ -246,7 +255,13 @@ export function wireInbound<TContext, TUser>(state: PresenceClientState<TContext
         }
       }
       const known = state.store.has(presence.clientId, presence.session);
-      if (state.store.ingest(presence) && !known && presence.leave !== true) state.onNewPeer();
+      // RequiredParsers plus the parse above give user and context their types
+      if (
+        state.store.ingest(presence as PresenceMessage<TContext, TUser>) &&
+        !known &&
+        presence.leave !== true
+      )
+        state.onNewPeer();
     } catch (error) {
       dropInbound("the codec or a subscriber threw", "", error);
     }

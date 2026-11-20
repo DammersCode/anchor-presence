@@ -11,8 +11,10 @@ import {
   RateLimiter,
   INVALID_ROOM_CODE,
   bindIdentity,
+  UNBINDABLE_FRAME_CLOSE,
   newConnectionId,
   parseRoom,
+  parseToken,
   safeAuthCheck,
   tokenAuthCheck,
   type AuthCheck,
@@ -27,7 +29,7 @@ export type HonoRelayOptions = {
   /** Seconds without a message or a pong before Bun closes the socket. Bun sends a ping before it closes. */
   idleTimeoutSeconds?: number;
   allowedOrigins?: Set<string>;
-  /** Auth hook placeholder: verify a token query param. Default accepts every token. */
+  /** Auth hook. Default: the `RELAY_AUTH_TOKEN` check, which admits everyone when the variable is unset. */
   authCheck?: AuthCheck;
 };
 
@@ -60,21 +62,28 @@ export function createHonoRelay(port: number, options: HonoRelayOptions = {}) {
 
   app.get(
     "/",
+    // a plain GET must not reach the events factory below: it runs the auth hook before any upgrade check
+    (c, next) =>
+      c.req.header("upgrade")?.toLowerCase() === "websocket"
+        ? next()
+        : c.text("WebSocket relay: upgrade required", 426),
     upgradeWebSocket(async (c) => {
-      const parsedRoom = parseRoom(c.req.query("room"));
+      const parsedRoom = parseRoom(c.req.queries("room"));
       const room = parsedRoom ?? "main";
       const connectionId = newConnectionId();
       const origin = c.req.header("origin") ?? "";
       // origin and room are checked before the hook runs, so a refused request never drives an expensive hook
       const preChecked = originAllowed(allowedOrigins, origin) && parsedRoom !== null;
-      const authOk = preChecked
-        ? await authCheck({
-            token: c.req.query("token") ?? "",
-            room,
-            origin,
-            headers: c.req.header(),
-          })
-        : false;
+      const token = parseToken(c.req.queries("token"));
+      const authOk =
+        preChecked && token !== null
+          ? await authCheck({
+              token,
+              room,
+              origin,
+              headers: c.req.header(),
+            })
+          : false;
       const rateLimiter = new RateLimiter(rateCapacity, rateRefillPerSecond);
       let admitted = false;
 
@@ -115,7 +124,10 @@ export function createHonoRelay(port: number, options: HonoRelayOptions = {}) {
               authOk,
               connectionId,
             );
-            if (bound === null) return;
+            if (bound === null) {
+              ws.close(UNBINDABLE_FRAME_CLOSE.code, UNBINDABLE_FRAME_CLOSE.reason);
+              return;
+            }
             outgoing = bound;
           }
           // the raw socket's publish (not server.publish) excludes the sender from the topic fan-out

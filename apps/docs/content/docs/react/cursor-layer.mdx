@@ -4,29 +4,29 @@ description: Render every visible remote cursor with labels, colors, and filteri
 icon: mouse-pointer-2
 ---
 
-import { Crosshair, Gauge, Component, Paintbrush } from "lucide-react";
+import { Crosshair, Gauge, Component, Paintbrush, UserPen } from "lucide-react";
 
-`CursorLayer` draws the cursor of every peer (another client in the same room) that is visible on your screen. If an arrow with a name label is enough, use it. For a different rendering model, read the positions with [useRemoteCursors](/docs/react/remote-cursors) and draw them yourself.
+`CursorLayer` draws the cursor of every peer that is visible on your screen. If an arrow with a name label is enough, use it. For a different rendering model, read the positions with [useRemoteCursors](/docs/react/remote-cursors) and draw them yourself.
 
 ## Usage
 
-This app connects to the Bun relay of the [Quick start](/docs/get-started/quick-start#connect-a-relay), on port 8788. It renders the remote cursors with the defaults:
+This app connects to the Bun relay of the [Quick start](/docs/get-started/quick-start#connect-a-relay), on port 8788. It renders the remote cursors with the defaults, and it uses the provider and the layer of `@anchor-presence/react`:
 
 ```tsx
 import { createPresenceClient } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
-import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
+import { CursorLayer, PresenceProvider } from "@anchor-presence/react";
 
 function App() {
   return (
-    <LiveCursorProvider
+    <PresenceProvider
       factory={() =>
         createPresenceClient({ transport: createWebSocketTransport({ port: 8788, path: "/?room=main" }) })
       }
     >
       <Dashboard />
       <CursorLayer />
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }
 ```
@@ -39,25 +39,35 @@ This preview shows `CursorLayer` in two layouts, with the label and the color fr
 
 - **Element:** one fixed-position root element per visible cursor, with `DefaultCursor` inside it.
 - **Label:** the `name` field of the peer's `user` value, if it is a string that is not empty. The layer cuts the name to 32 characters. Otherwise, the cursor has no label.
-- **Color:** one of 8 palette colors, picked from the peer's `clientId`. A peer keeps its color on every screen. A page reload creates a new `clientId`, so the color can change.
+- **Color:** one of 8 palette colors, picked from the peer's `clientId`. A peer keeps its color on every screen. With the default `clientId`, a page reload creates a new one, so the color can change. To keep one color per user, send it in `user` and return it from `getColor`. See [Label and color](#label-and-color).
 - **Stacking:** `zIndex` `9999`, above most app UI.
 
 ## Label and color
 
-`getLabel` and `getColor` run for each visible cursor. They replace the default label and the default color:
+`getLabel` and `getColor` run for each visible cursor. They replace the default label and the default color. The samples on this page pass inline callbacks for brevity. See [Keep the callbacks stable](#keep-the-callbacks-stable).
+
+`CursorLayer` from `@anchor-presence/react` gives `cursor.user` the type `unknown`. For a typed `cursor.user`, use the `CursorLayer` of a [`createPresenceHooks`](/docs/react/typed-hooks) result. This layer reads `name` and `color` from the `User` that the `./presence` module of [Typed hooks](/docs/react/typed-hooks#usage) fixes. The app must use the `PresenceProvider` of that module:
 
 ```tsx
-type MyUser = { name: string; color?: string };
+import { CursorLayer } from "./presence";
 
-<CursorLayer<unknown, MyUser>
-  getLabel={(cursor) => cursor.user?.name ?? "Guest"}
-  getColor={(cursor) => cursor.user?.color ?? "#6b7280"}
-/>;
+const safeColor = (color?: string) =>
+  color !== undefined && /^#[0-9a-f]{6}$/iu.test(color) ? color : "#6b7280";
+
+function LabeledLayer() {
+  return (
+    <CursorLayer
+      getLabel={(cursor) => cursor.user?.name ?? "Guest"}
+      getColor={(cursor) => safeColor(cursor.user?.color)}
+    />
+  );
+}
 ```
 
 <Callout type="warn">
   If you render remote `user` data, treat it as text, never as HTML. Another client sends this data, and it
-  can hold any value. See [Security](/docs/get-started/guides/security).
+  can hold any value. Check a remote color or URL against an allowlist before you use it. See
+  [Security](/docs/get-started/guides/security).
 </Callout>
 
 ## Filter cursors
@@ -67,6 +77,8 @@ type MyUser = { name: string; color?: string };
 ```tsx
 <CursorLayer filterCursor={(cursor) => cursor.tier !== "viewport"} />
 ```
+
+To hide idle cursors, see [Idle cursors](/docs/react/custom-cursors#idle-cursors).
 
 ## Extra props on the root
 
@@ -122,5 +134,8 @@ type MyUser = { name: string; color?: string };
   </Card>
   <Card icon={<Component />} title="Components API" href="/docs/react/api/components">
     Every prop of CursorLayer with its type.
+  </Card>
+  <Card icon={<UserPen />} title="Local context and user" href="/docs/react/local-context">
+    Set the user value, with its name and color.
   </Card>
 </Cards>

@@ -6,27 +6,33 @@ icon: braces
 
 import { Braces, Plug, Users, Zap } from "lucide-react";
 
-`createPresenceHooks<TContext, TUser, TEvents>()` returns the provider and every hook with your types fixed. A hook from the result takes no type parameter, so a call with a wrong type does not compile. Use it in every app that has a known shape for its context, user, or event values. `TEvents` is optional.
+`createPresenceHooks<TContext, TUser, TEvents>()` returns a provider, every hook, and a `CursorLayer` with your types fixed. The hooks that you import from `@anchor-presence/react` return `unknown` for `user`, `context`, and event `data`, because a type argument cannot prove what a peer sends. The hooks of the result read only the provider of the same call. That provider accepts only a client with the same `user` and `context` types and an event map that fits yours. Use it in every app that knows the shape of its context, user, or event values. `TEvents` is optional.
 
 ## Usage
 
-Call `createPresenceHooks` one time, at module level, and export the result:
+Call `createPresenceHooks` one time for the whole app, at module level, and export the result. An app has one `presence.ts`. The recipes and the other React pages import from this module:
 
 ```ts
 // presence.ts
 import { createPresenceHooks } from "@anchor-presence/react";
 
 export type User = { name: string; color: string };
-export type Context = { pageId: string };
-export type Events = { reaction: { emoji: string }; ping: undefined };
+export type Context = { pageId?: string; typingIn?: string | null; away?: boolean; selection?: string[] };
+export type Events = { reaction: { emoji: string }; chat: { text: string }; ping: undefined };
 
 export const {
-  LiveCursorProvider,
-  useCursorClient,
+  CursorLayer,
+  PresenceProvider,
+  useDomBinding,
   useLocalContext,
-  useCursorEvents,
   useLocalUser,
+  usePeerChanges,
+  usePresenceClient,
+  usePresenceStatus,
   useRemoteCursors,
+  useRemoteCursorsSelector,
+  useRemoteEvents,
+  useRemotePresence,
   useRemoteUsers,
   useSendEvent,
 } = createPresenceHooks<Context, User, Events>();
@@ -49,26 +55,26 @@ function PresenceList() {
 }
 ```
 
-`entry.user` has the type `User | undefined`. A field that `User` does not have, for example `entry.user?.age`, is a type error. A type argument, for example `useRemoteUsers<OtherUser>()`, is also a type error.
+`entry.user` has the type `User | undefined`. A field that `User` does not have, for example `entry.user?.age`, is a type error. A type argument, for example `useRemoteUsers<OtherUser>()`, is also a type error. A client with other `Context` or `User` types, given to this `PresenceProvider`, is a type error too.
 
 ## Typed events
 
 `TEvents` is an event map: an object type that maps each event type to the type of its `data`. The result has two hooks for these events:
 
 - `useSendEvent()` returns a function that sends one event. A misspelled type or a `data` value of the wrong type does not compile. The function returns the result of `client.sendEvent`. Without a client, it sends nothing and returns `false`. It keeps its identity while the client stays the same.
-- `useCursorEvents(listener)` calls `listener` with a typed event. A check of `event.type` narrows `event.data` to the type of that event.
+- `useRemoteEvents(listener)` calls `listener` with a typed event. A check of `event.type` narrows `event.data` to the type of that event.
 
-This component sends a reaction and shows the last reaction from a peer (another client in the same room):
+This component sends a reaction and shows the last reaction from a peer:
 
 ```tsx
 import { useState } from "react";
-import { useCursorEvents, useSendEvent } from "./presence";
+import { useRemoteEvents, useSendEvent } from "./presence";
 
 function Reactions() {
   const sendEvent = useSendEvent();
   const [lastEmoji, setLastEmoji] = useState<string | null>(null);
 
-  useCursorEvents((event) => {
+  useRemoteEvents((event) => {
     if (event.type === "reaction") setLastEmoji(event.data.emoji);
   });
 
@@ -85,75 +91,106 @@ function Reactions() {
 
 ## Check remote events
 
-<Callout type="warn">
-  If a peer sends data of another type, `useCursorEvents` still delivers it. The types check only the code
-  that you write. Build a `parseEvent` for the same event map with `createEventParser`, and pass it to the
-  client. See [Events](/docs/core/events).
+<Callout type="info">
+  `useRemoteEvents` delivers what the `parseEvent` of the client returns. The event map comes from
+  `parseEvent`, so a client with a typed event map always has the parser that checks it. Build it with
+  `createEventParser`. See [Events](/docs/core/events).
 </Callout>
 
-`createEventParser` from `@anchor-presence/core` builds this `parseEvent` from one parser per event type. For an event without data, use `null` as the parser. Pass the result to `createPresenceClient` in the provider `factory`:
+`createEventParser` from `@anchor-presence/core` builds this `parseEvent` from one parser per event type. For an event without data, use `null` as the parser. The client types `user` and `context` only through `parseUser` and `parseContext`, so pass them too. Pass the result to `createPresenceClient` in the provider `factory`:
 
 ```tsx
 import { createEventParser, createPresenceClient } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
-import { type Events, LiveCursorProvider } from "./presence";
+import { type Events, PresenceProvider } from "./presence";
+import { parseContext, parseUser } from "./parsers";
 
 const parseEvent = createEventParser<Events>({
   reaction: (data) => {
-    const emoji = (data as { emoji?: unknown } | undefined)?.emoji;
+    const emoji = typeof data === "object" && data !== null && "emoji" in data ? data.emoji : undefined;
     return typeof emoji === "string" ? { emoji } : undefined;
+  },
+  chat: (data) => {
+    const text = typeof data === "object" && data !== null && "text" in data ? data.text : undefined;
+    return typeof text === "string" ? { text } : undefined;
   },
   ping: null,
 });
 
 function App() {
   return (
-    <LiveCursorProvider
+    <PresenceProvider
       factory={() =>
         createPresenceClient({
           transport: createWebSocketTransport({ port: 8788, path: "/?room=main" }),
+          parseUser,
+          parseContext,
           parseEvent,
         })
       }
     >
       <Reactions />
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }
 ```
 
-The transport connects to the Bun relay of the [Quick start](/docs/get-started/quick-start#connect-a-relay), on port 8788.
+`./parsers` exports a `parseUser` that returns `User | undefined` and a `parseContext` that returns `Context | undefined`. [Validate with a schema](/docs/core/standard-schema) shows how to build them. The transport connects to the Bun relay of the [Quick start](/docs/get-started/quick-start#connect-a-relay), on port 8788.
 
 An event map can be a `type` or an `interface`. For the parser rules, see [Typed events](/docs/core/events#typed-events).
 
+## Infer the types from schemas
+
+If you check `user` and `context` with [Standard Schema](/docs/core/standard-schema) schemas, take the types from the same schemas with `InferSchemaOutput`. This call takes the place of the call in `presence.ts`. Destructure the same names from `schemaHooks`, and keep one call per app:
+
+```ts
+import * as v from "valibot";
+import { createPresenceHooks } from "@anchor-presence/react";
+import type { InferSchemaOutput } from "@anchor-presence/core/standard-schema";
+
+const userSchema = v.object({ name: v.string(), color: v.string() });
+const contextSchema = v.object({ pageId: v.string() });
+
+export const schemaHooks = createPresenceHooks<
+  InferSchemaOutput<typeof contextSchema>,
+  InferSchemaOutput<typeof userSchema>
+>();
+```
+
+Pass `parserFrom(userSchema)` and `parserFrom(contextSchema)` to `createPresenceClient` as `parseUser` and `parseContext`. The client then has the types of the hooks.
+
 ## What the result contains
 
-| Name                                    | Types that the result fixes                                          |
-| --------------------------------------- | -------------------------------------------------------------------- |
-| `LiveCursorProvider`                    | context and user                                                     |
-| `useCursorClient`, `useCursorBinding`   | context and user                                                     |
-| `useRemoteCursors`, `useRemotePresence` | context and user                                                     |
-| `useRemoteCursorsSelector`              | context and user. It still takes the `TSelected` type of its result. |
-| `usePeerChanges`                        | context and user                                                     |
-| `useRemoteUsers`, `useLocalUser`        | user                                                                 |
-| `useLocalContext`                       | context                                                              |
-| `useCursorEvents`, `useSendEvent`       | events                                                               |
-| `useCursorStatus`                       | none                                                                 |
+| Name                                    | Types that the result fixes                                    |
+| --------------------------------------- | -------------------------------------------------------------- |
+| `PresenceProvider`                      | context, user, and events of the client that it accepts        |
+| `CursorLayer`                           | context and user of its render props                           |
+| `usePresenceClient`                     | context, user, and events                                      |
+| `useDomBinding`                         | context and user                                               |
+| `useRemoteCursors`, `useRemotePresence` | context and user                                               |
+| `useRemoteCursorsSelector`              | context and user. It takes the `TSelected` type of its result. |
+| `usePeerChanges`                        | context and user                                               |
+| `useRemoteUsers`, `useLocalUser`        | user                                                           |
+| `useLocalContext`                       | context                                                        |
+| `useRemoteEvents`, `useSendEvent`       | events                                                         |
+| `usePresenceStatus`                     | none                                                           |
 
-Without `TEvents`, an event can have any `type`, and its `data` has the type `unknown`. `CursorLayer` and `DefaultCursor` are not in the result. Import them from `@anchor-presence/react`, and pass your types as type arguments, for example `<CursorLayer<Context, User> />`.
+Without `TEvents`, an event can have any `type`, and its `data` has the type `unknown`. `DefaultCursor` is not in the result. Import it from `@anchor-presence/react`.
 
-In development mode, a hook outside the provider writes a console warning. If you use the provider from your own module, the warning still names `LiveCursorProvider`.
+An app has one `createPresenceHooks` call. If you need more types, add them to this call. A hook from the result under another `PresenceProvider`, for example the one that you import from `@anchor-presence/react`, finds no client and shows empty data. The reverse also holds: a hook from `@anchor-presence/react` under the provider of the result shows empty data.
+
+In development mode, a hook outside its provider writes a console warning. Outside development mode, it writes none. If you use the provider from your own module, the warning still names `PresenceProvider`.
 
 ## Related
 
 <Cards>
-  <Card icon={<Zap />} title="Cursor events" href="/docs/react/cursor-events">
+  <Card icon={<Zap />} title="Remote events" href="/docs/react/remote-events">
     Untyped events with client.sendEvent.
   </Card>
   <Card icon={<Users />} title="Remote users" href="/docs/react/remote-users">
     The presence list that the typed hook reads.
   </Card>
-  <Card icon={<Plug />} title="LiveCursorProvider" href="/docs/react/live-cursor-provider">
+  <Card icon={<Plug />} title="PresenceProvider" href="/docs/react/presence-provider">
     Every prop of the provider.
   </Card>
   <Card icon={<Braces />} title="Hooks API" href="/docs/react/api/hooks#createpresencehooks">

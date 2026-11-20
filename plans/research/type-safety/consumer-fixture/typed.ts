@@ -1,0 +1,110 @@
+// Inference from parsers and from type arguments, with negatives.
+import {
+  createEventChannel,
+  createEventParser,
+  createPresenceClient,
+  createInMemoryPair,
+  type PresenceClient,
+} from "@anchor-presence/core";
+import { createPresenceHooks, PresenceProvider, type RemoteUser } from "@anchor-presence/react";
+
+type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
+declare function assertEqual<A, B>(ok: Equal<A, B>): void;
+
+type User = { name: string };
+type Ctx = { page: string };
+type Events = { ping: undefined; reaction: { emoji: string } };
+
+const parseUser = (v: unknown): User | undefined =>
+  typeof v === "object" && v !== null && "name" in v && typeof v.name === "string"
+    ? { name: v.name }
+    : undefined;
+const parseContext = (v: unknown): Ctx | undefined =>
+  typeof v === "object" && v !== null && "page" in v && typeof v.page === "string"
+    ? { page: v.page }
+    : undefined;
+
+const pair = createInMemoryPair();
+
+// inferred from parsers
+const inferred = createPresenceClient({ transport: pair.a, parseUser, parseContext });
+assertEqual<PresenceClient<Ctx, User>, typeof inferred>(true);
+
+// local values do not give the type: only a parser does
+const fromValues = createPresenceClient({ transport: pair.a, user: { name: "a" }, context: { page: "x" } });
+assertEqual<PresenceClient<unknown, unknown>, typeof fromValues>(true);
+
+// explicit type arguments need their parsers
+const explicit = createPresenceClient<Ctx, User>({ transport: pair.a, parseUser, parseContext });
+assertEqual<PresenceClient<Ctx, User>, typeof explicit>(true);
+
+// @ts-expect-error an explicit type argument without its parser does not compile
+createPresenceClient<Ctx, User>({ transport: pair.a });
+
+// @ts-expect-error user must match the type argument
+createPresenceClient<Ctx, User>({ transport: pair.a, parseUser, parseContext, user: { name: 1 } });
+// @ts-expect-error parser result must match the type argument
+createPresenceClient<Ctx, User>({ transport: pair.a, parseUser: (_v: unknown) => 1, parseContext });
+
+// events
+const parseEvent = createEventParser<Events>({
+  ping: null,
+  reaction: (data) =>
+    typeof data === "object" && data !== null && "emoji" in data && typeof data.emoji === "string"
+      ? { emoji: data.emoji }
+      : undefined,
+});
+const typedClient = createPresenceClient({ transport: pair.a, parseUser, parseContext, parseEvent });
+const channel = createEventChannel(typedClient);
+channel.send("ping");
+channel.send("reaction", { emoji: "x" });
+channel.subscribe((event) => {
+  if (event.type === "reaction") assertEqual<{ emoji: string }, typeof event.data>(true);
+});
+// @ts-expect-error unknown event type
+channel.send("nope");
+// @ts-expect-error wrong data type
+channel.send("reaction", { emoji: 3 });
+// @ts-expect-error reaction needs data
+channel.send("reaction");
+// @ts-expect-error a parser is required for each event type
+createEventParser<Events>({ ping: null });
+// @ts-expect-error null is only for events without data
+createEventParser<Events>({ ping: null, reaction: null });
+void parseEvent;
+
+// typed hooks and provider
+const hooks = createPresenceHooks<Ctx, User, Events>();
+const [user] = hooks.useLocalUser();
+assertEqual<User | undefined, typeof user>(true);
+const [context] = hooks.useLocalContext();
+assertEqual<Ctx | undefined, typeof context>(true);
+assertEqual<readonly RemoteUser<User>[], ReturnType<typeof hooks.useRemoteUsers>>(true);
+assertEqual<User | undefined, ReturnType<typeof hooks.useRemoteCursors>[number]["user"]>(true);
+hooks.useRemoteEvents((event) => {
+  if (event.type === "reaction") assertEqual<{ emoji: string }, typeof event.data>(true);
+});
+hooks.PresenceProvider({ client: typedClient });
+hooks.PresenceProvider({
+  // @ts-expect-error provider client must match the hook generics
+  client: createPresenceClient({
+    transport: pair.a,
+    parseUser,
+    parseContext: (_v: unknown): { other: 1 } | undefined => undefined,
+    parseEvent,
+  }),
+});
+// @ts-expect-error send rejects unknown events
+hooks.useSendEvent()("nope");
+
+// @ts-expect-error a typed client does not fit the standalone provider
+PresenceProvider({ client: inferred });
+PresenceProvider({ client: createPresenceClient({ transport: pair.a }) });
+PresenceProvider({ client: createPresenceClient<unknown, unknown>({ transport: pair.a, parseUser }) });
+
+// @ts-expect-error a channel cannot claim an event map that the client does not carry
+createEventChannel<Events>(createPresenceClient({ transport: pair.a }));
+
+const [, setUser] = hooks.useLocalUser();
+// @ts-expect-error the setter takes User, not a string
+setUser("name");

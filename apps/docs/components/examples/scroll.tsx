@@ -1,14 +1,18 @@
 "use client";
 
 import type { PresenceClient } from "@anchor-presence/core";
+import type { TourContext } from "./_preview/tour";
 import type { VisibilityPolicy } from "@anchor-presence/dom";
-import { CursorLayer, LiveCursorProvider, useRemoteCursors } from "@anchor-presence/react";
+import { CursorLayer, PresenceProvider, useRemoteCursors } from "./_preview/hooks";
 import { useRef, type ReactNode, type RefObject } from "react";
+
+const safeColor = (color: string | undefined, fallback: string) =>
+  color !== undefined && /^#[0-9a-f]{6}$/iu.test(color) ? color : fallback;
 
 type User = { name: string; color: string };
 
 type Props = {
-  client: PresenceClient<unknown, User> | null;
+  client: PresenceClient<TourContext, User> | null;
   layout: "wide" | "narrow";
   children?: ReactNode;
 };
@@ -32,9 +36,7 @@ const clippedPointPolicy: VisibilityPolicy = ({ resolution }) =>
 const bindingOptions = { resolution: { visibilityPolicy: clippedPointPolicy } };
 
 function OutOfViewHint({ listRef }: { listRef: RefObject<HTMLUListElement | null> }) {
-  const clipped = useRemoteCursors<unknown, User>().find(
-    (cursor) => cursor.tier === "anchor" && !cursor.pointVisible,
-  );
+  const clipped = useRemoteCursors().find((cursor) => cursor.tier === "anchor" && !cursor.pointVisible);
   if (clipped === undefined || clipped.anchorId === null) return null;
 
   const anchorId = clipped.anchorId;
@@ -49,7 +51,7 @@ function OutOfViewHint({ listRef }: { listRef: RefObject<HTMLUListElement | null
       type="button"
       onClick={reveal}
       className={`absolute left-1/2 z-10 flex -translate-x-1/2 items-center gap-1.5 rounded-full whitespace-nowrap px-2.5 py-1 text-[11px] font-medium text-white shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fd-ring ${below ? "bottom-2" : "top-2"}`}
-      style={{ backgroundColor: clipped.user?.color ?? "#4f46e5" }}
+      style={{ backgroundColor: safeColor(clipped.user?.color, "#4f46e5") }}
     >
       {below ? "↓" : "↑"} Show {clipped.user?.name ?? "the cursor"}
     </button>
@@ -61,11 +63,13 @@ export function ScrollScene({ client, layout, children }: Props) {
   const wide = layout === "wide";
 
   return (
-    <LiveCursorProvider client={client} bindingOptions={bindingOptions}>
+    <PresenceProvider client={client} bindingOptions={bindingOptions}>
       <div className="flex h-full flex-col p-2.5">
         <h3 className="font-display px-1 pb-1.5 text-sm font-semibold">Inbox</h3>
         <div className="relative min-h-0">
           <ul
+            tabIndex={0}
+            aria-label="Inbox"
             ref={listRef}
             data-anchor="inbox"
             className={`overflow-y-auto rounded-lg border border-fd-border bg-fd-background ${wide ? "" : "h-[148px]"}`}
@@ -93,11 +97,11 @@ export function ScrollScene({ client, layout, children }: Props) {
           </p>
         )}
       </div>
-      <CursorLayer<unknown, User>
+      <CursorLayer
         getLabel={(cursor) => cursor.user?.name ?? null}
-        getColor={(cursor) => cursor.user?.color ?? "#4f46e5"}
+        getColor={(cursor) => safeColor(cursor.user?.color, "#4f46e5")}
       />
       {children}
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }

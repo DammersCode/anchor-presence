@@ -3,10 +3,10 @@ import { createRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import type { PresenceClient } from "@anchor-presence/core";
-import { LiveCursorProvider, useCursorClient } from "../src";
+import { PresenceProvider, usePresenceClient, usePresenceStatus } from "../src";
 import { makeFakeClient } from "./test-utils";
 
-describe("LiveCursorProvider factory", () => {
+describe("PresenceProvider factory", () => {
   let container: HTMLDivElement;
 
   beforeEach(() => {
@@ -22,23 +22,23 @@ describe("LiveCursorProvider factory", () => {
     const factory = vi.fn(() => makeFakeClient().client);
     const seen: (PresenceClient | null)[] = [];
     function Comp() {
-      seen.push(useCursorClient());
+      seen.push(usePresenceClient());
       return null;
     }
     const root = createRoot(container);
 
     act(() => {
       root.render(
-        <LiveCursorProvider factory={factory}>
+        <PresenceProvider factory={factory}>
           <Comp />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
     act(() => {
       root.render(
-        <LiveCursorProvider factory={factory}>
+        <PresenceProvider factory={factory}>
           <Comp />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
 
@@ -51,6 +51,28 @@ describe("LiveCursorProvider factory", () => {
     act(() => root.unmount());
   });
 
+  it("reports connecting until the factory client exists, then the client status", () => {
+    const fake = makeFakeClient();
+    const seen: string[] = [];
+    function Comp() {
+      seen.push(usePresenceStatus());
+      return null;
+    }
+    const root = createRoot(container);
+
+    act(() => {
+      root.render(
+        <PresenceProvider factory={() => fake.client}>
+          <Comp />
+        </PresenceProvider>,
+      );
+    });
+
+    expect(seen[0]).toBe("connecting");
+    expect(seen.at(-1)).toBe(fake.client.getStatus());
+    act(() => root.unmount());
+  });
+
   it("disposes the client it created on unmount and not before", () => {
     const fake = makeFakeClient();
     const disposeSpy = vi.spyOn(fake.client, "dispose");
@@ -58,9 +80,9 @@ describe("LiveCursorProvider factory", () => {
 
     act(() => {
       root.render(
-        <LiveCursorProvider factory={() => fake.client}>
+        <PresenceProvider factory={() => fake.client}>
           <div />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
     expect(disposeSpy).not.toHaveBeenCalled();
@@ -70,6 +92,7 @@ describe("LiveCursorProvider factory", () => {
   });
 
   it("lets a client prop win: the factory never runs and the client is not disposed", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     const fake = makeFakeClient();
     const disposeSpy = vi.spyOn(fake.client, "dispose");
     const factory = vi.fn(() => makeFakeClient().client);
@@ -77,31 +100,35 @@ describe("LiveCursorProvider factory", () => {
 
     act(() => {
       root.render(
-        <LiveCursorProvider factory={factory} client={fake.client}>
+        // @ts-expect-error the types forbid factory with client; the runtime still lets client win
+        <PresenceProvider factory={factory} client={fake.client}>
           <div />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
 
     expect(factory).not.toHaveBeenCalled();
     act(() => root.unmount());
     expect(disposeSpy).not.toHaveBeenCalled();
+    expect(warn.mock.calls.some(([text]) => String(text).includes("both `client` and `factory`"))).toBe(true);
+    warn.mockRestore();
   });
 
   it("an explicit client null skips the factory", () => {
     const factory = vi.fn(() => makeFakeClient().client);
     const seen: (PresenceClient | null)[] = [];
     function Comp() {
-      seen.push(useCursorClient());
+      seen.push(usePresenceClient());
       return null;
     }
     const root = createRoot(container);
 
     act(() => {
       root.render(
-        <LiveCursorProvider factory={factory} client={null}>
+        // @ts-expect-error the types forbid factory with client; the runtime still lets client win
+        <PresenceProvider factory={factory} client={null}>
           <Comp />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
 
@@ -123,7 +150,7 @@ describe("LiveCursorProvider factory", () => {
     });
     const seen: (PresenceClient | null)[] = [];
     function Comp() {
-      seen.push(useCursorClient());
+      seen.push(usePresenceClient());
       return null;
     }
     const root = createRoot(container);
@@ -131,9 +158,9 @@ describe("LiveCursorProvider factory", () => {
     act(() => {
       root.render(
         <StrictMode>
-          <LiveCursorProvider factory={factory}>
+          <PresenceProvider factory={factory}>
             <Comp />
-          </LiveCursorProvider>
+          </PresenceProvider>
         </StrictMode>,
       );
     });
@@ -148,18 +175,39 @@ describe("LiveCursorProvider factory", () => {
     expect(live).toHaveLength(0);
   });
 
+  it("throws a clear TypeError when factory is a client object", () => {
+    const { client } = makeFakeClient();
+    const root = createRoot(container);
+    const errors: unknown[] = [];
+    const listener = (event: ErrorEvent) => {
+      errors.push(event.error);
+      event.preventDefault();
+    };
+    window.addEventListener("error", listener);
+    try {
+      act(() => {
+        root.render(<PresenceProvider factory={client as never} />);
+      });
+    } catch (error) {
+      errors.push(error);
+    } finally {
+      window.removeEventListener("error", listener);
+    }
+    expect(String(errors[0])).toMatch(/factory must be a function that returns a client/u);
+  });
+
   it("server renders run no factory and provide a null client", () => {
     const factory = vi.fn(() => makeFakeClient().client);
     const seen: (PresenceClient | null)[] = [];
     function Comp() {
-      seen.push(useCursorClient());
+      seen.push(usePresenceClient());
       return null;
     }
 
     renderToString(
-      <LiveCursorProvider factory={factory}>
+      <PresenceProvider factory={factory}>
         <Comp />
-      </LiveCursorProvider>,
+      </PresenceProvider>,
     );
 
     expect(factory).not.toHaveBeenCalled();

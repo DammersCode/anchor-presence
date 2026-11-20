@@ -31,19 +31,19 @@ Pass the provider a `factory` that creates the transport and the client. Mark on
 ```tsx
 import { createPresenceClient } from "@anchor-presence/core";
 import { createBroadcastChannelTransport } from "@anchor-presence/dom";
-import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
+import { CursorLayer, PresenceProvider } from "@anchor-presence/react";
 
 function createClient() {
   const transport = createBroadcastChannelTransport("live-cursors");
   return createPresenceClient({ transport, user: { name: `Guest ${Math.floor(Math.random() * 100)}` } });
 }
 
-export function App() {
+export default function App() {
   return (
-    <LiveCursorProvider factory={createClient}>
+    <PresenceProvider factory={createClient}>
       <button data-anchor="nav.dashboard">Dashboard</button>
       <CursorLayer />
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }
 ```

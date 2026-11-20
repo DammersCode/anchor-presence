@@ -4,11 +4,18 @@ description: A cursor stays on the same dashboard card when the grid changes fro
 icon: layout-grid
 ---
 
-import { BookOpen, MousePointer2, TableProperties } from "lucide-react";
+import { MousePointer2, TableProperties, Scaling, Anchor } from "lucide-react";
 
 A dashboard grid changes its column count at each breakpoint. Cards move to new rows and change their size. In this demo, the wide pane shows a 4-column grid with cards of mixed sizes. The narrow pane shows the same cards in 2 columns. The remote cursor stays on the same card, and on the same day in the chart.
 
 <ExamplePreview scene="responsive-grid" />
+
+<Callout type="info">
+  This demo breaks the layout rules on purpose, so you can see how a cursor moves. The cards swap places when
+  the grid reflows. In your app, keep neighbors, sizes, and shapes alike. See the [layout design
+  guide](/docs/get-started/guides/layout-design) and the [Stable layout](/docs/examples/stable-layout)
+  example.
+</Callout>
 
 ## Code
 
@@ -20,35 +27,39 @@ This file renders the scene of the demo:
 
 <CodeFromSource docs="components/examples/responsive-grid.tsx" lang="tsx" />
 
+<SceneNote />
+
 The scene gets `layout` as a prop, so that the two panes can show different layouts on one page. In your app, your breakpoints select the layout. The anchor IDs stay the same in all layouts.
 
 ## Behavior notes
 
+Try it: Move your pointer into a gap between two cards.
+
 - Every card has an anchor ID from its data, for example `metrics.revenue` and `metrics.churn`. The grid position is not part of the ID.
 - Each day of the chart is an anchor inside the chart anchor: `metrics.traffic.fri`. A cursor on Friday lands on Friday, also when the chart has a different size.
 - The `u` and `v` values are relative to the card. A cursor near the right edge of a wide card stays near the right edge of the narrow card.
-- Move your pointer into a gap between two cards. The cursor resolves to the grid anchor `metrics`, so it stays in the grid.
-- The cards change size when the pane shrinks. The demo shows this worst case on purpose. For the layout rule, see [Keep item sizes and shapes alike](/docs/get-started/guides/layout-design#keep-item-sizes-and-shapes-alike).
+- A cursor in a gap between two cards resolves to the grid anchor `metrics`, so it stays in the grid.
+- The cards change size when the pane shrinks. For the layout rule, see [Keep item sizes and shapes alike](/docs/get-started/guides/layout-design#keep-item-sizes-and-shapes-alike).
 
 ## Related
 
 <Cards>
   <Card
-    icon={<BookOpen />}
+    icon={<Scaling />}
     title="How wrapping and breakpoints resolve"
     href="/docs/get-started/concepts/responsive-layouts#how-wrapping-and-breakpoints-resolve"
   >
     Why the cursor follows a card to its new row.
   </Card>
   <Card
-    icon={<BookOpen />}
+    icon={<Scaling />}
     title="How element-size differences resolve"
     href="/docs/get-started/concepts/responsive-layouts#how-element-size-differences-resolve"
   >
     How `u` and `v` scale with the card size.
   </Card>
   <Card
-    icon={<BookOpen />}
+    icon={<Anchor />}
     title="Normalized u/v coordinates"
     href="/docs/get-started/concepts/anchors#normalized-uv-coordinates"
   >

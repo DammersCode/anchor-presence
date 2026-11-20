@@ -1,4 +1,4 @@
-import type { CursorPresence } from "../protocol.js";
+import type { PresenceMessage } from "../protocol.js";
 import type { PresenceClientState } from "./types.js";
 
 /**
@@ -44,8 +44,8 @@ function jsonByteLength(value: unknown): number {
  * Returns a dev-mode warning for oversized outbound fields and messages.
  * Checked when context/user changes, not per message; receivers silently drop oversized fields.
  */
-export function createOversizedWarning<TContext, TUser>(
-  state: PresenceClientState<TContext, TUser>,
+export function createOversizedWarning<TContext, TUser, TEvents extends object>(
+  state: PresenceClientState<TContext, TUser, TEvents>,
 ): () => void {
   return () => {
     if (!state.devMode) return;
@@ -60,7 +60,7 @@ export function createOversizedWarning<TContext, TUser>(
           `[anchor-presence] outbound user exceeds maxFieldBytes (${state.maxFieldBytes}); receivers will drop the field`,
         );
       }
-      const probe: CursorPresence<TContext, TUser> = {
+      const probe: PresenceMessage<TContext, TUser> = {
         version: 1,
         clientId: state.clientId,
         session: state.session,

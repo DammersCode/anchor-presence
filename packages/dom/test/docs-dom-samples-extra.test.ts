@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createInMemoryPair, createPresenceClient } from "@anchor-presence/core";
-import type { CursorPresence } from "@anchor-presence/core";
+import type { PresenceMessage } from "@anchor-presence/core";
 import { createDomBinding } from "../src/index";
 import type { VisibilityPolicy } from "../src/index";
 
@@ -8,7 +8,7 @@ import type { VisibilityPolicy } from "../src/index";
 const hideStaffCursors: VisibilityPolicy<{ role: string }> = ({ presence }) =>
   presence.context?.role === "staff" ? "hide" : "show";
 
-function presenceWith(role: string): CursorPresence<{ role: string }> {
+function presenceWith(role: string): PresenceMessage<{ role: string }> {
   return { version: 1, clientId: "a", session: "s", sequence: 0, cursor: null, context: { role } };
 }
 
@@ -22,7 +22,10 @@ describe("extra dom docs samples", () => {
 
   it("visibility-policy.mdx: a client with the policy's context type accepts the policy", () => {
     const { a: transport } = createInMemoryPair();
-    const client = createPresenceClient<{ role: string }>({ transport });
+    const client = createPresenceClient({
+      transport,
+      parseContext: (value) => value as { role: string } | undefined,
+    });
     const binding = createDomBinding(client, {
       resolution: { visibilityPolicy: hideStaffCursors },
     });

@@ -7,6 +7,7 @@ icon: mouse-pointer
 import {
   Anchor,
   AppWindow,
+  Braces,
   Code,
   Crosshair,
   Eye,
@@ -14,10 +15,13 @@ import {
   Link,
   Move,
   Pointer,
+  PlugZap,
   RadioTower,
+  Box,
+  Rocket,
 } from "lucide-react";
 
-`@anchor-presence/dom` is the only package that calls browser APIs. It turns a `PresenceClient` from `@anchor-presence/core` into a list of resolved cursors: the position of each remote cursor in the pixels of your viewport. It renders nothing. `@anchor-presence/react` uses it for you. Use it directly to draw cursors without React, or to build an adapter for another UI framework.
+`@anchor-presence/dom` is the package that reads the DOM layout and the pointer. It turns a `PresenceClient` from `@anchor-presence/core` into a list of resolved cursors: the position of each remote cursor in the pixels of your viewport. It renders nothing. `@anchor-presence/react` uses it for you. Use it directly to draw cursors without React, or to build an adapter for another UI framework.
 
 This sample connects a client and logs each visible cursor:
 
@@ -35,7 +39,7 @@ binding.subscribe(() => {
 });
 ```
 
-## Main paths
+## Binding
 
 <Cards>
   <Card icon={<Link />} title="Binding" href="/docs/dom/binding">
@@ -47,6 +51,11 @@ binding.subscribe(() => {
   <Card icon={<Pointer />} title="Pointer capture" href="/docs/dom/pointer-capture">
     What the binding sends for the local pointer and keyboard focus.
   </Card>
+</Cards>
+
+## Resolution
+
+<Cards>
   <Card icon={<Crosshair />} title="Resolution" href="/docs/dom/resolution">
     How a remote cursor gets a position on this screen.
   </Card>
@@ -59,14 +68,37 @@ binding.subscribe(() => {
   <Card icon={<Move />} title="Motion" href="/docs/dom/motion">
     Ease a remote cursor between positions, and respect reduced motion.
   </Card>
+</Cards>
+
+## Transports
+
+<Cards>
   <Card icon={<RadioTower />} title="WebSocket transport" href="/docs/dom/websocket-transport">
     Connect to a relay, with a room token and reconnect.
   </Card>
   <Card icon={<AppWindow />} title="BroadcastChannel transport" href="/docs/dom/broadcast-channel-transport">
     Connect tabs of one origin, with no server.
   </Card>
-  <Card icon={<Code />} title="API reference" href="/docs/dom/api/binding">
-    Every export of the package, with its type.
+</Cards>
+
+## API reference
+
+<Cards>
+  <Card icon={<Code />} title="Binding API" href="/docs/dom/api/binding">
+    The binding, its options, and its methods.
+  </Card>
+  <Card icon={<Braces />} title="Resolution types" href="/docs/dom/api/resolution">
+    The resolved cursor, tiers, and policy types.
+  </Card>
+  <Card icon={<PlugZap />} title="WebSocket transport API" href="/docs/dom/api/websocket-transport">
+    The options and status of the WebSocket transport.
+  </Card>
+  <Card
+    icon={<AppWindow />}
+    title="BroadcastChannel transport API"
+    href="/docs/dom/api/broadcast-channel-transport"
+  >
+    The options of the BroadcastChannel transport.
   </Card>
 </Cards>
 
@@ -76,6 +108,7 @@ binding.subscribe(() => {
 
 <Mermaid
   chart={`flowchart TD
+  accTitle: From anchor elements to resolved cursors
   page["anchor elements"] --> registry["registry"]
   registry --> pointer["pointer capture"]
   pointer --> client["PresenceClient"]
@@ -93,6 +126,10 @@ See [How it works](/docs/get-started/concepts/how-it-works) for the full picture
 ## Related
 
 <Cards>
-  <Card icon={<Link />} title="Binding" href="/docs/dom/binding" />
-  <Card icon={<Crosshair />} title="Resolution" href="/docs/dom/resolution" />
+  <Card icon={<Box />} title="Core overview" href="/docs/core">
+    The client, the store, and the transports that the binding reads.
+  </Card>
+  <Card icon={<Rocket />} title="Quick start" href="/docs/get-started/quick-start">
+    Install the packages and show the first remote cursor.
+  </Card>
 </Cards>

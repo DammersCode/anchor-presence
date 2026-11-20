@@ -189,14 +189,14 @@ describe("binding docs", () => {
     peer.dispose();
   });
 
-  it("binding.mdx: throws a TypeError for a bad anchorAttribute or a non-integer maxAnchors", () => {
+  it("binding.mdx: throws a TypeError for a bad anchorAttribute or a non-integer maxSentAnchors", () => {
     const { a } = createInMemoryPair();
     const client = createPresenceClient({ transport: a });
     expect(() => createDomBinding(client, { anchorAttribute: "data_anchor" })).toThrow(TypeError);
     expect(() => createDomBinding(client, { anchorAttribute: "1-anchor" })).toThrow(TypeError);
-    expect(() => createDomBinding(client, { maxAnchors: 2.5 })).toThrow(TypeError);
-    expect(() => createDomBinding(client, { maxAnchors: Number.NaN })).toThrow(TypeError);
-    createDomBinding(client, { anchorAttribute: "anchor", maxAnchors: 20 }).dispose();
+    expect(() => createDomBinding(client, { maxSentAnchors: 2.5 })).toThrow(TypeError);
+    expect(() => createDomBinding(client, { maxSentAnchors: Number.NaN })).toThrow(TypeError);
+    createDomBinding(client, { anchorAttribute: "anchor", maxSentAnchors: 20 }).dispose();
     client.dispose();
   });
 
@@ -355,7 +355,10 @@ describe("dom docs samples: pages without a guide test", () => {
 
   it("build-a-framework-adapter.mdx: observeCursors writes the first and each later snapshot", () => {
     // Copied from apps/docs/content/docs/core/build-a-framework-adapter.mdx (The bridge).
-    function observeCursors(binding: DomBinding, write: (cursors: ResolvedCursor[]) => void): () => void {
+    function observeCursors(
+      binding: DomBinding,
+      write: (cursors: readonly ResolvedCursor[]) => void,
+    ): () => void {
       write(binding.getSnapshot());
       return binding.subscribe(() => write(binding.getSnapshot()));
     }
@@ -363,7 +366,7 @@ describe("dom docs samples: pages without a guide test", () => {
     const { a } = createInMemoryPair();
     const client = createPresenceClient({ transport: a });
     const binding = createDomBinding(client);
-    const writes: ResolvedCursor[][] = [];
+    const writes: (readonly ResolvedCursor[])[] = [];
     const stop = observeCursors(binding, (cursors) => writes.push(cursors));
     binding.invalidate();
     stop();
@@ -432,6 +435,17 @@ function docSample(page: string, marker: string): string {
   return block;
 }
 
+describe("pointer-capture.mdx private attribute sample", () => {
+  it("compiles and creates a binding", () => {
+    const { a: transport } = createInMemoryPair();
+    const client = createPresenceClient({ transport });
+    const binding = createDomBinding(client, { privateAttribute: "data-no-cursor" });
+    expect(binding.getSnapshot()).toEqual([]);
+    binding.dispose();
+    client.dispose();
+  });
+});
+
 describe("doc sample sources", () => {
   it("match the copies in this file", () => {
     const source = trimLines(readRepoFile("packages/dom/test/docs-dom-samples.test.ts"));
@@ -442,6 +456,7 @@ describe("doc sample sources", () => {
       docSample("dom/websocket-transport.mdx", "const NO_RETRY_CODES"),
       docSample("dom/websocket-transport.mdx", "room=room-42"),
       docSample("dom/motion.mdx", "interpolatorFactory: mySpringInterpolatorFactory"),
+      docSample("dom/pointer-capture.mdx", "privateAttribute"),
     ];
     for (const sample of samples) expect(source).toContain(trimLines(sample));
   });

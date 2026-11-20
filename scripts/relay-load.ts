@@ -9,7 +9,7 @@ import net from "node:net";
 import path from "node:path";
 import { binaryCodec } from "../packages/core/src/binary-codec";
 import { validatePresence } from "../packages/core/src/validate";
-import type { CursorPresence } from "../packages/core/src/protocol";
+import type { PresenceMessage } from "../packages/core/src/protocol";
 
 const repoRoot = path.resolve(import.meta.dirname, "..");
 const PUBLISH_HZ = 20;
@@ -302,7 +302,7 @@ async function runForClientCount(
       const ws = sockets[i];
       if (ws === undefined || ws.readyState !== WebSocket.OPEN) continue;
       const clientId = makeClientId(i);
-      const message: CursorPresence = {
+      const message: PresenceMessage = {
         version: 1,
         clientId,
         session: `${clientId}-s`,

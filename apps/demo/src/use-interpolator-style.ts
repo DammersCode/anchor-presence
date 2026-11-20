@@ -6,7 +6,7 @@ const DEFAULT_STYLE: InterpolatorStyle = "spring";
 const PARAM = "interp";
 
 function isInterpolatorStyle(value: string | null): value is InterpolatorStyle {
-  return INTERPOLATOR_STYLES.includes(value as InterpolatorStyle);
+  return INTERPOLATOR_STYLES.some((style) => style === value);
 }
 
 function readStyleFromUrl(): InterpolatorStyle {

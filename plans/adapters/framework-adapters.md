@@ -17,10 +17,10 @@ Both depend on `@anchor-presence/core` and `@anchor-presence/dom` only. Neither 
 
 ## What each package exports, mirroring react
 
-`@anchor-presence/react` exports a provider component, `usePresenceClient`, read hooks (`useCursorClient`, `useCursorStatus`, `useCursorPresence`, `useCursorContext`, `useRemoteCursors`, `useRemoteCursorsSelector`, `useRemoteUsers`), and the optional `CursorLayer`/`DefaultCursor` pair. Each new adapter exposes the same shape in its framework's idiom:
+`@anchor-presence/react` exports a provider component, `usePresenceClient`, read hooks (`usePresenceClient`, `usePresenceStatus`, `useCursorPresence`, `useCursorContext`, `useRemoteCursors`, `useRemoteCursorsSelector`, `useRemoteUsers`), and the optional `CursorLayer`/`DefaultCursor` pair. Each new adapter exposes the same shape in its framework's idiom:
 
-- **Solid** (`@anchor-presence/solid`): a `LiveCursorProvider` component using Solid context, `createPresenceClient` factory hook (`createPresenceClientResource` or similar, mirroring `usePresenceClient`'s once-per-key creation), and signal-returning primitives for each `react` hook (`useCursorClient`, `useCursorStatus`, `useRemoteCursors`, and so on, returning Solid signals instead of React state). An optional `CursorLayer` built on `<For>`.
-- **Vue** (`@anchor-presence/vue`): a `LiveCursorProvider` component (or a plugin plus `provide`/`inject`), a composable mirroring `usePresenceClient`, and a composable per `react` hook returning `Ref`/`computed` values (`useCursorClient`, `useCursorStatus`, `useRemoteCursors`, and so on). An optional `CursorLayer` built on `v-for`.
+- **Solid** (`@anchor-presence/solid`): a `PresenceProvider` component using Solid context, `createPresenceClient` factory hook (`createPresenceClientResource` or similar, mirroring `usePresenceClient`'s once-per-key creation), and signal-returning primitives for each `react` hook (`usePresenceClient`, `usePresenceStatus`, `useRemoteCursors`, and so on, returning Solid signals instead of React state). An optional `CursorLayer` built on `<For>`.
+- **Vue** (`@anchor-presence/vue`): a `PresenceProvider` component (or a plugin plus `provide`/`inject`), a composable mirroring `usePresenceClient`, and a composable per `react` hook returning `Ref`/`computed` values (`usePresenceClient`, `usePresenceStatus`, `useRemoteCursors`, and so on). An optional `CursorLayer` built on `v-for`.
 
 Both packages re-export the `core` and `dom` types their own signatures use, the way `packages/react/src/index.ts` does, and both ship `test/public-api.test.ts` pinning their exports, per [Package boundaries](https://github.com/DammersCode/anchor-presence/blob/main/AGENTS.md).
 

@@ -12,12 +12,12 @@ Install the adapter and the two packages that it uses:
 bun add @anchor-presence/react @anchor-presence/dom @anchor-presence/core
 ```
 
-The samples connect to the Bun relay of the [quick start](https://anchor-presence.vercel.app/docs/get-started/quick-start#connect-a-relay), on port 8788. This app creates the client in the provider `factory` and renders the remote cursors:
+The first sample uses the provider of `@anchor-presence/react`. The samples connect to the Bun relay of the [quick start](https://anchor-presence.vercel.app/docs/get-started/quick-start#connect-a-relay), on port 8788. This app creates the client in the provider `factory` and renders the remote cursors:
 
 ```tsx
 import { createPresenceClient } from "@anchor-presence/core";
 import { createWebSocketTransport } from "@anchor-presence/dom";
-import { CursorLayer, LiveCursorProvider } from "@anchor-presence/react";
+import { CursorLayer, PresenceProvider } from "@anchor-presence/react";
 
 function DashboardButton() {
   return <button data-anchor="nav.dashboard">Dashboard</button>;
@@ -25,7 +25,7 @@ function DashboardButton() {
 
 function App() {
   return (
-    <LiveCursorProvider
+    <PresenceProvider
       factory={() => {
         const transport = createWebSocketTransport({ port: 8788, path: "/?room=main" });
         return createPresenceClient({ transport });
@@ -33,7 +33,7 @@ function App() {
     >
       <DashboardButton />
       <CursorLayer />
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }
 ```
@@ -48,26 +48,26 @@ The package exports these hooks and components:
 
 | Hook or component                            | What it does                                                                                                                      |
 | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `LiveCursorProvider`                         | Creates the client through `factory` or accepts one through `client`, and provides it with its `DomBinding` to the component tree |
+| `PresenceProvider`                           | Creates the client through `factory` or accepts one through `client`, and provides it with its `DomBinding` to the component tree |
 | `useRemoteUsers()`                           | One entry per peer (another client in the same room): `clientId`, `user`, `session`, and `idle`                                   |
 | `useRemoteCursors()`                         | Resolved cursor snapshot for rendering                                                                                            |
 | `useRemoteCursorsSelector(select, isEqual?)` | A derived value that rerenders only when it changes                                                                               |
 | `useRemotePresence()`                        | Raw remote presence list, stable per peer (without `sequence`)                                                                    |
-| `useCursorStatus()`                          | Connection status                                                                                                                 |
-| `useCursorClient()`                          | The `PresenceClient` of the provider                                                                                              |
-| `useCursorBinding()`                         | The `DomBinding` of the provider, for example to call `invalidate()`                                                              |
+| `usePresenceStatus()`                        | Connection status                                                                                                                 |
+| `usePresenceClient()`                        | The `PresenceClient` of the provider                                                                                              |
+| `useDomBinding()`                            | The `DomBinding` of the provider, for example to call `invalidate()`                                                              |
 | `useLocalContext()`                          | `[context, setContext]`                                                                                                           |
 | `useLocalUser()`                             | `[user, setUser]` for the local user value                                                                                        |
-| `useCursorEvents(listener)`                  | Calls `listener` for each one-shot event from a peer                                                                              |
+| `useRemoteEvents(listener)`                  | Calls `listener` for each one-shot event from a peer                                                                              |
 | `usePeerChanges(listener)`                   | Calls `listener` when a peer joins, leaves, or changes its `user` or `context`                                                    |
-| `useSendEvent<TEvents>()`                    | A function that sends one-shot events of the event map `TEvents`                                                                  |
-| `createPresenceHooks()`                      | Returns the provider and every hook with your context, user, and event types fixed                                                |
+| `useSendEvent()`                             | A function that sends one-shot events                                                                                             |
+| `createPresenceHooks()`                      | Returns a provider, every hook, and a `CursorLayer` with your context, user, and event types fixed                                |
 | `CursorLayer`                                | Optional component that renders every visible remote cursor                                                                       |
 | `DefaultCursor`                              | Optional neutral cursor visual, used by `CursorLayer` by default                                                                  |
 
 ## Hooks and render cost
 
-Every hook rerenders its component only when the value that it returns changes. Pick the hook that matches the value that you need.
+A hook rerenders its component when the value that it returns changes, or when the provider value changes. `useSendEvent`, `usePresenceClient`, and `useDomBinding` rerender on any change of the provider value. Pick the hook that matches the value that you need.
 
 | Hook                                         | Rerenders when                                                                                           |
 | -------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
@@ -75,20 +75,20 @@ Every hook rerenders its component only when the value that it returns changes. 
 | `useRemoteCursorsSelector(select, isEqual?)` | only when the `select` output changes under `isEqual`                                                    |
 | `useRemoteUsers()`                           | only when the set of peers, or the `user`, `session`, or `idle` field of one peer, changes               |
 | `useRemotePresence()`                        | only when the `cursor`, `context`, `user`, `pointer`, `session`, `idle`, or membership of a peer changes |
-| `useCursorStatus()`                          | only when the connection status changes                                                                  |
+| `usePresenceStatus()`                        | only when the connection status changes                                                                  |
 | `useLocalContext()`                          | only when the local context value changes                                                                |
 | `useLocalUser()`                             | only when the local user value changes                                                                   |
 
 Two more rules apply:
 
-- An idle room costs nothing: no inbound messages, no rerenders.
+- A heartbeat that changes no field causes no rerender. A peer that turns idle or expires does cause one.
 - A message that only advances `sequence` does not rerender `useRemotePresence` consumers. `sequence` is a wire-level ordering field and is not part of the stable snapshot. To read each `sequence` value, call `client.getRemoteSnapshot()` inside a `client.subscribeRemote()` callback.
 
 `useRemoteCursors` rerenders every frame while cursors move. If your component needs less than the full snapshot, derive a smaller value with `useRemoteCursorsSelector`.
 
 ## Client lifecycle
 
-Pass `LiveCursorProvider` a `factory`. The provider runs it once per mount, in an effect, and disposes the client that it created on unmount. It runs the factory only in the browser, so a server render creates no client. In development, React Strict Mode mounts the provider twice. The provider then creates two clients in sequence and disposes the first, so one live client remains. Before the effect runs, the provider renders its children with a `null` client, and every hook returns its server-safe value.
+Pass `PresenceProvider` a `factory`. The provider runs it once per mount, in an effect, and disposes the client that it created on unmount. It runs the factory only in the browser, so a server render creates no client. In development, React Strict Mode mounts the provider twice. The provider then creates two clients in sequence and disposes the first, so one live client remains. Before the effect runs, the provider renders its children with a `null` client, and every hook returns its server-safe value.
 
 The sample in [Install](#install) creates the client in the factory.
 
@@ -109,20 +109,23 @@ function OnlineBar() {
 }
 ```
 
-`user` is the `TUser` value that each peer passed to `createPresenceClient`. Without `getLabel`, `CursorLayer` shows `user.name` when it is a string that is not empty. Without `getColor`, it picks one color per `clientId` from a palette of 8 colors. Check `user` before you render it.
+`user` is the value that each peer passed to `createPresenceClient`, and it has the type `unknown` because a peer can send any value. This sample needs the provider of `@anchor-presence/react`. For a typed `user`, use the hooks of `createPresenceHooks` with the provider of the same call. Without `getLabel`, `CursorLayer` shows `user.name` when it is a string that is not empty. Without `getColor`, it picks one color per `clientId` from a palette of 8 colors. Check `user` before you render it.
 
 ## CursorLayer
 
-`CursorLayer` is optional. It renders every visible remote cursor. You can style it with the props `getLabel`, `getColor`, `filterCursor`, and `getCursorProps`. You can replace its contents with `renderCursor`. This sample uses every prop:
+`CursorLayer` is optional. It renders every visible remote cursor. You can style it with the props `getLabel`, `getColor`, `filterCursor`, and `getCursorProps`. You can replace its contents with `renderCursor`. This sample uses every prop. It takes `CursorLayer` from a `./presence` module that calls [`createPresenceHooks`](https://anchor-presence.vercel.app/docs/react/typed-hooks#usage) one time, so the app must use the `PresenceProvider` of that module:
 
 ```tsx
-type MyContext = { pageId: string };
-type MyUser = { name: string; color?: string };
+import { CursorLayer } from "./presence";
+
 declare function MyCursorGlyph(props: { color: string; children: React.ReactNode }): React.JSX.Element;
 
-<CursorLayer<MyContext, MyUser>
+const safeColor = (color?: string) =>
+  color !== undefined && /^#[0-9a-f]{6}$/iu.test(color) ? color : "#6b7280";
+
+<CursorLayer
   getLabel={(cursor) => cursor.user?.name ?? "Guest"}
-  getColor={(cursor) => cursor.user?.color ?? "#6b7280"}
+  getColor={(cursor) => safeColor(cursor.user?.color)}
   filterCursor={(cursor) => cursor.tier !== "viewport"}
   getCursorProps={() => ({ className: "my-cursor" })}
   renderCursor={({ label, color }) => <MyCursorGlyph color={color}>{label}</MyCursorGlyph>}

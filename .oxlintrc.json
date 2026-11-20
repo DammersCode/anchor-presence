@@ -61,6 +61,7 @@
     "examples/**",
     "apps/**",
     "e2e/**",
+    "plans/research/**",
     "test-results/**",
     ".claude/**"
   ],

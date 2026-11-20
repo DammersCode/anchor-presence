@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { useLocalContext } from "@anchor-presence/react";
-import { useCursorBinding } from "./cursors/hooks";
+import { useDomBinding, useLocalContext } from "./cursors/hooks";
 import { Sidebar } from "./components/dashboard/sidebar";
 import { Topbar } from "./components/dashboard/topbar";
 import { SettingsDialog } from "./components/dashboard/settings-dialog";
@@ -9,7 +8,6 @@ import { WhoIsOnline } from "./components/who-is-online";
 import { LiveReactions } from "./components/live-reactions";
 import { localRoom, localUserName } from "./cursors/setup";
 import type { LocalViewState } from "./cursors/visibility-policy";
-import type { DemoContext } from "./cursors/setup";
 import { usePageRoute, isPageId } from "./use-page-route";
 import { DashboardPage } from "./pages/dashboard-page";
 import { OrdersPage } from "./pages/orders-page";
@@ -27,8 +25,8 @@ export default function App({ localViewState, interpolatorStyle, onInterpolatorS
   const [collapsed, setCollapsed] = useState(false);
   const [page, navigate] = usePageRoute();
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [, setContext] = useLocalContext<DemoContext>();
-  const binding = useCursorBinding();
+  const [, setContext] = useLocalContext();
+  const binding = useDomBinding();
 
   // Single writer for both the published context and the local state the visibility policy reads.
   useEffect(() => {

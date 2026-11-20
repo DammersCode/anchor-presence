@@ -3,19 +3,17 @@ import { createRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import { createPresenceClient } from "@anchor-presence/core";
-import type { LiveCursorTransport } from "@anchor-presence/core";
-import { LiveCursorProvider } from "../src/provider";
+import type { PresenceTransport } from "@anchor-presence/core";
+import { PresenceProvider } from "../src/provider";
 import { useRemoteUsers } from "../src/hooks";
 import type { RemoteUser } from "../src/hooks";
 import { makeFakeBinding, makeFakeClient } from "./test-utils";
 
-type TestUser = { name: string };
-
-function makePeerPair(): { transportA: LiveCursorTransport; transportB: LiveCursorTransport } {
+function makePeerPair(): { transportA: PresenceTransport; transportB: PresenceTransport } {
   const aListeners = new Set<(data: Uint8Array) => void>();
   const bListeners = new Set<(data: Uint8Array) => void>();
 
-  const transportA: LiveCursorTransport = {
+  const transportA: PresenceTransport = {
     // 2-peer relay: each side's bytes go to the other peer's subscribers only
     send: (data) => {
       for (const listener of bListeners) listener(data);
@@ -26,7 +24,7 @@ function makePeerPair(): { transportA: LiveCursorTransport; transportB: LiveCurs
     },
   };
 
-  const transportB: LiveCursorTransport = {
+  const transportB: PresenceTransport = {
     send: (data) => {
       for (const listener of aListeners) listener(data);
     },
@@ -52,19 +50,19 @@ describe("useRemoteUsers", () => {
   });
 
   it("projects one entry per remote client with clientId, session, and user", () => {
-    const { client, pushRemote } = makeFakeClient<unknown, TestUser>();
-    const seen: RemoteUser<TestUser>[][] = [];
+    const { client, pushRemote } = makeFakeClient();
+    const seen: (readonly RemoteUser[])[] = [];
     function Probe() {
-      seen.push(useRemoteUsers<TestUser>());
+      seen.push(useRemoteUsers());
       return null;
     }
     const root = createRoot(container);
 
     act(() => {
       root.render(
-        <LiveCursorProvider client={client} binding={makeFakeBinding().binding}>
+        <PresenceProvider client={client} binding={makeFakeBinding().binding}>
           <Probe />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
     expect(seen.at(-1)).toEqual([]);
@@ -86,19 +84,19 @@ describe("useRemoteUsers", () => {
   });
 
   it("carries the idle flag from the presence snapshot", () => {
-    const { client, pushRemote } = makeFakeClient<unknown, TestUser>();
-    const seen: RemoteUser<TestUser>[][] = [];
+    const { client, pushRemote } = makeFakeClient();
+    const seen: (readonly RemoteUser[])[] = [];
     function Probe() {
-      seen.push(useRemoteUsers<TestUser>());
+      seen.push(useRemoteUsers());
       return null;
     }
     const root = createRoot(container);
 
     act(() => {
       root.render(
-        <LiveCursorProvider client={client} binding={makeFakeBinding().binding}>
+        <PresenceProvider client={client} binding={makeFakeBinding().binding}>
           <Probe />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
 
@@ -112,10 +110,10 @@ describe("useRemoteUsers", () => {
   });
 
   it("keeps entry and list identity across a presence update that changes only cursor position", () => {
-    const { client, pushRemote } = makeFakeClient<unknown, TestUser>();
-    const seen: RemoteUser<TestUser>[][] = [];
+    const { client, pushRemote } = makeFakeClient();
+    const seen: (readonly RemoteUser[])[] = [];
     function Probe() {
-      seen.push(useRemoteUsers<TestUser>());
+      seen.push(useRemoteUsers());
       return null;
     }
     const root = createRoot(container);
@@ -124,9 +122,9 @@ describe("useRemoteUsers", () => {
 
     act(() => {
       root.render(
-        <LiveCursorProvider client={client} binding={makeFakeBinding().binding}>
+        <PresenceProvider client={client} binding={makeFakeBinding().binding}>
           <Probe />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
 
@@ -166,10 +164,10 @@ describe("useRemoteUsers", () => {
   });
 
   it("gives a changed client a new entry while an unrelated client keeps identity", () => {
-    const { client, pushRemote } = makeFakeClient<unknown, TestUser>();
-    const seen: RemoteUser<TestUser>[][] = [];
+    const { client, pushRemote } = makeFakeClient();
+    const seen: (readonly RemoteUser[])[] = [];
     function Probe() {
-      seen.push(useRemoteUsers<TestUser>());
+      seen.push(useRemoteUsers());
       return null;
     }
     const root = createRoot(container);
@@ -177,9 +175,9 @@ describe("useRemoteUsers", () => {
 
     act(() => {
       root.render(
-        <LiveCursorProvider client={client} binding={makeFakeBinding().binding}>
+        <PresenceProvider client={client} binding={makeFakeBinding().binding}>
           <Probe />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
 
@@ -212,7 +210,7 @@ describe("useRemoteUsers", () => {
     const { transportA, transportB } = makePeerPair();
     const clientA = createPresenceClient({ transport: transportA, clientId: "A" });
     const clientB = createPresenceClient({ transport: transportB, clientId: "B", publishIntervalMs: 50 });
-    const seen: RemoteUser[][] = [];
+    const seen: (readonly RemoteUser[])[] = [];
     function Probe() {
       const users = useRemoteUsers();
       seen.push(users);
@@ -222,9 +220,9 @@ describe("useRemoteUsers", () => {
 
     act(() => {
       root.render(
-        <LiveCursorProvider client={clientA} binding={makeFakeBinding().binding}>
+        <PresenceProvider client={clientA} binding={makeFakeBinding().binding}>
           <Probe />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       );
     });
     expect(container.querySelector("[data-testid=count]")?.textContent).toBe("0");
@@ -246,7 +244,7 @@ describe("useRemoteUsers", () => {
   });
 
   it("returns an empty list without a provider (server snapshot)", () => {
-    const seen: RemoteUser[][] = [];
+    const seen: (readonly RemoteUser[])[] = [];
     function Probe() {
       seen.push(useRemoteUsers());
       return null;

@@ -69,7 +69,7 @@ type CursorPosition = {
   viewport?: { u: number; v: number }; // normalized viewport fallback
 };
 
-type CursorPresence<TContext = unknown, TUser = unknown> = {
+type PresenceMessage<TContext = unknown, TUser = unknown> = {
   version: 1;
   clientId: string; // identifies a client INSTANCE (tab/connection), not a user
   session: string; // random per client instance, generated at client creation
@@ -128,7 +128,7 @@ The store records `lastSeenAt` (local receive time) per remote client. A sweep r
 ```ts
 type ConnectionStatus = "connecting" | "connected" | "reconnecting" | "disconnected";
 
-interface LiveCursorTransport {
+interface PresenceTransport {
   connect?(): Promise<void> | void;
   disconnect?(): Promise<void> | void;
   send(data: Uint8Array): Promise<void> | void;
@@ -146,8 +146,8 @@ A transport that implements `subscribeStatus` SHOULD replay its current status t
 ## 6. Codec Abstraction
 
 ```ts
-interface CursorCodec {
-  encode(message: CursorPresence): Uint8Array;
+interface PresenceCodec {
+  encode(message: PresenceMessage): Uint8Array;
   decode(data: Uint8Array): unknown; // validated afterwards by core
 }
 ```
@@ -285,7 +285,7 @@ type ResolvedCursor<TContext, TUser> = {
 
 ```ts
 type VisibilityPolicy<TContext> = (input: {
-  presence: CursorPresence<TContext>;
+  presence: PresenceMessage<TContext>;
   resolution: { tier: "anchor" | "viewport" | "hidden"; anchorId: string | null; pointVisible: boolean };
 }) => "show" | "hide";
 ```
@@ -356,9 +356,9 @@ The resolver keeps one interpolator instance per remote `clientId` and prunes it
 ## 14. React Adapter
 
 ```tsx
-<LiveCursorProvider factory={createClient} client={client}>
+<PresenceProvider factory={createClient} client={client}>
   ...
-</LiveCursorProvider>
+</PresenceProvider>
 ```
 
 The provider runs `factory` once per mount, in an effect, and disposes the client it created on unmount. A `client` prop is bring-your-own and wins over `factory`; it is never disposed by the provider. Before the effect runs (and on the server) the tree sees a `null` client.
@@ -370,9 +370,9 @@ Hooks:
 | `useRemoteUsers()`                           | one entry per remote client: `clientId`, `user`, and `session` |
 | `useRemoteCursors()`                         | `ResolvedCursor[]` snapshot (useSyncExternalStore)             |
 | `useRemoteCursorsSelector(select, isEqual?)` | a value derived from the snapshot, recomputed per frame        |
-| `useRemotePresence()`                        | raw remote `CursorPresence[]`                                  |
-| `useCursorStatus()`                          | `ConnectionStatus`                                             |
-| `useCursorClient()`                          | the client instance                                            |
+| `useRemotePresence()`                        | raw remote `PresenceMessage[]`                                 |
+| `usePresenceStatus()`                        | `ConnectionStatus`                                             |
+| `usePresenceClient()`                        | the client instance                                            |
 | `useLocalContext()`                          | `[context, setContext]`                                        |
 
 Anchors are declared in the DOM with the binding's anchor attribute. Cursor movement updates flow only to components using `useRemoteCursors`; the provider never rerenders the app tree per cursor frame.
@@ -406,7 +406,7 @@ If `renderCursor` is absent, the root renders `DefaultCursor`. If `renderCursor`
 
 `DefaultCursor` has no Tailwind dependency and no external stylesheet. It renders a small neutral SVG pointer, `20px` by default, in `#6b7280`, with no label when `label` is `null` or `undefined`. Three CSS custom properties override its visual: `--anchor-presence-cursor-color`, `--anchor-presence-cursor-size`, `--anchor-presence-cursor-label-color`. An explicit CSS variable takes precedence over the `color` prop.
 
-Visual configuration lives on `CursorLayer` props only. `LiveCursorProvider` never gains rendering configuration.
+Visual configuration lives on `CursorLayer` props only. `PresenceProvider` never gains rendering configuration.
 
 ## 15. Demo
 

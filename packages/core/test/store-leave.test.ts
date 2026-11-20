@@ -1,8 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { RemotePresenceStore } from "../src/store";
-import type { CursorPresence } from "../src/protocol";
+import type { PresenceMessage } from "../src/protocol";
 
-function presence(overrides: Partial<CursorPresence> = {}): CursorPresence {
+function presence(overrides: Partial<PresenceMessage> = {}): PresenceMessage {
   return {
     version: 1,
     clientId: "client-1",
@@ -22,6 +22,15 @@ describe("RemotePresenceStore leave and peer data", () => {
     expect(store.getSnapshot()).toHaveLength(1);
     expect(store.ingest(presence({ sequence: 6, leave: true, cursor: null }))).toBe(true);
     expect(store.getSnapshot()).toHaveLength(0);
+  });
+
+  it("does not call a peer listener after it unsubscribes", () => {
+    const store = new RemotePresenceStore();
+    const listener = vi.fn();
+    const unsubscribe = store.subscribePeers(listener);
+    unsubscribe();
+    store.ingest(presence({ sequence: 0 }));
+    expect(listener).not.toHaveBeenCalled();
   });
 
   it("reports user and context in a peer change, and the last values on leave", () => {

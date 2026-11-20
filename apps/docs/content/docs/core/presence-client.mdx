@@ -6,7 +6,7 @@ icon: radio
 
 import { Cable, Code, ShieldCheck, Users, Zap } from "lucide-react";
 
-`createPresenceClient` builds a `PresenceClient`. The client publishes your local cursor on a timer, and it checks and stores the presence of each peer. A peer is another client in the same room. Create one client for each connection to a room.
+`createPresenceClient` builds a `PresenceClient`. The client publishes your local cursor on a timer, and it checks and stores the presence of each peer. Create one client for each connection to a room.
 
 The client also sends and receives events: one-shot messages to every peer, for example a reaction. See [Events](/docs/core/events).
 
@@ -27,22 +27,22 @@ client.dispose();
 
 `transport` is the only required option. See [Transports](/docs/core/transports) for the transport contract, and [Codecs](/docs/core/codecs) for the `codec` option. [`PresenceClientOptions`](/docs/core/api/client#createpresenceclient) lists every option with its default.
 
-`createPresenceClient` throws a `TypeError` when a numeric option is not a finite number. See [createPresenceClient](/docs/core/api/client#createpresenceclient) for the list.
+`createPresenceClient` throws a `TypeError` for an invalid option. See [createPresenceClient](/docs/core/api/client#createpresenceclient) for the list.
 
 ## Connect the transport
 
 The `autoConnect` option decides who calls `transport.connect()`:
 
-<Tabs items={["autoConnect: true (default)", "autoConnect: false"]}>
-  <Tab value="autoConnect: true (default)">
+<Tabs items={["autoConnect on", "autoConnect off"]}>
+  <Tab value="autoConnect on">
     The client calls `transport.connect()` one time, during creation. It subscribes to the messages and the status of the transport first, so it misses no inbound message and no status change.
   </Tab>
-  <Tab value="autoConnect: false">
+  <Tab value="autoConnect off">
     You call `connect()` yourself, before or right after you create the client:
 
 ```ts
 const client = createPresenceClient({ transport: myTransport, autoConnect: false });
-myTransport.connect();
+myTransport.connect?.();
 ```
 
   </Tab>
@@ -63,7 +63,7 @@ A transport with no `connect` method needs no call in either mode. A `connect()`
 
 `client.subscribeContext(listener)` calls `listener` on each `setContext` call that changes the value. `client.subscribeUser(listener)` does the same for `setUser`. A call changes the value when `value` is another reference than the current value. The listener receives no argument, so read the value with `getContext()` or `getUser()`. Both methods return a function that removes the listener. The [`useLocalContext`](/docs/react/local-context) and [`useLocalUser`](/docs/react/local-context#local-user) hooks use them.
 
-`client.dispose()` stops the client. It sends a leave message, if the client is connected, and stops every timer. Then it calls `transport.disconnect()` when the transport has one. A disposed client ignores every later call. Create a new client instead.
+`client.dispose()` stops the client. It sends a leave message, if the client is connected, and stops every timer. Then it calls `transport.disconnect()` when the transport has one. `client.dispose()` also sends a final `"disconnected"` to the `subscribeStatus` listeners, also when the transport has no `subscribeStatus`. A disposed client ignores every later call. Create a new client instead.
 
 `client.registerTeardown(fn)` adds a function that `dispose` runs. It returns a function that removes `fn`. If the client is already disposed, `fn` runs at once. The DOM binding uses it, so that `client.dispose()` also stops the binding.
 
@@ -146,8 +146,9 @@ const client = createPresenceClient({
 </Callout>
 
 <Callout type="warn">
-  If `idFactory` returns IDs longer than 64 characters, receivers drop every message of the client. The
-  default limits allow 128 characters for `clientId` and 64 for `session`.
+  A `clientId` must have 1 to 128 characters by default (`validationLimits.maxClientIdLength`), and a session
+  ID 1 to 64 by default (`validationLimits.maxSessionLength`). See the [list of `TypeError`
+  cases](/docs/core/api/client#createpresenceclient).
 </Callout>
 
 ## Development mode
@@ -166,7 +167,7 @@ import { isDevMode } from "@anchor-presence/core";
 if (isDevMode()) console.debug("[presence] debug overlay on");
 ```
 
-The client reads development mode one time, at creation. In development mode, it writes console warnings that start with `[anchor-presence]`. A receiver drops a bad message or field without a warning in production.
+Most warnings of the client read development mode one time, at creation. In development mode, it writes console warnings that start with `[anchor-presence]`. A receiver drops a bad message or field without a warning in production. The one exception is `parserFrom`, which warns once about an async schema in every mode.
 
 <Accordions>
   <Accordion title="Warnings of the client">
@@ -174,14 +175,14 @@ The client reads development mode one time, at creation. In development mode, it
     - An outbound `context`, `user`, or whole message breaks the size limit. The client checks at creation and on each `setContext` or `setUser` call that changes the value. It warns on each check that finds a value over the limit.
     - A remote `user` or `context` arrives and no check applies. The client warns one time.
     - The shape check drops a remote `user` or `context`. The warning names `parseUser` or `parseContext`. The client warns one time for `user` and one time for `context`.
-    - The shape check keeps a remote `user` or `context`, but drops a key that the local value does not have, for example a nested object. The page warns one time, for all clients together.
+    - The shape check keeps a remote `user` or `context`, but drops a key that the local value does not have, for example a nested object. The client warns one time per page.
     - The store is full and drops a new peer. The client warns one time.
     - The client drops an inbound message because it is too large, does not decode or validate, or a subscriber throws. The client warns one time for each reason.
-    - Another client uses the same `clientId`. The page warns one time, for all clients together.
-    - `staleTimeoutMs` is at most twice `heartbeatIntervalMs`, so a quiet peer expires between two heartbeats. The page warns one time, for all clients together.
-    - The codec cannot encode the `user` or `context`. The client encodes again without `context`, then without `user`, then without both, and sends the first message that encodes. The page warns one time.
+    - Another client uses the same `clientId`. The client warns one time per page.
+    - `staleTimeoutMs` is at most twice `heartbeatIntervalMs`, also when `staleTimeoutMs` has its default value, so a quiet peer expires between two heartbeats. The client warns one time per page.
+    - The codec cannot encode the `user` or `context`. The client encodes again without `context`, then without `user`, then without both, and sends the first message that encodes. The client warns one time.
     - A message fails to encode or to send for another reason. The client warns one time.
-    - A `subscribeContext`, `subscribeUser`, `subscribeRemote`, or `subscribePeers` listener throws. The client writes the error with `console.error` and calls the other listeners. A throwing `subscribeEvents` listener gives no output.
+    - A `subscribeContext`, `subscribeUser`, `subscribeRemote`, or `subscribePeers` listener throws. The client writes the error with `console.error` and calls the other listeners. A throwing `subscribeEvents` or `subscribeStatus` listener gives no output.
 
   </Accordion>
 

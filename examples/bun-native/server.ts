@@ -8,8 +8,10 @@ import {
   RateLimiter,
   INVALID_ROOM_CODE,
   bindIdentity,
+  UNBINDABLE_FRAME_CLOSE,
   newConnectionId,
   parseRoom,
+  parseToken,
   type AuthIdentity,
   safeAuthCheck,
   tokenAuthCheck,
@@ -25,7 +27,7 @@ export type BunRelayOptions = {
   /** Seconds without a message or a pong before Bun closes the socket. Bun sends a ping before it closes. */
   idleTimeoutSeconds?: number;
   allowedOrigins?: Set<string>;
-  /** Auth hook placeholder: verify a token query param. Default accepts every token. */
+  /** Auth hook. Default: the `RELAY_AUTH_TOKEN` check, which admits everyone when the variable is unset. */
   authCheck?: AuthCheck;
 };
 
@@ -76,19 +78,23 @@ export function createBunRelay(port: number, options: BunRelayOptions = {}) {
       }
       if (url.pathname !== "/")
         return new Response("Not found: rooms come from the room query parameter", { status: 404 });
-      const parsedRoom = parseRoom(url.searchParams.get("room"));
+      if (req.headers.get("upgrade")?.toLowerCase() !== "websocket")
+        return new Response("WebSocket relay: upgrade required", { status: 426 });
+      const parsedRoom = parseRoom(url.searchParams.getAll("room"));
       const room = parsedRoom ?? "main";
       const origin = req.headers.get("origin") ?? "";
       // origin and room are checked before the hook runs, so a refused request never drives an expensive hook
       const preChecked = originAllowed(allowedOrigins, origin) && parsedRoom !== null;
-      const authOk = preChecked
-        ? await authCheck({
-            token: url.searchParams.get("token") ?? "",
-            room,
-            origin,
-            headers: Object.fromEntries(req.headers),
-          })
-        : false;
+      const token = parseToken(url.searchParams.getAll("token"));
+      const authOk =
+        preChecked && token !== null
+          ? await authCheck({
+              token,
+              room,
+              origin,
+              headers: Object.fromEntries(req.headers),
+            })
+          : false;
       if (
         srv.upgrade(req, {
           data: {
@@ -140,7 +146,10 @@ export function createBunRelay(port: number, options: BunRelayOptions = {}) {
         let outgoing: string | Uint8Array | Buffer = message;
         if (ws.data.identity !== undefined) {
           const bound = bindIdentity(message, ws.data.identity, ws.data.connectionId);
-          if (bound === null) return;
+          if (bound === null) {
+            ws.close(UNBINDABLE_FRAME_CLOSE.code, UNBINDABLE_FRAME_CLOSE.reason);
+            return;
+          }
           outgoing = bound;
         }
         // ws.publish (not server.publish) excludes the sender from the topic fan-out.

@@ -4,9 +4,17 @@ description: The agent skill that scores a running app for cursor-jump risk betw
 icon: scan-search
 ---
 
-import { BookOpen, LayoutGrid, Plug, Ruler } from "lucide-react";
+import { LayoutGrid, Plug, LayoutDashboard, Scaling } from "lucide-react";
 
 The layout audit skill measures how far a remote cursor can jump when the layout of your app changes. Examples are a sidebar that collapses, a table that becomes cards, and a breakpoint that reflows a grid. To use it, install the skill and ask your agent to audit your layouts. The agent opens your running app in a real browser. It gives back a score for each view pair, with concrete fixes.
+
+To install only this skill, run:
+
+```sh
+npx skills add DammersCode/anchor-presence --skill anchor-presence-audit
+```
+
+See [Install](/docs/skills#install) for both skills.
 
 ## What it does
 
@@ -26,12 +34,13 @@ If a pair scores moderate or high, the agent proposes fixes with the file and li
 
 ## Prerequisites
 
-| Requirement            | Detail                                                                                                           |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Running app            | A local or deployed URL that answers with HTTP 200.                                                              |
-| Playwright             | The skill checks for Playwright. If it is missing, the skill gives the install command for your package manager. |
-| Node                   | Version 20 or later.                                                                                             |
-| Anchors already placed | The audit measures the anchors that your app already has. If your app has none, run the integration skill first. |
+| Requirement            | Detail                                                                                                                          |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Running app            | A local or deployed URL that answers with HTTP 200.                                                                             |
+| Playwright             | The skill checks for Playwright. If it is missing, the skill gives the install command for your package manager.                |
+| Node                   | Version 20 or later.                                                                                                            |
+| Browser                | Playwright's Chromium. If Playwright has no browser, set `ANCHOR_AUDIT_BROWSER` to the path of a Chrome or Chromium executable. |
+| Anchors already placed | The audit measures the anchors that your app already has. If your app has none, run the integration skill first.                |
 
 ## What it asks you
 
@@ -46,8 +55,9 @@ If a pair scores moderate or high, the agent proposes fixes with the file and li
 
 <Steps>
   <Step>
-    **Scan.** The agent finds every `data-anchor` in your code and the routes that render them. It also finds
-    your breakpoints and the toggles that change which anchors show or where they sit.
+    **Scan.** The `scan.mjs` script lists every `data-anchor` in your code and the routes that render them. It
+    also lists your breakpoints, the toggles that change which anchors show, and the code patterns that reflow
+    a layout. The agent checks the list against the code.
   </Step>
   <Step>
     **Propose a matrix.** It builds views from routes, viewport widths, and states. The widths are a base set
@@ -73,26 +83,26 @@ If a pair scores moderate or high, the agent proposes fixes with the file and li
 
 ## Output formats
 
-| Format      | Content                                                                                   | Rough chat cost                                                |
-| ----------- | ----------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| `table`     | One row per view pair (top 15): total, band, five sub-scores                              | About 40 tokens per row, 600 for 15 rows                       |
-| `markdown`  | A file: the score table, then per pair the inputs, largest jumps, gaps, shapes, fallbacks | About 30 tokens for the path. The script prints the file size. |
-| `mermaid`   | A file: bar charts of total and jump distance per pair, plus fallback-chain flowcharts    | About 30 tokens for the path                                   |
-| Combination | `table,markdown`, `markdown,mermaid`, or `all`                                            | The sum of the parts. The files merge into one file.           |
+| Format      | Content                                                                                                                    | Rough chat cost                                                     |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `table`     | One row per view pair (top 15): total, band, five sub-scores                                                               | About 40 tokens per row, 600 for 15 rows                            |
+| `markdown`  | A file: the score table, then per pair the inputs, largest jumps, gaps, shapes, fallbacks                                  | About 30 tokens for the path. The script prints the size in tokens. |
+| `mermaid`   | A file: bar charts of total and jump distance for the top 20 pairs, each with a data table, plus fallback-chain flowcharts | About 30 tokens for the path                                        |
+| Combination | `table,markdown`, `markdown,mermaid`, or `all`                                                                             | The sum of the parts. The files merge into one file.                |
 
 ## Score bands
 
 Each sub-score goes from 0 to 100. It is 0 at or below the first value, 100 at or above the second, and linear in between:
 
-| Sub-score | Weight | What it measures                                                         | 0 at        | 100 at                          |
-| --------- | :----: | ------------------------------------------------------------------------ | ----------- | ------------------------------- |
-| Jump      |  35%   | How far apart two neighboring anchors land in the other view (90th pct.) | 40 px       | 240 px                          |
-| Gap       |  25%   | Share of a container where the pointer has no anchored parent            | 5%          | 40%                             |
-| Depth     |  15%   | How many levels an anchor falls back in the other view                   | 0           | `maxAnchors` levels (default 4) |
-| Aspect    |  15%   | How much an anchor's width-to-height ratio changes (90th pct.)           | 1.3 × ratio | 3 × ratio                       |
-| Parity    |  10%   | Share of anchor IDs that exist in one view only                          | 0%          | 100%                            |
+| Sub-score | Weight | What it measures                                                               | 0 at        | 100 at                          |
+| --------- | :----: | ------------------------------------------------------------------------------ | ----------- | ------------------------------- |
+| Jump      |  35%   | How far apart two neighboring anchors land in the other view (90th percentile) | 40 px       | 240 px                          |
+| Gap       |  25%   | Share of a container where the pointer has no anchored parent                  | 5%          | 40%                             |
+| Depth     |  15%   | How many levels an anchor falls back in the other view                         | 0           | `maxAnchors` levels (default 4) |
+| Aspect    |  15%   | How much an anchor's width-to-height ratio changes (90th percentile)           | 1.3 × ratio | 3 × ratio                       |
+| Parity    |  10%   | Share of anchor IDs that exist in one view only                                | 0%          | 100%                            |
 
-`maxAnchors` is the audit config value for the length of the anchor chain that the app's binding sends. At depth `maxAnchors`, the anchor falls back to the viewport.
+`maxAnchors` is the audit config key for the length of the anchor chain that the app's binding sends. Set it to the `maxSentAnchors` option of your binding. At depth `maxAnchors`, the anchor falls back to the viewport.
 
 By default, Jump measures in CSS pixels. You can set `"jumpScale": "viewport"` in the audit config. Then Jump measures each jump as a percent of the viewport width of the receiving client. The range is 3.125% to 18.75%. These values equal 40 px and 240 px on a 1280 px screen. As a result, the same jump scores higher on a phone than on a desktop.
 
@@ -139,10 +149,14 @@ One route, at one viewport width, in one UI state. For example, the orders page 
   <Card icon={<Plug />} title="Integration skill" href="/docs/skills/integration">
     Run it first to place anchors. Then the audit measures them.
   </Card>
-  <Card icon={<Ruler />} title="Layout design for presence" href="/docs/get-started/guides/layout-design">
+  <Card
+    icon={<LayoutDashboard />}
+    title="Layout design for presence"
+    href="/docs/get-started/guides/layout-design"
+  >
     The layout rule behind every sub-score, with its fix.
   </Card>
-  <Card icon={<BookOpen />} title="Responsive layouts" href="/docs/get-started/concepts/responsive-layouts">
+  <Card icon={<Scaling />} title="Responsive layouts" href="/docs/get-started/concepts/responsive-layouts">
     How the resolver behaves across breakpoints.
   </Card>
   <Card icon={<LayoutGrid />} title="Responsive grid" href="/docs/examples/responsive-grid">

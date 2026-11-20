@@ -1,22 +1,24 @@
 ---
 title: Connection status
-description: Read the connection status of the client with useCursorStatus, and the close reasons with subscribeClose.
+description: Read the connection status of the client with usePresenceStatus, and the close reasons with subscribeClose.
 icon: wifi
 ---
 
-import { Braces, Cable, Gauge } from "lucide-react";
+import { Braces, Gauge, RadioTower } from "lucide-react";
 
-`useCursorStatus` returns the connection status of the client from the nearest provider. Use it to show a reconnect banner, or to disable UI that needs presence while the connection is down.
+`usePresenceStatus` returns the connection status of the client from the nearest provider. Use it to show a reconnect banner, or to disable UI that needs presence while the connection is down.
 
 ## Usage
+
+If your app has a [typed `presence.ts` module](/docs/react/typed-hooks), import `usePresenceStatus` from it. The package export reads only the provider of `@anchor-presence/react`.
 
 This component shows the status while the client is not connected:
 
 ```tsx
-import { useCursorStatus } from "@anchor-presence/react";
+import { usePresenceStatus } from "@anchor-presence/react";
 
 function ConnectionBanner() {
-  const status = useCursorStatus();
+  const status = usePresenceStatus();
   if (status === "connected") return null;
   return <div role="status">{status}</div>;
 }
@@ -26,12 +28,36 @@ function ConnectionBanner() {
 
 The status is one of `"connecting"`, `"connected"`, `"reconnecting"`, or `"disconnected"`. The hook rerenders only when the status changes.
 
-The hook returns `"disconnected"` on the server, without a provider, and before the provider `factory` runs.
+The hook returns `"disconnected"` without a provider. It returns `"connecting"` before the provider `factory` runs, also on the server render.
 
 <Callout type="warn">
-  If a banner renders on the first paint, it shows `"disconnected"` for a short time, before the client
-  exists. Show the banner only after the status was `"connected"` one time.
+  If a banner renders on the first paint, it shows `"connecting"` for a short time, before the client exists.
+  Show the banner only after the status stays not connected for 1 to 2 seconds.
 </Callout>
+
+This component waits 1.5 seconds before it shows the banner:
+
+```tsx
+import { useEffect, useState } from "react";
+import { usePresenceStatus } from "@anchor-presence/react";
+
+function DelayedConnectionBanner() {
+  const status = usePresenceStatus();
+  const connected = status === "connected";
+  const [show, setShow] = useState(false);
+
+  useEffect(() => {
+    if (connected) return;
+    const timer = setTimeout(() => setShow(true), 1500);
+    return () => {
+      clearTimeout(timer);
+      setShow(false);
+    };
+  }, [connected]);
+
+  return show ? <div role="status">{status}</div> : null;
+}
+```
 
 ## Cursors during an outage
 
@@ -45,10 +71,10 @@ This component shows an error when the relay rejects the [room token](/docs/dom/
 
 ```tsx
 import { useEffect, useState } from "react";
-import { useCursorClient } from "@anchor-presence/react";
+import { usePresenceClient } from "@anchor-presence/react";
 
 function TokenError() {
-  const client = useCursorClient();
+  const client = usePresenceClient();
   const [closeCode, setCloseCode] = useState<number | null>(null);
 
   useEffect(
@@ -67,13 +93,13 @@ function TokenError() {
 ## Related
 
 <Cards>
-  <Card icon={<Cable />} title="WebSocket transport" href="/docs/dom/websocket-transport#close-reasons">
+  <Card icon={<RadioTower />} title="WebSocket transport" href="/docs/dom/websocket-transport#close-reasons">
     Close codes and the reconnect rules.
   </Card>
   <Card icon={<Gauge />} title="Rerenders" href="/docs/react/rerenders">
     Which hook rerenders when.
   </Card>
-  <Card icon={<Braces />} title="Hooks API" href="/docs/react/api/hooks#usecursorstatus">
-    The signature of useCursorStatus.
+  <Card icon={<Braces />} title="Hooks API" href="/docs/react/api/hooks#usepresencestatus">
+    The signature of usePresenceStatus.
   </Card>
 </Cards>

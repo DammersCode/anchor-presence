@@ -1,6 +1,8 @@
 import { useCallback, useRef, useSyncExternalStore } from "react";
 import type { RemotePresence } from "@anchor-presence/core";
-import { EMPTY_PRESENCE, useLiveCursorContext } from "./use-cursor-client.js";
+import { PresenceProviderContext } from "../context.js";
+import type { PresenceContext } from "../context.js";
+import { EMPTY_PRESENCE, usePresenceProviderContext } from "./use-presence-client.js";
 
 /**
  * One remote user, keyed by client.
@@ -16,17 +18,17 @@ export type RemoteUser<TUser = unknown> = {
   idle: boolean;
 };
 
-const EMPTY_USERS: RemoteUser[] = [];
+const EMPTY_USERS: never[] = [];
 
 // Keeps each RemoteUser's identity across presence snapshots that change only cursor position,
 // so a consumer rendering a user list does not re-render on every remote pointer move.
 // The per-client map is updated in place; the users array is rebuilt only when membership,
 // order, or a user-relevant field changes. Cursor-only probes allocate nothing.
-function projectRemoteUsers<TUser>(
-  snapshot: RemotePresence<unknown, TUser>[],
-  previousUsers: RemoteUser<TUser>[],
+function projectRemoteUsers<TContext, TUser>(
+  snapshot: readonly RemotePresence<TContext, TUser>[],
+  previousUsers: readonly RemoteUser<TUser>[],
   byClientId: Map<string, RemoteUser<TUser>>,
-): RemoteUser<TUser>[] {
+): readonly RemoteUser<TUser>[] {
   let structureChanged = snapshot.length !== previousUsers.length;
   if (!structureChanged) {
     for (let i = 0; i < snapshot.length; i++) {
@@ -76,13 +78,11 @@ function projectRemoteUsers<TUser>(
   return users;
 }
 
-/**
- * Returns the remote user values, one entry per client.
- * The list, and each entry, keep identity across a presence snapshot that changes no user-relevant field.
- */
-export function useRemoteUsers<TUser = unknown>(): RemoteUser<TUser>[] {
-  const { client } = useLiveCursorContext<unknown, TUser>();
-  const previousUsersRef = useRef<RemoteUser<TUser>[]>([]);
+export function useRemoteUsersIn<TContext, TUser, TEvents extends object>(
+  context: PresenceContext<TContext, TUser, TEvents>,
+): readonly RemoteUser<TUser>[] {
+  const { client } = usePresenceProviderContext(context);
+  const previousUsersRef = useRef<readonly RemoteUser<TUser>[]>([]);
   const byClientIdRef = useRef(new Map<string, RemoteUser<TUser>>());
 
   const subscribe = useCallback(
@@ -90,14 +90,22 @@ export function useRemoteUsers<TUser = unknown>(): RemoteUser<TUser>[] {
     [client],
   );
 
-  const getSnapshot = useCallback((): RemoteUser<TUser>[] => {
-    const presence =
-      client !== null ? client.getRemotePresence() : (EMPTY_PRESENCE as RemotePresence<unknown, TUser>[]);
+  const getSnapshot = useCallback((): readonly RemoteUser<TUser>[] => {
+    const presence = client !== null ? client.getRemotePresence() : EMPTY_PRESENCE;
     const nextUsers = projectRemoteUsers(presence, previousUsersRef.current, byClientIdRef.current);
     previousUsersRef.current = nextUsers;
     return nextUsers;
   }, [client]);
 
-  const getServerSnapshot = useCallback(() => EMPTY_USERS as RemoteUser<TUser>[], []);
+  const getServerSnapshot = useCallback(() => EMPTY_USERS, []);
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+}
+
+/**
+ * Returns the remote user values, one entry per client.
+ * Each `user` has the type `unknown`. For typed users, use `useRemoteUsers` from `createPresenceHooks`.
+ * The list, and each entry, keep identity across a presence snapshot that changes no user-relevant field.
+ */
+export function useRemoteUsers(): readonly RemoteUser[] {
+  return useRemoteUsersIn(PresenceProviderContext);
 }

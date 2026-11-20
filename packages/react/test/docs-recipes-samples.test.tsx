@@ -1,4 +1,6 @@
 // Type-checked copies of the recipes in apps/docs/content/docs/get-started/guides (cursor-chat, follow-mode, offscreen-hints).
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { act, useCallback, useEffect, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { createRoot } from "react-dom/client";
@@ -6,28 +8,44 @@ import { renderToString } from "react-dom/server";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  CursorLayer,
-  LiveCursorProvider,
-  useCursorClient,
-  useCursorEvents,
-  usePeerChanges,
+  CursorLayer as PlainLayer,
+  DefaultCursor,
+  PresenceProvider as PlainProvider,
   useRemoteCursors,
-  useRemoteCursorsSelector,
-  useRemoteUsers,
 } from "../src/index";
-import type { PeerChange, PresenceClient, RemoteEvent, ResolvedCursor } from "../src/index";
+import type { PeerChange, PresenceClient, ResolvedCursor, TypedRemoteEvent } from "../src/index";
+import {
+  CursorLayer,
+  PresenceProvider,
+  useDomBinding,
+  usePeerChanges,
+  usePresenceClient,
+  useRemoteCursorsSelector,
+  useRemoteEvents,
+  useRemoteUsers,
+} from "./doc-presence";
+import type { Context, Events, User } from "./doc-presence";
+import { missingLines } from "./doc-source";
 import { makeFakeBinding, makeFakeClient } from "./test-utils";
 
 // cursor-chat.mdx
 
 const CHAT_MAX_LENGTH = 100;
 const CHAT_HIDE_MS = 5000;
+const NAME_MAX_LENGTH = 40;
+
+const segmenter = typeof Intl.Segmenter === "function" ? new Intl.Segmenter() : null;
+
+function cutGraphemes(text: string, max: number): string {
+  const units = segmenter ? Array.from(segmenter.segment(text), (part) => part.segment) : Array.from(text);
+  return units.length <= max ? text : units.slice(0, max).join("");
+}
 
 function readChatText(data: unknown): string | null {
   if (typeof data !== "object" || data === null) return null;
   const text: unknown = (data as { text?: unknown }).text;
   if (typeof text !== "string") return null;
-  const trimmed = text.trim().slice(0, CHAT_MAX_LENGTH);
+  const trimmed = cutGraphemes(text.trim(), CHAT_MAX_LENGTH);
   return trimmed === "" ? null : trimmed;
 }
 
@@ -35,7 +53,7 @@ function useRemoteChat(): Record<string, string> {
   const [messages, setMessages] = useState<Record<string, string>>({});
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
 
-  useCursorEvents((event) => {
+  useRemoteEvents((event) => {
     if (event.type !== "chat") return;
     const text = readChatText(event.data);
     if (text === null) return;
@@ -65,11 +83,19 @@ function useRemoteChat(): Record<string, string> {
   return messages;
 }
 
-type User = { name: string };
-
 function ChatCursorLayer() {
   const messages = useRemoteChat();
-  return <CursorLayer<unknown, User> getLabel={(cursor) => messages[cursor.clientId] ?? cursor.user?.name} />;
+  return (
+    <CursorLayer
+      getLabel={(cursor) =>
+        messages[cursor.clientId] ??
+        (typeof cursor.user?.name === "string" ? cutGraphemes(cursor.user.name, NAME_MAX_LENGTH) : undefined)
+      }
+      renderCursor={({ label, color }) => (
+        <DefaultCursor label={label} color={color} labelStyle={{ maxWidth: "24rem", whiteSpace: "normal" }} />
+      )}
+    />
+  );
 }
 
 function isTextField(target: EventTarget | null): boolean {
@@ -80,7 +106,7 @@ function isTextField(target: EventTarget | null): boolean {
 }
 
 function ChatComposer() {
-  const client = useCursorClient();
+  const client = usePresenceClient();
   const pointer = useRef({ x: 0, y: 0 });
   const bubble = useRef<HTMLDivElement>(null);
   const [origin, setOrigin] = useState({ x: 0, y: 0 });
@@ -143,13 +169,13 @@ function ChatComposer() {
   );
 }
 
-function ChatApp({ client }: { client: PresenceClient<unknown, User> }) {
+function ChatApp({ client }: { client: PresenceClient<Context, User, Events> }) {
   return (
-    <LiveCursorProvider client={client}>
+    <PresenceProvider client={client}>
       <main>{/* your app */}</main>
       <ChatCursorLayer />
       <ChatComposer />
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }
 
@@ -161,18 +187,12 @@ function isOffscreen(cursor: ResolvedCursor, width: number, height: number): boo
   return !cursor.pointVisible || cursor.x < 0 || cursor.y < 0 || cursor.x > width || cursor.y > height;
 }
 
-function findAnchor(anchorId: string): HTMLElement | null {
-  for (const element of document.querySelectorAll<HTMLElement>("[data-anchor]")) {
-    if (element.dataset.anchor === anchorId) return element;
-  }
-  return null;
-}
-
 function useFollowMode(): {
   leaderId: string | null;
   follow: (clientId: string) => void;
   stop: () => void;
 } {
+  const binding = useDomBinding();
   const [leaderId, setLeaderId] = useState<string | null>(null);
   const stop = useCallback(() => setLeaderId(null), []);
   usePeerChanges((change) => {
@@ -180,7 +200,7 @@ function useFollowMode(): {
   });
 
   const selectTarget = useCallback(
-    (cursors: ResolvedCursor[]) => {
+    (cursors: readonly ResolvedCursor[]) => {
       const leader = cursors.find((cursor) => cursor.clientId === leaderId);
       if (leader === undefined || leader.anchorId === null) return null;
       return isOffscreen(leader, window.innerWidth, window.innerHeight) ? leader.anchorId : null;
@@ -190,8 +210,9 @@ function useFollowMode(): {
   const target = useRemoteCursorsSelector(selectTarget);
 
   useEffect(() => {
-    if (target !== null) findAnchor(target)?.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, [target]);
+    if (target !== null)
+      binding?.getAnchorElement(target)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [binding, target]);
 
   useEffect(() => {
     if (leaderId === null) return;
@@ -212,7 +233,7 @@ function useFollowMode(): {
 }
 
 function FollowControls() {
-  const users = useRemoteUsers<User>();
+  const users = useRemoteUsers();
   const { leaderId, follow, stop } = useFollowMode();
 
   if (leaderId !== null) {
@@ -235,13 +256,13 @@ function FollowControls() {
   );
 }
 
-function FollowApp({ client }: { client: PresenceClient<unknown, User> }) {
+function FollowApp({ client }: { client: PresenceClient<Context, User, Events> }) {
   return (
-    <LiveCursorProvider client={client}>
+    <PresenceProvider client={client}>
       <FollowControls />
       <main>{/* your app, with data-anchor elements */}</main>
       <CursorLayer />
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }
 
@@ -288,19 +309,27 @@ function OffscreenHints() {
   );
 }
 
+// offscreen-hints.mdx uses the untyped provider, so this copy binds the two names to it
 function HintsApp({ client }: { client: PresenceClient }) {
+  // oxlint-disable-next-line eslint/no-shadow -- the copy keeps the names of the sample
+  const PresenceProvider = PlainProvider;
+  // oxlint-disable-next-line eslint/no-shadow -- the copy keeps the names of the sample
+  const CursorLayer = PlainLayer;
   return (
-    <LiveCursorProvider client={client}>
+    <PresenceProvider client={client}>
       <main>{/* your app */}</main>
       <CursorLayer />
       <OffscreenHints />
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }
 
 // tests
 
-function cursorAt(clientId: string, overrides: Partial<ResolvedCursor> = {}): ResolvedCursor {
+function cursorAt(
+  clientId: string,
+  overrides: Partial<ResolvedCursor<Context, User>> = {},
+): ResolvedCursor<Context, User> {
   return {
     clientId,
     x: 100,
@@ -331,7 +360,7 @@ afterEach(() => {
 
 describe("recipe usage samples", () => {
   it("render on the server with a client", () => {
-    const { client } = makeFakeClient<unknown, User>();
+    const { client } = makeFakeClient<Context, User, Events>();
     expect(renderToString(<ChatApp client={client} />)).toContain("<main>");
     expect(renderToString(<FollowApp client={client} />)).toContain("<ul>");
     expect(renderToString(<HintsApp client={makeFakeClient().client} />)).toContain("aria-hidden");
@@ -342,6 +371,7 @@ describe("cursor chat recipe", () => {
   it("caps the text, trims it and rejects anything that is not a string", () => {
     expect(readChatText({ text: "x".repeat(500) })).toHaveLength(CHAT_MAX_LENGTH);
     expect(readChatText({ text: "  hi  " })).toBe("hi");
+    expect(readChatText({ text: "👨‍👩‍👧".repeat(150) })).toBe("👨‍👩‍👧".repeat(CHAT_MAX_LENGTH));
     expect(readChatText({ text: 42 })).toBeNull();
     expect(readChatText("hi")).toBeNull();
     expect(readChatText({ text: "   " })).toBeNull();
@@ -349,7 +379,7 @@ describe("cursor chat recipe", () => {
 
   it("sends the typed text as a chat event and hides the local bubble after the timeout", () => {
     vi.useFakeTimers();
-    const { client } = makeFakeClient();
+    const { client } = makeFakeClient<Context, User, Events>();
     const sent: Array<[string, unknown]> = [];
     client.sendEvent = (type, data) => {
       sent.push([type, data]);
@@ -357,9 +387,9 @@ describe("cursor chat recipe", () => {
     };
     act(() =>
       root.render(
-        <LiveCursorProvider client={client} binding={makeFakeBinding().binding}>
+        <PresenceProvider client={client} binding={makeFakeBinding<Context, User>().binding}>
           <ChatComposer />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       ),
     );
 
@@ -383,21 +413,21 @@ describe("cursor chat recipe", () => {
 
   it("shows a remote chat as plain text next to the remote cursor, then falls back to the name", () => {
     vi.useFakeTimers();
-    const { client } = makeFakeClient<unknown, User>();
-    const listeners = new Set<(event: RemoteEvent) => void>();
+    const { client } = makeFakeClient<Context, User, Events>();
+    const listeners = new Set<(event: TypedRemoteEvent<Events>) => void>();
     client.subscribeEvents = (listener) => {
       listeners.add(listener);
       return () => listeners.delete(listener);
     };
-    const fake = makeFakeBinding<unknown, User>();
+    const fake = makeFakeBinding<Context, User>();
     act(() =>
       root.render(
-        <LiveCursorProvider client={client} binding={fake.binding}>
+        <PresenceProvider client={client} binding={fake.binding}>
           <ChatCursorLayer />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       ),
     );
-    act(() => fake.publish([{ ...cursorAt("peer"), user: { name: "Ada" } }]));
+    act(() => fake.publish([{ ...cursorAt("peer"), user: { name: "Ada", color: "#000000" } }]));
     expect(document.body.textContent).toContain("Ada");
 
     act(() => {
@@ -418,13 +448,13 @@ describe("cursor chat recipe", () => {
 
 describe("follow mode recipe", () => {
   it("scrolls the leader's anchor into view and stops on wheel, Escape or leave", () => {
-    const { client, pushRemote } = makeFakeClient<unknown, User>();
-    const peerListeners = new Set<(change: PeerChange<unknown, User>) => void>();
+    const { client, pushRemote } = makeFakeClient<Context, User, Events>();
+    const peerListeners = new Set<(change: PeerChange<Context, User>) => void>();
     client.subscribePeers = (listener) => {
       peerListeners.add(listener);
       return () => peerListeners.delete(listener);
     };
-    const fake = makeFakeBinding();
+    const fake = makeFakeBinding<Context, User>();
     const anchor = document.createElement("section");
     anchor.dataset.anchor = "orders";
     const scrollIntoView = vi.fn();
@@ -433,14 +463,21 @@ describe("follow mode recipe", () => {
 
     act(() =>
       root.render(
-        <LiveCursorProvider client={client} binding={fake.binding}>
+        <PresenceProvider client={client} binding={fake.binding}>
           <FollowControls />
-        </LiveCursorProvider>,
+        </PresenceProvider>,
       ),
     );
     act(() =>
       pushRemote([
-        { version: 1, clientId: "leader", session: "s", sequence: 1, cursor: null, user: { name: "Ada" } },
+        {
+          version: 1,
+          clientId: "leader",
+          session: "s",
+          sequence: 1,
+          cursor: null,
+          user: { name: "Ada", color: "#000000" },
+        },
       ]),
     );
     const followButton = (): HTMLButtonElement => container.querySelector("button")!;
@@ -500,9 +537,9 @@ describe("off-screen hint recipe", () => {
     const fake = makeFakeBinding();
     act(() =>
       root.render(
-        <LiveCursorProvider client={makeFakeClient().client} binding={fake.binding}>
+        <PlainProvider client={makeFakeClient().client} binding={fake.binding}>
           <OffscreenHints />
-        </LiveCursorProvider>,
+        </PlainProvider>,
       ),
     );
     act(() =>
@@ -515,5 +552,25 @@ describe("off-screen hint recipe", () => {
     expect(container.querySelector('[data-edge-hint="above"]')?.getAttribute("style")).toContain(
       "translate(92px, 8px)",
     );
+  });
+});
+
+describe("recipe sources", () => {
+  const pages = ["cursor-chat", "follow-mode", "offscreen-hints"];
+  const blocks = pages.flatMap((page) => {
+    const path = join(process.cwd(), `apps/docs/content/docs/get-started/guides/${page}.mdx`);
+    return [...readFileSync(path, "utf8").matchAll(/```tsx\r?\n([\s\S]*?)```/gu)].map(
+      ([, body = ""]) => body,
+    );
+  });
+
+  it("match the copies in this file", () => {
+    const missing = blocks.flatMap((block) =>
+      missingLines(
+        "docs-recipes-samples.test.tsx",
+        block.replaceAll("export ", "").replaceAll(/^import [^;]*;\n/gmu, ""),
+      ),
+    );
+    expect(missing).toEqual([]);
   });
 });

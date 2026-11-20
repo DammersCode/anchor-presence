@@ -5,20 +5,29 @@ icon: box
 ---
 
 import {
+  BadgeCheck,
+  Braces,
   Binary,
+  FileCheck,
+  FileCog,
+  FileDigit,
+  MemoryStick,
   Cable,
+  ArrowLeftRight,
   Code,
-  MousePointer2,
-  Network,
+  FileCode,
+  Plug,
   Puzzle,
   Radio,
   ShieldCheck,
   Spline,
   Users,
   Zap,
+  Blocks,
+  MousePointer,
 } from "lucide-react";
 
-`@anchor-presence/core` is the protocol layer. It sends the local presence, and it checks and stores the presence of each peer. A peer is another client in the same room. Use the package directly in a test, on a server, or in an adapter for a UI framework other than React.
+`@anchor-presence/core` is the protocol layer. It sends the local presence, and it checks and stores the presence of each peer. Use the package directly in a test, on a server, or in an adapter for a UI framework other than React.
 
 `@anchor-presence/core` has no runtime dependencies and needs no DOM. It runs in Node.js, Bun, workers, and browsers. It reads `document` at one place only, after a check that `document` exists. There, the client listens for `visibilitychange`. When the page becomes visible, the client sends a pending publish at once.
 
@@ -32,7 +41,7 @@ const clientA = createPresenceClient({ transport: a, user: { name: "Alice" } });
 const clientB = createPresenceClient({ transport: b, user: { name: "Bob" } });
 ```
 
-## Main paths
+## Client
 
 <Cards>
   <Card icon={<Radio />} title="Presence client" href="/docs/core/presence-client">
@@ -42,25 +51,72 @@ const clientB = createPresenceClient({ transport: b, user: { name: "Bob" } });
     Send one-shot messages to peers, with rate limits and types.
   </Card>
   <Card icon={<Users />} title="Remote presence" href="/docs/core/remote-presence">
-    Read peers, the idle stage, the stale timeout, and peer changes.
+    Read peers, the idle state, the stale timeout, and peer changes.
   </Card>
   <Card icon={<ShieldCheck />} title="Validation" href="/docs/core/validation">
     The checks on each inbound message, and the limits that you can change.
   </Card>
+  <Card icon={<BadgeCheck />} title="Validate with a schema" href="/docs/core/standard-schema">
+    Check the user, the context, and the events with a Standard Schema library.
+  </Card>
   <Card icon={<Spline />} title="Interpolation" href="/docs/core/interpolation">
     Ease a remote cursor between two positions.
   </Card>
+</Cards>
+
+## Transports
+
+<Cards>
   <Card icon={<Cable />} title="Transports" href="/docs/core/transports">
     The transport contract, connection status, and close reasons.
   </Card>
+  <Card icon={<MemoryStick />} title="In-memory transport" href="/docs/core/in-memory-transport">
+    In-process transports for tests and prototypes.
+  </Card>
+  <Card icon={<Plug />} title="Custom transport" href="/docs/core/custom-transport">
+    The interface, the status and close contracts, and a minimal example.
+  </Card>
+  <Card icon={<FileCheck />} title="Relay contract" href="/docs/examples/backends/relay-contract">
+    What every relay must do, the close codes, and the conformance suite.
+  </Card>
+</Cards>
+
+## Codecs
+
+<Cards>
   <Card icon={<Binary />} title="Codecs" href="/docs/core/codecs">
     Turn messages into bytes with JSON, the binary codec, or your own format.
   </Card>
+  <Card icon={<FileDigit />} title="Binary codec" href="/docs/core/binary-codec">
+    The wire layout, coordinate precision, and encode limits.
+  </Card>
+  <Card icon={<FileCog />} title="Custom codec" href="/docs/core/custom-codec">
+    Write your own codec with MessagePack, and debug binary traffic.
+  </Card>
+</Cards>
+
+## Adapters
+
+<Cards>
   <Card icon={<Puzzle />} title="Build a framework adapter" href="/docs/core/build-a-framework-adapter">
     Connect the client and the DOM binding to Solid, Vue, or another framework.
   </Card>
-  <Card icon={<Code />} title="API reference" href="/docs/core/api/client">
-    Every export of the package, with its type.
+</Cards>
+
+## API reference
+
+<Cards>
+  <Card icon={<Code />} title="Client API" href="/docs/core/api/client">
+    The client, its options, and its methods.
+  </Card>
+  <Card icon={<FileCode />} title="Protocol types" href="/docs/core/api/protocol">
+    The wire messages, validation limits, and constants.
+  </Card>
+  <Card icon={<Braces />} title="Standard schema API" href="/docs/core/api/standard-schema">
+    The signatures of parserFrom and eventParserFrom.
+  </Card>
+  <Card icon={<ArrowLeftRight />} title="Transport and codec API" href="/docs/core/api/transports-and-codecs">
+    The transport and codec interfaces and the built-in codecs.
   </Card>
 </Cards>
 
@@ -70,6 +126,7 @@ const clientB = createPresenceClient({ transport: b, user: { name: "Bob" } });
 
 <Mermaid
   chart={`flowchart TD
+  accTitle: Package layers and imports
   react["@anchor-presence/react"] --> dom["@anchor-presence/dom"]
   dom --> core["@anchor-presence/core"]
   react --> core`}
@@ -83,6 +140,10 @@ This split has two results:
 ## Related
 
 <Cards>
-  <Card icon={<Network />} title="How it works" href="/docs/get-started/concepts/how-it-works" />
-  <Card icon={<MousePointer2 />} title="DOM overview" href="/docs/dom" />
+  <Card icon={<Blocks />} title="How it works" href="/docs/get-started/concepts/how-it-works">
+    The path of one cursor from the sender to the receiver.
+  </Card>
+  <Card icon={<MousePointer />} title="DOM overview" href="/docs/dom">
+    Anchors, pointer capture, and the browser transports.
+  </Card>
 </Cards>

@@ -17,5 +17,24 @@ export function openControlChannel(channel: string): BroadcastChannel {
 export function readControlMessage(event: MessageEvent<unknown>): ControlMessage | null {
   const data = event.data;
   if (typeof data !== "object" || data === null || !("kind" in data)) return null;
-  return data as ControlMessage;
+  switch (data.kind) {
+    case "hello":
+    case "input":
+    case "toggle":
+      return { kind: data.kind };
+    case "visible":
+      return "visible" in data && typeof data.visible === "boolean"
+        ? { kind: "visible", visible: data.visible }
+        : null;
+    case "tour":
+      return "state" in data && isTourState(data.state) ? { kind: "tour", state: data.state } : null;
+    default:
+      return null;
+  }
+}
+
+const TOUR_STATES: readonly unknown[] = ["playing", "yielded", "paused", "waiting"] satisfies TourState[];
+
+function isTourState(value: unknown): value is TourState {
+  return TOUR_STATES.includes(value);
 }

@@ -4,7 +4,7 @@ description: Hide a cursor whose anchor is scrolled out of its container, and sh
 icon: eye-off
 ---
 
-import { AppWindow, Atom, LifeBuoy, ListTree } from "lucide-react";
+import { LifeBuoy, ListTree, Layers, Eye, Crosshair } from "lucide-react";
 
 An anchor inside a scroll container can exist, with a real size and position, while the container clips it out of view. Without a policy for this case, the cursor floats outside the container. In this demo, the wide pane shows every thread of an inbox. The narrow pane shows the same threads in a short scroll list.
 
@@ -20,35 +20,35 @@ This file renders the scene of the demo:
 
 <CodeFromSource docs="components/examples/scroll.tsx" lang="tsx" />
 
+<SceneNote />
+
 `clippedPointPolicy` hides a cursor when its point is outside the visible part of the anchor. The hint button reads the same cursor from `useRemoteCursors`. A hidden cursor keeps its `anchorId` and its `pointVisible` value, so the hint knows the thread.
 
 ## Behavior notes
 
+Try it: Scroll the narrow list with your pointer or your keyboard, or select the button at the edge of the list.
+
 - When the remote cursor is on thread 8, the narrow pane cannot show that thread without a scroll. The visibility policy hides the cursor, and the status bar shows "out of view".
-- A button at the top or bottom edge of the list shows where the cursor is. Select the button to scroll the thread into view. Then the cursor appears on the thread.
-- Scroll the narrow list with your pointer or your keyboard. The cursor appears when its thread comes into view.
+- A button at the top or bottom edge of the list shows where the cursor is. The button scrolls the thread into view, and the cursor then appears on the thread.
+- The cursor appears when its thread comes into view.
 
 ## Related
 
 <Cards>
   <Card
-    icon={<AppWindow />}
+    icon={<Layers />}
     title="How the check works"
     href="/docs/dom/occlusion-and-scroll#how-the-check-works"
   >
     How the resolver finds a clipped point.
   </Card>
-  <Card icon={<AppWindow />} title="Use pointVisible" href="/docs/dom/occlusion-and-scroll#use-pointvisible">
+  <Card icon={<Layers />} title="Use pointVisible" href="/docs/dom/occlusion-and-scroll#use-pointvisible">
     The field that the policy and the hint read.
   </Card>
-  <Card
-    icon={<AppWindow />}
-    title="Write a custom policy"
-    href="/docs/dom/visibility-policy#write-a-custom-policy"
-  >
+  <Card icon={<Eye />} title="Write a custom policy" href="/docs/dom/visibility-policy#write-a-custom-policy">
     The `VisibilityPolicy` contract.
   </Card>
-  <Card icon={<Atom />} title="useRemoteCursors" href="/docs/react/remote-cursors#usage">
+  <Card icon={<Crosshair />} title="useRemoteCursors" href="/docs/react/remote-cursors#usage">
     All resolved cursors, visible or not.
   </Card>
   <Card icon={<ListTree />} title="Anchors and fallbacks" href="/docs/examples/anchors-and-fallbacks">

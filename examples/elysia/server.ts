@@ -1,4 +1,5 @@
 // Elysia `.ws()` route on Bun, using Elysia's own topic pub-sub (same model as the Bun relay example).
+import type { ServerWebSocket } from "bun";
 import { Elysia, t } from "elysia";
 import {
   allowedOriginsFromEnv,
@@ -9,8 +10,10 @@ import {
   RateLimiter,
   INVALID_ROOM_CODE,
   bindIdentity,
+  UNBINDABLE_FRAME_CLOSE,
   newConnectionId,
   parseRoom,
+  parseToken,
   type AuthIdentity,
   safeAuthCheck,
   tokenAuthCheck,
@@ -26,7 +29,7 @@ export type ElysiaRelayOptions = {
   /** Seconds without a message or a pong before Bun closes the socket. Bun sends a ping before it closes. */
   idleTimeoutSeconds?: number;
   allowedOrigins?: Set<string>;
-  /** Auth hook placeholder: verify a token query param. Default accepts every token. */
+  /** Auth hook. Default: the `RELAY_AUTH_TOKEN` check, which admits everyone when the variable is unset. */
   authCheck?: AuthCheck;
 };
 
@@ -71,7 +74,10 @@ export function createElysiaRelay(port: number, options: ElysiaRelayOptions = {}
       closeOnBackpressureLimit: true,
     },
   }).ws("/", {
-    query: t.Object({ room: t.Optional(t.String()), token: t.Optional(t.String()) }),
+    query: t.Object({
+      room: t.Optional(t.Union([t.String(), t.Array(t.String())])),
+      token: t.Optional(t.Union([t.String(), t.Array(t.String())])),
+    }),
     async open(ws) {
       const { room: rawRoom, token } = ws.data.query;
       const headers = ws.data.headers as Record<string, string | undefined>;
@@ -85,7 +91,9 @@ export function createElysiaRelay(port: number, options: ElysiaRelayOptions = {}
         ws.close(INVALID_ROOM_CODE, "invalid room");
         return;
       }
-      const authOk = await authCheck({ token: token ?? "", room, origin, headers });
+      const parsedToken = parseToken(token);
+      const authOk =
+        parsedToken === null ? false : await authCheck({ token: parsedToken, room, origin, headers });
       // the socket can close while the hook runs; admitting it would leak a limit slot
       if (ws.raw.readyState !== 1) return;
       if (!authOk) {
@@ -104,38 +112,39 @@ export function createElysiaRelay(port: number, options: ElysiaRelayOptions = {}
       });
       ws.subscribe(room);
     },
-    message(ws, message) {
-      const state = connectionState.get(ws.raw);
-      if (!state) return;
-      if (!state.rateLimiter.tryConsume()) return;
-
-      // Elysia parses a JSON text frame into an object, which has no byteLength; measure its text form
-      const payload =
-        message instanceof ArrayBuffer || ArrayBuffer.isView(message) || typeof message === "string"
-          ? message
-          : JSON.stringify(message);
-      if (messageByteLength(payload, maxMessageBytes) > maxMessageBytes) return;
-
-      let outgoing: string | ArrayBuffer | ArrayBufferView = payload;
-      if (state.identity !== undefined) {
-        const bound = bindIdentity(
-          typeof payload === "string" ? payload : new Uint8Array(payload as ArrayBuffer),
-          state.identity,
-          state.connectionId,
-        );
-        if (bound === null) return;
-        // Elysia serializes a plain Uint8Array as JSON text; a Buffer stays a binary frame
-        outgoing = Buffer.from(bound);
-      }
-      ws.publish(parseRoom(ws.data.query.room) ?? "main", outgoing);
-    },
     close(ws) {
       const room = parseRoom(ws.data.query.room) ?? "main";
       if (connectionState.delete(ws.raw)) limits.release(room);
     },
   });
 
-  app.listen(port);
+  // Elysia JSON-parses a text frame before any route hook runs, so the guard sits on the raw Bun handler
+  app.listen({
+    port,
+    websocket: {
+      message(ws: ServerWebSocket<{ query: { room?: string | string[] } }>, message: string | Buffer) {
+        const state = connectionState.get(ws);
+        if (!state) return;
+        if (!state.rateLimiter.tryConsume()) return;
+        if (messageByteLength(message, maxMessageBytes) > maxMessageBytes) return;
+
+        let outgoing: string | Uint8Array = message;
+        if (state.identity !== undefined) {
+          const bound = bindIdentity(
+            typeof message === "string" ? message : new Uint8Array(message),
+            state.identity,
+            state.connectionId,
+          );
+          if (bound === null) {
+            ws.close(UNBINDABLE_FRAME_CLOSE.code, UNBINDABLE_FRAME_CLOSE.reason);
+            return;
+          }
+          outgoing = bound;
+        }
+        ws.publish(parseRoom(ws.data.query.room) ?? "main", outgoing);
+      },
+    },
+  });
 
   return {
     url: `http://localhost:${port}`,

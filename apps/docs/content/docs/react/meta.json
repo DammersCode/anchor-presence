@@ -6,7 +6,8 @@
   "pages": [
     "index",
     "---[settings]Setup---",
-    "live-cursor-provider",
+    "presence-provider",
+    "typed-hooks",
     "client-creation",
     "ssr-and-strict-mode",
     "---[layers]Rendering---",
@@ -16,12 +17,11 @@
     "remote-users",
     "local-context",
     "connection-status",
-    "cursor-events",
+    "remote-events",
     "remote-cursors",
     "remote-presence",
-    "typed-hooks",
     "rerenders",
-    "---[book-open]API reference---",
+    "---[braces]API reference---",
     "api/components",
     "api/hooks"
   ]

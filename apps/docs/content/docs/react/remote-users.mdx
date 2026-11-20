@@ -1,24 +1,22 @@
 ---
 title: Remote users
-description: Read the remote user values with useRemoteUsers, and react to joins and leaves with usePeerChanges.
+description: Show who is online with useRemoteUsers, which reads the remote user values, and react to joins and leaves with usePeerChanges.
 icon: users
 ---
 
-import { Gauge, LayoutList, UserPen, Braces } from "lucide-react";
+import { Gauge, UserPen, Braces, Users } from "lucide-react";
 
-`useRemoteUsers` returns one entry for each peer (another client in the same room). An entry holds the `user` value of the peer, its session, and its idle state. Use it for a presence list or an avatar stack. These lists need one row per person, and they do not rerender while cursors move.
+`useRemoteUsers` returns one entry for each peer. An entry holds the `user` value of the peer, its session, and its idle state. Use it for a presence list or an avatar stack. These lists need one row per client (tab), and they do not rerender when cursors move.
 
 ## Usage
 
-This component lists the peers and dims the idle ones:
+`useRemoteUsers` from `@anchor-presence/react` returns each `user` as `unknown`. For a typed `user`, use the `useRemoteUsers` of a [`createPresenceHooks`](/docs/react/typed-hooks) result. This component lists the peers and dims the idle ones. Its `user` has the type `User`, which the `./presence` module of [Typed hooks](/docs/react/typed-hooks#usage) fixes. The app must use the `PresenceProvider` of that module:
 
 ```tsx
-import { useRemoteUsers } from "@anchor-presence/react";
-
-type MyUser = { name: string; color: string };
+import { useRemoteUsers } from "./presence";
 
 function PresenceList() {
-  const users = useRemoteUsers<MyUser>();
+  const users = useRemoteUsers();
   return (
     <ul>
       {users.map((entry) => (
@@ -44,7 +42,7 @@ For a full presence list with avatars, see the [Presence list](/docs/examples/pr
 
 ## User shape
 
-The client checks each remote `user` against the shape of your local `user` value. If a remote value does not fit, the client drops it, and the entry keeps the previous `user` value. In development mode, the client then warns one time and names `parseUser`. A `null` inside a remote `user` fits every key, so give each field a fallback when you render it. For the rules, see [Remote user and context](/docs/core/validation#remote-user-and-context).
+If the client has a local `user` and no `parseUser`, it checks each remote `user` against the shape of your local `user` value. If a remote value does not fit, the client drops it, and the entry keeps the previous `user` value. In development mode, the client then warns one time and names `parseUser`. A `null` inside a remote `user` fits every key, so give each field a fallback when you render it. For the rules, see [Remote user and context](/docs/core/validation#remote-user-and-context). To build `parseUser` from a schema, see [Validate with a schema](/docs/core/standard-schema).
 
 ## Render cost
 
@@ -56,7 +54,7 @@ The list and each unchanged entry keep their object identity. A `React.memo` row
 
 `usePeerChanges(listener)` calls `listener` when a peer joins, leaves, or changes its `user` or `context`. Use it for a one-time effect, such as a notice. For a list, use `useRemoteUsers`.
 
-This component shows the last peer that joined:
+This component shows the last peer that joined. It needs the `PresenceProvider` from `@anchor-presence/react`:
 
 ```tsx
 import { useState } from "react";
@@ -74,7 +72,8 @@ function JoinNotice() {
 - The listener receives a `PeerChange`: a `type` of `"join"`, `"update"`, or `"leave"`, the `clientId`, and the `user` and `context` of the peer when they are set. On `"leave"`, `user` and `context` hold the last known values.
 - A cursor move never calls the listener. For the rules of each `type`, see [Peer changes](/docs/core/remote-presence#peer-changes).
 - The hook subscribes one time per client. An inline listener does not subscribe again on each render, and the hook always calls the listener of the last render.
-- The hook never rerenders its component. Without a client, it calls nothing.
+- The hook returns nothing, so it adds no rerender of its own. Without a client, it calls nothing.
+- A peer that loses its connection sends no leave message. The store removes it after `staleTimeoutMs`, 70 seconds by default, and the listener then gets a `"leave"`. See [Stale timeout](/docs/core/remote-presence#stale-timeout).
 
 ## Related
 
@@ -82,7 +81,7 @@ function JoinNotice() {
   <Card icon={<UserPen />} title="Local context and user" href="/docs/react/local-context">
     Set the user value that peers see.
   </Card>
-  <Card icon={<LayoutList />} title="Presence list example" href="/docs/examples/presence-list">
+  <Card icon={<Users />} title="Presence list" href="/docs/examples/presence-list">
     A live list with avatars and idle states.
   </Card>
   <Card icon={<Gauge />} title="Rerenders" href="/docs/react/rerenders">

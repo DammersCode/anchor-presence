@@ -4,9 +4,9 @@ description: Follow the cursor of one peer and scroll its anchor into view.
 icon: footprints
 ---
 
-import { Crosshair, Gauge, LocateFixed, MousePointer, Users } from "lucide-react";
+import { Crosshair, Gauge, LocateFixed, Users } from "lucide-react";
 
-In a long page, a user wants to see what another user looks at. Follow mode makes one client, the follower, track the cursor of a peer, the leader. When the leader's cursor leaves the follower's window, the follower's page scrolls the leader's anchor into view. Follow mode stops when the follower scrolls, when the follower presses Escape, or when the leader leaves the room. The recipe uses only public APIs: `useRemoteCursorsSelector`, `ResolvedCursor`, `element.scrollIntoView` and `usePeerChanges`.
+In a long page, a user wants to see what another user looks at. Follow mode makes one client, the follower, track the cursor of a peer, the leader. When the leader's cursor leaves the follower's window, the follower's page scrolls the leader's anchor into view. Follow mode stops when the follower scrolls, when the follower presses Escape, or when the leader leaves the room. The recipe uses only public APIs: `useRemoteCursorsSelector`, `useDomBinding`, `binding.getAnchorElement`, `ResolvedCursor`, `element.scrollIntoView` and `usePeerChanges`.
 
 The demo runs this recipe in the narrow pane, with a pane-local scroll in place of `scrollIntoView`:
 
@@ -16,32 +16,27 @@ When Mira moves to a section outside the narrow pane, that pane scrolls to the s
 
 ## Find the target
 
+The recipe imports its hooks and types from the `./presence` module of [Typed hooks](/docs/react/typed-hooks#usage). The app has one `createPresenceHooks` call, so add no second module.
+
 The recipe is one file, `follow-mode.tsx`. It starts with the imports, the off-screen test and the anchor lookup:
 
 ```tsx
 import { useCallback, useEffect, useState } from "react";
+import type { PresenceClient, ResolvedCursor } from "@anchor-presence/react";
 import {
   CursorLayer,
-  LiveCursorProvider,
+  PresenceProvider,
   usePeerChanges,
   useRemoteCursorsSelector,
+  useDomBinding,
   useRemoteUsers,
-} from "@anchor-presence/react";
-import type { PresenceClient, ResolvedCursor } from "@anchor-presence/react";
-
-type User = { name: string };
+} from "./presence";
+import type { Context, Events, User } from "./presence";
 
 const SCROLL_KEYS = new Set(["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " "]);
 
 export function isOffscreen(cursor: ResolvedCursor, width: number, height: number): boolean {
   return !cursor.pointVisible || cursor.x < 0 || cursor.y < 0 || cursor.x > width || cursor.y > height;
-}
-
-function findAnchor(anchorId: string): HTMLElement | null {
-  for (const element of document.querySelectorAll<HTMLElement>("[data-anchor]")) {
-    if (element.dataset.anchor === anchorId) return element;
-  }
-  return null;
 }
 ```
 
@@ -57,6 +52,7 @@ export function useFollowMode(): {
   follow: (clientId: string) => void;
   stop: () => void;
 } {
+  const binding = useDomBinding();
   const [leaderId, setLeaderId] = useState<string | null>(null);
   const stop = useCallback(() => setLeaderId(null), []);
   usePeerChanges((change) => {
@@ -64,7 +60,7 @@ export function useFollowMode(): {
   });
 
   const selectTarget = useCallback(
-    (cursors: ResolvedCursor[]) => {
+    (cursors: readonly ResolvedCursor[]) => {
       const leader = cursors.find((cursor) => cursor.clientId === leaderId);
       if (leader === undefined || leader.anchorId === null) return null;
       return isOffscreen(leader, window.innerWidth, window.innerHeight) ? leader.anchorId : null;
@@ -74,8 +70,9 @@ export function useFollowMode(): {
   const target = useRemoteCursorsSelector(selectTarget);
 
   useEffect(() => {
-    if (target !== null) findAnchor(target)?.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, [target]);
+    if (target !== null)
+      binding?.getAnchorElement(target)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [binding, target]);
 
   useEffect(() => {
     if (leaderId === null) return;
@@ -102,7 +99,7 @@ The controls list the peers and show a stop button while follow mode is on:
 
 ```tsx
 export function FollowControls() {
-  const users = useRemoteUsers<User>();
+  const users = useRemoteUsers();
   const { leaderId, follow, stop } = useFollowMode();
 
   if (leaderId !== null) {
@@ -129,13 +126,13 @@ export function FollowControls() {
 Render the controls inside the provider:
 
 ```tsx
-export function FollowApp({ client }: { client: PresenceClient<unknown, User> }) {
+export function FollowApp({ client }: { client: PresenceClient<Context, User, Events> }) {
   return (
-    <LiveCursorProvider client={client}>
+    <PresenceProvider client={client}>
       <FollowControls />
       <main>{/* your app, with data-anchor elements */}</main>
       <CursorLayer />
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }
 ```
@@ -147,12 +144,12 @@ export function FollowApp({ client }: { client: PresenceClient<unknown, User> })
 - **Viewport tier.** If the leader's cursor resolves through the viewport tier, `anchorId` is `null`. The page does not scroll then.
 - **Stop on scroll.** `scrollIntoView` fires `scroll` events, so the recipe does not listen for `scroll`. It stops on `wheel`, on `touchmove` and on the scroll keys. A drag on the scrollbar fires none of these events. For this case, the controls show the stop button.
 - **Stop on leave.** `usePeerChanges` reports a `leave` each time the store removes the leader. The causes are a leave message, the stale timeout, the reconnect expiry, and a `store.remove` call. A leader without a cursor is not a leave, so follow mode continues.
-- **Anchor attribute.** `findAnchor` reads `data-anchor`. If you set `anchorAttribute` in the binding options, read that attribute instead.
+- **Anchor element.** `binding.getAnchorElement` returns the element that the binding resolves for the anchor ID. It follows your `anchorAttribute` option, picks the newest element when IDs repeat, and returns `null` when no registered element is connected. It does not measure the element. The resolver skips an element with zero width or height, so the element can be one that no cursor resolves to.
 
 ## Related
 
 <Cards>
-  <Card icon={<MousePointer />} title="Remote cursors" href="/docs/react/remote-cursors">
+  <Card icon={<Crosshair />} title="Remote cursors" href="/docs/react/remote-cursors">
     `useRemoteCursors` and `useRemoteCursorsSelector`.
   </Card>
   <Card icon={<Users />} title="Remote users" href="/docs/react/remote-users">

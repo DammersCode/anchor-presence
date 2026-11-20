@@ -1,13 +1,17 @@
 "use client";
 
 import type { PresenceClient } from "@anchor-presence/core";
-import { CursorLayer, LiveCursorProvider, useRemoteUsers } from "@anchor-presence/react";
+import type { TourContext } from "./_preview/tour";
+import { CursorLayer, PresenceProvider, useRemoteUsers } from "./_preview/hooks";
 import type { ReactNode } from "react";
+
+const safeColor = (color: string | undefined, fallback: string) =>
+  color !== undefined && /^#[0-9a-f]{6}$/iu.test(color) ? color : fallback;
 
 type User = { name: string; color: string };
 
 type Props = {
-  client: PresenceClient<unknown, User> | null;
+  client: PresenceClient<TourContext, User> | null;
   layout: "wide" | "narrow";
   children?: ReactNode;
 };
@@ -43,7 +47,7 @@ const COLUMNS = [
 ];
 
 function WhoIsOnline({ compact }: { compact: boolean }) {
-  const users = useRemoteUsers<User>();
+  const users = useRemoteUsers();
 
   if (compact) {
     return (
@@ -54,7 +58,7 @@ function WhoIsOnline({ compact }: { compact: boolean }) {
               key={clientId}
               title={user?.name ?? "Guest"}
               className="grid size-5 place-items-center rounded-full text-[9px] font-semibold text-white ring-2 ring-fd-card transition-opacity"
-              style={{ backgroundColor: user?.color ?? "#6b7280", opacity: idle ? 0.35 : 1 }}
+              style={{ backgroundColor: safeColor(user?.color, "#6b7280"), opacity: idle ? 0.35 : 1 }}
             >
               {(user?.name ?? "?").charAt(0)}
             </span>
@@ -76,12 +80,12 @@ function WhoIsOnline({ compact }: { compact: boolean }) {
         >
           <span
             className="grid size-4 place-items-center rounded-full text-[9px] font-semibold text-white"
-            style={{ backgroundColor: user?.color ?? "#6b7280" }}
+            style={{ backgroundColor: safeColor(user?.color, "#6b7280") }}
           >
             {(user?.name ?? "?").charAt(0)}
           </span>
           {user?.name ?? "Guest"}
-          {idle ? <span className="text-fd-muted-foreground">away</span> : null}
+          {idle ? <span className="text-fd-muted-foreground">idle</span> : null}
         </li>
       ))}
     </ul>
@@ -92,7 +96,7 @@ export function PresenceScene({ client, layout, children }: Props) {
   const wide = layout === "wide";
 
   return (
-    <LiveCursorProvider client={client}>
+    <PresenceProvider client={client}>
       <div data-anchor="board" className="flex h-full flex-col gap-2 p-2.5">
         <header className="flex min-h-7 items-center justify-between gap-2 border-b border-fd-border pb-2">
           <h3 className="font-display flex-none text-sm font-semibold">Roadmap</h3>
@@ -123,11 +127,11 @@ export function PresenceScene({ client, layout, children }: Props) {
           ))}
         </div>
       </div>
-      <CursorLayer<unknown, User>
+      <CursorLayer
         getLabel={(cursor) => cursor.user?.name ?? null}
-        getColor={(cursor) => cursor.user?.color ?? "#4f46e5"}
+        getColor={(cursor) => safeColor(cursor.user?.color, "#4f46e5")}
       />
       {children}
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }

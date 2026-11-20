@@ -31,6 +31,11 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
+    "./standard-schema": {
+      "types": "./dist/standard-schema.d.ts",
+      "import": "./dist/standard-schema.js",
+      "default": "./dist/standard-schema.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -38,5 +43,10 @@
   ],
   "scripts": {
     "build": "rm -rf dist tsconfig.tsbuildinfo && tsc --build"
+  },
+  "devDependencies": {
+    "valibot": "^1.5.0",
+    "zod": "4.6.6",
+    "arktype": "^2.2.10"
   }
 }

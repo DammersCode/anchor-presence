@@ -4,7 +4,7 @@ description: How the React adapter sits on core and dom, and what a Solid or Vue
 icon: puzzle
 ---
 
-import { Atom, Code, Link, Network } from "lucide-react";
+import { Atom, Code, Blocks } from "lucide-react";
 
 A framework adapter connects the DOM binding to the reactivity of one UI framework. `@anchor-presence/react` is the adapter for React. Read this page to write an adapter for Solid, Vue, or another framework. The adapter copies the shape of the React adapter.
 
@@ -15,7 +15,10 @@ The core of every adapter is a bridge from `subscribe` and `getSnapshot` to a re
 ```ts
 import type { DomBinding, ResolvedCursor } from "@anchor-presence/dom";
 
-function observeCursors(binding: DomBinding, write: (cursors: ResolvedCursor[]) => void): () => void {
+function observeCursors(
+  binding: DomBinding,
+  write: (cursors: readonly ResolvedCursor[]) => void,
+): () => void {
   write(binding.getSnapshot());
   return binding.subscribe(() => write(binding.getSnapshot()));
 }
@@ -29,6 +32,7 @@ Each layer depends only on the layers below it:
 
 <Mermaid
   chart={`flowchart TD
+  accTitle: Package layers
   adapter["your adapter"] --> dom["@anchor-presence/dom"]
   dom --> core["@anchor-presence/core"]
   adapter --> core`}
@@ -80,7 +84,7 @@ interface Framework {
 }
 
 function createPresenceSignals(framework: Framework, client: PresenceClient) {
-  const [presence, setPresence] = framework.createSignal<RemotePresence[]>([]);
+  const [presence, setPresence] = framework.createSignal<readonly RemotePresence[]>([]);
   const [status, setStatus] = framework.createSignal<ConnectionStatus>("disconnected");
   if (framework.isServer) return { presence, status };
 
@@ -105,13 +109,13 @@ Call `createPresenceSignals` inside the owner scope, so that `onCleanup` runs wh
 
 ## What the React adapter does
 
-`LiveCursorProvider` is the one stateful part of `@anchor-presence/react`:
+`PresenceProvider` is the one stateful part of `@anchor-presence/react`:
 
 - It creates the client from a `factory` prop in a mount effect, and disposes it on unmount. The factory runs again each time the `clientKey` prop changes. A client from the `client` prop belongs to the app, and the provider never disposes it.
 - If you pass no `binding` prop, it creates one `DomBinding` with `createDomBinding(client, bindingOptions)` in an effect. The cleanup of that effect calls `binding.dispose()`.
 - It creates a new binding when the `client` or the `bindingKey` prop changes. A `bindingOptions` change alone creates no new binding.
 - Outside the browser, it creates no client from `factory` and no binding.
-- It exposes `{ client, binding }` through `LiveCursorContext`.
+- It exposes `{ client, binding }` through `PresenceProviderContext`.
 
 The hooks read that context. `useRemoteCursors` subscribes to `binding.subscribe` through `useSyncExternalStore` and returns an empty array without a binding. No hook stores cursor data in React state. See the [React overview](/docs/react).
 
@@ -130,12 +134,12 @@ An adapter package exports again the types of the lower packages that its own pu
 
 ## Package boundaries
 
-No third-party framework code lives inside `@anchor-presence/core` or `@anchor-presence/dom`. A `@anchor-presence/solid` or `@anchor-presence/vue` package depends on these two packages only. It never imports the internals of another adapter. The [package table](/docs/get-started/introduction#packages) shows the dependencies of each package.
+No third-party framework code lives inside `@anchor-presence/core` or `@anchor-presence/dom`. A `@anchor-presence/solid` or `@anchor-presence/vue` package depends on these two packages only. It never imports the internals of another adapter. The [Packages section](/docs/get-started/introduction#packages) shows the dependencies of each package.
 
 ## Related
 
 <Cards>
-  <Card icon={<Network />} title="How it works" href="/docs/get-started/concepts/how-it-works">
+  <Card icon={<Blocks />} title="How it works" href="/docs/get-started/concepts/how-it-works">
     The full picture and the invariants.
   </Card>
   <Card icon={<Atom />} title="React overview" href="/docs/react">
@@ -144,7 +148,7 @@ No third-party framework code lives inside `@anchor-presence/core` or `@anchor-p
   <Card icon={<Code />} title="Client API" href="/docs/core/api/client">
     Every method of `PresenceClient`.
   </Card>
-  <Card icon={<Link />} title="Binding API" href="/docs/dom/api/binding">
+  <Card icon={<Code />} title="Binding API" href="/docs/dom/api/binding">
     Every method of `DomBinding`.
   </Card>
 </Cards>

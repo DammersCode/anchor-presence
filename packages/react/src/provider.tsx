@@ -1,35 +1,57 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { warnOnce } from "@anchor-presence/core";
-import type { PresenceClient } from "@anchor-presence/core";
+import type { EventMap, PresenceClient } from "@anchor-presence/core";
 import { createDomBinding } from "@anchor-presence/dom";
 import type { DomBinding, DomBindingOptions } from "@anchor-presence/dom";
-import { LiveCursorContext } from "./context.js";
-import type { LiveCursorContextValue } from "./context.js";
+import { PresenceProviderContext } from "./context.js";
+import type { PresenceProviderValue } from "./context.js";
 
 /**
- * Props for `LiveCursorProvider`.
+ * Every `PresenceProvider` prop except `children`.
+ * Use it for a wrapper component: `Omit` on `PresenceProviderProps` loses the `client` or `factory` rule.
  */
-export type LiveCursorProviderProps<TContext = unknown, TUser = unknown> = {
-  /**
-   * Creates the client the provider owns.
-   * The provider runs it once per mount, in an effect, and disposes the client on unmount.
-   * Omit it when you pass `client`.
-   */
-  factory?: () => PresenceClient<TContext, TUser>;
-  /**
-   * A client you own; the provider never disposes it.
-   * `null` provides no client. Wins over `factory` when both are set.
-   */
-  client?: PresenceClient<TContext, TUser> | null;
-  /** A binding you created. Omit to let the provider create one. */
-  binding?: DomBinding<TContext, TUser>;
-  /** Options for the binding the provider creates. */
-  bindingOptions?: DomBindingOptions<TContext, TUser>;
-  /** Change this value to dispose the client `factory` made and create a new one, for example to join another room. */
-  clientKey?: unknown;
-  /** Change this value to rebuild the binding with the current `bindingOptions`. The client stays connected. */
-  bindingKey?: unknown;
+export type PresenceProviderConfig<TContext = unknown, TUser = unknown, TEvents extends object = EventMap> = (
+  | {
+      /** A client you own; the provider never disposes it. `null` provides no client. */
+      client: PresenceClient<TContext, TUser, TEvents> | null;
+      factory?: never;
+    }
+  | {
+      /**
+       * Creates the client the provider owns.
+       * The provider runs it once per mount, in an effect, and disposes the client on unmount.
+       */
+      factory: () => PresenceClient<TContext, TUser, TEvents>;
+      client?: never;
+    }
+) &
+  (
+    | {
+        /** A binding you created. Omit to let the provider create one. */
+        binding?: DomBinding<TContext, TUser> | undefined;
+        bindingOptions?: never;
+      }
+    | {
+        binding?: never;
+        /** Options for the binding the provider creates. */
+        bindingOptions?: DomBindingOptions<NoInfer<TContext>, NoInfer<TUser>> | undefined;
+      }
+  ) & {
+    /** Change this value to dispose the client `factory` made and create a new one, for example to join another room. */
+    clientKey?: unknown;
+    /** Change this value to rebuild the binding with the current `bindingOptions`. The client stays connected. */
+    bindingKey?: unknown;
+  };
+
+/**
+ * Props for `PresenceProvider`.
+ */
+export type PresenceProviderProps<
+  TContext = unknown,
+  TUser = unknown,
+  TEvents extends object = EventMap,
+> = PresenceProviderConfig<TContext, TUser, TEvents> & {
   /** The tree below the provider. */
   children?: ReactNode;
 };
@@ -38,15 +60,9 @@ function isBrowser(): boolean {
   return typeof window !== "undefined" && typeof document !== "undefined";
 }
 
-/**
- * Provides the presence client and the binding to the tree below.
- * The provider creates and disposes the client from `factory`; a `client` prop stays yours to dispose.
- * The provider creates a DOM binding when you do not pass one.
- * The provider reads `bindingOptions` when it creates the binding. Change `bindingKey` to create a new binding with the latest options, without touching the client.
- */
-export function LiveCursorProvider<TContext = unknown, TUser = unknown>(
-  props: LiveCursorProviderProps<TContext, TUser>,
-): ReactNode {
+export function usePresenceProviderValue<TContext, TUser, TEvents extends object>(
+  props: PresenceProviderProps<TContext, TUser, TEvents>,
+): PresenceProviderValue<TContext, TUser, TEvents> {
   const {
     factory,
     client: providedClient,
@@ -54,10 +70,9 @@ export function LiveCursorProvider<TContext = unknown, TUser = unknown>(
     bindingOptions,
     bindingKey,
     clientKey,
-    children,
   } = props;
 
-  const [ownClient, setOwnClient] = useState<PresenceClient<TContext, TUser> | null>(null);
+  const [ownClient, setOwnClient] = useState<PresenceClient<TContext, TUser, TEvents> | null>(null);
   // The factory runs once per mount and once more each time clientKey changes. Other factory and client changes are ignored.
   const factoryRef = useRef(factory);
   const providedClientRef = useRef(providedClient);
@@ -72,6 +87,11 @@ export function LiveCursorProvider<TContext = unknown, TUser = unknown>(
     // oxlint-disable-next-line react/refs -- one-shot creation path
     const create = factoryRef.current;
     if (create === undefined) return;
+    if (typeof create !== "function") {
+      throw new TypeError(
+        "PresenceProvider: factory must be a function that returns a client; pass a client with the client prop",
+      );
+    }
     if (!isBrowser()) return;
 
     const created = create();
@@ -87,13 +107,19 @@ export function LiveCursorProvider<TContext = unknown, TUser = unknown>(
   if (factory === undefined && providedClient === undefined) {
     warnOnce(
       "provider-without-client",
-      "LiveCursorProvider got neither `client` nor `factory`, so it renders without presence.",
+      "PresenceProvider got neither `client` nor `factory`, so it renders without presence.",
+    );
+  }
+  if (factory !== undefined && providedClient !== undefined) {
+    warnOnce(
+      "provider-client-and-factory",
+      "PresenceProvider got both `client` and `factory`; it ignores `factory`.",
     );
   }
   if (providedBinding !== undefined && bindingOptions !== undefined) {
     warnOnce(
       "binding-and-options",
-      "LiveCursorProvider got both `binding` and `bindingOptions`; it ignores `bindingOptions`.",
+      "PresenceProvider got both `binding` and `bindingOptions`; it ignores `bindingOptions`.",
     );
   }
 
@@ -129,11 +155,25 @@ export function LiveCursorProvider<TContext = unknown, TUser = unknown>(
   }, [client, providedBinding, bindingKey]);
 
   const activeBinding = providedBinding ?? ownBinding;
+  const clientPending = factory !== undefined && providedClient === undefined && ownClient === null;
 
-  const value = useMemo<LiveCursorContextValue<TContext, TUser>>(
-    () => ({ client, binding: activeBinding }),
-    [client, activeBinding],
+  const value = useMemo<PresenceProviderValue<TContext, TUser, TEvents>>(
+    () => ({ client, binding: activeBinding, clientPending }),
+    [client, activeBinding, clientPending],
   );
 
-  return <LiveCursorContext.Provider value={value}>{children}</LiveCursorContext.Provider>;
+  return value;
+}
+
+/**
+ * Provides the presence client and the binding to the tree below.
+ * The provider creates and disposes the client from `factory`; a `client` prop stays yours to dispose.
+ * The provider creates a DOM binding when you do not pass one.
+ * The provider reads `bindingOptions` when it creates the binding. Change `bindingKey` to create a new binding with the latest options, without touching the client.
+ * The hooks below it return `unknown` for `user`, `context` and event data, and the provider takes only an untyped client.
+ * Use `createPresenceHooks` for typed access.
+ */
+export function PresenceProvider(props: PresenceProviderProps): ReactNode {
+  const value = usePresenceProviderValue(props);
+  return <PresenceProviderContext.Provider value={value}>{props.children}</PresenceProviderContext.Provider>;
 }

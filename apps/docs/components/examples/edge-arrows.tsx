@@ -1,15 +1,19 @@
 "use client";
 
 import type { PresenceClient } from "@anchor-presence/core";
-import { CursorLayer, LiveCursorProvider, useRemoteCursors } from "@anchor-presence/react";
+import type { TourContext } from "./_preview/tour";
+import { CursorLayer, PresenceProvider, useRemoteCursors } from "./_preview/hooks";
 import type { ResolvedCursor } from "@anchor-presence/react";
 import type { ReactNode } from "react";
 import { LongPage } from "./long-page";
 
+const safeColor = (color: string | undefined, fallback: string) =>
+  color !== undefined && /^#[0-9a-f]{6}$/iu.test(color) ? color : fallback;
+
 type User = { name: string; color: string };
 
 type Props = {
-  client: PresenceClient<unknown, User> | null;
+  client: PresenceClient<TourContext, User> | null;
   layout: "wide" | "narrow";
   children?: ReactNode;
 };
@@ -58,14 +62,14 @@ function OffscreenHints() {
 
 export function EdgeArrowsScene({ client, layout, children }: Props) {
   return (
-    <LiveCursorProvider client={client}>
+    <PresenceProvider client={client}>
       <LongPage layout={layout} />
-      <CursorLayer<unknown, User>
+      <CursorLayer
         getLabel={(cursor) => cursor.user?.name ?? null}
-        getColor={(cursor) => cursor.user?.color ?? "#4f46e5"}
+        getColor={(cursor) => safeColor(cursor.user?.color, "#4f46e5")}
       />
       {/* The arrows take the status bar's place at the window edge. */}
       {layout === "narrow" ? <OffscreenHints /> : children}
-    </LiveCursorProvider>
+    </PresenceProvider>
   );
 }

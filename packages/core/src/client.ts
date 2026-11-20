@@ -1,4 +1,5 @@
 import { jsonCodec } from "./codec.js";
+import type { EventMap } from "./event-channel.js";
 import { defaultNow } from "./internal/clock.js";
 import { createOversizedWarning, isDevMode, reportListenerError, warnOnce } from "./internal/dev-warnings.js";
 import { defaultIdFactory } from "./internal/ids.js";
@@ -9,10 +10,17 @@ import { createStatusMachine } from "./internal/reconnect.js";
 import type {
   PresenceClient,
   PresenceClientOptions,
+  RequiredParsers,
   PresenceClientState,
   SchedulerLike,
 } from "./internal/types.js";
-import { DEFAULT_MAX_FIELD_BYTES, DEFAULT_MAX_MESSAGE_BYTES, MAX_EVENT_TYPE_LENGTH } from "./protocol.js";
+import {
+  DEFAULT_MAX_CLIENT_ID_LENGTH,
+  DEFAULT_MAX_SESSION_LENGTH,
+  DEFAULT_MAX_FIELD_BYTES,
+  DEFAULT_MAX_MESSAGE_BYTES,
+  MAX_EVENT_TYPE_LENGTH,
+} from "./protocol.js";
 import {
   DEFAULT_IDLE_AFTER_MS,
   DEFAULT_MAX_REMOTE_CLIENTS,
@@ -23,8 +31,9 @@ import {
 /** Default publish interval, in milliseconds. */
 export const DEFAULT_PUBLISH_INTERVAL_MS = 50;
 
-/** Default heartbeat interval, in milliseconds. */
 const MIN_SWEEP_INTERVAL_MS = 250;
+
+/** Default heartbeat interval, in milliseconds. */
 export const DEFAULT_HEARTBEAT_INTERVAL_MS = 10_000;
 
 const MIN_TIMER_INTERVAL_MS = 1;
@@ -45,9 +54,15 @@ const defaultScheduler: SchedulerLike = {
 function assertFiniteOptions(values: Record<string, number | undefined>): void {
   for (const [name, value] of Object.entries(values)) {
     if (value !== undefined && !Number.isFinite(value)) {
-      throw new TypeError(`${name} must be a finite number, got ${String(value)}`);
+      throw new TypeError(`createPresenceClient: ${name} must be a finite number, got ${String(value)}`);
     }
   }
+}
+
+function assertId(name: string, value: unknown, max: number): asserts value is string {
+  if (typeof value === "string" && value.length >= 1 && value.length <= max) return;
+  const got = typeof value === "string" ? value.length : typeof value;
+  throw new TypeError(`createPresenceClient: ${name} must be 1 to ${max} characters, got ${got}`);
 }
 
 /**
@@ -57,9 +72,16 @@ function assertFiniteOptions(values: Record<string, number | undefined>): void {
  * @param options The client options. `transport` is required.
  * @returns The client.
  */
-export function createPresenceClient<TContext = unknown, TUser = unknown>(
-  options: PresenceClientOptions<TContext, TUser>,
-): PresenceClient<TContext, TUser> {
+export function createPresenceClient<TContext = unknown, TUser = unknown, TEvents extends object = EventMap>(
+  options: PresenceClientOptions<TContext, TUser, TEvents> &
+    NoInfer<RequiredParsers<TContext, TUser, TEvents>>,
+): PresenceClient<TContext, TUser, TEvents> {
+  if (options?.transport === undefined || options.transport === null) {
+    throw new TypeError("createPresenceClient: options.transport is required");
+  }
+  if (typeof options.transport.subscribe !== "function") {
+    throw new TypeError("createPresenceClient: transport.subscribe must be a function");
+  }
   const {
     transport,
     codec = jsonCodec,
@@ -80,6 +102,11 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     "adaptivePublish.lowWatermarkBytes": options.adaptivePublish?.lowWatermarkBytes,
     "adaptivePublish.slowPublishIntervalMs": options.adaptivePublish?.slowPublishIntervalMs,
   });
+  if (maxRemoteClients !== undefined && !(Number.isInteger(maxRemoteClients) && maxRemoteClients >= 1)) {
+    throw new TypeError(
+      `createPresenceClient: maxRemoteClients must be an integer of at least 1, got ${String(maxRemoteClients)}`,
+    );
+  }
 
   const publishIntervalMs = Math.max(
     MIN_TIMER_INTERVAL_MS,
@@ -103,15 +130,18 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     options.staleTimeoutMs === undefined ? undefined : Math.max(MIN_STALE_TIMEOUT_MS, options.staleTimeoutMs);
   const idleAfterMs = options.idleAfterMs === undefined ? undefined : Math.max(0, options.idleAfterMs);
 
-  if (isDevMode() && staleTimeoutMs !== undefined && staleTimeoutMs <= heartbeatIntervalMs * 2) {
+  const effectiveStaleTimeoutMs = staleTimeoutMs ?? DEFAULT_STALE_TIMEOUT_MS;
+  if (isDevMode() && effectiveStaleTimeoutMs <= heartbeatIntervalMs * 2) {
     warnOnce(
       "stale-vs-heartbeat",
-      `staleTimeoutMs (${staleTimeoutMs}) is at most twice heartbeatIntervalMs (${heartbeatIntervalMs}), so a quiet peer expires between heartbeats. Raise staleTimeoutMs or lower heartbeatIntervalMs.`,
+      `staleTimeoutMs (${effectiveStaleTimeoutMs}) is at most twice heartbeatIntervalMs (${heartbeatIntervalMs}), so a quiet peer expires between heartbeats. Raise staleTimeoutMs or lower heartbeatIntervalMs.`,
     );
   }
 
   const clientId = options.clientId ?? idFactory();
+  assertId("clientId", clientId, validationLimits?.maxClientIdLength ?? DEFAULT_MAX_CLIENT_ID_LENGTH);
   const session = idFactory();
+  assertId("session", session, validationLimits?.maxSessionLength ?? DEFAULT_MAX_SESSION_LENGTH);
 
   const status = transport.subscribeStatus ? (transport.getStatus?.() ?? "connecting") : "connected";
 
@@ -122,7 +152,7 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     ...(staleTimeoutMs !== undefined ? { staleTimeoutMs } : {}),
     ...(idleAfterMs !== undefined ? { idleAfterMs } : {}),
     now,
-    onDropNewClient: (droppedClientId) => {
+    onRemoteClientRejected: ({ clientId: droppedClientId }) => {
       if (devMode && !warnedAboutRemoteCap) {
         warnedAboutRemoteCap = true;
         console.warn(
@@ -137,7 +167,7 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
     },
   });
 
-  const state: PresenceClientState<TContext, TUser> = {
+  const state: PresenceClientState<TContext, TUser, TEvents> = {
     transport,
     codec,
     scheduler,
@@ -203,6 +233,8 @@ export function createPresenceClient<TContext = unknown, TUser = unknown>(
   wireInbound(state);
 
   statusMachine.wireTransport();
+
+  if (state.status === "connected") publish.markReconnected();
 
   publish.wireVisibility();
 

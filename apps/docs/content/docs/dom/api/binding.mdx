@@ -6,7 +6,7 @@ icon: code
 
 import { Braces, Link } from "lucide-react";
 
-This page lists `createDomBinding` and its option types. Use it to look up a field. The [Binding](/docs/dom/binding) guide explains the behavior.
+This page lists `createDomBinding` and its option types. Use it to look up a field. The [Binding](/docs/dom/binding) guide explains the behavior. Import them from the package:
 
 ```ts
 import { createDomBinding } from "@anchor-presence/dom";
@@ -15,7 +15,13 @@ import type { DomBinding, DomBindingOptions } from "@anchor-presence/dom";
 
 ## createDomBinding
 
-`createDomBinding(client, options?)` creates the DOM side of one client and returns a `DomBinding`. It throws a `TypeError` for a bad `anchorAttribute` or a `maxAnchors` that is not an integer. See [Options](/docs/dom/binding#options).
+`createDomBinding(client, options?)` creates the DOM side of one client and returns a `DomBinding`. It throws a `TypeError` in these cases:
+
+- `anchorAttribute` is not letters and digits in groups split by single hyphens, with a letter first. For example, `data-anchor` and `anchor` pass, and `data_anchor` and `1-anchor` fail.
+- `privateAttribute` breaks the same rule as `anchorAttribute`.
+- `maxSentAnchors` is not an integer, for example `2.5` or `NaN`.
+
+See [Options](/docs/dom/binding#options).
 
 ## DomBinding
 

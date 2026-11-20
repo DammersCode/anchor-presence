@@ -1,26 +1,26 @@
 ---
-title: Pick a relay
+title: Backends
 description: Pick a relay for your server, and learn what every relay does, checks, and limits.
 icon: server
 ---
 
 import {
-  Cable,
   CloudUpload,
-  Cpu,
   FileCheck,
   Flame,
   Gauge,
   Hexagon,
   Radio,
+  RadioTower,
   Signal,
   Sparkles,
   Zap,
+  Cable,
 } from "lucide-react";
 
-Live cursors need a relay: a server that forwards each message to the peers of the sender. A peer is another client in the same room. `@anchor-presence/core` imports no transport library, so any channel that implements `LiveCursorTransport` works. This section has one tested relay for each common backend.
+Live cursors need a relay: a server that forwards each message to the peers of the sender. `@anchor-presence/core` imports no transport library, so any channel that implements `PresenceTransport` works. This section has one tested relay for each common backend.
 
-## Relays by backend
+## Pick a relay
 
 <Cards>
   <Card icon={<Zap />} title="Bun" href="/docs/examples/backends/bun-native">
@@ -58,14 +58,14 @@ The Bun, Node.js (ws), Hono and Elysia relays need no custom client transport. T
 
 To run a relay in production, see [Deploy a relay](/docs/get-started/guides/deploy-relay).
 
-Every relay has an integration test that starts the real server and connects two clients. The Bun, Node.js (ws), Hono and Elysia relays also pass the [conformance suite](#conformance-suite).
+Every relay has an integration test that starts the real server and connects two clients.
 
 ## No server
 
 Two transports need no relay:
 
-- `createInMemoryPair` from `@anchor-presence/core` connects two transports in one process. Use it for tests and prototypes. The code samples of this site use it.
-- `createBroadcastChannelTransport` from `@anchor-presence/dom` connects tabs and iframes on the same origin. The live demos of this site use it.
+- [`createInMemoryPair`](/docs/core/in-memory-transport) from `@anchor-presence/core` connects two transports in one process. Use it for tests and prototypes. Most tests and some samples use it.
+- [`createBroadcastChannelTransport`](/docs/dom/broadcast-channel-transport) from `@anchor-presence/dom` connects tabs and iframes on the same origin. The live demos of this site use it.
 
 ## What a relay does
 
@@ -75,9 +75,9 @@ A relay does not read the presence protocol. It forwards bytes between the socke
 sender.send(bytes) -> relay -> every other socket in the same room -> receiver.subscribe(listener)
 ```
 
-The relay never reads the `anchors`, `context`, or `user` field of a message. It only decodes a message when [identity binding](#identity-binding) is on. Every relay page has the same three behavior tables: what the relay does, its limits, and its auth checks. [Relay contract](/docs/examples/backends/relay-contract) gives the rules that every relay must obey. [Performance](/docs/get-started/guides/performance#scaling-limits) shows how the load of a relay grows with the size of a room.
+The relay never reads the `anchors`, `context`, or `user` field of a message. It only decodes a message when [identity binding](#identity-binding) is on. Every relay page has the same three behavior sections: what the relay does, its limits, and its auth checks. [Relay contract](/docs/examples/backends/relay-contract) gives the rules that every relay must obey. [Performance](/docs/get-started/guides/performance#scaling-limits) shows how the load of a relay grows with the size of a room.
 
-Every transport implements `LiveCursorTransport`. Only `send` and `subscribe` are required. See [Transports](/docs/core/transports) for the full interface.
+Every transport implements `PresenceTransport`. Only `send` and `subscribe` are required. See [Transports](/docs/core/transports) for the full interface.
 
 ## Shared guard helpers
 
@@ -96,21 +96,9 @@ The Bun, Node.js (ws), Hono, Elysia, and Socket.IO relays share one file of guar
 
 ## Identity binding
 
-A relay that does not decode messages cannot tell who sent a message. With identity binding, the `authCheck` hook returns a verified `{ clientId, user }`. The relay then writes that identity into every JSON frame of the connection. [Relay contract](/docs/examples/backends/relay-contract#identity) gives the rules and lists the relays that support it.
+A relay can write a verified identity into every JSON frame, so a peer cannot claim another `clientId`. [Relay contract](/docs/examples/backends/relay-contract#identity) gives the rules and lists the relays that support it.
 
-The entry files of the Bun, Node.js (ws), Hono and Elysia relays have a demo identity mode. To turn it on, set `RELAY_DEMO_IDENTITY=1` before you start the relay:
-
-```sh
-RELAY_DEMO_IDENTITY=1 bun relay.ts
-```
-
-In this mode, the [room token](/docs/dom/websocket-transport#room-token) names the user. `authCheck` returns `{ clientId: "user-<token>", user: { name: "<token>" } }`. A client with the room token `ada` gets the `clientId` `user-ada~<connection>` and the user `{ name: "ada" }`. The relay refuses a connection without a room token.
-
-<Callout type="warn">
-  If you use the demo identity mode in production, any client can claim any name. The relay trusts the room
-  token as the user name. Check the room token in your own `authCheck`, for example as a JWT, and return the
-  verified user.
-</Callout>
+To try identity binding without your own auth, use the [demo identity mode](/docs/examples/backends/relay-contract#demo-identity-mode).
 
 ## Conformance suite
 
@@ -122,16 +110,16 @@ In this mode, the [room token](/docs/dom/websocket-transport#room-token) names t
   <Card icon={<FileCheck />} title="Relay contract" href="/docs/examples/backends/relay-contract">
     The rules, the close codes, and the conformance suite.
   </Card>
-  <Card icon={<Cable />} title="WebSocket transport" href="/docs/dom/websocket-transport">
+  <Card icon={<RadioTower />} title="WebSocket transport" href="/docs/dom/websocket-transport">
     The client side of the Bun, Node.js, Hono and Elysia relays.
   </Card>
-  <Card icon={<Cpu />} title="Transports" href="/docs/core/transports">
-    The `LiveCursorTransport` interface and its contract.
+  <Card icon={<Cable />} title="Transports" href="/docs/core/transports">
+    The `PresenceTransport` interface and its contract.
   </Card>
   <Card icon={<Gauge />} title="Performance" href="/docs/get-started/guides/performance">
     How relay load grows with the size of a room.
   </Card>
   <Card icon={<CloudUpload />} title="Deploy a relay" href="/docs/get-started/guides/deploy-relay">
-    Pick a relay runtime, then run it behind TLS with one process per room.
+    Pick a relay runtime, then run it behind TLS, and keep each room on one process.
   </Card>
 </Cards>

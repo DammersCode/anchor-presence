@@ -4,11 +4,18 @@ description: Replace the default arrow with a name pill, an avatar, or a crossha
 icon: brush
 ---
 
-import { Atom, Spline, Users } from "lucide-react";
+import { Spline, Users, Paintbrush, MousePointer2 } from "lucide-react";
 
 `CursorLayer` renders `DefaultCursor` by default. `renderCursor` replaces the visual, and `CursorLayer` keeps control of the position and the pointer events. In this demo, the same remote cursor shows as a name pill in the wide pane and as an avatar in the narrow pane.
 
 <ExamplePreview scene="custom-cursors" />
+
+<Callout type="info">
+  This demo breaks the layout rules on purpose, so you can see how a cursor moves. The hero card moves from a
+  left column to a full-width row. In your app, keep neighbors, sizes, and shapes alike. See the [layout
+  design guide](/docs/get-started/guides/layout-design) and the [Stable layout](/docs/examples/stable-layout)
+  example.
+</Callout>
 
 ## Code
 
@@ -20,6 +27,8 @@ This file renders the scene of the demo:
 
 <CodeFromSource docs="components/examples/custom-cursors.tsx" lang="tsx" />
 
+<SceneNote />
+
 `CursorLayer` puts the root of each cursor at the cursor point. A renderer draws relative to that point. The crosshair moves its SVG up and to the left, so that the center of the crosshair is on the point.
 
 Pick cursor colors that reach WCAG AA contrast (4.5:1) against the label text.
@@ -30,20 +39,22 @@ Pick cursor colors that reach WCAG AA contrast (4.5:1) against the label text.
 
 ## Behavior notes
 
+Try it: Select a renderer in either pane.
+
 - Four renderers: the default arrow, a name pill, an avatar with initials, and a crosshair with the receiver coordinates.
-- Select a renderer in either pane. Each pane has its own setting, because the receiver renders the cursor.
+- Each pane has its own renderer setting, because the receiver renders the cursor.
 - The crosshair shows `cursor.x` and `cursor.y`. The numbers are different in the two panes, because each pane resolves the anchor in its own layout.
 
 ## Related
 
 <Cards>
-  <Card icon={<Atom />} title="renderCursor" href="/docs/react/custom-cursors#usage">
+  <Card icon={<Paintbrush />} title="renderCursor" href="/docs/react/custom-cursors#usage">
     The props that a renderer gets.
   </Card>
-  <Card icon={<Atom />} title="Root attributes" href="/docs/react/custom-cursors#root-attributes">
+  <Card icon={<Paintbrush />} title="Root attributes" href="/docs/react/custom-cursors#root-attributes">
     The attributes on each cursor root, for selectors and tests.
   </Card>
-  <Card icon={<Atom />} title="Label and color" href="/docs/react/cursor-layer#label-and-color">
+  <Card icon={<MousePointer2 />} title="Label and color" href="/docs/react/cursor-layer#label-and-color">
     `getLabel` and `getColor`.
   </Card>
   <Card icon={<Users />} title="Presence list" href="/docs/examples/presence-list">
